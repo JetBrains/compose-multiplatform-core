@@ -286,8 +286,8 @@ package androidx.compose.remote.creation.compose.modifier {
   }
 
   public final class WidthInModifierKt {
-    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.compose.remote.creation.compose.modifier.RemoteModifier widthIn(androidx.compose.remote.creation.compose.modifier.RemoteModifier, optional androidx.compose.remote.creation.compose.state.RemoteDp? min, optional androidx.compose.remote.creation.compose.state.RemoteDp? max);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.compose.remote.creation.compose.modifier.RemoteModifier widthIn(androidx.compose.remote.creation.compose.modifier.RemoteModifier, androidx.compose.remote.creation.compose.state.RemoteDp?, androidx.compose.remote.creation.compose.state.RemoteDp?, androidx.compose.runtime.Composer?, int, int);
+    method public static androidx.compose.remote.creation.compose.modifier.RemoteModifier widthIn(androidx.compose.remote.creation.compose.modifier.RemoteModifier, optional androidx.compose.remote.creation.compose.state.RemoteDp? min, optional androidx.compose.remote.creation.compose.state.RemoteDp? max);
+    method @BytecodeOnly public static androidx.compose.remote.creation.compose.modifier.RemoteModifier! widthIn$default(androidx.compose.remote.creation.compose.modifier.RemoteModifier!, androidx.compose.remote.creation.compose.state.RemoteDp!, androidx.compose.remote.creation.compose.state.RemoteDp!, int, Object!);
   }
 
   public final class WidthModifierKt {
@@ -388,7 +388,18 @@ package androidx.compose.remote.creation.compose.state {
   }
 
   public class RemoteBoolean extends androidx.compose.remote.creation.compose.state.BaseRemoteState<java.lang.Boolean> {
+    method public final infix androidx.compose.remote.creation.compose.state.RemoteBoolean and(androidx.compose.remote.creation.compose.state.RemoteBoolean b);
+    method public final infix androidx.compose.remote.creation.compose.state.RemoteBoolean eq(androidx.compose.remote.creation.compose.state.RemoteBoolean b);
     method @InaccessibleFromKotlin public Boolean? getConstantValueOrNull();
+    method public final infix androidx.compose.remote.creation.compose.state.RemoteBoolean ne(androidx.compose.remote.creation.compose.state.RemoteBoolean b);
+    method public final operator androidx.compose.remote.creation.compose.state.RemoteBoolean not();
+    method public final infix androidx.compose.remote.creation.compose.state.RemoteBoolean or(androidx.compose.remote.creation.compose.state.RemoteBoolean b);
+    method public final androidx.compose.remote.creation.compose.state.RemoteBoolean select(androidx.compose.remote.creation.compose.state.RemoteBoolean ifTrue, androidx.compose.remote.creation.compose.state.RemoteBoolean ifFalse);
+    method public final androidx.compose.remote.creation.compose.state.RemoteFloat select(androidx.compose.remote.creation.compose.state.RemoteFloat ifTrue, androidx.compose.remote.creation.compose.state.RemoteFloat ifFalse);
+    method public final androidx.compose.remote.creation.compose.state.RemoteInt select(androidx.compose.remote.creation.compose.state.RemoteInt ifTrue, androidx.compose.remote.creation.compose.state.RemoteInt ifFalse);
+    method public final androidx.compose.remote.creation.compose.state.RemoteString select(androidx.compose.remote.creation.compose.state.RemoteString ifTrue, androidx.compose.remote.creation.compose.state.RemoteString ifFalse);
+    method public final androidx.compose.remote.creation.compose.state.RemoteInt toRemoteInt();
+    method public final infix androidx.compose.remote.creation.compose.state.RemoteBoolean xor(androidx.compose.remote.creation.compose.state.RemoteBoolean b);
     property public Boolean? constantValueOrNull;
   }
 
@@ -440,7 +451,27 @@ package androidx.compose.remote.creation.compose.state {
   }
 
   @androidx.compose.runtime.Stable public abstract class RemoteFloat extends androidx.compose.remote.creation.compose.state.BaseRemoteState<java.lang.Float> {
-    method public static final androidx.compose.remote.creation.compose.state.RemoteFloat createNamedRemoteFloatExpression(String name, optional androidx.compose.remote.creation.compose.state.RemoteState.Domain domain, kotlin.jvm.functions.Function1<? super androidx.compose.remote.creation.compose.layout.RemoteFloatContext,? extends androidx.compose.remote.creation.compose.state.RemoteFloat> expression);
+    method public final operator androidx.compose.remote.creation.compose.state.RemoteFloat div(androidx.compose.remote.creation.compose.state.RemoteFloat v);
+    method public final infix androidx.compose.remote.creation.compose.state.RemoteBoolean eq(androidx.compose.remote.creation.compose.state.RemoteFloat b);
+    method public final infix androidx.compose.remote.creation.compose.state.RemoteBoolean ge(androidx.compose.remote.creation.compose.state.RemoteFloat b);
+    method public final infix androidx.compose.remote.creation.compose.state.RemoteBoolean gt(androidx.compose.remote.creation.compose.state.RemoteFloat b);
+    method public final infix androidx.compose.remote.creation.compose.state.RemoteBoolean le(androidx.compose.remote.creation.compose.state.RemoteFloat b);
+    method public final infix androidx.compose.remote.creation.compose.state.RemoteBoolean lt(androidx.compose.remote.creation.compose.state.RemoteFloat b);
+    method public final androidx.compose.remote.creation.compose.state.RemoteFloat min(androidx.compose.remote.creation.compose.state.RemoteFloat v);
+    method public final operator androidx.compose.remote.creation.compose.state.RemoteFloat minus(androidx.compose.remote.creation.compose.state.RemoteFloat v);
+    method public final infix androidx.compose.remote.creation.compose.state.RemoteBoolean ne(androidx.compose.remote.creation.compose.state.RemoteFloat b);
+    method public final operator androidx.compose.remote.creation.compose.state.RemoteFloat plus(androidx.compose.remote.creation.compose.state.RemoteFloat v);
+    method public final operator androidx.compose.remote.creation.compose.state.RemoteFloat rem(androidx.compose.remote.creation.compose.state.RemoteFloat v);
+    method public final androidx.compose.remote.creation.compose.state.RemoteInt toRemoteInt();
+    method public final androidx.compose.remote.creation.compose.state.RemoteString toRemoteString(int before, optional int after, optional int flags);
+    method public final androidx.compose.remote.creation.compose.state.RemoteString toRemoteString(java.text.DecimalFormat format);
+    method @BytecodeOnly public static androidx.compose.remote.creation.compose.state.RemoteString! toRemoteString$default(androidx.compose.remote.creation.compose.state.RemoteFloat!, int, int, int, int, Object!);
+    method public final operator androidx.compose.remote.creation.compose.state.RemoteFloat unaryMinus();
+    field public static final androidx.compose.remote.creation.compose.state.RemoteFloat.Companion Companion;
+  }
+
+  public static final class RemoteFloat.Companion {
+    method public operator androidx.compose.remote.creation.compose.state.RemoteFloat invoke(float float);
   }
 
   public final class RemoteFloatKt {
@@ -499,6 +530,14 @@ package androidx.compose.remote.creation.compose.state {
   }
 
   @androidx.compose.runtime.Stable public abstract class RemoteString extends androidx.compose.remote.creation.compose.state.BaseRemoteState<java.lang.String> {
+    method @InaccessibleFromKotlin public final androidx.compose.remote.creation.compose.state.RemoteBoolean isEmpty();
+    method @InaccessibleFromKotlin public final androidx.compose.remote.creation.compose.state.RemoteBoolean isNotEmpty();
+    method public final androidx.compose.remote.creation.compose.state.RemoteString lowercase();
+    method public final operator androidx.compose.remote.creation.compose.state.RemoteString plus(androidx.compose.remote.creation.compose.state.RemoteString v);
+    method public final androidx.compose.remote.creation.compose.state.RemoteString trim();
+    method public final androidx.compose.remote.creation.compose.state.RemoteString uppercase();
+    property public final androidx.compose.remote.creation.compose.state.RemoteBoolean isEmpty;
+    property public final androidx.compose.remote.creation.compose.state.RemoteBoolean isNotEmpty;
   }
 
   public final class RemoteStringKt {

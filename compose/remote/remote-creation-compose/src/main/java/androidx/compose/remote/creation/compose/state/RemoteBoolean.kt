@@ -50,7 +50,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      *
      * @return A new [RemoteBoolean] representing the logical NOT of this boolean.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public operator fun not(): RemoteBoolean = RemoteBoolean(intValue xor RemoteInt(1))
 
     /**
@@ -78,7 +77,7 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      *
      * @return The [RemoteInt] that holds the boolean\'s value.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun toRemoteInt(): RemoteInt = intValue
+    public fun toRemoteInt(): RemoteInt = intValue
 
     /**
      * If this RemoteBoolean evaluates to `true` then the returned value evaluates to [ifTrue]
@@ -88,7 +87,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * @param ifFalse The [RemoteString] to be selected if this boolean is `false`.
      * @return A new [RemoteString] representing the conditionally selected string.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun select(ifTrue: RemoteString, ifFalse: RemoteString): RemoteString {
         intValue.constantValueOrNull?.let {
             return if (it != 0) {
@@ -130,7 +128,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * @param ifFalse The [RemoteFloat] to be selected if this boolean is `false`.
      * @return A new [RemoteFloat] representing the conditionally selected float value.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun select(ifTrue: RemoteFloat, ifFalse: RemoteFloat): RemoteFloat {
         intValue.constantValueOrNull?.let {
             return if (it != 0) {
@@ -159,7 +156,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * @param ifFalse The [RemoteInt] to be selected if this boolean is `false`.
      * @return A new [RemoteInt] representing the conditionally selected integer value.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun select(ifTrue: RemoteInt, ifFalse: RemoteInt): RemoteInt {
         intValue.constantValueOrNull?.let {
             return if (it != 0) {
@@ -188,7 +184,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * @param ifFalse The [RemoteBoolean] to be selected if this boolean is `false`.
      * @return A new [RemoteBoolean] representing the conditionally selected integer value.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun select(ifTrue: RemoteBoolean, ifFalse: RemoteBoolean): RemoteBoolean {
         intValue.constantValueOrNull?.let {
             return if (it != 0) {
@@ -265,7 +260,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * @param b The other [RemoteBoolean] to compare with.
      * @return A new [RemoteBoolean] representing the result of the equality comparison.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public infix fun eq(b: RemoteBoolean): RemoteBoolean = intValue eq b.intValue
 
     /**
@@ -277,7 +271,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * @param b The other [RemoteBoolean] to compare with.
      * @return A new [RemoteBoolean] representing the result of the inequality comparison.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public infix fun ne(b: RemoteBoolean): RemoteBoolean = intValue ne b.intValue
 
     /**
@@ -289,7 +282,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * @param b The other [RemoteBoolean] to perform the OR operation with.
      * @return A new [RemoteBoolean] representing the result of the logical OR.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public infix fun or(b: RemoteBoolean): RemoteBoolean = RemoteBoolean(intValue or b.intValue)
 
     /**
@@ -301,7 +293,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * @param b The other [RemoteBoolean] to perform the AND operation with.
      * @return A new [RemoteBoolean] representing the result of the logical AND.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public infix fun and(b: RemoteBoolean): RemoteBoolean = RemoteBoolean(intValue and b.intValue)
 
     /**
@@ -313,7 +304,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * @param b The other [RemoteBoolean] to perform the XOR operation with.
      * @return A new [RemoteBoolean] representing the result of the logical XOR.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public infix fun xor(b: RemoteBoolean): RemoteBoolean = RemoteBoolean(intValue xor b.intValue)
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

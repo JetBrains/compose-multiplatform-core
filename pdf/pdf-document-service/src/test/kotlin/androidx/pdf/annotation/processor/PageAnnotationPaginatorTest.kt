@@ -22,7 +22,6 @@ import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.annotation.PageAnnotationsProvider
 import androidx.pdf.annotation.createKeyedPdfAnnotationList
 import com.google.common.truth.Truth.assertThat
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -63,10 +62,9 @@ class PageAnnotationPaginatorTest {
         assertThat(results.totalBatchCount).isEqualTo(1)
     }
 
-    @Ignore // b/483479440
     @Test
     fun test_getPageAnnotations_multipleBatches_returnsCorrectTotalBatchCount() {
-        val annotationDataList = createKeyedPdfAnnotationList(numAnnots = 2, pathLength = 10000)
+        val annotationDataList = createKeyedPdfAnnotationList(numAnnots = 2, pathLength = 5000)
         val annotationsProvider =
             object : PageAnnotationsProvider {
                 override fun getPageAnnotations(pageNum: Int): List<KeyedPdfAnnotation> =

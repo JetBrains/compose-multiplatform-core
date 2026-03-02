@@ -76,7 +76,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
     /**
      * Returns a [RemoteInt] that evaluates to the result of this [RemoteFloat] converted to Int.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun toRemoteInt(): RemoteInt {
         constantValueOrNull?.let {
             return RemoteInt(it.toInt())
@@ -86,7 +85,17 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
         }
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    /**
+     * Returns a [RemoteString] that evaluates to the result of this [RemoteFloat] formatted
+     * according to the provided [DecimalFormat].
+     *
+     * This method maps the localized [DecimalFormat] symbols (such as separators and grouping
+     * sizes) and configuration (such as padding and rounding) to a remote-compatible string
+     * representation.
+     *
+     * @param format The [DecimalFormat] to use for determining separators, grouping, and padding.
+     * @return A [RemoteString] representing the formatted float.
+     */
     public fun toRemoteString(format: DecimalFormat): RemoteString {
         val decimalSeparator = format.decimalFormatSymbols.decimalSeparator
         val groupingSeparator = format.decimalFormatSymbols.groupingSeparator
@@ -160,7 +169,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
      *   [TextFromFloat.PAD_AFTER_ZERO]).
      * @return A [RemoteString] representing the formatted float.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun toRemoteString(
         before: Int,
         after: Int = 2,
@@ -230,7 +238,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
     }
 
     /** Returns a new [RemoteFloat] that evaluates to the negative of this [RemoteFloat]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public operator fun unaryMinus(): RemoteFloat {
         constantValueOrNull?.let {
             return RemoteFloat(-it)
@@ -247,7 +254,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
         binaryOp(this, v, AnimatedFloatExpression.MOD) { a, b -> a % b }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] modulo [v]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public operator fun rem(v: RemoteFloat): RemoteFloat =
         binaryOp(this, v, AnimatedFloatExpression.MOD) { a, b -> a % b }
 
@@ -261,7 +267,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
         }
 
     /** Returns a new [RemoteFloat] that evaluates to minimum of this [RemoteFloat] and [v]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun min(v: RemoteFloat): RemoteFloat =
         binaryOp(this, v, AnimatedFloatExpression.MIN) { a, b -> kotlin.math.min(a, b) }
 
@@ -289,7 +294,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
     }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] plus [v]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public operator fun plus(v: RemoteFloat): RemoteFloat {
         v.constantValueOrNull?.let {
             return plus(it)
@@ -324,7 +328,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
     }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] minus [v]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public operator fun minus(v: RemoteFloat): RemoteFloat {
         v.constantValueOrNull?.let {
             return minus(it)
@@ -417,7 +420,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
         }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] div [v]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public operator fun div(v: RemoteFloat): RemoteFloat {
         if (constantValueOrNull != null && constantValueOrNull == 0f) {
             return RemoteFloat(0f)
@@ -455,7 +457,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
      * Returns a [RemoteBoolean] that evaluates to `true` if [b] is equal to the value of this
      * [RemoteFloat] or `false` otherwise.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public infix fun eq(b: RemoteFloat): RemoteBoolean =
         comparisonOp(this, b, { a, b -> floatArrayOf(1f, 0f, *b, *a, SUB, ABS, IFELSE) }) { a, b ->
             if (a == b) 1 else 0
@@ -465,7 +466,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
      * Returns a [RemoteBoolean] that evaluates to `true` if [b] is not equal to the value of this
      * [RemoteFloat] or `false` otherwise.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public infix fun ne(b: RemoteFloat): RemoteBoolean =
         comparisonOp(this, b, { a, b -> floatArrayOf(0f, 1f, *b, *a, SUB, ABS, IFELSE) }) { a, b ->
             if (a != b) 1 else 0
@@ -475,7 +475,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
      * Returns a [RemoteBoolean] that evaluates to `true` if [b] is less than the value of this
      * [RemoteFloat] or `false` otherwise.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public infix fun lt(b: RemoteFloat): RemoteBoolean =
         comparisonOp(this, b, { a, b -> floatArrayOf(0f, 1f, *b, *a, SUB, IFELSE) }) { a, b ->
             if (a < b) 1 else 0
@@ -485,7 +484,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
      * Returns a [RemoteBoolean] that evaluates to `true` if [b] is less than or equal to the value
      * of this [RemoteFloat] or `false` otherwise.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public infix fun le(b: RemoteFloat): RemoteBoolean =
         comparisonOp(this, b, { a, b -> floatArrayOf(1f, 0f, *a, *b, SUB, IFELSE) }) { a, b ->
             if (a <= b) 1 else 0
@@ -495,7 +493,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
      * Returns a [RemoteBoolean] that evaluates to `true` if [b] is greater than the value of this
      * [RemoteFloat] or `false` otherwise.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public infix fun gt(b: RemoteFloat): RemoteBoolean =
         comparisonOp(this, b, { a, b -> floatArrayOf(0f, 1f, *a, *b, SUB, IFELSE) }) { a, b ->
             if (a > b) 1 else 0
@@ -505,20 +502,23 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
      * Returns a [RemoteBoolean] that evaluates to `true` if [b] is greater than or equal to the
      * value of this [RemoteFloat] or `false` otherwise.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public infix fun ge(b: RemoteFloat): RemoteBoolean =
         comparisonOp(this, b, { a, b -> floatArrayOf(1f, 0f, *b, *a, SUB, IFELSE) }) { a, b ->
             if (a >= b) 1 else 0
         }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
         private fun isConstant(v: Float): Boolean {
             // Assume all NaNs are variables which are probably non-const.
             return !v.isNaN()
         }
 
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        /**
+         * Creates a [RemoteFloat] from a constant [Float] value.
+         *
+         * @param float The value to wrap.
+         * @return A [RemoteFloat] representing the given constant or encoded id.
+         */
         public operator fun invoke(float: Float): RemoteFloat {
             return RemoteFloatExpression(if (isConstant(float)) float else null) { _ ->
                 floatArrayOf(float)
@@ -554,6 +554,7 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
             }
         }
 
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
         public fun createNamedRemoteFloatExpression(
             name: String,

@@ -21,7 +21,6 @@ import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.asRdp
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.isUnspecified
 
@@ -62,7 +61,6 @@ public fun RemoteModifier.widthIn(
  * @param min The minimum width.
  * @param max The maximum width.
  */
-@Composable
 public fun RemoteModifier.widthIn(min: RemoteDp? = null, max: RemoteDp? = null): RemoteModifier {
     return then(WidthInModifier(min = min, max = max))
 }

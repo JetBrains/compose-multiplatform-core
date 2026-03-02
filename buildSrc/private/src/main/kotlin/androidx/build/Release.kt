@@ -169,6 +169,10 @@ object Release {
         val publishTask = project.tasks.named("publish")
         projectZipTask.configure { zipTask -> zipTask.dependsOn(publishTask) }
 
+        // Playground projects run with group constraints disabled (androidx.constraints=false).
+        // Returning early here ensures that the createProjectZip task (GMavenZipTask) is not
+        // included in the task graph, as it would otherwise fail due to the missing constraints.
+        if (ProjectLayoutType.isPlayground(project)) return
         project.configurations.register("releaseArtifacts") {
             it.isCanBeResolved = false
             it.isCanBeConsumed = true

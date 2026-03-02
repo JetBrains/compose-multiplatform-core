@@ -17,12 +17,18 @@
 package androidx.wear.compose.remote.material3.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.remote.creation.compose.action.ValueChange
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.clickable
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
+import androidx.compose.remote.creation.compose.modifier.padding
+import androidx.compose.remote.creation.compose.state.animateRemoteFloat
+import androidx.compose.remote.creation.compose.state.rdp
+import androidx.compose.remote.creation.compose.state.rememberMutableRemoteFloat
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable
@@ -34,6 +40,28 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 @Composable
 public fun RemoteCircularProgressIndicatorSample(modifier: RemoteModifier = RemoteModifier) {
     RemoteCircularProgressIndicator(modifier = modifier, progress = 0.75f.rf)
+}
+
+@Sampled
+@RemoteComposable
+@Composable
+public fun RemoteCircularProgressIndicatorAnimatedSample(
+    modifier: RemoteModifier = RemoteModifier
+) {
+    val progress = rememberMutableRemoteFloat { 0.25f.rf }
+    val animatedProgress = animateRemoteFloat(0.25f) { progress }
+
+    val toggleAction = ValueChange(progress, (progress + 0.25f) % 1f)
+
+    Container(modifier = modifier.clickable(toggleAction).padding(8.rdp)) {
+        RemoteCircularProgressIndicator(progress = animatedProgress)
+    }
+}
+
+@WearPreviewDevices
+@Composable
+fun RemoteCircularProgressIndicatorAnimatedSamplePreview() = RemotePreview {
+    Container { RemoteCircularProgressIndicatorAnimatedSample() }
 }
 
 @WearPreviewDevices

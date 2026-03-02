@@ -44,6 +44,10 @@ import androidx.compose.runtime.Composable
  * Material Design circular progress indicator.
  *
  * @sample androidx.wear.compose.remote.material3.samples.RemoteCircularProgressIndicatorSample
+ *
+ * For an animated progress, see:
+ *
+ * @sample androidx.wear.compose.remote.material3.samples.RemoteCircularProgressIndicatorAnimatedSample
  * @param progress The progress of this progress indicator where 0.0 represents no progress and 1.0
  *   represents completion.
  * @param modifier Modifier to be applied to the CircularProgressIndicator.

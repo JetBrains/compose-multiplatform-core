@@ -55,7 +55,6 @@ public abstract class RemoteString internal constructor() : BaseRemoteState<Stri
             }
         }
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val isEmpty: RemoteBoolean
         get() {
             constantValueOrNull?.let {
@@ -80,7 +79,6 @@ public abstract class RemoteString internal constructor() : BaseRemoteState<Stri
             )
         }
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val isNotEmpty: RemoteBoolean
         get() {
             constantValueOrNull?.let {
@@ -111,7 +109,6 @@ public abstract class RemoteString internal constructor() : BaseRemoteState<Stri
      * @param v The other [RemoteString] to concatenate.
      * @return A new [MutableRemoteString] representing the concatenated string.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public operator fun plus(v: RemoteString): RemoteString {
         if (constantValueOrNull != null && v.constantValueOrNull != null) {
             return RemoteString(constantValueOrNull!! + v.constantValueOrNull!!)
@@ -184,7 +181,6 @@ public abstract class RemoteString internal constructor() : BaseRemoteState<Stri
      *
      * @return A new [MutableRemoteString] representing the upper case version of this string.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun uppercase(): RemoteString {
         constantValueOrNull?.let {
             return RemoteString(it.uppercase())
@@ -218,7 +214,6 @@ public abstract class RemoteString internal constructor() : BaseRemoteState<Stri
      *
      * @return A new [MutableRemoteString] representing the lower case version of this string.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun lowercase(): RemoteString {
         constantValueOrNull?.let {
             return RemoteString(it.lowercase())
@@ -252,7 +247,6 @@ public abstract class RemoteString internal constructor() : BaseRemoteState<Stri
      *
      * @return A new [MutableRemoteString] representing the trimmed version of this string.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun trim(): RemoteString {
         constantValueOrNull?.let {
             return RemoteString(it.trim())
