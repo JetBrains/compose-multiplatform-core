@@ -188,8 +188,6 @@ private class OnClickModifierNode(
     private var onDoubleClick: (() -> Unit)?,
     private var onLongClick: (() -> Unit)?,
 ): DelegatingNode(), FocusRequesterModifierNode {
-    // TODO: never populated with values, only cleared is this intended?
-    private val currentKeyPressInteractions = mutableMapOf<Key, PressInteraction.Press>()
     private val hasDoubleClick: Boolean get() = onDoubleClick != null
     private val hasLongClick: Boolean get() =  onLongClick != null
     private val interactionData = InteractionData()
@@ -242,7 +240,7 @@ private class OnClickModifierNode(
     )
 
     override fun onDetach() {
-        cancelAllPressInteractions()
+        cancelPressInteraction()
         super.onDetach()
     }
 
@@ -259,7 +257,7 @@ private class OnClickModifierNode(
 
         if (this.interactionSource != interactionSource) {
             pointerInputNodeNeedsReset = true
-            cancelAllPressInteractions()
+            cancelPressInteraction()
         }
         if (interactionSource != null) {
             this.interactionSource = interactionSource
@@ -314,14 +312,6 @@ private class OnClickModifierNode(
             interactionSource.tryEmit(interaction)
             interactionData.pressInteraction = null
         }
-    }
-
-    private fun cancelAllPressInteractions() {
-        cancelPressInteraction()
-        currentKeyPressInteractions.values.forEach {
-            interactionSource.tryEmit(PressInteraction.Cancel(it))
-        }
-        currentKeyPressInteractions.clear()
     }
 }
 
