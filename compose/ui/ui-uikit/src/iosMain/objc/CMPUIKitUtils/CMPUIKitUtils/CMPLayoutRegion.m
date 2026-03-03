@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ typedef NS_ENUM(NSInteger, CMPLayoutRegionKind) {
 
 - (instancetype)initWithKind:(CMPLayoutRegionKind)kind
                         axis:(CMPLayoutRegionAdaptivityAxis)axis {
-    if ((self = [super init])) {
+    if (self = [super init]) {
         _kind = kind;
         _axis = axis;
     }
