@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -36,17 +37,15 @@ import androidx.compose.ui.text.input.EditProcessor
 import androidx.compose.ui.text.input.FinishComposingTextCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.usingNativeTextInput
 import androidx.compose.ui.text.input.PlatformTextInputService
 import androidx.compose.ui.text.input.SetComposingRegionCommand
 import androidx.compose.ui.text.input.SetComposingTextCommand
 import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.usingNativeTextInput
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -56,13 +55,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.IntermediateTextInputUIView
-import androidx.compose.ui.window.BackgroundInputView
-import androidx.compose.ui.window.OverlayInputView
 import androidx.compose.ui.window.IntermediateTextScrollView
+import androidx.compose.ui.window.OverlayInputView
 import androidx.compose.ui.window.PlatformTextLayoutDirection
-import kotlin.collections.emptyList
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
@@ -270,8 +268,8 @@ internal class UIKitTextInputService(
         return contentBounds
     }
 
-    private fun calculateContentInsets(textFieldFrame: Rect, contentBounds: Rect): TextInsets = with(view.density) {
-        return TextInsets(
+    private fun calculateContentInsets(textFieldFrame: Rect, contentBounds: Rect): DpInsets = with(view.density) {
+        return DpInsets(
             left = max(0f, -contentBounds.left).toDp(),
             top = max(0f, -contentBounds.top).toDp(),
             right = max(0f, textFieldFrame.width - contentBounds.width + contentBounds.left).toDp(),
@@ -286,7 +284,7 @@ internal class UIKitTextInputService(
     private var textFieldFrameInRoot: Rect? = null
     private var clippingTextFrame: Rect? = null
     private var currentContentBounds: Rect? = null
-    private var currentContentInsets: TextInsets? = null
+    private var currentContentInsets: DpInsets? = null
     fun updateClippingTextFrame(rect: Rect) {
         clippingTextFrame = rect
     }
@@ -311,7 +309,7 @@ internal class UIKitTextInputService(
             scrollView.setFrame(
                 rect.toDpRect(view.density),
                 contentBounds.toDpRect(view.density),
-                contentInsets.toPlatformInsets(view.density)
+                contentInsets
             )
         }
     }
@@ -1089,18 +1087,6 @@ internal data class TextSelectionRect(
     val isVertical: Boolean
 )
 
-// Text insets in DP
-private data class TextInsets(val left: Dp, val top: Dp, val right: Dp, val bottom: Dp)
-
-/**
- * Returns [PlatformInsets] in pixels.
- */
-private fun TextInsets.toPlatformInsets(density: Density): PlatformInsets = with(density) {
-    PlatformInsets(
-        left = left.roundToPx(),
-        top = top.roundToPx(),
-        right = right.roundToPx(),
-        bottom = bottom.roundToPx(),
-    )
-}
+// Insets in DP
+internal data class DpInsets(val left: Dp, val top: Dp, val right: Dp, val bottom: Dp)
 

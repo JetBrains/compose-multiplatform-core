@@ -16,14 +16,14 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.IOSSkikoInput
-import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextSelectionRect
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.uikit.utils.CMPEditMenuView
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
+import androidx.compose.ui.uikit.utils.CMPEditMenuView
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPTextInputStringTokenizer
 import androidx.compose.ui.unit.DpOffset
@@ -106,7 +106,6 @@ import platform.UIKit.UITextWritingDirection
 import platform.UIKit.UITouch
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
-import platform.UIKit.UIScreen
 import platform.UIKit.addInteraction
 import platform.UIKit.systemBlueColor
 import platform.darwin.NSInteger
@@ -1042,10 +1041,9 @@ internal class IntermediateTextScrollView(): UIScrollView(frame = CGRectZero.rea
      *
      * Note on units:
      * - `dpNewFrame` and `dpTextBounds` are in Compose `Dp` (mapped 1:1 to iOS points via `asCGRect()`).
-     * - `dpInsets` (PlatformInsets) values are provided in PIXELS by the Compose side to reflect exact
-     *   rasterized sizes. UIKit APIs (`UIEdgeInsetsMake`) expect POINTS, so we convert px → pt using screen scale.
+     * - `dpInsets` is in Compose `Dp` and can be passed to UIKit as POINTS directly.
      */
-    fun setFrame(dpNewFrame: DpRect, dpTextBounds: DpRect, dpInsets: PlatformInsets) {
+    fun setFrame(dpNewFrame: DpRect, dpTextBounds: DpRect, dpInsets: DpInsets) {
         val newFrame = dpNewFrame.asCGRect()
         val textBounds = dpTextBounds.asCGRect()
 
@@ -1056,13 +1054,11 @@ internal class IntermediateTextScrollView(): UIScrollView(frame = CGRectZero.rea
             height = CGRectGetHeight(textBounds)
         )
 
-        // PlatformInsets come in PIXELS on iOS. UIKit uses POINTS, so divide by screen scale.
-        val scale = window?.screen?.scale ?: UIScreen.mainScreen.scale
         val insets = UIEdgeInsetsMake(
-            top = dpInsets.top.toDouble() / scale,
-            left = dpInsets.left.toDouble() / scale,
-            bottom = dpInsets.bottom.toDouble() / scale,
-            right = dpInsets.right.toDouble() / scale
+            top = dpInsets.top.value.toDouble(),
+            left = dpInsets.left.value.toDouble(),
+            bottom = dpInsets.bottom.value.toDouble(),
+            right = dpInsets.right.value.toDouble()
         )
 
         val scrollContentSize = textBounds.useContents { size.readValue() }
