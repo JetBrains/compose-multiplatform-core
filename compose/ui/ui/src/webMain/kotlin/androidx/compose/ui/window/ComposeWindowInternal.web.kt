@@ -643,7 +643,7 @@ internal class ComposeWindow(
                     actualActivePointerButtons = null
                 }
                 PointerEventType.Move -> {
-                    isValidEvent = actualActivePointerButtons == event.composeButtons
+                    isValidEvent = actualActivePointerButtons == null || actualActivePointerButtons == event.composeButtons
                 }
             }
 
