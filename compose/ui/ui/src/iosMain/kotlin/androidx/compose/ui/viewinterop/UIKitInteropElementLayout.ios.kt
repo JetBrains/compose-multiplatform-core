@@ -53,7 +53,7 @@ internal class UIKitInteropElementLayout(
      * Frame-driven container that defines the "unclipped content bounds".
      * The [userComponent] is constrained to fill this host using Auto Layout.
      */
-    private val userComponentHostView = UIView(frame = CGRectZero.readValue())
+    val userComponentHostView = UIView(frame = CGRectZero.readValue())
         .also {
             it.translatesAutoresizingMaskIntoConstraints = true
             it.backgroundColor = null

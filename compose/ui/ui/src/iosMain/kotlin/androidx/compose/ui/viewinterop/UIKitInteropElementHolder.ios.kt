@@ -75,7 +75,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
     private var currentUserComponentRect: IntRect? = null
 
     private val layout = UIKitInteropElementLayout(group = group, userComponent = userComponentView)
-    override val measurePolicy: MeasurePolicy get() = UIKitInteropElementMeasurePolicy(userComponentView)
+    override val measurePolicy: MeasurePolicy get() = UIKitInteropElementMeasurePolicy(layout.userComponentHostView)
 
     val placedAsOverlay: Boolean get() = properties.placedAsOverlay
 
