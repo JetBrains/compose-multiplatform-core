@@ -501,7 +501,7 @@ internal class RootNodeOwner(
         override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
         override val fontFamilyResolver = createFontFamilyResolver()
         override val layoutDirection get() = _layoutDirection
-        override val localeList get() = LocaleList.current
+        override val localeList get() = platformContext.localeList
         override var showLayoutBounds by mutableStateOf(false)
             @InternalCoreApi
             set
