@@ -433,10 +433,8 @@ includeProject(":compose:animation:animation:animation-samples", "compose/animat
 includeProject(":compose:animation:animation-graphics")
 includeProject(":compose:animation:animation-graphics:animation-graphics-samples", "compose/animation/animation-graphics/samples")
 
-includeProject(":compose:desktop")
-includeProject(":compose:desktop:desktop")
-includeProject(":compose:desktop:desktop:desktop-samples", "compose/desktop/desktop/samples")
-includeProject(":compose:desktop:desktop:desktop-samples-material3", "compose/desktop/desktop/samples-material3")
+includeProject(":compose:mpp:desktop-samples", "compose/mpp/samples")
+includeProject(":compose:mpp:desktop-samples-material3", "compose/mpp/samples-material3")
 includeProject(":compose:mpp")
 includeProject(":compose:mpp:demo")
 includeProject(":compose:mpp:demo-swiftui")

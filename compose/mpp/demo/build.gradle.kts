@@ -260,7 +260,6 @@ if (System.getProperty("os.name") == "Mac OS X") {
 }
 
 tasks.register("runDesktop", JavaExec::class.java) {
-    dependsOn(":compose:desktop:desktop:jvmJar")
     mainClass.set("androidx.compose.mpp.demo.Main_desktopKt")
     args = listOfNotNull(project.findProperty("args")?.toString())
     systemProperty("skiko.fps.enabled", "true")

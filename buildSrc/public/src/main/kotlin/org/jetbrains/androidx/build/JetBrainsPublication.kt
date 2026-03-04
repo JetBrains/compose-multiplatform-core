@@ -66,20 +66,6 @@ object JetBrainsPublication {
             ),
             ComposeComponent(":compose:ui:ui-unit"),
             ComposeComponent(":compose:ui:ui-util"),
-            ComposeComponent(
-                ":compose:desktop:desktop",
-                supportedPlatforms = setOf(ComposePlatforms.Desktop),
-                customTasks = listOf(
-                    "KotlinMultiplatform",
-                    "Jvm",
-                    "Jvmlinux-x64",
-                    "Jvmlinux-arm64",
-                    "Jvmmacos-x64",
-                    "Jvmmacos-arm64",
-                    "Jvmwindows-x64",
-                    "Jvmwindows-arm64",
-                )
-            ),
         ),
         "COMPOSE_MATERIAL3" to listOf(
             ComposeComponent(":compose:material3:material3"),
@@ -137,8 +123,6 @@ object JetBrainsPublication {
                 "org.jetbrains.compose.annotation-internal"
             projectPath == ":collection:collection" ->
                 "org.jetbrains.compose.collection-internal"
-            projectPath == ":compose:desktop:desktop" ->
-                "org.jetbrains.compose.desktop"
             androidxGroup?.startsWith("androidx.compose") == true->
                 androidxGroup.replace("androidx.compose", "org.jetbrains.compose")
             androidxGroup?.startsWith("androidx") == true ->
