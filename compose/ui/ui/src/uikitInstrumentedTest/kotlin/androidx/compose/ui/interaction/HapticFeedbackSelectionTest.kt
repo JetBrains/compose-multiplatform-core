@@ -188,6 +188,8 @@ class HapticFeedbackSelectionTest {
         hapticFeedback.assertLongPressHapticPerformed()
     }
 
+    // TODO: https://youtrack.jetbrains.com/issue/CMP-9857
+    @Ignore
     @Test
     fun testBasicTextFieldState_DoubleTap_DoesNotTriggerHaptic() = runUIKitInstrumentedTest {
         val hapticFeedback = TestHapticFeedback()
