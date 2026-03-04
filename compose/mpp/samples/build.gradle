@@ -33,7 +33,6 @@ kotlin {
             resources.srcDirs += "src/jvmMain/res"
 
             dependencies {
-                implementation(libs.skikoCurrentOs)
                 implementation(project(":collection:collection"))
                 implementation(project(":compose:material:material"))
 

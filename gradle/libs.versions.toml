@@ -295,6 +295,7 @@ sdklib = { module = "com.android.tools:sdklib", version.ref = "androidLint" }
 shadow = { module = "com.gradleup.shadow:shadow-gradle-plugin", version = "8.3.7" }
 skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
 skikoAwt = { module = "org.jetbrains.skiko:skiko-awt", version.ref = "skiko" }
+skikoAwtRuntime = { module = "org.jetbrains.skiko:skiko-awt-runtime", version.ref = "skiko" }
 skikoAwtRuntimeMacOsArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64", version.ref = "skiko" }
 skikoAwtRuntimeMacOsX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-x64", version.ref = "skiko" }
 skikoAwtRuntimeWindowsX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-windows-x64", version.ref = "skiko" }

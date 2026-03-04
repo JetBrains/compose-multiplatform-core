@@ -160,9 +160,6 @@ androidXMultiplatform {
 
         desktopTest {
             dependsOn(skikoTest)
-            dependencies {
-                implementation(libs.skikoCurrentOs)
-            }
         }
 
         nonJvmMain {

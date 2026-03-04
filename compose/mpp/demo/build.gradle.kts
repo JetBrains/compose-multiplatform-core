@@ -164,7 +164,6 @@ kotlin {
             dependsOn(skikoMain)
             dependencies {
                 implementation(libs.kotlinCoroutinesSwing)
-                implementation(libs.skikoCurrentOs)
             }
         }
 
