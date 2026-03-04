@@ -50,7 +50,7 @@ androidXMultiplatform {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":collection:collection"))
-            api("org.jetbrains.compose.material3.adaptive:adaptive:1.10.0")
+            api(project(":compose:material3:adaptive:adaptive"))
             api("org.jetbrains.compose.animation:animation-core:1.10.0")
             api("org.jetbrains.compose.ui:ui:1.10.0")
             implementation("org.jetbrains.compose.animation:animation:1.10.0")
