@@ -508,7 +508,7 @@ class MemoryLeaksTest {
     @OptIn(NativeRuntimeApi::class)
     internal suspend fun assertDeallocated(reference: List<WeakReference<*>>) {
         val duration = 100.milliseconds
-        repeat((10.seconds / duration).toInt()) {
+        repeat((5.seconds / duration).toInt()) {
             runApplicationLoop(duration)
             GC.collect()
             if (reference.all { it.get() == null }) return
