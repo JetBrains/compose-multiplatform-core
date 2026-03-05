@@ -662,8 +662,8 @@ internal class BackgroundInputView(
 
     fun runOnceOnAppeared(block: () -> Unit) {
         onAppeared = {
-            block()
             onAppeared = null
+            block()
         }
 
         runOnAppearedIfEligible()

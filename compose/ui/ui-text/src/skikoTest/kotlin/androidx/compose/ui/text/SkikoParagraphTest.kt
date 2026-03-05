@@ -33,6 +33,8 @@ import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreWasmTarget
 
 // Adopted tests from text/text/src/androidTest/java/androidx/compose/ui/text/android/selection/WordBoundaryTest.kt
+@IgnoreJsTarget // FIXME https://youtrack.jetbrains.com/issue/CMP-8955
+@IgnoreWasmTarget
 class SkikoParagraphTest {
     private val fontFamilyResolver = createFontFamilyResolver()
     private val defaultDensity = Density(density = 1f)

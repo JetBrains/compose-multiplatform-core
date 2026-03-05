@@ -98,6 +98,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.toIntRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.useLegacyRenderNodeLayers
 import androidx.compose.ui.util.fastAll
@@ -501,7 +502,9 @@ internal class RootNodeOwner(
         override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
         override val fontFamilyResolver = createFontFamilyResolver()
         override val layoutDirection get() = _layoutDirection
-        override val localeList get() = platformContext.localeList
+        override val localeList: LocaleList
+            // TODO: https://youtrack.jetbrains.com/issue/CMP-9514/Implement-Owner.localeList-for-CMP
+            get() = LocaleList(emptyList())
         override var showLayoutBounds by mutableStateOf(false)
             @InternalCoreApi
             set

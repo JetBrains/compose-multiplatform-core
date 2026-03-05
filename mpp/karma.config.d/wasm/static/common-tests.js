@@ -42,12 +42,7 @@ window.addEventListener("rejectionhandled", (event) => {
     }, false
 );
 
-const awaitAnimationFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
-
-beforeEach(async function() {
-    // Wait for skiko.wasm to be ready before each test
-    await awaitAnimationFrame;
-
+beforeEach(function() {
     // This is the part of mocha configuration which guarantees that DOM elements are recreated for each test
     const canvasAppContainer = document.createElement("div");
     canvasAppContainer.setAttribute("id", "canvasApp");

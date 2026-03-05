@@ -42,7 +42,6 @@ import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.intl.LocaleList
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
@@ -135,7 +134,6 @@ interface PlatformContext {
      */
     val measureDrawLayerBounds: Boolean get() = false
 
-    val localeList: LocaleList get() = LocaleList.current
     val viewConfiguration: ViewConfiguration get() = DefaultViewConfiguration
     val inputModeManager: InputModeManager
     @Suppress("DEPRECATION") // TODO https://youtrack.jetbrains.com/issue/CMP-9858

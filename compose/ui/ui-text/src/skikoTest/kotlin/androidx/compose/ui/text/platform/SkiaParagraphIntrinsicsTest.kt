@@ -25,6 +25,8 @@ import kotlin.test.assertEquals
 import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreWasmTarget
 
+@IgnoreJsTarget // FIXME https://youtrack.jetbrains.com/issue/CMP-8955
+@IgnoreWasmTarget
 class SkiaParagraphIntrinsicsTest {
 
     @Test
