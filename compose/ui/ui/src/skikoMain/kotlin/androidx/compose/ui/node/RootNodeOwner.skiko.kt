@@ -31,6 +31,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SessionMutex
+import androidx.compose.ui.areWindowInsetsRulersEnabled
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusOwner
@@ -97,7 +98,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.round
-import androidx.compose.ui.unit.toIntRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.useLegacyRenderNodeLayers
 import androidx.compose.ui.util.fastAll
@@ -501,9 +501,7 @@ internal class RootNodeOwner(
         override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
         override val fontFamilyResolver = createFontFamilyResolver()
         override val layoutDirection get() = _layoutDirection
-        override val localeList: LocaleList
-            // TODO: https://youtrack.jetbrains.com/issue/CMP-9514/Implement-Owner.localeList-for-CMP
-            get() = LocaleList(emptyList())
+        override val localeList get() = platformContext.localeList
         override var showLayoutBounds by mutableStateOf(false)
             @InternalCoreApi
             set
@@ -722,8 +720,7 @@ internal class RootNodeOwner(
         }
 
         override fun invalidateRootLayer() {
-            // TODO: https://youtrack.jetbrains.com/issue/CMP-9533/Implement-SkikoOwner.invalidateRootLayer
-            super.invalidateRootLayer()
+            ownedLayerManager.invalidate()
         }
     }
 

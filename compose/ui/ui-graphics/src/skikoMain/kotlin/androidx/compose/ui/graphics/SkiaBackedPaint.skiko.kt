@@ -16,26 +16,47 @@
 
 package androidx.compose.ui.graphics
 
+import org.jetbrains.skia.Paint as SkPaint
 import org.jetbrains.skia.PaintMode as SkPaintMode
 import org.jetbrains.skia.PaintStrokeCap as SkPaintStrokeCap
 import org.jetbrains.skia.PaintStrokeJoin as SkPaintStrokeJoin
 
-// TODO: https://youtrack.jetbrains.com/issue/CMP-9776/Adapt-the-sources-for-expect-class-NativePaint-deprecation
-@Deprecated("Use direct reference to platform type instead of typealias")
-actual typealias NativePaint = org.jetbrains.skia.Paint
+@Deprecated(
+    message = "Use org.jetbrains.skia.Paint directly instead",
+    replaceWith = ReplaceWith("org.jetbrains.skia.Paint"),
+)
+actual typealias NativePaint = SkPaint
 
 actual fun Paint(): Paint = SkiaBackedPaint()
 
 /**
  * Convert the [org.jetbrains.skia.Paint] instance into a Compose-compatible Paint
  */
-fun org.jetbrains.skia.Paint.asComposePaint(): Paint = SkiaBackedPaint(this)
+// TODO: Multiple calls will NOT return the same instance,
+//  consider to replace to `fun Paint(skiaPaint: org.jetbrains.skia.Paint)`
+fun SkPaint.asComposePaint(): Paint = SkiaBackedPaint(this)
+
+/**
+ * Provides access to the underlying [org.jetbrains.skia.Paint] instance.
+ *
+ * It throws an exception if accessed on unsupported types.
+ */
+val Paint.skiaPaint: SkPaint
+    get() {
+        requirePrecondition(this is SkiaBackedPaint) {
+            "Extracting skia paint reference is only supported from androidx.compose.ui.graphics.SkiaBackedPaint instances but received ${this::class}"
+        }
+        return internalSkiaPaint
+    }
 
 internal class SkiaBackedPaint(
-    val skia: org.jetbrains.skia.Paint = org.jetbrains.skia.Paint()
+    val internalSkiaPaint: SkPaint = SkPaint()
 ) : Paint {
-    // TODO: https://youtrack.jetbrains.com/issue/CMP-9776/Adapt-the-sources-for-expect-class-NativePaint-deprecation
-    override fun asFrameworkPaint(): NativePaint = skia
+    @Deprecated(
+        message = "Use [Paint.nativePaint] extension instead",
+        replaceWith = ReplaceWith("skiaPaint", "androidx.compose.ui.graphics.skiaPaint"),
+    )
+    override fun asFrameworkPaint(): SkPaint = internalSkiaPaint
 
     private var mAlphaMultiplier = 1.0f
 
@@ -48,60 +69,60 @@ internal class SkiaBackedPaint(
         }
 
     private fun updateAlpha(alpha: Float = this.alpha, multiplier: Float = this.mAlphaMultiplier) {
-        skia.color = Color(skia.color).copy(alpha = alpha * multiplier).toArgb()
+        internalSkiaPaint.color = Color(internalSkiaPaint.color).copy(alpha = alpha * multiplier).toArgb()
     }
 
     override var alpha: Float
-        get() = Color(skia.color).alpha
+        get() = Color(internalSkiaPaint.color).alpha
         set(value) {
             updateAlpha(alpha = value)
         }
 
     override var isAntiAlias: Boolean
-        get() = skia.isAntiAlias
+        get() = internalSkiaPaint.isAntiAlias
         set(value) {
-            skia.isAntiAlias = value
+            internalSkiaPaint.isAntiAlias = value
         }
 
     override var color: Color
-        get() = Color(skia.color)
+        get() = Color(internalSkiaPaint.color)
         set(color) {
-            skia.color = color.toArgb()
+            internalSkiaPaint.color = color.toArgb()
         }
 
     override var blendMode: BlendMode = BlendMode.SrcOver
         set(value) {
-            skia.blendMode = value.toSkia()
+            internalSkiaPaint.blendMode = value.toSkia()
             field = value
         }
 
     override var style: PaintingStyle = PaintingStyle.Fill
         set(value) {
-            skia.mode = value.toSkia()
+            internalSkiaPaint.mode = value.toSkia()
             field = value
         }
 
     override var strokeWidth: Float
-        get() = skia.strokeWidth
+        get() = internalSkiaPaint.strokeWidth
         set(value) {
-            skia.strokeWidth = value
+            internalSkiaPaint.strokeWidth = value
         }
 
     override var strokeCap: StrokeCap = StrokeCap.Butt
         set(value) {
-            skia.strokeCap = value.toSkia()
+            internalSkiaPaint.strokeCap = value.toSkia()
             field = value
         }
 
     override var strokeJoin: StrokeJoin = StrokeJoin.Round
         set(value) {
-            skia.strokeJoin = value.toSkia()
+            internalSkiaPaint.strokeJoin = value.toSkia()
             field = value
         }
 
     override var strokeMiterLimit: Float = 0f
         set(value) {
-            skia.strokeMiter = value
+            internalSkiaPaint.strokeMiter = value
             field = value
         }
 
@@ -109,19 +130,19 @@ internal class SkiaBackedPaint(
 
     override var shader: Shader? = null
         set(value) {
-            skia.shader = value
+            internalSkiaPaint.shader = value?.skiaShader
             field = value
         }
 
     override var colorFilter: ColorFilter? = null
         set(value) {
-            skia.colorFilter = value?.asSkiaColorFilter()
+            internalSkiaPaint.colorFilter = value?.asSkiaColorFilter()
             field = value
         }
 
     override var pathEffect: PathEffect? = null
         set(value) {
-            skia.pathEffect = (value as SkiaBackedPathEffect?)?.asSkiaPathEffect()
+            internalSkiaPaint.pathEffect = (value as SkiaBackedPathEffect?)?.asSkiaPathEffect()
             field = value
         }
 

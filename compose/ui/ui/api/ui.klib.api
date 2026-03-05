@@ -2961,6 +2961,8 @@ final value class androidx.compose.ui.input.key/Key { // androidx.compose.ui.inp
             final fun <get-NumPadAdd>(): androidx.compose.ui.input.key/Key // androidx.compose.ui.input.key/Key.Companion.NumPadAdd.<get-NumPadAdd>|<get-NumPadAdd>(){}[0]
         final val NumPadComma // androidx.compose.ui.input.key/Key.Companion.NumPadComma|{}NumPadComma[0]
             final fun <get-NumPadComma>(): androidx.compose.ui.input.key/Key // androidx.compose.ui.input.key/Key.Companion.NumPadComma.<get-NumPadComma>|<get-NumPadComma>(){}[0]
+        final val NumPadDelete // androidx.compose.ui.input.key/Key.Companion.NumPadDelete|{}NumPadDelete[0]
+            final fun <get-NumPadDelete>(): androidx.compose.ui.input.key/Key // androidx.compose.ui.input.key/Key.Companion.NumPadDelete.<get-NumPadDelete>|<get-NumPadDelete>(){}[0]
         final val NumPadDirectionDown // androidx.compose.ui.input.key/Key.Companion.NumPadDirectionDown|{}NumPadDirectionDown[0]
             final fun <get-NumPadDirectionDown>(): androidx.compose.ui.input.key/Key // androidx.compose.ui.input.key/Key.Companion.NumPadDirectionDown.<get-NumPadDirectionDown>|<get-NumPadDirectionDown>(){}[0]
         final val NumPadDirectionLeft // androidx.compose.ui.input.key/Key.Companion.NumPadDirectionLeft|{}NumPadDirectionLeft[0]
@@ -3089,6 +3091,8 @@ final value class androidx.compose.ui.input.key/Key { // androidx.compose.ui.inp
             final fun <get-SwitchCharset>(): androidx.compose.ui.input.key/Key // androidx.compose.ui.input.key/Key.Companion.SwitchCharset.<get-SwitchCharset>|<get-SwitchCharset>(){}[0]
         final val Symbol // androidx.compose.ui.input.key/Key.Companion.Symbol|{}Symbol[0]
             final fun <get-Symbol>(): androidx.compose.ui.input.key/Key // androidx.compose.ui.input.key/Key.Companion.Symbol.<get-Symbol>|<get-Symbol>(){}[0]
+        final val SystemHome // androidx.compose.ui.input.key/Key.Companion.SystemHome|{}SystemHome[0]
+            final fun <get-SystemHome>(): androidx.compose.ui.input.key/Key // androidx.compose.ui.input.key/Key.Companion.SystemHome.<get-SystemHome>|<get-SystemHome>(){}[0]
         final val SystemNavigationDown // androidx.compose.ui.input.key/Key.Companion.SystemNavigationDown|{}SystemNavigationDown[0]
             final fun <get-SystemNavigationDown>(): androidx.compose.ui.input.key/Key // androidx.compose.ui.input.key/Key.Companion.SystemNavigationDown.<get-SystemNavigationDown>|<get-SystemNavigationDown>(){}[0]
         final val SystemNavigationLeft // androidx.compose.ui.input.key/Key.Companion.SystemNavigationLeft|{}SystemNavigationLeft[0]
@@ -4594,6 +4598,9 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeRelea
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop|#static{}androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop[0]
 
 // Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop|#static{}androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop[0]
+
+// Targets: [ios]
 final val androidx.compose.ui.uikit/LocalUIView // androidx.compose.ui.uikit/LocalUIView|{}LocalUIView[0]
     final fun <get-LocalUIView>(): androidx.compose.runtime/ProvidableCompositionLocal<platform.UIKit/UIView> // androidx.compose.ui.uikit/LocalUIView.<get-LocalUIView>|<get-LocalUIView>(){}[0]
 
@@ -4643,6 +4650,9 @@ final val androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitI
 final val androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropProperties$stableprop // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropProperties$stableprop|#static{}androidx_compose_ui_viewinterop_UIKitInteropProperties$stableprop[0]
 
 // Targets: [ios]
+final val androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropRemeasureRequester$stableprop // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropRemeasureRequester$stableprop|#static{}androidx_compose_ui_viewinterop_UIKitInteropRemeasureRequester$stableprop[0]
+
+// Targets: [ios]
 final fun <#A: platform.UIKit/UIView> androidx.compose.ui.interop/UIKitView(kotlin/Function0<#A>, androidx.compose.ui/Modifier, kotlin/Function1<#A, kotlin/Unit>?, androidx.compose.ui.graphics/Color, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function2<#A, kotlinx.cinterop/CValue<platform.CoreGraphics/CGRect>, kotlin/Unit>?, kotlin/Boolean, kotlin/Boolean, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.interop/UIKitView|UIKitView(kotlin.Function0<0:0>;androidx.compose.ui.Modifier;kotlin.Function1<0:0,kotlin.Unit>?;androidx.compose.ui.graphics.Color;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function2<0:0,kotlinx.cinterop.CValue<platform.CoreGraphics.CGRect>,kotlin.Unit>?;kotlin.Boolean;kotlin.Boolean;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){0§<platform.UIKit.UIView>}[0]
 
 // Targets: [ios]
@@ -4685,6 +4695,9 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeRelea
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop_getter|androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop_getter(){}[0]
 
 // Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop_getter|androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop_getter(){}[0]
+
+// Targets: [ios]
 final fun androidx.compose.ui.uikit/androidx_compose_ui_uikit_ComposeContainerConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.uikit/androidx_compose_ui_uikit_ComposeContainerConfiguration$stableprop_getter|androidx_compose_ui_uikit_ComposeContainerConfiguration$stableprop_getter(){}[0]
 
 // Targets: [ios]
@@ -4716,6 +4729,9 @@ final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitI
 
 // Targets: [ios]
 final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropProperties$stableprop_getter(): kotlin/Int // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropProperties$stableprop_getter|androidx_compose_ui_viewinterop_UIKitInteropProperties$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropRemeasureRequester$stableprop_getter(): kotlin/Int // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropRemeasureRequester$stableprop_getter|androidx_compose_ui_viewinterop_UIKitInteropRemeasureRequester$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.window/ComposeUIViewController(kotlin/Function1<androidx.compose.ui.uikit/ComposeUIViewControllerConfiguration, kotlin/Unit> = ..., kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): platform.UIKit/UIViewController // androidx.compose.ui.window/ComposeUIViewController|ComposeUIViewController(kotlin.Function1<androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration,kotlin.Unit>;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]

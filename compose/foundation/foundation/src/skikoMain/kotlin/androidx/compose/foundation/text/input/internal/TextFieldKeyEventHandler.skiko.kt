@@ -17,11 +17,10 @@
 package androidx.compose.foundation.text.input.internal
 
 import androidx.compose.foundation.text.KeyCommand
+import androidx.compose.foundation.text.KeyModifiers
 import androidx.compose.foundation.text.commonKeyMapping
 import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.platform.SoftwareKeyboardController
 
 /**
@@ -42,9 +41,7 @@ internal fun createIOSTextFieldKeyEventHandler() = object : TextFieldKeyEventHan
         singleLine: Boolean,
         onSubmit: () -> Boolean
     ): Boolean {
-        return when(commonKeyMapping{
-            event.isShiftPressed && event.isMetaPressed
-        }.map(event)) {
+        return when (commonKeyMapping(KeyModifiers.ShiftMeta).map(event)) {
             // iOS has its own Key Input handler for these keys:
             KeyCommand.LEFT_CHAR,
             KeyCommand.RIGHT_CHAR,
@@ -53,7 +50,7 @@ internal fun createIOSTextFieldKeyEventHandler() = object : TextFieldKeyEventHan
             KeyCommand.SELECT_LEFT_CHAR,
             KeyCommand.SELECT_RIGHT_CHAR,
             KeyCommand.SELECT_UP,
-            KeyCommand.SELECT_DOWN -> return false
+            KeyCommand.SELECT_DOWN -> false
             else -> {
                 super.onKeyEvent(
                     event,
