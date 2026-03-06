@@ -594,7 +594,7 @@ interface FrameWindowScope : WindowScope {
 interface SingleWindowApplicationScope: ApplicationScope, FrameWindowScope
 
 @Composable
-private fun SingleWindowApplicationScope(
+internal fun SingleWindowApplicationScope(
     applicationScope: ApplicationScope,
     windowScope: FrameWindowScope
 ): SingleWindowApplicationScope {

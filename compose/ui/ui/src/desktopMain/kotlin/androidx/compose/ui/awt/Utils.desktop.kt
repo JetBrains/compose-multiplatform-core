@@ -19,11 +19,14 @@ package androidx.compose.ui.awt
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastRoundToInt
 import java.awt.Component
 import java.awt.EventQueue
 import java.awt.Graphics
+import java.awt.Point
 import java.awt.Rectangle
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.JLayeredPane
@@ -60,13 +63,17 @@ internal fun toAwtRectangle(
     return Rectangle(rleft, rtop, rwidth, rheight)
 }
 
-internal fun IntRect.toAwtRectangle(density: Density = Density(1f)) = toAwtRectangle(
+internal fun IntRect.toAwtRectangle(density: Density) = toAwtRectangle(
     left = left.toFloat(),
     top = top.toFloat(),
     right = right.toFloat(),
     bottom = bottom.toFloat(),
     density = density.density
 )
+
+internal fun IntRect.toAwtRectangle() = Rectangle(left, top, right - left, bottom - top)
+
+internal fun Point.toIntOffset(): IntOffset = IntOffset(x, y)
 
 /**
  * Returns a [java.awt.Rectangle] corresponding to this [Rect], in the given density.
@@ -163,3 +170,24 @@ internal class DebouncingEdtExecutor {
         }
     }
 }
+
+/**
+ * Creates a copy of this [IntRect], with the specified size, preserving the top-left position.
+ */
+internal fun IntRect.copy(size: IntSize) =
+    IntRect(
+        left = left,
+        top = top,
+        right = size.width,
+        bottom = size.height
+    )
+
+/**
+ * Creates a copy of this [IntRect], with the specified position, preserving the size.
+ */
+internal fun IntRect.copy(topLeft: IntOffset) = IntRect(
+    left = topLeft.x,
+    top = topLeft.y,
+    right = topLeft.x + right,
+    bottom = topLeft.y + bottom
+)
