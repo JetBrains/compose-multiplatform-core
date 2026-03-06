@@ -31,6 +31,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
@@ -52,9 +53,6 @@ import androidx.navigation3.scene.SceneState
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.scene.rememberSceneState
-import androidx.navigation3.ui.NavDisplay.POP_TRANSITION_SPEC
-import androidx.navigation3.ui.NavDisplay.PREDICTIVE_POP_TRANSITION_SPEC
-import androidx.navigation3.ui.NavDisplay.TRANSITION_SPEC
 import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
 import androidx.navigation3.ui.NavDisplay.transitionSpec
@@ -558,7 +556,9 @@ public fun <T : Any> NavDisplay(
         val isSettled = transition.currentState == transition.targetState
         val sceneLifecycleOwner =
             rememberLifecycleOwner(
-                maxLifecycle = if (isSettled) Lifecycle.State.RESUMED else Lifecycle.State.STARTED
+                maxLifecycle =
+                    if (isSettled && currentOverlayScenes.isEmpty()) Lifecycle.State.RESUMED
+                    else Lifecycle.State.STARTED
             )
         CompositionLocalProvider(
             LocalLifecycleOwner provides sceneLifecycleOwner,
@@ -590,11 +590,21 @@ public fun <T : Any> NavDisplay(
 
     // Show all OverlayScene instances above the AnimatedContent
     overlayScenes.fastForEachReversed { overlayScene ->
-        CompositionLocalProvider(
-            LocalEntriesToExcludeFromCurrentScene provides
-                sceneToExcludedEntryMap.getValue(overlayScene::class to overlayScene.key)
-        ) {
-            overlayScene.content.invoke()
+        key(overlayScene) {
+            val overlaySceneLifecycleOwner =
+                rememberLifecycleOwner(
+                    maxLifecycle =
+                        if (overlayScenes.firstOrNull() == overlayScene) Lifecycle.State.RESUMED
+                        else Lifecycle.State.STARTED
+                )
+
+            CompositionLocalProvider(
+                LocalLifecycleOwner provides overlaySceneLifecycleOwner,
+                LocalEntriesToExcludeFromCurrentScene provides
+                    sceneToExcludedEntryMap.getValue(overlayScene::class to overlayScene.key)
+            ) {
+                overlayScene.content.invoke()
+            }
         }
     }
 }
