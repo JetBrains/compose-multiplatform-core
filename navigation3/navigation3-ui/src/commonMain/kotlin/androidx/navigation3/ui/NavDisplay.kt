@@ -53,6 +53,9 @@ import androidx.navigation3.scene.SceneState
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.scene.rememberSceneState
+import androidx.navigation3.ui.NavDisplay.POP_TRANSITION_SPEC
+import androidx.navigation3.ui.NavDisplay.PREDICTIVE_POP_TRANSITION_SPEC
+import androidx.navigation3.ui.NavDisplay.TRANSITION_SPEC
 import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
 import androidx.navigation3.ui.NavDisplay.transitionSpec
@@ -557,7 +560,7 @@ public fun <T : Any> NavDisplay(
         val sceneLifecycleOwner =
             rememberLifecycleOwner(
                 maxLifecycle =
-                    if (isSettled && currentOverlayScenes.isEmpty()) Lifecycle.State.RESUMED
+                    if (isSettled && overlayScenes.isEmpty()) Lifecycle.State.RESUMED
                     else Lifecycle.State.STARTED
             )
         CompositionLocalProvider(
