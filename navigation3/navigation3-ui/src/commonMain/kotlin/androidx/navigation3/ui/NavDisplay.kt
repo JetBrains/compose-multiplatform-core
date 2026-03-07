@@ -604,7 +604,7 @@ public fun <T : Any> NavDisplay(
             CompositionLocalProvider(
                 LocalLifecycleOwner provides overlaySceneLifecycleOwner,
                 LocalEntriesToExcludeFromCurrentScene provides
-                    sceneToExcludedEntryMap.getValue(overlayScene::class to overlayScene.key)
+                    sceneToExcludedEntryMap.getValue(overlayScene::class to overlayScene.key),
             ) {
                 overlayScene.content.invoke()
             }
