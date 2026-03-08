@@ -554,7 +554,7 @@ internal class ComposeSceneMediator(
         } ?: lastFocusedRect
     }
 
-    var onOutsidePointerEvent: (eventType: PointerEventType) -> Unit by _overlayView::onOutsidePointerEvent
+    var onOutsidePointerEvent: (PointerEventType) -> Unit by _overlayView::onOutsidePointerEvent
     var isInterceptingOutsideEvents: Boolean by _overlayView::isInterceptingOutsideEvents
     var interactionBounds = IntRect.Zero
 
