@@ -53,6 +53,7 @@ fun Window(
     alwaysOnTop: Boolean = false,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
+    onBoundsChanged: (IntRect) -> Unit = { },
     content: @Composable FrameWindowScope.() -> Unit
 ) {
     SwingWindow(
@@ -70,6 +71,7 @@ fun Window(
         alwaysOnTop = alwaysOnTop,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
+        onBoundsChanged = onBoundsChanged,
         init = { },
         content = content,
     )
@@ -90,6 +92,7 @@ fun singleWindowApplication(
     alwaysOnTop: Boolean = false,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
+    onBoundsChanged: (IntRect) -> Unit = { },
     exitProcessOnExit: Boolean = true,
     content: @Composable SingleWindowApplicationScope.() -> Unit
 ) = application(exitProcessOnExit = exitProcessOnExit) {
@@ -108,6 +111,7 @@ fun singleWindowApplication(
         alwaysOnTop = alwaysOnTop,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
+        onBoundsChanged = onBoundsChanged,
         content = {
             with(SingleWindowApplicationScope(this@application, this@Window)) {
                 content()

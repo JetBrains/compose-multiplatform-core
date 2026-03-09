@@ -98,6 +98,7 @@ fun SwingWindow(
     alwaysOnTop: Boolean = false,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
+    onBoundsChanged: (IntRect) -> Unit = { },
     init: (ComposeWindow) -> Unit,
     content: @Composable FrameWindowScope.() -> Unit
 ) {
@@ -111,6 +112,7 @@ fun SwingWindow(
     val currentFocusable by rememberUpdatedState(focusable)
     val currentAlwaysOnTop by rememberUpdatedState(alwaysOnTop)
     val currentOnCloseRequest by rememberUpdatedState(onCloseRequest)
+    val currentOnBoundsChanged by rememberUpdatedState(onBoundsChanged)
 
     val updater = remember(::ComponentUpdater)
 
@@ -172,6 +174,7 @@ fun SwingWindow(
                             val bounds = IntRect(x, y, x + width, y + height)
                             currentState.setBoundsDirect(bounds)
                             appliedState.bounds = bounds
+                            currentOnBoundsChanged(bounds)
                         }
 
                         override fun componentShown(e: ComponentEvent?) {
