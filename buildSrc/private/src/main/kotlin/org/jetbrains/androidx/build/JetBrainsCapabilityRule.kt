@@ -78,6 +78,10 @@ fun Project.configureJetBrainsCapabilityResolution() {
 }
 
 fun Project.configureRedirectionCapability() {
+    // Compatibility stubs already wrap androidx artifacts directly; adding extra outgoing
+    // redirection capability here can break IDE metadata resolution for stubbed KMP modules.
+    if (projectDir.name.endsWith("-compatibility-stub")) return
+
     if (!JetBrainsPublication.shouldPublish(this)) return
     val redirection = artifactRedirection() ?: return
     if (redirection.targetNames.isEmpty()) return
