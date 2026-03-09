@@ -201,7 +201,11 @@ fun SwingWindow(
                     override val window
                         get() = this@apply
                 }
-                bounds = with(initialBounds) { scope.getBounds() }.toAwtRectangle()
+                bounds = run {
+                    val boundsRect =
+                        currentState.bounds ?: with(initialBounds) { scope.getBounds() }
+                    boundsRect.toAwtRectangle()
+                }
 
                 init(this)
             }
@@ -224,17 +228,17 @@ fun SwingWindow(
                 set(currentAlwaysOnTop, window::setAlwaysOnTop)
                 set(currentDecoration.resizerThickness, window::undecoratedResizerThickness::set)
             }
-            if (state.placement != appliedState.placement) {
-                window.placement = state.placement
-                appliedState.placement = state.placement
+            if (currentState.placement != appliedState.placement) {
+                window.placement = currentState.placement
+                appliedState.placement = currentState.placement
             }
-            if (state.isMinimized != appliedState.isMinimized) {
-                window.isMinimized = state.isMinimized
-                appliedState.isMinimized = state.isMinimized
+            if (currentState.isMinimized != appliedState.isMinimized) {
+                window.isMinimized = currentState.isMinimized
+                appliedState.isMinimized = currentState.isMinimized
             }
-            state.bounds?.let { stateBounds ->
+            currentState.bounds?.let { stateBounds ->
                 if (stateBounds != appliedState.bounds) {
-                    window.setBoundsSafely(stateBounds, state.placement)
+                    window.setBoundsSafely(stateBounds, currentState.placement)
                     appliedState.bounds = stateBounds
                 }
             }
