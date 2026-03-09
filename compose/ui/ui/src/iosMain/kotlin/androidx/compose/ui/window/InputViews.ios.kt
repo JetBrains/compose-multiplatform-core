@@ -19,13 +19,14 @@ package androidx.compose.ui.window
 import androidx.compose.ui.navigationevent.UIKitBackGestureRecognizer
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer
-import androidx.compose.ui.uikit.utils.CMPHoverGestureHandler
+import androidx.compose.ui.uikit.utils.CMPHoverGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPPanGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPScrollView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.asDpOffset
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
+import kotlin.getValue
 import kotlin.math.abs
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
@@ -54,6 +55,7 @@ import platform.UIKit.UIGestureRecognizerStateChanged
 import platform.UIKit.UIGestureRecognizerStateEnded
 import platform.UIKit.UIGestureRecognizerStateFailed
 import platform.UIKit.UIGestureRecognizerStatePossible
+import platform.UIKit.UIHoverGestureRecognizer
 import platform.UIKit.UIPanGestureRecognizer
 import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIScreenEdgePanGestureRecognizer
@@ -533,8 +535,12 @@ internal class OverlayInputView(
         }
     }
 
-    private val hoverGestureHandler by lazy {
-        CMPHoverGestureHandler(this, NSSelectorFromString(::onHover.name + ":"))
+    private val hoverGestureRecognizer by lazy {
+        CMPHoverGestureRecognizer(this, NSSelectorFromString(::onHover.name + ":")).apply {
+            delaysTouchesBegan = false
+            delaysTouchesEnded = false
+            cancelsTouchesInView = false
+        }
     }
 
     /**
@@ -549,7 +555,8 @@ internal class OverlayInputView(
         scrollGestureRecognizer?.let {
             addGestureRecognizer(it)
         }
-        hoverGestureHandler.attachToView(this)
+
+        addGestureRecognizer(hoverGestureRecognizer)
 
         showsHorizontalScrollIndicator = false
         showsVerticalScrollIndicator = false
@@ -602,9 +609,9 @@ internal class OverlayInputView(
     private var lastHoverPosition: DpOffset? = null
     @OptIn(BetaInteropApi::class)
     @ObjCAction
-    fun onHover(gestureRecognizer: UIPanGestureRecognizer) {
+    fun onHover(gestureRecognizer: CMPHoverGestureRecognizer) {
         val position = gestureRecognizer.locationInView(this).asDpOffset()
-        val lastEvent = hoverGestureHandler.lastHandledEvent
+        val lastEvent = hoverGestureRecognizer.lastReceivedEvent
         when (gestureRecognizer.state) {
             UIGestureRecognizerStateBegan ->
                 onHoverEvent(position, lastEvent, TouchesEventKind.BEGAN)
@@ -634,7 +641,7 @@ internal class OverlayInputView(
             removeGestureRecognizer(it)
             it.dispose()
         }
-        hoverGestureHandler.detachFromViewAndDispose(this)
+        removeGestureRecognizer(hoverGestureRecognizer)
         onHoverEvent = { _, _, _ -> }
 
         hitTestInteropView = { null }
