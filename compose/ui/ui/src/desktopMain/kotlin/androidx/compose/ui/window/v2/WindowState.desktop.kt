@@ -89,21 +89,23 @@ class WindowState internal constructor(
 
     /**
      * The current bounds of the window; `null` if unknown (e.g., the window is not yet visible).
-     *
-     * Note that setting the bounds when the window placement is not [WindowPlacement.Floating] will
-     * set it to floating.
-     *
-     * [bounds] can not be set to `null`.
      */
-    var bounds: IntRect?
+    val bounds: IntRect?
         get() = _bounds
-        set(value) {
-            requireNotNull(value) { "Bounds cannot be set to null" }
-            if (this.placement != WindowPlacement.Floating) {
-                this.placement = WindowPlacement.Floating
-            }
-            _bounds = value
+
+
+    /**
+     * Set the bounds of the window.
+     *
+     * Setting the bounds when the window placement is not [WindowPlacement.Floating] will change
+     * the placement to floating.
+     */
+    fun setBounds(bounds: IntRect) {
+        if (this.placement != WindowPlacement.Floating) {
+            this.placement = WindowPlacement.Floating
         }
+        _bounds = bounds
+    }
 
     internal fun setBoundsDirect(bounds: IntRect) {
         _bounds = bounds
