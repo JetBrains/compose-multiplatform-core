@@ -99,7 +99,7 @@ internal class ComposeLayersViewController(
 
         val initialSize = view.layer.presentationLayer()?.bounds?.dpSize()
         if (initialSize != null &&
-            initialSize != DpSize(0.dp, 0.dp) &&
+            initialSize != DpSize.Zero &&
             initialSize != view.bounds.dpSize() &&
             !hasInteropViews
         ) {
