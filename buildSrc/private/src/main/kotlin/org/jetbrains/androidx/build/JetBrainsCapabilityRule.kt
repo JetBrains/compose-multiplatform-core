@@ -16,6 +16,7 @@
 
 package org.jetbrains.androidx.build
 
+import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import org.gradle.api.Project
 import org.gradle.api.artifacts.CapabilityResolutionDetails
 import org.gradle.api.artifacts.ComponentMetadataContext
@@ -24,6 +25,10 @@ import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 
 private const val ANDROIDX_GROUP_PREFIX = "androidx."
+private val JETBRAINS_GROUP_PREFIXES = setOf(
+    "org.jetbrains.androidx.",
+    "org.jetbrains.compose.",
+)
 
 /**
  * Gradle component metadata rule that adds capabilities to resolve conflicts between
@@ -51,12 +56,39 @@ private class JetBrainsCapabilityRule : ComponentMetadataRule {
 }
 
 /**
+ * Gradle component metadata rule that adds capabilities to artifacts with
+ * org.jetbrains.androidx.* or org.jetbrains.compose.* groups.
+ *
+ * This enables Gradle's capability-based conflict resolution to identify these artifacts
+ * as providing the same functionality as their original androidx.* counterparts,
+ * allowing the resolution strategy to choose the preferred version.
+ */
+private class AndroidXCapabilityRule : ComponentMetadataRule {
+    override fun execute(context: ComponentMetadataContext): Unit = context.details.run {
+        if (JETBRAINS_GROUP_PREFIXES.none { id.group.startsWith(it) }) return
+
+        // Add capability with a common resolver group to enable conflict resolution
+        allVariants { variant ->
+            variant.withCapabilities {
+                // Use implicit declaration
+            }
+        }
+    }
+}
+
+/**
  * Configures capability resolution for JetBrains and AndroidX projects in a Gradle build.
  * It ensures correct dependency resolution by handling conflicts between `androidx.*` and `org.jetbrains.*` artifacts.
  */
 fun Project.configureJetBrainsCapabilityResolution() {
     // Register the component metadata rule globally for external dependencies
-    dependencies.components.all(JetBrainsCapabilityRule::class.java)
+    dependencies.components.all(
+        if (isJetBrainsFork(this)) {
+            JetBrainsCapabilityRule::class.java
+        } else {
+            AndroidXCapabilityRule::class.java
+        }
+    )
 
     // Configure capability resolution for all projects
     configurations.configureEach { configuration ->
