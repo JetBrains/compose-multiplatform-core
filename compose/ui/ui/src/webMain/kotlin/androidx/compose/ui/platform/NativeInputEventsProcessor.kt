@@ -64,6 +64,7 @@ internal abstract class NativeInputEventsProcessor(
     private fun internalScheduleCheckpoint() {
         if (!isCheckpointScheduled) {
             scheduleCheckpoint()
+            isCheckpointScheduled = true
         }
     }
 
@@ -125,7 +126,6 @@ internal abstract class NativeInputEventsProcessor(
 
         isInIMEComposition = false
         collectedEvents.clear()
-        isCheckpointScheduled = true
     }
 
     private fun InputEventExt.process(currentTextFieldValue: TextFieldValue) {
