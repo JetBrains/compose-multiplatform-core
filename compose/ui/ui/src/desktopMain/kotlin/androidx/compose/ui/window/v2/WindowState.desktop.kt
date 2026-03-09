@@ -92,10 +92,13 @@ class WindowState internal constructor(
      *
      * Note that setting the bounds when the window placement is not [WindowPlacement.Floating] will
      * set it to floating.
+     *
+     * [bounds] can not be set to `null`.
      */
     var bounds: IntRect?
         get() = _bounds
         set(value) {
+            requireNotNull(value) { "Bounds cannot be set to null" }
             if (this.placement != WindowPlacement.Floating) {
                 this.placement = WindowPlacement.Floating
             }
