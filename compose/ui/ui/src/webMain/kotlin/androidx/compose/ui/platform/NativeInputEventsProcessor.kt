@@ -68,7 +68,7 @@ internal abstract class NativeInputEventsProcessor(
     }
 
     private fun UIEvent.isInIMEComposition(): Boolean {
-        return type == "compositionstart" || type == "compositionend"
+        return (this is CompositionEvent)
             || type == "keydown" && (this as KeyboardEvent).isComposing
             || type == "beforeinput" && (this as InputEvent).isComposing
     }
@@ -195,8 +195,12 @@ internal abstract class NativeInputEventsProcessor(
         }
     }
 
-    internal fun registerEvent(event: UIEvent) {
+    internal fun updateImeStatus(event: UIEvent) {
         isInIMEComposition = isInIMEComposition || event.isInIMEComposition()
+    }
+
+    internal fun registerEvent(event: UIEvent) {
+        updateImeStatus(event)
         collectedEvents.add(event)
         internalScheduleCheckpoint()
     }

@@ -114,6 +114,14 @@ internal class DomInputStrategy(
             }
         })
 
+        htmlInput.addEventListener("compositionstart", { evt ->
+            nativeInputEventsProcessor.updateImeStatus(evt as CompositionEvent)
+        })
+
+        htmlInput.addEventListener("compositionupdate", { evt ->
+            nativeInputEventsProcessor.updateImeStatus(evt as CompositionEvent)
+        })
+
         htmlInput.addEventListener("compositionend", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as CompositionEvent)
         })
