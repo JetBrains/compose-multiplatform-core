@@ -26,15 +26,16 @@ import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny
 import kotlin.js.JsName
 import kotlin.js.definedExternally
-import kotlin.js.js
 import kotlin.js.unsafeCast
 import kotlinx.browser.document
 import kotlinx.browser.window
+import org.w3c.dom.EventInit
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.CompositionEvent
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.InputEvent
 import org.w3c.dom.events.KeyboardEvent
+import org.w3c.dom.events.UIEvent
 
 internal class DomInputStrategy(
     imeOptions: ImeOptions,
@@ -77,18 +78,19 @@ internal class DomInputStrategy(
         }
     }
 
-    private val tabKeyCode = Key.Tab.keyCode.toInt()
+    private fun KeyboardEvent.isComposeOnlyEvent(): Boolean {
+        return when (keyCode.toLong()) {
+            // In text inputs we want tab to be controlled entirely by Compose, same about navigation via errors
+            Key.Tab.keyCode, Key.DirectionLeft.keyCode, Key.DirectionUp.keyCode, Key.DirectionRight.keyCode, Key.DirectionDown.keyCode -> true
+            else -> false
+        }
+    }
 
     private fun initEvents() {
-        htmlInput.addEventListener("blur", { evt ->
-            // TODO: any actions here?
-        })
-
         htmlInput.addEventListener("keydown", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
 
-            if (evt.keyCode == tabKeyCode) {
-                // Compose logic will handle the focus movement or insert Tabs if necessary
+            if (evt.isComposeOnlyEvent()) {
                 evt.preventDefault()
             }
 
@@ -110,10 +112,6 @@ internal class DomInputStrategy(
 
                 nativeInputEventsProcessor.registerEvent(evt)
             }
-        })
-
-        htmlInput.addEventListener("compositionstart", { evt ->
-            nativeInputEventsProcessor.registerEvent(evt as CompositionEvent)
         })
 
         htmlInput.addEventListener("compositionend", { evt ->
@@ -159,16 +157,14 @@ private external interface DocumentOrShadowRootLike : JsAny {
 }
 
 @JsName("InputEvent")
-internal external class InputEventExt : JsAny {
+internal external class InputEventExt(type: String, eventInitDict: EventInit = definedExternally) : UIEvent {
+    val data: String?
     val inputType: String
     var textRangeStart: Int
     var textRangeEnd: Int
 }
 
-internal val InputEvent.textRangeSize: Int
-    get() = this.asInputEventExt().let { it.textRangeEnd - it.textRangeStart }
-
-internal expect inline fun InputEvent.asInputEventExt(): InputEventExt
+internal inline fun UIEvent.asInputEventExt(): InputEventExt =  unsafeCast<InputEventExt>()
 
 private fun ImeOptions.createDomElement(): HTMLElement {
     val htmlElement = document.createElement(
@@ -250,6 +246,7 @@ private fun ImeOptions.createDomElement(): HTMLElement {
     return htmlElement
 }
 
+// HTMLTextAreaElement and HTMLInputElement do not intersect in Kotlin definition, so we introduce helper interface
 private external interface HTMLElementWithValue {
     var value: String
     val selectionStart: Int
@@ -257,6 +254,3 @@ private external interface HTMLElementWithValue {
     val selectionDirection: String?
     fun setSelectionRange(start: Int, end: Int, direction: String = definedExternally)
 }
-
-internal fun isTypedEvent(evt: KeyboardEvent): Boolean =
-    js("!evt.metaKey && !evt.ctrlKey && evt.key.charAt(0) === evt.key")

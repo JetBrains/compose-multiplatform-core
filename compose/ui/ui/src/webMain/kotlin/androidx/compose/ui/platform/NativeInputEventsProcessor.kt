@@ -18,19 +18,19 @@ package androidx.compose.ui.platform
 
 import androidx.compose.runtime.TestOnly
 import androidx.compose.ui.input.key.toComposeEvent
-import androidx.compose.ui.internal.jsinterop.timestampAsDouble
-import androidx.compose.ui.internal.jsinterop.timestampAsInt
 import androidx.compose.ui.text.input.BackspaceCommand
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.SetComposingTextCommand
 import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import org.w3c.dom.events.CompositionEvent
 import org.w3c.dom.events.InputEvent
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.UIEvent
+import kotlin.js.js
+import kotlin.js.toDouble
+import kotlin.js.toInt
 
 /**
  * Processes native input events and handles their translation to commands
@@ -48,7 +48,8 @@ internal abstract class NativeInputEventsProcessor(
     private val collectedEvents = mutableListOf<UIEvent>()
     private var isCheckpointScheduled = false
     private var lastCompositionEndTimestamp = 0.0 // Double because of k/wasm where Number.toLong() leads to a compilation error
-    var lastProcessedEventIsBackspace: Boolean = false
+    var isInIMEComposition = false
+    private var lastKeydownStatus: ComposeKeyDownStatus? = null
 
     /**
      * Schedules a checkpoint for processing input events.
@@ -66,21 +67,19 @@ internal abstract class NativeInputEventsProcessor(
         }
     }
 
+    private fun UIEvent.isInIMEComposition(): Boolean {
+        return type == "compositionstart" || type == "compositionend"
+            || type == "keydown" && (this as KeyboardEvent).isComposing
+            || type == "beforeinput" && (this as InputEvent).isComposing
+    }
+
     fun runCheckpoint(currentTextFieldValue: TextFieldValue) {
         isCheckpointScheduled = false
 
-        collectedEvents.sortBy { it.timestampAsInt() }
-
-        val isInIMEComposition = collectedEvents.fastAny {
-            it.type == "compositionstart"
-                || it.type == "compositionupdate"
-                || it.type == "compositionend"
-                || it.type == "keydown" && (it as KeyboardEvent).isComposing
-                || it.type == "beforeinput" && (it as InputEvent).isComposing
-        }
+        collectedEvents.sortBy { it.timeStamp.toInt() }
 
         collectedEvents.fastForEach { evt ->
-            val timestamp = evt.timestampAsDouble()
+            val timestamp = evt.timeStamp.toDouble()
 
             when (evt.type) {
                 "keydown" -> {
@@ -90,7 +89,7 @@ internal abstract class NativeInputEventsProcessor(
                     if (isTypedEvent(evt)) {
                         // we need to reset this each time we consider something to be typed
                         // see  https://youtrack.jetbrains.com/issue/CMP-8773
-                        lastProcessedEventIsBackspace = evt.key == "Backspace"
+                        lastKeydownStatus = null
                         return@fastForEach
                     }
 
@@ -105,8 +104,11 @@ internal abstract class NativeInputEventsProcessor(
                     val shouldBeProcessed = timestamp == 0.0 || !isFromLastComposition
 
                     if (shouldBeProcessed) {
-                        lastProcessedEventIsBackspace = evt.key == "Backspace"
-                        composeSender.sendKeyboardEvent(evt.toComposeEvent())
+                        lastKeydownStatus = ComposeKeyDownStatus(
+                            evt,
+                            composeSender.sendKeyboardEvent(evt.toComposeEvent())
+                        )
+
                     }
                 }
 
@@ -116,76 +118,76 @@ internal abstract class NativeInputEventsProcessor(
                 }
 
                 "beforeinput" -> {
-                    (evt as InputEvent).process(
-                        lastProcessedEventIsBackspace = lastProcessedEventIsBackspace,
-                        currentTextFieldValue = currentTextFieldValue
-                    )
+                    evt.asInputEventExt().process(currentTextFieldValue = currentTextFieldValue)
                 }
             }
         }
 
+        isInIMEComposition = false
         collectedEvents.clear()
+        isCheckpointScheduled = true
     }
 
-    private fun InputEvent.process(lastProcessedEventIsBackspace: Boolean, currentTextFieldValue: TextFieldValue) {
-        val inputExt = this.asInputEventExt()
-        val editCommands = when (inputExt.inputType) {
-            "deleteContentBackward" -> buildList {
-                // this means "deleteContentBackward" happened because of an earlier "keydown" event, so skipping it here
-                if (lastProcessedEventIsBackspace) return@buildList
+    private fun InputEventExt.process(currentTextFieldValue: TextFieldValue) {
+        val textRangeSize = textRangeEnd - textRangeStart
 
-                if (!currentTextFieldValue.selection.collapsed) {
-                    // Likely it's on mobile, where the Backspace has Unidentified key value.
-                    // When Compose TextField shows text selection,
-                    // a good UX for deleteContentBackward would be to emulate Backspace
-                    add(BackspaceCommand())
-                } else {
-                    // This happens when an autocorrection is applied on mobile:
-                    // The system first tells us to delete the old text,
-                    // and then it would send the "insertText" event.
-                    if (textRangeSize > 0) {
-                        // deleteContentBackward can happen under very non-trivial circumstances,
-                        // for instance; when an input suggestion on Android Chrome is accepted,
-                        // the browser then deletes space after the word just to add space again
-                        add(SetSelectionCommand(inputExt.textRangeStart, inputExt.textRangeEnd))
+        val editCommands = buildList {
+            when (inputType) {
+                "deleteContentBackward" -> {
+                    if (lastKeydownStatus?.getProcessedEvent()?.isBackspace() == true) return@buildList
+
+                    if (!currentTextFieldValue.selection.collapsed) {
+                        // Likely it's on mobile, where the Backspace has Unidentified key value.
+                        // When Compose TextField shows text selection,
+                        // a good UX for deleteContentBackward would be to emulate Backspace
                         add(BackspaceCommand())
-                    } else if (textRangeSize == 0) {
-                        // under specific circumstance previous symbol can be deleted while inputing new one
-                        // see https://youtrack.jetbrains.com/issue/CMP-8773
-                        add(BackspaceCommand())
+                    } else {
+                        // This happens when an autocorrection is applied on mobile:
+                        // The system first tells us to delete the old text,
+                        // and then it would send the "insertText" event.
+                        if (textRangeSize > 0) {
+                            // deleteContentBackward can happen under very non-trivial circumstances,
+                            // for instance; when an input suggestion on Android Chrome is accepted,
+                            // the browser then deletes space after the word just to add space again
+                            add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                            add(BackspaceCommand())
+                        } else if (textRangeSize == 0) {
+                            // under specific circumstance previous symbol can be deleted while inputting new one
+                            // see https://youtrack.jetbrains.com/issue/CMP-8773
+                            add(BackspaceCommand())
+                        }
                     }
                 }
-            }
 
-            "insertReplacementText" -> buildList {
-                if (data == null) return@buildList
-                if (textRangeSize > 0) {
-                    add(SetSelectionCommand(inputExt.textRangeStart, inputExt.textRangeEnd))
+                "insertReplacementText" -> {
+                    if (data == null) return@buildList
+                    if (textRangeSize > 0) {
+                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                    }
+
+                    add(CommitTextCommand(data, 1))
                 }
 
-                add(CommitTextCommand(data, 1))
-            }
+                "insertText" -> {
+                    if (data == null) return@buildList
+                    if (textRangeSize > 0 && currentTextFieldValue.selection.collapsed) {
+                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                    }
 
-            "insertText" -> buildList {
-                if (data == null) return@buildList
-                if (textRangeSize > 0 && currentTextFieldValue.selection.collapsed) {
-                    add(SetSelectionCommand(inputExt.textRangeStart, inputExt.textRangeEnd))
+                    add(CommitTextCommand(data, 1))
                 }
 
-                add(CommitTextCommand(data, 1))
-            }
-
-            "insertCompositionText" -> buildList {
-                if (data == null) return@buildList
-                if (textRangeSize > 0) {
-                    add(SetSelectionCommand(inputExt.textRangeStart, inputExt.textRangeEnd))
+                "insertCompositionText" -> {
+                    if (data == null) return@buildList
+                    if (textRangeSize > 0) {
+                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                    }
+                    add(SetComposingTextCommand(data, 1))
                 }
-                add(SetComposingTextCommand(data, 1))
-            }
 
-            // "insertFromComposition", "deleteCompositionText" are triggered in Safari just before the 'compositionEnd' event.
-            // They're ignored because Safari also sends 'insertCompositionText' which we handle (alongside 'compositionEnd')
-            else -> emptyList()
+                // "insertFromComposition", "deleteCompositionText" are triggered in Safari just before the 'compositionEnd' event.
+                // They're ignored because Safari also sends 'insertCompositionText' which we handle (alongside 'compositionEnd')
+            }
         }
 
         if (editCommands.isNotEmpty()) {
@@ -194,6 +196,7 @@ internal abstract class NativeInputEventsProcessor(
     }
 
     internal fun registerEvent(event: UIEvent) {
+        isInIMEComposition = isInIMEComposition || event.isInIMEComposition()
         collectedEvents.add(event)
         internalScheduleCheckpoint()
     }
@@ -201,3 +204,18 @@ internal abstract class NativeInputEventsProcessor(
     @TestOnly
     internal fun getCollectedEvents() = collectedEvents
 }
+
+private fun isTypedEvent(evt: KeyboardEvent): Boolean =
+    js("!evt.metaKey && !evt.ctrlKey && evt.key.charAt(0) === evt.key")
+
+
+class ComposeKeyDownStatus(
+    val event: KeyboardEvent,
+    val processed: Boolean
+)
+
+private fun ComposeKeyDownStatus.getProcessedEvent(): KeyboardEvent? {
+    return if (processed) event else null
+}
+
+private fun KeyboardEvent.isBackspace(): Boolean = key == "Backspace"

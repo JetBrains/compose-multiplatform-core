@@ -64,21 +64,16 @@ internal abstract class WebTextInputService :
      */
     abstract val backingDomInputContainer: HTMLElement
 
-    override fun startInput(
-        value: TextFieldValue,
-        imeOptions: ImeOptions,
-        onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
-    ) {
+    fun startInput(request: PlatformTextInputMethodRequest) {
         backingDomInput = BackingDomInput(
-            imeOptions = imeOptions,
+            imeOptions = request.imeOptions,
             composeCommunicator = object : ComposeCommandCommunicator {
-                override fun sendKeyboardEvent(keyboardEvent: KeyEvent) {
-                    this@WebTextInputService.processKeyboardEvent(keyboardEvent)
+                override fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean {
+                    return this@WebTextInputService.processKeyboardEvent(keyboardEvent)
                 }
 
                 override fun sendEditCommand(commands: List<EditCommand>) {
-                    onEditCommand(commands)
+                    request.onEditCommand(commands)
                 }
             },
             inputContainer = backingDomInputContainer,
@@ -93,6 +88,15 @@ internal abstract class WebTextInputService :
             notifyFocusedRect(Rect(currentTouchOffset!!, Size(1f, 1f)))
         }
         showSoftwareKeyboard()
+    }
+
+    override fun startInput(
+        value: TextFieldValue,
+        imeOptions: ImeOptions,
+        onEditCommand: (List<EditCommand>) -> Unit,
+        onImeActionPerformed: (ImeAction) -> Unit
+    ) {
+        // This method is not used in the new API, but we keep it for backward compatibility.
     }
 
     fun getBackingInput(): HTMLElement? {

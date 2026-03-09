@@ -19,17 +19,16 @@ package androidx.compose.foundation.text
 import androidx.compose.ui.dom.domEventOrNull
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.type
+import kotlin.js.js
 import org.w3c.dom.events.KeyboardEvent
 
 internal actual val KeyEvent.isTypedEvent: Boolean
-    get() = type == KeyEventType.KeyDown
-        && !isMetaPressed
-        && !isCtrlPressed
-        && domEventOrNull?.isPrintable() == true
+    get() = type == KeyEventType.KeyDown && domEventOrNull?.isTypedEvent == true
 
-private fun KeyboardEvent.isPrintable(): Boolean {
-    return key.firstOrNull()?.toString() == key
-}
+private val KeyboardEvent.isTypedEvent: Boolean
+    get() = isTypedEvent(this)
+
+private fun isTypedEvent(evt: KeyboardEvent): Boolean =
+    js("!evt.metaKey && !evt.ctrlKey && evt.key.charAt(0) === evt.key")
+

@@ -65,8 +65,9 @@ class NativeInputEventsProcessorTest {
             commands.forEach { it.applyTo(editingBuffer) }
         }
 
-        override fun sendKeyboardEvent(keyboardEvent: KeyEvent) {
+        override fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean {
             keyboardEvents.add(keyboardEvent)
+            return true
         }
 
         @Suppress("INVISIBLE_REFERENCE")

@@ -29,7 +29,7 @@ internal interface ComposeCommandCommunicator {
     fun sendEditCommand(commands: List<EditCommand>)
     fun sendEditCommand(command: EditCommand) = sendEditCommand(listOf(command))
 
-    fun sendKeyboardEvent(keyboardEvent: KeyEvent)
+    fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean
 }
 
 private fun setBackingInputBox(container: HTMLElement, left: Float, top: Float, width: Float, height: Float) { js("""
