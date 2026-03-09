@@ -429,7 +429,7 @@ internal class ComposeSceneMediator(
         }
 
         scene.sendPointerEvent(
-            eventType = PointerEventType.Pan,
+            eventType = PointerEventType.Scroll,
             pointers = listOf(
                 ComposeScenePointer(
                     id = PointerId(0),
@@ -438,10 +438,10 @@ internal class ComposeSceneMediator(
                     type = PointerType.Mouse,
                 )
             ),
+            scrollDelta = delta.toOffset(composeSceneDensity),
             timeMillis = event.timeMillis,
             nativeEvent = event,
             keyboardModifiers = PointerKeyboardModifiers(event.modifierFlagsOrZero),
-            panGestureOffset = delta.toOffset(composeSceneDensity),
         )
     }
 
