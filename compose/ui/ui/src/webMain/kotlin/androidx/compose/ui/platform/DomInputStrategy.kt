@@ -157,11 +157,13 @@ private external interface DocumentOrShadowRootLike : JsAny {
 }
 
 @JsName("InputEvent")
-internal external class InputEventExt(type: String, eventInitDict: EventInit = definedExternally) : UIEvent {
+internal external class InputEventExt : UIEvent {
     val data: String?
     val inputType: String
     var textRangeStart: Int
     var textRangeEnd: Int
+
+    constructor(type: String, eventInitDict: EventInit = definedExternally)
 }
 
 internal inline fun UIEvent.asInputEventExt(): InputEventExt =  unsafeCast<InputEventExt>()
