@@ -93,7 +93,6 @@ class WindowState internal constructor(
     val bounds: IntRect?
         get() = _bounds
 
-
     /**
      * Set the bounds of the window.
      *
@@ -101,14 +100,12 @@ class WindowState internal constructor(
      * the placement to floating.
      */
     fun setBounds(bounds: IntRect) {
-        if (this.placement != WindowPlacement.Floating) {
-            this.placement = WindowPlacement.Floating
-        }
-        _bounds = bounds
+        this.placement = WindowPlacement.Floating
+        this._bounds = bounds
     }
 
     internal fun setBoundsDirect(bounds: IntRect) {
-        _bounds = bounds
+        this._bounds = bounds
     }
 
     companion object {
@@ -117,19 +114,33 @@ class WindowState internal constructor(
          */
         val Saver = listSaver(
             save = {
-                listOf(
+                val bounds = it.bounds
+                arrayListOf(
                     it.placement.ordinal,
                     it.isMinimized,
-                    it.bounds
+                    bounds != null,
+                    bounds?.top ?: 0,
+                    bounds?.left ?: 0,
+                    bounds?.right ?: 0,
+                    bounds?.bottom ?: 0,
                 )
             },
             restore = { state ->
                 WindowState(
                     placement = WindowPlacement.entries[state[0] as Int],
                     isMinimized = state[1] as Boolean,
-                    bounds = state[2] as IntRect?,
+                    bounds = if (state[2] as Boolean) {
+                        IntRect(
+                            top = state[3] as Int,
+                            left = state[4] as Int,
+                            right = state[5] as Int,
+                            bottom = state[6] as Int
+                        )
+                    } else null,
                 )
             }
         )
     }
 }
+
+
