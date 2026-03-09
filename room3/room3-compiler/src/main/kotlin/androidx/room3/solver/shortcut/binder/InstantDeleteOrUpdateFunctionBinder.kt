@@ -16,7 +16,6 @@
 
 package androidx.room3.solver.shortcut.binder
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.codegen.XTypeSpec
@@ -25,14 +24,13 @@ import androidx.room3.ext.InvokeWithLambdaParameter
 import androidx.room3.ext.LambdaSpec
 import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_BLOCKING
 import androidx.room3.ext.SQLiteDriverTypeNames
-import androidx.room3.ext.isNotVoid
 import androidx.room3.solver.CodeGenScope
 import androidx.room3.solver.shortcut.result.DeleteOrUpdateFunctionAdapter
 import androidx.room3.vo.ShortcutQueryParameter
 
 /** Binder that knows how to write instant (blocking) delete and update methods. */
-class InstantDeleteOrUpdateFunctionBinder(adapter: DeleteOrUpdateFunctionAdapter?) :
-    DeleteOrUpdateFunctionBinder(adapter) {
+class InstantDeleteOrUpdateFunctionBinder(override val adapter: DeleteOrUpdateFunctionAdapter?) :
+    DeleteOrUpdateFunctionBinder {
 
     override fun convertAndReturn(
         parameters: List<ShortcutQueryParameter>,
@@ -68,16 +66,6 @@ class InstantDeleteOrUpdateFunctionBinder(adapter: DeleteOrUpdateFunctionAdapter
                         }
                     },
             )
-        val returnPrefix =
-            when (scope.language) {
-                CodeLanguage.JAVA ->
-                    if (adapter.returnType.isNotVoid()) {
-                        "return "
-                    } else {
-                        ""
-                    }
-                CodeLanguage.KOTLIN -> "return "
-            }
-        scope.builder.add("$returnPrefix%L", performBlock)
+        scope.builder.add("return %L", performBlock)
     }
 }

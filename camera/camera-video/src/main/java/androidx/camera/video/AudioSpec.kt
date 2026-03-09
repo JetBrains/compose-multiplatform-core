@@ -17,7 +17,6 @@ package androidx.camera.video
 
 import android.media.AudioFormat
 import android.media.MediaRecorder
-import android.util.Range
 import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -29,11 +28,12 @@ import java.util.Objects
 public class AudioSpec
 @JvmOverloads
 constructor(
-    public val bitrate: Range<Int> = BITRATE_RANGE_AUTO,
-    @get:SourceFormat public val sourceFormat: Int = SOURCE_FORMAT_AUTO,
-    @get:Source public val source: Int = SOURCE_AUTO,
-    public val sampleRate: Range<Int> = SAMPLE_RATE_RANGE_AUTO,
-    @get:ChannelCount public val channelCount: Int = CHANNEL_COUNT_AUTO,
+    public val bitrate: Int = BITRATE_UNSPECIFIED,
+    @get:SourceFormat public val sourceFormat: Int = SOURCE_FORMAT_UNSPECIFIED,
+    @get:Source public val source: Int = SOURCE_UNSPECIFIED,
+    public val sampleRate: Int = SAMPLE_RATE_UNSPECIFIED,
+    @get:ChannelCount public val channelCount: Int = CHANNEL_COUNT_UNSPECIFIED,
+    public val mimeType: String = MIME_TYPE_UNSPECIFIED,
 ) {
     /** Returns a [Builder] instance with the same property values as this instance. */
     public fun toBuilder(): Builder {
@@ -43,6 +43,7 @@ constructor(
             .setChannelCount(channelCount)
             .setSource(source)
             .setSourceFormat(sourceFormat)
+            .setMimeType(mimeType)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -52,7 +53,8 @@ constructor(
             source == other.source &&
             channelCount == other.channelCount &&
             bitrate == other.bitrate &&
-            sampleRate == other.sampleRate
+            sampleRate == other.sampleRate &&
+            mimeType == other.mimeType
     }
 
     override fun hashCode(): Int {
@@ -65,25 +67,27 @@ constructor(
             "sourceFormat=$sourceFormat, " +
             "source=$source, " +
             "sampleRate=$sampleRate, " +
-            "channelCount=$channelCount" +
+            "channelCount=$channelCount, " +
+            "mimeType=$mimeType" +
             '}'
     }
 
     /** The builder of the [AudioSpec]. */
     @RestrictTo(Scope.LIBRARY)
     public class Builder {
-        private var bitrate: Range<Int> = BITRATE_RANGE_AUTO
-        private var sourceFormat: Int = SOURCE_FORMAT_AUTO
-        private var source: Int = SOURCE_AUTO
-        private var sampleRate: Range<Int> = SAMPLE_RATE_RANGE_AUTO
-        private var channelCount: Int = CHANNEL_COUNT_AUTO
+        private var bitrate: Int = BITRATE_UNSPECIFIED
+        private var sourceFormat: Int = SOURCE_FORMAT_UNSPECIFIED
+        private var source: Int = SOURCE_UNSPECIFIED
+        private var sampleRate: Int = SAMPLE_RATE_UNSPECIFIED
+        private var channelCount: Int = CHANNEL_COUNT_UNSPECIFIED
+        private var mimeType: String = MIME_TYPE_UNSPECIFIED
 
         /**
-         * Sets the desired range of bitrates to be used by the encoder.
+         * Sets the desired bitrate to be used by the encoder.
          *
-         * If not set, defaults to [BITRATE_RANGE_AUTO].
+         * If not set, defaults to [BITRATE_UNSPECIFIED].
          */
-        public fun setBitrate(bitrate: Range<Int>): Builder {
+        public fun setBitrate(bitrate: Int): Builder {
             this.bitrate = bitrate
             return this
         }
@@ -91,10 +95,10 @@ constructor(
         /**
          * Sets the audio source format.
          *
-         * Available values for source format are [SOURCE_FORMAT_AUTO] and
+         * Available values for source format are [SOURCE_FORMAT_UNSPECIFIED] and
          * [SOURCE_FORMAT_PCM_16BIT].
          *
-         * If not set, defaults to [SOURCE_FORMAT_AUTO].
+         * If not set, defaults to [SOURCE_FORMAT_UNSPECIFIED].
          */
         public fun setSourceFormat(@SourceFormat audioFormat: Int): Builder {
             this.sourceFormat = audioFormat
@@ -104,25 +108,23 @@ constructor(
         /**
          * Sets the audio source.
          *
-         * Available values for source are [SOURCE_AUTO] and [SOURCE_CAMCORDER].
+         * Available values for source are [SOURCE_UNSPECIFIED] and [SOURCE_CAMCORDER].
          *
-         * If not set, defaults to [SOURCE_AUTO].
+         * If not set, defaults to [SOURCE_UNSPECIFIED].
          */
         public fun setSource(@Source source: Int): Builder = apply { this.source = source }
 
         /**
-         * Sets the desired range of sample rates to be used by the encoder.
+         * Sets the desired sample rate to be used by the encoder.
          *
-         * If not set, defaults to [SAMPLE_RATE_RANGE_AUTO].
+         * If not set, defaults to [SAMPLE_RATE_UNSPECIFIED].
          */
-        public fun setSampleRate(sampleRate: Range<Int>): Builder = apply {
-            this.sampleRate = sampleRate
-        }
+        public fun setSampleRate(sampleRate: Int): Builder = apply { this.sampleRate = sampleRate }
 
         /**
          * Sets the desired number of audio channels.
          *
-         * If not set, defaults to [CHANNEL_COUNT_AUTO]. Other common channel counts include
+         * If not set, defaults to [CHANNEL_COUNT_UNSPECIFIED]. Other common channel counts include
          * [CHANNEL_COUNT_MONO] or [CHANNEL_COUNT_STEREO].
          *
          * Setting to [CHANNEL_COUNT_NONE] is equivalent to requesting that no audio should be
@@ -132,28 +134,41 @@ constructor(
             this.channelCount = channelCount
         }
 
+        /**
+         * Sets the desired MIME type to be used by the encoder.
+         *
+         * If not set, defaults to [MIME_TYPE_UNSPECIFIED].
+         */
+        public fun setMimeType(mimeType: String): Builder = apply { this.mimeType = mimeType }
+
         /** Builds the AudioSpec instance. */
         public fun build(): AudioSpec {
-            return AudioSpec(bitrate, sourceFormat, source, sampleRate, channelCount)
+            return AudioSpec(bitrate, sourceFormat, source, sampleRate, channelCount, mimeType)
         }
     }
 
     @RestrictTo(Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
-    @IntDef(SOURCE_FORMAT_AUTO, SOURCE_FORMAT_PCM_16BIT)
+    @IntDef(SOURCE_FORMAT_UNSPECIFIED, SOURCE_FORMAT_PCM_16BIT)
     public annotation class SourceFormat
 
     @RestrictTo(Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
         open = true,
-        value = [CHANNEL_COUNT_AUTO, CHANNEL_COUNT_NONE, CHANNEL_COUNT_MONO, CHANNEL_COUNT_STEREO],
+        value =
+            [
+                CHANNEL_COUNT_UNSPECIFIED,
+                CHANNEL_COUNT_NONE,
+                CHANNEL_COUNT_MONO,
+                CHANNEL_COUNT_STEREO,
+            ],
     )
     public annotation class ChannelCount
 
     @RestrictTo(Scope.LIBRARY)
     @IntDef(
-        SOURCE_AUTO,
+        SOURCE_UNSPECIFIED,
         SOURCE_CAMCORDER,
         SOURCE_DEFAULT,
         SOURCE_MIC,
@@ -167,7 +182,7 @@ constructor(
 
     public companion object {
         /** The audio source format representing no preference for audio source format. */
-        public const val SOURCE_FORMAT_AUTO: Int = -1
+        public const val SOURCE_FORMAT_UNSPECIFIED: Int = -1
 
         /**
          * The PCM 16 bit per sample audio source format. Guaranteed to be supported by all devices.
@@ -175,7 +190,7 @@ constructor(
         public const val SOURCE_FORMAT_PCM_16BIT: Int = AudioFormat.ENCODING_PCM_16BIT
 
         /** Allows the audio source to choose the appropriate number of channels. */
-        public const val CHANNEL_COUNT_AUTO: Int = -1
+        public const val CHANNEL_COUNT_UNSPECIFIED: Int = -1
 
         /** A channel count which is equivalent to no audio. */
         public const val CHANNEL_COUNT_NONE: Int = 0
@@ -187,7 +202,7 @@ constructor(
         public const val CHANNEL_COUNT_STEREO: Int = 2
 
         /** The audio source representing no preference for audio source. */
-        public const val SOURCE_AUTO: Int = -1
+        public const val SOURCE_UNSPECIFIED: Int = -1
 
         /**
          * Microphone audio source tuned for video recording, with the same orientation as the
@@ -245,29 +260,26 @@ constructor(
         public const val SOURCE_VOICE_PERFORMANCE: Int = MediaRecorder.AudioSource.VOICE_PERFORMANCE
 
         /**
-         * Bitrate range representing no preference for bitrate.
+         * No preference for bitrate.
          *
          * Using this value with [AudioSpec.Builder.setBitrate] informs the device it should choose
          * any appropriate bitrate given the device and codec constraints.
          */
-        @JvmField public val BITRATE_RANGE_AUTO: Range<Int> = Range(0, Int.MAX_VALUE)
+        public const val BITRATE_UNSPECIFIED: Int = 0
 
         /**
-         * Sample rate range representing no preference for sample rate.
+         * No preference for sample rate.
          *
          * Using this value with [AudioSpec.Builder.setSampleRate] informs the device it should
          * choose any appropriate sample rate given the device and codec constraints.
          */
-        @JvmField public val SAMPLE_RATE_RANGE_AUTO: Range<Int> = Range(0, Int.MAX_VALUE)
+        public const val SAMPLE_RATE_UNSPECIFIED: Int = 0
 
-        /**
-         * An audio specification that corresponds to no audio.
-         *
-         * This is equivalent to creating an [AudioSpec] with channel count set to
-         * [CHANNEL_COUNT_NONE].
-         */
-        @JvmField
-        public val NO_AUDIO: AudioSpec = Builder().setChannelCount(CHANNEL_COUNT_NONE).build()
+        /** No preference for MIME type. */
+        public const val MIME_TYPE_UNSPECIFIED: String = "audio/*"
+
+        /** An [AudioSpec] representing the default audio configuration. */
+        public val DEFAULT: AudioSpec = builder().build()
 
         /** Returns a build for this config. */
         @RestrictTo(Scope.LIBRARY)

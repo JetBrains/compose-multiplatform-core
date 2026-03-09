@@ -29,6 +29,7 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.SurfaceTracker
 import androidx.camera.camera2.pipe.config.Camera2ControllerScope
 import androidx.camera.camera2.pipe.core.DurationNs
@@ -37,6 +38,7 @@ import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.core.TimeSource
 import androidx.camera.camera2.pipe.core.TimestampNs
 import androidx.camera.camera2.pipe.graph.GraphListener
+import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.internal.CameraStatusMonitor
 import androidx.camera.camera2.pipe.internal.CameraStatusMonitor.CameraStatus
 import javax.inject.Inject
@@ -62,6 +64,7 @@ internal class Camera2CameraController
 constructor(
     private val scope: CoroutineScope,
     private val threads: Threads,
+    private val strictMode: StrictMode,
     private val graphConfig: CameraGraph.Config,
     private val graphListener: GraphListener,
     private val surfaceTracker: SurfaceTracker,
@@ -74,6 +77,7 @@ constructor(
     private val timeSource: TimeSource,
     override val cameraGraphId: CameraGraphId,
     private val shutdownListener: ShutdownListener,
+    private val streamGraph: StreamGraphImpl,
     concurrentSessionSequencers: ConcurrentSessionSequencers,
 ) : CameraController {
     private val lock = Any()
@@ -159,12 +163,14 @@ constructor(
                 currentTimestampTs,
             )
         ) {
-            Log.debug {
-                "$this: Not restarting. " +
-                    "Controller state = $controllerState, last camera error = $lastCameraError, " +
-                    "camera availability = $cameraAvailability, " +
-                    "last camera priorities changed = $lastCameraPrioritiesChangedTs, " +
-                    "current timestamp = $currentTimestampTs."
+            if (DEBUG) {
+                Log.debug {
+                    "$this: Not restarting. " +
+                        "Controller state = $controllerState, last camera error = $lastCameraError, " +
+                        "camera availability = $cameraAvailability, " +
+                        "last camera priorities changed = $lastCameraPrioritiesChangedTs, " +
+                        "current timestamp = $currentTimestampTs."
+                }
             }
             return
         }
@@ -229,6 +235,8 @@ constructor(
                 timeSource,
                 graphConfig.flags,
                 concurrentSessionSequencer,
+                streamGraph,
+                strictMode,
                 threads,
                 scope,
             )
@@ -270,7 +278,9 @@ constructor(
     }
 
     private fun onCameraStatusChanged(cameraStatus: CameraStatus) {
-        Log.debug { "$this ($cameraId) camera status changed: $cameraStatus" }
+        if (DEBUG) {
+            Log.debug { "$this ($cameraId) camera status changed: $cameraStatus" }
+        }
         synchronized(lock) {
             if (isClosed()) {
                 return
@@ -448,6 +458,7 @@ constructor(
     }
 
     companion object {
+        private const val DEBUG = false
         private const val RESTART_TIMEOUT_WHEN_ENABLED_MS = 700L // 0.7s
         private const val MS_TO_NS = 1_000_000
         private val PRIORITIES_CHANGED_THRESHOLD_NS = DurationNs(200_000_000L) // 200ms
@@ -460,7 +471,9 @@ constructor(
             lastCameraPrioritiesChangedTs: TimestampNs?,
             currentTs: TimestampNs,
         ): Boolean {
-            val cameraAvailable = cameraAvailability is CameraStatus.CameraAvailable
+            val cameraAvailableAndOpenable =
+                cameraAvailability is CameraStatus.CameraAvailable &&
+                    lastCameraError != CameraError.ERROR_CAMERA_DISABLED
 
             // Camera priorities changed is a on-the-spot signal that doesn't actually indicate
             // whether we do have camera priority. The signal may come in early or late, and other
@@ -473,7 +486,7 @@ constructor(
 
             when (controllerState) {
                 ControllerState.DISCONNECTED ->
-                    if (cameraAvailable || prioritiesChanged) {
+                    if (cameraAvailableAndOpenable || prioritiesChanged) {
                         return true
                     } else if (
                         Build.VERSION.SDK_INT in (Build.VERSION_CODES.Q..Build.VERSION_CODES.S_V2)
@@ -489,7 +502,7 @@ constructor(
                     // an error during graph (session) configuration or the user lacks camera
                     // permission, since we'd be unlikely to succeed under these scenarios.
                     if (
-                        cameraAvailable &&
+                        cameraAvailableAndOpenable &&
                             lastCameraError != CameraError.ERROR_GRAPH_CONFIG &&
                             lastCameraError != CameraError.ERROR_SECURITY_EXCEPTION
                     ) {

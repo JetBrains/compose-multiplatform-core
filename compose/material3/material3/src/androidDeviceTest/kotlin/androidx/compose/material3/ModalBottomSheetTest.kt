@@ -25,6 +25,8 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,6 +62,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
@@ -71,7 +74,8 @@ import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isDialog
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -82,6 +86,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
@@ -89,6 +94,7 @@ import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -298,8 +304,7 @@ class ModalBottomSheetTest {
         var screenWidth by mutableStateOf(0)
 
         rule.setContent {
-            val context = LocalContext.current
-            screenWidth = context.resources.displayMetrics.widthPixels
+            screenWidth = LocalResources.current.displayMetrics.widthPixels
 
             ModalBottomSheet(onDismissRequest = {}) {
                 Box(
@@ -397,8 +402,7 @@ class ModalBottomSheetTest {
             latch.await(3000, TimeUnit.MILLISECONDS)
             var screenWidthPx by mutableStateOf(0)
             rule.setContent {
-                val context = LocalContext.current
-                screenWidthPx = context.resources.displayMetrics.widthPixels
+                screenWidthPx = LocalResources.current.displayMetrics.widthPixels
                 ModalBottomSheet(onDismissRequest = {}, sheetMaxWidth = Dp.Unspecified) {
                     Box(Modifier.testTag(sheetTag).fillMaxHeight(0.4f))
                 }
@@ -505,6 +509,40 @@ class ModalBottomSheetTest {
     }
 
     @Test
+    fun modalBottomSheet_doesNotDismissOnBack_whenPropertyFalse() {
+        var dismissCount = 0
+        lateinit var sheetState: SheetState
+
+        rule.setContent {
+            sheetState = rememberModalBottomSheetState()
+            val scope = rememberCoroutineScope()
+
+            // Explicitly set shouldDismissOnBackPress = false
+            ModalBottomSheet(
+                onDismissRequest = { dismissCount++ },
+                sheetState = sheetState,
+                properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
+            ) {
+                Box(Modifier.fillMaxSize())
+            }
+
+            // Ensure sheet is expanded to start
+            if (!sheetState.isVisible) {
+                androidx.compose.runtime.LaunchedEffect(Unit) { sheetState.show() }
+            }
+        }
+
+        rule.waitForIdle()
+        assertThat(sheetState.isVisible).isTrue()
+
+        Espresso.pressBackUnconditionally()
+        rule.waitForIdle()
+
+        assertThat(sheetState.isVisible).isTrue()
+        assertThat(dismissCount).isEqualTo(0)
+    }
+
+    @Test
     fun modalBottomSheet_tallSheet_isDismissedOnBackPress() {
         var showBottomSheet by mutableStateOf(true)
         lateinit var sheetState: SheetState
@@ -586,9 +624,8 @@ class ModalBottomSheetTest {
         var screenWidth by mutableStateOf(0.dp)
         rule.setContent {
             sheetMaxWidth = remember { mutableStateOf(0.dp) }
-            val context = LocalContext.current
             val density = LocalDensity.current
-            screenWidth = with(density) { context.resources.displayMetrics.widthPixels.toDp() }
+            screenWidth = with(density) { LocalResources.current.displayMetrics.widthPixels.toDp() }
             ModalBottomSheet(onDismissRequest = {}, sheetMaxWidth = sheetMaxWidth.value) {
                 Box(Modifier.fillMaxWidth().testTag(sheetTag))
             }
@@ -661,9 +698,11 @@ class ModalBottomSheetTest {
         rule.waitForIdle()
         assertThat(state.currentValue).isEqualTo(SheetValue.PartiallyExpanded) // We should
         // retain the current value if possible
-        assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.Hidden))
-        assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.PartiallyExpanded))
-        assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.Expanded))
+        assertTrue(state.anchoredDraggableState.anchors.hasPositionFor(SheetValue.Hidden))
+        assertTrue(
+            state.anchoredDraggableState.anchors.hasPositionFor(SheetValue.PartiallyExpanded)
+        )
+        assertTrue(state.anchoredDraggableState.anchors.hasPositionFor(SheetValue.Expanded))
 
         scope.launch { state.expand() }
         rule.waitForIdle()
@@ -673,16 +712,20 @@ class ModalBottomSheetTest {
         rule.waitForIdle()
         assertThat(state.currentValue).isEqualTo(SheetValue.Expanded)
         // We should retain the current value if possible
-        assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.Hidden))
-        assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.PartiallyExpanded))
-        assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.Expanded))
+        assertTrue(state.anchoredDraggableState.anchors.hasPositionFor(SheetValue.Hidden))
+        assertTrue(
+            state.anchoredDraggableState.anchors.hasPositionFor(SheetValue.PartiallyExpanded)
+        )
+        assertTrue(state.anchoredDraggableState.anchors.hasPositionFor(SheetValue.Expanded))
 
         amountOfItems = 0 // When the sheet height is 0, we should only have a hidden anchor
         rule.waitForIdle()
         assertThat(state.currentValue).isEqualTo(SheetValue.Hidden)
-        assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.Hidden))
-        assertFalse(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.PartiallyExpanded))
-        assertFalse(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.Expanded))
+        assertTrue(state.anchoredDraggableState.anchors.hasPositionFor(SheetValue.Hidden))
+        assertFalse(
+            state.anchoredDraggableState.anchors.hasPositionFor(SheetValue.PartiallyExpanded)
+        )
+        assertFalse(state.anchoredDraggableState.anchors.hasPositionFor(SheetValue.Expanded))
     }
 
     @Test
@@ -774,6 +817,7 @@ class ModalBottomSheetTest {
         rule.runOnIdle { assertThat(sheetState.currentValue).isEqualTo(SheetValue.Hidden) }
 
         showShortContent = true
+        rule.waitForIdle()
         scope.launch { sheetState.show() } // We can't use LaunchedEffect with Swipeable in tests
         // yet, so we're invoking this outside of composition. See b/254115946.
 
@@ -875,7 +919,7 @@ class ModalBottomSheetTest {
             sheetState = rememberModalBottomSheetState()
             scope = rememberCoroutineScope()
             ModalBottomSheet(onDismissRequest = {}, sheetState = sheetState) {
-                Box(Modifier.fillMaxSize().testTag(sheetTag))
+                Box(Modifier.fillMaxSize().weight(1f).testTag(sheetTag))
             }
         }
 
@@ -1111,19 +1155,27 @@ class ModalBottomSheetTest {
 
         assertThat(sheetState.currentValue).isEqualTo(SheetValue.Hidden)
         assertFalse(
-            sheetState.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.PartiallyExpanded)
+            sheetState.anchoredDraggableState.anchors.hasPositionFor(SheetValue.PartiallyExpanded)
         )
-        assertFalse(sheetState.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.Expanded))
+        assertFalse(sheetState.anchoredDraggableState.anchors.hasPositionFor(SheetValue.Expanded))
 
         scope.launch { sheetState.show() }
         rule.waitForIdle()
 
         assertThat(sheetState.isVisible).isTrue()
-        assertThat(sheetState.currentValue).isEqualTo(sheetState.targetValue)
+        // animateTo with a non-existent target will force currentValue to the targetValue
+        // (Expanded). This allows moving the sheet to an anchor that we anticipate will be
+        // available in the next composition/layout pass, meaning the sheet will
+        // reconcile to that anchor when the sheet is re-laid out.
+        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.targetValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.requireOffset()).isEqualTo(rule.rootHeightPx())
 
         hasSheetContent = true // Recompose with sheet content
         rule.waitForIdle()
         assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.targetValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.requireOffset()).isWithin(1f).of(rule.rootHeightPx() * 0.6f)
     }
 
     @Test
@@ -1159,19 +1211,21 @@ class ModalBottomSheetTest {
 
         assertThat(sheetState.currentValue).isEqualTo(SheetValue.Hidden)
         assertFalse(
-            sheetState.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.PartiallyExpanded)
+            sheetState.anchoredDraggableState.anchors.hasPositionFor(SheetValue.PartiallyExpanded)
         )
-        assertFalse(sheetState.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.Expanded))
+        assertFalse(sheetState.anchoredDraggableState.anchors.hasPositionFor(SheetValue.Expanded))
 
         scope.launch { sheetState.show() }
         rule.waitForIdle()
 
         assertThat(sheetState.isVisible).isTrue()
-        assertThat(sheetState.currentValue).isEqualTo(sheetState.targetValue)
+        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.requireOffset()).isEqualTo(rule.rootHeightPx())
 
         hasSheetContent = true // Recompose with sheet content
         rule.waitForIdle()
         assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.requireOffset()).isWithin(1f).of(rule.rootHeightPx() * 0.5f)
     }
 
     @Test
@@ -1326,12 +1380,15 @@ class ModalBottomSheetTest {
             }
         }
 
-        // wait for layout
         rule.waitForIdle()
         assertThat(sheetState.requireOffset()).isGreaterThan(providedTopInsets)
-        // Consumed insets are the larger of the two provided consumed insets, in this case, the
-        // sheets offset as inset 1, and top window insets as inset 2.
-        assertThat(consumedTopInsets).isEqualTo(sheetState.requireOffset().toInt())
+        // UPDATED BEHAVIOR:
+        // The content inside the sheet only consumes the insets explicitly provided
+        // to it (10px). It does NOT consume the empty space (offset) above the sheet
+        // because that space is outside the content's coordinate system.
+        // This is functionally the same for users for as long as the sheets offset is larger than
+        // or equal to the provided insets, the visual padding will remain 0.
+        assertThat(consumedTopInsets).isEqualTo(providedTopInsets)
     }
 
     @Test
@@ -1467,6 +1524,100 @@ class ModalBottomSheetTest {
             assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
         }
 
+    @Test
+    fun sheetWindowInsets_reportsOffset_asTopInset() {
+        lateinit var state: SheetState
+        lateinit var scope: CoroutineScope
+        lateinit var insets: WindowInsets
+        lateinit var density: Density
+
+        rule.setContent {
+            state = rememberSheetState(initialValue = SheetValue.PartiallyExpanded)
+            scope = rememberCoroutineScope()
+            density = LocalDensity.current
+            insets = remember(state) { SheetWindowInsets(state) }
+
+            Box(Modifier.fillMaxSize()) {
+                BottomSheet(
+                    state = state,
+                    onDismissRequest = {},
+                    content = { Box(Modifier.fillMaxSize()) },
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            val reportedTopInset = insets.getTop(density).toFloat()
+            val actualOffset = state.requireOffset()
+            assertThat(reportedTopInset).isWithin(1f).of(actualOffset)
+            assertThat(reportedTopInset).isGreaterThan(0)
+        }
+
+        scope.launch { state.expand() }
+        rule.runOnIdle {
+            val reportedTopInset = insets.getTop(density).toFloat()
+            val actualOffset = state.requireOffset()
+            assertThat(reportedTopInset).isWithin(1f).of(actualOffset)
+            assertThat(reportedTopInset).isEqualTo(0)
+        }
+
+        scope.launch { state.hide() }
+        rule.runOnIdle {
+            val reportedTopInset = insets.getTop(density).toFloat()
+            val actualOffset = state.requireOffset()
+            assertThat(reportedTopInset).isWithin(1f).of(actualOffset)
+            assertThat(reportedTopInset).isGreaterThan(0)
+        }
+    }
+
+    @Test
+    fun bottomSheet_respectsMaterialThemeMotionScheme() {
+        val customSpatialSpec = tween<Float>(durationMillis = 123)
+        val customEffectsSpec = tween<Float>(durationMillis = 456)
+
+        // Mock a MotionScheme that returns our specific specs
+        val customMotionScheme =
+            object : MotionScheme {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T> =
+                    customSpatialSpec as FiniteAnimationSpec<T>
+
+                @Suppress("UNCHECKED_CAST")
+                override fun <T> fastEffectsSpec(): FiniteAnimationSpec<T> =
+                    customEffectsSpec as FiniteAnimationSpec<T>
+
+                override fun <T> fastSpatialSpec() = defaultSpatialSpec<T>()
+
+                override fun <T> slowSpatialSpec() = defaultSpatialSpec<T>()
+
+                override fun <T> defaultEffectsSpec() = fastEffectsSpec<T>()
+
+                override fun <T> slowEffectsSpec() = fastEffectsSpec<T>()
+            }
+
+        lateinit var sheetState: SheetState
+
+        rule.setContent {
+            MaterialTheme(motionScheme = customMotionScheme) {
+                sheetState = rememberModalBottomSheetState()
+
+                BottomSheet(
+                    state = sheetState,
+                    onDismissRequest = {},
+                    content = { /* Empty Content */ },
+                )
+            }
+        }
+
+        rule.waitForIdle()
+        assertThat(sheetState.showMotionSpec).isEqualTo(customSpatialSpec)
+        assertThat(sheetState.anchoredDraggableMotionSpec).isEqualTo(customSpatialSpec)
+        assertThat(sheetState.hideMotionSpec).isEqualTo(customEffectsSpec)
+    }
+
     private val Bundle.traversalBefore: Int
         get() = getInt("android.view.accessibility.extra.EXTRA_DATA_TEST_TRAVERSALBEFORE_VAL")
+
+    private fun ComposeTestRule.rootHeightPx(): Float =
+        with(density) { onAllNodes(isDialog()).onFirst().getUnclippedBoundsInRoot().height.toPx() }
 }

@@ -26,10 +26,12 @@ import androidx.camera.camera2.pipe.testing.UpdateCounting3AStateListener
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 internal class Listener3ATest {
     @Test
     fun testListenersInvoked() {

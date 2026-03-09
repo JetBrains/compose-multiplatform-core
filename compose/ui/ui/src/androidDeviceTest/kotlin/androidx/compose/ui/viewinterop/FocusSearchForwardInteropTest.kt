@@ -32,8 +32,6 @@ import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
@@ -49,7 +47,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.dp
@@ -188,11 +186,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
 
     @Test
     fun focusedComposableWithFocusableView_view_inLinearLayout() {
-        assumeTrue(
-            @OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isPre26FocusFinderFixEnabled ||
-                SDK_INT >= 26 ||
-                !moveFocusProgrammatically
-        )
+        assumeTrue(SDK_INT >= 26 || !moveFocusProgrammatically)
 
         // Arrange.
         setTestContent {

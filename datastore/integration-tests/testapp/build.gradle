@@ -15,15 +15,13 @@
  */
 
 import org.gradle.api.attributes.java.TargetJvmEnvironment
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
     id("com.google.protobuf")
-    id ("kotlin-parcelize")
+    id("kotlin-parcelize")
 }
 
 configurations {
@@ -68,5 +66,5 @@ dependencies {
 }
 
 tasks.withType(KotlinCompile).configureEach {
-    it.friendPaths.from(configurations.friends.incoming.artifactView { }.files)
+    it.friendPaths.from(configurations.friends.incoming.files)
 }

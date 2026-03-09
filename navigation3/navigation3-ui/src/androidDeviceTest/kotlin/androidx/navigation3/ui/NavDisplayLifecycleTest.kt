@@ -17,14 +17,10 @@
 package androidx.navigation3.ui
 
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.kruth.assertThat
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.test.Test
@@ -89,7 +85,10 @@ class NavDisplayLifecycleTest {
 
         val actualEvents = mutableListOf<Pair<String, String>>()
         rule.setContent {
-            NavDisplay(backStack = backStack, sceneStrategy = TestTwoPaneSceneStrategy()) { key ->
+            NavDisplay(
+                backStack = backStack,
+                sceneStrategies = listOf(TestTwoPaneSceneStrategy()),
+            ) { key ->
                 NavEntry(key) {
                     LifecycleResumeEffect(key1 = Unit) {
                         actualEvents += key to "ON_RESUME"
@@ -117,7 +116,10 @@ class NavDisplayLifecycleTest {
 
         val actualEvents = mutableListOf<Pair<String, String>>()
         rule.setContent {
-            NavDisplay(backStack = backStack, sceneStrategy = TestTwoPaneSceneStrategy()) { key ->
+            NavDisplay(
+                backStack = backStack,
+                sceneStrategies = listOf(TestTwoPaneSceneStrategy()),
+            ) { key ->
                 NavEntry(key) {
                     LifecycleResumeEffect(key1 = Unit) {
                         actualEvents += key to "ON_RESUME"
@@ -136,162 +138,6 @@ class NavDisplayLifecycleTest {
                 "B" to "ON_PAUSE",
                 "A" to "ON_PAUSE",
                 "A" to "ON_RESUME",
-            )
-            .inOrder()
-    }
-
-    @Test
-    fun testNavigateToDialogKeepsSinglePaneEntryAtStarted() {
-        lateinit var backStack: SnapshotStateList<String>
-
-        val actualEvents = mutableListOf<Pair<String, String>>()
-        rule.setContent {
-            backStack = remember { mutableStateListOf("A") }
-            NavDisplay(
-                backStack = backStack,
-                sceneStrategy = remember { DialogSceneStrategy() },
-                onBack = { /* no-op */ },
-            ) { key ->
-                when (key) {
-                    "A" ->
-                        NavEntry("A") {
-                            LifecycleResumeEffect(key1 = Unit) {
-                                actualEvents += key to "ON_RESUME"
-                                onPauseOrDispose { actualEvents += key to "ON_PAUSE" }
-                            }
-                        }
-                    else ->
-                        NavEntry("B", metadata = DialogSceneStrategy.dialog()) {
-                            LifecycleResumeEffect(key1 = Unit) {
-                                actualEvents += key to "ON_RESUME"
-                                onPauseOrDispose { actualEvents += key to "ON_PAUSE" }
-                            }
-                        }
-                }
-            }
-        }
-        rule.runOnIdle { backStack += "B" }
-        rule.waitForIdle()
-
-        assertThat(actualEvents)
-            .containsExactly("A" to "ON_RESUME", "A" to "ON_PAUSE", "B" to "ON_RESUME")
-            .inOrder()
-    }
-
-    @Test
-    fun testNavigateFromDialogToSinglePaneKeepsDialogAtStarted() {
-        lateinit var backStack: SnapshotStateList<String>
-
-        val actualEvents = mutableListOf<Pair<String, String>>()
-        rule.setContent {
-            backStack = remember { mutableStateListOf("A", "B") }
-            NavDisplay(
-                backStack = backStack,
-                sceneStrategy = remember { DialogSceneStrategy() },
-                onBack = { /* no-op */ },
-            ) { key ->
-                when (key) {
-                    "A" ->
-                        NavEntry("A") {
-                            LifecycleResumeEffect(key1 = Unit) {
-                                actualEvents += key to "ON_RESUME"
-                                onPauseOrDispose { actualEvents += key to "ON_PAUSE" }
-                            }
-                        }
-                    "B" ->
-                        NavEntry("B", metadata = DialogSceneStrategy.dialog()) {
-                            LifecycleResumeEffect(key1 = Unit) {
-                                actualEvents += key to "ON_RESUME"
-                                onPauseOrDispose { actualEvents += key to "ON_PAUSE" }
-                            }
-                        }
-                    else ->
-                        NavEntry("C") {
-                            LifecycleResumeEffect(key1 = Unit) {
-                                actualEvents += key to "ON_RESUME"
-                                onPauseOrDispose { actualEvents += key to "ON_PAUSE" }
-                            }
-                        }
-                }
-            }
-        }
-
-        rule.waitForIdle()
-
-        assertThat(actualEvents)
-            .containsExactly("A" to "ON_RESUME", "A" to "ON_PAUSE", "B" to "ON_RESUME")
-            .inOrder()
-
-        rule.runOnIdle { backStack += "C" }
-        rule.waitForIdle()
-
-        assertThat(actualEvents)
-            .containsExactly(
-                "A" to "ON_RESUME",
-                "A" to "ON_PAUSE",
-                "B" to "ON_RESUME",
-                "B" to "ON_PAUSE",
-                "C" to "ON_RESUME",
-            )
-            .inOrder()
-    }
-
-    @Test
-    fun testNavigateToSecondDialogKeepsFirstDialogAtStarted() {
-        lateinit var backStack: SnapshotStateList<String>
-
-        val actualEvents = mutableListOf<Pair<String, String>>()
-        rule.setContent {
-            backStack = remember { mutableStateListOf("A", "B") }
-            NavDisplay(
-                backStack = backStack,
-                sceneStrategy = remember { DialogSceneStrategy() },
-                onBack = { /* no-op */ },
-            ) { key ->
-                when (key) {
-                    "A" ->
-                        NavEntry("A") {
-                            LifecycleResumeEffect(key1 = Unit) {
-                                actualEvents += key to "ON_RESUME"
-                                onPauseOrDispose { actualEvents += key to "ON_PAUSE" }
-                            }
-                        }
-                    "B" ->
-                        NavEntry("B", metadata = DialogSceneStrategy.dialog()) {
-                            println("B Lifecycle owner = ${LocalLifecycleOwner.current}")
-                            LifecycleResumeEffect(key1 = Unit) {
-                                actualEvents += key to "ON_RESUME"
-                                onPauseOrDispose { actualEvents += key to "ON_PAUSE" }
-                            }
-                        }
-                    else ->
-                        NavEntry("C", metadata = DialogSceneStrategy.dialog()) {
-                            println("C Lifecycle owner = ${LocalLifecycleOwner.current}")
-                            LifecycleResumeEffect(key1 = Unit) {
-                                actualEvents += key to "ON_RESUME"
-                                onPauseOrDispose { actualEvents += key to "ON_PAUSE" }
-                            }
-                        }
-                }
-            }
-        }
-
-        rule.waitForIdle()
-
-        assertThat(actualEvents)
-            .containsExactly("A" to "ON_RESUME", "A" to "ON_PAUSE", "B" to "ON_RESUME")
-            .inOrder()
-
-        rule.runOnIdle { backStack += "C" }
-        rule.waitForIdle()
-
-        assertThat(actualEvents)
-            .containsExactly(
-                "A" to "ON_RESUME",
-                "A" to "ON_PAUSE",
-                "B" to "ON_RESUME",
-                "B" to "ON_PAUSE",
-                "C" to "ON_RESUME",
             )
             .inOrder()
     }

@@ -52,11 +52,10 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isFocusable
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
@@ -67,6 +66,8 @@ import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.xr.glimmer.testutils.captureToImage
+import androidx.xr.glimmer.testutils.createGlimmerRule
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -84,7 +85,7 @@ import org.junit.runner.RunWith
 class ListItemTest {
     @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
 
-    @get:Rule(1) val inputModeRule = nonTouchInputModeRule()
+    @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     @Test
     fun semantics() {
@@ -607,7 +608,7 @@ class ListItemTest {
         // Label should be top aligned when the height of the primary and supporting labels is
         // greater than minimum list item height
         (primaryLabelBounds.top - listItemBounds.top).assertIsEqualTo(
-            20.dp,
+            23.5.dp,
             "Padding between top of list item and top of primary label.",
         )
 
@@ -627,7 +628,7 @@ class ListItemTest {
         )
 
         (listItemBounds.bottom - supportingLabelBounds.bottom).assertIsEqualTo(
-            20.dp,
+            23.5.dp,
             "Padding between bottom of list item and bottom of supporting label.",
         )
 

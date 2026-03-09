@@ -64,10 +64,11 @@ public operator fun Float.rem(v: RFloat): RFloat {
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RFloat : Number {
+open public class RFloat : Number {
     public var array: FloatArray = floatArrayOf()
     public var id: Float = 0f // if 0 it has not been sent
     public var writer: RemoteComposeWriter? = null
+    public var animation: FloatArray? = null
 
     public constructor(writer: RemoteComposeWriter?, array: FloatArray) {
         this.array = array
@@ -96,9 +97,18 @@ public class RFloat : Number {
 
     override fun toFloat(): Float {
         if (!id.isNaN()) {
-            id = writer?.floatExpression(*array)!!
+            if (animation != null) {
+                id = writer?.floatExpression(array, animation)!!
+            } else {
+                id = writer?.floatExpression(*array)!!
+            }
         }
         return id
+    }
+
+    public fun flush(): RFloat {
+        toFloat()
+        return this
     }
 
     override fun toInt(): Int {
@@ -121,8 +131,12 @@ public class RFloat : Number {
         return toInt().toChar()
     }
 
-    public operator fun unaryPlus(): RFloat {
+    public operator fun unaryMinus(): RFloat {
         return RFloat(writer, floatArrayOf(*toArray(this), -1f, Rc.FloatExpression.MUL))
+    }
+
+    public operator fun unaryPlus(): RFloat {
+        return this
     }
 
     public operator fun rem(v: Float): RFloat {
@@ -187,18 +201,48 @@ public class RFloat : Number {
         return RFloat(writer, floatArrayOf(*toArray(this), *toArray(v), Rc.FloatExpression.DIV))
     }
 
-    public operator fun get(v: RFloat): RFloat {
-        return RFloat(writer, floatArrayOf(*toArray(v), *toArray(this), Rc.FloatExpression.A_DEREF))
+    public operator fun get(index: RFloat): RFloat {
+        return RFloat(
+            writer,
+            floatArrayOf(*toArray(this), *toArray(index), Rc.FloatExpression.A_DEREF),
+        )
     }
 
-    public operator fun get(v: Int): RFloat {
-        return RFloat(writer, floatArrayOf(v.toFloat(), *toArray(this), Rc.FloatExpression.A_DEREF))
+    public operator fun get(index: Int): RFloat {
+        return RFloat(
+            writer,
+            floatArrayOf(*toArray(this), index.toFloat(), Rc.FloatExpression.A_DEREF),
+        )
     }
 
     public companion object {
         public operator fun invoke(float: Float, writer: RemoteComposeWriter? = null): RFloat {
             return RFloat(writer, floatArrayOf(float))
         }
+    }
+
+    public fun anim(
+        duration: Float,
+        type: Int = Rc.Animate.CUBIC_STANDARD,
+        spec: FloatArray? = null,
+        initialValue: Float = Float.NaN,
+        wrap: Float = Float.NaN,
+    ): RFloat {
+        animation = writer?.anim(duration, type, spec, initialValue, wrap)
+        this.flush()
+        return this
+    }
+
+    public fun genTextId(
+        before: Int = 2,
+        after: Int = 1,
+        flags: Int = Rc.TextFromFloat.PAD_AFTER_ZERO,
+    ): Int {
+        val w = writer
+        if (w == null) {
+            throw IllegalStateException("writer is null")
+        }
+        return w.createTextFromFloat(this.toFloat(), before, after, flags)
     }
 }
 
@@ -293,12 +337,28 @@ public fun log(a: RFloat): RFloat {
     return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.LOG))
 }
 
+public fun log2(a: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.LOG2))
+}
+
 public fun ln(a: RFloat): RFloat {
     return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.LN))
 }
 
 public fun round(a: RFloat): RFloat {
     return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.ROUND))
+}
+
+public fun inverse(a: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.INV))
+}
+
+public fun fraction(a: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.FRACT))
+}
+
+public fun square(a: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.SQUARE))
 }
 
 /** Math.sin(a) */
@@ -350,9 +410,14 @@ public fun cbrt(a: RFloat): RFloat {
     return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.CBRT))
 }
 
-/** if (a) b else c */
+/** if (c) b else c */
 public fun ifThenElse(a: RFloat, b: RFloat, c: RFloat): RFloat {
     return RFloat(a.writer, floatArrayOf(*a.array, *b.array, *c.array, Rc.FloatExpression.IFELSE))
+}
+
+/** if (a) b else c */
+public fun ifElse(a: RFloat, b: RFloat, c: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*c.array, *b.array, *a.array, Rc.FloatExpression.IFELSE))
 }
 
 /** convert radians to degrees */
@@ -425,7 +490,7 @@ public fun pingPong(max: Number, x: Number): RFloat {
     val maxr = max as? RFloat ?: RFloat(null, max.toFloat())
     var writer = xr.writer
     if (writer == null) {
-        writer = xr.writer
+        writer = maxr.writer
     }
 
     if (writer == null) {
@@ -512,6 +577,81 @@ public fun clamp(min: Number, max: Number, value: RFloat): RFloat {
     )
 }
 
+/** clamp a value between min and max */
+public fun cubic(x1: Number, x2: Number, y1: Number, y2: Number, value: Number): RFloat {
+    val writer =
+        if (value is RFloat) value.writer
+        else if (x1 is RFloat) x1.writer
+        else if (x2 is RFloat) x2.writer
+        else if (y1 is RFloat) y1.writer else if (y2 is RFloat) y2.writer else null
+    if (writer == null) {
+        throw IllegalStateException("one of the inputs must be an RFloat")
+    }
+    return RFloat(
+        writer,
+        floatArrayOf(
+            *(toArray(x1)),
+            *(toArray(y1)),
+            *(toArray(x2)),
+            *(toArray(y2)),
+            *(toArray(value)),
+            Rc.FloatExpression.CUBIC,
+        ),
+    )
+}
+
+/* ==================== Array operations ================== */
+
+/** maximum value of an array */
+public fun arrayMax(a: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.A_MAX))
+}
+
+/** The minimum value of an array */
+public fun arrayMin(a: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.A_MIN))
+}
+
+/** the sum of the values of an array */
+public fun arraySum(a: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.A_SUM))
+}
+
+/** the sum of the values of an array up to index */
+public fun arraySum(a: RFloat, index: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, *index.array, Rc.FloatExpression.A_SUM_UNTIL))
+}
+
+@Suppress("RestrictedApiAndroidX")
+public fun arraySumXY(a: RFloat, b: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, *b.array, Rc.FloatExpression.A_SUM_XY))
+}
+
+@Suppress("RestrictedApiAndroidX")
+public fun arraySumSqr(a: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.A_SUM_SQR))
+}
+
+/** the avg values of an array */
+public fun arrayAvg(a: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.A_AVG))
+}
+
+/** the length of an array */
+public fun arrayLength(a: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.A_LEN))
+}
+
+/** treat the array as a spline and get a value 0 = start 1 = end */
+public fun arraySpline(a: RFloat, pos: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, *pos.array, Rc.FloatExpression.A_SPLINE))
+}
+
+/** treat the array as a spline that loops and get a value 0 = start 1 = start & end */
+public fun splineLoop(a: RFloat, pos: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, *pos.array, Rc.FloatExpression.A_SPLINE_LOOP))
+}
+
 /** hours run from Midnight=0 quantized to Hours 0-23 */
 public fun RemoteComposeWriter.Hour(): RFloat {
     return RFloat(this, FLOAT_TIME_IN_HR)
@@ -560,6 +700,36 @@ public fun RemoteComposeWriter.ComponentWidth(): RFloat {
 /** Height */
 public fun RemoteComposeWriter.ComponentHeight(): RFloat {
     return RFloat(this, addComponentHeightValue())
+}
+
+/** Content Width */
+public fun RemoteComposeWriter.ComponentContentWidth(): RFloat {
+    return RFloat(this, addComponentContentWidthValue())
+}
+
+/** Content Height */
+public fun RemoteComposeWriter.ComponentContentHeight(): RFloat {
+    return RFloat(this, addComponentContentHeightValue())
+}
+
+/** X */
+public fun RemoteComposeWriter.ComponentX(): RFloat {
+    return RFloat(this, addComponentXValue())
+}
+
+/** Y */
+public fun RemoteComposeWriter.ComponentY(): RFloat {
+    return RFloat(this, addComponentYValue())
+}
+
+/** ROOT X */
+public fun RemoteComposeWriter.ComponentRootX(): RFloat {
+    return RFloat(this, addComponentRootXValue())
+}
+
+/** ROOT Y */
+public fun RemoteComposeWriter.ComponentRootY(): RFloat {
+    return RFloat(this, addComponentRootYValue())
 }
 
 /** generate random number */

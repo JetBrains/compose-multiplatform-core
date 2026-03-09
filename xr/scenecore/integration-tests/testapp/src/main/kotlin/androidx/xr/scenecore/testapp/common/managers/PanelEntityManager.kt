@@ -75,7 +75,7 @@ class PanelEntityManager(
         if (panelEntities.size < maxEntities) {
             val panelNumber = panelEntities.size + 1
             val mTextView =
-                TextView(session.activity).apply {
+                TextView(session.context).apply {
                     text = "Hello, XR World! Panel $panelNumber"
                     textSize = 24f
                     setTextColor(Color.BLACK)
@@ -137,11 +137,21 @@ class PanelEntityManager(
             createPanelEntityButton.text =
                 if (currentCount == maxEntities) "Create panel Entity"
                 else
-                    "Create Panel Entity #${currentCount + 1}-#${minOf(currentCount + entitiesPerClick, maxEntities)}"
+                    "Create Panel Entity #${currentCount + 1}-#${
+                        minOf(
+                            currentCount + entitiesPerClick,
+                            maxEntities,
+                        )
+                    }"
             destroyPanelEntityButton.text =
                 if (currentCount == 0) "Destroy Panel Entity"
                 else
-                    "Destroy Panel Entity #${currentCount}-#${maxOf(currentCount - entitiesPerClick, 1)}"
+                    "Destroy Panel Entity #${currentCount}-#${
+                        maxOf(
+                            currentCount - entitiesPerClick,
+                            1,
+                        )
+                    }"
         }
     }
 }

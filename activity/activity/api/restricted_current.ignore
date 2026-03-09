@@ -1,9 +1,0 @@
-// Baseline format: 1.0
-AddedMethod: androidx.activity.BackEventCompat#BackEventCompat(float, float, float, int, long, int, kotlin.jvm.internal.DefaultConstructorMarker):
-    Added constructor androidx.activity.BackEventCompat(float,float,float,int,long,int,kotlin.jvm.internal.DefaultConstructorMarker)
-AddedMethod: androidx.activity.ComponentDialog#ComponentDialog(android.content.Context, int, int, kotlin.jvm.internal.DefaultConstructorMarker):
-    Added constructor androidx.activity.ComponentDialog(android.content.Context,int,int,kotlin.jvm.internal.DefaultConstructorMarker)
-AddedMethod: androidx.activity.OnBackPressedDispatcher#OnBackPressedDispatcher(Runnable, int, kotlin.jvm.internal.DefaultConstructorMarker):
-    Added constructor androidx.activity.OnBackPressedDispatcher(Runnable,int,kotlin.jvm.internal.DefaultConstructorMarker)
-AddedMethod: androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia#PickMultipleVisualMedia(int, int, kotlin.jvm.internal.DefaultConstructorMarker):
-    Added constructor androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia(int,int,kotlin.jvm.internal.DefaultConstructorMarker)

@@ -108,18 +108,37 @@ class RaiseHandDataEmitter {
 
 @OptIn(ExperimentalAppActions::class)
 class LocalCallSilenceExtensionDataEmitter {
-    private val mLcsDataFlow: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    companion object {
+        val TAG: String = LocalCallSilenceExtensionDataEmitter::class.java.simpleName
+    }
 
-    fun onVoipAppUpdate(isSilenced: Boolean) {
+    private val mLcsDataFlow: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val mCanUserUpdateSilenceFlow: MutableStateFlow<Boolean> = MutableStateFlow(true)
+
+    fun onVoipAppUpdateIsSilenced(isSilenced: Boolean) {
+        Log.i(TAG, "ICS: onVoipAppUpdateIsSilenced: $isSilenced")
         mLcsDataFlow.value = isSilenced
     }
 
+    fun onVoipAppUpdateCanUserUpdateSilence(canUserUpdateSilence: Boolean) {
+        Log.i(TAG, "ICS: onVoipAppUpdateCanUserUpdateSilence: $canUserUpdateSilence")
+        mCanUserUpdateSilenceFlow.value = canUserUpdateSilence
+    }
+
     fun onInCallServiceUpdate(isSilenced: Boolean) {
+        Log.i(TAG, "ICS: onInCallServiceUpdate: $isSilenced")
         mLcsDataFlow.value = isSilenced
     }
 
     fun collect(e: LocalCallSilenceExtensionRemote): Flow<LocalCallSilenceData> {
-        return mLcsDataFlow.map { LocalCallSilenceData(it, ::onInCallServiceUpdate, e) }
+        return combine(mLcsDataFlow, mCanUserUpdateSilenceFlow) { isSilenced, canUpdate ->
+            LocalCallSilenceData(
+                isLocallySilenced = isSilenced,
+                canUserUpdateSilence = canUpdate,
+                onInCallServiceUiUpdate = ::onInCallServiceUpdate,
+                extension = e,
+            )
+        }
     }
 }
 

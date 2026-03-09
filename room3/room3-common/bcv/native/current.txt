@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64, tvosArm64, tvosSimulatorArm64, tvosX64, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64, watchosX64]
+// Targets: [iosArm64, iosSimulatorArm64, linuxArm64, linuxX64, macosArm64, tvosArm64, tvosSimulatorArm64, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
@@ -101,6 +101,20 @@ open annotation class androidx.room3/ConstructedBy : kotlin/Annotation { // andr
 
 open annotation class androidx.room3/Dao : kotlin/Annotation { // androidx.room3/Dao|null[0]
     constructor <init>() // androidx.room3/Dao.<init>|<init>(){}[0]
+}
+
+open annotation class androidx.room3/DaoReturnTypeConverter : kotlin/Annotation { // androidx.room3/DaoReturnTypeConverter|null[0]
+    constructor <init>(kotlin/Array<androidx.room3/OperationType>) // androidx.room3/DaoReturnTypeConverter.<init>|<init>(kotlin.Array<androidx.room3.OperationType>){}[0]
+
+    final val operations // androidx.room3/DaoReturnTypeConverter.operations|{}operations[0]
+        final fun <get-operations>(): kotlin/Array<androidx.room3/OperationType> // androidx.room3/DaoReturnTypeConverter.operations.<get-operations>|<get-operations>(){}[0]
+}
+
+open annotation class androidx.room3/DaoReturnTypeConverters : kotlin/Annotation { // androidx.room3/DaoReturnTypeConverters|null[0]
+    constructor <init>(kotlin/Array<out kotlin.reflect/KClass<*>>... = ...) // androidx.room3/DaoReturnTypeConverters.<init>|<init>(kotlin.Array<out|kotlin.reflect.KClass<*>>...){}[0]
+
+    final val value // androidx.room3/DaoReturnTypeConverters.value|{}value[0]
+        final fun <get-value>(): kotlin/Array<out kotlin.reflect/KClass<*>> // androidx.room3/DaoReturnTypeConverters.value.<get-value>|<get-value>(){}[0]
 }
 
 open annotation class androidx.room3/Database : kotlin/Annotation { // androidx.room3/Database|null[0]
@@ -295,19 +309,6 @@ open annotation class androidx.room3/MapColumn : kotlin/Annotation { // androidx
         final fun <get-tableName>(): kotlin/String // androidx.room3/MapColumn.tableName.<get-tableName>|<get-tableName>(){}[0]
 }
 
-open annotation class androidx.room3/MapInfo : kotlin/Annotation { // androidx.room3/MapInfo|null[0]
-    constructor <init>(kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...) // androidx.room3/MapInfo.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]
-
-    final val keyColumn // androidx.room3/MapInfo.keyColumn|{}keyColumn[0]
-        final fun <get-keyColumn>(): kotlin/String // androidx.room3/MapInfo.keyColumn.<get-keyColumn>|<get-keyColumn>(){}[0]
-    final val keyTable // androidx.room3/MapInfo.keyTable|{}keyTable[0]
-        final fun <get-keyTable>(): kotlin/String // androidx.room3/MapInfo.keyTable.<get-keyTable>|<get-keyTable>(){}[0]
-    final val valueColumn // androidx.room3/MapInfo.valueColumn|{}valueColumn[0]
-        final fun <get-valueColumn>(): kotlin/String // androidx.room3/MapInfo.valueColumn.<get-valueColumn>|<get-valueColumn>(){}[0]
-    final val valueTable // androidx.room3/MapInfo.valueTable|{}valueTable[0]
-        final fun <get-valueTable>(): kotlin/String // androidx.room3/MapInfo.valueTable.<get-valueTable>|<get-valueTable>(){}[0]
-}
-
 open annotation class androidx.room3/OnConflictStrategy : kotlin/Annotation { // androidx.room3/OnConflictStrategy|null[0]
     constructor <init>() // androidx.room3/OnConflictStrategy.<init>|<init>(){}[0]
 
@@ -432,51 +433,15 @@ open annotation class androidx.room3/Upsert : kotlin/Annotation { // androidx.ro
         final fun <get-entity>(): kotlin.reflect/KClass<*> // androidx.room3/Upsert.entity.<get-entity>|<get-entity>(){}[0]
 }
 
-open class androidx.room3/RoomWarnings { // androidx.room3/RoomWarnings|null[0]
-    constructor <init>() // androidx.room3/RoomWarnings.<init>|<init>(){}[0]
+final enum class androidx.room3/OperationType : kotlin/Enum<androidx.room3/OperationType> { // androidx.room3/OperationType|null[0]
+    enum entry READ // androidx.room3/OperationType.READ|null[0]
+    enum entry WRITE // androidx.room3/OperationType.WRITE|null[0]
 
-    final object Companion { // androidx.room3/RoomWarnings.Companion|null[0]
-        final const val AMBIGUOUS_COLUMN_IN_RESULT // androidx.room3/RoomWarnings.Companion.AMBIGUOUS_COLUMN_IN_RESULT|{}AMBIGUOUS_COLUMN_IN_RESULT[0]
-            final fun <get-AMBIGUOUS_COLUMN_IN_RESULT>(): kotlin/String // androidx.room3/RoomWarnings.Companion.AMBIGUOUS_COLUMN_IN_RESULT.<get-AMBIGUOUS_COLUMN_IN_RESULT>|<get-AMBIGUOUS_COLUMN_IN_RESULT>(){}[0]
-        final const val CANNOT_CREATE_VERIFICATION_DATABASE // androidx.room3/RoomWarnings.Companion.CANNOT_CREATE_VERIFICATION_DATABASE|{}CANNOT_CREATE_VERIFICATION_DATABASE[0]
-            final fun <get-CANNOT_CREATE_VERIFICATION_DATABASE>(): kotlin/String // androidx.room3/RoomWarnings.Companion.CANNOT_CREATE_VERIFICATION_DATABASE.<get-CANNOT_CREATE_VERIFICATION_DATABASE>|<get-CANNOT_CREATE_VERIFICATION_DATABASE>(){}[0]
-        final const val CURSOR_MISMATCH // androidx.room3/RoomWarnings.Companion.CURSOR_MISMATCH|{}CURSOR_MISMATCH[0]
-            final fun <get-CURSOR_MISMATCH>(): kotlin/String // androidx.room3/RoomWarnings.Companion.CURSOR_MISMATCH.<get-CURSOR_MISMATCH>|<get-CURSOR_MISMATCH>(){}[0]
-        final const val DEFAULT_CONSTRUCTOR // androidx.room3/RoomWarnings.Companion.DEFAULT_CONSTRUCTOR|{}DEFAULT_CONSTRUCTOR[0]
-            final fun <get-DEFAULT_CONSTRUCTOR>(): kotlin/String // androidx.room3/RoomWarnings.Companion.DEFAULT_CONSTRUCTOR.<get-DEFAULT_CONSTRUCTOR>|<get-DEFAULT_CONSTRUCTOR>(){}[0]
-        final const val DOES_NOT_IMPLEMENT_EQUALS_HASHCODE // androidx.room3/RoomWarnings.Companion.DOES_NOT_IMPLEMENT_EQUALS_HASHCODE|{}DOES_NOT_IMPLEMENT_EQUALS_HASHCODE[0]
-            final fun <get-DOES_NOT_IMPLEMENT_EQUALS_HASHCODE>(): kotlin/String // androidx.room3/RoomWarnings.Companion.DOES_NOT_IMPLEMENT_EQUALS_HASHCODE.<get-DOES_NOT_IMPLEMENT_EQUALS_HASHCODE>|<get-DOES_NOT_IMPLEMENT_EQUALS_HASHCODE>(){}[0]
-        final const val INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED // androidx.room3/RoomWarnings.Companion.INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED|{}INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED[0]
-            final fun <get-INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED>(): kotlin/String // androidx.room3/RoomWarnings.Companion.INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED.<get-INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED>|<get-INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED>(){}[0]
-        final const val INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED // androidx.room3/RoomWarnings.Companion.INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED|{}INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED[0]
-            final fun <get-INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED>(): kotlin/String // androidx.room3/RoomWarnings.Companion.INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED.<get-INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED>|<get-INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED>(){}[0]
-        final const val INDEX_FROM_PARENT_FIELD_IS_DROPPED // androidx.room3/RoomWarnings.Companion.INDEX_FROM_PARENT_FIELD_IS_DROPPED|{}INDEX_FROM_PARENT_FIELD_IS_DROPPED[0]
-            final fun <get-INDEX_FROM_PARENT_FIELD_IS_DROPPED>(): kotlin/String // androidx.room3/RoomWarnings.Companion.INDEX_FROM_PARENT_FIELD_IS_DROPPED.<get-INDEX_FROM_PARENT_FIELD_IS_DROPPED>|<get-INDEX_FROM_PARENT_FIELD_IS_DROPPED>(){}[0]
-        final const val INDEX_FROM_PARENT_IS_DROPPED // androidx.room3/RoomWarnings.Companion.INDEX_FROM_PARENT_IS_DROPPED|{}INDEX_FROM_PARENT_IS_DROPPED[0]
-            final fun <get-INDEX_FROM_PARENT_IS_DROPPED>(): kotlin/String // androidx.room3/RoomWarnings.Companion.INDEX_FROM_PARENT_IS_DROPPED.<get-INDEX_FROM_PARENT_IS_DROPPED>|<get-INDEX_FROM_PARENT_IS_DROPPED>(){}[0]
-        final const val MISMATCHED_GETTER // androidx.room3/RoomWarnings.Companion.MISMATCHED_GETTER|{}MISMATCHED_GETTER[0]
-            final fun <get-MISMATCHED_GETTER>(): kotlin/String // androidx.room3/RoomWarnings.Companion.MISMATCHED_GETTER.<get-MISMATCHED_GETTER>|<get-MISMATCHED_GETTER>(){}[0]
-        final const val MISMATCHED_SETTER // androidx.room3/RoomWarnings.Companion.MISMATCHED_SETTER|{}MISMATCHED_SETTER[0]
-            final fun <get-MISMATCHED_SETTER>(): kotlin/String // androidx.room3/RoomWarnings.Companion.MISMATCHED_SETTER.<get-MISMATCHED_SETTER>|<get-MISMATCHED_SETTER>(){}[0]
-        final const val MISSING_INDEX_ON_FOREIGN_KEY_CHILD // androidx.room3/RoomWarnings.Companion.MISSING_INDEX_ON_FOREIGN_KEY_CHILD|{}MISSING_INDEX_ON_FOREIGN_KEY_CHILD[0]
-            final fun <get-MISSING_INDEX_ON_FOREIGN_KEY_CHILD>(): kotlin/String // androidx.room3/RoomWarnings.Companion.MISSING_INDEX_ON_FOREIGN_KEY_CHILD.<get-MISSING_INDEX_ON_FOREIGN_KEY_CHILD>|<get-MISSING_INDEX_ON_FOREIGN_KEY_CHILD>(){}[0]
-        final const val MISSING_INDEX_ON_JUNCTION // androidx.room3/RoomWarnings.Companion.MISSING_INDEX_ON_JUNCTION|{}MISSING_INDEX_ON_JUNCTION[0]
-            final fun <get-MISSING_INDEX_ON_JUNCTION>(): kotlin/String // androidx.room3/RoomWarnings.Companion.MISSING_INDEX_ON_JUNCTION.<get-MISSING_INDEX_ON_JUNCTION>|<get-MISSING_INDEX_ON_JUNCTION>(){}[0]
-        final const val MISSING_JAVA_TMP_DIR // androidx.room3/RoomWarnings.Companion.MISSING_JAVA_TMP_DIR|{}MISSING_JAVA_TMP_DIR[0]
-            final fun <get-MISSING_JAVA_TMP_DIR>(): kotlin/String // androidx.room3/RoomWarnings.Companion.MISSING_JAVA_TMP_DIR.<get-MISSING_JAVA_TMP_DIR>|<get-MISSING_JAVA_TMP_DIR>(){}[0]
-        final const val MISSING_SCHEMA_LOCATION // androidx.room3/RoomWarnings.Companion.MISSING_SCHEMA_LOCATION|{}MISSING_SCHEMA_LOCATION[0]
-            final fun <get-MISSING_SCHEMA_LOCATION>(): kotlin/String // androidx.room3/RoomWarnings.Companion.MISSING_SCHEMA_LOCATION.<get-MISSING_SCHEMA_LOCATION>|<get-MISSING_SCHEMA_LOCATION>(){}[0]
-        final const val PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED // androidx.room3/RoomWarnings.Companion.PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED|{}PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED[0]
-            final fun <get-PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED>(): kotlin/String // androidx.room3/RoomWarnings.Companion.PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED.<get-PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED>|<get-PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED>(){}[0]
-        final const val QUERY_MISMATCH // androidx.room3/RoomWarnings.Companion.QUERY_MISMATCH|{}QUERY_MISMATCH[0]
-            final fun <get-QUERY_MISMATCH>(): kotlin/String // androidx.room3/RoomWarnings.Companion.QUERY_MISMATCH.<get-QUERY_MISMATCH>|<get-QUERY_MISMATCH>(){}[0]
-        final const val RELATION_QUERY_WITHOUT_TRANSACTION // androidx.room3/RoomWarnings.Companion.RELATION_QUERY_WITHOUT_TRANSACTION|{}RELATION_QUERY_WITHOUT_TRANSACTION[0]
-            final fun <get-RELATION_QUERY_WITHOUT_TRANSACTION>(): kotlin/String // androidx.room3/RoomWarnings.Companion.RELATION_QUERY_WITHOUT_TRANSACTION.<get-RELATION_QUERY_WITHOUT_TRANSACTION>|<get-RELATION_QUERY_WITHOUT_TRANSACTION>(){}[0]
-        final const val RELATION_TYPE_MISMATCH // androidx.room3/RoomWarnings.Companion.RELATION_TYPE_MISMATCH|{}RELATION_TYPE_MISMATCH[0]
-            final fun <get-RELATION_TYPE_MISMATCH>(): kotlin/String // androidx.room3/RoomWarnings.Companion.RELATION_TYPE_MISMATCH.<get-RELATION_TYPE_MISMATCH>|<get-RELATION_TYPE_MISMATCH>(){}[0]
-        final const val UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE // androidx.room3/RoomWarnings.Companion.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE|{}UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE[0]
-            final fun <get-UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE>(): kotlin/String // androidx.room3/RoomWarnings.Companion.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE.<get-UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE>|<get-UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE>(){}[0]
-    }
+    final val entries // androidx.room3/OperationType.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<androidx.room3/OperationType> // androidx.room3/OperationType.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): androidx.room3/OperationType // androidx.room3/OperationType.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<androidx.room3/OperationType> // androidx.room3/OperationType.values|values#static(){}[0]
 }
 
 final object androidx.room3/AmbiguousColumnResolver { // androidx.room3/AmbiguousColumnResolver|null[0]
@@ -530,4 +495,45 @@ final object androidx.room3/RoomMasterTable { // androidx.room3/RoomMasterTable|
         final fun <get-TABLE_NAME>(): kotlin/String // androidx.room3/RoomMasterTable.TABLE_NAME.<get-TABLE_NAME>|<get-TABLE_NAME>(){}[0]
 
     final fun createInsertQuery(kotlin/String): kotlin/String // androidx.room3/RoomMasterTable.createInsertQuery|createInsertQuery(kotlin.String){}[0]
+}
+
+final object androidx.room3/RoomWarnings { // androidx.room3/RoomWarnings|null[0]
+    final const val AMBIGUOUS_COLUMN_IN_RESULT // androidx.room3/RoomWarnings.AMBIGUOUS_COLUMN_IN_RESULT|{}AMBIGUOUS_COLUMN_IN_RESULT[0]
+        final fun <get-AMBIGUOUS_COLUMN_IN_RESULT>(): kotlin/String // androidx.room3/RoomWarnings.AMBIGUOUS_COLUMN_IN_RESULT.<get-AMBIGUOUS_COLUMN_IN_RESULT>|<get-AMBIGUOUS_COLUMN_IN_RESULT>(){}[0]
+    final const val CANNOT_CREATE_VERIFICATION_DATABASE // androidx.room3/RoomWarnings.CANNOT_CREATE_VERIFICATION_DATABASE|{}CANNOT_CREATE_VERIFICATION_DATABASE[0]
+        final fun <get-CANNOT_CREATE_VERIFICATION_DATABASE>(): kotlin/String // androidx.room3/RoomWarnings.CANNOT_CREATE_VERIFICATION_DATABASE.<get-CANNOT_CREATE_VERIFICATION_DATABASE>|<get-CANNOT_CREATE_VERIFICATION_DATABASE>(){}[0]
+    final const val DEFAULT_CONSTRUCTOR // androidx.room3/RoomWarnings.DEFAULT_CONSTRUCTOR|{}DEFAULT_CONSTRUCTOR[0]
+        final fun <get-DEFAULT_CONSTRUCTOR>(): kotlin/String // androidx.room3/RoomWarnings.DEFAULT_CONSTRUCTOR.<get-DEFAULT_CONSTRUCTOR>|<get-DEFAULT_CONSTRUCTOR>(){}[0]
+    final const val DOES_NOT_IMPLEMENT_EQUALS_HASHCODE // androidx.room3/RoomWarnings.DOES_NOT_IMPLEMENT_EQUALS_HASHCODE|{}DOES_NOT_IMPLEMENT_EQUALS_HASHCODE[0]
+        final fun <get-DOES_NOT_IMPLEMENT_EQUALS_HASHCODE>(): kotlin/String // androidx.room3/RoomWarnings.DOES_NOT_IMPLEMENT_EQUALS_HASHCODE.<get-DOES_NOT_IMPLEMENT_EQUALS_HASHCODE>|<get-DOES_NOT_IMPLEMENT_EQUALS_HASHCODE>(){}[0]
+    final const val INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED // androidx.room3/RoomWarnings.INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED|{}INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED[0]
+        final fun <get-INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED>(): kotlin/String // androidx.room3/RoomWarnings.INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED.<get-INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED>|<get-INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED>(){}[0]
+    final const val INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED // androidx.room3/RoomWarnings.INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED|{}INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED[0]
+        final fun <get-INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED>(): kotlin/String // androidx.room3/RoomWarnings.INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED.<get-INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED>|<get-INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED>(){}[0]
+    final const val INDEX_FROM_PARENT_FIELD_IS_DROPPED // androidx.room3/RoomWarnings.INDEX_FROM_PARENT_FIELD_IS_DROPPED|{}INDEX_FROM_PARENT_FIELD_IS_DROPPED[0]
+        final fun <get-INDEX_FROM_PARENT_FIELD_IS_DROPPED>(): kotlin/String // androidx.room3/RoomWarnings.INDEX_FROM_PARENT_FIELD_IS_DROPPED.<get-INDEX_FROM_PARENT_FIELD_IS_DROPPED>|<get-INDEX_FROM_PARENT_FIELD_IS_DROPPED>(){}[0]
+    final const val INDEX_FROM_PARENT_IS_DROPPED // androidx.room3/RoomWarnings.INDEX_FROM_PARENT_IS_DROPPED|{}INDEX_FROM_PARENT_IS_DROPPED[0]
+        final fun <get-INDEX_FROM_PARENT_IS_DROPPED>(): kotlin/String // androidx.room3/RoomWarnings.INDEX_FROM_PARENT_IS_DROPPED.<get-INDEX_FROM_PARENT_IS_DROPPED>|<get-INDEX_FROM_PARENT_IS_DROPPED>(){}[0]
+    final const val MISMATCHED_GETTER // androidx.room3/RoomWarnings.MISMATCHED_GETTER|{}MISMATCHED_GETTER[0]
+        final fun <get-MISMATCHED_GETTER>(): kotlin/String // androidx.room3/RoomWarnings.MISMATCHED_GETTER.<get-MISMATCHED_GETTER>|<get-MISMATCHED_GETTER>(){}[0]
+    final const val MISMATCHED_SETTER // androidx.room3/RoomWarnings.MISMATCHED_SETTER|{}MISMATCHED_SETTER[0]
+        final fun <get-MISMATCHED_SETTER>(): kotlin/String // androidx.room3/RoomWarnings.MISMATCHED_SETTER.<get-MISMATCHED_SETTER>|<get-MISMATCHED_SETTER>(){}[0]
+    final const val MISSING_INDEX_ON_FOREIGN_KEY_CHILD // androidx.room3/RoomWarnings.MISSING_INDEX_ON_FOREIGN_KEY_CHILD|{}MISSING_INDEX_ON_FOREIGN_KEY_CHILD[0]
+        final fun <get-MISSING_INDEX_ON_FOREIGN_KEY_CHILD>(): kotlin/String // androidx.room3/RoomWarnings.MISSING_INDEX_ON_FOREIGN_KEY_CHILD.<get-MISSING_INDEX_ON_FOREIGN_KEY_CHILD>|<get-MISSING_INDEX_ON_FOREIGN_KEY_CHILD>(){}[0]
+    final const val MISSING_INDEX_ON_JUNCTION // androidx.room3/RoomWarnings.MISSING_INDEX_ON_JUNCTION|{}MISSING_INDEX_ON_JUNCTION[0]
+        final fun <get-MISSING_INDEX_ON_JUNCTION>(): kotlin/String // androidx.room3/RoomWarnings.MISSING_INDEX_ON_JUNCTION.<get-MISSING_INDEX_ON_JUNCTION>|<get-MISSING_INDEX_ON_JUNCTION>(){}[0]
+    final const val MISSING_JAVA_TMP_DIR // androidx.room3/RoomWarnings.MISSING_JAVA_TMP_DIR|{}MISSING_JAVA_TMP_DIR[0]
+        final fun <get-MISSING_JAVA_TMP_DIR>(): kotlin/String // androidx.room3/RoomWarnings.MISSING_JAVA_TMP_DIR.<get-MISSING_JAVA_TMP_DIR>|<get-MISSING_JAVA_TMP_DIR>(){}[0]
+    final const val MISSING_SCHEMA_LOCATION // androidx.room3/RoomWarnings.MISSING_SCHEMA_LOCATION|{}MISSING_SCHEMA_LOCATION[0]
+        final fun <get-MISSING_SCHEMA_LOCATION>(): kotlin/String // androidx.room3/RoomWarnings.MISSING_SCHEMA_LOCATION.<get-MISSING_SCHEMA_LOCATION>|<get-MISSING_SCHEMA_LOCATION>(){}[0]
+    final const val PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED // androidx.room3/RoomWarnings.PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED|{}PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED[0]
+        final fun <get-PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED>(): kotlin/String // androidx.room3/RoomWarnings.PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED.<get-PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED>|<get-PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED>(){}[0]
+    final const val QUERY_MISMATCH // androidx.room3/RoomWarnings.QUERY_MISMATCH|{}QUERY_MISMATCH[0]
+        final fun <get-QUERY_MISMATCH>(): kotlin/String // androidx.room3/RoomWarnings.QUERY_MISMATCH.<get-QUERY_MISMATCH>|<get-QUERY_MISMATCH>(){}[0]
+    final const val RELATION_QUERY_WITHOUT_TRANSACTION // androidx.room3/RoomWarnings.RELATION_QUERY_WITHOUT_TRANSACTION|{}RELATION_QUERY_WITHOUT_TRANSACTION[0]
+        final fun <get-RELATION_QUERY_WITHOUT_TRANSACTION>(): kotlin/String // androidx.room3/RoomWarnings.RELATION_QUERY_WITHOUT_TRANSACTION.<get-RELATION_QUERY_WITHOUT_TRANSACTION>|<get-RELATION_QUERY_WITHOUT_TRANSACTION>(){}[0]
+    final const val RELATION_TYPE_MISMATCH // androidx.room3/RoomWarnings.RELATION_TYPE_MISMATCH|{}RELATION_TYPE_MISMATCH[0]
+        final fun <get-RELATION_TYPE_MISMATCH>(): kotlin/String // androidx.room3/RoomWarnings.RELATION_TYPE_MISMATCH.<get-RELATION_TYPE_MISMATCH>|<get-RELATION_TYPE_MISMATCH>(){}[0]
+    final const val UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE // androidx.room3/RoomWarnings.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE|{}UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE[0]
+        final fun <get-UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE>(): kotlin/String // androidx.room3/RoomWarnings.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE.<get-UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE>|<get-UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE>(){}[0]
 }

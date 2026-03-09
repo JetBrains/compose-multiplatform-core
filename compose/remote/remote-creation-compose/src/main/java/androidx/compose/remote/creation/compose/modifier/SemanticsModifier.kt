@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.modifier
 
@@ -24,55 +23,30 @@ import androidx.compose.remote.core.semantics.AccessibleComponent.Mode.CLEAR_AND
 import androidx.compose.remote.core.semantics.AccessibleComponent.Mode.MERGE
 import androidx.compose.remote.core.semantics.AccessibleComponent.Mode.SET
 import androidx.compose.remote.core.semantics.CoreSemantics
-import androidx.compose.remote.creation.compose.state.FallbackCreationState
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsPropertyReceiver
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.text
-import androidx.compose.ui.text.AnnotatedString
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class SemanticsModifier(val mergeMode: Mode, val semantics: AccessibilitySemantics) :
+internal data class SemanticsModifier(val mergeMode: Mode, val semantics: AccessibilitySemantics) :
     RemoteModifier.Element {
-    override fun toRemoteComposeElement(): RecordingModifier.Element {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
         return androidx.compose.remote.creation.modifiers.SemanticsModifier(
             CoreSemantics().apply {
                 mMode = mergeMode
-                mTextId = semantics.text?.getIdForCreationState(FallbackCreationState.state) ?: 0
-                mContentDescriptionId =
-                    semantics.contentDescription?.getIdForCreationState(FallbackCreationState.state)
-                        ?: 0
-                mStateDescriptionId =
-                    semantics.stateDescription?.getIdForCreationState(FallbackCreationState.state)
-                        ?: 0
+                mTextId = semantics.text?.id ?: 0
+                mContentDescriptionId = semantics.contentDescription?.id ?: 0
+                mStateDescriptionId = semantics.stateDescription?.id ?: 0
                 mEnabled = semantics.enabled ?: true
                 mRole = fromRole(semantics.role)
             }
         )
-    }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        val properties: SemanticsPropertyReceiver.() -> Unit = {
-            semantics.text?.constantValue?.let { text = AnnotatedString(it) }
-            semantics.role?.let { role = it }
-            semantics.stateDescription?.constantValue?.let { stateDescription = it }
-            semantics.contentDescription?.constantValue?.let { contentDescription = it }
-        }
-
-        return if (mergeMode == CLEAR_AND_SET) {
-            clearAndSetSemantics(properties)
-        } else {
-            semantics(mergeDescendants = mergeMode == MERGE, properties)
-        }
     }
 }
 
@@ -99,10 +73,12 @@ public data class AccessibilitySemantics(
     public var enabled: Boolean? = null,
 )
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteModifier.clearAndSetSemantics(
     fn: AccessibilitySemantics.() -> Unit
 ): RemoteModifier = then(SemanticsModifier(CLEAR_AND_SET, AccessibilitySemantics().apply(fn)))
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteModifier.semantics(
     mergeDescendants: Boolean = false,
     fn: AccessibilitySemantics.() -> Unit,

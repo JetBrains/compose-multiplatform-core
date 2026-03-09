@@ -35,13 +35,13 @@ import androidx.credentials.providerevents.exception.GetCredentialTransferCapabi
 import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesSystemErrorException
 import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesUnknownErrorException
 import androidx.credentials.providerevents.exception.ImportCredentialsException
+import androidx.credentials.providerevents.exception.ImportCredentialsInvalidJsonException
 import androidx.credentials.providerevents.exception.ImportCredentialsSystemErrorException
 import androidx.credentials.providerevents.exception.ImportCredentialsUnknownErrorException
 import androidx.credentials.providerevents.internal.UriUtils.Companion.writeToUri
 import androidx.credentials.providerevents.playservices.ConversionUtils.Companion.convertToJetpackRequest
 import androidx.credentials.providerevents.service.DeviceSetupService
 import androidx.credentials.providerevents.transfer.CredentialTransferCapabilities
-import androidx.credentials.providerevents.transfer.CredentialTransferCapabilitiesRequest
 import androidx.credentials.providerevents.transfer.ExportCredentialsRequest
 import androidx.credentials.providerevents.transfer.ExportCredentialsResponse
 import androidx.credentials.providerevents.transfer.ImportCredentialsResponse
@@ -187,12 +187,7 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
 
             // TODO(b/385394695): Fix being able to create CallingAppInfo with GMS
             //  CallingAppInfoParcelable
-            var jetpackRequest: CredentialTransferCapabilitiesRequest? = null
-            try {
-                jetpackRequest = convertToJetpackRequest(request)
-            } catch (e: IllegalArgumentException) {
-                Log.e(TAG, "Exception thrown while constructing the request", e)
-            }
+            val jetpackRequest = convertToJetpackRequest(request)
             if (jetpackRequest == null) {
                 val exception =
                     GetCredentialTransferCapabilitiesInvalidJsonException(
@@ -257,6 +252,11 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
             // TODO(b/385394695): Fix being able to create CallingAppInfo with GMS
             //  CallingAppInfoParcelable
             val jetpackRequest = convertToJetpackRequest(request)
+            if (jetpackRequest == null) {
+                val exception = ImportCredentialsInvalidJsonException("The requestJson is invalid.")
+                callback.onFailure(exception.type, exception.message!!)
+                return
+            }
 
             handler.post {
                 val service = serviceRef.get()

@@ -80,9 +80,12 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.testapp.R
+import androidx.xr.compose.testapp.common.isDrmSupported
+import androidx.xr.compose.testapp.common.isMvHevcSupported
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.FloatSize2d
@@ -129,7 +132,7 @@ class VideoPlayerActivity : ComponentActivity() {
 
         session = (Session.create(this) as SessionCreateSuccess).session
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
-        session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
+        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN))
         arDevice = ArDevice.getInstance(session)
 
         checkExternalStoragePermission()
@@ -352,13 +355,13 @@ class VideoPlayerActivity : ComponentActivity() {
                         VideoButton(
                             VideoPlayerButtons.MVHEVC_LEFT_PRIMARY_BUTTON.ordinal,
                             modifier,
-                            true,
+                            isMvHevcSupported(),
                         )
 
                         VideoButton(
                             VideoPlayerButtons.MVHEVC_RIGHT_PRIMARY_BUTTON.ordinal,
                             modifier,
-                            true,
+                            isMvHevcSupported(),
                         )
                     }
                 }
@@ -382,7 +385,7 @@ class VideoPlayerActivity : ComponentActivity() {
                         VideoButton(
                             VideoPlayerButtons.NAVER_180_MVHEVC_BUTTON.ordinal,
                             modifier,
-                            true,
+                            isMvHevcSupported(),
                         )
                     }
                 }
@@ -414,7 +417,7 @@ class VideoPlayerActivity : ComponentActivity() {
                         VideoButton(
                             VideoPlayerButtons.GALAXY_360_MVHEVC_BUTTON.ordinal,
                             modifier,
-                            true,
+                            isMvHevcSupported(),
                         )
                     }
                 }
@@ -445,9 +448,15 @@ class VideoPlayerActivity : ComponentActivity() {
                         VideoButton(
                             VideoPlayerButtons.DRM_PROTECTED_MVHEVC_LEFT_PRIMARY_BUTTON.ordinal,
                             modifier,
-                            true,
+                            isMvHevcSupported(),
                         )
                     }
+                }
+                if (!isMvHevcSupported()) {
+                    ApiText(text = "MV-HEVC is not supported on this device")
+                }
+                if (!isDrmSupported()) {
+                    ApiText(text = "DRM is not supported on this device")
                 }
             }
         }
@@ -587,10 +596,10 @@ class VideoPlayerActivity : ComponentActivity() {
             VideoPlayerButtons.GALAXY_360_MVHEVC_BUTTON.ordinal,
             VideoPlayerButtons.NAVER_180_MVHEVC_BUTTON.ordinal,
             VideoPlayerButtons.NAVER_180_BUTTON.ordinal -> {
-                session.scene.spatialUser.head?.transformPoseTo(
-                    Pose.Identity,
+                session.scene.perceptionSpace.transformPoseTo(
+                    arDevice.state.value.devicePose,
                     session.scene.activitySpace,
-                )!!
+                )
             }
 
             else -> {

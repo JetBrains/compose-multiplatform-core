@@ -36,6 +36,7 @@ private val SURFACE_SIZE = Size(60, 40)
 
 /** Unit tests for [androidx.camera.viewfinder.core.impl.Transformations]. */
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 @DoNotInstrument
 class TransformationsTest {
 

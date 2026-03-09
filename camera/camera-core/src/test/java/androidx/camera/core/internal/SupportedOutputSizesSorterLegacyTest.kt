@@ -53,6 +53,7 @@ private val DEFAULT_SUPPORTED_SIZES =
 /** Unit tests for [SupportedOutputSizesSorterLegacy]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.ALL_SDKS])
 class SupportedOutputSizesSorterLegacyTest {
     private val cameraInfoInternal = FakeCameraInfoInternal()
     private val supportedOutputSizesSorterLegacy =

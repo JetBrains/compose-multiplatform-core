@@ -49,7 +49,7 @@ import androidx.compose.ui.graphics.Shape
  * You can change the shape that a component has by overriding the shape parameter for that
  * component. For example, by default, buttons use the shape style “full.” If your product requires
  * a smaller amount of roundedness, you can override the shape parameter with a different shape
- * value like [MaterialTheme.shapes.small].
+ * value like [Shapes.small] of [MaterialTheme.shapes].
  *
  * To learn more about shapes, see
  * [Material Design shapes](https://m3.material.io/styles/shape/overview).
@@ -133,7 +133,7 @@ constructor(
      * You can change the shape that a component has by overriding the shape parameter for that
      * component. For example, by default, buttons use the shape style “full.” If your product
      * requires a smaller amount of roundedness, you can override the shape parameter with a
-     * different shape value like [MaterialTheme.shapes.small].
+     * different shape value like [Shapes.small] of [MaterialTheme.shapes].
      *
      * To learn more about shapes, see
      * [Material Design shapes](https://m3.material.io/styles/shape/overview).
@@ -261,7 +261,23 @@ constructor(
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     internal var defaultIconButtonShapesCached: IconButtonShapes? = null
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    internal var defaultInteractiveListItemShapesCached: InteractiveListItemShapes? = null
+    internal var defaultListItemShapesCached: ListItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuStandaloneItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuLeadingItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuMiddleItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuTrailingItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuStandaloneGroupShapesCached: MenuGroupShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuLeadingGroupShapesCached: MenuGroupShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuMiddleGroupShapesCached: MenuGroupShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuTrailingGroupShapesCached: MenuGroupShapes? = null
 }
 
 /** Contains the default values used by [Shapes] */

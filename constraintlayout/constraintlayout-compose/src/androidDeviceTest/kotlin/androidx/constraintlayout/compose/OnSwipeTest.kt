@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertPositionInRootIsEqualTo
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
@@ -97,40 +97,40 @@ private fun OnSwipeTestJson() {
             MotionScene(
                 content =
                     """
-       {
-         ConstraintSets: {
-           start: {
-             box: {
-               width: 20, height: 20,
-               bottom: ['parent', 'bottom', 10],
-               start: ['parent', 'start', 10]
-             }
-           },
-           end: {
-             Extends: 'start',
-             box: {
-               clear: ['constraints'],
-               top: ['parent', 'top', 10],
-               end: ['parent', 'end', 10],
-             }
-           }
-         },
-         Transitions: {
-           default: {
-              from: 'start',
-              to: 'end',
-              onSwipe: {
-                anchor: 'box',
-                direction: 'end',
-                side: 'end',
-                mode: 'spring',
-                touchUp: 'neverCompleteStart',
-                stopThreshold: 0.0001
-              }
-           }
-         }
-       }
-        """
+                    {
+                      ConstraintSets: {
+                        start: {
+                          box: {
+                            width: 20, height: 20,
+                            bottom: ['parent', 'bottom', 10],
+                            start: ['parent', 'start', 10]
+                          }
+                        },
+                        end: {
+                          Extends: 'start',
+                          box: {
+                            clear: ['constraints'],
+                            top: ['parent', 'top', 10],
+                            end: ['parent', 'end', 10],
+                          }
+                        }
+                      },
+                      Transitions: {
+                        default: {
+                           from: 'start',
+                           to: 'end',
+                           onSwipe: {
+                             anchor: 'box',
+                             direction: 'end',
+                             side: 'end',
+                             mode: 'spring',
+                             touchUp: 'neverCompleteStart',
+                             stopThreshold: 0.0001
+                           }
+                        }
+                      }
+                    }
+                    """
                         .trimIndent()
             ),
         progress = 0.0f,

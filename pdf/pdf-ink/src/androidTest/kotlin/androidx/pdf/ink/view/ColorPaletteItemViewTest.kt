@@ -19,14 +19,11 @@ package androidx.pdf.ink.view
 import PALETTE_COLOR_ITEM_SELECTED
 import PALETTE_COLOR_ITEM_SELECTED_INVERSE_COLOR_TICK
 import PALETTE_COLOR_ITEM_UNSELECTED
-import PALETTE_EMOJI_ITEM_SELECTED
-import PALETTE_EMOJI_ITEM_UNSELECTED
 import SCREENSHOT_GOLDEN_DIRECTORY
 import android.view.View
 import android.view.ViewGroup.LayoutParams
 import androidx.pdf.PdfTestActivity
 import androidx.pdf.ink.view.colorpalette.PaletteItemView
-import androidx.pdf.ink.view.colorpalette.model.getHighlightPaletteItems
 import androidx.pdf.ink.view.colorpalette.model.getPenPaletteItems
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -81,27 +78,6 @@ class ColorPaletteItemViewTest {
             screenshotRule,
             PALETTE_COLOR_ITEM_SELECTED_INVERSE_COLOR_TICK,
         )
-    }
-
-    @Test
-    fun test_palette_item_set_to_emoji_unselected() {
-        setupPaletteItemView { item ->
-            val emoji = getHighlightPaletteItems(item.context)[21]
-            item.setPaletteItem(emoji)
-        }
-
-        assertScreenshot(PALETTE_ITEM_VIEW_ID, screenshotRule, PALETTE_EMOJI_ITEM_UNSELECTED)
-    }
-
-    @Test
-    fun test_palette_item_set_to_emoji_selected() {
-        setupPaletteItemView { item ->
-            val emoji = getHighlightPaletteItems(item.context)[25]
-            item.setPaletteItem(emoji)
-            item.setSelected(selected = true, animate = false)
-        }
-
-        assertScreenshot(PALETTE_ITEM_VIEW_ID, screenshotRule, PALETTE_EMOJI_ITEM_SELECTED)
     }
 
     private fun setupPaletteItemView(callback: (PaletteItemView) -> Unit) {

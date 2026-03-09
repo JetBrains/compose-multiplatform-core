@@ -94,6 +94,18 @@ interface XType : XAnnotated {
         return isAssignableWithoutVariance(other, this)
     }
 
+    /**
+     * Returns true if this is a star type.
+     *
+     * In Java, this returns true for the `?` type.
+     *
+     * In Kotlin, this returns true for the `*` type.
+     *
+     * Note that `? extends Object` and `out Any?` are not considered star types even though they're
+     * equivalent.
+     */
+    fun isStar(): Boolean
+
     // TODO these is<Type> checks may need to be moved into the implementation.
     //  It is not yet clear how we will model some types in Kotlin (e.g. primitives)
     /** Returns `true` if this is an error type. */

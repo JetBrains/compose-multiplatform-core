@@ -41,6 +41,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class ZoomCompatTest {
     @Test
     @Config(minSdk = 30)

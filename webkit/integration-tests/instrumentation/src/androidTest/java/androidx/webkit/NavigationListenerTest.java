@@ -21,6 +21,7 @@ import static androidx.webkit.test.common.WebkitUtils.waitForNextQueueElement;
 import android.os.Bundle;
 import android.util.Pair;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -51,6 +52,18 @@ import okhttp3.mockwebserver.RecordedRequest;
 @RunWith(AndroidJUnit4.class)
 public class NavigationListenerTest {
 
+    private static class PerformanceMark {
+        public final Page page;
+        public final String markName;
+        public final long markTimeMs;
+
+        PerformanceMark(Page markPage, String name, long timeMs) {
+            page = markPage;
+            markName = name;
+            markTimeMs = timeMs;
+        }
+    }
+
     public WebViewOnUiThread mWebViewOnUiThread;
     private WebView mWebView;
     private RecordingNavigationListener mListener;
@@ -68,7 +81,14 @@ public class NavigationListenerTest {
         public final BlockingQueue<Page> mOnPageLoadEventFiredQueue = new LinkedBlockingQueue<>();
         public final BlockingQueue<Page> mOnPageDomContentLoadedEventFiredQueue =
                 new LinkedBlockingQueue<>();
+
+        public final BlockingQueue<Pair<Page, Long>> mOnFirstContentfulPaintMicrosQueue =
+                new LinkedBlockingQueue<>();
         public final BlockingQueue<Pair<Page, Long>> mOnFirstContentfulPaintQueue =
+                new LinkedBlockingQueue<>();
+        public final BlockingQueue<Pair<Page, Long>> mOnLargestContentfulPaintQueue =
+                new LinkedBlockingQueue<>();
+        public final BlockingQueue<PerformanceMark> mOnPerformanceMarkQueue =
                 new LinkedBlockingQueue<>();
 
 
@@ -106,7 +126,22 @@ public class NavigationListenerTest {
 
         @Override
         public void onFirstContentfulPaint(@NonNull Page page, long fcpDurationUs) {
-            mOnFirstContentfulPaintQueue.add(new Pair<>(page, fcpDurationUs));
+            mOnFirstContentfulPaintMicrosQueue.add(new Pair<>(page, fcpDurationUs));
+        }
+
+        @Override
+        public void onFirstContentfulPaintMillis(@NonNull Page page, long fcpDurationMs) {
+            mOnFirstContentfulPaintQueue.add(new Pair<>(page, fcpDurationMs));
+        }
+
+        @Override
+        public void onLargestContentfulPaintMillis(@NonNull Page page, long lcpDurationMs) {
+            mOnLargestContentfulPaintQueue.add(new Pair<>(page, lcpDurationMs));
+        }
+
+        @Override
+        public void onPerformanceMarkMillis(@NonNull Page page, String markName, long markTimeMs) {
+            mOnPerformanceMarkQueue.add(new PerformanceMark(page, markName, markTimeMs));
         }
 
         public void clearRecordedEvents() {
@@ -116,7 +151,10 @@ public class NavigationListenerTest {
             mOnPageDeletedQueue.clear();
             mOnPageLoadEventFiredQueue.clear();
             mOnPageDomContentLoadedEventFiredQueue.clear();
+            mOnFirstContentfulPaintMicrosQueue.clear();
             mOnFirstContentfulPaintQueue.clear();
+            mOnLargestContentfulPaintQueue.clear();
+            mOnPerformanceMarkQueue.clear();
         }
 
     }
@@ -243,6 +281,17 @@ public class NavigationListenerTest {
     }
 
     @Test
+    public void didCommitErrorPage_webResourceErrorReturned() {
+        WebkitUtils.checkFeature(WebViewFeature.NAVIGATION_GET_WEB_RESOURCE_ERROR);
+        mWebViewOnUiThread.loadUrl("malformed-url");
+        Navigation navigation = waitForNextQueueElement(mListener.mOnNavigationCompletedQueue);
+        Assert.assertTrue(navigation.didCommitErrorPage());
+        Assert.assertNotNull(navigation.getWebResourceError());
+        Assert.assertEquals(WebViewClient.ERROR_HOST_LOOKUP,
+                navigation.getWebResourceError().getErrorCode());
+    }
+
+    @Test
     public void isRestore_isFalseForRegularNavigation() {
         mWebViewOnUiThread.loadUrl(getSuccessUrl());
         Navigation navigation = waitForNextQueueElement(mListener.mOnNavigationCompletedQueue);
@@ -308,17 +357,83 @@ public class NavigationListenerTest {
                     mListener.mOnPageDomContentLoadedEventFiredQueue);
             Assert.assertEquals(navigationCompletePage, domContentLoadedPage);
 
-            Pair<Page, Long> firstContentfulPaint = waitForNextQueueElement(
-                    mListener.mOnFirstContentfulPaintQueue);
-            Page firstContentfulPaintPage = firstContentfulPaint.first;
-            Assert.assertEquals(navigationCompletePage, firstContentfulPaintPage);
-            Assert.assertTrue(firstContentfulPaint.second > 0);
+            Pair<Page, Long> firstContentfulPaintMicros = waitForNextQueueElement(
+                    mListener.mOnFirstContentfulPaintMicrosQueue);
+            Page firstContentfulPaintMicrosPage = firstContentfulPaintMicros.first;
+            Assert.assertEquals(navigationCompletePage, firstContentfulPaintMicrosPage);
+            Assert.assertTrue(firstContentfulPaintMicros.second > 0);
         }
 
         // Tearing down the activity and WebView will delete the page.
         Page deletedPage = waitForNextQueueElement(mListener.mOnPageDeletedQueue);
         Assert.assertEquals(loadedPage, deletedPage);
+    }
 
+    @Test
+    public void isSamePageObject_listenerV2() throws Exception {
+        WebkitUtils.checkFeature(WebViewFeature.NAVIGATION_LISTENER_V2);
+        // Success URL is obtained outside of the activity scope in order to avoid a
+        // StrictModeViolation for attempting to resolve the hostname on the main thread.
+        final String successUrl = getSuccessUrl();
+        Page loadedPage;
+        try (ActivityScenario<WebViewTestActivity> scenario = ActivityScenario.launch(
+                WebViewTestActivity.class)) {
+            // The onFirstContentfulPaint event is only triggered if the WebView is attached to
+            // the view hierarchy, so this test runs in an Activity.
+            scenario.onActivity(activity -> {
+                WebView webView = activity.getWebView();
+                WebViewCompat.addNavigationListener(webView, mListener);
+                webView.getSettings().setJavaScriptEnabled(true);
+                webView.loadUrl(successUrl);
+            });
+
+            Navigation completedNavigation = waitForNextQueueElement(
+                    mListener.mOnNavigationCompletedQueue);
+
+            Page navigationCompletePage = completedNavigation.getPage();
+            Assert.assertNotNull(navigationCompletePage);
+
+            loadedPage = waitForNextQueueElement(mListener.mOnPageLoadEventFiredQueue);
+            Assert.assertEquals(navigationCompletePage, loadedPage);
+
+            Page domContentLoadedPage = waitForNextQueueElement(
+                    mListener.mOnPageDomContentLoadedEventFiredQueue);
+            Assert.assertEquals(navigationCompletePage, domContentLoadedPage);
+
+            Pair<Page, Long> firstContentfulPaint = waitForNextQueueElement(
+                    mListener.mOnFirstContentfulPaintQueue);
+            Page firstContentfulPaintPage = firstContentfulPaint.first;
+            Assert.assertEquals(navigationCompletePage, firstContentfulPaintPage);
+            Assert.assertTrue(firstContentfulPaint.second > 0);
+
+            Pair<Page, Long> largestContentfulPaint = waitForNextQueueElement(
+                    mListener.mOnLargestContentfulPaintQueue);
+            Page largestContentfulPaintPage = largestContentfulPaint.first;
+            Assert.assertEquals(navigationCompletePage, largestContentfulPaintPage);
+            Assert.assertTrue(largestContentfulPaint.second > 0);
+
+            PerformanceMark performanceMark = waitForNextQueueElement(
+                    mListener.mOnPerformanceMarkQueue);
+            Assert.assertEquals(navigationCompletePage, performanceMark.page);
+            Assert.assertTrue(performanceMark.markName.equals("testMark"));
+            Assert.assertTrue(performanceMark.markTimeMs > 0);
+        }
+
+        // Tearing down the activity and WebView will delete the page.
+        Page deletedPage = waitForNextQueueElement(mListener.mOnPageDeletedQueue);
+        Assert.assertEquals(loadedPage, deletedPage);
+    }
+
+    @Test
+    public void isSamePageObject_sameUrl() {
+        WebkitUtils.checkFeature(WebViewFeature.PAGE_GET_URL);
+        final String successUrl = getSuccessUrl();
+        mWebViewOnUiThread.loadUrl(successUrl);
+        Navigation completedNavigation = waitForNextQueueElement(
+                mListener.mOnNavigationCompletedQueue);
+        Page navigationCompletePage = completedNavigation.getPage();
+        Assert.assertNotNull(navigationCompletePage);
+        Assert.assertEquals(navigationCompletePage.getUrl(), successUrl);
     }
 
     @Test
@@ -400,7 +515,9 @@ public class NavigationListenerTest {
                 response.setHeader("Location", destination);
             } else {
                 response.setHeader("Content-Type", "text/html");
-                response.setBody("<!DOCTYPE html>\n<body><h1>Success</h1></body>");
+                response.setBody("<!DOCTYPE html>\n"
+                        + "<script>performance.mark(\"testMark\");</script>\n"
+                        + "<body><h1>Success</h1></body>");
             }
             return response;
         }

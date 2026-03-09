@@ -23,6 +23,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import android.view.ViewParent
+import androidx.collection.mutableScatterMapOf
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.PausableMonotonicFrameClock
@@ -90,7 +91,7 @@ fun View.findViewTreeCompositionContext(): CompositionContext? {
     return found
 }
 
-private val animationScale = mutableMapOf<Context, StateFlow<Float>>()
+private val animationScale = mutableScatterMapOf<Context, StateFlow<Float>>()
 
 // Callers of this function should pass an application context. Passing an activity context might
 // result in activity leaks.
@@ -270,10 +271,10 @@ object WindowRecomposerPolicy {
  * with the lifecycle of the host activity, we want that recomposer to shut down and create a new
  * one for the new activity instance.
  */
-private val View.contentChild: View
+internal val View.contentChild: View
     get() {
         var self: View = this
-        var parent: ViewParent? = self.parent
+        var parent: ViewParent? = self.getParentOrViewTreeDisjointParent()
         while (parent is View) {
             if (parent.id == android.R.id.content) return self
             self = parent

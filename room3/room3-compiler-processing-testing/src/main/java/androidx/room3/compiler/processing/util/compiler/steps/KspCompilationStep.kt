@@ -17,7 +17,6 @@
 package androidx.room3.compiler.processing.util.compiler.steps
 
 import androidx.room3.compiler.processing.util.compiler.KotlinCliRunner
-import androidx.room3.compiler.processing.util.compiler.Ksp1Compilation
 import androidx.room3.compiler.processing.util.compiler.Ksp2Compilation
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import java.io.File
@@ -36,8 +35,7 @@ internal class KspCompilationStep(
     ): CompilationStepResult {
         val languageVersion = KotlinCliRunner.getLanguageVersion(arguments.kotlincArguments)
         return if (languageVersion < LanguageVersion.KOTLIN_2_0) {
-            Ksp1Compilation(name, symbolProcessorProviders, processorOptions)
-                .execute(workingDir, arguments)
+            throw Exception("KSP1 is not supported anymore")
         } else {
             Ksp2Compilation(name, symbolProcessorProviders, processorOptions)
                 .execute(workingDir, arguments)

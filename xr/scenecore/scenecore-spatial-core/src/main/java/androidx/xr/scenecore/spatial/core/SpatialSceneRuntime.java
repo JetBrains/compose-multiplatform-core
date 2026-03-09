@@ -16,33 +16,37 @@
 
 package androidx.xr.scenecore.spatial.core;
 
+import static androidx.xr.scenecore.spatial.core.RuntimeUtils.getPositionFromTransform;
+import static androidx.xr.scenecore.spatial.core.RuntimeUtils.getRotationFromTransform;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
+import android.database.ContentObserver;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Pair;
 import android.view.View;
 
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
-import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
-import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.impl.perception.ViewProjections;
 import androidx.xr.scenecore.runtime.ActivityPanelEntity;
 import androidx.xr.scenecore.runtime.ActivitySpace;
 import androidx.xr.scenecore.runtime.AnchorEntity;
 import androidx.xr.scenecore.runtime.AnchorPlacement;
 import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper;
-import androidx.xr.scenecore.runtime.CameraViewScenePose;
+import androidx.xr.scenecore.runtime.BoundsComponent;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.GltfEntity;
 import androidx.xr.scenecore.runtime.GltfFeature;
-import androidx.xr.scenecore.runtime.HeadScenePose;
 import androidx.xr.scenecore.runtime.InputEventListener;
 import androidx.xr.scenecore.runtime.InteractableComponent;
 import androidx.xr.scenecore.runtime.LoggingEntity;
@@ -77,20 +81,19 @@ import com.android.extensions.xr.space.ActivityPanel;
 import com.android.extensions.xr.space.ActivityPanelLaunchParameters;
 import com.android.extensions.xr.space.SpatialState;
 
-import com.google.common.util.concurrent.ListenableFuture;
-
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -103,65 +106,59 @@ import java.util.function.Supplier;
 @SuppressWarnings({"BanSynchronizedMethods", "BanConcurrentHashMap"})
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory {
-    private @Nullable Activity mActivity;
+    private static final String GUARDIAN_CONSENT_GRANTED = "guardian_consent_granted";
+    private static final String TOGGLE_GUARDIAN = "toggle_guardian";
     private final ScheduledExecutorService mExecutor;
     private final XrExtensions mExtensions;
     private final Node mSceneRootNode;
     private final Node mTaskWindowLeashNode;
-    private final int mOpenXrReferenceSpaceType;
-    private boolean mIsDestroyed;
     private final EntityManager mEntityManager;
-    private final PerceptionLibrary mPerceptionLibrary;
     private final SpatialEnvironmentImpl mEnvironment;
-
     private final SoundPoolExtensionsWrapper mSoundPoolExtensionsWrapper;
     private final AudioTrackExtensionsWrapper mAudioTrackExtensionsWrapper;
     private final MediaPlayerExtensionsWrapper mMediaPlayerExtensionsWrapper;
-
     private final Map<Consumer<SpatialCapabilities>, Executor>
             mSpatialCapabilitiesChangedListeners = new ConcurrentHashMap<>();
-
-    private @Nullable Pair<Executor, Consumer<SpatialVisibility>> mSpatialVisibilityHandler = null;
     private final Map<Consumer<PixelDimensions>, Executor> mPerceivedResolutionChangedListeners =
             new ConcurrentHashMap<>();
-    @VisibleForTesting boolean mIsExtensionVisibilityStateCallbackRegistered = false;
-
+    private final Map<Consumer<Boolean>, Executor> mBoundaryConsentListeners =
+            new ConcurrentHashMap<>();
     // TODO b/373481538: remove lazy initialization once XR Extensions bug is fixed. This will allow
     // us to remove the lazySpatialStateProvider instance and pass the spatialState directly.
     private final AtomicReference<SpatialState> mSpatialState = new AtomicReference<>(null);
-
     // Returns the currently-known spatial state, or fetches it from the extensions if it has never
     // been set. The spatial state is kept updated in the SpatialStateCallback.
     private final Supplier<SpatialState> mLazySpatialStateProvider;
-
-    private SpatialModeChangeListener mSpatialModeChangeListener = null;
-
     private final ActivitySpaceImpl mActivitySpace;
-    private final HeadScenePoseImpl mHeadScenePose;
-    private final List<CameraViewScenePoseImpl> mCameraViewScenePoses = new ArrayList<>();
 
     /** Returns the PerceptionSpaceScenePose for the Session. */
     private final PerceptionSpaceScenePoseImpl mPerceptionSpaceScenePose;
 
     private final PanelEntity mMainPanelEntity;
+    private final AtomicBoolean mIsBoundaryConsentGrantedCache;
+    private final int mSpatialApiVersion;
+    @VisibleForTesting boolean mIsExtensionVisibilityStateCallbackRegistered = false;
+    @VisibleForTesting Closeable mKeyEntityTransformCloseable;
+    private @Nullable Activity mActivity;
+    private boolean mIsDestroyed;
+    private @Nullable Pair<Executor, Consumer<SpatialVisibility>> mSpatialVisibilityHandler;
+    private @Nullable SpatialModeChangeListener mSpatialModeChangeListener;
+    private @Nullable ContentObserver mBoundaryConsentObserver;
+    private @Nullable Entity mKeyEntity = null;
 
     private SpatialSceneRuntime(
             @NonNull Activity activity,
             @NonNull ScheduledExecutorService executor,
             @NonNull XrExtensions extensions,
             @NonNull EntityManager entityManager,
-            @NonNull PerceptionLibrary perceptionLibrary,
             @NonNull Node sceneRootNode,
-            @NonNull Node taskWindowLeashNode,
-            boolean unscaledGravityAlignedActivitySpace) {
+            @NonNull Node taskWindowLeashNode) {
         mActivity = activity;
         mExecutor = executor;
         mExtensions = extensions;
         mSceneRootNode = sceneRootNode;
         mTaskWindowLeashNode = taskWindowLeashNode;
         mEntityManager = entityManager;
-        mPerceptionLibrary = perceptionLibrary;
-        mOpenXrReferenceSpaceType = extensions.getOpenXrWorldReferenceSpaceType();
 
         mLazySpatialStateProvider =
                 () ->
@@ -196,47 +193,30 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                         extensions,
                         entityManager,
                         mLazySpatialStateProvider,
-                        unscaledGravityAlignedActivitySpace,
                         executor);
         mEntityManager.addSystemSpaceActivityPose(mActivitySpace);
-        mHeadScenePose = new HeadScenePoseImpl(mActivitySpace, mActivitySpace, perceptionLibrary);
-        mEntityManager.addSystemSpaceActivityPose(mHeadScenePose);
-        mPerceptionSpaceScenePose =
-                new PerceptionSpaceScenePoseImpl(mActivitySpace, mActivitySpace);
+        mPerceptionSpaceScenePose = new PerceptionSpaceScenePoseImpl(mActivitySpace);
         mEntityManager.addSystemSpaceActivityPose(mPerceptionSpaceScenePose);
-        mCameraViewScenePoses.add(
-                new CameraViewScenePoseImpl(
-                        CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE,
-                        mActivitySpace,
-                        mActivitySpace,
-                        perceptionLibrary));
-        mCameraViewScenePoses.add(
-                new CameraViewScenePoseImpl(
-                        CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE,
-                        mActivitySpace,
-                        mActivitySpace,
-                        perceptionLibrary));
-        mCameraViewScenePoses.forEach(mEntityManager::addSystemSpaceActivityPose);
         mMainPanelEntity =
                 new MainPanelEntityImpl(
                         activity, taskWindowLeashNode, extensions, entityManager, executor);
         mMainPanelEntity.setParent(mActivitySpace);
+        // Initialize the boundary consent cache and register the listener.
+        mIsBoundaryConsentGrantedCache = new AtomicBoolean(calculateBoundaryConsentState());
+        registerBoundaryConsentStateListener();
+        mSpatialApiVersion = new SpatialCoreApiVersionProvider().getSpatialApiVersion();
     }
 
     static @NonNull SpatialSceneRuntime create(
             @NonNull Activity activity,
             @NonNull ScheduledExecutorService executor,
             @NonNull XrExtensions extensions,
-            @NonNull EntityManager entityManager,
-            @NonNull PerceptionLibrary perceptionLibrary,
-            boolean unscaledGravityAlignedActivitySpace) {
+            @NonNull EntityManager entityManager) {
         return create(
                 activity,
                 executor,
                 extensions,
                 entityManager,
-                perceptionLibrary,
-                unscaledGravityAlignedActivitySpace,
                 /* sceneRootNode= */ extensions.createNode(),
                 /* taskWindowLeashNode= */ extensions.createNode());
     }
@@ -251,8 +231,6 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                 executor,
                 Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()),
                 new EntityManager(),
-                new PerceptionLibrary(),
-                /* unscaledGravityAlignedActivitySpace= */ false,
                 /* sceneRootNode= */ sceneRootNode,
                 /* taskWindowLeashNode= */ taskWindowLeashNode);
     }
@@ -262,8 +240,6 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull ScheduledExecutorService executor,
             @NonNull XrExtensions extensions,
             @NonNull EntityManager entityManager,
-            @NonNull PerceptionLibrary perceptionLibrary,
-            boolean unscaledGravityAlignedActivitySpace,
             @NonNull Node sceneRootNode,
             @NonNull Node taskWindowLeashNode) {
         // TODO: b/376934871 - Check async results.
@@ -277,18 +253,8 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                     .apply();
         }
 
-        SpatialSceneRuntime runtime =
-                new SpatialSceneRuntime(
-                        activity,
-                        executor,
-                        extensions,
-                        entityManager,
-                        perceptionLibrary,
-                        sceneRootNode,
-                        taskWindowLeashNode,
-                        unscaledGravityAlignedActivitySpace);
-        runtime.initPerceptionLibrary();
-        return runtime;
+        return new SpatialSceneRuntime(
+                activity, executor, extensions, entityManager, sceneRootNode, taskWindowLeashNode);
     }
 
     /** Create a new @c SpatialSceneRuntime. */
@@ -298,32 +264,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                 activity,
                 executor,
                 Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()),
-                new EntityManager(),
-                new PerceptionLibrary(),
-                false);
-    }
-
-    private void initPerceptionLibrary() {
-        // Already initialized. Skip init perception session.
-        if (mPerceptionLibrary.getSession() != null) return;
-
-        ListenableFuture<Session> sessionFuture =
-                mPerceptionLibrary.initSession(mActivity, mOpenXrReferenceSpaceType, mExecutor);
-        Objects.requireNonNull(sessionFuture)
-                .addListener(
-                        () -> {
-                            try {
-                                sessionFuture.get();
-                            } catch (Exception e) {
-                                if (e instanceof InterruptedException) {
-                                    Thread.currentThread().interrupt();
-                                }
-                                throw new RuntimeException(
-                                        "Failed to init perception session with error: "
-                                                + e.getMessage());
-                            }
-                        },
-                        mExecutor);
+                new EntityManager());
     }
 
     @Override
@@ -332,8 +273,12 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             return;
         }
         mEnvironment.dispose();
+        clearKeyEntitySubscription(false);
         mSpatialModeChangeListener = null;
         mExtensions.clearSpatialStateCallback(mActivity);
+
+        unregisterBoundaryConsentStateListener();
+        mBoundaryConsentListeners.clear();
 
         clearSpatialVisibilityChangedListener();
         mPerceivedResolutionChangedListeners.clear();
@@ -370,37 +315,8 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     }
 
     @Override
-    public @Nullable HeadScenePose getHeadActivityPose() {
-        // If it is unable to retrieve a pose the head in not yet loaded in openXR so return null.
-        if (mHeadScenePose.getPoseInOpenXrReferenceSpace() == null) {
-            return null;
-        }
-        return mHeadScenePose;
-    }
-
-    @Override
-    public @Nullable CameraViewScenePose getCameraViewActivityPose(
-            @CameraViewScenePose.CameraType int cameraType) {
-        CameraViewScenePoseImpl cameraViewScenePose = null;
-        if (cameraType == CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE) {
-            cameraViewScenePose = mCameraViewScenePoses.get(0);
-        } else if (cameraType == CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE) {
-            cameraViewScenePose = mCameraViewScenePoses.get(1);
-        }
-        // If it is unable to retrieve a pose the camera in not yet loaded in openXR so return null.
-        if (cameraViewScenePose == null
-                || cameraViewScenePose.getPoseInOpenXrReferenceSpace() == null) {
-            return null;
-        }
-        return cameraViewScenePose;
-    }
-
-    @Override
     public @NonNull ScenePose getScenePoseFromPerceptionPose(@NonNull Pose perceptionPose) {
-        return new OpenXrScenePose(
-                (ActivitySpaceImpl) getActivitySpace(),
-                (AndroidXrEntity) getActivitySpace(),
-                perceptionPose);
+        return new OpenXrScenePose((ActivitySpaceImpl) getActivitySpace(), perceptionPose);
     }
 
     @Override
@@ -414,15 +330,15 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     }
 
     @Override
+    public @Nullable SpatialModeChangeListener getSpatialModeChangeListener() {
+        return mSpatialModeChangeListener;
+    }
+
+    @Override
     public void setSpatialModeChangeListener(
             @Nullable SpatialModeChangeListener spatialModeChangeListener) {
         mSpatialModeChangeListener = spatialModeChangeListener;
         mActivitySpace.setSpatialModeChangeListener(spatialModeChangeListener);
-    }
-
-    @Override
-    public @NonNull SpatialModeChangeListener getSpatialModeChangeListener() {
-        return mSpatialModeChangeListener;
     }
 
     @Override
@@ -447,7 +363,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull View view,
             @NonNull Dimensions dimensions,
             @NonNull String name,
-            @NonNull Entity parent) {
+            @Nullable Entity parent) {
 
         Node node = mExtensions.createNode();
         PanelEntity panelEntity =
@@ -472,7 +388,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull View view,
             @NonNull PixelDimensions pixelDimensions,
             @NonNull String name,
-            @NonNull Entity parent) {
+            @Nullable Entity parent) {
 
         Node node = mExtensions.createNode();
         PanelEntity panelEntity =
@@ -504,7 +420,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull PixelDimensions windowBoundsPx,
             @NonNull String name,
             @NonNull Activity hostActivity,
-            @NonNull Entity parent) {
+            @Nullable Entity parent) {
 
         // TODO(b/352630140): Move this into a static factory method of ActivityPanelEntityImpl.
         Rect windowBoundsRect = new Rect(0, 0, windowBoundsPx.width, windowBoundsPx.height);
@@ -532,13 +448,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     public @NonNull AnchorEntity createAnchorEntity() {
         Node node = mExtensions.createNode();
         return AnchorEntityImpl.create(
-                mActivity,
-                node,
-                getActivitySpace(),
-                getActivitySpace(),
-                mExtensions,
-                mEntityManager,
-                mExecutor);
+                mActivity, node, mActivitySpace, mExtensions, mEntityManager, mExecutor);
     }
 
     @Override
@@ -572,19 +482,28 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     }
 
     @Override
-    public @NonNull Entity createGroupEntity(
-            @NonNull Pose pose, @NonNull String name, @NonNull Entity parent) {
+    public @NonNull Entity createEntity(
+            @NonNull Pose pose, @Nullable String name, @Nullable Entity parent) {
         Node node = mExtensions.createNode();
-        try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
-            transaction.setName(node, name).apply();
+        if (name != null) {
+            try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
+                transaction.setName(node, name).apply();
+            }
         }
 
-        // This entity is used to back SceneCore's GroupEntity.
+        // This entity is used to back SceneCore's Entity.
         Entity entity =
                 new AndroidXrEntity(mActivity, node, mExtensions, mEntityManager, mExecutor) {};
         entity.setParent(parent);
         entity.setPose(pose, Space.PARENT);
         return entity;
+    }
+
+    @Override
+    @Deprecated
+    public @NonNull Entity createGroupEntity(
+            @NonNull Pose pose, @NonNull String name, @Nullable Entity parent) {
+        return createEntity(pose, name, parent);
     }
 
     @Override
@@ -703,7 +622,8 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             try {
                 mExtensions.setVisibilityStateCallback(
                         mActivity,
-                        mExecutor, // Executor for the combined callback itself
+                        mExecutor,
+                        // Executor for the combined callback itself
                         (com.android.extensions.xr.space.VisibilityState visibilityStateEvent) -> {
                             // Dispatch to SpatialVisibility listener
                             if (mSpatialVisibilityHandler != null) {
@@ -721,6 +641,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                                 PixelDimensions jxrPerceivedResolution =
                                         RuntimeUtils.convertPerceivedResolution(
                                                 visibilityStateEvent.getPerceivedResolution());
+
                                 mPerceivedResolutionChangedListeners.forEach(
                                         (listener, executor) ->
                                                 executor.execute(
@@ -771,7 +692,6 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     }
 
     @Override
-    // TODO: b/441105591 - Add more unit tests.
     public void enablePanelDepthTest(boolean enabled) {
         mExtensions.enablePanelDepthTest(mActivity, enabled);
     }
@@ -794,29 +714,20 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull Set<PlaneType> planeTypeFilter,
             @NonNull Set<PlaneSemantic> planeSemanticFilter) {
         AnchorPlacementImpl anchorPlacement = new AnchorPlacementImpl();
-        anchorPlacement.mPlaneTypeFilter.addAll(planeTypeFilter);
-        anchorPlacement.mPlaneSemanticFilter.addAll(planeSemanticFilter);
+        anchorPlacement.planeTypeFilter.addAll(planeTypeFilter);
+        anchorPlacement.planeSemanticFilter.addAll(planeSemanticFilter);
         return anchorPlacement;
     }
 
     @Override
     public @NonNull MovableComponent createMovableComponent(
-            boolean systemMovable,
-            boolean scaleInZ,
-            @NonNull Set<AnchorPlacement> anchorPlacement,
-            boolean shouldDisposeParentAnchor) {
+            boolean systemMovable, boolean scaleInZ, boolean userAnchorable) {
         return new MovableComponentImpl(
                 systemMovable,
                 scaleInZ,
-                anchorPlacement,
-                shouldDisposeParentAnchor,
-                mPerceptionLibrary,
-                mExtensions,
+                userAnchorable,
                 mActivitySpace,
-                mActivitySpace,
-                mPerceptionSpaceScenePose,
-                mEntityManager,
-                new PanelShadowRenderer(
+                new EntityShadowRendererImpl(
                         mActivitySpace, mPerceptionSpaceScenePose, mActivity, mExtensions),
                 mExecutor);
     }
@@ -843,16 +754,159 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
         return new SpatialPointerComponentImpl(mExtensions);
     }
 
-    /**
-     * Get the user's current eye views relative to @c XR_REFERENCE_SPACE_TYPE_UNBOUNDED_ANDROID.
-     */
-    @VisibleForTesting
-    @Nullable ViewProjections getStereoViewsInOpenXrUnboundedSpace() {
-        Session session = mPerceptionLibrary.getSession();
-        if (session == null) {
-            // Perception session is uninitialized, returning null head pose.
-            return null;
+    /** Calculates the current boundary consent state directly from system settings. */
+    private boolean calculateBoundaryConsentState() {
+        if (mActivity == null) {
+            throw new IllegalStateException(
+                    "Cannot calculate boundary consent on a destroyed runtime.");
         }
-        return session.getStereoViews();
+        // TODO: b/464401298 - Implement boundary consent logic for Spatial API >= 2
+        ContentResolver resolver = mActivity.getContentResolver();
+        boolean isExplicitBoundaryConsentGranted =
+                (Settings.Secure.getInt(resolver, GUARDIAN_CONSENT_GRANTED, 0) == 1);
+        boolean isBoundaryEnabledInDeveloperOptions =
+                (Settings.System.getInt(resolver, TOGGLE_GUARDIAN, 1) == 1);
+        return (!isBoundaryEnabledInDeveloperOptions || isExplicitBoundaryConsentGranted);
+    }
+
+    private void registerBoundaryConsentStateListener() {
+        // TODO: b/464401298 - Implement boundary consent logic for Spatial API >= 2
+        if (mActivity == null) {
+            throw new IllegalStateException("Cannot register listener on a destroyed runtime.");
+        }
+        if (mBoundaryConsentObserver != null) {
+            return; // Already registered.
+        }
+        Uri isExplicitBoundaryConsentGrantedUri =
+                Settings.Secure.getUriFor(GUARDIAN_CONSENT_GRANTED);
+        Uri isBoundaryEnabledInDeveloperOptionsUri = Settings.System.getUriFor(TOGGLE_GUARDIAN);
+        // Registers the ContentObserver to listen for changes in boundary settings.
+        mBoundaryConsentObserver =
+                new ContentObserver(new Handler(Looper.getMainLooper())) {
+                    @Override
+                    public void onChange(boolean selfChange) {
+                        mExecutor.execute(
+                                () -> {
+                                    // Recalculate the current state
+                                    boolean newGrantedState = calculateBoundaryConsentState();
+
+                                    // Only update cache and notify listeners
+                                    // if the state has actually changed
+                                    if (mIsBoundaryConsentGrantedCache.compareAndSet(
+                                            !newGrantedState, newGrantedState)) {
+                                        mBoundaryConsentListeners.forEach(
+                                                (consumer, anExecutor) ->
+                                                        anExecutor.execute(
+                                                                () ->
+                                                                        consumer.accept(
+                                                                                newGrantedState)));
+                                    }
+                                });
+                    }
+                };
+
+        ContentResolver resolver = mActivity.getContentResolver();
+        resolver.registerContentObserver(
+                isExplicitBoundaryConsentGrantedUri,
+                /* notifyForDescendants= */ false,
+                mBoundaryConsentObserver);
+        resolver.registerContentObserver(
+                isBoundaryEnabledInDeveloperOptionsUri,
+                /* notifyForDescendants= */ false,
+                mBoundaryConsentObserver);
+    }
+
+    private void unregisterBoundaryConsentStateListener() {
+        // TODO: b/464401298 - Implement boundary consent logic for Spatial API >= 2
+        if (mBoundaryConsentObserver != null && mActivity != null) {
+            mActivity.getContentResolver().unregisterContentObserver(mBoundaryConsentObserver);
+            mBoundaryConsentObserver = null;
+        }
+    }
+
+    @Override
+    public boolean isBoundaryConsentGranted() {
+        return mIsBoundaryConsentGrantedCache.get();
+    }
+
+    @Override
+    public void addOnBoundaryConsentChangedListener(
+            @NonNull Executor executor, @NonNull Consumer<Boolean> listener) {
+        mBoundaryConsentListeners.put(listener, executor);
+    }
+
+    @Override
+    public void removeOnBoundaryConsentChangedListener(@NonNull Consumer<Boolean> listener) {
+        mBoundaryConsentListeners.remove(listener);
+    }
+
+    @Override
+    public @NonNull BoundsComponent createBoundsComponent() {
+        return new BoundsComponentImpl();
+    }
+
+    @Override
+    public @Nullable Entity getKeyEntity() {
+        return mKeyEntity;
+    }
+
+    @Override
+    public void setKeyEntity(@Nullable Entity entity) {
+        if (Objects.equals(mKeyEntity, entity)) {
+            return;
+        }
+
+        // Always clean up the old entity's subscription first.
+        clearKeyEntitySubscription(true);
+
+        mKeyEntity = entity;
+
+        // If the new entity is valid, set up a new subscription.
+        if (mKeyEntity instanceof AndroidXrEntity) {
+            setupKeyEntitySubscription((AndroidXrEntity) mKeyEntity);
+        }
+    }
+
+    /** Clears any existing subscription for the current key entity. */
+    private void clearKeyEntitySubscription(boolean throwException) {
+        if (mKeyEntityTransformCloseable == null) {
+            return;
+        }
+        if (mSpatialApiVersion >= 2) {
+            try {
+                mKeyEntityTransformCloseable.close();
+                mExtensions.getUnderlyingObject().clearSpatialContinuityHint(mActivity);
+            } catch (IOException e) {
+                if (throwException) {
+                    // Re-throw as an unchecked exception but include the original cause.
+                    throw new RuntimeException(
+                            "Could not close the key entity's transform subscription.", e);
+                }
+            } finally {
+                // Ensure the reference is cleared even if closing fails.
+                mKeyEntityTransformCloseable = null;
+            }
+        }
+    }
+
+    /** Creates a new subscription to the transform of the given key entity. */
+    private void setupKeyEntitySubscription(@NonNull AndroidXrEntity entity) {
+        if (mSpatialApiVersion >= 2) {
+            mKeyEntityTransformCloseable =
+                    entity.getNode()
+                            .subscribeToTransform(
+                                    mExecutor,
+                                    nodeTransform -> {
+                                        Matrix4 transform =
+                                                RuntimeUtils.getMatrix(
+                                                        nodeTransform.getTransform());
+                                        mExtensions
+                                                .getUnderlyingObject()
+                                                .setSpatialContinuityHint(
+                                                        mActivity,
+                                                        getPositionFromTransform(transform),
+                                                        getRotationFromTransform(transform));
+                                    });
+        }
     }
 }

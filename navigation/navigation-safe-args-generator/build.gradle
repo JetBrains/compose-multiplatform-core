@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -54,7 +53,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     // TODO(b/438455972): Use ToT of compiler-processing-testing
-    testImplementation("androidx.room:room-compiler-processing-testing:2.8.0-rc02")
+    testImplementation("androidx.room:room-compiler-processing-testing:2.8.0")
     testImplementationAarAsJar(project(":navigation:navigation-common"))
     testImplementationAarAsJar(project(":lifecycle:lifecycle-viewmodel-savedstate"))
     testImplementation(tasks.named("strippedAndroidJar").map { it.outputs.files })

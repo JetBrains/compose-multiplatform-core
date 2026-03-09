@@ -55,7 +55,7 @@ public final class ResponseToPlatformConverter {
                 .setAliveNamespacesCount(platformStorageInfo.getAliveNamespacesCount())
                 .setAliveDocumentsCount(platformStorageInfo.getAliveDocumentsCount())
                 .setSizeBytes(platformStorageInfo.getSizeBytes());
-        if (AppSearchVersionUtil.isAtLeastB()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             jetpackBuilder
                     .setBlobsCount(platformStorageInfo.getBlobsCount())
                     .setBlobsSizeBytes(platformStorageInfo.getBlobsSizeBytes());

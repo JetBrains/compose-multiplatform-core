@@ -20,6 +20,7 @@ import android.content.ClipData
 import android.net.Uri
 import android.os.Build
 import android.os.Parcel
+import android.view.Display
 import android.view.DragEvent
 import androidx.compose.foundation.content.createClipData
 import androidx.compose.ui.geometry.Offset
@@ -40,16 +41,22 @@ object DragAndDropTestUtils {
      * @param action The action passed to [DragEvent], for example [DragEvent.ACTION_DRAG_ENDED]
      * @param text The text of the event
      * @param position The position of the drag event
+     * @param displayId The display id of the drag event, [Display.DEFAULT_DISPLAY] by default. Only
+     *   used on API 36+. This is only relevant for multi-display environments. For technical
+     *   correctness, you should obtain the correct display id, for example from the closest View's
+     *   display (see [android.view.View.getDisplay]).
      */
     fun makeTextDragEvent(
         action: Int,
         text: String = SAMPLE_TEXT,
         position: Offset = Offset.Zero,
+        displayId: Int = Display.DEFAULT_DISPLAY,
     ): DragEvent {
         return makeDragEvent(
             action = action,
             clipData = createClipData { addText(text) },
             position = position,
+            displayId = displayId,
         )
     }
 
@@ -59,11 +66,16 @@ object DragAndDropTestUtils {
      * @param action The action passed to [DragEvent], for example [DragEvent.ACTION_DRAG_ENDED]
      * @param item The [Uri] of the item
      * @param position The position of the drag event
+     * @param displayId The display id of the drag event, [Display.DEFAULT_DISPLAY] by default. Only
+     *   used on API 36+. This is only relevant for multi-display environments. For technical
+     *   correctness, you should obtain the correct display id, for example from the closest View's
+     *   display (see [android.view.View.getDisplay]).
      */
     fun makeImageDragEvent(
         action: Int,
         item: Uri = SAMPLE_URI,
         position: Offset = Offset.Zero,
+        displayId: Int = Display.DEFAULT_DISPLAY,
     ): DragEvent {
         return makeDragEvent(
             action = action,
@@ -73,6 +85,7 @@ object DragAndDropTestUtils {
                     addUri(item, mimeType = "image/png")
                 },
             position = position,
+            displayId = displayId,
         )
     }
 
@@ -82,10 +95,20 @@ object DragAndDropTestUtils {
      * [DragEvent.CREATOR].
      *
      * @param action The action passed to [DragEvent], for example [DragEvent.ACTION_DRAG_ENDED]
-     * @param clipData The [ClipData] associated with the event
+     * @param clipData The [ClipData] associated with the event. This is optional since e.g. WebView
+     *   can create DragEvents that do not carry a ClipData.
      * @param position The position of the drag event
+     * @param displayId The display id of the drag event, [Display.DEFAULT_DISPLAY] by default. Only
+     *   used on API 36+. This is only relevant for multi-display environments. For technical
+     *   correctness, you should obtain the correct display id, for example from the closest View's
+     *   display (see [android.view.View.getDisplay]).
      */
-    fun makeDragEvent(action: Int, clipData: ClipData, position: Offset = Offset.Zero): DragEvent {
+    fun makeDragEvent(
+        action: Int,
+        clipData: ClipData?,
+        position: Offset = Offset.Zero,
+        displayId: Int = Display.DEFAULT_DISPLAY,
+    ): DragEvent {
         val parcel = Parcel.obtain()
 
         // mAction
@@ -100,17 +123,12 @@ object DragAndDropTestUtils {
             parcel.writeFloat(0f)
             parcel.writeFloat(0f)
         }
-
-        // Context; b/418197972 and b/454429862
-        // The following property was made part of API36 release initially but it was discarded
-        // after a certain time. It still exists on git_main ToT as of adding this comment. When
-        // the tests that use this utility starts failing again on feature API releases, the
-        // maintainer can simply revert the change that added this notice.
-
+        // Currently this field is only present in Cuttlefish builds which are on API 36.
+        // However postsubmit API36 builds do not have this field.
         // mDisplayId
-        // if (Build.VERSION.SDK_INT >= 36) {
-        //     parcel.writeInt(displayId)
-        // }
+        if (Build.VERSION.SDK_INT >= 36 && Build.MODEL.contains("Cuttlefish")) {
+            parcel.writeInt(displayId)
+        }
         // mFlags
         if (Build.VERSION.SDK_INT >= 35) {
             parcel.writeInt(0)
@@ -118,11 +136,16 @@ object DragAndDropTestUtils {
         // mDragResult
         parcel.writeInt(0)
         // mClipData
-        parcel.writeInt(1) // 0 = no clip data, 1 = clip data present
-        clipData.writeToParcel(parcel, 0)
-        // mClipDescription
-        parcel.writeInt(1) // 0 = no description, 1 = description present
-        clipData.description.writeToParcel(parcel, 0)
+        if (clipData != null) {
+            parcel.writeInt(1) // 0 = no clip data, 1 = clip data present
+            clipData.writeToParcel(parcel, 0)
+            // mClipDescription
+            parcel.writeInt(1) // 0 = no description, 1 = description present
+            clipData.description.writeToParcel(parcel, 0)
+        } else {
+            parcel.writeInt(0) // ClipData
+            parcel.writeInt(0) // ClipDescription
+        }
         // mDragSurface
         parcel.writeInt(0) // 0 = no SurfaceControl, 1 = SurfaceControl present
         // mDragAndDropPermissions

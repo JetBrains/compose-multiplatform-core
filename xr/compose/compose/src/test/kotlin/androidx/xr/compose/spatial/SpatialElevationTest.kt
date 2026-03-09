@@ -16,8 +16,11 @@
 
 package androidx.xr.compose.spatial
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -37,12 +40,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.createFakeSession
-import androidx.xr.compose.testing.disableXr
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.session
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,7 +53,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SpatialElevationTest {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     private val parentTestTag = "parent"
 
@@ -76,7 +84,7 @@ class SpatialElevationTest {
 
     @Test
     fun spatialElevation_xrNotSupported_doesNotThrowError() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
 
         composeTestRule.setContent { SpatialElevation { Popup { Text("Popup") } } }
 
@@ -85,8 +93,7 @@ class SpatialElevationTest {
 
     @Test
     fun spatialElevation_homeSpaceMode_doesNotElevate() {
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) { SpatialElevation { Text("Main Content") } }
@@ -150,5 +157,28 @@ class SpatialElevationTest {
         composeTestRule.onAllNodesWithText("Main Content").assertCountEquals(2)
         composeTestRule.onAllNodesWithText("Main Content").onFirst().assertIsNotDisplayed()
         composeTestRule.onAllNodesWithText("Main Content").onLast().assertIsDisplayed()
+    }
+
+    @Test
+    fun spatialElevation_scrolledOffScreen_setsAlphaToZero() {
+        val scrollState = ScrollState(0)
+
+        composeTestRule.setContent {
+            Column(modifier = Modifier.size(100.dp).verticalScroll(scrollState)) {
+                SpatialElevation { Box(Modifier.size(100.dp).testTag("ElevatedContent")) }
+                Box(Modifier.size(1000.dp))
+            }
+        }
+
+        val panel =
+            checkNotNull(composeTestRule.session?.scene?.getEntitiesOfType(PanelEntity::class.java))
+                .single { !it.isMainPanelEntity }
+
+        assertThat(panel.getAlpha()).isEqualTo(1f)
+
+        runBlocking { scrollState.scrollTo(500) }
+        composeTestRule.waitForIdle()
+
+        assertThat(panel.getAlpha()).isEqualTo(0f)
     }
 }

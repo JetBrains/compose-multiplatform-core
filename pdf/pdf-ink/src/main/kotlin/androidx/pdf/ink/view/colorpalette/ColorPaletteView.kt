@@ -52,8 +52,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 
     private var paletteItemSelectedListener: PaletteItemSelectedListener? = null
 
-    private val colorPaletteAdapter = ColorPaletteAdapter { paletteItem ->
-        paletteItemSelectedListener?.onItemSelected(paletteItem = paletteItem)
+    private val colorPaletteAdapter = ColorPaletteAdapter { index, paletteItem ->
+        paletteItemSelectedListener?.onItemSelected(index = index, paletteItem = paletteItem)
     }
 
     init {
@@ -64,11 +64,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * Updates the grid with a new list of palette items.
      *
      * @param paletteItems The new list of [PaletteItem]s to be displayed.
+     * @param currentSelectedIndex The index of the currently selected item in the palette.
      */
-    fun updatePaletteItems(paletteItems: List<PaletteItem>) {
+    fun updatePaletteItems(paletteItems: List<PaletteItem>, currentSelectedIndex: Int? = null) {
         colorPaletteAdapter.submitList(paletteItems) {
-            // Updating palette items may change the dimensions of the view
-            requestLayout()
+            if (currentSelectedIndex != null) colorPaletteAdapter.setSelection(currentSelectedIndex)
         }
     }
 
@@ -96,10 +96,19 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                 // by adding back one spacing unit because a grid of 'n' items has 'n-1' gaps
                 val availableWidth = w - paddingLeft - paddingRight + itemSpacing
                 val newSpanCount = max(1, availableWidth / totalItemSpace)
+                val lm = layoutManager as? GridLayoutManager ?: return
+                if (newSpanCount != lm.spanCount) lm.spanCount = newSpanCount
+            }
+        }
+    }
 
-                // Post the span count update to the message queue. This ensures it runs after the
-                // current layout pass is complete, avoiding race conditions.
-                post { (layoutManager as? GridLayoutManager)?.spanCount = newSpanCount }
+    fun requestFocusOnSelectedItem() {
+        post {
+            val selectedIndex = colorPaletteAdapter.selectedPosition
+            val viewHolder = findViewHolderForAdapterPosition(selectedIndex)
+            viewHolder?.itemView?.let {
+                it.isFocusableInTouchMode = true
+                it.requestFocus()
             }
         }
     }
@@ -136,9 +145,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         /**
          * Called when a new item has been selected from the palette.
          *
+         * @param index The index of the newly selected item in the palette.
          * @param paletteItem The [PaletteItem] that was selected by the user.
          */
-        fun onItemSelected(paletteItem: PaletteItem)
+        fun onItemSelected(index: Int, paletteItem: PaletteItem)
     }
 
     /** An [ItemDecoration] to add equal spacing around all items in a [GridLayoutManager]. */

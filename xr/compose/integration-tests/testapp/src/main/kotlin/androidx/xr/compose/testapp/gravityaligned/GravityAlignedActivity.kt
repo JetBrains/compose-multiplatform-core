@@ -44,7 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.spatial.ApplicationSubspace
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
@@ -55,8 +55,8 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.gravityAligned
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.rotate
-import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.runtime.math.Quaternion
 
@@ -70,11 +70,8 @@ class GravityAlignedActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             IntegrationTestsAppTheme {
-                ApplicationSubspace(
-                    modifier =
-                        SubspaceModifier.width(1600.dp)
-                            .height(2200.dp)
-                            .testTag("ApplicationSubspace")
+                Subspace(
+                    modifier = SubspaceModifier.width(1600.dp).height(2200.dp).testTag("Subspace")
                 ) {
                     // Main layout: a Row containing two Columns
                     SpatialRow(

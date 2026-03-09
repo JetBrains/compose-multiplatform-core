@@ -18,13 +18,65 @@ package androidx.xr.scenecore.runtime
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.BoundingBox
+import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /** Interface for a XR Runtime [GltfEntity]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface GltfEntity : Entity {
 
+    /** The flattened list of all nodes contained within this glTF model entity. */
+    public val nodes: List<GltfModelNodeFeature>
+
     /** Returns the current animation state of the glTF entity. */
     @AnimationStateValue public val animationState: Int
+
+    /**
+     * Retrieves the axis-aligned bounding box (AABB) of an instanced glTF model in meters in the
+     * model's local coordinate space.
+     *
+     * Note that this bounding box can change over time, for example, if the glTF model contains
+     * animations that alter the bounds of the geometry. There is currently no listener mechanism to
+     * be notified of such changes. Follow b/451424385 for updates on making this observable.
+     *
+     * @return A [BoundingBox] object representing the model's bounding box. The
+     *   [BoundingBox.center] defines the geometric center of the box, and the
+     *   [BoundingBox.halfExtents] defines the distance from the center to each face. The total size
+     *   of the box is twice the half-extent. All values are in meters.
+     */
+    public val gltfModelBoundingBox: BoundingBox
+
+    /** Returns a list of all animations in the model. */
+    public val animations: List<GltfAnimationFeature>
+
+    /**
+     * Enable/disable the collider for the glTF entity.
+     *
+     * @param enabled Whether the collider should be enabled.
+     */
+    public fun setColliderEnabled(enabled: Boolean)
+
+    /**
+     * Adds a listener to observe the glTF entity's AA-bounds updates.
+     *
+     * @param listener The listener to add.
+     */
+    public fun addOnBoundsUpdateListener(listener: Consumer<BoundingBox>)
+
+    /**
+     * Removes provided listener from registered listeners of glTF entity's AA-bounds updates.
+     *
+     * @param listener The listener to remove.
+     */
+    public fun removeOnBoundsUpdateListener(listener: Consumer<BoundingBox>)
+
+    /**
+     * Enable/disable the reform affordances for glTF entity.
+     *
+     * @param enabled Whether the reform affordances should be enabled.
+     * @param systemMovable Whether the entity should be movable by the system.
+     */
+    public fun setReformAffordanceEnabled(enabled: Boolean, systemMovable: Boolean)
 
     /**
      * Starts the animation with the given name.
@@ -38,42 +90,22 @@ public interface GltfEntity : Entity {
     /** Stops the animation of the glTF entity. */
     public fun stopAnimation()
 
-    /**
-     * Sets a material override for a specific mesh of a node.
-     *
-     * @param material The material to use for the mesh primitive.
-     * @param nodeName The name of the node containing the mesh to override.
-     * @param primitiveIndex The zero-based index for the mesh of the node.
-     */
-    public fun setMaterialOverride(
-        material: MaterialResource,
-        nodeName: String,
-        primitiveIndex: Int,
-    )
+    /* Pause the animation of the glTF entity. */
+    public fun pauseAnimation()
 
-    /**
-     * Clears a material override for a specific mesh of a node.
-     *
-     * @param nodeName The name of the node containing the mesh for which to clear the override.
-     * @param primitiveIndex The zero-based index for the mesh of the node.
-     */
-    public fun clearMaterialOverride(nodeName: String, primitiveIndex: Int)
+    /* Resume the animation of the glTF entity. */
+    public fun resumeAnimation()
 
     // TODO: b/417750821 - Add an OnAnimationFinished() Listener interface
     //                     Add a getAnimationTimeRemaining() interface
 
     // TODO: b/451424385 -GltfEntity.getGltfModelBoundingBox() becomes a Flow if the bounding box
     //  can change during animation.
-    /**
-     * Retrieves the axis-aligned bounding box (AABB) of an instanced glTF model in meters in the
-     * model's local coordinate space.
-     *
-     * @return A [BoundingBox] object representing the model's bounding box. The
-     *   [BoundingBox.center] defines the geometric center of the box, and the
-     *   [BoundingBox.halfExtents] defines the distance from the center to each face. The total size
-     *   of the box is twice the half-extent. All values are in meters.
-     */
-    public fun getGltfModelBoundingBox(): BoundingBox
+    /** Adds a listener to be invoked when the [animationState] value changes. */
+    public fun addAnimationStateListener(executor: Executor, listener: Consumer<Int>)
+
+    /** Removes an [animationState] listener. */
+    public fun removeAnimationStateListener(listener: Consumer<Int>)
 
     /** Specifies the current animation state of the [GltfEntity]. */
     public annotation class AnimationStateValue
@@ -82,5 +114,6 @@ public interface GltfEntity : Entity {
     public object AnimationState {
         public const val PLAYING: Int = 0
         public const val STOPPED: Int = 1
+        public const val PAUSED: Int = 2
     }
 }

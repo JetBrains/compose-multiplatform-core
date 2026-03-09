@@ -20,18 +20,19 @@ import android.annotation.SuppressLint
 import android.os.Parcel
 import android.os.Parcelable
 import androidx.annotation.RestrictTo
+import androidx.pdf.annotation.KeyedPdfAnnotation
 
 /**
  * Represents a paginated batch of PDF annotations.
  *
- * @property annotations The list of [PdfAnnotationData] objects for the current page or batch.
+ * @property annotations The list of [KeyedPdfAnnotation] objects for the current page or batch.
  * @property currentBatchIndex The 0-based index of the current batch of annotations.
  * @property totalBatchCount The total number of batches available.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @SuppressLint("BanParcelableUsage")
 public class PaginatedAnnotations(
-    public val annotations: List<PdfAnnotationData>,
+    public val annotations: List<KeyedPdfAnnotation>,
     public val currentBatchIndex: Int,
     public val totalBatchCount: Int,
 ) : Parcelable {
@@ -49,7 +50,7 @@ public class PaginatedAnnotations(
             object : Parcelable.Creator<PaginatedAnnotations> {
                 override fun createFromParcel(parcel: Parcel): PaginatedAnnotations {
                     val annotations =
-                        parcel.createTypedArrayList(PdfAnnotationData.CREATOR) ?: emptyList()
+                        parcel.createTypedArrayList(KeyedPdfAnnotation.CREATOR) ?: emptyList()
                     val currentBatchIndex = parcel.readInt()
                     val totalBatchCount = parcel.readInt()
                     return PaginatedAnnotations(annotations, currentBatchIndex, totalBatchCount)

@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -67,13 +66,6 @@ androidXMultiplatform {
         compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
             it.returnDefaultValues = true
         }
-
-        // Needed for api tasks and docs generation
-        sourceSets {
-            androidMain {
-                kotlin.srcDirs += 'src/androidMain/java'
-            }
-        }
     }
     ios() {
         // Link to sqlite3 available in iOS
@@ -81,32 +73,16 @@ androidXMultiplatform {
             linkerOpts += ["-lsqlite3"]
         }
     }
+    js()
     jvm()
     linux()
     mac()
     tvos()
+    wasmJs()
     watchos()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
-    // Source set structure:
-    //                            ┌──────────────────┐
-    //                            │    commonMain    │
-    //                            └──────────────────┘
-    //                                      │
-    //                       ┌──────────────┴─────────────┐
-    //                       │                            │
-    //                       ▼                            ▼
-    //             ┌──────────────────┐         ┌──────────────────┐
-    //             │  jvmAndroidMain  │         │  jvmNativeMain   │
-    //             └──────────────────┘         └──────────────────┘
-    //                       │                            │
-    //           ┌───────────┴──────────────┬─────────────┴───────────┐
-    //           │                          │                         │
-    //           ▼                          ▼                         ▼
-    // ┌──────────────────┐       ┌──────────────────┐      ┌──────────────────┐
-    // │   androidMain    │       │     jvmMain      │      │    nativeMain    │
-    // └──────────────────┘       └──────────────────┘      └──────────────────┘
     sourceSets {
         commonMain {
             dependencies {
@@ -124,47 +100,50 @@ androidXMultiplatform {
                 implementation(project(":kruth:kruth"))
             }
         }
-        jvmAndroidMain {
+        nonWebMain {
             dependsOn(commonMain)
         }
-        jvmNativeMain {
+        nonWebTest {
+            dependsOn(commonTest)
+        }
+        jvmNativeWebMain {
             dependsOn(commonMain)
         }
         jvmMain {
-            dependsOn(jvmAndroidMain)
-            dependsOn(jvmNativeMain)
+            dependsOn(jvmNativeWebMain)
         }
         jvmTest {
-            dependsOn(commonTest)
             dependencies {
                 implementation(project(":sqlite:sqlite-bundled"))
                 implementation(libs.kotlinTestJunit)
             }
         }
+        jvmAndAndroidMain {
+            dependsOn(nonWebMain)
+        }
+        jvmAndAndroidTest {
+            dependsOn(nonWebTest)
+        }
         androidMain {
-            dependsOn(jvmAndroidMain)
+            kotlin.srcDirs += "src/androidMain/java"
             dependencies {
                 api(libs.jspecify)
                 api(project(":sqlite:sqlite-framework"))
                 api(libs.kotlinCoroutinesAndroid)
-                compileOnly("androidx.lifecycle:lifecycle-livedata:2.9.4")
                 implementation("androidx.annotation:annotation-experimental:1.5.0")
             }
         }
         androidHostTest {
-            dependsOn(commonTest)
             dependencies {
                 implementation("androidx.arch.core:core-testing:2.2.0")
                 implementation(libs.junit)
                 implementation(libs.byteBuddy)
                 implementation(libs.mockitoCore4)
                 implementation(libs.mockitoKotlin4)
-                implementation("androidx.lifecycle:lifecycle-livedata-core:2.0.0")
                 implementation(libs.testRunner) // Needed for @FlakyTest and @Ignore
             }
         }
         androidDeviceTest {
-            dependsOn(commonTest)
             dependencies {
                 implementation(project(":sqlite:sqlite-bundled"))
                 implementation(libs.junit)
@@ -180,14 +159,15 @@ androidXMultiplatform {
             }
         }
         nativeMain {
-            dependsOn(jvmNativeMain)
+            dependsOn(nonWebMain)
+            dependsOn(jvmNativeWebMain)
             dependencies {
                 api(project(":sqlite:sqlite-framework"))
                 implementation(libs.atomicFu)
             }
         }
         nativeTest {
-            dependsOn(commonTest)
+            dependsOn(nonWebTest)
             dependencies {
                 implementation(project(":sqlite:sqlite-bundled"))
                 implementation(libs.okio)
@@ -195,13 +175,7 @@ androidXMultiplatform {
         }
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    dependsOn(nativeMain)
-                }
                 def test = target.compilations["test"]
-                test.defaultSourceSet {
-                    dependsOn(nativeTest)
-                }
                 if (target.konanTarget.family == Family.LINUX) {
                     // For tests in Linux host, statically include androidx's compiled SQLite
                     // via a generated C interop definition
@@ -213,6 +187,9 @@ androidXMultiplatform {
                     ]
                 }
             }
+        }
+        webMain {
+            dependsOn(jvmNativeWebMain)
         }
     }
 }

@@ -20,7 +20,6 @@ package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
 import androidx.xr.scenecore.SpatialEnvironment.Companion.NO_PASSTHROUGH_OPACITY_PREFERENCE
-import androidx.xr.scenecore.runtime.MaterialResource as RtMaterial
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.SpatialEnvironment as RtSpatialEnvironment
 import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference as RtSpatialEnvironmentPreference
@@ -31,7 +30,8 @@ import java.util.function.Consumer
 
 /**
  * The SpatialEnvironment is used to manage the XR background and passthrough. There is a single
- * instance of this class managed by each [Session] and it is accessible through Session.scene.
+ * instance of this class managed by each [androidx.xr.runtime.Session] and it is accessible through
+ * Session.scene.
  *
  * The SpatialEnvironment is a composite of a stand-alone skybox, and of a
  * [glTF](https://www.khronos.org/Gltf)-specified geometry. A single skybox and a single glTF can be
@@ -50,8 +50,11 @@ import java.util.function.Consumer
  * preference that will be applied when the device enters a state where the XR background can be
  * changed.
  */
-public class SpatialEnvironment internal constructor(private val sceneRuntime: SceneRuntime) {
-
+public class SpatialEnvironment
+internal constructor(
+    private val sceneRuntime: SceneRuntime,
+    private val entityManager: EntityManager,
+) {
     private val rtEnvironment: RtSpatialEnvironment = sceneRuntime.spatialEnvironment
 
     /**
@@ -66,26 +69,11 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
         public val skybox: ExrImage?,
         public val geometry: GltfModel?,
     ) {
-
         /**
-         * The material to override a given mesh in the geometry. If null, the material will not
-         * override any mesh.
+         * The preferred geometry Entity for the environment. If null, there will be no geometry if
+         * no other geometry resource is passed.
          */
-        internal var geometryMaterial: Material? = null
-            private set
-
-        /**
-         * The name of the node containing the mesh to override with the material. If null, the
-         * material will not override any mesh.
-         */
-        internal var geometryNodeName: String? = null
-            private set
-
-        /**
-         * The name of the animation to play on the geometry. If null, the geometry will not play
-         * any animation. Note that the animation will be played in loop.
-         */
-        internal var geometryAnimationName: String? = null
+        internal var geometryEntity: GltfModelEntity? = null
             private set
 
         /**
@@ -93,25 +81,15 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
          *
          * @param skybox The preferred skybox for the environment.
          * @param geometry The preferred geometry for the environment.
-         * @param geometryMaterial The material to override a given mesh in the geometry.
-         * @param geometryNodeName The name of the node which contains the mesh to override with the
-         *   material.
-         * @param geometryAnimationName The name of the animation to play on the geometry.
-         * @throws IllegalStateException if the material is not properly set up and if the geometry
-         *   glTF model does not contain the mesh or the animation name.
+         * @param geometryEntity The preferred geometry Entity for the environment.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-        @JvmOverloads
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public constructor(
             skybox: ExrImage?,
             geometry: GltfModel?,
-            geometryMaterial: Material?,
-            geometryNodeName: String? = null,
-            geometryAnimationName: String? = null,
+            geometryEntity: GltfModelEntity?,
         ) : this(skybox, geometry) {
-            this.geometryMaterial = geometryMaterial
-            this.geometryNodeName = geometryNodeName
-            this.geometryAnimationName = geometryAnimationName
+            this.geometryEntity = geometryEntity
         }
 
         override fun equals(other: Any?): Boolean {
@@ -144,7 +122,7 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
      * applied and visible to the user. The actual passthrough opacity value is controlled by the
      * system in response to a combination of this preference and user actions outside the
      * application. Generally, this preference is honored when the application has the
-     * [SpatialCapability.SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL] capability.
+     * [SpatialCapability.PASSTHROUGH_CONTROL] capability.
      *
      * The value should be between 0.0f (passthrough disabled) and 1.0f (passthrough fully obscures
      * the spatial environment). Values within 0.01f of 0.0 or 1.0 are snapped to those values.
@@ -238,9 +216,9 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
      *
      * Setting this property only sets the preference and does not cause an immediate change unless
      * [isPreferredSpatialEnvironmentActive] is already true. Once the device enters a state where
-     * the XR background can be changed and the
-     * [SpatialCapability.SPATIAL_CAPABILITY_APP_ENVIRONMENT] capability is available, the preferred
-     * spatial environment for the application will be automatically displayed.
+     * the XR background can be changed and the [SpatialCapability.APP_ENVIRONMENT] capability is
+     * available, the preferred spatial environment for the application will be automatically
+     * displayed.
      *
      * Setting the preference to null will disable the preferred spatial environment for the
      * application, meaning the default system environment will be displayed instead.
@@ -252,7 +230,16 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
      * listeners to know when this preference becomes active.
      */
     public var preferredSpatialEnvironment: SpatialEnvironmentPreference?
-        get() = rtEnvironment.preferredSpatialEnvironment?.toSpatialEnvironmentPreference()
+        get() {
+            val rtPreference = rtEnvironment.preferredSpatialEnvironment ?: return null
+            val skybox = rtPreference.skybox?.let { ExrImage(null, it) }
+            val geometry = rtPreference.geometry?.let { GltfModel(null, it) }
+            val apiEntity =
+                rtPreference.geometryEntity?.let { rtEntity ->
+                    entityManager.getEntityForRtEntity(rtEntity) as? GltfModelEntity
+                }
+            return SpatialEnvironmentPreference(skybox, geometry, apiEntity)
+        }
         set(value) {
             rtEnvironment.preferredSpatialEnvironment = value?.toRtSpatialEnvironmentPreference()
         }
@@ -263,8 +250,8 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
      *
      * The environment will try to transition to the application environment when a non-null
      * preference is set through [preferredSpatialEnvironment] and the application has the
-     * [SpatialCapability.SPATIAL_CAPABILITY_APP_ENVIRONMENT] capability. The environment
-     * preferences will otherwise not be active.
+     * [SpatialCapability.APP_ENVIRONMENT] capability. The environment preferences will otherwise
+     * not be active.
      *
      * The listener consumes a boolean value that is true if the environment preference is active
      * when the listener is notified.
@@ -284,8 +271,8 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
      *
      * The environment will try to transition to the application environment when a non-null
      * preference is set through [preferredSpatialEnvironment] and the application has the
-     * [SpatialCapability.SPATIAL_CAPABILITY_APP_ENVIRONMENT] capability. The environment
-     * preferences will otherwise not be active.
+     * [SpatialCapability.APP_ENVIRONMENT] capability. The environment preferences will otherwise
+     * not be active.
      *
      * The listener consumes a boolean value that is true if the environment preference is active
      * when the listener is notified.
@@ -326,30 +313,5 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
 
 internal fun SpatialEnvironment.SpatialEnvironmentPreference.toRtSpatialEnvironmentPreference():
     RtSpatialEnvironmentPreference {
-    return RtSpatialEnvironmentPreference(
-        skybox?.image,
-        geometry?.model,
-        geometryMaterial?.material,
-        geometryNodeName,
-        geometryAnimationName,
-    )
-}
-
-internal fun RtSpatialEnvironmentPreference.toSpatialEnvironmentPreference():
-    SpatialEnvironment.SpatialEnvironmentPreference {
-    return SpatialEnvironment.SpatialEnvironmentPreference(
-        skybox?.let { ExrImage(it) },
-        geometry?.let { GltfModel(it) },
-        geometryMaterial?.let { rtMaterial ->
-            object : Material {
-                override val material: RtMaterial = rtMaterial
-
-                override fun close() {
-                    // The lifecycle of this material is managed by the SpatialEnvironment.
-                }
-            }
-        },
-        geometryNodeName,
-        geometryAnimationName,
-    )
+    return RtSpatialEnvironmentPreference(skybox?.image, geometry?.model, geometryEntity?.rtEntity)
 }

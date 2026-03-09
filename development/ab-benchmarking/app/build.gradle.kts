@@ -51,9 +51,10 @@ dependencies {
     implementation(libs.lets.plot.image.export)
     // testing dependencies
     testImplementation(kotlin("test"))
-    testImplementation(libs.junit5.jupiter.api)
-    testRuntimeOnly(libs.junit5.jupiter.engine)
+    testImplementation(libs.junit)
     testImplementation(libs.truth)
+    implementation(libs.commons.csv)
+    implementation(libs.slf4j.simple)
 }
 
 tasks.withType(KotlinCompile::class.java).configureEach {
@@ -63,14 +64,30 @@ tasks.withType(KotlinCompile::class.java).configureEach {
 }
 
 tasks.withType<Test> {
-    useJUnitPlatform()
+    useJUnit()
     testLogging {
         events("passed", "skipped", "failed")
     }
 }
 
-application {
-    // Defines the main class to be executed when the application is run.
-    mainClass.set("androidx.abbenchmarking.BenchmarkRunnerKt")
-    applicationName = "ab-benchmarking"
+tasks.register<JavaExec>("runMicrobenchmark") {
+    group = "A/B Benchmarking"
+    description = "Runs A/B microbenchmarks between two git revisions."
+    mainClass.set("androidx.abbenchmarking.microbenchmarking.MicroBenchmarkRunnerKt")
+    classpath = sourceSets.main.get().runtimeClasspath
+    // Forward command-line arguments from Gradle to the application
+    if (project.hasProperty("args")) {
+        args(project.property("args").toString().split(" "))
+    }
+}
+
+tasks.register<JavaExec>("runMacrobenchmark") {
+    group = "A/B Benchmarking"
+    description = "Runs A/B macrobenchmarks between two git revisions."
+    mainClass.set("androidx.abbenchmarking.macrobenchmarking.MacroBenchmarkRunnerKt")
+    classpath = sourceSets.main.get().runtimeClasspath
+    // Forward command-line arguments from Gradle to the application
+    if (project.hasProperty("args")) {
+        args(project.property("args").toString().split(" "))
+    }
 }

@@ -33,6 +33,7 @@ import org.robolectric.RobolectricTestRunner
 
 /** Tests for [AndroidImage] */
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class AndroidImageTest {
     private val mockImage: Image =
         mock() {

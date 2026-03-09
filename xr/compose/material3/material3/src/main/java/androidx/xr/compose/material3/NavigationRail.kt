@@ -104,8 +104,6 @@ public fun NavigationRail(
                 modifier = modifier,
             ) {
                 Column(
-                    // XR-changed: Original NavigationRail uses fillMaxHeight() and windowInsets,
-                    // which do not produce the desired result in XR.
                     Modifier.widthIn(min = XrNavigationRailTokens.ContainerWidth)
                         .padding(vertical = XrNavigationRailTokens.VerticalPadding)
                         .selectableGroup(),

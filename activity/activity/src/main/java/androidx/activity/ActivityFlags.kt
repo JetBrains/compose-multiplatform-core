@@ -62,7 +62,7 @@ public object ActivityFlags {
      * This flag is intended for testing and migration. It may be removed once the legacy behavior
      * is fully retired.
      */
-    @Suppress("MutableBareField")
+    @field:Suppress("MutableBareField")
     @JvmField
     public var isOnBackPressedLifecycleOrderMaintained: Boolean = true
 }

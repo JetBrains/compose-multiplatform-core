@@ -26,7 +26,7 @@ import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.material3.XrThreePaneScaffoldOverride.ThreePaneScaffold
-import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.spatial.PlanarEmbeddedSubspace
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SpatialRowScope
@@ -65,7 +65,7 @@ public fun ThreePaneScaffold(
     tertiaryPane: (@Composable () -> Unit)? = null,
     primaryPane: @Composable () -> Unit,
 ) {
-    Subspace {
+    PlanarEmbeddedSubspace {
         SpatialRow(
             modifier =
                 modifier

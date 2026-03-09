@@ -18,7 +18,6 @@ package androidx.room3.autoclose
 
 import android.os.SystemClock
 import androidx.annotation.GuardedBy
-import androidx.room3.concurrent.AtomicBoolean
 import androidx.room3.concurrent.AtomicInt
 import androidx.room3.concurrent.AtomicLong
 import androidx.sqlite.SQLiteConnection
@@ -47,7 +46,7 @@ internal class AutoCloser(
     private val lastReferenceTimestamp = AtomicLong(0)
     private var autoCloseJob: Job? = null
 
-    private var explicitlyClose = AtomicBoolean(false)
+    @Volatile private var explicitlyClose = false
 
     private lateinit var coroutineScope: CoroutineScope
 
@@ -70,7 +69,7 @@ internal class AutoCloser(
     fun incrementCount() {
         autoCloseJob?.cancel()
         autoCloseJob = null
-        check(!explicitlyClose.get()) { "Attempting to use an already closed database." }
+        check(!explicitlyClose) { "Attempting to use an already closed database." }
         referenceCount.incrementAndGet()
     }
 
@@ -138,7 +137,8 @@ internal class AutoCloser(
     }
 
     fun close() {
-        if (explicitlyClose.compareAndSet(false, true)) {
+        if (!explicitlyClose) {
+            explicitlyClose = true
             autoCloseJob?.cancel()
             autoCloseJob = null
             lock.withLock {

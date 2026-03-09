@@ -16,7 +16,6 @@
 
 package androidx.room3.writer
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.buildCodeBlock
 import androidx.room3.ext.CommonTypeNames
@@ -49,22 +48,7 @@ class TableInfoValidationWriter(val entity: Entity) : ValidationWriter() {
             addLocalVariable(
                 name = columnListVar,
                 typeName = columnListType,
-                assignExpr =
-                    buildCodeBlock { language ->
-                        when (language) {
-                            CodeLanguage.JAVA ->
-                                add(
-                                    "new %T(%L)",
-                                    CommonTypeNames.HASH_MAP.parametrizedBy(
-                                        CommonTypeNames.STRING,
-                                        RoomTypeNames.TABLE_INFO_COLUMN,
-                                    ),
-                                    entity.properties.size,
-                                )
-                            CodeLanguage.KOTLIN ->
-                                add("%M()", KotlinCollectionMemberNames.MUTABLE_MAP_OF)
-                        }
-                    },
+                assignExpr = XCodeBlock.of("%M()", KotlinCollectionMemberNames.MUTABLE_MAP_OF),
             )
             entity.properties.forEach { field ->
                 addStatement(
@@ -91,21 +75,7 @@ class TableInfoValidationWriter(val entity: Entity) : ValidationWriter() {
             addLocalVariable(
                 name = foreignKeySetVar,
                 typeName = foreignKeySetType,
-                assignExpr =
-                    buildCodeBlock { language ->
-                        when (language) {
-                            CodeLanguage.JAVA ->
-                                add(
-                                    "new %T(%L)",
-                                    CommonTypeNames.HASH_SET.parametrizedBy(
-                                        RoomTypeNames.TABLE_INFO_FOREIGN_KEY
-                                    ),
-                                    entity.foreignKeys.size,
-                                )
-                            CodeLanguage.KOTLIN ->
-                                add("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF)
-                        }
-                    },
+                assignExpr = XCodeBlock.of("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF),
             )
             entity.foreignKeys.forEach {
                 addStatement(
@@ -129,21 +99,7 @@ class TableInfoValidationWriter(val entity: Entity) : ValidationWriter() {
             addLocalVariable(
                 name = indicesSetVar,
                 typeName = indicesType,
-                assignExpr =
-                    buildCodeBlock { language ->
-                        when (language) {
-                            CodeLanguage.JAVA ->
-                                add(
-                                    "new %T(%L)",
-                                    CommonTypeNames.HASH_SET.parametrizedBy(
-                                        RoomTypeNames.TABLE_INFO_INDEX
-                                    ),
-                                    entity.indices.size,
-                                )
-                            CodeLanguage.KOTLIN ->
-                                add("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF)
-                        }
-                    },
+                assignExpr = XCodeBlock.of("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF),
             )
             entity.indices.forEach { index ->
                 val orders =
@@ -209,11 +165,6 @@ class TableInfoValidationWriter(val entity: Entity) : ValidationWriter() {
 
     private fun listOfStrings(strings: List<String>) = buildCodeBlock { language ->
         val placeholders = List(strings.size) { "%S" }.joinToString()
-        val function: Any =
-            when (language) {
-                CodeLanguage.JAVA -> XCodeBlock.of("%T.asList", CommonTypeNames.ARRAYS)
-                CodeLanguage.KOTLIN -> "listOf"
-            }
-        add("%L($placeholders)", function, *strings.toTypedArray())
+        add("listOf($placeholders)", *strings.toTypedArray())
     }
 }

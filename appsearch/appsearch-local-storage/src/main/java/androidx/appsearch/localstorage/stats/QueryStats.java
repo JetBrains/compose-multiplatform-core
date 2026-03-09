@@ -29,6 +29,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Locale;
 
 /**
  * Class holds detailed stats for
@@ -395,6 +396,7 @@ public final class QueryStats extends BaseStats {
     @Override
     public String toString() {
         return String.format(
+                Locale.ROOT,
                 "QueryStats {\n"
                         + "  packageName=%s,\n"
                         + "  database=%s,\n"

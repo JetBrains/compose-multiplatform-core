@@ -14,7 +14,7 @@ package androidx.benchmark {
   public static final class BenchmarkState.Companion {
   }
 
-  @SuppressCompatibility @androidx.benchmark.ExperimentalBlackHoleApi public final class BlackHole {
+  public final class BlackHole {
     method public static void consume(boolean value);
     method public static void consume(byte value);
     method public static void consume(char value);
@@ -31,9 +31,6 @@ package androidx.benchmark {
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalBenchmarkStateApi {
-  }
-
-  @SuppressCompatibility @kotlin.RequiresOptIn @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalBlackHoleApi {
   }
 
   @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public final class ExperimentalConfig {
@@ -85,7 +82,7 @@ package androidx.benchmark {
     method public final inline <T> T runWithMeasurementDisabled(kotlin.jvm.functions.Function0<? extends T> block);
   }
 
-  @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public abstract sealed class ProfilerConfig {
+  @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public abstract sealed nonexhaustive class ProfilerConfig {
   }
 
   @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public static final class ProfilerConfig.MethodTracing extends androidx.benchmark.ProfilerConfig {
@@ -125,7 +122,7 @@ package androidx.benchmark.perfetto {
   @SuppressCompatibility @kotlin.RequiresOptIn @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface ExperimentalPerfettoCaptureApi {
   }
 
-  @SuppressCompatibility @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public abstract sealed class PerfettoConfig {
+  @SuppressCompatibility @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public abstract sealed nonexhaustive class PerfettoConfig {
   }
 
   @SuppressCompatibility @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public static final class PerfettoConfig.Binary extends androidx.benchmark.perfetto.PerfettoConfig {

@@ -158,6 +158,10 @@ internal abstract class JavacType(
         return typeMirror.toString()
     }
 
+    override fun isStar(): Boolean {
+        return typeMirror.kind == TypeKind.WILDCARD && typeMirror.extendsBound() == null
+    }
+
     override fun extendsBound(): XType? {
         return typeMirror.extendsBound()?.let {
             env.wrap<JavacType>(

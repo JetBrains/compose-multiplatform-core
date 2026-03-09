@@ -16,12 +16,16 @@
 
 package androidx.navigation3.scene
 
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.util.fastFold
 import androidx.compose.ui.util.fastMap
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
-import kotlin.collections.plusAssign
 
 /**
  * Returns a [SceneState] that is remembered across compositions based on the parameters.
@@ -33,30 +37,85 @@ import kotlin.collections.plusAssign
  * @param onBack a callback for handling system back press.
  * @sample androidx.navigation3.scene.samples.SceneStateSample
  */
+@Deprecated(
+    message =
+        "Deprecated in favor of rememberSceneState that supports sharedTransitionScope, " +
+            "sceneDecoratorStrategies, and list of SceneStrategies",
+    level = DeprecationLevel.HIDDEN,
+)
 @Composable
 public fun <T : Any> rememberSceneState(
     entries: List<NavEntry<T>>,
     sceneStrategy: SceneStrategy<T>,
     onBack: () -> Unit,
-): SceneState<T> =
-    with(SceneStrategyScope<T>(onBack)) {
-        // Re-wrap the entries with:
-        // - SceneSetupNavEntryDecorator to ensure all the ensures are inside of a moveable content
-        // - BackStackAwareLifecycleNavEntryDecorator to ensure that the Lifecycle of entries that
-        // are no longer on the back stack is capped at CREATED
-        val decoratedEntries =
-            rememberDecoratedNavEntries(
-                entries,
-                listOf(
-                    rememberSceneSetupNavEntryDecorator(),
-                    rememberBackStackAwareLifecycleNavEntryDecorator(entries),
-                ),
+): SceneState<T> {
+    return rememberSceneState(
+        entries = entries,
+        sceneStrategies = listOf(sceneStrategy),
+        sharedTransitionScope = null,
+        onBack = onBack,
+    )
+}
+
+/**
+ * Returns a [SceneState] that is remembered across compositions based on the parameters.
+ *
+ * This calculates all of the scenes and provides them in a [SceneState].
+ *
+ * @param entries all of the entries that are associated with this state
+ * @param sceneStrategies the list of [SceneStrategy] to determine which scene to render a list of
+ *   entries.
+ * @param sceneDecoratorStrategies list of [SceneDecoratorStrategy] to add content to the scene.
+ * @param sharedTransitionScope the [SharedTransitionScope] needed to wrap the scene decorator. If
+ *   this parameter is added, this function will require the
+ *   [androidx.navigation3.ui.LocalNavAnimatedContentScope].
+ * @param onBack a callback for handling system back press.
+ * @sample androidx.navigation3.scene.samples.SceneStateSample
+ */
+@Composable
+public fun <T : Any> rememberSceneState(
+    entries: List<NavEntry<T>>,
+    sceneStrategies: List<SceneStrategy<T>>,
+    sceneDecoratorStrategies: List<SceneDecoratorStrategy<T>> = emptyList(),
+    sharedTransitionScope: SharedTransitionScope? = null,
+    onBack: () -> Unit,
+): SceneState<T> {
+    val currentOnBack by rememberUpdatedState(onBack)
+
+    val sharedElementDecorator: SharedEntryInSceneNavEntryDecorator<T>? =
+        sharedTransitionScope?.let { rememberSharedEntryInSceneNavEntryDecorator(it) }
+
+    // Re-wrap the entries with:
+    // - SharedEntryInSceneNavEntryDecorator to allow entries between scenes to be animated
+    // - SceneSetupNavEntryDecorator to ensure all the ensures are inside of a moveable content
+    // - BackStackAwareLifecycleNavEntryDecorator to ensure that the Lifecycle of entries that
+    // are no longer on the back stack is capped at CREATED
+    val decoratedEntries =
+        rememberDecoratedNavEntries(
+            entries,
+            listOfNotNull(
+                sharedElementDecorator,
+                rememberSceneSetupNavEntryDecorator(),
+                rememberBackStackAwareLifecycleNavEntryDecorator(entries),
+            ),
+        )
+
+    @Suppress("ListIterator")
+    return remember(sceneStrategies.toList(), decoratedEntries) {
+        val scope =
+            SceneDecoratorStrategyScope<T>(
+                // `currentOnBack` invokes the *latest* `onBack` lambda. The outer
+                // `remember` block intentionally skips `onBack` as a key to avoid
+                // recalculating all scenes when just the `onBack` instance changes.
+                onBack = @Suppress("UnnecessaryLambdaCreation") { currentOnBack() }
             )
+
         // Calculate the single scene based on the sceneStrategy and start the list there.
         val allScenes =
             mutableListOf(
-                sceneStrategy.calculateSceneWithSinglePaneFallback(this, decoratedEntries)
+                provideScene(scope, decoratedEntries, sceneStrategies, sceneDecoratorStrategies)
             )
+
         // find all of the OverlayScenes
         do {
             // Starts from previously calculated scene and check if it is an OverlayScene
@@ -69,7 +128,7 @@ public fun <T : Any> rememberSceneState(
                 }
                 // Keep added scenes to the end of our list until we find a non-overlay scene
                 allScenes +=
-                    sceneStrategy.calculateSceneWithSinglePaneFallback(this, overlaidEntries)
+                    provideScene(scope, overlaidEntries, sceneStrategies, sceneDecoratorStrategies)
             }
         } while (overlaidEntries != null)
 
@@ -86,11 +145,10 @@ public fun <T : Any> rememberSceneState(
             val previousEntries = previousScene?.previousEntries
             if (!previousEntries.isNullOrEmpty()) {
                 // If there are previous entries, add the scene from those entries to the front of
-                // the
-                // list
+                // the list
                 previousScenes.add(
-                    0,
-                    sceneStrategy.calculateSceneWithSinglePaneFallback(this, previousEntries),
+                    index = 0,
+                    provideScene(scope, previousEntries, sceneStrategies, sceneDecoratorStrategies),
                 )
             }
         } while (!previousEntries.isNullOrEmpty())
@@ -98,13 +156,9 @@ public fun <T : Any> rememberSceneState(
         // remove the currentScene from the list
         previousScenes.remove(currentScene)
 
-        return SceneState(
-            entries = decoratedEntries,
-            overlayScenes = overlayScenes,
-            currentScene = currentScene,
-            previousScenes = previousScenes,
-        )
+        SceneState(decoratedEntries, overlayScenes, currentScene, previousScenes)
     }
+}
 
 /**
  * Class for holding the state associated with a scene
@@ -148,3 +202,15 @@ internal constructor(
         return "SceneState(entries=$entries, overlayScenes=$overlayScenes, currentScene=$currentScene, previousScenes=$previousScenes)"
     }
 }
+
+private fun <T : Any> provideScene(
+    scope: SceneDecoratorStrategyScope<T>,
+    decoratedEntries: List<NavEntry<T>>,
+    sceneStrategies: List<SceneStrategy<T>>,
+    sceneDecorators: List<SceneDecoratorStrategy<T>>,
+): Scene<T> =
+    sceneDecorators.fastFold(
+        calculateSceneWithSinglePaneFallback(sceneStrategies, scope, decoratedEntries)
+    ) { scene, decoratorStrategy ->
+        scene as? OverlayScene ?: decoratorStrategy.decorateScene(scope, scene)
+    }

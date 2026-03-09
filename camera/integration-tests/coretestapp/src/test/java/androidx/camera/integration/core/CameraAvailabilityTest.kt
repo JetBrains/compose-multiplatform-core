@@ -18,6 +18,7 @@ package androidx.camera.integration.core
 
 import android.content.Context
 import android.graphics.ImageFormat
+import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
@@ -27,7 +28,6 @@ import android.os.HandlerThread
 import android.os.Looper
 import android.util.Size
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraPresenceListener
@@ -97,7 +97,7 @@ class CameraAvailabilityTest(private val testConfig: CameraTestConfig) {
 
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
-        fun data() = listOf(CameraTestConfig("Camera2"), CameraTestConfig("CameraPipe"))
+        fun data() = listOf(CameraTestConfig("Camera2"))
     }
 
     @Before
@@ -106,7 +106,6 @@ class CameraAvailabilityTest(private val testConfig: CameraTestConfig) {
         val configBuilder =
             when (testConfig.implName) {
                 "Camera2" -> CameraXConfig.Builder.fromConfig(Camera2Config.defaultConfig())
-                "CameraPipe" -> CameraXConfig.Builder.fromConfig(CameraPipeConfig.defaultConfig())
                 else -> throw IllegalArgumentException("Unknown impl name: ${testConfig.implName}")
             }
 
@@ -334,6 +333,7 @@ class CameraAvailabilityTest(private val testConfig: CameraTestConfig) {
         val cameraCharacteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
         shadowOf(cameraCharacteristics).apply {
             set(CameraCharacteristics.LENS_FACING, lensFacing)
+            set(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE, Rect(0, 0, 10, 10))
             set(CameraCharacteristics.SENSOR_ORIENTATION, 0)
             set(CameraCharacteristics.FLASH_INFO_AVAILABLE, false)
             set(

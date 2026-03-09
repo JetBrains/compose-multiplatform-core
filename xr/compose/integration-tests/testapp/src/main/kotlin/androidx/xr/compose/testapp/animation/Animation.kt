@@ -41,18 +41,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
+import androidx.xr.compose.subspace.draw.alpha
+import androidx.xr.compose.subspace.draw.scale
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.alpha
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.scale
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.ui.components.CUJButton
@@ -77,7 +77,7 @@ class Animation : ComponentActivity() {
     private fun ValueBasedAnimationsApp() {
         MainPanelContent()
 
-        ApplicationSubspace {
+        Subspace {
             val (showSidePanel, updateShowSidePanel) = remember { mutableStateOf(false) }
             val toggleSidePanel: () -> Unit = { updateShowSidePanel(!showSidePanel) }
             val desiredWidth = 300.dp

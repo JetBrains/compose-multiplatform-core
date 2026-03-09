@@ -17,32 +17,31 @@ package androidx.compose.remote.creation.compose.state
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.Color as AndroidColor
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 private val referenceColor =
-    RemoteColor.fromARGB(
-        RemoteFloat(0.1f),
-        RemoteFloat(0.25f),
-        RemoteFloat(0.5f),
-        RemoteFloat(0.75f),
-    )
+    RemoteColor.rgb(red = 0.25f.rf, green = 0.5f.rf, blue = 0.75f.rf, alpha = 0.1f.rf)
 
 private val referenceHsvColor =
-    RemoteColor.fromHSV(RemoteFloat(0.75f), RemoteFloat(0.5f), RemoteFloat(0.25f))
+    RemoteColor.hsv(hue = 0.75f.rf, saturation = 0.5f.rf, value = 0.25f.rf)
 
 @RunWith(RobolectricTestRunner::class)
-@SdkSuppress(minSdkVersion = 26)
+@Config(sdk = [Config.TARGET_SDK])
+@SdkSuppress(minSdkVersion = 29)
 class RemoteColorTest {
     val context =
         AndroidRemoteContext().apply {
@@ -52,56 +51,80 @@ class RemoteColorTest {
     val creationState = RemoteComposeCreationState(AndroidxRcPlatformServices(), Size(1f, 1f))
 
     @Test
-    fun fromHSV() {
-        val h = RemoteFloat(0.75f)
-        val s = RemoteFloat(0.5f)
-        val v = RemoteFloat(0.25f)
-        val result = RemoteColor.fromHSV(h, s, v)
+    fun fromHSV_constant() {
+        val h = 0.75f.rf
+        val s = 0.5f.rf
+        val v = 0.25f.rf
+        val result = RemoteColor.hsv(hue = h, saturation = s, value = v)
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
-        val expectedColorInt = Color.argb(255, 48, 32, 64)
-        val expectedColor = Color.valueOf(expectedColorInt)
+        val expectedColorInt = AndroidColor.argb(255, 48, 32, 64)
+        val expectedColor = AndroidColor.valueOf(expectedColorInt)
         assertThat(context.getColor(resultId)).isEqualTo(expectedColorInt)
-        assertThat(result.alpha.constantValue).isEqualTo(expectedColor.alpha())
-        assertThat(result.red.constantValue).isEqualTo(expectedColor.red())
-        assertThat(result.green.constantValue).isEqualTo(expectedColor.green())
-        assertThat(result.blue.constantValue).isEqualTo(expectedColor.blue())
+        assertThat(result.alpha.constantValue).isWithin(1f / 255f).of(expectedColor.alpha())
+        assertThat(result.red.constantValue).isWithin(1f / 255f).of(expectedColor.red())
+        assertThat(result.green.constantValue).isWithin(1f / 255f).of(expectedColor.green())
+        assertThat(result.blue.constantValue).isWithin(1f / 255f).of(expectedColor.blue())
+    }
+
+    @Test
+    fun fromHSV_references() {
+        val h = 0.75f.rf.createReference()
+        val s = 0.5f.rf.createReference()
+        val v = 0.25f.rf.createReference()
+        val result = RemoteColor.hsv(hue = h, saturation = s, value = v)
+        val resultId = result.getIdForCreationState(creationState)
+
+        val alphaId = result.alpha.getIdForCreationState(creationState)
+        val redId = result.red.getIdForCreationState(creationState)
+        val greenId = result.green.getIdForCreationState(creationState)
+        val blueId = result.blue.getIdForCreationState(creationState)
+
+        makeAndPaintCoreDocument()
+
+        val expectedColorInt = AndroidColor.argb(255, 48, 32, 64)
+        val expectedColor = AndroidColor.valueOf(expectedColorInt)
+        assertThat(context.getColor(resultId)).isEqualTo(expectedColorInt)
+        assertThat(context.getFloat(alphaId)).isWithin(1f / 255f).of(expectedColor.alpha())
+        assertThat(context.getFloat(redId)).isWithin(1f / 255f).of(expectedColor.red())
+        assertThat(context.getFloat(greenId)).isWithin(1f / 255f).of(expectedColor.green())
+        assertThat(context.getFloat(blueId)).isWithin(1f / 255f).of(expectedColor.blue())
     }
 
     @Test
     fun fromAHSV() {
-        val h = RemoteFloat(0.75f)
-        val s = RemoteFloat(0.5f)
-        val v = RemoteFloat(0.25f)
-        val result = RemoteColor.fromAHSV(127, h, s, v)
+        val h = 0.75f.rf
+        val s = 0.5f.rf
+        val v = 0.25f.rf
+        val result = RemoteColor.fromAHSV(alpha = 127, hue = h, saturation = s, value = v)
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
-        val expectedColorInt = Color.argb(127, 48, 32, 64)
-        val expectedColor = Color.valueOf(expectedColorInt)
+        val expectedColorInt = AndroidColor.argb(127, 48, 32, 64)
+        val expectedColor = AndroidColor.valueOf(expectedColorInt)
         assertThat(context.getColor(resultId)).isEqualTo(expectedColorInt)
-        assertThat(result.alpha.constantValue).isEqualTo(expectedColor.alpha())
-        assertThat(result.red.constantValue).isEqualTo(expectedColor.red())
-        assertThat(result.green.constantValue).isEqualTo(expectedColor.green())
-        assertThat(result.blue.constantValue).isEqualTo(expectedColor.blue())
+        assertThat(result.alpha.constantValue).isWithin(1f / 255f).of(expectedColor.alpha())
+        assertThat(result.red.constantValue).isWithin(1f / 255f).of(expectedColor.red())
+        assertThat(result.green.constantValue).isWithin(1f / 255f).of(expectedColor.green())
+        assertThat(result.blue.constantValue).isWithin(1f / 255f).of(expectedColor.blue())
     }
 
     @Test
     fun fromARGB() {
-        val a = RemoteFloat(1f)
-        val r = RemoteFloat(0.75f)
-        val g = RemoteFloat(0.5f)
-        val b = RemoteFloat(0.25f)
-        val result = RemoteColor.fromARGB(a, r, g, b)
+        val a = 1f.rf
+        val r = 0.75f.rf
+        val g = 0.5f.rf
+        val b = 0.25f.rf
+        val result = RemoteColor.rgb(red = r, green = g, blue = b, alpha = a)
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
-        assertThat(context.getColor(resultId)).isEqualTo(Color.argb(255, 191, 128, 64))
-        assertThat(result.alpha.constantValue).isEqualTo(1f)
-        assertThat(result.red.constantValue).isEqualTo(0.75f)
-        assertThat(result.green.constantValue).isEqualTo(0.5f)
-        assertThat(result.blue.constantValue).isEqualTo(0.25f)
+        assertThat(context.getColor(resultId)).isEqualTo(AndroidColor.argb(255, 191, 128, 64))
+        assertThat(result.alpha.constantValue).isWithin(1f / 255f).of(1f)
+        assertThat(result.red.constantValue).isWithin(1f / 255f).of(0.75f)
+        assertThat(result.green.constantValue).isWithin(1f / 255f).of(0.5f)
+        assertThat(result.blue.constantValue).isWithin(1f / 255f).of(0.25f)
     }
 
     @Test
@@ -169,33 +192,34 @@ class RemoteColorTest {
 
     @Test
     fun tween0() {
-        val red = RemoteColor(Color.RED)
-        val green = RemoteColor(Color.GREEN)
+        val red = RemoteColor(AndroidColor.RED)
+        val green = RemoteColor(AndroidColor.GREEN)
         val result = tween(red, green, RemoteFloat(0f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
-        assertThat(context.getColor(resultId)).isEqualTo(Color.RED)
+        assertThat(context.getColor(resultId)).isEqualTo(AndroidColor.RED)
     }
 
     @Test
     fun tweenTwice() {
         var redCreated = 0
 
-        val color = Color.RED
+        val color = AndroidColor.RED
         val red =
             RemoteColor(
-                constantValue = null,
-                RemoteFloat(Color.alpha(color).toFloat() / 255f),
-                RemoteFloat(Color.red(color).toFloat() / 255f),
-                RemoteFloat(Color.green(color).toFloat() / 255f),
-                RemoteFloat(Color.blue(color).toFloat() / 255f),
+                constantValueOrNull = null,
+                alpha = RemoteFloat(AndroidColor.alpha(color).toFloat() / 255f),
+                red = RemoteFloat(AndroidColor.red(color).toFloat() / 255f),
+                green = RemoteFloat(AndroidColor.green(color).toFloat() / 255f),
+                blue = RemoteFloat(AndroidColor.blue(color).toFloat() / 255f),
+                cacheKey = RemoteStateInstanceKey(),
             ) { creationState ->
                 // This should only be created once
                 redCreated++
                 creationState.document.addNamedColor("USER:OnPrimaryColor", color)
             }
-        val green = RemoteColor(Color.GREEN)
+        val green = RemoteColor(AndroidColor.GREEN)
 
         val result0 = tween(green, red, RemoteFloat(0.26f))
         val result0Id = result0.getIdForCreationState(creationState)
@@ -205,82 +229,82 @@ class RemoteColorTest {
 
         makeAndPaintCoreDocument()
 
-        assertThat(context.getColor(resultId)).isEqualTo(Color.argb(255, 223, 135, 0))
+        assertThat(context.getColor(resultId)).isEqualTo(AndroidColor.argb(255, 223, 135, 0))
         assertThat(redCreated).isEqualTo(1)
     }
 
     @Test
     fun tween0_25() {
-        val red = RemoteColor(Color.RED)
-        val green = RemoteColor(Color.GREEN)
+        val red = RemoteColor(AndroidColor.RED)
+        val green = RemoteColor(AndroidColor.GREEN)
         val result = tween(red, green, RemoteFloat(0.25f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
-        assertThat(context.getColor(resultId)).isEqualTo(Color.argb(255, 223, 135, 0))
+        assertThat(context.getColor(resultId)).isEqualTo(AndroidColor.argb(255, 223, 135, 0))
     }
 
     @Test
     fun tween0_75() {
-        val red = RemoteColor(Color.RED)
-        val green = RemoteColor(Color.GREEN)
+        val red = RemoteColor(AndroidColor.RED)
+        val green = RemoteColor(AndroidColor.GREEN)
         val result = tween(red, green, RemoteFloat(0.75f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
-        assertThat(context.getColor(resultId)).isEqualTo(Color.argb(255, 135, 223, 0))
+        assertThat(context.getColor(resultId)).isEqualTo(AndroidColor.argb(255, 135, 223, 0))
     }
 
     @Test
     fun tween1() {
-        val red = RemoteColor(Color.RED)
-        val green = RemoteColor(Color.GREEN)
+        val red = RemoteColor(AndroidColor.RED)
+        val green = RemoteColor(AndroidColor.GREEN)
         val result = tween(red, green, RemoteFloat(1f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
-        assertThat(context.getColor(resultId)).isEqualTo(Color.GREEN)
+        assertThat(context.getColor(resultId)).isEqualTo(AndroidColor.GREEN)
     }
 
     @Test
     fun tweenColorInt() {
-        val result = tween(Color.RED, Color.GREEN, RemoteFloat(0.25f))
+        val result = tween(AndroidColor.RED, AndroidColor.GREEN, RemoteFloat(0.25f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
-        assertThat(context.getColor(resultId)).isEqualTo(Color.argb(255, 223, 135, 0))
+        assertThat(context.getColor(resultId)).isEqualTo(AndroidColor.argb(255, 223, 135, 0))
     }
 
     @Test
     fun multiply() {
         val a =
-            RemoteColor.fromARGB(
-                RemoteFloat(1f),
-                RemoteFloat(0.8f),
-                RemoteFloat(0.8f),
-                RemoteFloat(0.5f),
+            RemoteColor.rgb(
+                red = RemoteFloat(0.8f),
+                green = RemoteFloat(0.8f),
+                blue = RemoteFloat(0.5f),
+                alpha = RemoteFloat(1f),
             )
         val b =
-            RemoteColor.fromARGB(
-                RemoteFloat(0.8f),
-                RemoteFloat(0.75f),
-                RemoteFloat(0.5f),
-                RemoteFloat(0.4f),
+            RemoteColor.rgb(
+                red = RemoteFloat(0.75f),
+                green = RemoteFloat(0.5f),
+                blue = RemoteFloat(0.4f),
+                alpha = RemoteFloat(0.8f),
             )
         val result = a * b
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
-        assertThat(context.getColor(resultId)).isEqualTo(Color.argb(204, 153, 102, 51))
-        assertThat(result.alpha.constantValue).isEqualTo(0.8f)
-        assertThat(result.red.constantValue).isEqualTo(0.6f)
-        assertThat(result.green.constantValue).isEqualTo(0.4f)
-        assertThat(result.blue.constantValue).isEqualTo(0.2f)
+        assertThat(context.getColor(resultId)).isEqualTo(AndroidColor.argb(204, 153, 102, 51))
+        assertThat(result.alpha.constantValue).isWithin(1f / 255f).of(0.8f)
+        assertThat(result.red.constantValue).isWithin(1f / 255f).of(0.6f)
+        assertThat(result.green.constantValue).isWithin(1f / 255f).of(0.4f)
+        assertThat(result.blue.constantValue).isWithin(1f / 255f).of(0.2f)
     }
 
     @Test
     fun copy() {
-        val a = RemoteColor.fromARGB(1f.rf, 1f.rf, 1f.rf, 1f.rf)
+        val a = RemoteColor.rgb(red = 1f.rf, green = 1f.rf, blue = 1f.rf, alpha = 1f.rf)
         val aAlpha = a.copy(alpha = 0f.rf)
         val aRed = a.copy(red = 0f.rf)
         val aGreen = a.copy(green = 0f.rf)
@@ -291,71 +315,95 @@ class RemoteColorTest {
         val resultIdBlue = aBlue.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
-        assertThat(context.getColor(resultIdAlpha)).isEqualTo(Color.argb(0, 255, 255, 255))
-        assertThat(context.getColor(resultIdRed)).isEqualTo(Color.argb(255, 0, 255, 255))
-        assertThat(context.getColor(resultIdGreen)).isEqualTo(Color.argb(255, 255, 0, 255))
-        assertThat(context.getColor(resultIdBlue)).isEqualTo(Color.argb(255, 255, 255, 0))
+        assertThat(context.getColor(resultIdAlpha)).isEqualTo(AndroidColor.argb(0, 255, 255, 255))
+        assertThat(context.getColor(resultIdRed)).isEqualTo(AndroidColor.argb(255, 0, 255, 255))
+        assertThat(context.getColor(resultIdGreen)).isEqualTo(AndroidColor.argb(255, 255, 0, 255))
+        assertThat(context.getColor(resultIdBlue)).isEqualTo(AndroidColor.argb(255, 255, 255, 0))
     }
 
     @Test
     fun constantValue_constant() {
         val a =
-            RemoteColor.fromARGB(
-                RemoteFloat(1f),
-                RemoteFloat(0.8f),
-                RemoteFloat(0.8f),
-                RemoteFloat(0.5f),
+            RemoteColor.rgb(
+                red = RemoteFloat(0.8f),
+                green = RemoteFloat(0.8f),
+                blue = RemoteFloat(0.5f),
+                alpha = RemoteFloat(1f),
             )
         val b =
-            RemoteColor.fromARGB(
-                RemoteFloat(0.8f),
-                RemoteFloat(0.75f),
-                RemoteFloat(0.5f),
-                RemoteFloat(0.4f),
+            RemoteColor.rgb(
+                red = RemoteFloat(0.75f),
+                green = RemoteFloat(0.5f),
+                blue = RemoteFloat(0.4f),
+                alpha = RemoteFloat(0.8f),
             )
         val result = a * b
 
-        assertThat(result.constantValue?.toArgb()).isEqualTo(Color.argb(204, 153, 102, 51))
+        assertThat(result.constantValue.toArgb()).isEqualTo(AndroidColor.argb(204, 153, 102, 51))
     }
 
     @Test
     fun constantValue_notConstant() {
         val a =
-            RemoteColor.fromARGB(
-                RemoteFloat(1f),
-                RemoteFloat(0.8f),
-                RemoteFloat(0.8f),
-                RemoteFloat(0.5f),
+            RemoteColor.rgb(
+                red = RemoteFloat(0.8f),
+                green = RemoteFloat(0.8f),
+                blue = RemoteFloat(0.5f),
+                alpha = RemoteFloat(1f),
             )
         val b =
-            RemoteColor.fromARGB(
-                RemoteFloat(0.8f),
-                RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC),
-                RemoteFloat(0.5f),
-                RemoteFloat(0.4f),
+            RemoteColor.rgb(
+                red = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC),
+                green = RemoteFloat(0.5f),
+                blue = RemoteFloat(0.4f),
+                alpha = RemoteFloat(0.8f),
             )
         val result = a * b
 
-        assertThat(result.constantValue).isNull()
+        assertThat(result.constantValueOrNull).isNull()
     }
 
     @Test
     fun remoteColorIsCached() {
         val red =
-            creationState.getOrCreateNamedState(RemoteColor::class.java, "red", "USER") {
-                RemoteColor(Color.valueOf(Color.RED))
+            creationState.getOrCreateNamedState(
+                RemoteColor::class.java,
+                "red",
+                RemoteState.Domain.User,
+            ) {
+                RemoteColor(Color(AndroidColor.RED))
             }
         val red2 =
-            creationState.getOrCreateNamedState(RemoteColor::class.java, "red", "USER") {
-                RemoteColor(Color.valueOf(Color.RED))
+            creationState.getOrCreateNamedState(
+                RemoteColor::class.java,
+                "red",
+                RemoteState.Domain.User,
+            ) {
+                RemoteColor(Color(AndroidColor.RED))
             }
         val green =
-            creationState.getOrCreateNamedState(RemoteColor::class.java, "green", "USER") {
-                RemoteColor(Color.valueOf(Color.GREEN))
+            creationState.getOrCreateNamedState(
+                RemoteColor::class.java,
+                "green",
+                RemoteState.Domain.User,
+            ) {
+                RemoteColor(Color(AndroidColor.GREEN))
             }
 
         assertThat(red).isSameInstanceAs(red2)
         assertThat(red).isNotSameInstanceAs(green)
+    }
+
+    @Test
+    fun extensionFunctionMatches() {
+        assertThat(Color.Black.rc.constantValue.toArgb()).isEqualTo(AndroidColor.BLACK)
+        assertThat(Color.Transparent.rc.constantValue.toArgb()).isEqualTo(AndroidColor.TRANSPARENT)
+    }
+
+    @Test
+    fun cacheKeys() {
+        val constant = RemoteColor(Color.Red)
+        assertThat(constant.cacheKey).isEqualTo(RemoteConstantCacheKey(Color.Red.toArgb()))
     }
 
     private fun makeAndPaintCoreDocument() =

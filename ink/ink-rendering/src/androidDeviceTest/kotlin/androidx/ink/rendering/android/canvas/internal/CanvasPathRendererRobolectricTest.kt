@@ -29,7 +29,8 @@ import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -62,15 +63,14 @@ class CanvasPathRendererRobolectricTest {
     fun canDraw_withEmptyStroke_returnsTrue() {
         val emptyStroke = Stroke(simpleBrush, ImmutableStrokeInputBatch.EMPTY)
 
-        assertThat(
-                renderer.canDraw(
-                    canvas = createCanvas(),
-                    stroke = emptyStroke,
-                    coatIndex = 0,
-                    paintPreferenceIndex = 0,
-                )
+        assertTrue(
+            renderer.canDraw(
+                canvas = createCanvas(),
+                stroke = emptyStroke,
+                coatIndex = 0,
+                paintPreferenceIndex = 0,
             )
-            .isTrue()
+        )
     }
 
     @Test
@@ -88,15 +88,14 @@ class CanvasPathRendererRobolectricTest {
             )
         val stroke = Stroke(selfOverlapDiscardBrush, simpleInputs)
 
-        assertThat(
-                renderer.canDraw(
-                    canvas = createCanvas(),
-                    stroke = stroke,
-                    coatIndex = 0,
-                    paintPreferenceIndex = 0,
-                )
+        assertFalse(
+            renderer.canDraw(
+                canvas = createCanvas(),
+                stroke = stroke,
+                coatIndex = 0,
+                paintPreferenceIndex = 0,
             )
-            .isFalse()
+        )
     }
 
     @Test
@@ -124,15 +123,14 @@ class CanvasPathRendererRobolectricTest {
             )
         val stroke = Stroke(stampingBrush, simpleInputs)
 
-        assertThat(
-                renderer.canDraw(
-                    canvas = createCanvas(),
-                    stroke = stroke,
-                    coatIndex = 0,
-                    paintPreferenceIndex = 0,
-                )
+        assertFalse(
+            renderer.canDraw(
+                canvas = createCanvas(),
+                stroke = stroke,
+                coatIndex = 0,
+                paintPreferenceIndex = 0,
             )
-            .isFalse()
+        )
     }
 
     private fun createCanvas() = Picture().beginRecording(100, 100)

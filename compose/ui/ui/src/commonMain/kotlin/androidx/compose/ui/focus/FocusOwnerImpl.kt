@@ -343,13 +343,7 @@ internal class FocusOwnerImpl(
                     Default -> {
                         /* Do Nothing */
                     }
-                    else ->
-                        @OptIn(ExperimentalComposeUiApi::class)
-                        return if (ComposeUiFlags.isRequestFocusOnNonFocusableFocusTargetEnabled) {
-                            customDest.findFocusTarget(onFound)
-                        } else {
-                            customDest.findFocusTargetNode(onFound)
-                        }
+                    else -> return customDest.findFocusTarget(onFound)
                 }
             }
 
@@ -573,9 +567,7 @@ internal class FocusOwnerImpl(
             val previousValue = field
             field = value
             if (value == null || previousValue !== value) isFocusCaptured = false
-            if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isSemanticAutofillEnabled) {
-                listeners.forEach { it.onFocusChanged(previousValue, value) }
-            }
+            listeners.forEach { it.onFocusChanged(previousValue, value) }
         }
 
     override var isFocusCaptured: Boolean = false

@@ -23,7 +23,6 @@ import android.os.Parcelable.ClassLoaderCreator
 import androidx.core.os.ParcelCompat
 import androidx.customview.view.AbsSavedState
 import androidx.pdf.formfilling.FormFillingEditTextState
-import androidx.pdf.models.FormEditRecord
 import androidx.pdf.selection.SelectionModel
 import androidx.pdf.view.layout.LayoutStrategy
 import androidx.pdf.view.layout.PaginationModel
@@ -35,11 +34,14 @@ internal class PdfViewSavedState : AbsSavedState {
     var zoom: Float = 1F
     var isFormFillingEnabled: Boolean = false
     var isFormFillingTooltipEnabled: Boolean = false
+    var isImageSelectionEnabled: Boolean = false
+    var pagesPerRow: Int = PdfView.SINGLE_PAGE
+    var horizontalPageSpacing: Int = 20
+    var verticalPageSpacing: Int = 20
     var documentUri: Uri? = null
     var paginationModel: PaginationModel? = null
     var layoutStrategy: LayoutStrategy? = null
     var pdfFormFillingState: PdfFormFillingState? = null
-    var pdfFormEditRecords: List<FormEditRecord>? = null
     var pdfFormFillingEditTextState: FormFillingEditTextState? = null
 
     /**
@@ -73,13 +75,16 @@ internal class PdfViewSavedState : AbsSavedState {
         viewWidth = parcel.readInt()
         isFormFillingEnabled = parcel.readBoolean()
         isFormFillingTooltipEnabled = parcel.readBoolean()
+        isImageSelectionEnabled = parcel.readBoolean()
+        pagesPerRow = parcel.readInt()
+        horizontalPageSpacing = parcel.readInt()
+        verticalPageSpacing = parcel.readInt()
         documentUri = ParcelCompat.readParcelable(parcel, loader, Uri::class.java)
         paginationModel = ParcelCompat.readParcelable(parcel, loader, PaginationModel::class.java)
         layoutStrategy = ParcelCompat.readParcelable(parcel, loader, LayoutStrategy::class.java)
         pdfFormFillingState =
             ParcelCompat.readParcelable(parcel, loader, PdfFormFillingState::class.java)
         selectionModel = ParcelCompat.readParcelable(parcel, loader, SelectionModel::class.java)
-        pdfFormEditRecords = parcel.createTypedArrayList(FormEditRecord.CREATOR)
         pdfFormFillingEditTextState =
             ParcelCompat.readParcelable(parcel, loader, FormFillingEditTextState::class.java)
     }
@@ -92,12 +97,15 @@ internal class PdfViewSavedState : AbsSavedState {
         dest.writeInt(viewWidth)
         dest.writeBoolean(isFormFillingEnabled)
         dest.writeBoolean(isFormFillingTooltipEnabled)
+        dest.writeBoolean(isImageSelectionEnabled)
+        dest.writeInt(pagesPerRow)
+        dest.writeInt(horizontalPageSpacing)
+        dest.writeInt(verticalPageSpacing)
         dest.writeParcelable(documentUri, flags)
         dest.writeParcelable(paginationModel, flags)
         dest.writeParcelable(layoutStrategy, flags)
         dest.writeParcelable(pdfFormFillingState, flags)
         dest.writeParcelable(selectionModel, flags)
-        dest.writeTypedList(pdfFormEditRecords)
         dest.writeParcelable(pdfFormFillingEditTextState, flags)
     }
 

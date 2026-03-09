@@ -16,6 +16,9 @@
 
 package androidx.core.telecom.internal
 
+import android.annotation.SuppressLint
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import android.os.OutcomeReceiver
 import android.os.ParcelUuid
@@ -37,6 +40,7 @@ import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isSpeakerEnd
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isWiredHeadsetOrBtEndpoint
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.maybeRemoveEarpieceIfWiredEndpointPresent
 import java.util.function.Consumer
+import kotlin.Int
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -72,7 +76,7 @@ internal open class CallSession(
     // been received from the platform.
     private val mIsCurrentEndpointSet = CompletableDeferred<Unit>()
     private val mIsAvailableEndpointsSet = CompletableDeferred<Unit>()
-    private val mIsCurrentlyDisplayingVideo = attributes.isVideoCall()
+    private var mCallType: Int = 0
     internal val mJetpackToPlatformCallEndpoint: HashMap<ParcelUuid, CallEndpoint> = HashMap()
     /**
      * Stores the audio endpoint that was initially preferred by the client when the call was
@@ -96,6 +100,14 @@ internal open class CallSession(
             val state =
                 if (attributes.isOutgoingCall()) CallStateEvent.DIALING else CallStateEvent.RINGING
             onStateChangedCallback.emit(state)
+            val initialCallType =
+                if (attributes.isVideoCall()) {
+                    CallAttributesCompat.CALL_TYPE_VIDEO_CALL
+                } else {
+                    CallAttributesCompat.CALL_TYPE_AUDIO_CALL
+                }
+            mCallType = initialCallType
+            callChannels.callTypeChannel.trySend(initialCallType)
         }
     }
 
@@ -373,7 +385,7 @@ internal open class CallSession(
     ) {
         try {
             if (
-                mIsCurrentlyDisplayingVideo &&
+                (mCallType == CallAttributesCompat.CALL_TYPE_VIDEO_CALL) &&
                     /* Only switch if the users headset disconnects & earpiece is defaulted */
                     isEarpieceEndpoint(newEndpoint) &&
                     isWiredHeadsetOrBtEndpoint(previousEndpoint) &&
@@ -411,6 +423,11 @@ internal open class CallSession(
 
     override fun onEvent(event: String, extras: Bundle) {
         CoroutineScope(coroutineContext).launch { onEventCallback(event, extras) }
+    }
+
+    override fun onVideoStateChanged(videoState: Int) {
+        mCallType = videoState
+        CoroutineScope(coroutineContext).launch { callChannels.callTypeChannel.send(videoState) }
     }
 
     /**
@@ -513,6 +530,23 @@ internal open class CallSession(
             mLastClientRequestedEndpoint = null
         }
         return platformResult
+    }
+
+    @SuppressLint("NewApi")
+    suspend fun requestVideoState(videoState: Int): CallControlResult {
+        return if (VERSION.SDK_INT >= VERSION_CODES.VANILLA_ICE_CREAM) {
+            val result: CompletableDeferred<CallControlResult> = CompletableDeferred()
+            mPlatformInterface!!.requestVideoState(
+                videoState,
+                Runnable::run,
+                CallControlReceiver(result),
+            )
+            return result.await()
+        } else {
+            mCallType = videoState
+            callChannels.callTypeChannel.send(videoState)
+            return CallControlResult.Success()
+        }
     }
 
     suspend fun disconnect(disconnectCause: DisconnectCause): CallControlResult {
@@ -627,6 +661,12 @@ internal open class CallSession(
             return session.requestEndpointChange(endpoint)
         }
 
+        override suspend fun requestCallType(
+            callType: @CallAttributesCompat.Companion.CallType Int
+        ): CallControlResult {
+            return session.requestVideoState(callType)
+        }
+
         // Send these events out to the client to collect
         override val currentCallEndpoint: Flow<CallEndpointCompat> =
             callChannels.currentEndpointChannel.receiveAsFlow()
@@ -635,6 +675,10 @@ internal open class CallSession(
             callChannels.availableEndpointChannel.receiveAsFlow()
 
         override val isMuted: Flow<Boolean> = callChannels.isMutedChannel.receiveAsFlow()
+
+        override fun callTypeFlow(): Flow<Int> {
+            return session.callChannels.callTypeChannel.receiveAsFlow()
+        }
     }
 
     override fun close() {

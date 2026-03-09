@@ -242,7 +242,7 @@ public final class Preview extends UseCase {
         CameraEffect effect = getEffect();
         if (effect != null) {
             // Create nodes and edges.
-            mNode = new SurfaceProcessorNode(camera, effect.createSurfaceProcessorInternal());
+            mNode = new SurfaceProcessorNode(camera, effect.createSurfaceProcessorInternal(), TAG);
             mCameraEdge.addOnInvalidatedListener(this::notifyReset);
             OutConfig outConfig = OutConfig.of(mCameraEdge);
             SurfaceProcessorNode.In nodeInput = SurfaceProcessorNode.In.of(mCameraEdge,

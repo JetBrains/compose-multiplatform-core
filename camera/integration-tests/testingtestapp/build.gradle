@@ -18,14 +18,12 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    // Remove when b/442128557 is fixed
-    id("org.jetbrains.kotlin.android")
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(36) }
 
     namespace = "androidx.camera.integration.testingtestapp"
 

@@ -2,7 +2,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
@@ -14,7 +13,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-    compileSdk = 35
+    compileSdk { version = release(35) }
 }
 
 dependencies {

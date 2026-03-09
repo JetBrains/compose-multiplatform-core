@@ -82,6 +82,7 @@ private val TEST_CAMERA_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
 /** Unit tests for [Preview]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 // Option Declarations:
 // *********************************************************************************************
 class PreviewTest {

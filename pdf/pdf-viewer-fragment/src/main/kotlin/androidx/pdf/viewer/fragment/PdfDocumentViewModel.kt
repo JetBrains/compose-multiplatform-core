@@ -26,10 +26,12 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.pdf.EditablePdfDocument
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfLoader
 import androidx.pdf.PdfPasswordException
 import androidx.pdf.SandboxedPdfLoader
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.search.SearchRepository
 import androidx.pdf.search.model.NoQuery
 import androidx.pdf.search.model.QueryResults
@@ -128,12 +130,19 @@ public open class PdfDocumentViewModel(
     internal val isTextSearchActiveFromState: Boolean
         get() = state[TEXT_SEARCH_STATE_KEY] ?: false
 
+    protected val isTextSearchActiveFlow: StateFlow<Boolean> =
+        state.getStateFlow(TEXT_SEARCH_STATE_KEY, false)
+
     /** isImmersiveModeFromState as set in [state] */
     internal val isImmersiveModeDesired: Boolean
         get() = state[IMMERSIVE_MODE_STATE_KEY] ?: false
 
+    protected val formEditInfos: ArrayList<FormEditInfo> = ArrayList()
+
     /** Holds business logic for search feature. */
     private lateinit var searchRepository: SearchRepository
+
+    private var formApplyEditJob: Job? = null
 
     init {
         /**
@@ -210,16 +219,36 @@ public open class PdfDocumentViewModel(
                 // Loading a new document should not persist a search session from previous
                 // document.
                 resetState()
+                if (uri != state[DOCUMENT_URI_KEY]) {
+                    resetFormEditsState()
+                }
 
                 documentLoadJob = viewModelScope.launch { openDocument(uri, password) }
             }
         }
     }
 
+    /** Forces a reload of the current PDF document. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    protected open fun forceLoadDocument() {
+        if (documentLoadJob?.isActive == true) documentLoadJob?.cancel()
+
+        val uri: Uri? = state[DOCUMENT_URI_KEY]
+        resetState()
+        resetFormEditsState()
+
+        uri?.let { documentLoadJob = viewModelScope.launch { openDocument(uri, null) } }
+    }
+
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     protected open fun resetState() {
         updateSearchState(isTextSearchActive = false)
         setImmersiveModeDesired(enterImmersive = true)
+    }
+
+    private fun resetFormEditsState() {
+        formEditInfos.clear()
+        state.remove<ArrayList<FormEditInfo>>(FORM_EDIT_INFOS_KEY)
     }
 
     /**
@@ -254,6 +283,23 @@ public open class PdfDocumentViewModel(
                 remove<Int>(QUERY_RESULT_PAGE_NUM_KEY)
                 remove<Int>(QUERY_RESULT_INDEX_KEY)
             }
+        }
+    }
+
+    internal fun applyFormEdit(formEditInfo: FormEditInfo) {
+        val currentState = _fragmentUiScreenState.value
+        if (
+            currentState is PdfFragmentUiState.DocumentLoaded &&
+                currentState.pdfDocument is EditablePdfDocument
+        ) {
+            val previousJob = formApplyEditJob
+            formApplyEditJob =
+                viewModelScope.launch {
+                    previousJob?.join()
+                    currentState.pdfDocument.applyEdit(formEditInfo)
+                    formEditInfos.add(formEditInfo)
+                    state[FORM_EDIT_INFOS_KEY] = formEditInfos
+                }
         }
     }
 
@@ -353,7 +399,15 @@ public open class PdfDocumentViewModel(
         try {
 
             // Try opening pdf with provided params
-            val document = loader.openDocument(uri, password)
+            var document = loader.openDocument(uri, password)
+            // Restore the edited state of the document before updating the UI status to Loaded.
+            val formStateRestored = restoreFormFillingState(document)
+            if (!formStateRestored) {
+                // If we are not able to restore the state completely, we open the pdf in the
+                // original state without any edits.
+                document = loader.openDocument(uri, password)
+                resetFormEditsState()
+            }
 
             searchRepository = SearchRepository(document)
 
@@ -376,6 +430,20 @@ public open class PdfDocumentViewModel(
             /** Resets the [passwordFailed] state after a document failed to load. */
             passwordFailed = false
         }
+    }
+
+    private suspend fun restoreFormFillingState(document: PdfDocument): Boolean {
+        if (document !is EditablePdfDocument) return false
+        val savedFormEdits = state.get<ArrayList<FormEditInfo>>(FORM_EDIT_INFOS_KEY)
+        if (savedFormEdits.isNullOrEmpty()) return true
+        try {
+            savedFormEdits.forEach { document.applyEdit(it) }
+            // If all the edits are applied successfully update the stored formEditInfos.
+            formEditInfos.addAll(savedFormEdits)
+        } catch (_: IllegalArgumentException) {
+            return false
+        }
+        return true
     }
 
     /** Intent triggered when user submits a search query. */
@@ -449,6 +517,7 @@ public open class PdfDocumentViewModel(
         private const val SEARCH_QUERY_KEY = "searchQuery"
         private const val QUERY_RESULT_INDEX_KEY = "queryResultIndex"
         private const val QUERY_RESULT_PAGE_NUM_KEY = "queryResultPageNum"
+        private const val FORM_EDIT_INFOS_KEY = "formEditInfos"
         private val EMPTY_HIGHLIGHTS = HighlightData(currentIndex = -1, highlightBounds = listOf())
 
         val Factory: ViewModelProvider.Factory =

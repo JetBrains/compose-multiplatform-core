@@ -21,9 +21,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.widget.EdgeEffect;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.RemoteClock;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.ScrollingEdgeEffect;
 import androidx.compose.remote.core.SystemClock;
 import androidx.compose.remote.core.TouchListener;
 import androidx.compose.remote.core.VariableSupport;
@@ -41,6 +44,7 @@ import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 
 /**
  * An implementation of Context for Android.
@@ -51,22 +55,24 @@ import java.util.HashMap;
 public class AndroidRemoteContext extends RemoteContext {
     private static final boolean CHECK_DATA_SIZE = true;
 
+    public @Nullable EdgeEffectBuilder mEdgeEffectBuilder;
+
     private boolean mA11yAnimationEnabled = true;
 
     @NonNull
     private BitmapLoader mBitmapLoader = BitmapLoader.UNSUPPORTED;
 
-    /** Default constructor, uses a {@link SystemClock} as the clock. */
+    /** Default constructor, uses a {@link RemoteClock#SYSTEM} as the clock. */
     public AndroidRemoteContext() {
-        this(new SystemClock());
+        this(RemoteClock.SYSTEM);
     }
 
-    /**
-     * Context for the Android Implementation.
-     *
-     * @param clock The clock used for tracking time.
-     */
     public AndroidRemoteContext(@NonNull Clock clock) {
+        super(new SystemClock(clock));
+        setBitmapLoader(new AndroidBitmapLoader());
+    }
+
+    public AndroidRemoteContext(@NonNull RemoteClock clock) {
         super(clock);
         setBitmapLoader(new AndroidBitmapLoader());
     }
@@ -103,9 +109,39 @@ public class AndroidRemoteContext extends RemoteContext {
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    // Data handling
+    // Edge effect handling
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /// ////////////////////////////////////////////////////////////////////////////////////////////
+    /**
+     * EdgeEffectBuilder interface
+     */
+    public interface EdgeEffectBuilder {
+        /**
+         * Create a new EdgeEffect
+         * @return
+         */
+        @NonNull EdgeEffect create();
+    }
+
+    /**
+     * Set a builder for EdgeEffects
+     * @param builder
+     */
+    public void setEdgeEffectBuilder(@NonNull EdgeEffectBuilder builder) {
+        mEdgeEffectBuilder = builder;
+    }
+
+    @Override
+    public @Nullable ScrollingEdgeEffect createEdgeEffect(int direction) {
+        if (mEdgeEffectBuilder == null) {
+            return null;
+        }
+        return new AndroidEdgeEffect(mEdgeEffectBuilder.create(), direction);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Data handling
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
     public void loadPathData(int instanceId, int winding, float @NonNull [] floatPath) {
@@ -131,6 +167,25 @@ public class AndroidRemoteContext extends RemoteContext {
     }
 
     HashMap<String, VarName> mVarNameHashMap = new HashMap<>();
+
+    /**
+     * Returns the id of a variable
+     * @param name
+     * @return
+     */
+    public int getVariableId(@NonNull String name) {
+        return Objects.requireNonNull(mVarNameHashMap.get(name)).mId;
+    }
+
+    /**
+     * Returns the content of a name variable
+     * @param name
+     * @return
+     */
+    public @Nullable String getStringVariableName(@NonNull String name) {
+        int id = getVariableId(name);
+        return getText(id);
+    }
 
     @Override
     public void loadVariableName(@NonNull String varName, int varId, int varType) {

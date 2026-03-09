@@ -17,16 +17,21 @@
 package androidx.biometric.internal.data
 
 import android.os.Build
+import androidx.biometric.AuthenticationRequest.Biometric.Fallback
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.utils.AuthenticatorUtils
 import androidx.biometric.utils.CryptoObjectUtils
+import kotlin.collections.emptyList
 import kotlinx.coroutines.delay
 
 /**
  * A repository for both the initial configuration and the dynamic states of the biometric prompt.
  */
 internal interface PromptConfigRepository {
+    /** A key used to track the current authentication session. */
+    var currentAuthenticationKey: Int
+
     /** Info about the appearance and behavior of the prompt provided by the client application. */
     var promptInfo: BiometricPrompt.PromptInfo?
 
@@ -51,11 +56,14 @@ internal interface PromptConfigRepository {
     /** The type(s) of authenticators that may be invoked by the biometric prompt. */
     @BiometricManager.AuthenticatorTypes val allowedAuthenticators: Int
 
-    /** The text that should be shown for the negative button on the biometric prompt. */
-    val negativeButtonText: CharSequence?
-
     /** Whether the identity check is available on the current API level. */
     var isIdentityCheckAvailable: Boolean
+
+    /**
+     * The fallback option list that should be shown on the biometric prompt screen or separate
+     * fallback options page.
+     */
+    val fallbackOptionList: List<Fallback>
 
     /** Sets a text override for the negative button. */
     fun setNegativeButtonTextOverride(negativeButtonTextOverride: CharSequence?)
@@ -80,6 +88,8 @@ internal interface PromptConfigRepository {
  * hosts the [BiometricPrompt].
  */
 internal class PromptConfigRepositoryImpl : PromptConfigRepository {
+    override var currentAuthenticationKey: Int = 0
+
     override var promptInfo: BiometricPrompt.PromptInfo? = null
         set(value) {
             field = value
@@ -141,17 +151,17 @@ internal class PromptConfigRepositoryImpl : PromptConfigRepository {
      * [BiometricPrompt.PromptInfo.getNegativeButtonText].
      */
     private var _negativeButtonTextOverride: CharSequence? = null
-    /**
-     * The text that should be shown for the negative button on the biometric prompt.
-     *
-     * If non-null, the value set by [_negativeButtonTextOverride] is used. Otherwise, falls back to
-     * the value returned by [BiometricPrompt.PromptInfo.getNegativeButtonText], or `null` if a
-     * non-null [BiometricPrompt.PromptInfo] has not been set.
-     *
-     * @return The negative button text for the prompt, or `null` if not set.
-     */
-    override val negativeButtonText
-        get() = _negativeButtonTextOverride ?: promptInfo?.negativeButtonText
+    override val fallbackOptionList
+        get() =
+            _negativeButtonTextOverride?.let {
+                listOf(Fallback.OverriddenDeviceCredential(it.toString()))
+            }
+                ?: promptInfo
+                    ?.negativeButtonText
+                    ?.takeUnless { it.isEmpty() }
+                    ?.let { listOf(Fallback.CustomOption(it.toString())) }
+                ?: promptInfo?.fallbackOptionList
+                ?: emptyList()
 
     override fun setNegativeButtonTextOverride(negativeButtonTextOverride: CharSequence?) {
         _negativeButtonTextOverride = negativeButtonTextOverride

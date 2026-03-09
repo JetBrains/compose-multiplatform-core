@@ -17,13 +17,12 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
     id("AndroidXComposePlugin")
 }
 
 android {
     namespace = "androidx.camera.integration.avsync"
-    compileSdk = 36
+    compileSdk { version = release(36) }
     defaultConfig {
         applicationId = "androidx.camera.integration.avsync"
     }
@@ -41,7 +40,6 @@ dependencies {
 
     // Internal library
     implementation(project(":camera:camera-camera2"))
-    implementation(project(":camera:camera-camera2-pipe-integration"))
     implementation(project(":camera:camera-lifecycle"))
     implementation(project(":camera:camera-video"))
 

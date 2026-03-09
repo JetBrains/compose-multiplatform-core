@@ -135,36 +135,47 @@ final class FeaturesImpl implements Features {
             case Features.INDEXER_MOBILE_APPLICATIONS:
                 // For devices that receive mainline updates, this will be available in M-2024-11,
                 // and in B for devices that don't receive mainline updates.
-                return AppSearchVersionUtil.isAtLeastB()
+                return Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
                         || AppSearchVersionUtil.getAppSearchVersionCode(mContext)
                         >= AppSearchVersionUtil.APPSEARCH_M2024_11_VERSION_CODE;
 
-            // Android B Features
-            case Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG:
+            // SDK extension B Base features
+            case Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION:
+                // fall through
+            case Features.SCHEMA_SCORABLE_PROPERTY_CONFIG:
+                // fall through
+            case Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS:
                 // fall through
             case Features.SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS:
                 // fall through
-            case Features.SEARCH_RESULT_PARENT_TYPES:
-                // fall through
+                return BuildCompat.T_EXTENSION_INT
+                        >= AppSearchVersionUtil.TExtensionVersions.B_BASE;
+
+            // Android B Features
             case Features.SCHEMA_BLOB_HANDLE:
+                // This feature is restricted to Android B+ devices only due to rollback
+                // compatibility issues. It is not allowed in Android T devices.
+                // TODO(b/369703879) Remove this special handling once blobs are backported to
+                // Android T devices.
+                // fall through
+            case Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG:
                 // fall through
             case Features.SCHEMA_EMBEDDING_QUANTIZATION:
-                return AppSearchVersionUtil.isAtLeastB();
-
-            // M-2025-05 Features
-            case Features.SCHEMA_SCORABLE_PROPERTY_CONFIG:
+                // This feature is restricted to Android B+ devices only due to rollback
+                // compatibility issues. It is not allowed in Android T devices.
+                // TODO(b/369703879) Remove this special handling once embeddings are backported to
+                // Android T devices.
                 // fall through
-            case Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION:
-                return AppSearchVersionUtil.isAtLeastB()
-                        || BuildCompat.T_EXTENSION_INT
-                        >= AppSearchVersionUtil.TExtensionVersions.B_BASE;
+            case Features.SEARCH_RESULT_PARENT_TYPES:
+                // Polymorphism (Parent types) is restricted to Android V+ devices only due to
+                // rollback compatibility issues. It is not allowed in Android T devices.
+                // TODO(b/369703879) Remove this special handling once embeddings are backported to
+                // Android T devices.
+                return Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA;
 
             // Pending Android B Features
             case Features.SEARCH_SPEC_SEARCH_STRING_PARAMETERS:
                 // TODO(b/332620561) : Update when feature is ready in service-appsearch.
-                // fall through
-            case Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS:
-                // TODO(b/367464836) : Update when feature is ready in service-appsearch.
                 // fall through
 
             // Beyond Android B Features
@@ -173,8 +184,16 @@ final class FeaturesImpl implements Features {
                 // fall through
             case Features.SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM:
                 // TODO(b/384947619) : Update when feature is ready in service-appsearch.
+                // fall through
             case Features.SEARCH_EMBEDDING_MATCH_INFO:
-                // TODO(395128139) : Update when feature is ready in service-appsearch.
+                // TODO(b/395128139) : Update when feature is ready in service-appsearch.
+                // fall through
+            case Features.SCHEMA_JOINABLE_REPEATED_PROPERTIES:
+                // TODO(b/457496944) : Update when feature is ready in service-appsearch.
+                // fall through
+            case Features.SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT:
+                // TODO(b/457496944) : Update when feature is ready in service-appsearch.
+                // fall through
                 return false;
 
             default:

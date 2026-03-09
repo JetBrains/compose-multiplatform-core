@@ -65,7 +65,7 @@ public fun NavigationSuiteScaffold(
     content: @Composable () -> Unit = {},
 ) {
     Subspace {
-        // TODO(kmost): Expose DragPolicy and ResizePolicy params
+        // TODO(b/454025889): Expose DragPolicy and ResizePolicy params
         SpatialPanel(
             modifier = modifier.getPaddingForLayoutType(layoutType).fillMaxSize(),
             dragPolicy = MovePolicy(),
@@ -90,7 +90,7 @@ private fun SubspaceModifier.getPaddingForLayoutType(
     return if (layoutType.isNavigationBar) {
         this.padding(bottom = XrNavigationSuiteScaffoldTokens.PaddingForNavigationBarOrbiter)
     } else { // Layout is NavigationRail
-        this.padding(left = XrNavigationSuiteScaffoldTokens.PaddingForNavigationRailOrbiter)
+        this.padding(start = XrNavigationSuiteScaffoldTokens.PaddingForNavigationRailOrbiter)
     }
 }
 

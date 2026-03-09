@@ -63,21 +63,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.spatial.PlanarEmbeddedSubspace
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SceneCoreEntity
-import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
+import androidx.xr.compose.subspace.SpatialSpacer
 import androidx.xr.compose.subspace.SubspaceComposable
+import androidx.xr.compose.subspace.draw.scale
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.rotate
-import androidx.xr.compose.subspace.layout.scale
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.runtime.math.Quaternion
@@ -135,11 +136,11 @@ class PanelEmbeddedSubspace : ComponentActivity() {
                             Box(Modifier.background(Color.Yellow).fillMaxHeight().weight(1.0f)) {
                                 // Here we have a PanelEmbeddedSubspace that is capable of rendering
                                 // a 3D layout within the scope of this 2D panel.
-                                Subspace {
+                                PlanarEmbeddedSubspace {
                                     var count by remember { mutableIntStateOf(0) }
                                     SpatialRow(
                                         modifier = SubspaceModifier.fillMaxSize(),
-                                        alignment = SpatialAlignment.Center,
+                                        verticalAlignment = SpatialAlignment.CenterVertically,
                                     ) {
                                         SpatialPanel(
                                             SubspaceModifier.fillMaxSize(0.5f).offset(z = 150.dp)
@@ -154,7 +155,7 @@ class PanelEmbeddedSubspace : ComponentActivity() {
                                                 Button(onClick = { count++ }) { Text("Increase") }
                                             }
                                         }
-                                        SpatialLayoutSpacer(SubspaceModifier.size(50.dp))
+                                        SpatialSpacer(SubspaceModifier.size(50.dp))
                                         SpatialPanel(SubspaceModifier.offset(z = 250.dp)) {
                                             Box(
                                                 modifier =
@@ -174,13 +175,13 @@ class PanelEmbeddedSubspace : ComponentActivity() {
                         }
                     }
 
-                    SpatialLayoutSpacer(SubspaceModifier.size(100.dp))
+                    SpatialSpacer(SubspaceModifier.size(100.dp))
                     SpatialPanel(
                         SubspaceModifier.height(800.dp).width(400.dp),
                         dragPolicy = MovePolicy(),
                     ) {
                         Box(Modifier.border(30.dp, Color.White, RoundedCornerShape(10.dp))) {
-                            Subspace {
+                            PlanarEmbeddedSubspace {
                                 SpatialPanel(SubspaceModifier.offset(z = (-200).dp)) {
                                     Box(Modifier.fillMaxSize().background(Color.Black))
                                 }
@@ -203,7 +204,7 @@ class PanelEmbeddedSubspace : ComponentActivity() {
                                                     )
                                                     .aspectRatio(1f),
                                         ) {
-                                            Subspace {
+                                            PlanarEmbeddedSubspace {
                                                 XyzArrows(
                                                     modifier =
                                                         SubspaceModifier.scale(0.05f)

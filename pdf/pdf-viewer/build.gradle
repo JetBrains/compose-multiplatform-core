@@ -15,12 +15,12 @@
  */
 
 import androidx.build.SoftwareType
+import com.android.build.api.variant.HasUnitTest
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("androidx.stableaidl")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -58,16 +58,15 @@ dependencies {
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.mockitoKotlin4)
     androidTestImplementation(libs.espressoIntents)
+    androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(project(":test:screenshot:screenshot"))
 }
 
 android {
     namespace = "androidx.pdf"
-
+    compileSdk { version = release(36) { sdkExtension = 19 }}
     defaultConfig {
-        minSdk = 31
-        compileSdk = 36
-        compileSdkExtension = 19
+        minSdk { version = release(31) }
     }
 
     buildFeatures {
@@ -79,16 +78,11 @@ android {
             version = 1
         }
     }
+}
 
-    sourceSets {
-        test {
-            assets {
-                srcDirs += ["src/test/assets"]
-            }
-            resources {
-                srcDirs += ["src/test/res"]
-            }
-        }
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        (variant as HasUnitTest).unitTest.sources.resources.addStaticSourceDirectory("src/test/res")
     }
 }
 

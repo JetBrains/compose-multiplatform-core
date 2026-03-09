@@ -16,7 +16,7 @@
 
 package androidx.datastore.core
 
-import androidx.datastore.core.handlers.NoOpCorruptionHandler
+import androidx.datastore.core.handlers.ReThrowCorruptionHandler
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -57,12 +57,10 @@ public object MultiProcessDataStoreFactory {
         migrations: List<DataMigration<T>> = listOf(),
         scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
     ): DataStore<T> =
-        DataStoreImpl<T>(
-            storage = storage,
-            initTasksList = listOf(DataMigrationInitializer.getInitializer(migrations)),
-            corruptionHandler = corruptionHandler ?: NoOpCorruptionHandler(),
-            scope = scope,
-        )
+        DataStore.Builder(storage = storage, context = scope.coroutineContext)
+            .setCorruptionHandler(corruptionHandler ?: ReThrowCorruptionHandler())
+            .addMigrations(migrations)
+            .build()
 
     /**
      * Create an instance of MultiProcessDataStore, which provides cross-process eventual
@@ -101,15 +99,18 @@ public object MultiProcessDataStoreFactory {
         scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
         produceFile: () -> File,
     ): DataStore<T> =
-        DataStoreImpl<T>(
-            storage =
-                FileStorage(
-                    serializer,
-                    { MultiProcessCoordinator(scope.coroutineContext, it) },
-                    produceFile,
-                ),
-            initTasksList = listOf(DataMigrationInitializer.getInitializer(migrations)),
-            corruptionHandler = corruptionHandler ?: NoOpCorruptionHandler(),
-            scope = scope,
-        )
+        DataStore.Builder(
+                storage =
+                    FileStorage(
+                        serializer = serializer,
+                        coordinatorProducer = {
+                            MultiProcessCoordinator(scope.coroutineContext, it)
+                        },
+                        produceFile = produceFile,
+                    ),
+                context = scope.coroutineContext,
+            )
+            .setCorruptionHandler(corruptionHandler ?: ReThrowCorruptionHandler())
+            .addMigrations(migrations)
+            .build()
 }

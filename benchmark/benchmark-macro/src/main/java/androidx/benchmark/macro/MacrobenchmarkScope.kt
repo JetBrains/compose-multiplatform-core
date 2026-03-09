@@ -51,6 +51,15 @@ public class MacrobenchmarkScope(
     private val launchWithClearTask: Boolean,
 ) : UiAutomatorTestScope() {
 
+    /**
+     * When launching activities through UiAutomator APIs, perform a full startActivityAndWait,
+     * which includes Macrobenchmark's custom wait-for-frames logic which would be hard to
+     * reproduce/implement in UiAutomator.
+     */
+    override fun startIntentAndWait(intent: Intent) {
+        startActivityAndWait(intent)
+    }
+
     internal val context = instrumentation.context
 
     /** The per-iteration file label used as a prefix when storing Macrobenchmark results. */
@@ -214,10 +223,6 @@ public class MacrobenchmarkScope(
         } else {
             amStartAndWait(uri)
         }
-    }
-
-    override fun startActivityIntent(intent: Intent) {
-        startActivityAndWait(intent)
     }
 
     @SuppressLint("BanThreadSleep") // Cannot always detect activity launches.

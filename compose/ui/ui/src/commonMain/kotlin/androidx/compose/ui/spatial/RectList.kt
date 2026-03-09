@@ -189,7 +189,6 @@ internal class RectList {
             }
             i -= LongsPerItem
         }
-        throw IllegalStateException("Inserted child $value before its parent $parentId")
     }
 
     /**
@@ -224,9 +223,8 @@ internal class RectList {
         val value = value and MaxSupportedId
         val items = items
         val size = itemsSize
-        var i = 0
-        while (i < items.size - 2) {
-            if (i >= size) break
+        var i = size - LongsPerItem
+        while (i >= 0) {
             val meta = items[i + 2]
             if (unpackMetaValue(meta) == parentId) {
                 val parentLT = items[i + 0]
@@ -250,9 +248,8 @@ internal class RectList {
                 )
                 return
             }
-            i += LongsPerItem
+            i -= LongsPerItem
         }
-        throw IllegalStateException("Inserted child $value before its parent $parentId")
     }
 
     /**
@@ -386,7 +383,6 @@ internal class RectList {
             }
             i += LongsPerItem
         }
-        throw IllegalStateException("Didn't find the node with $value")
     }
 
     /**
@@ -444,11 +440,9 @@ internal class RectList {
                     }
                     i += LongsPerItem
                 }
-                throw IllegalStateException("Didn't find the node with $value")
             }
             i += LongsPerItem
         }
-        throw IllegalStateException("Didn't find the parent with $parentId")
     }
 
     fun updateSubhierarchy(id: Int, deltaX: Int, deltaY: Int) {

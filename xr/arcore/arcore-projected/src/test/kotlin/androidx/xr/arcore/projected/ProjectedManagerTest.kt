@@ -16,7 +16,10 @@
 package androidx.xr.arcore.projected
 
 import android.app.Activity
+import androidx.xr.arcore.runtime.Geospatial
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -43,6 +46,7 @@ import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class ProjectedManagerTest {
     @Mock private lateinit var mockActivity: Activity
     @Mock private lateinit var mockPerceptionService: IProjectedPerceptionService.Stub
@@ -92,14 +96,20 @@ class ProjectedManagerTest {
         expectedUpdateResult.devicePose = projectedPose
         `when`(mockPerceptionService.update()).thenReturn(expectedUpdateResult)
         underTest.create()
+        val config = Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN)
+
+        underTest.configure(config)
         underTest.running.set(true)
 
         underTest.update()
+
         assertThat(perceptionManager.xrResources.deviceTrackingState)
             .isEqualTo(TrackingState.TRACKING)
         assertThat(perceptionManager.xrResources.geospatialTrackingState)
             .isEqualTo(TrackingState.STOPPED)
         assertThat(perceptionManager.arDevice.devicePose).isEqualTo(expectedPose)
+        assertThat(perceptionManager.xrResources.geospatial.state)
+            .isEqualTo(Geospatial.State.NOT_RUNNING)
     }
 
     @Test
@@ -107,13 +117,29 @@ class ProjectedManagerTest {
         underTest.create()
         val config =
             Config(
-                deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
-                geospatial = Config.GeospatialMode.VPS_AND_GPS,
+                deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+                geospatial = GeospatialMode.VPS_AND_GPS,
             )
 
         underTest.configure(config)
 
         verify(mockPerceptionService).startWithConfiguration(any())
+    }
+
+    @Test
+    fun configure_withGeospatialEnabledWithoutLocationPermissions_throwsSecurityException() {
+        underTest.create()
+        `when`(mockPerceptionService.startWithConfiguration(any()))
+            .thenReturn(
+                -21 /*ProjectedStatus.PROJECTED_ERROR_FINE_LOCATION_PERMISSION_NOT_GRANTED*/
+            )
+        val config =
+            Config(
+                deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+                geospatial = GeospatialMode.VPS_AND_GPS,
+            )
+
+        assertThrows(SecurityException::class.java) { underTest.configure(config) }
     }
 
     @Test
@@ -123,8 +149,8 @@ class ProjectedManagerTest {
 
         val config =
             Config(
-                deviceTracking = Config.DeviceTrackingMode.DISABLED,
-                geospatial = Config.GeospatialMode.DISABLED,
+                deviceTracking = DeviceTrackingMode.DISABLED,
+                geospatial = GeospatialMode.DISABLED,
             )
         underTest.configure(config)
 
@@ -135,43 +161,90 @@ class ProjectedManagerTest {
     fun configure_withIncompatibleSettings_throwsException() {
         val config =
             Config(
-                deviceTracking = Config.DeviceTrackingMode.DISABLED,
-                geospatial = Config.GeospatialMode.VPS_AND_GPS,
+                deviceTracking = DeviceTrackingMode.DISABLED,
+                geospatial = GeospatialMode.VPS_AND_GPS,
             )
         assertThrows(UnsupportedOperationException::class.java) { underTest.configure(config) }
     }
 
     @Test
-    fun configure_withValidConfigs_sendsCorrectAidlConfig() {
+    fun configure_spatialLastKnownWithGeo_sends6DofAndGeoEnabled() {
         underTest.create()
         underTest.running.set(true)
-        val configWithGeospatial =
+        val config =
             Config(
-                deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
-                geospatial = Config.GeospatialMode.VPS_AND_GPS,
+                deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+                geospatial = GeospatialMode.VPS_AND_GPS,
             )
 
-        underTest.configure(configWithGeospatial)
+        underTest.configure(config)
 
         verify(mockPerceptionService).startWithConfiguration(projectedConfigCaptor.capture())
         assertThat(projectedConfigCaptor.value.geospatialMode)
             .isEqualTo(ProjectedGeospatialMode.ENABLED)
         assertThat(projectedConfigCaptor.value.trackingMode)
             .isEqualTo(ProjectedTrackingMode.PROJECTED_TRACKING_6DOF)
+    }
 
-        val configWithoutGeospatial =
+    @Test
+    fun configure_spatialLastKnownWithoutGeo_sends6DofAndGeoDisabled() {
+        underTest.create()
+        underTest.running.set(true)
+        val config =
             Config(
-                deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
-                geospatial = Config.GeospatialMode.DISABLED,
+                deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+                geospatial = GeospatialMode.DISABLED,
             )
 
-        underTest.configure(configWithoutGeospatial)
-        verify(mockPerceptionService, times(2))
+        underTest.configure(config)
+
+        verify(mockPerceptionService, times(1))
+            .startWithConfiguration(projectedConfigCaptor.capture())
+        assertThat(projectedConfigCaptor.value.geospatialMode)
+            .isEqualTo(ProjectedGeospatialMode.DISABLED)
+        assertThat(projectedConfigCaptor.value.trackingMode)
+            .isEqualTo(ProjectedTrackingMode.PROJECTED_TRACKING_6DOF)
+    }
+
+    @Test
+    fun configure_inertialLastKnownWithoutGeo_sends3DofAndGeoDisabled() {
+        underTest.create()
+        underTest.running.set(true)
+        val config =
+            Config(
+                deviceTracking = DeviceTrackingMode.INERTIAL_LAST_KNOWN,
+                geospatial = GeospatialMode.DISABLED,
+            )
+
+        underTest.configure(config)
+
+        verify(mockPerceptionService, times(1))
             .startWithConfiguration(projectedConfigCaptor.capture())
         assertThat(projectedConfigCaptor.value.geospatialMode)
             .isEqualTo(ProjectedGeospatialMode.DISABLED)
         assertThat(projectedConfigCaptor.value.trackingMode)
             .isEqualTo(ProjectedTrackingMode.PROJECTED_TRACKING_3DOF)
+    }
+
+    @Test
+    fun configure_inertialLastKnownWithGeo_sendsExpectedConfig() {
+        underTest.create()
+        underTest.running.set(true)
+        val config =
+            Config(
+                deviceTracking = DeviceTrackingMode.INERTIAL_LAST_KNOWN,
+                geospatial = GeospatialMode.VPS_AND_GPS,
+            )
+
+        underTest.configure(config)
+
+        verify(mockPerceptionService, times(1))
+            .startWithConfiguration(projectedConfigCaptor.capture())
+        assertThat(projectedConfigCaptor.value.geospatialMode)
+            .isEqualTo(ProjectedGeospatialMode.ENABLED)
+        // Geo is not compatible with 3DoF, so it forces 6DoF
+        assertThat(projectedConfigCaptor.value.trackingMode)
+            .isEqualTo(ProjectedTrackingMode.PROJECTED_TRACKING_6DOF)
     }
 
     @Test
@@ -182,13 +255,14 @@ class ProjectedManagerTest {
     }
 
     @Test
-    fun stop_whenServiceIsRunning_stopsService() {
+    fun stop_whenServiceIsRunning_stopsServiceAndUnbinds() {
         underTest.create()
         underTest.running.set(true)
 
         underTest.stop()
 
         verify(mockPerceptionService).stop()
+        verify(mockActivity).unbindService(any())
     }
 
     @Test
@@ -198,5 +272,16 @@ class ProjectedManagerTest {
         underTest.stop()
 
         verify(mockPerceptionService, never()).stop()
+    }
+
+    @Test
+    fun stop_calledMultipleTimes_onlyUnbindsServiceOnce() {
+        underTest.create()
+        underTest.running.set(true)
+
+        underTest.stop()
+        underTest.stop()
+
+        verify(mockActivity, times(1)).unbindService(any())
     }
 }

@@ -122,10 +122,14 @@ public class WebViewFeature {
             DELETE_BROWSING_DATA,
             PRERENDER_WITH_URL,
             SAVE_STATE,
+            NAVIGATION_GET_WEB_RESOURCE_ERROR,
             NAVIGATION_CALLBACK_BASIC,
             NAVIGATION_LISTENER_V1,
+            NAVIGATION_LISTENER_V2,
+            NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED,
             PAYMENT_REQUEST,
-            WEBVIEW_BUILDER,
+            WEBVIEW_BUILDER_EXPERIMENTAL_V1,
+            WEBVIEW_BUILDER_EXPERIMENTAL_V2,
             WARM_UP_RENDERER_PROCESS,
             PRECONNECT,
             PROVIDER_WEAKLY_REF_WEBVIEW,
@@ -133,6 +137,10 @@ public class WebViewFeature {
             ORIGIN_MATCHED_HEADERS,
             CUSTOM_REQUEST_HEADERS,
             ADD_QUIC_HINTS_V1,
+            PAGE_GET_URL,
+            PREFETCH_CACHE_V1,
+            SET_MAX_PRERENDERS_V1,
+            JS_INJECTION_IN_FRAME_AND_WORLD
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -149,7 +157,7 @@ public class WebViewFeature {
             STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS,
             STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES,
             STARTUP_FEATURE_SET_PROFILES_TO_LOAD,
-            STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE,
+            STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -663,13 +671,21 @@ public class WebViewFeature {
      */
     public static final String BACK_FORWARD_CACHE_SETTINGS = "BACK_FORWARD_CACHE_SETTINGS";
 
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link BackForwardCacheSettings#setMaxPagesInCache(int)}
+     * {@link BackForwardCacheSettings#setTimeoutSeconds(long)}
+     */
+    public static final String BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3 =
+            "BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3";
+
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link Profile#prefetchUrlAsync(String, CancellationSignal, Executor, SpeculativeLoadingParameters, OutcomeReceiverCompat)}
-     * {@link Profile#prefetchUrlAsync(String, CancellationSignal, Executor, OutcomeReceiverCompat)}
-     * {@link Profile#clearPrefetchAsync(String, Executor, OutcomeReceiverCompat)}
+     * {@link Profile#prefetchUrlAsync(String, CancellationSignal, Executor, SpeculativeLoadingParameters, WebViewOutcomeReceiver)}
+     * {@link Profile#prefetchUrlAsync(String, CancellationSignal, Executor, WebViewOutcomeReceiver)}
      */
     @Profile.ExperimentalUrlPrefetch
     public static final String PROFILE_URL_PREFETCH = "PREFETCH_URL_V5";
@@ -707,10 +723,36 @@ public class WebViewFeature {
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link PrefetchCache#setMaxPrefetches(Integer)},{@link PrefetchCache#setPrefetchTtlSeconds(Integer)}
+     */
+    @Profile.ExperimentalUrlPrefetch
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String PREFETCH_CACHE_V1 = "PREFETCH_CACHE_V1";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link Profile#setMaxPrerenders(Integer)}
+     */
+    @Profile.ExperimentalUrlPrefetch
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String SET_MAX_PRERENDERS_V1 = "SET_MAX_PRERENDERS_V1";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers {@link WebViewCompat#saveState}.
      */
     @WebViewCompat.ExperimentalSaveState
     public static final String SAVE_STATE = "SAVE_STATE";
+
+    /**
+     * Feature for
+     * {@link Navigation#getWebResourceError()}
+     * {@link WebResourceErrorCompat#getDebugCode()}.
+     */
+    public static final String NAVIGATION_GET_WEB_RESOURCE_ERROR =
+            "NAVIGATION_GET_WEB_RESOURCE_ERROR";
 
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
@@ -732,8 +774,37 @@ public class WebViewFeature {
     public static final String NAVIGATION_CALLBACK_BASIC = "WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE";
 
     @WebNavigationClient.ExperimentalNavigationCallback
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String NAVIGATION_LISTENER_V1 = "NAVIGATION_LISTENER_V1";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link NavigationListener#onFirstContentfulPaintMillis(Page, long)},
+     * {@link NavigationListener#onLargestContentfulPaintMillis(Page, long)}, and
+     * {@link NavigationListener#onPerformanceMarkMillis(Page, String, long)}
+     */
+    @WebNavigationClient.ExperimentalNavigationCallback
+    public static final String NAVIGATION_LISTENER_V2 = "NAVIGATION_LISTENER_V2";
+
+    /**
+     * When this feature is enabled, {@link NavigationListener#onNavigationCompleted} will be
+     * called even for navigations that do not commit (eg, results in 204/download/cancelled).
+     * <p>
+     * This will become the default behavior of {@link NavigationListener}.
+     */
+    @WebNavigationClient.ExperimentalNavigationCallback
+    public static final String NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED =
+            "NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED";
+
+    /**
+     * When this feature is enabled, {@link Navigation#getPage()} will return non-null for committed
+     * navigations that are same document. Previously {@code null} was returned.
+     * <p>
+     * This will become the default behavior of {@link NavigationListener}.
+     */
+    @WebNavigationClient.ExperimentalNavigationCallback
+    public static final String NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS =
+            "NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
@@ -748,14 +819,19 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers:
-     * {@link WebViewBuilder#build(Context)},
-     * {@link WebViewBuilder#build(Context, AttributeSet)},
-     * {@link WebViewBuilder#build(Context, AttributeSet, int)} and
-     * {@link WebViewBuilder#build(Context, AttributeSet, int, int)}.
+     * {@link WebViewBuilder#build(Context)}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @WebViewBuilder.Experimental
-    public static final String WEBVIEW_BUILDER = "WEBVIEW_BUILDER";
+    public static final String WEBVIEW_BUILDER_EXPERIMENTAL_V1 = "WEBVIEW_BUILDER_EXPERIMENTAL_V1";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers:
+     * {@link WebViewBuilder#applyTo(WebView)}.
+     */
+    @WebViewBuilder.Experimental
+    public static final String WEBVIEW_BUILDER_EXPERIMENTAL_V2 =
+            "WEBVIEW_BUILDER_EXPERIMENTAL_V2";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
@@ -812,10 +888,22 @@ public class WebViewFeature {
      * Feature for {@link #isStartupFeatureSupported(Context, String)}.
      * This feature covers
      * {@link ProcessGlobalConfig#setUiThreadStartupMode(Context, int)}.
+     *
+     * @deprecated Use {@link #STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2} instead.
      */
     @WebViewCompat.ExperimentalAsyncStartUp
+    @Deprecated
     public static final String STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE =
             "STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE";
+
+    /**
+     * Feature for {@link #isStartupFeatureSupported(Context, String)}.
+     * This feature covers
+     * {@link ProcessGlobalConfig#setUiThreadStartupMode(Context, int)}.
+     */
+    @WebViewCompat.ExperimentalAsyncStartUp
+    public static final String STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2 =
+            "STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
@@ -842,6 +930,23 @@ public class WebViewFeature {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String PROVIDER_WEAKLY_REF_WEBVIEW = "PROVIDER_WEAKLY_REF_WEBVIEW";
+
+    /**
+     * Feature for {@link Page#getUrl()}.
+     */
+    public static final String PAGE_GET_URL = "PAGE_GET_URL";
+
+    /**
+     * Feature for injecting JavaScript into isolated worlds and iFrames.
+     * This feature covers:
+     * {@link WebViewCompat#addJavaScriptOnEvent(WebView, String, int, Set, JavaScriptExecutionWorld)},
+     * {@link WebViewCompat#addWebMessageListener(WebView, String, Set, JavaScriptExecutionWorld, WebViewCompat.WebMessageListener)},
+     * {@link WebViewCompat#removeWebMessageListener(WebView, JavaScriptExecutionWorld, String)}
+     * {@link WebViewCompat#getExecutionWorld(WebView, String)}, and
+     * {@link JavaScriptReplyProxy#executeJavaScript(String, WebViewOutcomeReceiver)}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String JS_INJECTION_IN_FRAME_AND_WORLD = "JS_INJECTION_IN_FRAME_AND_WORLD";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is
@@ -886,4 +991,5 @@ public class WebViewFeature {
             @WebViewStartupFeature @NonNull String startupFeature) {
         return WebViewFeatureInternal.isStartupFeatureSupported(startupFeature, context);
     }
+
 }

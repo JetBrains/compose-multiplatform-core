@@ -17,12 +17,11 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
     namespace = "androidx.fragment.testapp"
-    compileSdk = 35
+    compileSdk { version = release(35) }
 }
 
 dependencies {

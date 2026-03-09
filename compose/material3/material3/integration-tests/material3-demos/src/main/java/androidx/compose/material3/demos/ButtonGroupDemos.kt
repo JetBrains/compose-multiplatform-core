@@ -68,7 +68,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ButtonGroupDemos() {
     val checked = remember { mutableStateListOf(false, false, false, false, false, false, false) }
-    val interactionSources = List(7) { MutableInteractionSource() }
+    val interactionSources = remember { List(7) { MutableInteractionSource() } }
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -94,6 +94,7 @@ fun ButtonGroupDemos() {
                     }
                 },
                 modifier = Modifier.padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.Top,
             ) {
                 customItem(
                     buttonGroupContent = {

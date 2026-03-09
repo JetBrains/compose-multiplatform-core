@@ -23,17 +23,20 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
-import android.os.ParcelFileDescriptor
 import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfDocument.Companion.LINEARIZATION_STATUS_UNKNOWN
+import androidx.pdf.RenderParams
+import androidx.pdf.annotation.KeyedPdfAnnotation
+import androidx.pdf.annotation.models.PdfObject
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.SelectionBoundary
-import androidx.pdf.models.FormEditRecord
 import androidx.pdf.models.FormWidgetInfo
+import java.util.concurrent.Executor
 import kotlin.random.Random
 
 /**
@@ -48,15 +51,22 @@ import kotlin.random.Random
  * @param formType one of [PDF_FORM_TYPE_ACRO_FORM], [PDF_FORM_TYPE_XFA_FULL],
  *   [PDF_FORM_TYPE_XFA_FOREGROUND], or [PDF_FORM_TYPE_NONE] depending on the type of PDF form this
  *   fake PDF should represent
- * @param isLinearized true if this fake PDF is linearized
+ * @param linearizationStatus One of [LINEARIZATION_STATUS_LINEARIZED],
+ *   [LINEARIZATION_STATUS_NOT_LINEARIZED], or [LINEARIZATION_STATUS_UNKNOWN], indicating the
+ *   linearization state of the fake PDF.
  */
 @OpenForTesting
 internal open class FakePdfDocument(
     /** A list of (x, y) page dimensions in content coordinates */
     private val pages: List<Point> = listOf(),
     override val formType: Int = PDF_FORM_TYPE_NONE,
+    override val linearizationStatus: Int = LINEARIZATION_STATUS_UNKNOWN,
+    @Deprecated(
+        "Deprecated, Use linearizationStatus instead",
+        replaceWith = ReplaceWith("linearizationStatus"),
+    )
     override val isLinearized: Boolean = false,
-    override val formEditRecords: List<FormEditRecord> = emptyList(),
+    override val renderParams: RenderParams = RenderParams(RenderParams.RENDER_MODE_FOR_DISPLAY),
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
     override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
     private val pageLinks: List<PdfDocument.PdfPageLinks> = emptyList(),
@@ -67,20 +77,25 @@ internal open class FakePdfDocument(
         return FakeBitmapSource(pageNumber)
     }
 
-    override suspend fun getFormWidgetInfos(pageNum: Int): List<FormWidgetInfo> {
+    override suspend fun getFormWidgetInfos(pageNum: Int, types: Long): List<FormWidgetInfo> {
         return listOf()
     }
 
-    override suspend fun getFormWidgetInfos(pageNum: Int, types: IntArray): List<FormWidgetInfo> {
-        return listOf()
+    override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
+        return null
     }
 
-    override suspend fun applyEdit(pageNum: Int, record: FormEditRecord): List<Rect> {
-        return listOf()
+    override fun addOnPdfContentInvalidatedListener(
+        executor: Executor,
+        listener: PdfDocument.OnPdfContentInvalidatedListener,
+    ) {
+        TODO("Not yet implemented")
     }
 
-    override suspend fun write(destination: ParcelFileDescriptor) {
-        return
+    override fun removeOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
+        TODO("Not yet implemented")
     }
 
     override suspend fun getPageLinks(pageNumber: Int): PdfDocument.PdfPageLinks {
@@ -89,6 +104,10 @@ internal open class FakePdfDocument(
         } else {
             PdfDocument.PdfPageLinks(emptyList(), emptyList())
         }
+    }
+
+    override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
+        TODO("Not yet implemented")
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
@@ -124,19 +143,16 @@ internal open class FakePdfDocument(
 
     override suspend fun getPageInfos(
         pageRange: IntRange,
-        pageInfoFlags: PdfDocument.PageInfoFlags,
+        pageInfoFlags: Long,
     ): List<PdfDocument.PageInfo> {
         return listOf()
     }
 
     override suspend fun getPageInfo(pageNumber: Int): PdfDocument.PageInfo {
-        return getPageInfo(pageNumber, PdfDocument.PageInfoFlags.of(0))
+        return getPageInfo(pageNumber, PdfDocument.PAGE_INFO_EXCLUDE_FORM_WIDGETS)
     }
 
-    override suspend fun getPageInfo(
-        pageNumber: Int,
-        pageInfoFlags: PdfDocument.PageInfoFlags,
-    ): PdfDocument.PageInfo {
+    override suspend fun getPageInfo(pageNumber: Int, pageInfoFlags: Long): PdfDocument.PageInfo {
         val size = pages[pageNumber]
         return PdfDocument.PageInfo(pageNumber, size.y, size.x)
     }

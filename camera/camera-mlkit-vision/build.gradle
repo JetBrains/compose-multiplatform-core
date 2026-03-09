@@ -18,7 +18,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -33,7 +32,7 @@ dependencies {
         }
     }
     implementation("androidx.annotation:annotation-experimental:1.4.1")
-    implementation("com.google.android.gms:play-services-tasks:18.0.1")
+    implementation("com.google.android.gms:play-services-tasks:18.2.1")
     implementation(libs.playServicesBasement)
 
     testImplementation(libs.mockitoCore4)
@@ -48,7 +47,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(36) }
 
     lint {
         enable.add("CameraXQuirksClassDetector")

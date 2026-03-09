@@ -27,44 +27,25 @@ import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.operations.Theme
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.player.compose.test.util.getCoreDocument
-import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.DarkMode
 import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 
 @MediumTest
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
-@RunWith(JUnit4::class)
-class ThemeComposeTest : ThemeTest() {
+@RunWith(AndroidJUnit4::class)
+class ThemeTest {
     @get:Rule
-    override val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(
-            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-            targetPlayer = TargetPlayer.Compose,
-        )
-}
-
-@MediumTest
-@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
-@RunWith(JUnit4::class)
-class ThemeViewTest() : ThemeTest() {
-    @get:Rule
-    override val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(
-            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-            targetPlayer = TargetPlayer.View,
-        )
-}
-
-abstract class ThemeTest() {
-    abstract val remoteComposeTestRule: RemoteComposeScreenshotTestRule
+    val remoteComposeTestRule by lazy {
+        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
+    }
 
     @Test
     fun nightUnspecifiedDarkMode_darkThemeProvided_showsDarkTheme() {

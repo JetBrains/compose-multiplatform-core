@@ -172,6 +172,7 @@ actual constructor() {
      * @throws IllegalArgumentException if initialization fails.
      */
     @CallSuper
+    @Suppress("KmpVisibilityMismatch") // expect is internal
     public actual open fun init(configuration: DatabaseConfiguration) {
         this.configuration = configuration
         useTempTrackingTable = configuration.useTempTrackingTable
@@ -363,13 +364,13 @@ actual constructor() {
                 }
                 connection.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE) {
                     if (hasForeignKeys) {
-                        execSQL("PRAGMA defer_foreign_keys = TRUE")
+                        executeSQL("PRAGMA defer_foreign_keys = TRUE")
                     }
-                    tableNames.forEach { tableName -> execSQL("DELETE FROM `$tableName`") }
+                    tableNames.forEach { tableName -> executeSQL("DELETE FROM `$tableName`") }
                 }
                 if (!connection.inTransaction()) {
-                    connection.execSQL("PRAGMA wal_checkpoint(FULL)")
-                    connection.execSQL("VACUUM")
+                    connection.executeSQL("PRAGMA wal_checkpoint(FULL)")
+                    connection.executeSQL("VACUUM")
                     invalidationTracker.refreshAsync()
                 }
             }
@@ -433,7 +434,7 @@ actual constructor() {
      * @param connection The database connection.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected actual fun internalInitInvalidationTracker(connection: SQLiteConnection) {
+    protected actual suspend fun internalInitInvalidationTracker(connection: SQLiteConnection) {
         invalidationTracker.internalInit(connection)
     }
 
@@ -476,7 +477,9 @@ actual constructor() {
      *
      * @param T The type of the abstract database class.
      */
-    @Suppress("GetterOnBuilder") // To keep ABI compatibility from Java
+    // GetterOnBuilder: To keep ABI compatibility from Java
+    // KmpModifierMismatch: expect is not open
+    @Suppress("GetterOnBuilder", "KmpModifierMismatch")
     public actual open class Builder<T : RoomDatabase> {
         private val klass: KClass<T>
         private val context: Context
@@ -1127,6 +1130,7 @@ actual constructor() {
      * A container to hold migrations. It also allows querying its contents to find migrations
      * between two versions.
      */
+    @Suppress("KmpModifierMismatch") // expect is not open
     public actual open class MigrationContainer {
         private val migrations = mutableMapOf<Int, TreeMap<Int, Migration>>()
 
@@ -1227,21 +1231,21 @@ actual constructor() {
          *
          * @param connection The database connection.
          */
-        public actual open fun onCreate(connection: SQLiteConnection) {}
+        public actual open suspend fun onCreate(connection: SQLiteConnection) {}
 
         /**
          * Called after the database was destructively migrated.
          *
          * @param connection The database connection.
          */
-        public actual open fun onDestructiveMigration(connection: SQLiteConnection) {}
+        public actual open suspend fun onDestructiveMigration(connection: SQLiteConnection) {}
 
         /**
          * Called when the database has been opened.
          *
          * @param connection The database connection.
          */
-        public actual open fun onOpen(connection: SQLiteConnection) {}
+        public actual open suspend fun onOpen(connection: SQLiteConnection) {}
     }
 
     /**

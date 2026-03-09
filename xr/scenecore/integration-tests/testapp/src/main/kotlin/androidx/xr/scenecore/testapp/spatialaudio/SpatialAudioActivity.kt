@@ -20,7 +20,7 @@ import android.annotation.SuppressLint
 import android.content.res.Resources
 import android.media.AudioAttributes
 import android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION
-import android.media.AudioAttributes.USAGE_ASSISTANCE_SONIFICATION
+import android.media.AudioAttributes.USAGE_NOTIFICATION
 import android.media.AudioFormat
 import android.media.AudioFormat.CHANNEL_OUT_MONO
 import android.media.AudioTrack
@@ -64,6 +64,7 @@ class SpatialAudioActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_spatialaudio)
+        session.scene.keyEntity = session.scene.mainPanelEntity
 
         // Toolbar action
         val toolbar: Toolbar = findViewById(R.id.toolbar_spatial_audio_test)
@@ -91,7 +92,7 @@ class SpatialAudioActivity : AppCompatActivity() {
             )
 
         val movableComponent = MovableComponent.createSystemMovable(session, scaleInZ = false)
-        val unused = soundEntity.addComponent(movableComponent)
+        soundEntity.addComponent(movableComponent)
 
         val pointSourceParams = PointSourceParams(soundEntity)
         val soundFieldAttributes =
@@ -102,13 +103,12 @@ class SpatialAudioActivity : AppCompatActivity() {
                 .setAudioAttributes(
                     AudioAttributes.Builder()
                         .setContentType(CONTENT_TYPE_SONIFICATION)
-                        .setUsage(USAGE_ASSISTANCE_SONIFICATION)
+                        .setUsage(USAGE_NOTIFICATION)
                         .build()
                 )
                 .build()
 
-        val tigerPath =
-            Environment.getExternalStorageDirectory().getPath() + "/Download/tiger_16db.mp3"
+        val tigerPath = Environment.getExternalStorageDirectory().path + "/Download/tiger_16db.mp3"
         val tigerFile = File(tigerPath)
         if (!tigerFile.exists()) {
             Toast.makeText(
@@ -130,47 +130,44 @@ class SpatialAudioActivity : AppCompatActivity() {
             soundPool.load(
                 // For Testers: Note that this translates to
                 // "/sdcard/Download/foa_basketball_16bit.wav"
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/foa_basketball_16bit.wav",
                 /* priority= */ 1,
             )
 
         val soundPoolPointButton = findViewById<Button>(R.id.button_soundpool_play_point_sound)
         soundPoolPointButton.setOnClickListener {
-            val unused =
-                SpatialSoundPool.play(
-                    session,
-                    soundPool,
-                    pointSoundId,
-                    pointSourceParams,
-                    DEFAULT_VOLUME,
-                    DEFAULT_PRIORITY,
-                    DEFAULT_LOOP,
-                    DEFAULT_RATE,
-                )
+            SpatialSoundPool.play(
+                session,
+                soundPool,
+                pointSoundId,
+                pointSourceParams,
+                DEFAULT_VOLUME,
+                DEFAULT_PRIORITY,
+                DEFAULT_LOOP,
+                DEFAULT_RATE,
+            )
         }
 
         val soundPoolSoundFieldButton = findViewById<Button>(R.id.button_soundpool_play_sound_field)
         soundPoolSoundFieldButton.setOnClickListener {
-            val unused =
-                SpatialSoundPool.play(
-                    session,
-                    soundPool,
-                    soundFieldSoundId,
-                    soundFieldAttributes,
-                    DEFAULT_VOLUME,
-                    DEFAULT_PRIORITY,
-                    DEFAULT_LOOP,
-                    DEFAULT_RATE,
-                )
+            SpatialSoundPool.play(
+                session,
+                soundPool,
+                soundFieldSoundId,
+                soundFieldAttributes,
+                DEFAULT_VOLUME,
+                DEFAULT_PRIORITY,
+                DEFAULT_LOOP,
+                DEFAULT_RATE,
+            )
         }
 
         val audioTrackDefaultPlayer =
             AudioTrackPlayer(
                 resources,
                 // For Testers: Note that this translates to "/sdcard/Download/tiger_16db_raw.wav"
-                Environment.getExternalStorageDirectory().getPath() +
-                    "/Download/tiger_16db_raw.wav",
+                Environment.getExternalStorageDirectory().path + "/Download/tiger_16db_raw.wav",
                 sampleRate = 48000,
                 session,
             )
@@ -188,8 +185,7 @@ class SpatialAudioActivity : AppCompatActivity() {
             PointSourceTrackPlayer(
                 resources,
                 // For Testers: Note that this translates to "/sdcard/Download/tiger_16db_raw.wav"
-                Environment.getExternalStorageDirectory().getPath() +
-                    "/Download/tiger_16db_raw.wav",
+                Environment.getExternalStorageDirectory().path + "/Download/tiger_16db_raw.wav",
                 sampleRate = 48000,
                 session,
                 PointSourceParams(session.scene.mainPanelEntity),
@@ -208,8 +204,7 @@ class SpatialAudioActivity : AppCompatActivity() {
                 resources,
                 // For Testers: Note that this translates to
                 // "/sdcard/Download/foa_basketball_raw.wav"
-                Environment.getExternalStorageDirectory().getPath() +
-                    "/Download/foa_basketball_raw.wav",
+                Environment.getExternalStorageDirectory().path + "/Download/foa_basketball_raw.wav",
                 sampleRate = 48000,
                 session,
                 soundFieldAttributes,
@@ -229,14 +224,13 @@ class SpatialAudioActivity : AppCompatActivity() {
         // Init MediaPlayer
         // For Testers: Note that this translates to "/sdcard/Download/tiger_16db.mp3"
         val pointSourcePath =
-            Environment.getExternalStorageDirectory().getPath() + "/Download/tiger_16db.mp3"
+            Environment.getExternalStorageDirectory().path + "/Download/tiger_16db.mp3"
         // For Testers: Note that this translates to "/sdcard/Download/foa_basketball_16bit.wav"
         val soundFieldPath =
-            Environment.getExternalStorageDirectory().getPath() +
-                "/Download/foa_basketball_16bit.wav"
+            Environment.getExternalStorageDirectory().path + "/Download/foa_basketball_16bit.wav"
         // For Testers: Note that this translates to "/sdcard/Download/dunes_test_opus.ogg"
         val soundFieldOpusPath =
-            Environment.getExternalStorageDirectory().getPath() + "/Download/dunes_test_opus.ogg"
+            Environment.getExternalStorageDirectory().path + "/Download/dunes_test_opus.ogg"
 
         val mediaPlayerPointButton = findViewById<Button>(R.id.button_mediaplayer_play_point_sound)
         mediaPlayerPointButton.setOnClickListener {
@@ -307,8 +301,7 @@ class SpatialAudioActivity : AppCompatActivity() {
 
         override fun configureBuilder(session: Session, builder: AudioTrack.Builder) {
             super.configureBuilder(session, builder)
-            val unused =
-                SpatialAudioTrackBuilder.setPointSourceParams(session, builder, pointSourceParams)
+            SpatialAudioTrackBuilder.setPointSourceParams(session, builder, pointSourceParams)
         }
     }
 
@@ -321,12 +314,7 @@ class SpatialAudioActivity : AppCompatActivity() {
     ) : AudioTrackPlayer(resources, filePath, sampleRate, session) {
 
         override fun configureBuilder(session: Session, builder: AudioTrack.Builder) {
-            val unused =
-                SpatialAudioTrackBuilder.setSoundFieldAttributes(
-                    session,
-                    builder,
-                    soundFieldAttributes,
-                )
+            SpatialAudioTrackBuilder.setSoundFieldAttributes(session, builder, soundFieldAttributes)
         }
     }
 
@@ -390,16 +378,28 @@ class SpatialAudioActivity : AppCompatActivity() {
                 SpatializerConstants.SourceType.DEFAULT -> {
                     Log.d(TAG, "Source type is bypass")
                 }
+
                 SpatializerConstants.SourceType.POINT_SOURCE -> {
                     Log.d(
                         TAG,
-                        "Point Source: ${SpatialAudioTrack.getPointSourceParams(session, audioTrack)}",
+                        "Point Source: ${
+                            SpatialAudioTrack.getPointSourceParams(
+                                session,
+                                audioTrack,
+                            )
+                        }",
                     )
                 }
+
                 SpatializerConstants.SourceType.SOUND_FIELD -> {
                     Log.d(
                         TAG,
-                        "Sound Field: ${SpatialAudioTrack.getSoundFieldAttributes(session, audioTrack)}",
+                        "Sound Field: ${
+                            SpatialAudioTrack.getSoundFieldAttributes(
+                                session,
+                                audioTrack,
+                            )
+                        }",
                     )
                 }
             }

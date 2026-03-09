@@ -39,7 +39,7 @@ package androidx.xr.arcore {
     ctor public AnchorCreateResourcesExhausted();
   }
 
-  public abstract sealed class AnchorCreateResult {
+  public abstract sealed exhaustive class AnchorCreateResult {
   }
 
   public final class AnchorCreateSuccess extends androidx.xr.arcore.AnchorCreateResult {
@@ -56,8 +56,16 @@ package androidx.xr.arcore {
     ctor public AnchorCreateUnsupportedLocation();
   }
 
+  public final class AnchorCreateUnsupportedObject extends androidx.xr.arcore.AnchorCreateResult {
+    ctor public AnchorCreateUnsupportedObject();
+  }
+
   public final class AnchorLoadInvalidUuid extends androidx.xr.arcore.AnchorCreateResult {
     ctor public AnchorLoadInvalidUuid();
+  }
+
+  public interface Anchorable<T> extends androidx.xr.arcore.Trackable<T> {
+    method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
   }
 
   public final class ArDevice {
@@ -77,7 +85,6 @@ package androidx.xr.arcore {
   }
 
   public final class AugmentedObject implements androidx.xr.arcore.Trackable<androidx.xr.arcore.AugmentedObject.State> {
-    method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.AugmentedObject.State> getState();
     method public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.AugmentedObject>> subscribe(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.AugmentedObject.State> state;
@@ -103,7 +110,7 @@ package androidx.xr.arcore {
     ctor public CreateGeospatialPoseFromPoseNotTracking();
   }
 
-  public abstract sealed class CreateGeospatialPoseFromPoseResult {
+  public abstract sealed exhaustive class CreateGeospatialPoseFromPoseResult {
   }
 
   public final class CreateGeospatialPoseFromPoseSuccess extends androidx.xr.arcore.CreateGeospatialPoseFromPoseResult {
@@ -121,7 +128,7 @@ package androidx.xr.arcore {
     ctor public CreatePoseFromGeospatialPoseNotTracking();
   }
 
-  public abstract sealed class CreatePoseFromGeospatialPoseResult {
+  public abstract sealed exhaustive class CreatePoseFromGeospatialPoseResult {
   }
 
   public final class CreatePoseFromGeospatialPoseSuccess extends androidx.xr.arcore.CreatePoseFromGeospatialPoseResult {
@@ -160,7 +167,10 @@ package androidx.xr.arcore {
     property public int width;
   }
 
-  public final class Eye {
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalGesturesApi {
+  }
+
+  public final class Eye implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Eye.State> {
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Eye.State> getState();
     method public static androidx.xr.arcore.Eye? left(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.Eye? right(androidx.xr.runtime.Session session);
@@ -173,7 +183,7 @@ package androidx.xr.arcore {
     method public androidx.xr.arcore.Eye? right(androidx.xr.runtime.Session session);
   }
 
-  public static final class Eye.State {
+  public static final class Eye.State implements androidx.xr.arcore.Trackable.State {
     ctor public Eye.State(boolean isOpen, androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.TrackingState trackingState);
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
@@ -183,22 +193,30 @@ package androidx.xr.arcore {
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
-  public final class Face {
+  public final class Face implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Face.State> {
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> getState();
     method public static androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
+    method public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Face>> subscribe(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> state;
     field public static final androidx.xr.arcore.Face.Companion Companion;
   }
 
   public static final class Face.Companion {
     method public androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
+    method public kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Face>> subscribe(androidx.xr.runtime.Session session);
   }
 
-  public static final class Face.State {
+  public static final class Face.State implements androidx.xr.arcore.Trackable.State {
     method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> getBlendShapes();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getCenterPose();
     method @FloatRange(from=0.0, to=1.0, fromInclusive=true, toInclusive=true) public float getConfidence(androidx.xr.arcore.FaceConfidenceRegion region);
+    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Mesh? getMesh();
+    method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.FaceMeshRegion,androidx.xr.runtime.math.Pose?> getRegionPoses();
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     property public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> blendShapes;
+    property public androidx.xr.runtime.math.Pose? centerPose;
+    property public androidx.xr.arcore.runtime.Mesh? mesh;
+    property public java.util.Map<androidx.xr.arcore.FaceMeshRegion,androidx.xr.runtime.math.Pose?> regionPoses;
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
@@ -358,8 +376,23 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.FaceConfidenceRegion FACE_CONFIDENCE_REGION_RIGHT_UPPER;
   }
 
+  public final class FaceMeshRegion {
+    field public static final androidx.xr.arcore.FaceMeshRegion.Companion Companion;
+    field public static final androidx.xr.arcore.FaceMeshRegion FOREHEAD_LEFT;
+    field public static final androidx.xr.arcore.FaceMeshRegion FOREHEAD_RIGHT;
+    field public static final androidx.xr.arcore.FaceMeshRegion NOSE_TIP;
+  }
+
+  public static final class FaceMeshRegion.Companion {
+    property public androidx.xr.arcore.FaceMeshRegion FOREHEAD_LEFT;
+    property public androidx.xr.arcore.FaceMeshRegion FOREHEAD_RIGHT;
+    property public androidx.xr.arcore.FaceMeshRegion NOSE_TIP;
+  }
+
   public final class Geospatial {
     method public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
+    method public androidx.xr.arcore.AnchorCreateResult createAnchor(double latitude, double longitude, double altitude, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion);
+    method public suspend Object? createAnchorOnSurface(double latitude, double longitude, double altitudeAboveSurface, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion, androidx.xr.arcore.Geospatial.Surface surface, kotlin.coroutines.Continuation<? super androidx.xr.arcore.AnchorCreateResult>);
     method public androidx.xr.arcore.CreateGeospatialPoseFromPoseResult createGeospatialPoseFromPose(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.arcore.CreatePoseFromGeospatialPoseResult createPoseFromGeospatialPose(androidx.xr.runtime.math.GeospatialPose geospatialPose);
     method public static androidx.xr.arcore.Geospatial getInstance(androidx.xr.runtime.Session session);
@@ -391,7 +424,18 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.Geospatial.State RUNNING;
   }
 
-  public final class Hand {
+  public static final class Geospatial.Surface {
+    field public static final androidx.xr.arcore.Geospatial.Surface.Companion Companion;
+    field public static final androidx.xr.arcore.Geospatial.Surface ROOFTOP;
+    field public static final androidx.xr.arcore.Geospatial.Surface TERRAIN;
+  }
+
+  public static final class Geospatial.Surface.Companion {
+    property public androidx.xr.arcore.Geospatial.Surface ROOFTOP;
+    property public androidx.xr.arcore.Geospatial.Surface TERRAIN;
+  }
+
+  public final class Hand implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Hand.State> {
     method public static androidx.xr.arcore.Hand.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> getState();
     method public static androidx.xr.arcore.Hand? left(androidx.xr.runtime.Session session);
@@ -412,7 +456,7 @@ package androidx.xr.arcore {
     enum_constant public static final androidx.xr.arcore.Hand.HandSide UNKNOWN;
   }
 
-  public static final class Hand.State {
+  public static final class Hand.State implements androidx.xr.arcore.Trackable.State {
     method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.HandJointType,androidx.xr.runtime.math.Pose> getHandJoints();
     method @InaccessibleFromKotlin public java.nio.FloatBuffer getHandJointsBuffer();
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
@@ -464,6 +508,17 @@ package androidx.xr.arcore {
     method public static java.util.List<androidx.xr.arcore.HitResult> hitTest(androidx.xr.runtime.Session session, androidx.xr.runtime.math.Ray ray);
   }
 
+  public final class NativeData {
+    method @InaccessibleFromKotlin public Long? getNativeInstancePointer();
+    method @InaccessibleFromKotlin public long getNativeSessionPointer();
+    property public Long? nativeInstancePointer;
+    property public long nativeSessionPointer;
+  }
+
+  @SuppressCompatibility public final class NativeDataExt {
+    method @SuppressCompatibility @androidx.xr.arcore.UnstableNativeResourceApi public static androidx.xr.arcore.NativeData getNativeData(androidx.xr.runtime.Session);
+  }
+
   public final class PerceptionState {
     method @InaccessibleFromKotlin public androidx.xr.arcore.ArDevice getArDevice();
     method @InaccessibleFromKotlin public androidx.xr.arcore.DepthMap? getLeftDepthMap();
@@ -491,7 +546,7 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.Face? userFace;
   }
 
-  public final class Plane implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Plane.State> {
+  public final class Plane implements androidx.xr.arcore.Anchorable<androidx.xr.arcore.Plane.State> {
     method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Plane.State> getState();
     method @InaccessibleFromKotlin public androidx.xr.arcore.Plane.Type getType();
@@ -574,8 +629,33 @@ package androidx.xr.arcore {
     property public androidx.xr.runtime.math.Pose pose;
   }
 
+  @SuppressCompatibility @androidx.xr.arcore.ExperimentalGesturesApi public final class Tilt {
+    field public static final androidx.xr.arcore.Tilt.Companion Companion;
+    field public static final androidx.xr.arcore.Tilt DOWN;
+    field public static final androidx.xr.arcore.Tilt UP;
+  }
+
+  @SuppressCompatibility @androidx.xr.arcore.ExperimentalGesturesApi public static final class Tilt.Companion {
+    property public androidx.xr.arcore.Tilt DOWN;
+    property public androidx.xr.arcore.Tilt UP;
+  }
+
+  @SuppressCompatibility @androidx.xr.arcore.ExperimentalGesturesApi public final class TiltGesture {
+    method public kotlinx.coroutines.flow.Flow<androidx.xr.arcore.TiltGesture.State> detect(androidx.xr.runtime.Session session);
+    field public static final androidx.xr.arcore.TiltGesture INSTANCE;
+  }
+
+  @SuppressCompatibility @androidx.xr.arcore.ExperimentalGesturesApi public static final class TiltGesture.State {
+    ctor public TiltGesture.State();
+    ctor public TiltGesture.State(optional androidx.xr.arcore.Tilt tilt, optional @FloatRange(from=0.0, to=1.0) float progress);
+    ctor @BytecodeOnly public TiltGesture.State(androidx.xr.arcore.Tilt!, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public float getProgress();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Tilt getTilt();
+    property public float progress;
+    property public androidx.xr.arcore.Tilt tilt;
+  }
+
   public interface Trackable<State> {
-    method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Trackable.State> getState();
     property public abstract kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Trackable.State> state;
   }
@@ -583,6 +663,9 @@ package androidx.xr.arcore {
   public static interface Trackable.State {
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     property public abstract androidx.xr.runtime.TrackingState trackingState;
+  }
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="Access to native pointers is discouraged and the data returned by this API may change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface UnstableNativeResourceApi {
   }
 
 }

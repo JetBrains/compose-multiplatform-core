@@ -28,6 +28,7 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.core.Token
 import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
+import androidx.camera.camera2.pipe.internal.CameraGraphRequestListenersImpl
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Deferred
@@ -40,8 +41,14 @@ internal class CameraGraphSessionImpl(
     private val controller3A: Controller3A,
     private val frameCaptureQueue: FrameCaptureQueue,
     private val parameters: CameraGraphParametersImpl,
+    private val listeners: CameraGraphRequestListenersImpl,
 ) : CameraGraph.Session {
     private val debugId = cameraGraphSessionIds.incrementAndGet()
+    override var repeatingRequest: Request?
+        get() = graphProcessor.repeatingRequest
+        set(request) {
+            graphProcessor.repeatingRequest = request
+        }
 
     override fun submit(request: Request) {
         check(!token.released) { "Cannot call submit on $this after close." }
@@ -82,10 +89,12 @@ internal class CameraGraphSessionImpl(
     }
 
     override fun close() {
-        val unappliedParameters = parameters.fetchUpdatedParameters()
-        if (unappliedParameters != null) {
-            graphProcessor.updateGraphParameters(unappliedParameters)
-        }
+        // Since we are already holding a session, it's good to flush any pending changes to
+        // parameters and listeners. This can potentially save any new session creation or code to
+        // that was meant to apply them in the first place.
+        parameters.flush()
+        listeners.flush()
+
         token.release()
     }
 

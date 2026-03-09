@@ -17,18 +17,19 @@
 
 package androidx.compose.remote.creation.compose.state
 
-import android.graphics.Bitmap
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.BitmapFontData
 import androidx.compose.remote.core.operations.BitmapTextMeasure
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 
 /**
  * Represents a **bitmap font** within a Compose Remote hierarchy.
  *
- * A bitmap font defines its glyphs (character representations) using individual [Bitmap] images.
- * This class allows you to define custom fonts using rasterized images for each character or
- * character sequence.
+ * A bitmap font defines its glyphs (character representations) using individual [ImageBitmap]
+ * images. This class allows you to define custom fonts using rasterized images for each character
+ * or character sequence.
  *
  * When bitmap fonts are rendered, a **greedy algorithm** is used to match parts of the text to
  * available glyphs. This means that the system prefers to match longer glyphs (e.g., a glyph for
@@ -43,15 +44,22 @@ import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationSta
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteBitmapFont(
     public val glyphs: List<Glyph>,
-    public val kerningTable: Map<String, Short> = emptyMap(),
-) : BaseRemoteState {
+    @Suppress("PrimitiveInCollection") public val kerningTable: Map<String, Short> = emptyMap(),
+) : BaseRemoteState<Any>() {
+    internal enum class OperationKey {
+        MeasureWidth,
+        MeasureHeight,
+    }
+
+    internal override val cacheKey: RemoteStateCacheKey = RemoteStateInstanceKey()
+
     /** A Glyph from a [RemoteBitmapFont] which may represent one or more characters. */
     public class Glyph(
         /** The character(s) this glyph represents. */
         public val chars: String,
 
         /** The bitmap for this glyph, or null for a space. */
-        public val bitmap: Bitmap?,
+        public val bitmap: ImageBitmap?,
 
         /** The margin in pixels to the left of the glyph bitmap. */
         public val marginLeft: Short,
@@ -64,24 +72,32 @@ public class RemoteBitmapFont(
 
         /** The margin in pixels below the glyph bitmap. */
         public val marginBottom: Short,
+
+        /** The width of the glyph, defaults to the bitmap width. */
+        public val width: Short = bitmap?.width?.toShort() ?: 0,
+
+        /** The height of the glyph, defaults to the bitmap height. */
+        public val height: Short = bitmap?.height?.toShort() ?: 0,
     )
 
-    public override val hasConstantValue: Boolean
-        get() = true
+    public override val constantValueOrNull: Any?
+        get() = null
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int {
         return creationState.document.addBitmapFont(
             Array<BitmapFontData.Glyph>(glyphs.size) { index ->
                 val glyph = glyphs[index]
                 BitmapFontData.Glyph(
                     glyph.chars,
-                    glyph.bitmap?.let { creationState.document.addBitmap(it) } ?: -1,
+                    glyph.bitmap?.let { creationState.document.addBitmap(it.asAndroidBitmap()) }
+                        ?: -1,
                     glyph.marginLeft,
                     glyph.marginTop,
                     glyph.marginRight,
                     glyph.marginBottom,
-                    glyph.bitmap?.width?.toShort() ?: 0,
-                    glyph.bitmap?.height?.toShort() ?: 0,
+                    glyph.width,
+                    glyph.height,
                 )
             },
             kerningTable,
@@ -93,15 +109,21 @@ public class RemoteBitmapFont(
      * drawn at position 0, 0.
      *
      * @param text The [RemoteString] whose width needs to be measured.
+     * @param glyphSpacing A [RemoteFloat] specifying a horizontal adjustment between glyphs in
+     *   pixels.
      * @return A [RemoteFloat] representing the calculated width in pixels.
      */
-    public fun measureWidth(text: RemoteString): RemoteFloat {
-        return RemoteFloatExpression(constantValue = null) { creationState ->
+    public fun measureWidth(text: RemoteString, glyphSpacing: RemoteFloat): RemoteFloat {
+        return RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey = RemoteOperationCacheKey.create(OperationKey.MeasureWidth, this, text),
+        ) { creationState ->
             floatArrayOf(
                 creationState.document.bitmapTextMeasure(
                     text.getIdForCreationState(creationState),
                     getIdForCreationState(creationState),
                     BitmapTextMeasure.MEASURE_WIDTH,
+                    glyphSpacing.getFloatIdForCreationState(creationState),
                 )
             )
         }
@@ -115,12 +137,16 @@ public class RemoteBitmapFont(
      * @return A [RemoteFloat] representing the calculated height in pixels.
      */
     public fun measureHeight(text: RemoteString): RemoteFloat {
-        return RemoteFloatExpression(constantValue = null) { creationState ->
+        return RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey = RemoteOperationCacheKey.create(OperationKey.MeasureHeight, this, text),
+        ) { creationState ->
             floatArrayOf(
                 creationState.document.bitmapTextMeasure(
                     text.getIdForCreationState(creationState),
                     getIdForCreationState(creationState),
                     BitmapTextMeasure.MEASURE_HEIGHT,
+                    0f,
                 )
             )
         }

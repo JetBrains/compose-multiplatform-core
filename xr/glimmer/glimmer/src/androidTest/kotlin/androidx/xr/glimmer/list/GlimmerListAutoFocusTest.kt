@@ -23,10 +23,8 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +45,6 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
-import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
@@ -63,7 +60,6 @@ import androidx.test.filters.MediumTest
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.performIndirectSwipe
 import com.google.common.truth.Truth
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -81,32 +77,14 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
     }
 
     @Test
-    @Ignore("b/447024357")
     fun performScrollToIndex_movesAutoFocus() {
         rule.setAutoFocusContent { FocusableTestList(itemsCount = 100) }
 
-        // TODO: b/447024357 - Focus is lost at the beginning of the animation
-        //  and can't be gained again because the List no longer has focus.
         rule.onNodeWithTag(LIST_TEST_TAG).performScrollToIndex(25)
 
         // TODO: b/433687753 - performScrollToIndex() isn't aligned with the auto-focused item.
         // We brought item-25 to the top, but centered item-27 is focused.
         rule.onListItem(27).assertIsFocused()
-    }
-
-    @Test
-    fun animateScrollToItem_movesAutoFocus() {
-        rule.setAutoFocusContent {
-            val state = remember { ListState() }
-            FocusableTestList(state = state, itemsCount = 100)
-            LaunchedEffect(Unit) { state.animateScrollToItem(42) }
-        }
-
-        rule.waitForIdle()
-
-        // TODO: b/433687753 - animateScrollToItem() isn't aligned with the auto-focused item.
-        // We brought item-42 to the top, but centered item-44 is focused.
-        rule.onListItem(44).assertIsFocused()
     }
 
     @Test
@@ -386,10 +364,8 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
         rule.waitForIdle()
     }
 
-    private fun ComposeContentTestRule.setAutoFocusContent(
-        content: @Composable ColumnScope.() -> Unit
-    ) {
-        setContentWithInitialFocus {
+    private fun ComposeContentTestRule.setAutoFocusContent(content: @Composable () -> Unit) {
+        setContent {
             focusManager = LocalFocusManager.current
             content()
         }

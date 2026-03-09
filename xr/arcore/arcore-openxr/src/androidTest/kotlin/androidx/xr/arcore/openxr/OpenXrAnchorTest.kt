@@ -33,7 +33,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.runtime.openxr.test"
+// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.arcore.openxr.test"
 // supports a
 // lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
@@ -43,7 +43,7 @@ class OpenXrAnchorTest {
 
     companion object {
         init {
-            System.loadLibrary("androidx.xr.runtime.openxr.test")
+            System.loadLibrary("androidx.xr.arcore.openxr.test")
         }
     }
 
@@ -52,10 +52,12 @@ class OpenXrAnchorTest {
     private lateinit var openXrManager: OpenXrManager
     private lateinit var xrResources: XrResources
     private lateinit var underTest: OpenXrAnchor
+    private lateinit var timeSource: OpenXrTimeSource
 
     @Before
     fun setUp() {
-        xrResources = XrResources()
+        timeSource = OpenXrTimeSource()
+        xrResources = XrResources(timeSource)
         underTest = OpenXrAnchor(nativePointer = 1, xrResources = xrResources)
         xrResources.addUpdatable(underTest as Updatable)
     }
@@ -151,7 +153,6 @@ class OpenXrAnchorTest {
 
     private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            val timeSource = OpenXrTimeSource()
             val perceptionManager = OpenXrPerceptionManager(timeSource)
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()

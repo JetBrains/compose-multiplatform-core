@@ -28,6 +28,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 private const val INVALID_ROTATION = -1
@@ -35,6 +36,7 @@ private const val INVALID_ROTATION = -1
 /** Unit tests for [RotationProvider]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class RotationProviderTest {
 
     private val rotationProvider = RotationProvider(getInstrumentation().context)

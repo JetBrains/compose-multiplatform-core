@@ -3448,6 +3448,72 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
     }
 
     @Test
+    public void projectedExtenderSetGetContentIntent() {
+        NotificationCompat.ProjectedExtender projectedExtender =
+                new NotificationCompat.ProjectedExtender();
+        PendingIntent intent = createIntent("test");
+        projectedExtender.setContentIntent(intent);
+        assertEquals(intent, projectedExtender.getContentIntent());
+    }
+
+    @Test
+    public void projectedExtenderSetsExtras() {
+        PendingIntent contentIntent = createIntent("content");
+
+        NotificationCompat.ProjectedExtender projectedExtender =
+                new NotificationCompat.ProjectedExtender().setContentIntent(contentIntent);
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(mContext, "test channel")
+                        .setSmallIcon(0)
+                        .setContentTitle("title")
+                        .setContentText("text");
+
+        builder = projectedExtender.extend(builder);
+        Notification notification = builder.build();
+
+        Bundle projectedExtensions =
+                notification.extras.getBundle(
+                        NotificationCompat.ProjectedExtender.EXTRA_PROJECTED_EXTENDER);
+        assertNotNull(projectedExtensions);
+        assertEquals(
+                contentIntent,
+                BundleCompat.getParcelable(
+                        projectedExtensions,
+                        NotificationCompat.ProjectedExtender.KEY_CONTENT_INTENT,
+                        PendingIntent.class));
+    }
+
+    @Test
+    public void projectedExtenderFromNotification() {
+        PendingIntent contentIntent = createIntent("content");
+
+        NotificationCompat.ProjectedExtender projectedExtender =
+                new NotificationCompat.ProjectedExtender().setContentIntent(contentIntent);
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(mContext, "test channel")
+                        .setSmallIcon(0)
+                        .setContentTitle("title")
+                        .setContentText("text");
+
+        builder = projectedExtender.extend(builder);
+        Notification notification = builder.build();
+
+        NotificationCompat.ProjectedExtender recoveredExtender =
+                new NotificationCompat.ProjectedExtender(notification);
+        assertEquals(contentIntent, recoveredExtender.getContentIntent());
+    }
+
+    @Test
+    public void emptyProjectedExtender() {
+        NotificationCompat.ProjectedExtender projectedExtender =
+                new NotificationCompat.ProjectedExtender();
+        Notification notification = new NotificationCompat.Builder(mContext, "test channel")
+                .extend(projectedExtender).build();
+        assertTrue(notification.extras.getBundle(
+                NotificationCompat.ProjectedExtender.EXTRA_PROJECTED_EXTENDER).isEmpty());
+    }
+
+    @Test
     public void setBubbleMetadataIntent() {
         IconCompat icon = IconCompat.createWithAdaptiveBitmap(BitmapFactory.decodeResource(
                 mContext.getResources(),

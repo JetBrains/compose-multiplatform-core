@@ -42,10 +42,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class SessionConfigTest {
     val useCases = listOf(Preview.Builder().build(), ImageCapture.Builder().build())
     val viewPort = ViewPort.Builder(Rational(4, 3), Surface.ROTATION_0).build()
@@ -101,6 +103,7 @@ class SessionConfigTest {
         assertThat(sessionConfig.requiredFeatureGroup).isEmpty()
         assertThat(sessionConfig.preferredFeatureGroup).isEmpty()
         assertThat(sessionConfig.isLegacy).isFalse()
+        assertThat(sessionConfig.isAutoRotationEnabled).isFalse()
     }
 
     @Test
@@ -180,6 +183,7 @@ class SessionConfigTest {
                 .setViewPort(viewPort)
                 .addEffect(effect)
                 .setFrameRateRange(frameRateRange)
+                .setAutoRotationEnabled(true)
                 .build()
 
         assertThat(sessionConfig.useCases).isEqualTo(useCases)
@@ -190,6 +194,7 @@ class SessionConfigTest {
         assertThat(sessionConfig.requiredFeatureGroup).isEmpty()
         assertThat(sessionConfig.preferredFeatureGroup).isEmpty()
         assertThat(sessionConfig.isLegacy).isFalse()
+        assertThat(sessionConfig.isAutoRotationEnabled).isTrue()
     }
 
     @Test
@@ -298,7 +303,7 @@ class SessionConfigTest {
     }
 
     @Test
-    fun sessionConfig_conflictingReqFeatures_throwsIllegalArgumentExceptionWithCorrectMessage() {
+    fun sessionConfig_reqFeaturesConflictingForSameType_throwsIllegalArgExceptionWithCorrectMsg() {
         // Arrange
         val requiredFeatures =
             setOf(
@@ -355,17 +360,15 @@ class SessionConfigTest {
     }
 
     @Test
-    fun sessionConfig_imageAnalysisAddedWithFeatureParam_illegalArgumentExceptionThrown() {
+    fun sessionConfig_imageAnalysisAddedWithFeatureParam_noExceptionThrown() {
         // Arrange
         val features = listOf(FPS_60)
 
         // Act & assert
-        assertThrows<IllegalArgumentException> {
-            SessionConfig(
-                useCases = listOf(ImageAnalysis.Builder().build()),
-                preferredFeatureGroup = features,
-            )
-        }
+        SessionConfig(
+            useCases = listOf(ImageAnalysis.Builder().build()),
+            preferredFeatureGroup = features,
+        )
     }
 
     @Test
@@ -375,14 +378,11 @@ class SessionConfigTest {
     }
 
     @Test
-    fun sessionConfig_effectAddedWithFeatureParam_illegalArgumentExceptionThrown() {
+    fun sessionConfig_effectAddedWithFeatureParam_noExceptionThrown() {
         // Arrange
         val features = listOf(FPS_60)
 
-        // Act & assert
-        assertThrows<IllegalArgumentException> {
-            SessionConfig(useCases = useCases, preferredFeatureGroup = features, effects = effects)
-        }
+        SessionConfig(useCases = useCases, preferredFeatureGroup = features, effects = effects)
     }
 
     @Test
@@ -654,6 +654,44 @@ class SessionConfigTest {
     @Test
     fun sessionConfig_nonEmptyUseCaseList_noException() {
         SessionConfig(useCases) // Should not throw
+    }
+
+    @Test
+    fun builderCopyConstructor_copiesAllProperties() {
+        // Arrange
+        val cameraFilter = mock(CameraFilter::class.java)
+        val originalSessionConfig =
+            object :
+                SessionConfig(
+                    useCases = useCases,
+                    viewPort = viewPort,
+                    effects = effects,
+                    frameRateRange = frameRateRange,
+                    requiredFeatureGroup = setOf(HDR_HLG10),
+                    preferredFeatureGroup = listOf(FPS_60),
+                ) {
+                override val cameraFilter: CameraFilter? = cameraFilter
+                override val sessionType: Int = SESSION_TYPE_HIGH_SPEED
+                override val requireNonEmptyUseCases: Boolean = false
+            }
+
+        // Act
+        val copiedSessionConfig = SessionConfig.Builder(originalSessionConfig).build()
+
+        // Assert
+        assertThat(copiedSessionConfig.useCases).isEqualTo(originalSessionConfig.useCases)
+        assertThat(copiedSessionConfig.viewPort).isEqualTo(originalSessionConfig.viewPort)
+        assertThat(copiedSessionConfig.effects).isEqualTo(originalSessionConfig.effects)
+        assertThat(copiedSessionConfig.frameRateRange)
+            .isEqualTo(originalSessionConfig.frameRateRange)
+        assertThat(copiedSessionConfig.requiredFeatureGroup)
+            .isEqualTo(originalSessionConfig.requiredFeatureGroup)
+        assertThat(copiedSessionConfig.preferredFeatureGroup)
+            .isEqualTo(originalSessionConfig.preferredFeatureGroup)
+        assertThat(copiedSessionConfig.cameraFilter).isEqualTo(originalSessionConfig.cameraFilter)
+        assertThat(copiedSessionConfig.sessionType).isEqualTo(originalSessionConfig.sessionType)
+        assertThat(copiedSessionConfig.requireNonEmptyUseCases)
+            .isEqualTo(originalSessionConfig.requireNonEmptyUseCases)
     }
 
     private fun createVideoCapture(quality: Quality? = null): VideoCapture<Recorder> {

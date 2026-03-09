@@ -30,6 +30,7 @@ import org.robolectric.RobolectricTestRunner
 
 /** Tests for [LoadingView]. */
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class LoadingViewTest {
     private lateinit var loadingView: LoadingView
 

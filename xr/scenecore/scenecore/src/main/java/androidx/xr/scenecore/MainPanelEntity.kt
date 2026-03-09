@@ -18,7 +18,7 @@
 
 package androidx.xr.scenecore
 
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.IntSize2d
@@ -41,10 +41,11 @@ public class MainPanelEntity
 internal constructor(
     private val lifecycleManager: LifecycleManager,
     private val sceneRuntime: SceneRuntime,
+    perceptionSpace: PerceptionSpace,
     entityManager: EntityManager,
 ) :
     PanelEntity(
-        lifecycleManager,
+        perceptionSpace,
         sceneRuntime.mainPanelEntity,
         entityManager,
         isMainPanelEntity = true,
@@ -74,15 +75,15 @@ internal constructor(
      *   whenever the maximum perceived resolution of the main panel changes. The parameter passed
      *   to the Consumer’s accept method is the new value for [IntSize2d] value for perceived
      *   resolution.
-     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
-     *   [Config.DeviceTrackingMode.LAST_KNOWN].
+     * @throws [IllegalStateException] if [Session.config] is not set to
+     *   [androidx.xr.runtime.DeviceTrackingMode.SPATIAL_LAST_KNOWN].
      */
     public fun addPerceivedResolutionChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<IntSize2d>,
     ): Unit {
-        check(lifecycleManager.config.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN) {
-            "Config.DeviceTrackingMode is not set to LastKnown."
+        check(lifecycleManager.config.deviceTracking == DeviceTrackingMode.SPATIAL_LAST_KNOWN) {
+            "Config.DeviceTrackingMode is not set to SpatialLastKnown."
         }
         val rtListener =
             Consumer<RtPixelDimensions> { rtDimensions: RtPixelDimensions ->
@@ -118,8 +119,8 @@ internal constructor(
      *   whenever the maximum perceived resolution of the main panel changes. The parameter passed
      *   to the Consumer’s accept method is the new value for [IntSize2d] value for perceived
      *   resolution.
-     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
-     *   [Config.DeviceTrackingMode.LAST_KNOWN].
+     * @throws [IllegalStateException] if [Session.config] is not set to
+     *   [androidx.xr.runtime.DeviceTrackingMode.SPATIAL_LAST_KNOWN].
      */
     public fun addPerceivedResolutionChangedListener(listener: Consumer<IntSize2d>): Unit =
         addPerceivedResolutionChangedListener(HandlerExecutor.mainThreadExecutor, listener)
@@ -147,8 +148,10 @@ internal constructor(
         internal fun create(
             lifecycleManager: LifecycleManager,
             sceneRuntime: SceneRuntime,
+            perceptionSpace: PerceptionSpace,
             entityManager: EntityManager,
-        ): MainPanelEntity = MainPanelEntity(lifecycleManager, sceneRuntime, entityManager)
+        ): MainPanelEntity =
+            MainPanelEntity(lifecycleManager, sceneRuntime, perceptionSpace, entityManager)
     }
 
     override fun dispose() {

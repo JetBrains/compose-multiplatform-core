@@ -72,10 +72,12 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsModifier
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
@@ -1398,6 +1400,7 @@ class LayoutNodeTest {
     @Test
     fun hitTestSemantics_pointerInMinimumTouchTarget_pointerInputFilterHit() {
         val semanticsConfiguration = SemanticsConfiguration()
+        semanticsConfiguration.contentDescription = "test"
         val semanticsModifier =
             object : SemanticsModifier {
                 override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
@@ -1417,6 +1420,7 @@ class LayoutNodeTest {
     @Test
     fun hitTestSemantics_pointerInMinimumTouchTarget_pointerInputFilterHit_nestedNodes() {
         val semanticsConfiguration = SemanticsConfiguration()
+        semanticsConfiguration.contentDescription = "test"
         val semanticsModifier =
             object : SemanticsModifier {
                 override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
@@ -1438,11 +1442,15 @@ class LayoutNodeTest {
     fun hitTestSemantics_pointerInMinimumTouchTarget_closestHit() {
         val semanticsNode1 =
             object : SemanticsModifierNode, Modifier.Node() {
-                override fun SemanticsPropertyReceiver.applySemantics() {}
+                override fun SemanticsPropertyReceiver.applySemantics() {
+                    contentDescription = "node1"
+                }
             }
         val semanticsNode2 =
             object : SemanticsModifierNode, Modifier.Node() {
-                override fun SemanticsPropertyReceiver.applySemantics() {}
+                override fun SemanticsPropertyReceiver.applySemantics() {
+                    contentDescription = "node2"
+                }
             }
         data class TestSemanticsElement(private val node: Modifier.Node) :
             ModifierNodeElement<Modifier.Node>() {
@@ -1507,6 +1515,7 @@ class LayoutNodeTest {
     @Test
     fun hitTestSemantics_pointerInMinimumTouchTarget_closestHitWithOverlap() {
         val semanticsConfiguration = SemanticsConfiguration()
+        semanticsConfiguration.contentDescription = "test description"
         val semanticsModifier1 =
             object : SemanticsModifier {
                 override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
@@ -2419,6 +2428,9 @@ internal class MockOwner(
 
     override val layoutDirection: LayoutDirection
         get() = LayoutDirection.Ltr
+
+    override val localeList: LocaleList
+        get() = TODO("Not yet implemented")
 
     @InternalCoreApi override var showLayoutBounds: Boolean = false
     override val snapshotObserver = OwnerSnapshotObserver { it.invoke() }

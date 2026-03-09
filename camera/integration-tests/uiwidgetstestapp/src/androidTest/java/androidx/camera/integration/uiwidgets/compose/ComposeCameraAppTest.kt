@@ -26,17 +26,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.rule.GrantPermissionRule
 import androidx.testutils.RepeatRule
-import com.google.common.truth.Truth
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
@@ -49,7 +46,10 @@ class ComposeCameraAppTest {
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(*ComposeCameraActivity.REQUIRED_PERMISSIONS)
 
-    @get:Rule val androidComposeTestRule = createAndroidComposeRule<ComposeCameraActivity>()
+    @OptIn(ExperimentalCoroutinesApi::class) // b/457970052
+    @get:Rule
+    val androidComposeTestRule =
+        createAndroidComposeRule<ComposeCameraActivity>(StandardTestDispatcher())
 
     @get:Rule val labTest: LabTestRule = LabTestRule()
 
@@ -70,7 +70,6 @@ class ComposeCameraAppTest {
 
     // Activity launch will render ImageCaptureScreen
     // Ensure that ImageCapture screen's PreviewView is streaming properly
-    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     @Test
     @RepeatRule.Repeat(times = 10)
     fun testPreviewViewStreamStateOnActivityLaunch() {
@@ -82,7 +81,6 @@ class ComposeCameraAppTest {
     @Test
     @LabTestRule.LabTestOnly
     @RepeatRule.Repeat(times = 10)
-    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     fun testPreviewViewStreamStateOnNavigation() {
 
         // Get VideoCapture Navigation Tab (Node)
@@ -117,18 +115,14 @@ class ComposeCameraAppTest {
     private fun assertExpectedScreenAndStreamState(
         scenario: ActivityScenario<ComposeCameraActivity>
     ) =
-        runBlocking<Unit> {
-            lateinit var result: Deferred<Boolean>
-
-            scenario.onActivity { activity ->
-                // Make async Coroutine to wait the result, not block the test thread.
-                result = async { activity.waitForExpectedScreenAndStreamState() }
-            }
-
-            Truth.assertThat(result.await()).isTrue()
+        androidComposeTestRule.waitUntil(timeoutMillis = LATCH_TIMEOUT) {
+            var reached = false
+            scenario.onActivity { activity -> reached = activity.isExpectedStateReached() }
+            reached
         }
 
     companion object {
         private const val TAG = "ComposeCameraAppTest"
+        private const val LATCH_TIMEOUT: Long = 5000
     }
 }

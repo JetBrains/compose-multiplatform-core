@@ -17,6 +17,8 @@
 package androidx.appsearch.localstorage;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.AppSearchSchema;
+import androidx.appsearch.flags.Flags;
 
 import org.jspecify.annotations.NonNull;
 
@@ -128,5 +130,10 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     @Override
     public int getEmbeddingIndexNumShards() {
         return DEFAULT_EMBEDDING_INDEX_NUM_SHARDS;
+    }
+
+    @Override
+    public boolean enableRepeatedFieldJoins() {
+        return Flags.enableRepeatedFieldJoins();
     }
 }

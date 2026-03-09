@@ -46,14 +46,17 @@ public interface SceneRuntime : JxrRuntime {
     /** Returns the Activity Space entity at the root of the scene. */
     public val activitySpace: ActivitySpace
 
-    /** Returns the HeadScenePose for the session or null if it not ready. */
-    public val headActivityPose: HeadScenePose?
-
     /** Returns the PerceptionSpaceScenePose for the Session. */
     public val perceptionSpaceActivityPose: PerceptionSpaceScenePose
 
     /** Get the PanelEntity associated with the main window for the Runtime. */
     public val mainPanelEntity: PanelEntity
+
+    /**
+     * Key entity, specifying the entity to use for spatial continuity hint across spatial state
+     * transitions.
+     */
+    public var keyEntity: Entity?
 
     /** Returns the Environment for the Session. */
     public val spatialEnvironment: SpatialEnvironment
@@ -75,14 +78,12 @@ public interface SceneRuntime : JxrRuntime {
     public val mediaPlayerExtensionsWrapper: MediaPlayerExtensionsWrapper
 
     /**
-     * Returns the CameraViewScenePose for the specified camera type or null if it is not
-     * ready/available.
+     * The current state of the boundary consent from the underlying system.
      *
-     * @param cameraType The type of camera to retrieve the pose for.
+     * This is `true` if consent has been explicitly granted or the boundary system has been
+     * disabled by the user (implicit consent). Otherwise, this is `false`.
      */
-    public fun getCameraViewActivityPose(
-        @CameraViewScenePose.CameraType cameraType: Int
-    ): CameraViewScenePose?
+    public val isBoundaryConsentGranted: Boolean
 
     /**
      * Returns an [ScenePose] based off of a position within the perception space.
@@ -107,7 +108,7 @@ public interface SceneRuntime : JxrRuntime {
         view: View,
         dimensions: Dimensions,
         name: String,
-        parent: Entity,
+        parent: Entity?,
     ): PanelEntity
 
     /**
@@ -126,7 +127,7 @@ public interface SceneRuntime : JxrRuntime {
         view: View,
         pixelDimensions: PixelDimensions,
         name: String,
-        parent: Entity,
+        parent: Entity?,
     ): PanelEntity
 
     /**
@@ -143,21 +144,24 @@ public interface SceneRuntime : JxrRuntime {
         windowBoundsPx: PixelDimensions,
         name: String,
         hostActivity: Activity,
-        parent: Entity,
+        parent: Entity?,
     ): ActivityPanelEntity
 
     /** A factory function to create an Anchor entity. */
     public fun createAnchorEntity(): AnchorEntity
 
     /**
-     * A factory function to create a group entity. This entity is used as a connection point for
+     * A factory function to create a basic entity. This entity is used as a connection point for
      * attaching children entities and managing them (i.e. setPose()) as a group.
      *
      * @param pose Initial pose of the entity.
      * @param name Name of the entity.
      * @param parent Parent entity.
      */
-    public fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity
+    public fun createEntity(pose: Pose, name: String?, parent: Entity?): Entity
+
+    @Deprecated(message = "Use createEntity instead.")
+    public fun createGroupEntity(pose: Pose, name: String, parent: Entity?): Entity
 
     /** A function to create a XR Runtime Entity. */
     public fun createLoggingEntity(pose: Pose): LoggingEntity
@@ -247,14 +251,14 @@ public interface SceneRuntime : JxrRuntime {
     public fun addPerceivedResolutionChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<PixelDimensions>,
-    ): Unit
+    )
 
     /**
      * Releases the listener previously added by [addPerceivedResolutionChangedListener].
      *
      * @param listener The [Consumer] to be removed. It will no longer receive change events.
      */
-    public fun removePerceivedResolutionChangedListener(listener: Consumer<PixelDimensions>): Unit
+    public fun removePerceivedResolutionChangedListener(listener: Consumer<PixelDimensions>)
 
     /**
      * If the primary Activity for the Session that owns this object has focus, causes it to be
@@ -399,16 +403,14 @@ public interface SceneRuntime : JxrRuntime {
      * @param scaleInZ A [Boolean] which tells the system to update the scale of the Entity as the
      *   user moves it closer and further away. This is mostly useful for Panel auto-rescaling with
      *   Distance
-     * @param anchorPlacement AnchorPlacement information for when to anchor the entity.
-     * @param shouldDisposeParentAnchor A [Boolean] which tells the system to dispose of the parent
-     *   anchor if that entity was created by the moveable component and is moved off of it.
+     * @param userAnchorable A [Boolean] which tells the system that the entity can be anchored to
+     *   planes detected by the system.
      * @return [MovableComponent] instance.
      */
     public fun createMovableComponent(
         systemMovable: Boolean,
         scaleInZ: Boolean,
-        anchorPlacement: Set<@JvmSuppressWildcards AnchorPlacement>,
-        shouldDisposeParentAnchor: Boolean,
+        userAnchorable: Boolean,
     ): MovableComponent
 
     /**
@@ -448,4 +450,38 @@ public interface SceneRuntime : JxrRuntime {
     ): PointerCaptureComponent
 
     public fun createSpatialPointerComponent(): SpatialPointerComponent
+
+    /**
+     * Creates an instance of [BoundsComponent].
+     *
+     * This component allows an application to monitor changes to the spatial bounds of an entity.
+     * Once created, the component can be attached to an entity that supports bounds tracking. After
+     * attachment, listeners can be added via [BoundsComponent.addOnBoundsUpdateListener] to receive
+     * notifications when the entity's bounds change due to animations or other transformations.
+     *
+     * @return A new [BoundsComponent] instance.
+     * @see BoundsComponent
+     */
+    public fun createBoundsComponent(): BoundsComponent
+
+    /**
+     * Adds the given [Consumer] as a listener to be invoked when the boundary consent state
+     * changes.
+     *
+     * @param callbackExecutor The [Executor] on which to invoke the listener.
+     * @param listener The [Consumer] to be invoked asynchronously on the given [callbackExecutor]
+     *   with the new boundary consent state (`true` if granted, `false` otherwise). Refer to
+     *   [isBoundaryConsentGranted] for a detailed explanation of the states.
+     */
+    public fun addOnBoundaryConsentChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<Boolean>,
+    )
+
+    /**
+     * Releases the given [Consumer] from receiving updates when the boundary consent state changes.
+     *
+     * @param listener The [Consumer] to be removed. It will no longer receive change events.
+     */
+    public fun removeOnBoundaryConsentChangedListener(listener: Consumer<Boolean>)
 }

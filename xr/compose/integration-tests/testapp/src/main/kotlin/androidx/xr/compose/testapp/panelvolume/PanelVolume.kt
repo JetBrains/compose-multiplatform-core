@@ -52,16 +52,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.spatial.PlanarEmbeddedSubspace
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SceneCoreEntity
 import androidx.xr.compose.subspace.SpatialPanel
+import androidx.xr.compose.subspace.draw.scale
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.scale
-import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.GltfModel
@@ -161,7 +162,7 @@ class PanelVolume : ComponentActivity() {
                 Row {
                     Text(text = "Panel", textAlign = TextAlign.Center, fontSize = 20.sp)
                     if (gltfEntity != null) {
-                        Subspace {
+                        PlanarEmbeddedSubspace {
                             SceneCoreEntity(
                                 factory = { gltfEntity },
                                 modifier =

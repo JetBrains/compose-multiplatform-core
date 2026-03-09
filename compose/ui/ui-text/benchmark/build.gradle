@@ -20,7 +20,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("com.android.experimental.built-in-kotlin")
     id("androidx.benchmark")
 }
 
@@ -40,11 +39,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
-    defaultConfig {
-        // Using blocked private API b/425739542
-        targetSdk = 34
-    }
+    compileSdk { version = release(35) }
     namespace = "androidx.compose.ui.text.benchmark"
 }
 

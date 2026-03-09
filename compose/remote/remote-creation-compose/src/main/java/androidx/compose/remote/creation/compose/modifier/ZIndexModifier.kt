@@ -13,28 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.zIndex
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ZIndexModifier(public val value: RemoteFloat) : RemoteLayoutModifier {
+internal class ZIndexModifier(public val value: RemoteFloat) : RemoteModifier.Element {
 
-    override fun toRemoteComposeElement(): RecordingModifier.Element {
-        return androidx.compose.remote.creation.modifiers.ZIndexModifier(value.internalAsFloat())
-    }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        return zIndex(value.toFloat())
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
+        return androidx.compose.remote.creation.modifiers.ZIndexModifier(value.floatId)
     }
 }
 
-public fun RemoteModifier.zIndex(value: RemoteFloat): RemoteModifier = then(ZIndexModifier(value))
+public fun RemoteModifier.zIndex(zIndex: RemoteFloat): RemoteModifier = then(ZIndexModifier(zIndex))

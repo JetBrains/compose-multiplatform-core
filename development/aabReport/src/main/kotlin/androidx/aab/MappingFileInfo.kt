@@ -85,11 +85,19 @@ data class MappingFileInfo(
         const val BUNDLE_LOCATION =
             "BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map"
 
-        val CSV_TITLES = listOf("mapping_file_version", "mapping_file_type")
-
-        fun MappingFileInfo?.csvEntries(): List<String> {
-            return listOf(this?.mappingVersion.toString(), this?.getType().toString())
-        }
+        val CSV_COLUMNS =
+            listOf(
+                CsvColumn<MappingFileInfo?>(
+                    "mapping_file_version",
+                    "Version number in mapping file, or null if no mapping file present",
+                    calculate = { it?.mappingVersion.toString() },
+                ),
+                CsvColumn<MappingFileInfo?>(
+                    "mapping_file_type",
+                    "Mapping file header pattern, of those observed in common mapping file headers",
+                    calculate = { it?.getType().toString() },
+                ),
+            )
 
         private fun List<String>.findAfterPrefix(prefix: String): String? {
             return firstOrNull { it.startsWith(prefix) }?.removePrefix(prefix)?.trim()

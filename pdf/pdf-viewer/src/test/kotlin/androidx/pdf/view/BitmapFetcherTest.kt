@@ -35,6 +35,7 @@ import org.mockito.kotlin.mock
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class BitmapFetcherTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -47,7 +48,7 @@ class BitmapFetcherTest {
         }
 
     private var invalidationCounter = 0
-    private val invalidationTracker: () -> Unit = { invalidationCounter++ }
+    private val invalidationTracker: (Int) -> Unit = { invalidationCounter++ }
 
     private val maxBitmapSizePx = Point(2048, 2048)
     private val pageSize = Point(512, 512)

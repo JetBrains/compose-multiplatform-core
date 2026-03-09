@@ -18,40 +18,31 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
-import androidx.compose.remote.creation.compose.modifier.BackgroundModifier
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.fillMaxSize
-import androidx.compose.remote.creation.compose.modifier.toComposeUi
 import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
+import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
+import androidx.compose.remote.creation.compose.v2.FitBoxV2
+import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentComposer
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
 
 /** Utility modifier to record the layout information */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteComposeFitBoxModifier(
+internal class RemoteComposeFitBoxModifier(
     private val modifier: RemoteModifier,
-    private val horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    private val verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    private val horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
+    private val verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
 ) : DrawModifier {
     override fun ContentDrawScope.draw() {
-        drawIntoCanvas {
-            if (it.nativeCanvas is RecordingCanvas) {
-                (it.nativeCanvas as RecordingCanvas).let {
-                    it.document.startFitBox(
-                        modifier.toRemoteCompose(),
-                        horizontalAlignment.toRemoteCompose(),
-                        verticalArrangement.toRemoteCompose(),
-                    )
-                    drawContent()
-                    it.document.endFitBox()
-                }
-            }
+        drawIntoRemoteCanvas { canvas ->
+            canvas.document.startFitBox(
+                canvas.toRecordingModifier(modifier),
+                horizontalAlignment.toRemote(),
+                verticalArrangement.toRemote(),
+            )
+            this@draw.drawContent()
+            canvas.document.endFitBox()
         }
     }
 }
@@ -61,35 +52,24 @@ public class RemoteComposeFitBoxModifier(
  * FitBox to both work as a normal Box when called within a normal Compose tree, and capture the
  * layout information when called within a capture pass for RemoteCompose.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
 public fun FitBox(
     modifier: RemoteModifier = RemoteModifier,
-    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    verticalArrangement: Arrangement.Vertical = Arrangement.Center,
-    content: @Composable () -> Unit,
+    horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.CenterHorizontally,
+    verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Center,
+    content: @RemoteComposable @Composable () -> Unit,
 ) {
-    val captureMode = LocalRemoteComposeCreationState.current
-    if (captureMode is NoRemoteCompose) {
-        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-        androidx.compose.foundation.layout.Box(
-            modifier.toComposeUi(),
-            contentAlignment = boxAlignment(horizontalAlignment, verticalArrangement),
-        ) {
-            content()
-        }
-    } else {
-        val background = modifier.find<BackgroundModifier>()
-        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-        androidx.compose.foundation.layout.Box(
-            RemoteComposeFitBoxModifier(modifier, horizontalAlignment, verticalArrangement)
-                .then(modifier.toComposeUiLayout())
-        ) {
-            if (background?.brush?.hasShader == true) {
-                RemoteCanvas(RemoteModifier.fillMaxSize()) { drawRect(background.brush) }
-            }
-
-            content()
-        }
+    if (currentComposer.applier is RemoteComposeApplierV2) {
+        FitBoxV2(modifier, horizontalAlignment, verticalArrangement, content)
+        return
+    }
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    androidx.compose.foundation.layout.Box(
+        RemoteComposeFitBoxModifier(modifier, horizontalAlignment, verticalArrangement)
+            .then(modifier.toComposeUiLayout())
+    ) {
+        content()
     }
 }

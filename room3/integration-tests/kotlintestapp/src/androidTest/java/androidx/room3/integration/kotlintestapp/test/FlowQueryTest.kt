@@ -35,6 +35,7 @@ import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
@@ -98,6 +99,17 @@ class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         booksDao.getBooksFlow().take(1).collect {
             assertThat(it).isEqualTo(listOf(TestUtil.BOOK_1, TestUtil.BOOK_2))
         }
+    }
+
+    @Test
+    fun collectBooks_takeOne_customReturnType() = runBlocking {
+        booksDao.addAuthors(TestUtil.AUTHOR_1)
+        booksDao.addPublishers(TestUtil.PUBLISHER)
+        booksDao.addBooks(TestUtil.BOOK_1, TestUtil.BOOK_2)
+
+        val data = booksDao.getBooksCustomDaoReturnType().data
+        assertThat(data[0]).isEqualTo(TestUtil.BOOK_1)
+        assertThat(data[1]).isEqualTo(TestUtil.BOOK_2)
     }
 
     @Test
@@ -516,6 +528,7 @@ class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
      * are not missed. b/432365736 and b/439232923
      */
     @Test
+    @SdkSuppress(minSdkVersion = 28) // Older versions doesn't clean up connection properly.
     fun flow_cancellations_flatMapLatest_combine() =
         repeat(1000) {
             val context = ApplicationProvider.getApplicationContext() as Context

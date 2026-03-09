@@ -45,11 +45,13 @@ import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class CameraSurfaceAdapterTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val mockCameraAppComponent: CameraAppComponent = mock()
@@ -203,5 +205,7 @@ class CameraSurfaceAdapterTest {
             }
             return underlyingFake.awaitCameraMetadata(cameraId, cameraBackendId)
         }
+
+        override fun awaitCameraMetadata(cameraId: CameraId) = awaitCameraMetadata(cameraId, null)
     }
 }

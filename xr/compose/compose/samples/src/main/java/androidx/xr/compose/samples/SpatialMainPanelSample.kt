@@ -19,7 +19,7 @@ package androidx.xr.compose.samples
 import androidx.annotation.Sampled
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.xr.compose.spatial.ApplicationSubspace
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
@@ -37,7 +37,7 @@ public fun SpatialMainPanelSample() {
         MainPanelContent()
 
         // Spatial content rendered in full space mode.
-        ApplicationSubspace {
+        Subspace {
             SpatialRow {
                 SpatialPanel { Text("Spatial panel") }
                 SpatialMainPanel()

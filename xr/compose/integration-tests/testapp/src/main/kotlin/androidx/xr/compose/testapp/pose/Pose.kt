@@ -37,7 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
-import androidx.xr.compose.spatial.ApplicationSubspace
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SceneCoreEntity
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
@@ -85,7 +85,7 @@ class Pose : ComponentActivity() {
 
         setContent {
             IntegrationTestsAppTheme {
-                ApplicationSubspace(
+                Subspace(
                     modifier =
                         SubspaceModifier.sizeIn(
                             maxWidth = 20.meters.toDp(),
@@ -106,7 +106,7 @@ class Pose : ComponentActivity() {
                         //     Green arrow: +Y (Up)
                         //     Blue arrow: +Z (Backward)
                         //     Red arrow: +X (Right)
-                        SpatialColumn(alignment = SpatialAlignment.Center) {
+                        SpatialColumn(horizontalAlignment = SpatialAlignment.CenterHorizontally) {
                             LabelPanel(
                                 "Case 1:\nInitial State\n\n" +
                                     "EXPECTED:\n" +
@@ -123,7 +123,7 @@ class Pose : ComponentActivity() {
                         //     Green: +Z (Backward)
                         //     Blue: -Y (Down)
                         //     Red: +X (Right)
-                        SpatialColumn(alignment = SpatialAlignment.Center) {
+                        SpatialColumn(horizontalAlignment = SpatialAlignment.CenterHorizontally) {
                             LabelPanel(
                                 "Case 2:\nParent Rot\n" +
                                     "= rotX90°\n\n" +
@@ -148,7 +148,7 @@ class Pose : ComponentActivity() {
                         //     Green: +Z (Backward)
                         //     Blue: +X (Right)
                         //     Red: +Y (Up)
-                        SpatialColumn(alignment = SpatialAlignment.Center) {
+                        SpatialColumn(horizontalAlignment = SpatialAlignment.CenterHorizontally) {
                             LabelPanel(
                                 "Case 3:\nGrand Parent Rot * Parent Rot\n" +
                                     "= rotX90 * rotY90\n\n" +
@@ -175,7 +175,7 @@ class Pose : ComponentActivity() {
                         //     Green: -Y (Down)
                         //     Blue: +X (Right)
                         //     Red: +Z (Backward)
-                        SpatialColumn(alignment = SpatialAlignment.Center) {
+                        SpatialColumn(horizontalAlignment = SpatialAlignment.CenterHorizontally) {
                             LabelPanel(
                                 "Case 4:\nGrand Parent Rot *\n" +
                                     "Parent Inner Rot Y *\n" +
@@ -210,7 +210,7 @@ class Pose : ComponentActivity() {
                         //     Green: -Y (Down)
                         //     Blue: +X (Right)
                         //     Red: +Z (Backward)
-                        SpatialColumn(alignment = SpatialAlignment.Center) {
+                        SpatialColumn(horizontalAlignment = SpatialAlignment.CenterHorizontally) {
                             LabelPanel(
                                 "Case 5:\nGrand Grand Parent Rot *\n" +
                                     "Grand Parent Rot Y *\n" +

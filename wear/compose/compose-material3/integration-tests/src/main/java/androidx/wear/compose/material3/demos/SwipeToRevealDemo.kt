@@ -850,7 +850,7 @@ fun SwipeToRevealIconOnlyWithTransformingLazyColumnDemo() {
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
         modifier = Modifier.background(Color.Black),
     ) {
-        items(items = messages, key = { it }) { message ->
+        items(items = messages, key = { it.title }) { message ->
             val revealState = rememberRevealState(initialValue = Covered)
 
             // SwipeToReveal is covered on scroll.

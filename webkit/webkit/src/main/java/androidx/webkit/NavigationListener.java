@@ -16,7 +16,7 @@
 
 package androidx.webkit;
 
-import androidx.annotation.RestrictTo;
+import android.annotation.SuppressLint;
 
 import org.jspecify.annotations.NonNull;
 
@@ -44,7 +44,6 @@ import org.jspecify.annotations.NonNull;
  *   </li>
  * </ul>
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @WebNavigationClient.ExperimentalNavigationCallback
 public interface NavigationListener {
     /**
@@ -70,7 +69,8 @@ public interface NavigationListener {
     /**
      * Called when a navigation completes.
      * <p>
-     * The navigation might not have actually committed (e.g., results in 204/download/cancelled).
+     * The navigation might not have actually committed (e.g., results in 204/download/cancelled),
+     * but those that do they will have committed by this point.
      *
      * @param navigation The Navigation object representing the completed navigation.
      */
@@ -115,7 +115,67 @@ public interface NavigationListener {
      * @param page       The Page for which the First Contentful Paint occurred.
      * @param loadTimeUs Navigation to First Contentful Paint load time in microseconds.
      */
+    @SuppressLint("LambdaLast")
     default void onFirstContentfulPaint(@NonNull Page page, long loadTimeUs) {
+
+    }
+
+    /**
+     * Called when the page achieves "First Contentful Paint".
+     *
+     * <p>See <a href="https://web.dev/articles/fcp">First Contentful Paint (FCP)</a>
+     * for a definition.</p>
+     * <p>This method is called only if
+     * {@link WebViewFeature#NAVIGATION_LISTENER_V2} is supported.
+     * You can check whether that flag is supported using
+     * {@link WebViewFeature#isFeatureSupported(String)}.
+     *
+     * @param page           The Page for which the First Contentful Paint occurred.
+     * @param durationMillis Navigation to First Contentful Paint duration in milliseconds.
+     */
+    @SuppressLint("LambdaLast")
+    default void onFirstContentfulPaintMillis(@NonNull Page page, long durationMillis) {
+
+    }
+
+    /**
+     * Called when the page fires a "Largest Contentful Paint" event.
+     *
+     * <p>See <a href="https://web.dev/articles/lcp">Largest Contentful Paint (LCP)</a>
+     * for a definition.</p>
+     *
+     * <p>This method is called only if
+     * {@link WebViewFeature#NAVIGATION_LISTENER_V2} is supported.
+     * You can check whether that flag is supported using
+     * {@link WebViewFeature#isFeatureSupported(String)}.
+     *
+     * @param page           The Page for which the Largest Contentful Paint occurred.
+     * @param durationMillis Navigation to Largest Contentful Paint duration in milliseconds.
+     */
+    @SuppressLint("LambdaLast")
+    default void onLargestContentfulPaintMillis(@NonNull Page page, long durationMillis) {
+
+    }
+
+    /**
+     * Called when the page registers a performance mark.
+     *
+     * <p>See <a href="https://developer.mozilla.org/en-US/docs/Web/API/Performance/mark">
+     *     Performance: mark() method</a> for a definition.</p>
+     *
+     * <p>This method is called only if
+     * {@link WebViewFeature#NAVIGATION_LISTENER_V2} is supported.
+     * You can check whether that flag is supported using
+     * {@link WebViewFeature#isFeatureSupported(String)}.
+     *
+     * @param page           The Page for which the performance mark was registered.
+     * @param markName       The name of the performance mark.
+     * @param markTimeMillis The time of the performance mark in milliseconds since
+     *                       Performance.timeOrigin.
+     */
+    @SuppressLint("LambdaLast")
+    default void onPerformanceMarkMillis(@NonNull Page page,
+            @NonNull String markName, long markTimeMillis) {
 
     }
 }

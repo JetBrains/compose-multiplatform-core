@@ -19,10 +19,12 @@ package androidx.xr.scenecore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.GltfAnimationFeature
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
-import androidx.xr.scenecore.runtime.MaterialResource
+import androidx.xr.scenecore.runtime.GltfModelNodeFeature
 import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.GltfEntity] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -30,16 +32,23 @@ public open class FakeGltfEntity(
     private val feature: GltfFeature? = null,
     private val executor: Executor? = null,
 ) : FakeEntity(), GltfEntity {
-    public class Node {
-        public val nodeName: String = "glTF node"
-        public val materialArray: Array<FakeResource> =
-            arrayOf(FakeResource(1), FakeResource(2), FakeResource(3))
-    }
+    override val nodes: List<GltfModelNodeFeature>
+        get() = feature?.nodes ?: emptyList()
 
-    public val node: Node = Node()
+    private val _animationStateListeners = mutableMapOf<Consumer<Int>, Executor?>()
 
     @GltfEntity.AnimationStateValue
     private var _animationState: Int = GltfEntity.AnimationState.STOPPED
+        set(value) {
+            field = value
+            for ((listener, executor) in _animationStateListeners.entries) {
+                if (executor != null) {
+                    executor.execute { listener.accept(value) }
+                } else {
+                    listener.accept(value)
+                }
+            }
+        }
 
     /** Returns the current animation state of the glTF entity. */
     @GltfEntity.AnimationStateValue
@@ -48,8 +57,38 @@ public open class FakeGltfEntity(
             return feature?.animationState ?: _animationState
         }
 
-    override fun getGltfModelBoundingBox(): BoundingBox =
+    override val gltfModelBoundingBox: BoundingBox =
         BoundingBox.fromMinMax(Vector3.Zero, Vector3.One)
+
+    private val _animations = mutableListOf<GltfAnimationFeature>()
+
+    override val animations: List<GltfAnimationFeature>
+        get() = (feature?.getAnimations(executor!!) ?: emptyList()) + _animations
+
+    override fun setColliderEnabled(enabled: Boolean) {
+        feature?.setColliderEnabled(enabled)
+    }
+
+    override fun addOnBoundsUpdateListener(listener: Consumer<BoundingBox>) {
+        feature?.addOnBoundsUpdateListener(listener)
+    }
+
+    override fun removeOnBoundsUpdateListener(listener: Consumer<BoundingBox>) {
+        feature?.removeOnBoundsUpdateListener(listener)
+    }
+
+    override fun setReformAffordanceEnabled(enabled: Boolean, systemMovable: Boolean) {
+        feature?.setReformAffordanceEnabled(this, enabled, executor!!, systemMovable)
+    }
+
+    /**
+     * Adds an animation to the list of animations.
+     *
+     * @param animation The animation to add.
+     */
+    public fun addAnimation(animation: GltfAnimationFeature) {
+        _animations.add(animation)
+    }
 
     /**
      * Indicates whether the animation is currently looping. In tests, you can
@@ -59,24 +98,6 @@ public open class FakeGltfEntity(
      *   correctly to the animation stopping.
      */
     public var isLooping: Boolean = false
-
-    override fun setMaterialOverride(
-        material: MaterialResource,
-        nodeName: String,
-        primitiveIndex: Int,
-    ) {
-        feature?.setMaterialOverride(material, nodeName, primitiveIndex)
-        if (nodeName == node.nodeName && primitiveIndex < node.materialArray.size) {
-            node.materialArray[primitiveIndex] = material as FakeResource
-        }
-    }
-
-    override fun clearMaterialOverride(nodeName: String, primitiveIndex: Int) {
-        feature?.clearMaterialOverride(nodeName, primitiveIndex)
-        if (nodeName == node.nodeName && primitiveIndex < node.materialArray.size) {
-            node.materialArray[primitiveIndex] = FakeResource(primitiveIndex.toLong())
-        }
-    }
 
     /**
      * The name of the animation that is currently playing. In tests, you can
@@ -107,7 +128,8 @@ public open class FakeGltfEntity(
         feature?.startAnimation(loop, animationName, executor!!)
         if (
             supportedAnimationNames.contains(animationName) &&
-                _animationState == GltfEntity.AnimationState.STOPPED
+                (_animationState == GltfEntity.AnimationState.STOPPED ||
+                    _animationState == GltfEntity.AnimationState.PAUSED)
         ) {
 
             _animationState = GltfEntity.AnimationState.PLAYING
@@ -120,11 +142,40 @@ public open class FakeGltfEntity(
     /** Stops the animation of the glTF entity. */
     override fun stopAnimation() {
         feature?.stopAnimation()
-        if (_animationState == GltfEntity.AnimationState.PLAYING) {
+        if (
+            _animationState == GltfEntity.AnimationState.PLAYING ||
+                _animationState == GltfEntity.AnimationState.PAUSED
+        ) {
             _animationState = GltfEntity.AnimationState.STOPPED
 
             isLooping = false
             currentAnimationName = null
         }
+    }
+
+    /* Pause the animation of the glTF entity. */
+    override fun pauseAnimation() {
+        feature?.pauseAnimation()
+
+        if (_animationState == GltfEntity.AnimationState.PLAYING) {
+            _animationState = GltfEntity.AnimationState.PAUSED
+        }
+    }
+
+    /* Resume the animation of the glTF entity. */
+    override fun resumeAnimation() {
+        feature?.resumeAnimation()
+
+        if (_animationState == GltfEntity.AnimationState.PAUSED) {
+            _animationState = GltfEntity.AnimationState.PLAYING
+        }
+    }
+
+    override fun addAnimationStateListener(executor: Executor, listener: Consumer<Int>) {
+        _animationStateListeners.putIfAbsent(listener, executor)
+    }
+
+    override fun removeAnimationStateListener(listener: Consumer<Int>) {
+        _animationStateListeners.remove(listener)
     }
 }

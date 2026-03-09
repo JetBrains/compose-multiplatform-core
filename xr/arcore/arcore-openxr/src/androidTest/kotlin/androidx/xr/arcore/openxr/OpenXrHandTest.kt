@@ -23,6 +23,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.xr.arcore.runtime.HandJointType
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -33,7 +34,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.runtime.openxr.test"
+// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.arcore.openxr.test"
 // supports a lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
 @LargeTest
@@ -42,7 +43,7 @@ class OpenXrHandTest {
 
     companion object {
         init {
-            System.loadLibrary("androidx.xr.runtime.openxr.test")
+            System.loadLibrary("androidx.xr.arcore.openxr.test")
         }
     }
 
@@ -110,7 +111,7 @@ class OpenXrHandTest {
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()
             openXrManager.resume()
-            openXrManager.configure(Config(handTracking = Config.HandTrackingMode.BOTH))
+            openXrManager.configure(Config(handTracking = HandTrackingMode.BOTH))
 
             testBody()
 

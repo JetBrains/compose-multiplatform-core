@@ -20,7 +20,6 @@ import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.VisibilityModifier
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XCodeBlock
-import androidx.room3.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room3.compiler.codegen.XFunSpec
 import androidx.room3.compiler.codegen.XFunSpec.Builder.Companion.applyTo
 import androidx.room3.compiler.codegen.XPropertySpec
@@ -37,7 +36,6 @@ import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.XType
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.KotlinPreconditionsMemberNames
-import androidx.room3.ext.RoomMemberNames
 import androidx.room3.ext.RoomTypeNames.DELETE_OR_UPDATE_ADAPTER
 import androidx.room3.ext.RoomTypeNames.INSERT_ADAPTER
 import androidx.room3.ext.RoomTypeNames.RAW_QUERY
@@ -47,14 +45,10 @@ import androidx.room3.ext.RoomTypeNames.UPSERT_ADAPTER
 import androidx.room3.ext.capitalize
 import androidx.room3.processor.OnConflictProcessor
 import androidx.room3.solver.CodeGenScope
-import androidx.room3.solver.KotlinBoxedPrimitiveFunctionDelegateBinder
-import androidx.room3.solver.KotlinDefaultFunctionDelegateBinder
 import androidx.room3.solver.types.getRequiredTypeConverters
 import androidx.room3.vo.Dao
 import androidx.room3.vo.DeleteOrUpdateShortcutFunction
 import androidx.room3.vo.InsertFunction
-import androidx.room3.vo.KotlinBoxedPrimitiveFunctionDelegate
-import androidx.room3.vo.KotlinDefaultFunctionDelegate
 import androidx.room3.vo.RawQueryFunction
 import androidx.room3.vo.ReadQueryFunction
 import androidx.room3.vo.ShortcutEntity
@@ -146,14 +140,6 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
             }
             preparedQueries.forEach { addFunction(createPreparedQueryFunction(it)) }
             dao.rawQueryFunctions.forEach { addFunction(createRawQueryFunction(it)) }
-            applyTo(CodeLanguage.JAVA) {
-                dao.kotlinDefaultFunctionDelegates.forEach {
-                    addFunction(createDefaultImplFunctionDelegate(it))
-                }
-                dao.kotlinBoxedPrimitiveFunctionDelegates.forEach {
-                    addFunction(createBoxedPrimitiveBridgeFunctionDelegate(it))
-                }
-            }
             // Keep this the last one to be generated because used custom converters will
             // register fields with a payload which we collect in dao to report used
             // Type Converters.
@@ -168,8 +154,6 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
     }
 
     private fun addConverterListFunction(typeSpecBuilder: XTypeSpec.Builder) {
-        // For Java a static method is created
-        typeSpecBuilder.applyTo(CodeLanguage.JAVA) { addFunction(createConverterListFunction()) }
         // For Kotlin a function in the companion object is created
         companionTypeBuilder.value.applyTo(CodeLanguage.KOTLIN) {
             addFunction(createConverterListFunction())
@@ -180,35 +164,14 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
         val body = buildCodeBlock { language ->
             val requiredTypeConverters = getRequiredTypeConverters()
             if (requiredTypeConverters.isEmpty()) {
-                when (language) {
-                    CodeLanguage.JAVA ->
-                        addStatement("return %T.emptyList()", CommonTypeNames.COLLECTIONS)
-                    CodeLanguage.KOTLIN -> addStatement("return emptyList()")
-                }
+                addStatement("return emptyList()")
             } else {
                 val placeholders = requiredTypeConverters.joinToString(",") { "%L" }
                 val requiredTypeConvertersLiterals =
                     requiredTypeConverters
-                        .map {
-                            when (language) {
-                                CodeLanguage.JAVA -> XCodeBlock.ofJavaClassLiteral(it)
-                                CodeLanguage.KOTLIN -> XCodeBlock.ofKotlinClassLiteral(it)
-                            }
-                        }
+                        .map { XCodeBlock.ofKotlinClassLiteral(it) }
                         .toTypedArray()
-                when (language) {
-                    CodeLanguage.JAVA ->
-                        addStatement(
-                            "return %T.asList($placeholders)",
-                            CommonTypeNames.ARRAYS,
-                            *requiredTypeConvertersLiterals,
-                        )
-                    CodeLanguage.KOTLIN ->
-                        addStatement(
-                            "return listOf($placeholders)",
-                            *requiredTypeConvertersLiterals,
-                        )
-                }
+                addStatement("return listOf($placeholders)", *requiredTypeConvertersLiterals)
             }
         }
         return XFunSpec.builder(GET_LIST_OF_TYPE_CONVERTERS_FUNCTION, VisibilityModifier.PUBLIC)
@@ -216,10 +179,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
             .applyTo { language ->
                 returns(
                     CommonTypeNames.LIST.parametrizedBy(
-                        when (language) {
-                            CodeLanguage.JAVA -> CommonTypeNames.JAVA_CLASS
-                            CodeLanguage.KOTLIN -> CommonTypeNames.KOTLIN_CLASS
-                        }.parametrizedBy(XTypeName.ANY_WILDCARD)
+                        CommonTypeNames.KOTLIN_CLASS.parametrizedBy(XTypeName.ANY_WILDCARD)
                     )
                 )
             }
@@ -255,8 +215,8 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
             addStatement("this.%N = %L", dbProperty, dbProperty.name)
             shortcutFunctions
                 .asSequence()
-                .filterNot { it.fields.isEmpty() }
-                .map { it.fields.values }
+                .filterNot { it.properties.isEmpty() }
+                .map { it.properties.values }
                 .flatten()
                 .groupBy { it.first.name }
                 .map { it.value.first() }
@@ -381,64 +341,6 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
         }
         return scope.generate()
     }
-
-    /** Used by the Non-KMP Paging3 binders and the Paging2 binders. */
-    private fun compatCreateRawQueryFunctionBody(function: RawQueryFunction): XCodeBlock =
-        XCodeBlock.builder()
-            .apply {
-                val scope = CodeGenScope(this@DaoWriter)
-                val roomSQLiteQueryVar: String
-                val queryParam = function.runtimeQueryParam
-                if (queryParam?.isSupportQuery() == true) {
-                    queryParam.paramName
-                } else if (queryParam?.isString() == true) {
-                    roomSQLiteQueryVar = scope.getTmpVar("_statement")
-                    addLocalVariable(
-                        name = roomSQLiteQueryVar,
-                        typeName = ROOM_SQL_QUERY,
-                        assignExpr =
-                            XCodeBlock.of(
-                                "%M(%L, 0)",
-                                RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
-                                queryParam.paramName,
-                            ),
-                    )
-                } else {
-                    // try to generate compiling code. we would've already reported this error
-                    roomSQLiteQueryVar = scope.getTmpVar("_statement")
-                    addLocalVariable(
-                        name = roomSQLiteQueryVar,
-                        typeName = ROOM_SQL_QUERY,
-                        assignExpr =
-                            XCodeBlock.of(
-                                "%M(%S, 0)",
-                                RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
-                                "missing query parameter",
-                            ),
-                    )
-                }
-                val rawQueryParamName = function.runtimeQueryParam?.paramName
-                if (rawQueryParamName != null) {
-                    if (function.returnsValue) {
-                        function.queryResultBinder.convertAndReturn(
-                            sqlQueryVar = rawQueryParamName,
-                            dbProperty = dbProperty,
-                            bindStatement = { stmtVar ->
-                                this.builder.addStatement(
-                                    "%L.getBindingFunction().invoke(%L)",
-                                    rawQueryParamName,
-                                    stmtVar,
-                                )
-                            },
-                            returnTypeName = function.returnType.asTypeName(),
-                            inTransaction = function.inTransaction,
-                            scope = scope,
-                        )
-                    }
-                }
-                add(scope.generate())
-            }
-            .build()
 
     private fun createPreparedQueryFunction(function: WriteQueryFunction): XFunSpec {
         return overrideWithoutAnnotations(function.element, declaredDao)
@@ -638,46 +540,6 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
         return scope.generate()
     }
 
-    // TODO(b/251459654): Handle @JvmOverloads in delegating functions with Kotlin codegen.
-    private fun createDefaultImplFunctionDelegate(
-        function: KotlinDefaultFunctionDelegate
-    ): XFunSpec {
-        val scope = CodeGenScope(this)
-        return overrideWithoutAnnotations(function.element, declaredDao)
-            .apply {
-                KotlinDefaultFunctionDelegateBinder.executeAndReturn(
-                    daoName = dao.typeName,
-                    daoImplName = dao.implTypeName,
-                    functionName = function.element.jvmName,
-                    returnType = function.element.returnType,
-                    parameterNames = function.element.parameters.map { it.name },
-                    scope = scope,
-                )
-                addCode(scope.generate())
-            }
-            .build()
-    }
-
-    private fun createBoxedPrimitiveBridgeFunctionDelegate(
-        function: KotlinBoxedPrimitiveFunctionDelegate
-    ): XFunSpec {
-        val scope = CodeGenScope(this)
-        return overrideWithoutAnnotations(function.element, declaredDao)
-            .apply {
-                KotlinBoxedPrimitiveFunctionDelegateBinder.execute(
-                    functionName = function.element.jvmName,
-                    returnType = function.element.returnType,
-                    parameters =
-                        function.concreteFunction.parameters.map {
-                            it.type.asTypeName() to it.name
-                        },
-                    scope = scope,
-                )
-                addCode(scope.generate())
-            }
-            .build()
-    }
-
     private fun overrideWithoutAnnotations(elm: XMethodElement, owner: XType): XFunSpec.Builder {
         return XFunSpec.overridingBuilder(elm, owner)
     }
@@ -691,11 +553,11 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
      * @param functionImpl The body of the query function implementation.
      */
     data class PreparedStmtQuery(
-        val fields: Map<String, Pair<XPropertySpec, Any>>,
+        val properties: Map<String, Pair<XPropertySpec, Any>>,
         val functionImpl: XFunSpec,
     ) {
         companion object {
-            // The key to be used in `fields` where the function requires a field that is not
+            // The key to be used in `properties` where the function requires a field that is not
             // associated with any of its parameters
             const val NO_PARAM_FIELD = "-"
         }

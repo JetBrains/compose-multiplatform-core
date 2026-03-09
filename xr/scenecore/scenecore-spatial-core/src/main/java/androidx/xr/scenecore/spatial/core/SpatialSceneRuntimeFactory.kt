@@ -17,11 +17,10 @@
 package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
-import androidx.xr.runtime.internal.Feature
+import androidx.xr.runtime.interfaces.Feature
 import androidx.xr.runtime.internal.SceneRuntimeFactory
 import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
 
 /**
  * Factory for creating instances of [androidx.xr.scenecore.runtime.SceneRuntime] for devices that
@@ -34,12 +33,6 @@ internal class SpatialSceneRuntimeFactory() : SceneRuntimeFactory {
     override fun create(activity: Activity): SceneRuntime =
         SpatialSceneRuntime.create(
             activity,
-            Executors.newSingleThreadScheduledExecutor(
-                object : ThreadFactory {
-                    override fun newThread(r: Runnable): Thread {
-                        return Thread(r, "JXRRuntimeSession")
-                    }
-                }
-            ),
+            Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "JXRRuntimeSession") },
         )
 }

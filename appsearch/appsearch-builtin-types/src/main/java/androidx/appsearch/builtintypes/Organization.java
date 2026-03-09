@@ -34,7 +34,7 @@ public class Organization extends Thing {
     private @Nullable ImageObject mLogo;
 
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    protected Organization(
+    Organization(
         @NonNull String namespace, @NonNull String id, int documentScore,
         long creationTimestampMillis, long documentTtlMillis,
         @Nullable String name, @Nullable List<String> alternateNames,

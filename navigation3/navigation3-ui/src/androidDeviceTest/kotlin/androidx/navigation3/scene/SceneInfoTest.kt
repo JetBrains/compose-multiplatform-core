@@ -18,7 +18,7 @@ package androidx.navigation3.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.kruth.assertThat
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
@@ -62,7 +62,7 @@ internal class NavDisplayInfoTest {
             CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides childOwner) {
                 NavDisplay(
                     backStack = backStack,
-                    sceneStrategy = sceneStrategy,
+                    sceneStrategies = listOf(sceneStrategy),
                     onBack = { backStack.removeAt(backStack.lastIndex) },
                     entryProvider = { key -> NavEntry(key) {} },
                 )

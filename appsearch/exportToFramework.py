@@ -242,7 +242,7 @@ class ExportToFramework:
         )
         for shim in [
                 'AppSearchSession', 'GlobalSearchSession', 'EnterpriseGlobalSearchSession',
-                'SearchResults']:
+                'ReadOnlyGlobalSearchSession', 'SearchResults']:
             contents = re.sub(r"([^a-zA-Z])(%s)([^a-zA-Z0-9])" % shim, r'\1\2Shim\3', contents)
         return self._TransformCommonCode(contents)
 
@@ -321,7 +321,8 @@ class ExportToFramework:
                 test_util_source_dir, test_util_dest_dir, transform_func=self._TransformTestCode)
         for iface_file in (
                 'AppSearchSession.java', 'GlobalSearchSession.java',
-                'EnterpriseGlobalSearchSession.java', 'SearchResults.java'):
+                'EnterpriseGlobalSearchSession.java', 'ReadOnlyGlobalSearchSession.java',
+                'SearchResults.java'):
             dest_file_name = os.path.splitext(iface_file)[0] + 'Shim.java'
             self._TransformAndCopyFile(
                     os.path.join(api_source_dir, 'app/' + iface_file),

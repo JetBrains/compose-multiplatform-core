@@ -17,7 +17,6 @@
 package androidx.xr.arcore.testapp.helloar.rendering
 
 import android.app.Activity
-import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -29,6 +28,7 @@ import androidx.xr.arcore.Plane
 import androidx.xr.arcore.hitTest
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
@@ -81,15 +81,15 @@ internal class AnchorRenderer(
 
     private fun attachInteractableComponents(planeModels: Collection<PlaneModel>) {
         for (planeModel in planeModels) {
-            if (planeModel.entity.getComponents().isEmpty()) {
-                planeModel.entity.addComponent(
+            if (planeModel.modelEntity.getComponents().isEmpty()) {
+                planeModel.modelEntity.addComponent(
                     InteractableComponent.create(session, activity.mainExecutor) { event ->
                         if (event.action.equals(InputEvent.Action.DOWN)) {
                             val headScenePose =
                                 session.scene.perceptionSpace.getScenePoseFromPerceptionPose(
                                     arDevice.state.value.devicePose
                                 )
-                            val up = headScenePose.activitySpacePose.up
+                            val up = headScenePose.poseInActivitySpace.up
                             val perceptionRayPose =
                                 session.scene.activitySpace.transformPoseTo(
                                     Pose(
@@ -117,10 +117,9 @@ internal class AnchorRenderer(
                                             )
                                         }
                                         is AnchorCreateResourcesExhausted -> {
-                                            Log.e(
-                                                activity::class.simpleName,
-                                                "Failed to create anchor: anchor resources exhausted.",
-                                            )
+                                            XrLog.error {
+                                                "Failed to create anchor: anchor resources exhausted."
+                                            }
                                             Toast.makeText(
                                                     activity,
                                                     "Anchor limit has been reached.",
@@ -129,10 +128,9 @@ internal class AnchorRenderer(
                                                 .show()
                                         }
                                         else -> {
-                                            Log.e(
-                                                activity::class.simpleName,
-                                                "Failed to create anchor: ${anchorResult::class.simpleName}",
-                                            )
+                                            XrLog.error {
+                                                "Failed to create anchor: ${anchorResult::class.simpleName}"
+                                            }
                                             Toast.makeText(
                                                     activity,
                                                     "Anchor failed to create.",

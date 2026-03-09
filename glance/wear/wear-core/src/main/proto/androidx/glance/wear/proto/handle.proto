@@ -22,7 +22,10 @@ package androidx.glance.wear.proto;
 message ActiveWearWidgetHandleProto {
 
   // The ID of the widget instance for which an update is being requested.
-  uint32 instance_id = 1;
+  uint32 id = 1;
+
+  // The namespace for the ID of the widget instance.
+  string id_namespace = 3;
 
   // The container type of the widget. This is an integer which corresponds to
   // the values in WearWidgetProviderInfo.ContainerType.

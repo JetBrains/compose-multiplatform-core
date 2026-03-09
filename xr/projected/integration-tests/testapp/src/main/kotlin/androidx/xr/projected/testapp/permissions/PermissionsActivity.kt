@@ -21,6 +21,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.permissions.ProjectedPermissionsRequestParams
 import androidx.xr.projected.permissions.ProjectedPermissionsResultContract
 
@@ -28,6 +29,7 @@ import androidx.xr.projected.permissions.ProjectedPermissionsResultContract
  * A sample activity that uses the [ProjectedPermissionsResultContract] API from a non-Jetpack
  * Android Activity. This activity needs to be run on a Projected device.
  */
+@OptIn(ExperimentalProjectedApi::class)
 class PermissionsActivity : Activity() {
 
     private val projectedPermissionsResultContract = ProjectedPermissionsResultContract()

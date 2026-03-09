@@ -79,7 +79,7 @@ private fun Project.getKtfmtConfiguration(): FileCollection {
             project.objects.named(TargetJvmEnvironment.STANDARD_JVM),
         )
     }
-    return files(conf)
+    return conf.incoming.files
 }
 
 @CacheableTask

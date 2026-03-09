@@ -42,8 +42,9 @@ import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionOneOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionParcelableTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
@@ -51,6 +52,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Ignore
@@ -175,13 +177,17 @@ class AppFunctionDataTest {
     }
 
     @Test
-    fun testBuild_missingRequiredPendingIntent_throwsException() {
+    fun testBuild_missingRequiredParcelable_throwsException() {
         val parameterMetadata =
             listOf(
                 AppFunctionParameterMetadata(
                     name = "requiredPi",
                     isRequired = true,
-                    dataType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
+                    dataType =
+                        AppFunctionParcelableTypeMetadata(
+                            qualifiedName = "android.app.PendingIntent",
+                            isNullable = false,
+                        ),
                 ),
                 AppFunctionParameterMetadata(
                     name = "optionalString",
@@ -201,21 +207,25 @@ class AppFunctionDataTest {
         // Set the required PendingIntent field, now build should succeed
         val dummyPendingIntent =
             PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
-        builder.setPendingIntent("requiredPi", dummyPendingIntent)
+        builder.setParcelable("requiredPi", dummyPendingIntent)
         // No exception should be thrown here
         builder.build()
     }
 
     @Test
-    fun testBuild_missingRequiredPendingIntentList_throwsException() {
+    fun testBuild_missingRequiredParcelableList_throwsException() {
         val parameterMetadata =
             listOf(
                 AppFunctionParameterMetadata(
-                    name = "requiredPiList",
+                    name = "requiredBundleList",
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
+                            itemType =
+                                AppFunctionParcelableTypeMetadata(
+                                    qualifiedName = Bundle::class.java.name,
+                                    isNullable = false,
+                                ),
                             isNullable = false,
                         ),
                 ),
@@ -227,7 +237,7 @@ class AppFunctionDataTest {
             )
         val builder = AppFunctionData.Builder(parameterMetadata, AppFunctionComponentsMetadata())
 
-        // Attempt to build without setting the required "requiredPiList" field
+        // Attempt to build without setting the required "requiredBundleList" field
         assertFailsWith<IllegalArgumentException> { builder.build() }
 
         // Set the optional field but still miss the required PendingIntent list
@@ -235,9 +245,8 @@ class AppFunctionDataTest {
         assertFailsWith<IllegalArgumentException> { builder.build() }
 
         // Set the required PendingIntent list field, now build should succeed
-        val dummyPendingIntent =
-            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
-        builder.setPendingIntentList("requiredPiList", listOf(dummyPendingIntent))
+        val dummyBundle = Bundle()
+        builder.setParcelableList("requiredBundleList", listOf(dummyBundle))
         // No exception should be thrown here
         builder.build()
     }
@@ -253,7 +262,7 @@ class AppFunctionDataTest {
         builder.setDouble("double", 50.0)
         builder.setBoolean("boolean", true)
         builder.setString("string", "testString")
-        builder.setPendingIntent(
+        builder.setParcelable(
             "pendingIntent",
             PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
         )
@@ -264,7 +273,7 @@ class AppFunctionDataTest {
         builder.setBooleanArray("booleanArray", booleanArrayOf(false, true, false))
         builder.setByteArray("byteArray", byteArrayOf(10.toByte(), 20.toByte()))
         builder.setStringList("stringList", listOf("1", "2", "3"))
-        builder.setPendingIntentList(
+        builder.setParcelableList(
             "pendingIntentList",
             listOf(
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
@@ -279,7 +288,7 @@ class AppFunctionDataTest {
         assertThat(data.getDouble("double")).isEqualTo(50.0)
         assertThat(data.getBoolean("boolean")).isTrue()
         assertThat(data.getString("string")).isEqualTo("testString")
-        assertThat(data.getPendingIntent("pendingIntent"))
+        assertThat(data.getParcelable<PendingIntent>("pendingIntent"))
             .isEqualTo(
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
             )
@@ -298,7 +307,7 @@ class AppFunctionDataTest {
             .asList()
             .containsExactly(10.toByte(), 20.toByte())
         assertThat(data.getStringList("stringList")).containsExactly("1", "2", "3")
-        assertThat(data.getPendingIntentList("pendingIntentList"))
+        assertThat(data.getParcelableList<PendingIntent>("pendingIntentList"))
             .containsExactly(
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
                 PendingIntent.getService(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
@@ -341,7 +350,7 @@ class AppFunctionDataTest {
         assertFailsWith(IllegalArgumentException::class) { builder.setDouble("string", 100.0) }
 
         assertFailsWith(IllegalArgumentException::class) {
-            builder.setPendingIntentList(
+            builder.setParcelableList(
                 "pendingIntent",
                 listOf(
                     PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
@@ -392,7 +401,7 @@ class AppFunctionDataTest {
         }
 
         assertFailsWith(IllegalArgumentException::class) {
-            builder.setPendingIntent(
+            builder.setParcelable(
                 "pendingIntentList",
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
             )
@@ -412,7 +421,7 @@ class AppFunctionDataTest {
         builder.setDouble("double", 50.0)
         builder.setBoolean("boolean", true)
         builder.setString("string", "testString")
-        builder.setPendingIntent(
+        builder.setParcelable(
             "pendingIntent",
             PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
         )
@@ -423,7 +432,7 @@ class AppFunctionDataTest {
         builder.setBooleanArray("booleanArray", booleanArrayOf(false, true, false))
         builder.setByteArray("byteArray", byteArrayOf(10.toByte(), 20.toByte()))
         builder.setStringList("stringList", listOf("1", "2", "3"))
-        builder.setPendingIntentList(
+        builder.setParcelableList(
             "pendingIntentList",
             listOf(PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)),
         )
@@ -449,7 +458,7 @@ class AppFunctionDataTest {
 
         assertFailsWith(IllegalArgumentException::class) { data.getString("pendingIntent") }
         assertFailsWith(IllegalArgumentException::class) {
-            data.getPendingIntentList("pendingIntent")
+            data.getParcelableList<PendingIntent>("pendingIntent")
         }
 
         assertFailsWith(IllegalArgumentException::class) { data.getLongArray("intArray") }
@@ -475,7 +484,7 @@ class AppFunctionDataTest {
 
         assertFailsWith(IllegalArgumentException::class) { data.getStringList("pendingIntentList") }
         assertFailsWith(IllegalArgumentException::class) {
-            data.getPendingIntent("pendingIntentList")
+            data.getParcelable<PendingIntent>("pendingIntentList")
         }
     }
 
@@ -491,7 +500,7 @@ class AppFunctionDataTest {
         builder.setDouble("double", 50.0)
         builder.setBoolean("boolean", true)
         builder.setString("string", "testString")
-        builder.setPendingIntent(
+        builder.setParcelable(
             "pendingIntent",
             PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
         )
@@ -504,7 +513,7 @@ class AppFunctionDataTest {
         builder.setBooleanArray("booleanArray", booleanArrayOf(false, true, false))
         builder.setByteArray("byteArray", byteArrayOf(10.toByte(), 20.toByte()))
         builder.setStringList("stringList", listOf("1", "2", "3"))
-        builder.setPendingIntentList(
+        builder.setParcelableList(
             "pendingIntentList",
             listOf(
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
@@ -521,7 +530,7 @@ class AppFunctionDataTest {
         assertThat(data.getDouble("double")).isEqualTo(50.0)
         assertThat(data.getBoolean("boolean")).isTrue()
         assertThat(data.getString("string")).isEqualTo("testString")
-        assertThat(data.getPendingIntent("pendingIntent"))
+        assertThat(data.getParcelable<PendingIntent>("pendingIntent"))
             .isEqualTo(
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
             )
@@ -543,7 +552,7 @@ class AppFunctionDataTest {
             .asList()
             .containsExactly(10.toByte(), 20.toByte())
         assertThat(data.getStringList("stringList")).containsExactly("1", "2", "3")
-        assertThat(data.getPendingIntentList("pendingIntentList"))
+        assertThat(data.getParcelableList<PendingIntent>("pendingIntentList"))
             .containsExactly(
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
                 PendingIntent.getService(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
@@ -745,7 +754,7 @@ class AppFunctionDataTest {
         assertFailsWith(IllegalArgumentException::class) { builder.setDouble("string", 100.0) }
 
         assertFailsWith(IllegalArgumentException::class) {
-            builder.setPendingIntentList(
+            builder.setParcelableList(
                 "pendingIntent",
                 listOf(
                     PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
@@ -796,7 +805,7 @@ class AppFunctionDataTest {
         }
 
         assertFailsWith(IllegalArgumentException::class) {
-            builder.setPendingIntent(
+            builder.setParcelable(
                 "pendingIntentList",
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
             )
@@ -815,7 +824,7 @@ class AppFunctionDataTest {
         builder.setDouble("double", 50.0)
         builder.setBoolean("boolean", true)
         builder.setString("string", "testString")
-        builder.setPendingIntent(
+        builder.setParcelable(
             "pendingIntent",
             PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
         )
@@ -826,7 +835,7 @@ class AppFunctionDataTest {
         builder.setBooleanArray("booleanArray", booleanArrayOf(false, true, false))
         builder.setByteArray("byteArray", byteArrayOf(10.toByte(), 20.toByte()))
         builder.setStringList("stringList", listOf("1", "2", "3"))
-        builder.setPendingIntentList(
+        builder.setParcelableList(
             "pendingIntentList",
             listOf(PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)),
         )
@@ -852,7 +861,7 @@ class AppFunctionDataTest {
 
         assertFailsWith(IllegalArgumentException::class) { data.getString("pendingIntent") }
         assertFailsWith(IllegalArgumentException::class) {
-            data.getPendingIntentList("pendingIntent")
+            data.getParcelableList<PendingIntent>("pendingIntent")
         }
 
         assertFailsWith(IllegalArgumentException::class) { data.getLongArray("intArray") }
@@ -878,7 +887,7 @@ class AppFunctionDataTest {
 
         assertFailsWith(IllegalArgumentException::class) { data.getStringList("pendingIntentList") }
         assertFailsWith(IllegalArgumentException::class) {
-            data.getPendingIntent("pendingIntentList")
+            data.getParcelable<PendingIntent>("pendingIntentList")
         }
     }
 
@@ -1491,7 +1500,7 @@ class AppFunctionDataTest {
     }
 
     @Test
-    fun getParcelable_withWrongParcelableName_returnsNull() {
+    fun getParcelable_withWrongParcelableName_throwsException() {
         val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
         val gameCharacter = GameCharacter(name = "Test", level = 10, characterClass = "Warrior")
         val data =
@@ -1500,8 +1509,12 @@ class AppFunctionDataTest {
                 .setParcelableList(key = "customParcelableList", listOf(gameCharacter))
                 .build()
 
-        assertThat(data.getParcelable("bitmap", GameCharacter::class.java)).isNull()
-        assertThat(data.getParcelableList("customParcelableList", Bitmap::class.java)).isNull()
+        assertFailsWith<IllegalArgumentException> {
+            data.getParcelable("bitmap", GameCharacter::class.java)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            data.getParcelableList("customParcelableList", Bitmap::class.java)
+        }
     }
 
     /** A custom Parcelable class representing a game character, implemented manually. */
@@ -1554,7 +1567,7 @@ class AppFunctionDataTest {
                         .setString("uri", "test")
                         .build(),
                 )
-                .setPendingIntent(
+                .setParcelable(
                     "intentToOpen",
                     PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
                 )
@@ -1562,7 +1575,7 @@ class AppFunctionDataTest {
 
         assertThat(data.getString("title")).isEqualTo("test")
         assertThat(data.getAppFunctionData("attachment")?.getString("uri")).isEqualTo("test")
-        assertThat(data.getPendingIntent("intentToOpen")).isNotNull()
+        assertThat(data.getParcelable<PendingIntent>("intentToOpen")).isNotNull()
     }
 
     @Test
@@ -1585,7 +1598,7 @@ class AppFunctionDataTest {
 
         assertThat(data.getString("title")).isEqualTo("test")
         assertThat(data.getAppFunctionData("attachment")?.getString("uri")).isEqualTo("test")
-        assertThat(data.getPendingIntent("intentToOpen")).isNotNull()
+        assertThat(data.getParcelable<PendingIntent>("intentToOpen")).isNotNull()
         // Also ensure that read validation is applied
         assertFailsWith<IllegalArgumentException> { data.getInt("intentToOpen") }
     }
@@ -1597,7 +1610,7 @@ class AppFunctionDataTest {
                     OpenableNote.OPENABLE_NOTE_ALL_OF_TYPE_METADATA,
                     OpenableNote.COMPONENT_METADATA,
                 )
-                .setPendingIntent(
+                .setParcelable(
                     "intentToOpen",
                     PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
                 )
@@ -1626,6 +1639,84 @@ class AppFunctionDataTest {
         }
     }
 
+    @Test
+    fun buildOneOfType_wrongNestedType_fails() {
+        val exception =
+            assertFailsWith<IllegalArgumentException> {
+                AppFunctionData.Builder(
+                        AppFunctionResponseMetadata(TEST_ONE_OF_TYPE_METADATA),
+                        AppFunctionComponentsMetadata(),
+                    )
+                    .setAppFunctionData(
+                        ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                        AppFunctionData.Builder(
+                                AppFunctionObjectTypeMetadata(
+                                    emptyMap(),
+                                    emptyList(),
+                                    "randomTestObject",
+                                    false,
+                                ),
+                                AppFunctionComponentsMetadata(),
+                            )
+                            .build(),
+                    )
+                    .build()
+            }
+        assertThat(exception)
+            .hasMessageThat()
+            .contains("randomTestObject does not match any of the oneOf types")
+    }
+
+    @Test
+    fun buildOneOfType_correctSubclasses_success() {
+        val afd =
+            AppFunctionData.Builder(
+                    AppFunctionResponseMetadata(
+                        AppFunctionArrayTypeMetadata(TEST_ONE_OF_TYPE_METADATA, isNullable = false)
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
+                .setAppFunctionDataList(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    listOf(
+                        AppFunctionData.Builder(
+                                TEST_ONE_OF_TYPE_A_METADATA,
+                                AppFunctionComponentsMetadata(),
+                            )
+                            .setInt("int", 10)
+                            .build(),
+                        AppFunctionData.Builder(
+                                TEST_ONE_OF_TYPE_B_WITH_ALL_OF_METADATA,
+                                AppFunctionComponentsMetadata(),
+                            )
+                            .setString("str", "hello")
+                            .setAppFunctionDataList(
+                                "resources",
+                                listOf(
+                                    AppFunctionData.Builder(
+                                            TEST_APP_FUNCTION_TEXT_RESOURCE_METADATA,
+                                            AppFunctionComponentsMetadata(),
+                                        )
+                                        .setString("mimeType", "text/plain")
+                                        .setString("content", "hello again!")
+                                        .build()
+                                ),
+                            )
+                            .build(),
+                    ),
+                )
+                .build()
+
+        val oneOfList =
+            assertNotNull(
+                afd.getAppFunctionDataList(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+            )
+        assertThat(oneOfList[0].getInt("int")).isEqualTo(10)
+        assertThat(oneOfList[1].getString("str")).isEqualTo("hello")
+        assertThat(oneOfList[1].getAppFunctionDataList("resources")?.single()?.getString("content"))
+            .isEqualTo("hello again!")
+    }
+
     companion object {
         val TEST_OBJECT_METADATA =
             AppFunctionObjectTypeMetadata(
@@ -1637,7 +1728,21 @@ class AppFunctionDataTest {
                         "double" to AppFunctionDoubleTypeMetadata(false),
                         "boolean" to AppFunctionBooleanTypeMetadata(false),
                         "string" to AppFunctionStringTypeMetadata(false),
-                        "pendingIntent" to AppFunctionPendingIntentTypeMetadata(false),
+                        "pendingIntent" to
+                            AppFunctionParcelableTypeMetadata(
+                                qualifiedName = PendingIntent::class.java.name,
+                                false,
+                            ),
+                        "bitmap" to
+                            AppFunctionParcelableTypeMetadata(
+                                qualifiedName = Bitmap::class.java.name,
+                                false,
+                            ),
+                        "customParcelable" to
+                            AppFunctionParcelableTypeMetadata(
+                                qualifiedName = GameCharacter::class.java.name,
+                                false,
+                            ),
                         "intArray" to
                             AppFunctionArrayTypeMetadata(
                                 itemType = AppFunctionIntTypeMetadata(false),
@@ -1671,7 +1776,29 @@ class AppFunctionDataTest {
                             ),
                         "pendingIntentList" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPendingIntentTypeMetadata(false),
+                                itemType =
+                                    AppFunctionParcelableTypeMetadata(
+                                        qualifiedName = PendingIntent::class.java.name,
+                                        false,
+                                    ),
+                                isNullable = false,
+                            ),
+                        "bitmapList" to
+                            AppFunctionArrayTypeMetadata(
+                                itemType =
+                                    AppFunctionParcelableTypeMetadata(
+                                        qualifiedName = Bitmap::class.java.name,
+                                        false,
+                                    ),
+                                isNullable = false,
+                            ),
+                        "customParcelableList" to
+                            AppFunctionArrayTypeMetadata(
+                                itemType =
+                                    AppFunctionParcelableTypeMetadata(
+                                        qualifiedName = GameCharacter::class.java.name,
+                                        false,
+                                    ),
                                 isNullable = false,
                             ),
                     ),
@@ -1716,7 +1843,11 @@ class AppFunctionDataTest {
                 AppFunctionParameterMetadata(
                     name = "pendingIntent",
                     isRequired = true,
-                    dataType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
+                    dataType =
+                        AppFunctionParcelableTypeMetadata(
+                            qualifiedName = PendingIntent::class.java.name,
+                            isNullable = false,
+                        ),
                 ),
                 AppFunctionParameterMetadata(
                     name = "intArray",
@@ -1782,7 +1913,11 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
+                            itemType =
+                                AppFunctionParcelableTypeMetadata(
+                                    qualifiedName = PendingIntent::class.java.name,
+                                    isNullable = false,
+                                ),
                             isNullable = false,
                         ),
                 ),
@@ -1803,6 +1938,62 @@ class AppFunctionDataTest {
                             isNullable = false,
                         ),
                 ),
+            )
+
+        val TEST_APP_FUNCTION_TEXT_RESOURCE_METADATA =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "mimeType" to AppFunctionStringTypeMetadata(isNullable = false),
+                        "content" to AppFunctionStringTypeMetadata(isNullable = false),
+                    ),
+                required = listOf("mimeType", "content"),
+                qualifiedName = "androidx.appfunctions.AppFunctionTextResource",
+                isNullable = false,
+            )
+
+        val TEST_ONE_OF_TYPE_A_METADATA =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("int" to AppFunctionIntTypeMetadata(isNullable = false)),
+                required = listOf("int"),
+                qualifiedName = "androidx.appfunctions.TestOneOfASubclass",
+                isNullable = false,
+            )
+
+        val TEST_ONE_OF_TYPE_B_WITH_ALL_OF_METADATA =
+            AppFunctionAllOfTypeMetadata(
+                matchAll =
+                    listOf(
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf("str" to AppFunctionStringTypeMetadata(isNullable = false)),
+                            required = listOf("str"),
+                            qualifiedName = "androidx.appfunctions.TestOneOfBSubclass",
+                            isNullable = false,
+                        ),
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf(
+                                    "resources" to
+                                        AppFunctionArrayTypeMetadata(
+                                            itemType = TEST_APP_FUNCTION_TEXT_RESOURCE_METADATA,
+                                            isNullable = false,
+                                        )
+                                ),
+                            required = listOf("resources"),
+                            qualifiedName = "androidx.appfunctions.AppFunctionResourceContainer",
+                            isNullable = false,
+                        ),
+                    ),
+                qualifiedName = "androidx.appfunctions.TestOneOfBSubclass",
+                isNullable = false,
+            )
+        val TEST_ONE_OF_TYPE_METADATA =
+            AppFunctionOneOfTypeMetadata(
+                qualifiedName = "androidx.appfunctions.TestOneOfType",
+                isNullable = false,
+                matchOneOf =
+                    listOf(TEST_ONE_OF_TYPE_A_METADATA, TEST_ONE_OF_TYPE_B_WITH_ALL_OF_METADATA),
             )
     }
 }

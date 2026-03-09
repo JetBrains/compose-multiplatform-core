@@ -289,10 +289,9 @@ internal class CurvedTextDelegate {
     ) {
         var needsUpdate = false
 
-        if (Build.VERSION.SDK_INT >= 29) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val actualWarping =
                 if (WearComposeFoundationFlags.isWarpingCurvedTextEnabled) {
-                    // Defaults to half optical height warping
                     warpOffset.takeOrElse { CurvedTextStyle.WarpOffset.HalfOpticalHeight }
                 } else CurvedTextStyle.WarpOffset.None
 
@@ -301,8 +300,19 @@ internal class CurvedTextDelegate {
                 // Note that the Rendered may be stateful (computing things in the `preRender` to
                 // (re)use during `render`), so we need our own instance.
                 textRender =
-                    if (actualWarping != CurvedTextStyle.WarpOffset.None) WarpedCurvedTextRenderer()
-                    else AndroidCurvedTextRenderer()
+                    // b/484319336: androidx.graphics.path native library does not work in a
+                    // Robolectric test environment, so defaulting to warped text before API 34
+                    // would break developer tests.
+                    // From API 34 onwards, PathIterator is available in the Android Framework,
+                    // so we can then default to half optical height warping.
+                    if (
+                        actualWarping != CurvedTextStyle.WarpOffset.None &&
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                    ) {
+                        WarpedCurvedTextRenderer()
+                    } else {
+                        AndroidCurvedTextRenderer()
+                    }
 
                 needsUpdate = true
                 warpRadiusOffset =

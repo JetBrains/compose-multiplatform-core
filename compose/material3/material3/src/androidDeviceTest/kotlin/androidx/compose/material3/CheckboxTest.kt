@@ -52,7 +52,7 @@ import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.isFocusable
 import androidx.compose.ui.test.isNotFocusable
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -90,7 +90,7 @@ class CheckboxTest(private val isCheckboxStyleM3FixEnabled: Boolean) {
     @OptIn(ExperimentalMaterial3Api::class)
     @Before
     fun setUp() {
-        isCheckboxStylingFixEnabled = isCheckboxStyleM3FixEnabled
+        ComposeMaterial3Flags.isCheckboxStylingFixEnabled = isCheckboxStyleM3FixEnabled
     }
 
     @Test
@@ -356,7 +356,7 @@ class CheckboxTest(private val isCheckboxStyleM3FixEnabled: Boolean) {
                 if (clickable && minimumTouchTarget) {
                     assertIsSquareWithSize(48.dp)
                 } else {
-                    if (isCheckboxStylingFixEnabled) {
+                    if (ComposeMaterial3Flags.isCheckboxStylingFixEnabled) {
                         assertIsSquareWithSize(18.dp)
                     } else {
                         assertIsSquareWithSize(2.dp * 2 + 20.dp)

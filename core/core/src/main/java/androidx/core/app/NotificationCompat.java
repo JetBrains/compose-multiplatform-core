@@ -1451,7 +1451,8 @@ public class NotificationCompat {
         }
 
         /**
-         * If {@code true}, silences this instance of the notification, regardless of the sounds or
+         * If {@code true}, silences this instance of the notification and prevents the
+         * notification from peeking on screen, regardless of the importance, sounds, or
          * vibrations set on the notification or notification channel. If {@code false}, then the
          * normal sound and vibration logic applies. Defaults to {@code false}.
          */
@@ -8764,6 +8765,107 @@ public class NotificationCompat {
          */
         public boolean isSuppressShowOverApps() {
             return mSuppressShowOverApps;
+        }
+    }
+
+    /**
+     * Helper class to add projection-specific extensions to a notification.
+     * This class is used to specify metadata that is specific to notifications
+     * that may be displayed on a Projected device.
+     *
+     * <p>To create a notification with Projected extensions:
+     * <ol>
+     * <li>Create a {@link NotificationCompat.Builder} for the notification.
+     * <li>Create an {@code ProjectedExtender}.
+     * <li>Set projection-specific properties using the {@code set} methods on the
+     * {@code ProjectedExtender}.
+     * <li>Call {@link NotificationCompat.Builder#extend} to apply the extensions to
+     * the notification.
+     * </ol>
+     *
+     * <pre class="prettyprint">
+     * NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+     *     .setContentTitle("Example Title")
+     *     .setContentText("Example Text")
+     *     .setSmallIcon(R.drawable.ic_notification);
+     *
+     * ProjectedExtender projectedExtender = new ProjectedExtender()
+     *     .setContentIntent(projectedTapIntent);
+     *
+     * builder.extend(projectedExtender);
+     * notificationManager.notify(NOTIFICATION_ID, builder.build());
+     * </pre>
+     */
+    public static final class ProjectedExtender implements Extender {
+        static final String EXTRA_PROJECTED_EXTENDER = "android.projected.EXTENSIONS";
+        static final String KEY_CONTENT_INTENT = "content_intent";
+
+        private PendingIntent mContentIntent;
+
+        /**
+         * Create a {@link ProjectedExtender} with default options.
+         */
+        public ProjectedExtender() {
+        }
+
+        /**
+         * Creates an {@link ProjectedExtender} from the extensions in a
+         * {@link Notification}.
+         *
+         * @param notification the notification to extract extensions from.
+         */
+        public ProjectedExtender(@NonNull Notification notification) {
+            Bundle extras = getExtras(notification);
+            Bundle projectedBundle = extras == null
+                    ? null : extras.getBundle(EXTRA_PROJECTED_EXTENDER);
+            if (projectedBundle != null) {
+                mContentIntent = BundleCompat.getParcelable(projectedBundle, KEY_CONTENT_INTENT,
+                        PendingIntent.class);
+            }
+        }
+
+        /**
+         * Sets the {@link PendingIntent} to be opened on the Projected device when the
+         * notification is tapped on the that device. This is distinct from the notification's
+         * main {@link Notification#contentIntent}, which is typically fired when the notification
+         * is tapped on the host device (e.g., the phone).
+         *
+         * @param intent the {@link PendingIntent} to fire on tap
+         * @return this {@code ProjectedExtender} object for chaining
+         */
+        public @NonNull ProjectedExtender setContentIntent(@Nullable PendingIntent intent) {
+            mContentIntent = intent;
+            return this;
+        }
+
+        /**
+         * Returns the {@link PendingIntent} to be fired when the notification is
+         * tapped on the Projected device.
+         *
+         * @return the {@link PendingIntent} to fire on tap, or null if not set
+         */
+        @Nullable
+        public PendingIntent getContentIntent() {
+            return mContentIntent;
+        }
+
+        /**
+         * Applies the Project extensions to the notification builder. This method is
+         * called by the {@link NotificationCompat.Builder#extend} method and should not
+         * be called directly.
+         *
+         * @param builder the notification builder to extend
+         * @return the modified notification builder
+         */
+        @Override
+        public NotificationCompat.@NonNull Builder extend(
+                NotificationCompat.@NonNull Builder builder) {
+            Bundle projectedBundle = new Bundle();
+            if (mContentIntent != null) {
+                projectedBundle.putParcelable(KEY_CONTENT_INTENT, mContentIntent);
+            }
+            builder.getExtras().putBundle(EXTRA_PROJECTED_EXTENDER, projectedBundle);
+            return builder;
         }
     }
 

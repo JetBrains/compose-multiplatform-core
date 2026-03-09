@@ -16,7 +16,6 @@
 
 package androidx.room3.solver.shortcut.result
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.codegen.XTypeName
@@ -25,7 +24,6 @@ import androidx.room3.compiler.processing.isInt
 import androidx.room3.compiler.processing.isKotlinUnit
 import androidx.room3.compiler.processing.isVoid
 import androidx.room3.compiler.processing.isVoidObject
-import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.isNotKotlinUnit
 import androidx.room3.ext.isNotVoid
 import androidx.room3.ext.isNotVoidObject
@@ -86,21 +84,10 @@ class DeleteOrUpdateFunctionAdapter private constructor(val returnType: XType) {
                     param.name,
                 )
             }
-            when (scope.language) {
-                CodeLanguage.KOTLIN ->
-                    if (resultVar != null) {
-                        addStatement("%L", resultVar)
-                    } else if (returnType.isVoidObject()) {
-                        addStatement("null")
-                    }
-                CodeLanguage.JAVA ->
-                    if (resultVar != null) {
-                        addStatement("return %L", resultVar)
-                    } else if (returnType.isVoidObject() || returnType.isVoid()) {
-                        addStatement("return null")
-                    } else {
-                        addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
-                    }
+            if (resultVar != null) {
+                addStatement("%L", resultVar)
+            } else if (returnType.isVoidObject()) {
+                addStatement("null")
             }
         }
     }

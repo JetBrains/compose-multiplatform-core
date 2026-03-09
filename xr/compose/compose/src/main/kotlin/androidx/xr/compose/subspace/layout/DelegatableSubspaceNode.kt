@@ -17,6 +17,7 @@
 package androidx.xr.compose.subspace.layout
 
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNodeCoordinator
+import androidx.xr.compose.subspace.node.SubspaceOwner
 
 /**
  * Represents a [SubspaceModifier.Node] which can be a delegate of another [SubspaceModifier.Node].
@@ -43,3 +44,13 @@ internal fun DelegatableSubspaceNode.requireCoordinator(): SubspaceLayoutModifie
     requireNotNull(node.coordinator) {
         "No SubspaceLayoutModifierNodeCoordinator available for $this. Ensure the node is attached."
     }
+
+/**
+ * This is used to access the root layout [SubspaceOwner] for a given [DelegatableSubspaceNode].
+ *
+ * Requires a [SubspaceOwner] for the node, throwing an error if the node is not attached.
+ */
+internal fun DelegatableSubspaceNode.requireOwner(): SubspaceOwner {
+    return this.node.layoutNode?.owner
+        ?: throw IllegalStateException("SubspaceModifier.Node is not attached.")
+}

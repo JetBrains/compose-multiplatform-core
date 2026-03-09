@@ -32,6 +32,7 @@ import androidx.test.core.app.ApplicationProvider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ import java.util.List;
 
 /** Tests for {@link Row}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class RowTest {
     @Test
@@ -136,7 +138,19 @@ public class RowTest {
     public void setEndImage() {
         CarIcon endImage = ALERT;
         Row row = new Row.Builder().setTitle("Title").setEndImage(endImage).build();
-        assertThat(endImage).isEqualTo(row.getEndImage());
+        assertThat(row.getEndImage()).isEqualTo(endImage);
+        assertThat(row.getRowEndImageType()).isEqualTo(Row.IMAGE_TYPE_SMALL);
+    }
+
+    @Test
+    public void setEndImageWithSize() {
+        CarIcon endImage = ALERT;
+        Row row = new Row.Builder()
+                .setTitle("Title")
+                .setEndImage(endImage, Row.IMAGE_TYPE_MEDIUM)
+                .build();
+        assertThat(row.getEndImage()).isEqualTo(endImage);
+        assertThat(row.getRowEndImageType()).isEqualTo(Row.IMAGE_TYPE_MEDIUM);
     }
 
     @Test
@@ -527,5 +541,22 @@ public class RowTest {
         Row row = new Row.Builder().setTitle("Title").addText("foo").build();
 
         assertThat(new Row.Builder().setTitle("Title").addText("bar").build()).isNotEqualTo(row);
+    }
+
+    @Test
+    public void setProgressBar() {
+        CarProgressBar bar = new CarProgressBar.Builder(0.5f).build();
+        Row row = new Row.Builder().setTitle("Title").setProgressBar(bar).build();
+        assertThat(row.getProgressBar()).isEqualTo(bar);
+    }
+
+    @Test
+    public void notEquals_differentProgressBar() {
+        CarProgressBar bar1 = new CarProgressBar.Builder(0.5f).build();
+        CarProgressBar bar2 = new CarProgressBar.Builder(0.6f).build();
+        Row row = new Row.Builder().setTitle("Title").setProgressBar(bar1).build();
+        Row row2 = new Row.Builder().setTitle("Title").setProgressBar(bar2).build();
+
+        assertThat(row2).isNotEqualTo(row);
     }
 }

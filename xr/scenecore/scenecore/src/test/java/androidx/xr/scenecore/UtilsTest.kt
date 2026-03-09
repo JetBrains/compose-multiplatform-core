@@ -67,7 +67,7 @@ class UtilsTest {
 
     @Test
     fun verifyPoseToRtPoseConversion() {
-        val rtPose = Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f).toNormalized())
+        val rtPose = Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f))
 
         assertThat(rtPose.translation.x).isEqualTo(1f)
         assertThat(rtPose.translation.y).isEqualTo(2f)
@@ -83,7 +83,7 @@ class UtilsTest {
 
     @Test
     fun verifyRtPoseToPoseConversion() {
-        val pose = Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f).toNormalized())
+        val pose = Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f))
 
         assertThat(pose.translation.x).isEqualTo(1f)
         assertThat(pose.translation.y).isEqualTo(2f)
@@ -762,9 +762,10 @@ class UtilsTest {
 
     @Test
     fun rtPerceivedResolutionResultInvalidCameraView_convertsCorrectly() {
-        val runtimeInvalidCamera = RuntimePerceivedResolutionResult.InvalidCameraView()
+        val runtimeInvalidCamera = RuntimePerceivedResolutionResult.InvalidRenderViewpoint()
         val result = runtimeInvalidCamera.toPerceivedResolutionResult()
 
-        assertThat(result).isInstanceOf(PerceivedResolutionResult.InvalidCameraView::class.java)
+        assertThat(result)
+            .isInstanceOf(PerceivedResolutionResult.InvalidRenderViewpoint::class.java)
     }
 }
