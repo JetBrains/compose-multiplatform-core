@@ -315,7 +315,9 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         buttons: PointerButtons? = null,
         keyboardModifiers: PointerKeyboardModifiers? = null,
         nativeEvent: Any? = null,
-        button: PointerButton? = null
+        button: PointerButton? = null,
+        scaleGestureFactor: Float = 1f,
+        panGestureOffset: Offset = Offset.Zero,
     ) {
         scene.sendPointerEvent(
             eventType,
@@ -326,7 +328,9 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
             buttons,
             keyboardModifiers,
             nativeEvent,
-            button
+            button,
+            scaleGestureFactor,
+            panGestureOffset,
         )
     }
 
@@ -360,6 +364,8 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         timeMillis: Long = (currentNanoTime() / 1E6).toLong(),
         nativeEvent: Any? = null,
         button: PointerButton? = null,
+        scaleGestureFactor: Float = 1f,
+        panGestureOffset: Offset = Offset.Zero,
     ) {
         scene.sendPointerEvent(
             eventType,
@@ -369,7 +375,9 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
             scrollDelta,
             timeMillis,
             nativeEvent,
-            button
+            button,
+            scaleGestureFactor,
+            panGestureOffset,
         )
     }
 
