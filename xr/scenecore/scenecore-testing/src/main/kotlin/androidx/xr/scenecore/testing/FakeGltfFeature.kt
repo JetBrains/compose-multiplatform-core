@@ -21,9 +21,12 @@ import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.GltfAnimationFeature
+import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
-import androidx.xr.scenecore.runtime.MaterialResource
+import androidx.xr.scenecore.runtime.GltfModelNodeFeature
 import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.GltfFeature] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -31,7 +34,14 @@ public class FakeGltfFeature(nodeHolder: NodeHolder<*>) :
     FakeBaseRenderingFeature(nodeHolder), GltfFeature {
     private var mockGltfFeature: GltfFeature? = null
 
+    override val nodes: List<GltfModelNodeFeature>
+        get() = mockGltfFeature?.nodes ?: emptyList()
+
     override val size: FloatSize3d = mockGltfFeature?.size ?: FloatSize3d(1f, 1f, 1f)
+
+    override fun getAnimations(executor: Executor): List<GltfAnimationFeature> {
+        return mockGltfFeature?.getAnimations(executor) ?: emptyList()
+    }
 
     override val animationState: Int = mockGltfFeature?.animationState ?: 0
 
@@ -48,20 +58,41 @@ public class FakeGltfFeature(nodeHolder: NodeHolder<*>) :
         mockGltfFeature?.stopAnimation()
     }
 
-    override fun setMaterialOverride(
-        material: MaterialResource,
-        nodeName: String,
-        primitiveIndex: Int,
-    ) {
-        mockGltfFeature?.setMaterialOverride(material, nodeName, primitiveIndex)
+    override fun pauseAnimation() {
+        mockGltfFeature?.pauseAnimation()
     }
 
-    override fun clearMaterialOverride(nodeName: String, primitiveIndex: Int) {
-        mockGltfFeature?.clearMaterialOverride(nodeName, primitiveIndex)
+    override fun resumeAnimation() {
+        mockGltfFeature?.resumeAnimation()
     }
 
     override fun setColliderEnabled(enableCollider: Boolean) {
         mockGltfFeature?.setColliderEnabled(enableCollider)
+    }
+
+    override fun addAnimationStateListener(executor: Executor, listener: Consumer<Int>) {
+        mockGltfFeature?.addAnimationStateListener(executor, listener)
+    }
+
+    override fun removeAnimationStateListener(listener: Consumer<Int>) {
+        mockGltfFeature?.removeAnimationStateListener(listener)
+    }
+
+    override fun addOnBoundsUpdateListener(listener: Consumer<BoundingBox>) {
+        mockGltfFeature?.addOnBoundsUpdateListener(listener)
+    }
+
+    override fun removeOnBoundsUpdateListener(listener: Consumer<BoundingBox>) {
+        mockGltfFeature?.removeOnBoundsUpdateListener(listener)
+    }
+
+    override fun setReformAffordanceEnabled(
+        entity: GltfEntity,
+        enabled: Boolean,
+        executor: Executor,
+        systemMovable: Boolean,
+    ) {
+        mockGltfFeature?.setReformAffordanceEnabled(entity, enabled, executor, systemMovable)
     }
 
     override fun dispose() {

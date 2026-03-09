@@ -42,10 +42,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class CameraXTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -151,6 +153,16 @@ class CameraXTest {
         assertThat(cameraX.cameraUseCaseAdapterProvider).isNotNull()
         assertThat(cameraInfo1.cameraUseCaseAdapterProvider).isNotNull()
         assertThat(cameraInfo2.cameraUseCaseAdapterProvider).isNotNull()
+    }
+
+    @Test
+    fun rotationProviderIsShutdown() {
+        val cameraX = CameraX(context) { createConfigProvider().getCameraXConfig() }
+        cameraX.initializeFuture.get()
+        val rotationProvider = cameraX.rotationProvider
+        assertThat(rotationProvider.isShutdown).isFalse()
+        cameraX.shutdown().get()
+        assertThat(rotationProvider.isShutdown).isTrue()
     }
 
     private fun createCameraFactoryProvider(

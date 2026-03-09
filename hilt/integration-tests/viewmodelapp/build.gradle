@@ -17,14 +17,12 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    // Remove when b/442128557 is fixed
-    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
-    id("dagger.hilt.android.plugin")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     defaultConfig {
         testInstrumentationRunner "androidx.hilt.integration.viewmodelapp.TestRunner"
     }

@@ -21,15 +21,24 @@ import android.content.Context
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.runtime.Composable
-import androidx.glance.wear.ActiveWearWidgetHandle
-import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_LARGE
-import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_SMALL
 import androidx.glance.wear.GlanceWearWidget
-import androidx.glance.wear.WearWidgetContent
-import androidx.glance.wear.WearWidgetRawContent
-import androidx.glance.wear.WearWidgetRequest
+import androidx.glance.wear.WearWidgetBrush
+import androidx.glance.wear.WearWidgetData
+import androidx.glance.wear.WearWidgetDocument
+import androidx.glance.wear.core.ActiveWearWidgetHandle
+import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_FULLSCREEN
+import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_LARGE
+import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_SMALL
+import androidx.glance.wear.core.WearWidgetEvent
+import androidx.glance.wear.core.WearWidgetEventBatch
+import androidx.glance.wear.core.WearWidgetParams
+import androidx.glance.wear.core.WearWidgetRawContent
+import androidx.glance.wear.core.WearWidgetVisibleEvent
+import androidx.glance.wear.core.WidgetInstanceId
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import com.google.common.truth.Truth.assertThat
+import java.time.Duration
+import java.time.Instant
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,9 +63,11 @@ class WearWidgetProviderImplTest {
                 isSuccess = true
             }
 
-            override fun onError() {
+            override fun onError(errorCode: Int, message: String) {
                 isFailure = true
             }
+
+            override fun getInterfaceVersion(): Int = VERSION
         }
 
     private val testName = ComponentName("package.name", "class.name")
@@ -65,36 +76,83 @@ class WearWidgetProviderImplTest {
     private val contentChannel = Channel<WearWidgetRawContent>()
 
     @Test
-    fun onWidgetRequest_callsProvideWidgetContent() = runTest {
-        val widgetRequest = WearWidgetRequest(instanceId = 17, widthDp = 200f, heightDp = 200f)
+    fun onWidgetRequest_callsProvideWidgetData() = runTest {
+        val widgetParams =
+            WearWidgetParams(
+                instanceId = WidgetInstanceId("namespace", 17),
+                containerType = CONTAINER_TYPE_LARGE,
+                widthDp = 200f,
+                heightDp = 200f,
+                horizontalPaddingDp = 8f,
+                verticalPaddingDp = 8f,
+                cornerRadiusDp = 16f,
+            )
         val channelWidgetCallback = ChannelWidgetCallback(this, contentChannel)
         val provider = WearWidgetProviderImpl(context, testName, mainScope, testWidget)
 
-        provider.onWidgetRequest(widgetRequest.toParcel(), channelWidgetCallback)
+        provider.onWidgetRequest(widgetParams.toParcel(), channelWidgetCallback)
         contentChannel.receive()
 
-        assertThat(testWidget.lastRequestedInstanceId).isEqualTo(widgetRequest.instanceId)
+        assertThat(testWidget.lastRequestedInstanceId).isEqualTo(widgetParams.instanceId)
+        assertThat(testWidget.lastRequestedContainerType).isEqualTo(CONTAINER_TYPE_LARGE)
+    }
+
+    @Test
+    fun onWidgetRequest_remapsFullscreenToLarge() = runTest {
+        val widgetParams =
+            WearWidgetParams(
+                instanceId = WidgetInstanceId("namespace", 17),
+                containerType = CONTAINER_TYPE_FULLSCREEN,
+                widthDp = 200f,
+                heightDp = 200f,
+                horizontalPaddingDp = 8f,
+                verticalPaddingDp = 8f,
+                cornerRadiusDp = 16f,
+            )
+        val channelWidgetCallback = ChannelWidgetCallback(this, contentChannel)
+        val provider = WearWidgetProviderImpl(context, testName, mainScope, testWidget)
+
+        provider.onWidgetRequest(widgetParams.toParcel(), channelWidgetCallback)
+        contentChannel.receive()
+
+        assertThat(testWidget.lastRequestedInstanceId).isEqualTo(widgetParams.instanceId)
+        assertThat(testWidget.lastRequestedContainerType).isEqualTo(CONTAINER_TYPE_LARGE)
     }
 
     @Test
     fun onWidgetRequest_capturesRemoteComposable() = runBlocking {
-        val widgetRequest = WearWidgetRequest(instanceId = 17, widthDp = 200f, heightDp = 200f)
+        val widgetParams =
+            WearWidgetParams(
+                instanceId = WidgetInstanceId("namespace", 17),
+                containerType = CONTAINER_TYPE_LARGE,
+                widthDp = 200f,
+                heightDp = 200f,
+                horizontalPaddingDp = 0f,
+                verticalPaddingDp = 0f,
+                cornerRadiusDp = 0f,
+            )
         testWidget.content = { RemoteText("Testing ...") }
         val expectedRcDocumentHierarchy =
             """
-            DATA_TEXT<42> = "Testing ..."
             ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-              TEXT_LAYOUT [-3:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
+              BOX [-3:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                 MODIFIERS
+                  ROUNDED_CLIP_RECT = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                BOX [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
+                  DATA_TEXT<42> = "Testing ..."
+                  MODIFIERS
+                    PADDING = [0.0, 0.0, 0.0, 0.0]
+                  TEXT_LAYOUT [-7:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
+                    MODIFIERS
             """
                 .trimIndent()
         val provider = WearWidgetProviderImpl(context, testName, mainScope, testWidget)
         val channelWidgetCallback = ChannelWidgetCallback(this, contentChannel)
 
-        provider.onWidgetRequest(widgetRequest.toParcel(), channelWidgetCallback)
+        provider.onWidgetRequest(widgetParams.toParcel(), channelWidgetCallback)
         val receivedRawContent = contentChannel.receive()
 
-        assertThat(testWidget.lastRequestedInstanceId).isEqualTo(widgetRequest.instanceId)
+        assertThat(testWidget.lastRequestedInstanceId).isEqualTo(widgetParams.instanceId)
         assertThat(
                 RemoteDocument(receivedRawContent.rcDocument)
                     .document
@@ -105,20 +163,30 @@ class WearWidgetProviderImplTest {
     }
 
     @Test
-    fun onActivated_callsWidgetAndCallback() = runTest {
-        val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_LARGE)
+    fun onAdded_callsWidgetAndCallback() = runTest {
+        val handle =
+            ActiveWearWidgetHandle(
+                testName,
+                WidgetInstanceId("namespace", 12),
+                CONTAINER_TYPE_LARGE,
+            )
         val provider = WearWidgetProviderImpl(context, testName, this, testWidget)
 
-        provider.onActivated(handle.toParcel(), fakeExecutionCallback)
+        provider.onAdded(handle.toParcel(), fakeExecutionCallback)
         advanceUntilIdle()
 
-        assertThat(testWidget.activatedHandle).isEqualTo(handle)
+        assertThat(testWidget.addedHandle).isEqualTo(handle)
         assertThat(fakeExecutionCallback.isSuccess).isTrue()
     }
 
     @Test
-    fun onActivated_throws_callsCallbackOnError() = runTest {
-        val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_LARGE)
+    fun onAdded_throws_callsCallbackOnError() = runTest {
+        val handle =
+            ActiveWearWidgetHandle(
+                testName,
+                WidgetInstanceId("namespace", 12),
+                CONTAINER_TYPE_LARGE,
+            )
         val exceptionHandlerScope =
             CoroutineScope(
                 coroutineContext + SupervisorJob() + CoroutineExceptionHandler { _, _ -> }
@@ -126,28 +194,38 @@ class WearWidgetProviderImplTest {
         val provider = WearWidgetProviderImpl(context, testName, exceptionHandlerScope, testWidget)
         testWidget.enableFailureMode = true
 
-        provider.onActivated(handle.toParcel(), fakeExecutionCallback)
+        provider.onAdded(handle.toParcel(), fakeExecutionCallback)
         advanceUntilIdle()
 
-        assertThat(testWidget.activatedHandle).isEqualTo(handle)
+        assertThat(testWidget.addedHandle).isEqualTo(handle)
         assertThat(fakeExecutionCallback.isFailure).isTrue()
     }
 
     @Test
-    fun onDeactivated_callsWidgetAndCallback() = runTest {
-        val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_SMALL)
+    fun onRemoved_callsWidgetAndCallback() = runTest {
+        val handle =
+            ActiveWearWidgetHandle(
+                testName,
+                WidgetInstanceId("namespace", 12),
+                CONTAINER_TYPE_SMALL,
+            )
         val provider = WearWidgetProviderImpl(context, testName, this, testWidget)
 
-        provider.onDeactivated(handle.toParcel(), fakeExecutionCallback)
+        provider.onRemoved(handle.toParcel(), fakeExecutionCallback)
         advanceUntilIdle()
 
-        assertThat(testWidget.deactivatedHandle).isEqualTo(handle)
+        assertThat(testWidget.removedHandle).isEqualTo(handle)
         assertThat(fakeExecutionCallback.isSuccess).isTrue()
     }
 
     @Test
-    fun onDeactivated_throws_callsCallbackOnError() = runTest {
-        val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_LARGE)
+    fun onRemoved_throws_callsCallbackOnError() = runTest {
+        val handle =
+            ActiveWearWidgetHandle(
+                testName,
+                WidgetInstanceId("namespace", 12),
+                CONTAINER_TYPE_LARGE,
+            )
         val exceptionHandlerScope =
             CoroutineScope(
                 coroutineContext + SupervisorJob() + CoroutineExceptionHandler { _, _ -> }
@@ -155,40 +233,104 @@ class WearWidgetProviderImplTest {
         val provider = WearWidgetProviderImpl(context, testName, exceptionHandlerScope, testWidget)
         testWidget.enableFailureMode = true
 
-        provider.onDeactivated(handle.toParcel(), fakeExecutionCallback)
+        provider.onRemoved(handle.toParcel(), fakeExecutionCallback)
         advanceUntilIdle()
 
-        assertThat(testWidget.deactivatedHandle).isEqualTo(handle)
+        assertThat(testWidget.removedHandle).isEqualTo(handle)
+        assertThat(fakeExecutionCallback.isFailure).isTrue()
+    }
+
+    @Test
+    fun onEvents_callsWidgetAndCallback() = runTest {
+        val exceptionHandlerScope =
+            CoroutineScope(
+                coroutineContext + SupervisorJob() + CoroutineExceptionHandler { _, _ -> }
+            )
+        val provider = WearWidgetProviderImpl(context, testName, exceptionHandlerScope, testWidget)
+
+        val events =
+            listOf(
+                WearWidgetVisibleEvent(
+                    instanceId = WidgetInstanceId(namespace = "ns", id = 1),
+                    startTime = Instant.ofEpochMilli(1000),
+                    duration = Duration.ofSeconds(2),
+                ),
+                WearWidgetVisibleEvent(
+                    instanceId = WidgetInstanceId(namespace = "ns", id = 2),
+                    startTime = Instant.ofEpochMilli(2000),
+                    duration = Duration.ofSeconds(3),
+                ),
+            )
+        val eventBatch = WearWidgetEventBatch(events)
+        provider.onEvents(eventBatch.toParcel(), fakeExecutionCallback)
+        advanceUntilIdle()
+
+        assertThat(testWidget.events).containsExactlyElementsIn(events)
+        assertThat(fakeExecutionCallback.isSuccess).isTrue()
+    }
+
+    @Test
+    fun onEvents_widgetThrows_callbackCalled() = runTest {
+        val exceptionHandlerScope =
+            CoroutineScope(
+                coroutineContext + SupervisorJob() + CoroutineExceptionHandler { _, _ -> }
+            )
+        val provider = WearWidgetProviderImpl(context, testName, exceptionHandlerScope, testWidget)
+        testWidget.enableFailureMode = true
+
+        val events =
+            listOf(
+                WearWidgetVisibleEvent(
+                    instanceId = WidgetInstanceId(namespace = "ns", id = 1),
+                    startTime = Instant.ofEpochMilli(1000),
+                    duration = Duration.ofSeconds(2),
+                )
+            )
+        val eventBatch = WearWidgetEventBatch(events)
+        provider.onEvents(eventBatch.toParcel(), fakeExecutionCallback)
+        advanceUntilIdle()
+
+        assertThat(testWidget.events).containsExactlyElementsIn(events)
         assertThat(fakeExecutionCallback.isFailure).isTrue()
     }
 
     private class TestGlanceWearWidget : GlanceWearWidget() {
-        var lastRequestedInstanceId: Int? = null
-        var activatedHandle: ActiveWearWidgetHandle? = null
-        var deactivatedHandle: ActiveWearWidgetHandle? = null
+        var lastRequestedInstanceId: WidgetInstanceId? = null
+        var lastRequestedContainerType: Int? = null
+        var addedHandle: ActiveWearWidgetHandle? = null
+        var removedHandle: ActiveWearWidgetHandle? = null
         var enableFailureMode = false
         var content = @Composable { RemoteText("WearWidgetProviderImplTest") }
+        var events: List<WearWidgetEvent>? = null
 
-        override suspend fun provideWidgetContent(
+        override suspend fun provideWidgetData(
             context: Context,
-            request: WearWidgetRequest,
-        ): WearWidgetContent {
-            lastRequestedInstanceId = request.instanceId
+            params: WearWidgetParams,
+        ): WearWidgetData {
+            lastRequestedInstanceId = params.instanceId
+            lastRequestedContainerType = params.containerType
             if (enableFailureMode) {
                 throw Exception("Test exception")
             }
-            return WearWidgetContent { content() }
+            return WearWidgetDocument(background = WearWidgetBrush) { content() }
         }
 
-        override suspend fun onActivated(context: Context, widgetHandle: ActiveWearWidgetHandle) {
-            activatedHandle = widgetHandle
+        override suspend fun onAdded(context: Context, widgetHandle: ActiveWearWidgetHandle) {
+            addedHandle = widgetHandle
             if (enableFailureMode) {
                 throw Exception("Test exception")
             }
         }
 
-        override suspend fun onDeactivated(context: Context, widgetHandle: ActiveWearWidgetHandle) {
-            deactivatedHandle = widgetHandle
+        override suspend fun onRemoved(context: Context, widgetHandle: ActiveWearWidgetHandle) {
+            removedHandle = widgetHandle
+            if (enableFailureMode) {
+                throw Exception("Test exception")
+            }
+        }
+
+        override suspend fun onEvents(context: Context, events: List<WearWidgetEvent>) {
+            this@TestGlanceWearWidget.events = events
             if (enableFailureMode) {
                 throw Exception("Test exception")
             }
@@ -206,5 +348,7 @@ class WearWidgetProviderImplTest {
                 channel.close(IllegalStateException("null contentParcel"))
             }
         }
+
+        override fun getInterfaceVersion(): Int = VERSION
     }
 }

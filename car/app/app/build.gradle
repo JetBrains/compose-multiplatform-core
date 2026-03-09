@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -47,7 +46,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("androidx.stableaidl")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -138,7 +136,7 @@ abstract class ProtocolApiTask extends DefaultTask {
                 (bootClasspath.files + dependencyClasspath.files).join(File.pathSeparator),
                 '--source-path',
                 sourceDirs.filter { it.exists() }.join(File.pathSeparator),
-                '--format=v4',
+                '--format=4.0',
                 '--quiet'
         ]
         standardArgs.addAll(additionalArgs)
@@ -146,7 +144,6 @@ abstract class ProtocolApiTask extends DefaultTask {
         MetalavaRunnerKt.runMetalavaWithArgs(
                 metalavaClasspath,
                 standardArgs,
-                /* k2UastEnabled= */ false,
                 kotlinSourceLevel.get(),
                 workerExecutor,
         )

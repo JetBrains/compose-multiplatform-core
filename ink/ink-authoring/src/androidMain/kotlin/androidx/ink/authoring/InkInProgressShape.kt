@@ -17,6 +17,7 @@
 package androidx.ink.authoring
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 import androidx.ink.brush.Brush
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureAnimationProgressHelper
@@ -30,20 +31,36 @@ import kotlin.random.Random
 /**
  * An implementation of [InProgressShape] that simply wraps [androidx.ink.strokes.InProgressStroke].
  */
-internal class InkInProgressShape : InProgressShape<Brush, Stroke> {
+@OptIn(ExperimentalInkCustomBrushApi::class)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalCustomShapeWorkflowApi
+public class InkInProgressShape : InProgressShape<Brush, Stroke> {
 
     internal val inProgressStroke = InProgressStroke()
 
+    private var brush: Brush? = null
+    private var noiseSeed: Int = Int.MIN_VALUE
+
+    /**
+     * When enabled, the same integer random noise seed is kept across calls to [start] and
+     * [prepareToRecycle]. This isn't needed for standard Ink behavior, but can be useful when this
+     * [InProgressShape] is delegated to in the implementation of another [InProgressShape]. The
+     * default behavior is for a new noise seed to be used each time.
+     */
+    @get:JvmName("shouldPreserveNoiseSeed") public var shouldPreserveNoiseSeed: Boolean = false
+
     private var shapeChangesWithTime = false
-    internal var textureAnimationDurationMillis: Long = -Long.MIN_VALUE
+    internal var textureAnimationDurationMillis: Long = Long.MIN_VALUE
         private set
 
-    /** Whether this shape has been canceled. Primarily tracked for defensive coding purposes. */
-    internal var canceled = false
-        private set
+    private var canceled = false
+
+    override fun isCanceled(): Boolean = canceled
 
     private var updateSinceResetUpdatedRegion = false
     private var cancelSinceResetUpdatedRegion = false
+
+    private var startSystemElapsedTimeMillis = Long.MIN_VALUE
 
     /** The most recent value passed to [update]. Acts as the current time for all calculations. */
     internal var lastUpdateSystemElapsedTimeMillis = Long.MIN_VALUE
@@ -62,8 +79,14 @@ internal class InkInProgressShape : InProgressShape<Brush, Stroke> {
     private val scratchBoxAccumulator = BoxAccumulator()
 
     @OptIn(ExperimentalInkCustomBrushApi::class)
-    override fun start(shapeSpec: Brush) {
-        inProgressStroke.start(brush = shapeSpec, noiseSeed = Random.Default.nextInt())
+    override fun start(shapeSpec: Brush, systemElapsedTimeMillis: Long) {
+        prepareToRecycle()
+        this.brush = shapeSpec
+        if (!shouldPreserveNoiseSeed) {
+            this.noiseSeed = Random.Default.nextInt()
+        }
+        inProgressStroke.start(brush = shapeSpec, noiseSeed = noiseSeed)
+        startSystemElapsedTimeMillis = systemElapsedTimeMillis
         shapeChangesWithTime = inProgressStroke.changesWithTime()
         textureAnimationDurationMillis =
             TextureAnimationProgressHelper.getAnimationDurationMillis(shapeSpec.family)
@@ -82,27 +105,16 @@ internal class InkInProgressShape : InProgressShape<Brush, Stroke> {
         }
     }
 
-    override fun changesWithTime(): Boolean {
-        return shapeChangesWithTime || textureAnimationDurationMillis > 0
-    }
+    override fun changesWithTime(): Boolean =
+        shapeChangesWithTime || textureAnimationDurationMillis > 0
 
-    override fun update(
-        inputElapsedTimeMillis: Long,
-        systemElapsedTimeMillis: Long,
-        forceCompletion: Boolean,
-    ) {
+    override fun update(shapeDurationMillis: Long) {
         // Update these values even if the underlying [InProgressStroke] doesn't need updating, so
         // that
         // texture animations can be properly rendered.
-        lastUpdateSystemElapsedTimeMillis = systemElapsedTimeMillis
+        lastUpdateSystemElapsedTimeMillis = startSystemElapsedTimeMillis + shapeDurationMillis
         updateSinceResetUpdatedRegion = true
-
-        if (!inProgressStroke.isUpdateNeeded()) return
-        runCatching {
-                inProgressStroke.updateShape(
-                    if (forceCompletion) Long.MAX_VALUE else inputElapsedTimeMillis
-                )
-            }
+        runCatching { inProgressStroke.updateShape(shapeDurationMillis) }
             .exceptionOrNull()
             ?.let {
                 Log.w(
@@ -163,19 +175,24 @@ internal class InkInProgressShape : InProgressShape<Brush, Stroke> {
         inProgressStroke.finishInput()
     }
 
-    override fun getCompletedShape() =
+    override fun forceCompletion() {
+        inProgressStroke.updateShape(Long.MAX_VALUE)
+    }
+
+    override fun getCompletedShape(): Stroke? =
         if (inProgressStroke.isInputFinished() && !inProgressStroke.isUpdateNeeded()) {
             inProgressStroke.toImmutable()
         } else {
             null
         }
 
-    override fun clear() {
+    override fun prepareToRecycle() {
+        startSystemElapsedTimeMillis = Long.MIN_VALUE
         lastUpdateSystemElapsedTimeMillis = Long.MIN_VALUE
         updateSinceResetUpdatedRegion = false
         cancelSinceResetUpdatedRegion = false
         canceled = false
-        textureAnimationDurationMillis = -Long.MIN_VALUE
+        textureAnimationDurationMillis = Long.MIN_VALUE
         shapeChangesWithTime = false
         inProgressStroke.clear()
     }

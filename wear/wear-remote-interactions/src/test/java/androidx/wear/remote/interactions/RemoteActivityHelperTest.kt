@@ -68,7 +68,10 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implements
 
 @RunWith(WearRemoteInteractionsTestRunner::class)
-@Config(shadows = [RemoteActivityHelperTest.ActualResultReceiver::class])
+@org.robolectric.annotation.Config(
+    shadows = [RemoteActivityHelperTest.ActualResultReceiver::class],
+    sdk = [org.robolectric.annotation.Config.TARGET_SDK],
+)
 class RemoteActivityHelperTest {
     @Implements(ResultReceiver::class)
     class ActualResultReceiver {

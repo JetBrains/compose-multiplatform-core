@@ -18,11 +18,10 @@ package androidx.ink.authoring
 
 import android.graphics.Canvas
 import android.graphics.Matrix
-import androidx.annotation.RestrictTo
 
+@ExperimentalCustomShapeWorkflowApi
 /** Implement this interface to render an [InProgressShape]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
-public interface InProgressShapeRenderer<in IPS : InProgressShape<*, *>> {
+public interface InProgressShapeRenderer<in InProgressShapeT : InProgressShape<*, *>> {
     /**
      * Draw the given [InProgressShape] onto the provided [Canvas], with the given transform. This
      * will be called on the render thread.
@@ -32,5 +31,5 @@ public interface InProgressShapeRenderer<in IPS : InProgressShape<*, *>> {
      * @param strokeToScreenTransform A [Matrix] to transform the [InProgressShape] from its local
      *   coordinate space to the screen coordinate space.
      */
-    public fun draw(canvas: Canvas, shape: IPS, strokeToScreenTransform: Matrix)
+    public fun draw(canvas: Canvas, shape: InProgressShapeT, strokeToScreenTransform: Matrix)
 }

@@ -16,17 +16,16 @@
 
 package androidx.pdf.utils
 
-import android.content.Context
+import android.graphics.Path
 import android.graphics.pdf.component.PdfPagePathObject
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresExtension
 import androidx.pdf.annotation.models.PathPdfObject
-import androidx.test.core.app.ApplicationProvider
+import androidx.pdf.annotation.models.PathPdfObject.PathInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -35,20 +34,38 @@ import org.junit.runner.RunWith
 class AnnotationUtilsTest {
 
     @Test
-    fun readAnnotationsFromPfd_emptyFile() = runTest {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val pfd = createPfd(context, TEST_ANNOTATIONS_FILE, "rwt")
-
-        val annotations = readAnnotationsFromPfd(pfd)
-        assertThat(annotations).isEmpty()
-        pfd.close()
+    fun getPathFromPathInputs_emptyList_returnsEmptyPath() {
+        val pathInputs = emptyList<PathInput>()
+        val path = pathInputs.getPathFromPathInputs()
+        assert(path.isEmpty)
     }
 
     @Test
-    fun getPathFromPathInputs_emptyList_returnsEmptyPath() {
-        val pathInputs = emptyList<PathPdfObject.PathInput>()
-        val path = pathInputs.getPathFromPathInputs()
-        assert(path.isEmpty)
+    fun getPathInputsFromPath_multipleContours_identifiesMoveToAndLineTo() {
+        val path = Path()
+        path.moveTo(0f, 0f)
+        path.lineTo(5f, 5f)
+        path.moveTo(10f, 10f)
+        path.lineTo(15f, 15f)
+
+        val pathInputs = path.getPathInputsFromPath()
+
+        // Assert MOVE_TO commands: Identifying the start of each contour
+        val moveTos = pathInputs.filter { it.command == PathInput.MOVE_TO }
+        assertThat(moveTos).hasSize(2)
+        assertThat(moveTos[0].x).isEqualTo(0f)
+        assertThat(moveTos[0].y).isEqualTo(0f)
+        assertThat(moveTos[1].x).isEqualTo(10f)
+        assertThat(moveTos[1].y).isEqualTo(10f)
+
+        // Assert LINE_TO commands: Verifying the connections within contours
+        val lineTos = pathInputs.filter { it.command == PathInput.LINE_TO }
+        // Each segment in this test is a simple straight line, so we expect exactly two LINE_TOs
+        assertThat(lineTos).hasSize(2)
+        assertThat(lineTos[0].x).isEqualTo(5f)
+        assertThat(lineTos[0].y).isEqualTo(5f)
+        assertThat(lineTos[1].x).isEqualTo(15f)
+        assertThat(lineTos[1].y).isEqualTo(15f)
     }
 
     internal companion object {
@@ -56,13 +73,13 @@ class AnnotationUtilsTest {
         private fun getSamplePathPdfObject(): PathPdfObject {
             val pathInputs =
                 listOf(
-                    PathPdfObject.PathInput(0f, 0f),
-                    PathPdfObject.PathInput(5f, 5f),
-                    PathPdfObject.PathInput(10f, 10f),
-                    PathPdfObject.PathInput(15f, 15f),
-                    PathPdfObject.PathInput(20f, 20f),
-                    PathPdfObject.PathInput(25f, 25f),
-                    PathPdfObject.PathInput(30f, 30f),
+                    PathInput(0f, 0f, PathInput.MOVE_TO),
+                    PathInput(5f, 5f, PathInput.LINE_TO),
+                    PathInput(10f, 10f, PathInput.LINE_TO),
+                    PathInput(15f, 15f, PathInput.LINE_TO),
+                    PathInput(20f, 20f, PathInput.LINE_TO),
+                    PathInput(25f, 25f, PathInput.LINE_TO),
+                    PathInput(30f, 30f, PathInput.LINE_TO),
                 )
             return PathPdfObject(
                 brushColor = android.graphics.Color.RED,
@@ -89,13 +106,16 @@ class AnnotationUtilsTest {
             for (i in pathPdfObject.inputs.indices) {
                 assertThat(pathInputs[i].x).isEqualTo(pathPdfObject.inputs[i].x)
                 assertThat(pathInputs[i].y).isEqualTo(pathPdfObject.inputs[i].y)
+                assertThat(pathInputs[i].command).isEqualTo(pathPdfObject.inputs[i].command)
             }
         }
 
-        fun isRequiredSdkExtensionAvailable(): Boolean {
+        fun isRequiredSdkExtensionAvailable(
+            extensionVersion: Int = REQUIRED_EXTENSION_VERSION
+        ): Boolean {
             // Get the device's version for the specified SDK extension
-            val deviceExtensionVersion = SdkExtensions.getExtensionVersion(Build.VERSION_CODES.R)
-            return deviceExtensionVersion >= REQUIRED_EXTENSION_VERSION
+            val deviceExtensionVersion = SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S)
+            return deviceExtensionVersion >= extensionVersion
         }
 
         private const val TEST_ANNOTATIONS_FILE = "annotationsTest.json"

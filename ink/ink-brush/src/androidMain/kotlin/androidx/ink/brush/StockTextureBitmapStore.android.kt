@@ -18,17 +18,17 @@ package androidx.ink.brush
 
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import androidx.annotation.RestrictTo
 
 /**
  * A [TextureBitmapStore] that automatically loads texture bitmaps for [StockBrushes].
  *
- * Pass this to your stroke renderer (e.g. [CanvasStrokeRenderer] and/or [InProgressStrokesView]) to
- * give it access to the textures.
+ * Pass this to your stroke renderer (e.g.
+ * [androidx.ink.rendering.android.canvas.CanvasStrokeRenderer] and/or
+ * [androidx.ink.authoring.InProgressStrokesView]) to give it access to the textures.
  */
 // Not public until we're actually publishing stock brushes with stock textures.
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
 public class StockTextureBitmapStore(private val resources: Resources) : TextureBitmapStore {
     private val idToBitmap = mutableMapOf<String, Bitmap>()
 
@@ -43,18 +43,7 @@ public class StockTextureBitmapStore(private val resources: Resources) : Texture
      * each textured brush family, as it needs to load and decode a bitmap from [resources]. To
      * prevent this, call [preloadStockBrushesTextures] in advance.
      */
-    public override operator fun get(clientTextureId: String): Bitmap? =
-        idToBitmap[clientTextureId]
-            ?: when (clientTextureId) {
-                StockBrushes.pencilUnstableBackgroundTextureId -> R.drawable.pencil_background_v1
-                else -> null
-            }?.let { resourceId ->
-                // computeIfAbsent is not available until API 24 (Android N).
-                checkNotNull(BitmapFactory.decodeResource(resources, resourceId)) {
-                        "Failed to decode resource $resourceId for stock brush texture ID $clientTextureId"
-                    }
-                    .also { idToBitmap.put(clientTextureId, it) }
-            }
+    public override operator fun get(clientTextureId: String): Bitmap? = idToBitmap[clientTextureId]
 
     /**
      * Preloads the textures for the given [BrushFamily].
@@ -76,7 +65,8 @@ public class StockTextureBitmapStore(private val resources: Resources) : Texture
     }
 
     /** Whether the store contains a texture with the given client . */
-    public fun contains(clientTextureId: String): Boolean = idToBitmap[clientTextureId] != null
+    public operator fun contains(clientTextureId: String): Boolean =
+        idToBitmap[clientTextureId] != null
 
     /**
      * Adds a texture to the store.

@@ -20,7 +20,6 @@ import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import com.google.common.util.concurrent.ListenableFuture
 
 /** Interface for an XR Runtime ScenePose. */
 // TODO: b/420684433 This interface name no longer matches the public SceneCore interface name.
@@ -58,6 +57,47 @@ public interface ScenePose {
      */
     public fun transformPoseTo(pose: Pose, destination: ScenePose): Pose
 
+    /**
+     * Transforms a position from this ScenePose's local space to the destination ScenePose's local
+     * space.
+     *
+     * This operation is affected by both ScenePose's position, rotation, and scale.
+     *
+     * @param position The position in this ScenePose's local coordinate space
+     * @param destination The ScenePose which the returned position will be relative to.
+     * @return The position in the destination ScenePose's local space.
+     */
+    public fun transformPositionTo(position: Vector3, destination: ScenePose): Vector3
+
+    /**
+     * Transforms a vector from this ScenePose's local space to the destination ScenePose's local
+     * space. This operation accounts for scale. The magnitude of the output vector might be
+     * different from the magnitude of the input vector.
+     *
+     * This operation is not affected by either ScenePose's position.
+     *
+     * @param vector The vector in this ScenePose's local coordinate space
+     * @param destination The ScenePose which the returned vector will be relative to.
+     * @return The vector in the destination ScenePose's local space. The returned magnitude will be
+     *   affected by destination scale.
+     */
+    public fun transformVectorTo(vector: Vector3, destination: ScenePose): Vector3
+
+    /**
+     * Transforms a direction from this ScenePose's local space to the destination ScenePose's local
+     * space. This operation ignores relative scaling; the output vector will have the same
+     * magnitude as [direction].
+     *
+     * This operation is not affected by either ScenePose's scale or position.
+     * > Warning: This operation does not support non-uniformly scaled ScenePoses.
+     *
+     * @param direction The direction in this ScenePose's local coordinate space
+     * @param destination The ScenePose which the returned direction will be relative to.
+     * @return The direction in the destination ScenePose's local space. It will have the same
+     *   magnitude as the input direction.
+     */
+    public fun transformDirectionTo(direction: Vector3, destination: ScenePose): Vector3
+
     /** A filter for which Scenes to hit test with ScenePose.hitTest */
     public object HitTestFilter {
         /** Register hit tests for the scene which this Scene pose belongs to. */
@@ -81,14 +121,13 @@ public interface ScenePose {
      * @param origin The translation of the origin of the hit test relative to this ScenePose.
      * @param direction The direction for the hit test ray from the ScenePose.
      * @param hitTestFilter The scenes that will be in range for the hit test.
-     * @return a {@code ListenableFuture<HitResult>}. The HitResult describes if it hit something
-     *   and where relative to this [ScenePose]. Listeners will be called on the main thread if
-     *   Runnable::run is supplied.
+     * @return a {@code HitResult}. The HitResult describes if it hit something and where relative
+     *   to this [ScenePose]. Listeners will be called on the main thread if Runnable::run is
+     *   supplied.
      */
-    @Suppress("AsyncSuffixFuture")
-    public fun hitTest(
+    public suspend fun hitTest(
         origin: Vector3,
         direction: Vector3,
         @HitTestFilterValue hitTestFilter: Int,
-    ): ListenableFuture<HitTestResult>
+    ): HitTestResult
 }

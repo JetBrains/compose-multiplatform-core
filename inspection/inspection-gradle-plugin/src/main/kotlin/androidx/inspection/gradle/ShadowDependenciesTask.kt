@@ -39,71 +39,87 @@ fun Project.registerShadowDependenciesTask(
     zipTask: TaskProvider<Copy>,
 ): TaskProvider<ShadowJar> {
     val versionTask = registerGenerateInspectionPlatformVersionTask(variant)
-    return tasks.register(variant.taskName("inspectionShadowDependencies"), ShadowJar::class.java) {
-        it.dependsOn(versionTask)
+    return tasks.register(
+        variant.taskName("inspectionShadowDependencies"),
+        ShadowJar::class.java,
+    ) { task ->
+        task.dependsOn(versionTask)
         val fileTree = project.fileTree(zipTask.get().destinationDir)
         fileTree.include("**/*.jar", "**/*.so")
-        it.from(fileTree)
-        it.from(versionTask.get().outputDir)
-        it.includeEmptyDirs = false
-        it.filesMatching("**/*.so") {
+        task.from(fileTree)
+        task.from(versionTask.get().outputDir)
+        task.includeEmptyDirs = false
+        task.filesMatching("**/*.so") {
             if (it.path.startsWith("jni")) {
                 it.path = "lib/${it.path.removePrefix("jni")}"
             }
         }
-        it.transform(RenameServicesTransformer::class.java)
-        it.destinationDirectory.set(taskWorkingDir(variant, "shadowedJar"))
-        it.archiveBaseName.set("${extension.name ?: project.name}-nondexed")
-        it.archiveVersion.set("")
-        it.dependsOn(zipTask)
+        task.transform(RenameServicesTransformer::class.java)
+        task.destinationDirectory.set(taskWorkingDir(variant, "shadowedJar"))
+        task.archiveBaseName.set("${extension.name ?: project.name}-nondexed")
+        task.archiveVersion.set("")
+        task.dependsOn(zipTask)
         val prefix = "deps.${project.name.replace('-', '.')}"
 
-        val filteredRuntimeDepsProvider = provider {
-            val runtimeArtifacts =
-                variant.runtimeConfiguration.incoming
-                    .artifactView {
-                        it.attributes.attribute(
-                            Attribute.of("artifactType", String::class.java),
-                            ArtifactTypeDefinition.JAR_TYPE,
-                        )
-                    }
-                    .artifacts
-
-            val userExcludes = extension.excludedModules.orNull ?: emptySet()
-            val userAllows = extension.allowedModules.orNull ?: emptySet()
-
-            if (userExcludes.isEmpty() && userAllows.isEmpty()) {
-                return@provider files(
-                    runtimeArtifacts.map { it.file }.filter { it.name.endsWith("jar") }
+        val view =
+            variant.runtimeConfiguration.incoming.artifactView { viewConfig ->
+                viewConfig.attributes.attribute(
+                    Attribute.of("artifactType", String::class.java),
+                    ArtifactTypeDefinition.JAR_TYPE,
                 )
             }
 
-            fun matches(id: ModuleComponentIdentifier, patterns: Set<String>): Boolean {
-                val groupModule = "${id.group}:${id.module}"
-                return groupModule in patterns || "${id.group}:*" in patterns
-            }
+        val filteredRuntimeDepsProvider =
+            extension.excludedModules
+                .zip(extension.allowedModules) { excludes, allows -> excludes to allows }
+                .zip(view.files.elements) { (excludes, allows), elements ->
+                    Triple(excludes, allows, elements)
+                }
+                .zip(view.artifacts.resolvedArtifacts) { (excludes, allows, elements), artifacts ->
+                    fun matches(id: ModuleComponentIdentifier, patterns: Set<String>): Boolean {
+                        val fullId = "${id.group}:${id.module}"
+                        return patterns.any { pattern ->
+                            when {
+                                pattern == fullId -> true
+                                pattern == "${id.group}:*" -> true
+                                pattern.endsWith("*") ->
+                                    fullId.startsWith(pattern.removeSuffix("*"))
+                                else -> false
+                            }
+                        }
+                    }
 
-            val filteredArtifacts =
-                runtimeArtifacts.filterNot { artifact ->
-                    val id = artifact.id.componentIdentifier
-                    if (id is ModuleComponentIdentifier) {
-                        val excluded = matches(id, userExcludes)
-                        val allowed = matches(id, userAllows)
-                        excluded && !allowed
+                    if (excludes.isEmpty() && allows.isEmpty()) {
+                        elements.map { it.asFile }.toSet()
                     } else {
-                        false
+                        val artifactsToExclude =
+                            artifacts
+                                .filter { artifact ->
+                                    val id = artifact.id.componentIdentifier
+                                    if (id is ModuleComponentIdentifier) {
+                                        val excluded = matches(id, excludes)
+                                        val allowed = matches(id, allows)
+                                        excluded && !allowed
+                                    } else {
+                                        false
+                                    }
+                                }
+                                .map { it.file }
+                                .toSet()
+                        elements
+                            .map { it.asFile }
+                            .filter { file -> file !in artifactsToExclude }
+                            .toSet()
                     }
                 }
-            files(filteredArtifacts.map { it.file }.filter { it.name.endsWith("jar") })
-        }
 
-        it.exclude("**/module-info.class")
-        it.exclude("google/**/*.proto")
-        it.exclude("META-INF/versions/9/**/*.class")
+        task.exclude("**/module-info.class")
+        task.exclude("google/**/*.proto")
+        task.exclude("META-INF/versions/9/**/*.class")
 
-        it.from(filteredRuntimeDepsProvider)
+        task.from(filteredRuntimeDepsProvider)
 
-        it.doFirst {
+        task.doFirst {
             val shadow = it as ShadowJar
             filteredRuntimeDepsProvider
                 .get()

@@ -35,6 +35,12 @@ class QuaternionTest {
     }
 
     @Test
+    fun constructor_nonNormalizedValues_returnsQuaternionNormalized() {
+        val underTest = Quaternion(1f, 2f, 3f, 4f)
+        assertRotation(underTest, 0.1825742f, 0.3651484f, 0.5477226f, 0.7302967f)
+    }
+
+    @Test
     fun equals_sameValues_returnsTrue() {
         val underTest = Quaternion(1f, 2f, 3f, 4f)
         val underTest2 = Quaternion(1f, 2f, 3f, 4f)
@@ -183,20 +189,6 @@ class QuaternionTest {
     }
 
     @Test
-    fun normalized_returnsQuaternionNormalized() {
-        val underTest = Quaternion(1f, 2f, 3f, 4f)
-        val underTestNormalized = underTest.toNormalized()
-
-        assertRotation(
-            underTest,
-            underTestNormalized.x,
-            underTestNormalized.y,
-            underTestNormalized.z,
-            underTestNormalized.w,
-        )
-    }
-
-    @Test
     fun inverted_returnsQuaternionInverted() {
         val underTest = Quaternion(1f, 2f, 3f, 4f)
         val underTestInverted = underTest.inverse
@@ -242,14 +234,6 @@ class QuaternionTest {
         val underTestTimes = underTest * underTest2
 
         assertRotation(underTestTimes, 0.6090002f, -0.442909f, -0.16609f, -0.63668f)
-    }
-
-    @Test
-    fun div_returnsQuaternionDividedByScalar() {
-        val underTest = Quaternion(0f, 0f, 0f, 1f)
-        val underTestDiv = underTest / 2f
-
-        assertRotation(underTestDiv, 0f, 0f, 0f, 1f)
     }
 
     @Test

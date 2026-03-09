@@ -1169,7 +1169,7 @@ public final class CameraUtil {
      * Grant the camera permission and test the camera.
      *
      * <p>This method is mainly required to be used when running the test with
-     * Camera2Config/CameraPipeConfig. Please create a PreTestCameraIdList with the CameraXConfig
+     * Camera2Config. Please create a PreTestCameraIdList with the CameraXConfig
      * that is used in the test.
      * If the test uses fake CameraXConfig or doesn't initialize CameraX, i.e. doesn't uses
      * {@link androidx.camera.lifecycle.ProcessCameraProvider} or {@link CameraXUtil#initialize} to
@@ -1198,7 +1198,7 @@ public final class CameraUtil {
      * Grant the camera permission and test the camera.
      *
      * <p>This method is mainly required to be used when running the test with
-     * Camera2Config/CameraPipeConfig. Please create a PreTestCameraIdList with the CameraXConfig
+     * Camera2Config. Please create a PreTestCameraIdList with the CameraXConfig
      * that is used in the test.
      * If the test uses fake CameraXConfig or doesn't initialize CameraX, i.e. doesn't uses
      * {@link androidx.camera.lifecycle.ProcessCameraProvider} or {@link CameraXUtil#initialize} to
@@ -1227,7 +1227,7 @@ public final class CameraUtil {
      * Grant the camera permission and test the camera.
      *
      * <p>This method is mainly required to be used when running the test with
-     * Camera2Config/CameraPipeConfig. Please create a PreTestCameraIdList with the CameraXConfig
+     * Camera2Config. Please create a PreTestCameraIdList with the CameraXConfig
      * that is used in the test.
      * If the test uses fake CameraXConfig or doesn't initialize CameraX, i.e. doesn't uses
      * {@link androidx.camera.lifecycle.ProcessCameraProvider} or {@link CameraXUtil#initialize} to

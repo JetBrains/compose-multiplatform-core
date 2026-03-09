@@ -22,7 +22,6 @@ import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
-import com.google.common.util.concurrent.ListenableFuture
 
 /**
  * RenderingRuntime encapsulates all the platform-specific rendering-related operations. Its
@@ -38,32 +37,28 @@ import com.google.common.util.concurrent.ListenableFuture
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface RenderingRuntime : JxrRuntime {
     /**
-     * Loads glTF Asset for the given asset name from the assets folder. The future returned by this
-     * method will fire listeners on the UI thread if Runnable::run is supplied.
+     * Loads glTF Asset for the given asset name from the assets folder. The Coroutine returned by
+     * this method will fire listeners on the UI thread if Runnable::run is supplied.
      *
      * @param assetName The name of the asset to load from the assets folder.
-     * @return A future that resolves to the glTF model when it is loaded. The future will be null
-     *   if the asset was not found.
+     * @return A glTF model. Will be null if the asset was not found.
      */
-    @Suppress("AsyncSuffixFuture")
-    public fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource>
+    public suspend fun loadGltfByAssetName(assetName: String): GltfModelResource
 
     /**
-     * Loads glTF Asset from a provided byte array. The future returned by this method will fire
+     * Loads glTF Asset from a provided byte array. The Coroutine returned by this method will fire
      * listeners on the UI thread if Runnable::run is supplied.
      *
      * @param assetData A gltfAsset in the form of a byte array.
      * @param assetKey The name of the asset to load from the cache.
-     * @return A future that resolves to the glTF model when it is loaded. The future will be null
-     *   if the asset was not found.
+     * @return A glTF model when it is loaded. Will be null if the asset was not found.
      */
-    @Suppress("AsyncSuffixFuture")
     // TODO(b/397746548): Add InputStream support for loading glTFs.
     // Suppressed to allow CompletableFuture.
-    public fun loadGltfByByteArray(
+    public suspend fun loadGltfByByteArray(
         assetData: ByteArray,
         assetKey: String,
-    ): ListenableFuture<GltfModelResource>
+    ): GltfModelResource
 
     /**
      * Destroys the given glTF model resource.
@@ -76,26 +71,21 @@ public interface RenderingRuntime : JxrRuntime {
      * Loads an ExrImage for the given asset name from the assets folder.
      *
      * @param assetName The name of the asset to load from the assets folder.
-     * @return A future that resolves to the ExrImage when it is loaded. The future will be null if
-     *   the asset was not found.
+     * @return An ExrImage. Will be null if the asset was not found.
      */
-    @SuppressWarnings("AsyncSuffixFuture")
-    public fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource>
+    public suspend fun loadExrImageByAssetName(assetName: String): ExrImageResource
 
     /**
      * Loads an ExrImage from a provided byte array.
      *
      * @param assetData An ExrImage in the form of a byte array.
      * @param assetKey The name of the asset to load from the cache.
-     * @return A future that resolves to the ExrImage when it is loaded. The future will be null if
-     *   the asset was not found.
+     * @return An ExrImage. Will be null if the asset was not found.
      */
-    @Suppress("AsyncSuffixFuture")
-    // Suppressed to allow CompletableFuture.
-    public fun loadExrImageByByteArray(
+    public suspend fun loadExrImageByByteArray(
         assetData: ByteArray,
         assetKey: String,
-    ): ListenableFuture<ExrImageResource>
+    ): ExrImageResource
 
     /**
      * Destroys the given EXR image resource.
@@ -105,14 +95,13 @@ public interface RenderingRuntime : JxrRuntime {
     public fun destroyExrImage(exrImage: ExrImageResource)
 
     /**
-     * Loads a texture resource for the given asset name or URL. The future returned by this method
-     * will fire listeners on the UI thread if Runnable::run is supplied.
+     * Loads a texture resource for the given asset name or URL. The Coroutine returned by this
+     * method will fire listeners on the UI thread if Runnable::run is supplied.
      *
      * @param assetName The name of the texture file to load or the URL of the remote texture.
-     * @return A future that resolves to the texture when it is loaded.
+     * @return A texture.
      */
-    @Suppress("AsyncSuffixFuture")
-    public fun loadTexture(assetName: String): ListenableFuture<TextureResource>
+    public suspend fun loadTexture(assetName: String): TextureResource
 
     /** Borrows the reflection texture from the currently set environment IBL. */
     public fun borrowReflectionTexture(): TextureResource?
@@ -134,15 +123,14 @@ public interface RenderingRuntime : JxrRuntime {
     public fun getReflectionTextureFromIbl(iblToken: ExrImageResource): TextureResource?
 
     /**
-     * Creates a water material by querying it from the system's built-in materials. The future
+     * Creates a water material by querying it from the system's built-in materials. The Coroutine
      * returned by this method will fire listeners on the UI thread if Runnable::run is supplied.
      *
      * @param isAlphaMapVersion True if the water material should be the alpha map version.
-     * @return A ListenableFuture containing a WaterMaterial backed by an imp::WaterMaterial. The
-     *   WaterMaterial can be destroyed by passing it to destroyNativeObject.
+     * @return A WaterMaterial backed by an imp::WaterMaterial. The WaterMaterial can be destroyed
+     *   by passing it to destroyNativeObject.
      */
-    @Suppress("AsyncSuffixFuture")
-    public fun createWaterMaterial(isAlphaMapVersion: Boolean): ListenableFuture<MaterialResource>
+    public suspend fun createWaterMaterial(isAlphaMapVersion: Boolean): MaterialResource
 
     /**
      * Destroys the given water material resource.
@@ -235,12 +223,10 @@ public interface RenderingRuntime : JxrRuntime {
 
     /**
      * Creates a Khronos PBR material by querying it from the system's built-in materials. The
-     * future returned by this method will fire listeners on the UI thread if Runnable::run is
+     * Coroutine returned by this method will fire listeners on the UI thread if Runnable::run is
      * supplied.
      */
-    public fun createKhronosPbrMaterial(
-        spec: KhronosPbrMaterialSpec
-    ): ListenableFuture<MaterialResource>
+    public suspend fun createKhronosPbrMaterial(spec: KhronosPbrMaterialSpec): MaterialResource
 
     /**
      * Destroys the given Khronos PBR material resource.
@@ -611,13 +597,15 @@ public interface RenderingRuntime : JxrRuntime {
     public fun createGltfEntity(
         pose: Pose,
         loadedGltf: GltfModelResource,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): GltfEntity
 
     /**
      * Factory method for SurfaceEntity.
      *
      * @param stereoMode Stereo mode for the surface.
+     * @param mediaBlendingMode The [SurfaceEntity.MediaBlendingMode] which describes the media
+     *   blending mode of the surface.
      * @param pose Pose of this entity relative to its parent, default value is Identity.
      * @param shape The [SurfaceEntity.Shape] which describes the 3D geometry of the entity.
      * @param surfaceProtection The [SurfaceEntity.SurfaceProtection] which describes whether DRM is
@@ -629,10 +617,11 @@ public interface RenderingRuntime : JxrRuntime {
      */
     public fun createSurfaceEntity(
         stereoMode: Int,
+        @SurfaceEntity.MediaBlendingMode mediaBlendingMode: Int,
         pose: Pose,
         shape: SurfaceEntity.Shape,
         @SurfaceEntity.SurfaceProtection surfaceProtection: Int,
         superSampling: Int,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): SurfaceEntity
 }

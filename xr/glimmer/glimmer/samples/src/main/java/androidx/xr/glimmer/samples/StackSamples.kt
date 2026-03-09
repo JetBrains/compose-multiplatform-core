@@ -18,29 +18,38 @@ package androidx.xr.glimmer.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.Card
 import androidx.xr.glimmer.CardDefaults
 import androidx.xr.glimmer.GlimmerTheme
+import androidx.xr.glimmer.LocalTextStyle
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.stack.VerticalStack
 
 @Sampled
 @Composable
 fun VerticalStackSample() {
-    VerticalStack(modifier = Modifier.height(300.dp)) {
+    VerticalStack(modifier = Modifier.fillMaxWidth().height(364.dp)) {
         item(key = 0) {
             Card(modifier = Modifier.fillMaxSize().itemDecoration(CardDefaults.shape)) {
-                Text("Item-0")
+                Text(
+                    "Item-0",
+                    style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                )
             }
         }
         items(count = 10, key = { it + 1 }) { index ->
             Card(modifier = Modifier.fillMaxSize().itemDecoration(CardDefaults.shape)) {
-                Text("Item-${index + 1}")
+                Text(
+                    "Item-${index + 1}",
+                    style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                )
             }
         }
     }

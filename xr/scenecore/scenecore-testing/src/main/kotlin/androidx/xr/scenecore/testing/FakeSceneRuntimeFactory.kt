@@ -18,7 +18,7 @@ package androidx.xr.scenecore.testing
 
 import android.app.Activity
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.Feature
+import androidx.xr.runtime.interfaces.Feature
 import androidx.xr.runtime.internal.SceneRuntimeFactory
 
 /** Factory for creating test-only instances of [androidx.xr.scenecore.runtime.SceneRuntime]. */

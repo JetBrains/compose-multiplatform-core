@@ -17,18 +17,21 @@
 package androidx.xr.glimmer.list
 
 import androidx.compose.foundation.OverscrollEffect
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberOverscrollEffect
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.layout.LocalPinnableContainer
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.onNodeWithTag
@@ -39,13 +42,9 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.xr.glimmer.Text
-import androidx.xr.glimmer.nonTouchInputModeRule
 import androidx.xr.glimmer.performIndirectSwipe
 import androidx.xr.glimmer.setGlimmerThemeContent
 import com.google.common.truth.Truth.assertThat
-import org.junit.After
-import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -54,21 +53,6 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 @OptIn(ExperimentalComposeUiApi::class)
 class ListInteractionTest(orientation: Orientation) : BaseListTestWithOrientation(orientation) {
-
-    @get:Rule(1) val inputModeRule = nonTouchInputModeRule()
-
-    private val savedInitialFocusAvailabilityFlag =
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable
-
-    @Before
-    fun setup() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = true
-    }
-
-    @After
-    fun tearDown() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = savedInitialFocusAvailabilityFlag
-    }
 
     @Test
     fun performScrollToIndex() {
@@ -116,6 +100,49 @@ class ListInteractionTest(orientation: Orientation) : BaseListTestWithOrientatio
         rule.onNodeWithText("Item (4)").assertIsNotDisplayed().assertDoesNotExist()
         // The pinned item must be laid out but not visible.
         rule.onNodeWithText("Item (3)").assertIsNotDisplayed().assertExists()
+    }
+
+    @Test
+    fun itemsCountZero_displaysNoItems() {
+        val itemTag = "BoxItem"
+        rule.setGlimmerThemeContent {
+            TestList(
+                modifier = Modifier.size(100.dp).background(Color.Black),
+                itemsCount = 0,
+                itemContent = { _ ->
+                    Box(Modifier.size(20.dp).background(Color.Red).testTag(itemTag))
+                },
+            )
+        }
+
+        rule.onNodeWithTag(itemTag).assertIsNotDisplayed()
+    }
+
+    @Test
+    fun itemsExtensionOverload_forList() {
+        val itemsList = listOf("A", "B", "C", "D", "E")
+        rule.setGlimmerThemeContent { VerticalList { items(itemsList) { item -> Text(item) } } }
+
+        for (item in itemsList) {
+            rule.onNodeWithText(item).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun itemsExtension_forIndexedList() {
+        val itemsList = listOf("A", "B", "C", "D", "E")
+        rule.setGlimmerThemeContent {
+            VerticalList {
+                itemsIndexed(itemsList) { index, item ->
+                    assertThat(index).isEqualTo(itemsList.indexOf(item))
+                    Text(item)
+                }
+            }
+        }
+
+        for (item in itemsList) {
+            rule.onNodeWithText(item).assertIsDisplayed()
+        }
     }
 
     @Test

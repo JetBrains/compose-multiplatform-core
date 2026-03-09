@@ -25,6 +25,7 @@ import androidx.webkit.test.common.WebViewOnUiThread;
 import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -37,6 +38,7 @@ public class WebViewGarbageCollectionTest {
 
     @Test
     @MediumTest
+    @Ignore("b/458621212")
     public void testOneWebViewGc() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.PROVIDER_WEAKLY_REF_WEBVIEW);
         runGcTest(() -> {
@@ -55,6 +57,7 @@ public class WebViewGarbageCollectionTest {
 
     @Test
     @MediumTest
+    @Ignore("b/458621212")
     public void testManyWebViewGc() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.PROVIDER_WEAKLY_REF_WEBVIEW);
         runGcTest(() -> {

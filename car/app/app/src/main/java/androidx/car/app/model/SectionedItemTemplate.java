@@ -36,7 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-/** A template that contains sections of items like rows, grid items, etc. */
+/** A template that contains sections of items like rows, grid items, filter chips, etc. */
 @KeepFields
 @RequiresCarApi(8)
 @CarProtocol
@@ -136,7 +136,7 @@ public final class SectionedItemTemplate implements Template {
         mIsLoading = false;
         mIsAlphabeticalIndexingAllowed = false;
         mAlphabeticalIndexingStrategy = ALPHABETICAL_INDEXING_DISABLED;
-        mScrollStatePersistenceStrategy = SCROLL_STATE_RESET_TO_TOP;
+        mScrollStatePersistenceStrategy = SCROLL_STATE_PRESERVE_INDEX;
     }
 
     /** Creates a {@link SectionedItemTemplate} from the {@link Builder}. */
@@ -200,6 +200,7 @@ public final class SectionedItemTemplate implements Template {
      * <p>Individual items may be excluded from the list by setting their {@code #isIndexable}
      * field to {@code false}.
      */
+    @AlphabeticalIndexingStrategy
     public int getAlphabeticalIndexingStrategy() {
         // Existing field is used if the new field is set to DISABLED
         if (mAlphabeticalIndexingStrategy == ALPHABETICAL_INDEXING_DISABLED
@@ -215,6 +216,7 @@ public final class SectionedItemTemplate implements Template {
      *
      * See {@link Builder#setScrollStatePersistenceStrategy(int)}
      */
+    @ScrollStatePersistenceStrategy
     public int getScrollStatePersistenceStrategy() {
         return mScrollStatePersistenceStrategy;
     }
@@ -262,7 +264,10 @@ public final class SectionedItemTemplate implements Template {
      *
      * <ul>
      *     <li>The template is not both loading and populated with sections
-     *     <li>Only {@link RowSection} and/or {@link GridSection} are added as sections
+     *     <li>Only {@link FilterChipSection}, {@link RowSection} and/or {@link GridSection} are
+     *     added as sections
+     *     <li>If a {@link FilterChipSection} is added, it must be the first section and only one
+     *     is allowed
      * </ul>
      */
     @ExperimentalCarApi
@@ -279,7 +284,7 @@ public final class SectionedItemTemplate implements Template {
 
         private int mAlphabeticalIndexingStrategy = ALPHABETICAL_INDEXING_DISABLED;
 
-        private int mScrollStatePersistenceStrategy = SCROLL_STATE_RESET_TO_TOP;
+        private int mScrollStatePersistenceStrategy = SCROLL_STATE_PRESERVE_INDEX;
 
         /** Create a new {@link SectionedItemTemplate} builder. */
         public Builder() {
@@ -474,10 +479,23 @@ public final class SectionedItemTemplate implements Template {
                 }
             }
 
-            for (Section<?> section : mSections) {
-                if (!(section instanceof RowSection) && !(section instanceof GridSection)) {
+            boolean hasFilterChipSection = false;
+            for (int i = 0; i < mSections.size(); i++) {
+                Section<?> section = mSections.get(i);
+                if (section instanceof FilterChipSection) {
+                    if (hasFilterChipSection) {
+                        throw new IllegalArgumentException(
+                                "Only one FilterChipSection is allowed in SectionedItemTemplate.");
+                    }
+                    if (i != 0) {
+                        throw new IllegalArgumentException(
+                                "FilterChipSection must be the first section in "
+                                        + "SectionedItemTemplate.");
+                    }
+                    hasFilterChipSection = true;
+                } else if (!(section instanceof RowSection) && !(section instanceof GridSection)) {
                     throw new IllegalArgumentException(
-                            "Only RowSections and GridSections are allowed in "
+                            "Only FilterChipSections, RowSections and GridSections are allowed in "
                                     + "SectionedItemTemplate.");
                 }
             }

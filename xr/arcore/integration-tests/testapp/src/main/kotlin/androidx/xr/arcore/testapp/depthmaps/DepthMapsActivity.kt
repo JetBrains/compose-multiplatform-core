@@ -19,7 +19,6 @@ package androidx.xr.arcore.testapp.depthmaps
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -54,7 +53,10 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.XrLog
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlinx.coroutines.runBlocking
@@ -84,13 +86,13 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
     private var selectedView by mutableStateOf(ViewSelection.LEFT)
     private val rawConfig =
         Config(
-            depthEstimation = Config.DepthEstimationMode.RAW_ONLY,
-            headTracking = Config.HeadTrackingMode.LAST_KNOWN,
+            depthEstimation = DepthEstimationMode.RAW_ONLY,
+            deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
         )
     private val smoothConfig =
         Config(
-            depthEstimation = Config.DepthEstimationMode.SMOOTH_ONLY,
-            headTracking = Config.HeadTrackingMode.LAST_KNOWN,
+            depthEstimation = DepthEstimationMode.SMOOTH_ONLY,
+            deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
         )
     private var configurationMutex = Mutex()
 
@@ -121,6 +123,7 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
                     surfaceView.setWillNotDraw(false)
                     setContent { DepthMapPanel(surfaceView) }
                 },
+                context = applicationContext,
             )
         sessionHelper.tryCreateSession()
     }
@@ -148,7 +151,7 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
             depthMapRenderer.createDepthGradientTexture(/* context= */ this)
             depthMapRenderer.createDepthShaders(/* context= */ this, depthTexture.depthTextureId)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to read an asset file", e)
+            XrLog.error(e) { "Failed to read an asset file" }
         }
     }
 

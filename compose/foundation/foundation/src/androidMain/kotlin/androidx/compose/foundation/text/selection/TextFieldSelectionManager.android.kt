@@ -137,3 +137,7 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
 
 internal actual suspend fun TextFieldSelectionManager.hasAvailableTextToPaste(): Boolean =
     this.clipboard?.let { ClipboardUtils.hasText(it) } ?: false
+
+internal actual fun TextFieldSelectionManager.isSelectionHandleInVisibleBound(
+    isStartHandle: Boolean
+): Boolean = isSelectionHandleInVisibleBoundDefault(isStartHandle)

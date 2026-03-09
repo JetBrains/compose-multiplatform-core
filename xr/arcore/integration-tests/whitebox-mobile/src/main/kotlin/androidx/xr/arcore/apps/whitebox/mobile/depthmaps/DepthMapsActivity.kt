@@ -21,7 +21,6 @@ import android.opengl.GLES11Ext
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import android.os.Bundle
-import android.util.Log
 import android.view.Surface
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -61,8 +60,10 @@ import androidx.xr.arcore.apps.whitebox.mobile.samplerender.renderers.Background
 import androidx.xr.arcore.playservices.ArCoreRuntime
 import androidx.xr.arcore.playservices.cameraState
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Matrix4
 import com.google.ar.core.exceptions.DeadlineExceededException
 import com.google.ar.core.exceptions.NotYetAvailableException
@@ -96,8 +97,8 @@ class DepthMapsActivity :
 
     private var selectedDepthMode by mutableStateOf(DepthMode.RAW)
 
-    private val rawConfig = Config(depthEstimation = Config.DepthEstimationMode.RAW_ONLY)
-    private val smoothConfig = Config(depthEstimation = Config.DepthEstimationMode.SMOOTH_ONLY)
+    private val rawConfig = Config(depthEstimation = DepthEstimationMode.RAW_ONLY)
+    private val smoothConfig = Config(depthEstimation = DepthEstimationMode.SMOOTH_ONLY)
     private var configurationMutex = Mutex()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -138,7 +139,7 @@ class DepthMapsActivity :
             backgroundRenderer = BackgroundRenderer(render)
             virtualSceneFramebuffer = Framebuffer(render, width = 1, height = 1)
         } catch (e: IOException) {
-            Log.v(ACTIVITY_NAME, "Failed to create background renderer", e)
+            XrLog.error(e) { "Failed to create background renderer" }
             return
         }
     }
@@ -181,17 +182,15 @@ class DepthMapsActivity :
                     }
                     depthImageNotAvailable = false
                 } catch (e: IOException) {
-                    Log.e(ACTIVITY_NAME, "Failed to read a required asset file", e)
+                    XrLog.error(e) { "Failed to read a required asset file" }
                 } catch (e: NotYetAvailableException) {
-                    Log.e(
-                        "DepthMapActivity",
-                        "Depth image is not yet available, unable to retrieve depth map buffers.",
-                    )
+                    XrLog.error(e) {
+                        "Depth image is not yet available, unable to retrieve depth map buffers."
+                    }
                 } catch (e: DeadlineExceededException) {
-                    Log.e(
-                        "DepthMapActivity",
-                        "Depth image DeadlineExceededException, unable to retrieve depth map buffers.",
-                    )
+                    XrLog.error(e) {
+                        "Depth image DeadlineExceededException, unable to retrieve depth map buffers."
+                    }
                 }
             }
         }

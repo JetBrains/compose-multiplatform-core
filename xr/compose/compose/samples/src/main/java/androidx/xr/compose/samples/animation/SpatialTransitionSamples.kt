@@ -23,7 +23,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.xr.compose.spatial.ApplicationSubspace
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.animation.AnimatedSpatialVisibility
 import androidx.xr.compose.subspace.animation.SpatialTransitions
@@ -32,7 +32,7 @@ import androidx.xr.compose.unit.IntVolumeOffset
 @Sampled
 @Composable
 fun SpatialFade() {
-    ApplicationSubspace {
+    Subspace {
         val visibleState = remember { MutableTransitionState(false) }
         visibleState.targetState = true
 
@@ -52,7 +52,7 @@ fun SpatialFade() {
 @Sampled
 @Composable
 fun SpatialSlide() {
-    ApplicationSubspace {
+    Subspace {
         val visibleState = remember { MutableTransitionState(false) }
         visibleState.targetState = true
 

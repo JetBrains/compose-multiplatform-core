@@ -131,6 +131,7 @@ private val M_RECT_PVIEW_RATIO_4x3_SENSOR_1920x1080 =
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class FocusMeteringControlTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
@@ -1041,7 +1042,7 @@ class FocusMeteringControlTest {
 
         // Assert.
         assertFutureFailedWithOperationCancellation(actionResult)
-        assertThat(cancelResult[3, TimeUnit.SECONDS]?.status).isEqualTo(Result3A.Status.OK)
+        assertThat(cancelResult[3, TimeUnit.SECONDS]).isNull()
     }
 
     @Test
@@ -1675,7 +1676,12 @@ class FocusMeteringControlTest {
         cameraId: String = CAMERA_ID_0,
         properties: CameraProperties = cameraPropertiesMap[cameraId]!!,
         requestControl: UseCaseCameraRequestControl = fakeRequestControl,
-    ) = FakeState3AControlCreator.createState3AControl(properties, requestControl)
+    ) =
+        FakeState3AControlCreator.createState3AControl(
+            properties,
+            requestControl,
+            fakeUseCaseThreads,
+        )
 
     private fun FocusMeteringControl.startFocusAndMeteringAndAdvanceTestScope(
         testScope: TestScope,

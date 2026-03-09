@@ -16,8 +16,6 @@
 
 package androidx.xr.arcore.testing
 
-import androidx.annotation.RestrictTo
-import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.Face as RuntimeFace
 import androidx.xr.arcore.runtime.Mesh
 import androidx.xr.runtime.TrackingState
@@ -27,14 +25,7 @@ import androidx.xr.runtime.math.Vector3
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 
-/**
- * Fake implementation of [androidx.xr.arcore.runtime.Face] for testing purposes.
- *
- * @property trackingState The current tracking state of the face.
- * @property isValid Indicates whether the face is valid.
- * @property blendShapeValues The array of blend shape values.
- * @property confidenceValues The array of confidence values.
- */
+/** Fake implementation of [Face][RuntimeFace] for testing purposes. */
 public class FakeRuntimeFace(
     override var trackingState: TrackingState = TrackingState.PAUSED,
     override var isValid: Boolean = true,
@@ -42,21 +33,8 @@ public class FakeRuntimeFace(
     override var confidenceValues: FloatArray = FloatArray(0),
 ) : RuntimeFace {
 
-    /**
-     * Controls whether calling [createAnchor] will succeed or throw an [IllegalStateException].
-     * Defaults to `true`.
-     */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @get:JvmName("canCreateAnchors")
-    public var canCreateAnchors: Boolean = true
-
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override var centerPose: Pose = Pose()
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override var mesh: Mesh =
         Mesh(
             ShortBuffer.allocate(1),
@@ -65,16 +43,13 @@ public class FakeRuntimeFace(
             FloatBuffer.allocate(1),
         )
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    /** The [Pose] located at the tip of the nose. */
     override var noseTipPose: Pose = Pose(Vector3(1f, 1f, 0f), Quaternion.Identity)
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    /** The [Pose] located at the left side of the detected face's forehead. */
     override var foreheadLeftPose: Pose = Pose(Vector3(0f, 0f, 0f), Quaternion.Identity)
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    /** The [Pose] located at the right side of the detected face's forehead. */
     override var foreheadRightPose: Pose = Pose(Vector3(2f, 0f, 0f), Quaternion.Identity)
 
     init {
@@ -82,18 +57,5 @@ public class FakeRuntimeFace(
         mesh.normals!!.put(1f)
         mesh.textureCoordinates!!.put(1f)
         mesh.vertices!!.put(1f)
-    }
-
-    /**
-     * Controls whether calling [createAnchor] will succeed or throw an [IllegalStateException].
-     *
-     * Defaults to `true`.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun createAnchor(pose: Pose): Anchor {
-        if (!canCreateAnchors) {
-            throw IllegalStateException()
-        }
-        return FakeRuntimeAnchor(pose)
     }
 }

@@ -28,8 +28,7 @@ import com.google.android.icing.protobuf.ByteString;
 import org.jspecify.annotations.NonNull;
 
 /**
- * Translates a {@link android.app.blob.BlobHandle} into {@link PropertyProto.BlobHandleProto}.
-
+ * Translates a {@link AppSearchBlobHandle} into {@link PropertyProto.BlobHandleProto}.
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

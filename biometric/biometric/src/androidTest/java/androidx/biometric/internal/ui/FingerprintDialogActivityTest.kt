@@ -38,6 +38,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.testutils.lifecycle.LifecycleOwnerUtils.waitUntilState
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Assume.assumeTrue
@@ -95,7 +96,9 @@ class FingerprintDialogActivityTest {
         startActivity()
         onView(withText("Test Title")).check(matches(isDisplayed()))
 
-        scenario.onActivity {
+        lateinit var activityFromScenario: FingerprintDialogActivity
+        scenario.onActivity { activity ->
+            activityFromScenario = activity
             authenticationViewModel.setAuthenticationResult(
                 BiometricPrompt.AuthenticationResult(
                     null,
@@ -103,8 +106,7 @@ class FingerprintDialogActivityTest {
                 )
             )
         }
-
-        assertThat(scenario.state).isEqualTo(Lifecycle.State.DESTROYED)
+        waitUntilState(activityFromScenario, Lifecycle.State.DESTROYED)
     }
 
     @Test
@@ -114,13 +116,14 @@ class FingerprintDialogActivityTest {
 
         val errorCode = BiometricPrompt.ERROR_HW_UNAVAILABLE
         val errorMessage = "test error"
-        scenario.onActivity {
+        lateinit var activityFromScenario: FingerprintDialogActivity
+        scenario.onActivity { activity ->
+            activityFromScenario = activity
             authenticationViewModel.setAuthenticationError(
                 BiometricErrorData(errorCode, errorMessage)
             )
         }
-
-        assertThat(scenario.state).isEqualTo(Lifecycle.State.DESTROYED)
+        waitUntilState(activityFromScenario, Lifecycle.State.DESTROYED)
     }
 
     @Test

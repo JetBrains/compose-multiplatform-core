@@ -79,7 +79,7 @@ class AugmentedObjectTest {
         session.configure(
             Config(
                 augmentedObjectCategories =
-                    listOf(
+                    setOf(
                         AugmentedObjectCategory.KEYBOARD,
                         AugmentedObjectCategory.MOUSE,
                         AugmentedObjectCategory.LAPTOP,
@@ -116,50 +116,9 @@ class AugmentedObjectTest {
 
     @Test
     fun subscribe_augmentedObjectTrackingDisabled_throwsIllegalStateException() {
-        val configureResult = session.configure(Config(augmentedObjectCategories = listOf()))
+        val configureResult = session.configure(Config(augmentedObjectCategories = setOf()))
 
         assertFailsWith<IllegalStateException> { AugmentedObject.subscribe(session) }
-    }
-
-    @Test
-    fun createAnchor_usesGivenPose() {
-        val runtimeObject = FakeRuntimeObject()
-        getFakePerceptionManager().addTrackable(runtimeObject)
-        xrResourcesManager.syncTrackables(listOf(runtimeObject))
-        val underTest = xrResourcesManager.trackablesMap.values.first() as AugmentedObject
-        val pose = Pose(Vector3(1.0f, 2.0f, 3.0f), Quaternion(1.0f, 2.0f, 3.0f, 4.0f))
-
-        val anchorResult = underTest.createAnchor(pose)
-
-        assertThat(anchorResult).isInstanceOf(AnchorCreateSuccess::class.java)
-        val anchor = (anchorResult as AnchorCreateSuccess).anchor
-        assertThat(anchor.state.value.pose).isEqualTo(pose)
-    }
-
-    @Test
-    fun createAnchor_anchorLimitReached_returnsAnchorResourcesExhaustedResult() {
-        val runtimeObject = FakeRuntimeObject()
-        getFakePerceptionManager().addTrackable(runtimeObject)
-        xrResourcesManager.syncTrackables(listOf(runtimeObject))
-        val underTest = xrResourcesManager.trackablesMap.values.first() as AugmentedObject
-
-        repeat(FakeRuntimeAnchor.ANCHOR_RESOURCE_LIMIT) {
-            val result = underTest.createAnchor(Pose())
-        }
-
-        assertThat(underTest.createAnchor(Pose()))
-            .isInstanceOf(AnchorCreateResourcesExhausted::class.java)
-    }
-
-    @Test
-    fun createAnchor_augmentedObjectTrackingDisabled_throwsIllegalStateException() {
-        val runtimeObject = FakeRuntimeObject()
-        getFakePerceptionManager().addTrackable(runtimeObject)
-        xrResourcesManager.syncTrackables(listOf(runtimeObject))
-        val underTest = xrResourcesManager.trackablesMap.values.first() as AugmentedObject
-        session.configure(Config(augmentedObjectCategories = listOf()))
-
-        assertFailsWith<IllegalStateException> { underTest.createAnchor(Pose()) }
     }
 
     @Test

@@ -39,9 +39,34 @@ import androidx.glance.layout.wrapContentHeight
  *   [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items. If
  *   the item has more than one top-level child, they will be automatically wrapped in a Box.
  */
-// TODO(b/198618359): interaction handling
 @Composable
 public fun LazyColumn(
+    modifier: GlanceModifier = GlanceModifier,
+    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    content: LazyListScope.() -> Unit,
+): Unit =
+    LazyColumn(
+        modifier = modifier,
+        horizontalAlignment = horizontalAlignment,
+        verticalScrollMode = VerticalScrollMode.Normal,
+        content = content,
+    )
+
+/**
+ * A vertical scrolling list that only lays out the currently visible items. The [content] block
+ * defines a DSL which allows you to emit different list items.
+ *
+ * @param modifier the modifier to apply to this layout
+ * @param horizontalAlignment the horizontal alignment applied to the items.
+ * @param verticalScrollMode how to handle scrolling. See [VerticalScrollMode]
+ * @param content a block which describes the content. Inside this block you can use methods like
+ *   [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items. If
+ *   the item has more than one top-level child, they will be automatically wrapped in a Box.
+ */
+@JvmOverloads
+@Composable
+public fun LazyColumn(
+    verticalScrollMode: VerticalScrollMode,
     modifier: GlanceModifier = GlanceModifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     content: LazyListScope.() -> Unit,
@@ -50,6 +75,7 @@ public fun LazyColumn(
         factory = ::EmittableLazyColumn,
         update = {
             this.set(modifier) { this.modifier = it }
+            this.set(verticalScrollMode) { this.verticalScrollMode = it }
             this.set(horizontalAlignment) { this.horizontalAlignment = it }
         },
         content =
@@ -80,12 +106,30 @@ public fun LazyColumn(
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     content: LazyListScope.() -> Unit,
 ) {
+    LazyColumn(
+        activityOptions = activityOptions,
+        modifier = modifier,
+        horizontalAlignment = horizontalAlignment,
+        verticalScrollMode = VerticalScrollMode.Normal,
+        content = content,
+    )
+}
+
+@Composable
+private fun LazyColumn(
+    activityOptions: Bundle,
+    modifier: GlanceModifier,
+    horizontalAlignment: Alignment.Horizontal,
+    verticalScrollMode: VerticalScrollMode,
+    content: LazyListScope.() -> Unit,
+) {
     GlanceNode(
         factory = ::EmittableLazyColumn,
         update = {
             this.set(modifier) { this.modifier = it }
             this.set(horizontalAlignment) { this.horizontalAlignment = it }
             this.set(activityOptions) { this.activityOptions = it }
+            this.set(verticalScrollMode) { this.verticalScrollMode = it }
         },
         content =
             applyListScope(
@@ -270,10 +314,15 @@ internal abstract class EmittableLazyList : EmittableWithChildren(resetsDepthFor
     override var modifier: GlanceModifier = GlanceModifier
     var horizontalAlignment: Alignment.Horizontal = Alignment.Start
     var activityOptions: Bundle? = null
+    var verticalScrollMode: VerticalScrollMode = VerticalScrollMode.Normal
 
     override fun toString() =
         "EmittableLazyList(modifier=$modifier, horizontalAlignment=$horizontalAlignment, " +
-            "activityOptions=$activityOptions, children=[\n${childrenToString()}\n])"
+            "activityOptions=$activityOptions, verticalScrollMode=${verticalScrollMode}, children=[\n${childrenToString()}\n])"
+
+    override fun requiresRemoteCompose(): Boolean {
+        return verticalScrollMode != VerticalScrollMode.Normal || super.requiresRemoteCompose()
+    }
 }
 
 internal class EmittableLazyListItem : EmittableLazyItemWithChildren() {
@@ -298,6 +347,7 @@ internal class EmittableLazyColumn : EmittableLazyList() {
     override fun copy(): Emittable =
         EmittableLazyColumn().also {
             it.modifier = modifier
+            it.verticalScrollMode = verticalScrollMode
             it.horizontalAlignment = horizontalAlignment
             it.activityOptions = activityOptions
             it.children.addAll(children.map { it.copy() })

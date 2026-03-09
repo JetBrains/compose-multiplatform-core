@@ -69,8 +69,13 @@ fun getApiFileVersion(version: Version): Version {
                 "Did you mean $suggestedVersion?"
         )
     }
-    val extra = if (version.patch != 0) "" else version.extra ?: ""
-    return Version(version.major, version.minor, 0, extra)
+    return Version(
+        major = version.major,
+        minor = version.minor,
+        patch = 0,
+        preRelease = if (version.patch != 0) null else version.preRelease,
+        buildMetadata = null,
+    )
 }
 
 /** Whether it is allowed for an artifact to have this version */

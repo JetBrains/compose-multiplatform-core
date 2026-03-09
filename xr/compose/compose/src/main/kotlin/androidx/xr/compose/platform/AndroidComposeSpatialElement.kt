@@ -24,7 +24,7 @@ import androidx.xr.compose.subspace.node.Logger
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.subspace.node.SubspaceMeasureAndLayoutDelegate
 import androidx.xr.compose.subspace.node.SubspaceOwner
-import androidx.xr.compose.unit.VolumeConstraints
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -45,13 +45,17 @@ import kotlinx.coroutines.launch
  */
 internal class AndroidComposeSpatialElement :
     SpatialElement(), SubspaceOwner, DefaultLifecycleObserver {
-    override val root: SubspaceLayoutNode = SubspaceLayoutNode()
+    override val root: SubspaceLayoutNode =
+        SubspaceLayoutNode().apply { measurePolicy = SubspaceLayoutNode.RootMeasurePolicy }
 
     // For debug output set this to androidx.xr.compose.subspace.node.DebugLogger().
     override var logger: Logger? = null
 
     // This coroutine scope will launch tasks to the Choreographer on the main thread.
     private val uiCoroutineScope = CoroutineScope(AndroidUiDispatcher.Main)
+
+    override val coroutineContext: CoroutineContext
+        get() = uiCoroutineScope.coroutineContext
 
     internal var wrappedComposition: WrappedComposition? = null
 
@@ -66,12 +70,6 @@ internal class AndroidComposeSpatialElement :
     private val measureAndLayoutDelegate = SubspaceMeasureAndLayoutDelegate(root)
 
     private var isMeasureAndLayoutScheduled: Boolean = false
-
-    internal var rootVolumeConstraints: VolumeConstraints
-        get() = measureAndLayoutDelegate.rootVolumeConstraints
-        set(value) {
-            measureAndLayoutDelegate.rootVolumeConstraints = value
-        }
 
     init {
         root.attach(this)
@@ -158,6 +156,15 @@ internal class AndroidComposeSpatialElement :
         if (!root.isPlaced) return
 
         if (measureAndLayoutDelegate.requestLayout(node, forceRequest)) {
+            scheduleMeasureAndLayout()
+        }
+    }
+
+    override fun requestEntityUpdate(node: SubspaceLayoutNode, forceRequest: Boolean) {
+
+        if (!root.isPlaced) return
+
+        if (measureAndLayoutDelegate.requestEntityUpdate(node, forceRequest)) {
             scheduleMeasureAndLayout()
         }
     }

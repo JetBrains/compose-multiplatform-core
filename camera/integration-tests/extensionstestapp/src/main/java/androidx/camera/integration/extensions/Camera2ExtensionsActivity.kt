@@ -198,7 +198,7 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
     // ===============================================================
     // Fields that will be accessed under synchronization protection
     // ===============================================================
-    private val lock = Object()
+    private val lock = Any()
     @GuardedBy("lock")
     private var captureSessionClosedDeferred: CompletableDeferred<Unit> =
         CompletableDeferred<Unit>().apply { complete(Unit) }

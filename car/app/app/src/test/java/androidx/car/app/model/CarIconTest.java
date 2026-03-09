@@ -48,6 +48,7 @@ import java.io.File;
 
 /** Tests for {@link CarIcon}. */
 @RunWith(RobolectricTestRunner.class)
+@org.robolectric.annotation.Config(sdk = {org.robolectric.annotation.Config.TARGET_SDK})
 @DoNotInstrument
 public class CarIconTest {
     private IconCompat mIcon;

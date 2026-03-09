@@ -16,6 +16,7 @@
 
 package androidx.core.telecom.test
 
+import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.telecom.Call
 import android.telecom.DisconnectCause
@@ -26,8 +27,10 @@ import androidx.core.telecom.CallControlScope
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.internal.utils.Utils
 import androidx.core.telecom.test.utils.BaseTelecomTest
-import androidx.core.telecom.test.utils.TestInCallService
 import androidx.core.telecom.test.utils.TestUtils
+import androidx.core.telecom.test.utils.TestUtils.ALL_CALL_CAPABILITIES
+import androidx.core.telecom.test.utils.TestUtils.OUTGOING_NAME
+import androidx.core.telecom.test.utils.TestUtils.TEST_ADDRESS
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -289,6 +292,57 @@ class BasicCallControlsTest : BaseTelecomTest() {
     }
 
     /**
+     * Add test coverage for [CallControlScope.requestCallType] and [CallControlScope.callTypeFlow]
+     */
+    @SdkSuppress(minSdkVersion = VERSION_CODES.O)
+    @LargeTest
+    @Test
+    fun testCallType() {
+        runBlocking {
+            // 1. Add an audio call
+            assertWithinTimeout_addCall(
+                attributes =
+                    CallAttributesCompat(
+                        OUTGOING_NAME,
+                        TEST_ADDRESS,
+                        CallAttributesCompat.DIRECTION_OUTGOING,
+                        CallAttributesCompat.CALL_TYPE_AUDIO_CALL, // Start as audio
+                        ALL_CALL_CAPABILITIES,
+                    )
+            ) {
+                launch {
+                    // 2. Collect the initial call type from the flow and verify it's audio
+                    val callTypeFlow = callTypeFlow()
+                    if (Build.VERSION.SDK_INT != VERSION_CODES.VANILLA_ICE_CREAM) {
+                        val initialCallType = callTypeFlow.first()
+                        assertEquals(
+                            "Initial call type should be audio",
+                            CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
+                            initialCallType,
+                        )
+                    }
+                    // 3. Launch a collector for the next value *before* triggering it.
+                    //    This ensures we are listening for the change when it happens.
+                    val collectorJob = launch {
+                        waitForVideoState(CallAttributesCompat.CALL_TYPE_VIDEO_CALL, callTypeFlow)
+                    }
+                    // 4. Request the upgrade to a video call, which triggers the emission.
+                    assertEquals(
+                        "Request to change video state should succeed",
+                        CallControlResult.Success(),
+                        requestCallType(CallAttributesCompat.CALL_TYPE_VIDEO_CALL),
+                    )
+                    // 5. Wait for the collector coroutine to complete, which confirms the
+                    //    assertion in waitForVideoState has passed.
+                    collectorJob.join()
+                    // 6. Clean up the call
+                    disconnect(DisconnectCause(DisconnectCause.LOCAL))
+                }
+            }
+        }
+    }
+
+    /**
      * ********************************************************************************************
      * Helpers
      * *******************************************************************************************
@@ -453,6 +507,29 @@ class BasicCallControlsTest : BaseTelecomTest() {
                     .firstOrNull()
             }
         assertEquals("Global Mute State never reached the expected state", isMuted, result)
+    }
+
+    /**
+     * Collects from the videoStateFlow until the expected call type is emitted or a 5-second
+     * timeout is reached.
+     */
+    private suspend fun waitForVideoState(expectedCallType: Int, videoStateFlow: Flow<Int>) {
+        // withTimeoutOrNull will return the result of the block or null if it times out.
+        val finalState =
+            withTimeoutOrNull(5000) {
+                // Use the 'first' operator with a predicate. It's more concise and achieves the
+                // same goal as filtering and then taking the first element.
+                videoStateFlow.first { it == expectedCallType }
+            }
+
+        // This assertion now has a much clearer failure message. If 'finalState' is null
+        // (due to timeout), the message will clearly explain what the test was waiting for.
+        assertEquals(
+            "Timeout: Video state did not change to the expected" +
+                " value of [$expectedCallType] within 5s.",
+            expectedCallType,
+            finalState,
+        )
     }
 
     private fun getAnotherEndpoint(

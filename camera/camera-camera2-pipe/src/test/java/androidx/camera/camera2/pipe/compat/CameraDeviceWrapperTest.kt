@@ -35,10 +35,12 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.annotation.Config
 
 @Suppress("deprecation")
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraDeviceWrapperTest {
     private val cameraId = CameraId("0")
     private val cameraMetadata = FakeCameraMetadata(cameraId = cameraId)

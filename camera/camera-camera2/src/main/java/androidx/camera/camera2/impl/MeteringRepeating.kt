@@ -82,11 +82,12 @@ public class MeteringRepeating(
         secondaryStreamSpec: StreamSpec?,
     ): StreamSpec {
         updateSessionConfig(listOf(createPipeline(meteringSurfaceSize).build()))
-        notifyActive()
         return primaryStreamSpec.toBuilder().setResolution(meteringSurfaceSize).build()
     }
 
     override fun onUnbind() {
+        closeableErrorListener?.close()
+        closeableErrorListener = null
         synchronized(deferrableSurfaceLock) {
             deferrableSurface?.close()
             deferrableSurface = null

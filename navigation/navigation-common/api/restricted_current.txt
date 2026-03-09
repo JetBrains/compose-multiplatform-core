@@ -120,7 +120,6 @@ package androidx.navigation {
 
   public final class NavBackStackEntry implements androidx.lifecycle.HasDefaultViewModelProviderFactory androidx.lifecycle.LifecycleOwner androidx.savedstate.SavedStateRegistryOwner androidx.lifecycle.ViewModelStoreOwner {
     method @InaccessibleFromKotlin public android.os.Bundle? getArguments();
-    method @InaccessibleFromKotlin public androidx.lifecycle.ViewModelProvider.Factory getDefaultViewModelProviderFactory();
     method @InaccessibleFromKotlin public androidx.navigation.NavDestination getDestination();
     method @InaccessibleFromKotlin public String getId();
     method @InaccessibleFromKotlin public androidx.lifecycle.Lifecycle getLifecycle();
@@ -170,7 +169,7 @@ package androidx.navigation {
     method @BytecodeOnly public static androidx.navigation.NavDeepLink.Builder! setUriPattern$default(androidx.navigation.NavDeepLink.Builder!, kotlin.reflect.KClass!, String!, java.util.Map!, int, Object!);
   }
 
-  @kotlin.DslMarker public @interface NavDeepLinkDsl {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface NavDeepLinkDsl {
   }
 
   @androidx.navigation.NavDeepLinkDsl public final class NavDeepLinkDslBuilder {
@@ -296,7 +295,7 @@ package androidx.navigation {
     property public final String? route;
   }
 
-  @kotlin.DslMarker public @interface NavDestinationDsl {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface NavDestinationDsl {
   }
 
   public interface NavDirections {
@@ -424,7 +423,7 @@ package androidx.navigation {
     method public androidx.navigation.NavOptions.Builder setPopEnterAnim(@AnimRes @AnimatorRes int popEnterAnim);
     method public androidx.navigation.NavOptions.Builder setPopExitAnim(@AnimRes @AnimatorRes int popExitAnim);
     method @BytecodeOnly public <T> androidx.navigation.NavOptions.Builder! setPopUpTo(boolean);
-    method @KotlinOnly public inline <reified T> androidx.navigation.NavOptions.Builder setPopUpTo(boolean inclusive, boolean saveState);
+    method @KotlinOnly public inline <reified T> androidx.navigation.NavOptions.Builder setPopUpTo(boolean inclusive, optional boolean saveState);
     method public androidx.navigation.NavOptions.Builder setPopUpTo(@IdRes int destinationId, boolean inclusive);
     method public androidx.navigation.NavOptions.Builder setPopUpTo(@IdRes int destinationId, boolean inclusive, optional boolean saveState);
     method public androidx.navigation.NavOptions.Builder setPopUpTo(String? route, boolean inclusive);
@@ -452,7 +451,7 @@ package androidx.navigation {
     method @InaccessibleFromKotlin public boolean getRestoreState();
     method public void popUpTo(@IdRes int id, optional kotlin.jvm.functions.Function1<? super androidx.navigation.PopUpToBuilder,kotlin.Unit> popUpToBuilder);
     method public void popUpTo(String route, optional kotlin.jvm.functions.Function1<? super androidx.navigation.PopUpToBuilder,kotlin.Unit> popUpToBuilder);
-    method @KotlinOnly public inline <reified T> void popUpTo(kotlin.jvm.functions.Function1<androidx.navigation.PopUpToBuilder,kotlin.Unit> popUpToBuilder);
+    method @KotlinOnly public inline <reified T> void popUpTo(optional kotlin.jvm.functions.Function1<androidx.navigation.PopUpToBuilder,kotlin.Unit> popUpToBuilder);
     method public <T> void popUpTo(kotlin.reflect.KClass<T> route, kotlin.jvm.functions.Function1<? super androidx.navigation.PopUpToBuilder,kotlin.Unit> popUpToBuilder);
     method public <T> void popUpTo(T route, optional kotlin.jvm.functions.Function1<? super androidx.navigation.PopUpToBuilder,kotlin.Unit> popUpToBuilder);
     method @BytecodeOnly public static void popUpTo$default(androidx.navigation.NavOptionsBuilder!, int, kotlin.jvm.functions.Function1!, int, Object!);
@@ -474,7 +473,7 @@ package androidx.navigation {
     method public static androidx.navigation.NavOptions navOptions(kotlin.jvm.functions.Function1<? super androidx.navigation.NavOptionsBuilder,kotlin.Unit> optionsBuilder);
   }
 
-  @kotlin.DslMarker public @interface NavOptionsDsl {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface NavOptionsDsl {
   }
 
   public abstract class NavType<T> {

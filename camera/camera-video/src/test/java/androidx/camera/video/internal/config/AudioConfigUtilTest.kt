@@ -16,31 +16,35 @@
 
 package androidx.camera.video.internal.config
 
-import android.util.Range
+import android.media.MediaCodecInfo.CodecProfileLevel.AACObjectLC
+import android.media.MediaFormat.MIMETYPE_AUDIO_AAC
+import android.media.MediaFormat.MIMETYPE_AUDIO_VORBIS
 import android.util.Rational
+import androidx.camera.testing.impl.EncoderProfilesUtil.createFakeAudioProfileProxy
 import androidx.camera.video.AudioSpec.Companion.CHANNEL_COUNT_MONO
-import androidx.camera.video.AudioSpec.Companion.SAMPLE_RATE_RANGE_AUTO
+import androidx.camera.video.AudioSpec.Companion.MIME_TYPE_UNSPECIFIED
 import androidx.camera.video.AudioSpec.Companion.SOURCE_FORMAT_PCM_16BIT
+import androidx.camera.video.internal.encoder.EncoderConfig.CODEC_PROFILE_NONE
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class AudioConfigUtilTest {
 
     @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_auto_noRatio() {
-        val targetEncodeSampleRateRange = SAMPLE_RATE_RANGE_AUTO
-        val initialTargetEncodeSampleRate = 24000
+    fun resolveSampleRates_noRatio() {
+        val targetEncodeSampleRate = 24000
         val captureToEncodeRatio: Rational? = null
 
         val result =
             AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
+                targetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
                 captureToEncodeRatio,
@@ -51,15 +55,13 @@ class AudioConfigUtilTest {
     }
 
     @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_auto_withRatio() {
-        val targetEncodeSampleRateRange = SAMPLE_RATE_RANGE_AUTO
-        val initialTargetEncodeSampleRate = 24000
+    fun resolveSampleRates_withRatio() {
+        val targetEncodeSampleRate = 24000
         val captureToEncodeRatio = Rational(2, 1)
 
         val result =
             AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
+                targetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
                 captureToEncodeRatio,
@@ -70,78 +72,75 @@ class AudioConfigUtilTest {
     }
 
     @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_specific_noRatio() {
-        val targetEncodeSampleRateRange = Range(22050, 24000)
-        val initialTargetEncodeSampleRate = 24000
-        val captureToEncodeRatio: Rational? = null
-
-        val result =
-            AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
-                CHANNEL_COUNT_MONO,
-                SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio,
+    fun resolveCompatibleAudioProfile_matchesSpecificMimeAndProfile_returnsProfile() {
+        // Arrange: Prepare profiles including one matching AAC
+        val audioMime = MIMETYPE_AUDIO_AAC
+        val matchingProfile =
+            createFakeAudioProfileProxy(audioMediaType = audioMime, profile = AACObjectLC)
+        val profiles =
+            listOf(
+                createFakeAudioProfileProxy(audioMediaType = MIMETYPE_AUDIO_VORBIS),
+                matchingProfile,
             )
 
-        assertThat(result.captureRate).isEqualTo(24000)
-        assertThat(result.encodeRate).isEqualTo(24000)
+        // Act
+        val result = AudioConfigUtil.resolveCompatibleAudioProfile(audioMime, profiles)
+
+        // Assert
+        assertThat(result).isEqualTo(matchingProfile)
     }
 
     @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_specific_withRatio() {
-        val targetEncodeSampleRateRange = Range(22050, 24000)
-        val initialTargetEncodeSampleRate = 24000
-        val captureToEncodeRatio = Rational(2, 1)
+    fun resolveCompatibleAudioProfile_matchesMimeButMismatchesProfile_returnsNull() {
+        // Arrange: Create a profile that has the right MIME but the WRONG profile integer
+        val audioMime = MIMETYPE_AUDIO_AAC
+        val mismatchingProfile =
+            createFakeAudioProfileProxy(audioMediaType = audioMime, profile = CODEC_PROFILE_NONE)
+        val profiles = listOf(mismatchingProfile)
 
-        val result =
-            AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
-                CHANNEL_COUNT_MONO,
-                SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio,
-            )
+        // Act
+        val result = AudioConfigUtil.resolveCompatibleAudioProfile(audioMime, profiles)
 
-        assertThat(result.captureRate).isEqualTo(48000)
-        assertThat(result.encodeRate).isEqualTo(24000)
+        // Assert: Even though MIME matches, the profile check should fail it
+        assertThat(result).isNull()
     }
 
     @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_clamping_noRatio() {
-        val targetEncodeSampleRateRange = Range(22050, 22050)
-        val initialTargetEncodeSampleRate = 24000
-        val captureToEncodeRatio: Rational? = null
-
-        val result =
-            AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
-                CHANNEL_COUNT_MONO,
-                SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio,
+    fun resolveCompatibleAudioProfile_noMatchReturnsNull() {
+        // Arrange: Request a MIME type not present in the list
+        val audioMime = MIMETYPE_AUDIO_VORBIS
+        val profiles =
+            listOf(
+                createFakeAudioProfileProxy(
+                    audioMediaType = MIMETYPE_AUDIO_AAC,
+                    profile = AACObjectLC,
+                )
             )
 
-        assertThat(result.captureRate).isEqualTo(22050)
-        assertThat(result.encodeRate).isEqualTo(22050)
+        // Act
+        val result = AudioConfigUtil.resolveCompatibleAudioProfile(audioMime, profiles)
+
+        // Assert
+        assertThat(result).isNull()
     }
 
     @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_clamping_withRatio() {
-        val targetEncodeSampleRateRange = Range(22050, 22050)
-        val initialTargetEncodeSampleRate = 24000
-        val captureToEncodeRatio = Rational(2, 1)
-
-        val result =
-            AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
-                CHANNEL_COUNT_MONO,
-                SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio,
+    fun resolveCompatibleAudioProfile_unspecifiedMimeReturnsFirstProfile() {
+        // Arrange: Provide a list of profiles
+        val audioMime = MIME_TYPE_UNSPECIFIED
+        val profiles =
+            listOf(
+                createFakeAudioProfileProxy(audioMediaType = MIMETYPE_AUDIO_VORBIS),
+                createFakeAudioProfileProxy(
+                    audioMediaType = MIMETYPE_AUDIO_AAC,
+                    profile = AACObjectLC,
+                ),
             )
 
-        assertThat(result.captureRate).isEqualTo(44100)
-        assertThat(result.encodeRate).isEqualTo(22050)
+        // Act
+        val result = AudioConfigUtil.resolveCompatibleAudioProfile(audioMime, profiles)
+
+        // Assert: It should return the first available profile
+        assertThat(result).isEqualTo(profiles.first())
     }
 }

@@ -18,7 +18,6 @@ package androidx.xr.arcore.testapp.persistentanchors
 
 import android.app.Activity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -66,12 +65,13 @@ import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
+import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.AnchorPersistenceMode
-import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -94,9 +94,10 @@ class PersistentAnchorsActivity : ComponentActivity() {
     private lateinit var session: Session
     private lateinit var sessionHelper: SessionLifecycleHelper
     private lateinit var movableEntity: Entity
-    private val movableEntityOffset = Pose(Vector3(0f, 0.75f, -1.3f))
+    private val movableEntityOffset = Pose(Vector3(0f, 0.0f, -1.3f))
     private val uuids = MutableStateFlow<List<UUID>>(emptyList())
     private var anchorOffset = MutableStateFlow<Float>(0f)
+    private lateinit var arDevice: ArDevice
     private lateinit var renderViewpoints: List<RenderViewpoint>
     private val panelInViewStatus = MutableStateFlow<List<Pair<String, Boolean>>>(emptyList())
 
@@ -108,10 +109,11 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 this,
                 Config(
                     anchorPersistence = AnchorPersistenceMode.LOCAL,
-                    headTracking = HeadTrackingMode.LAST_KNOWN,
+                    deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
                 ),
                 onSessionAvailable = { session ->
                     this.session = session
+                    this.arDevice = ArDevice.getInstance(session)
                     this.renderViewpoints = buildList {
                         RenderViewpoint.left(session)?.let { add(it) }
                         RenderViewpoint.right(session)?.let { add(it) }
@@ -134,9 +136,12 @@ class PersistentAnchorsActivity : ComponentActivity() {
                     startPanelInViewStatusUpdates()
 
                     lifecycleScope.launch {
-                        ArDevice.getInstance(session).state.collect { arDeviceState ->
-                            updatePlaneEntity(arDeviceState)
-                        }
+                        arDevice.state.collect { arDeviceState -> updatePanelEntity(arDeviceState) }
+                    }
+
+                    session.scene.activitySpace.addOnOriginChangedListener {
+                        updatePanelEntity(arDevice.state.value)
+                        updatePanelInViewStatusUpdates(renderViewpoints.map { it.state.value })
                     }
                 },
             )
@@ -148,36 +153,40 @@ class PersistentAnchorsActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             combine(cameraStateFlows) { cameraStates ->
-                    val mainPanelEntity = session.scene.mainPanelEntity
-                    val panelPoseInActivitySpace = mainPanelEntity.getPose()
-                    val panelPoseInPerceptionSpace =
-                        session.scene.activitySpace.transformPoseTo(
-                            panelPoseInActivitySpace,
-                            session.scene.perceptionSpace,
-                        )
-                    val panelSizeInMeters = mainPanelEntity.size
-                    val newStatus =
-                        cameraStates.mapIndexed { index, cameraState ->
-                            val isInView =
-                                isPanelInView(
-                                    cameraPoseInPerceptionSpace = cameraState.pose,
-                                    cameraFov = cameraState.fieldOfView,
-                                    panelPoseInPerceptionSpace = panelPoseInPerceptionSpace,
-                                    panelSizeInMeters = panelSizeInMeters,
-                                )
-                            val cameraName =
-                                when {
-                                    renderViewpoints.size == 1 -> "CameraView"
-                                    index == 0 -> "Left Eye CameraView"
-                                    index == 1 -> "Right Eye CameraView"
-                                    else -> "CameraView ${index + 1}"
-                                }
-                            cameraName to isInView
-                        }
-                    panelInViewStatus.value = newStatus
+                    updatePanelInViewStatusUpdates(cameraStates.asList())
                 }
                 .collect {}
         }
+    }
+
+    private fun updatePanelInViewStatusUpdates(cameraStates: List<RenderViewpoint.State>) {
+        val mainPanelEntity = session.scene.mainPanelEntity
+        val panelPoseInActivitySpace = mainPanelEntity.getPose()
+        val panelPoseInPerceptionSpace =
+            session.scene.activitySpace.transformPoseTo(
+                panelPoseInActivitySpace,
+                session.scene.perceptionSpace,
+            )
+        val panelSizeInMeters = mainPanelEntity.size
+        val newStatus =
+            cameraStates.mapIndexed { index, cameraState ->
+                val isInView =
+                    isPanelInView(
+                        cameraPoseInPerceptionSpace = cameraState.pose,
+                        cameraFov = cameraState.fieldOfView,
+                        panelPoseInPerceptionSpace = panelPoseInPerceptionSpace,
+                        panelSizeInMeters = panelSizeInMeters,
+                    )
+                val cameraName =
+                    when {
+                        renderViewpoints.size == 1 -> "CameraView"
+                        index == 0 -> "Left Eye CameraView"
+                        index == 1 -> "Right Eye CameraView"
+                        else -> "CameraView ${index + 1}"
+                    }
+                cameraName to isInView
+            }
+        panelInViewStatus.value = newStatus
     }
 
     private fun createTargetPanel() {
@@ -195,7 +204,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
         configureComposeView(composeView, this)
     }
 
-    private fun updatePlaneEntity(arDeviceState: ArDevice.State) {
+    private fun updatePanelEntity(arDeviceState: ArDevice.State) {
         arDeviceState.devicePose.let { headPose ->
             val headScenePose =
                 session.scene.perceptionSpace.getScenePoseFromPerceptionPose(headPose)
@@ -353,7 +362,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
 
         Column(
             modifier =
-                Modifier.background(color = Color.White)
+                Modifier.background(color = Color.LightGray)
                     .fillMaxHeight()
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp),
@@ -397,11 +406,11 @@ class PersistentAnchorsActivity : ComponentActivity() {
         when (anchorResult) {
             is AnchorCreateSuccess -> createAnchorPanel(anchorResult.anchor)
             is AnchorCreateResourcesExhausted -> {
-                Log.e(ACTIVITY_NAME, "Failed to create anchor: anchor resources exhausted.")
+                XrLog.error { "Failed to create anchor: anchor resources exhausted." }
                 Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
             }
             else -> {
-                Log.e(ACTIVITY_NAME, "Failed to create anchor: ${anchorResult::class.simpleName}")
+                XrLog.error { "Failed to create anchor: ${anchorResult::class.simpleName}" }
                 Toast.makeText(this, "Anchor failed to create.", Toast.LENGTH_LONG).show()
             }
         }
@@ -466,7 +475,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 anchor.persist()
                 uuids.emit(Anchor.getPersistedAnchorUuids(session))
             } catch (e: RuntimeException) {
-                Log.e("ARCore", "Error persisting anchor: ${e.message}")
+                XrLog.error(e) { "Error persisting anchor: ${e.message}" }
             }
         }
     }
@@ -486,7 +495,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
             try {
                 Anchor.load(session, uuid)
             } catch (e: IllegalStateException) {
-                Log.e(ACTIVITY_NAME, "Failed to create anchor: ${e.message}")
+                XrLog.error(e) { "Failed to create anchor: ${e.message}" }
                 return
             }
 
@@ -499,15 +508,15 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 }
             }
             is AnchorCreateResourcesExhausted -> {
-                Log.e(ACTIVITY_NAME, "Failed to load anchor: anchor resources exhausted.")
+                XrLog.error { "Failed to load anchor: anchor resources exhausted." }
                 Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
             }
             is AnchorLoadInvalidUuid -> {
-                Log.e(ACTIVITY_NAME, "Failed to load anchor: invalid UUID.")
+                XrLog.error { "Failed to load anchor: invalid UUID." }
                 Toast.makeText(this, "Invalid UUID.", Toast.LENGTH_LONG).show()
             }
             else -> {
-                Log.e(ACTIVITY_NAME, "Failed to load anchor: ${anchorResult::class.simpleName}")
+                XrLog.error { "Failed to load anchor: ${anchorResult::class.simpleName}" }
                 Toast.makeText(this, "Anchor failed to load.", Toast.LENGTH_LONG).show()
             }
         }

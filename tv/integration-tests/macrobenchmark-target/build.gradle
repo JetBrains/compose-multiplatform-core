@@ -18,16 +18,15 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.application")
     id("AndroidXComposePlugin")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
 
     namespace = "androidx.tv.integration.macrobenchmark.target"
 
     defaultConfig {
-        minSdk = 28
+        minSdk { version = release(28) }
     }
 
     buildTypes {

@@ -20,13 +20,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.StateRestorationTester
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
@@ -55,7 +56,7 @@ class PullToRefreshStateImplTest {
             touchSlop = LocalViewConfiguration.current.touchSlop
             positionalThreshold =
                 with(LocalDensity.current) { PullToRefreshDefaults.PositionalThreshold.toPx() }
-            var isRefreshing by mutableStateOf(false)
+            var isRefreshing by remember { mutableStateOf(false) }
             PullToRefreshBox(
                 modifier = Modifier.testTag(PullRefreshTag),
                 isRefreshing = isRefreshing,

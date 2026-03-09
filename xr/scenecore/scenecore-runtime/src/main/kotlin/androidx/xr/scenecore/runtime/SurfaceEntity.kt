@@ -18,7 +18,11 @@ package androidx.xr.scenecore.runtime
 
 import android.view.Surface
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
+import java.nio.FloatBuffer
+import java.nio.IntBuffer
+import kotlin.jvm.JvmOverloads
 
 /**
  * Interface for a spatialized Entity which manages an Android Surface. Applications can render to
@@ -37,6 +41,13 @@ public interface SurfaceEntity : Entity {
      * @throws kotlin.IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var stereoMode: Int
+
+    /**
+     * Specifies the blending mode of the content.
+     *
+     * @throws kotlin.IllegalStateException when setting this value if the Entity has been disposed.
+     */
+    public var mediaBlendingMode: Int
 
     /**
      * Specifies the geometry of the spatial canvas which the surface is texture mapped to.
@@ -95,22 +106,27 @@ public interface SurfaceEntity : Entity {
      * Gets the perceived resolution of the entity in the camera view.
      *
      * This API is only intended for use in Full Space Mode and will return
-     * [PerceivedResolutionResult.InvalidCameraView] in Home Space Mode.
+     * [PerceivedResolutionResult.InvalidRenderViewpoint] in Home Space Mode.
      *
      * The entity's own rotation and the camera's viewing direction are disregarded; this value
      * represents the dimensions of the entity on the camera view if its largest surface was facing
      * the camera without changing the distance of the entity to the camera.
      *
+     * @param renderViewScenePose The [ScenePose] that represents the camera pose.
+     * @param renderViewFov The [FieldOfView] of the camera.
      * @return A [PerceivedResolutionResult] which encapsulates the outcome:
      *     - [PerceivedResolutionResult.Success] containing the [PixelDimensions] if the calculation
      *       is successful.
      *     - [PerceivedResolutionResult.EntityTooClose] if the entity is too close to the camera.
-     *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
-     *       the calculation is invalid or unavailable.
+     *     - [PerceivedResolutionResult.InvalidRenderViewpoint] if the camera information required
+     *       for the calculation is invalid or unavailable.
      *
      * @see PerceivedResolutionResult
      */
-    public fun getPerceivedResolution(): PerceivedResolutionResult
+    public fun getPerceivedResolution(
+        renderViewScenePose: ScenePose,
+        renderViewFov: FieldOfView,
+    ): PerceivedResolutionResult
 
     /**
      * Indicates whether explicit color information has been set for the surface content. If
@@ -277,15 +293,40 @@ public interface SurfaceEntity : Entity {
         }
     }
 
+    /** Specifies the draw mode of the mesh. */
+    public annotation class DrawMode {
+        public companion object {
+            /** Draw the mesh as a list of triangles. */
+            public const val TRIANGLES: Int = 0
+            /** Draw the mesh as a triangle strip. */
+            public const val TRIANGLE_STRIP: Int = 1
+            /** Draw the mesh as a triangle fan. */
+            public const val TRIANGLE_FAN: Int = 2
+        }
+    }
+
+    /** Specifies the blending mode of the content. */
+    public annotation class MediaBlendingMode {
+        public companion object {
+            // Content is alpha-blended with the background.
+            public const val TRANSPARENT: Int = 0
+            // Content is opaque and does not blend with the background.
+            public const val OPAQUE: Int = 1
+        }
+    }
+
     /** Represents the shape of the spatial canvas which the surface is texture mapped to. */
     public interface Shape {
         public val dimensions: Dimensions
 
         /**
-         * A 2D rectangle-shaped canvas. Width and height are represented in the local spatial
-         * coordinate system of the entity. (0,0,0) is the center of the canvas.
+         * A 2D rectangle-shaped canvas. Width, height and corner radius are represented in the
+         * local spatial coordinate system of the entity. (0,0,0) is the center of the canvas.
          */
-        public class Quad(public val extents: FloatSize2d) : Shape {
+        public class Quad
+        @JvmOverloads
+        constructor(public val extents: FloatSize2d, public val cornerRadius: Float = 0.0f) :
+            Shape {
             override val dimensions: Dimensions = Dimensions(extents.width, extents.height, 0f)
         }
 
@@ -303,6 +344,57 @@ public interface SurfaceEntity : Entity {
          */
         public class Hemisphere(public val radius: Float) : Shape {
             override val dimensions: Dimensions = Dimensions(radius * 2, radius * 2, radius)
+        }
+
+        /**
+         * A triangle mesh. The mesh is specified by a list of positions and texture coordinates and
+         * an optional list of indices.
+         */
+        public class TriangleMesh(
+            /** The positions of the vertices in the mesh. */
+            public var positions: FloatBuffer,
+            public var texCoords: FloatBuffer,
+            public var indices: IntBuffer?,
+        )
+
+        /**
+         * A custom mesh canvas. The mesh is specified by a left eye mesh and an optional right eye
+         * mesh.
+         */
+        public class CustomMesh(
+            public val leftEye: TriangleMesh,
+            public val rightEye: TriangleMesh?,
+            public val drawMode: Int = DrawMode.TRIANGLES,
+        ) : Shape {
+            override val dimensions: Dimensions by lazy {
+                val min = floatArrayOf(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE)
+                val max = floatArrayOf(Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE)
+
+                fun updateBounds(positions: FloatBuffer) {
+                    // Rewind buffer to make sure we start from the beginning
+                    positions.rewind()
+                    while (positions.remaining() >= 3) {
+                        val x = positions.get()
+                        val y = positions.get()
+                        val z = positions.get()
+                        min[0] = kotlin.math.min(min[0], x)
+                        max[0] = kotlin.math.max(max[0], x)
+                        min[1] = kotlin.math.min(min[1], y)
+                        max[1] = kotlin.math.max(max[1], y)
+                        min[2] = kotlin.math.min(min[2], z)
+                        max[2] = kotlin.math.max(max[2], z)
+                    }
+                }
+
+                updateBounds(leftEye.positions)
+                rightEye?.let { updateBounds(it.positions) }
+
+                val width = max[0] - min[0]
+                val height = max[1] - min[1]
+                val depth = max[2] - min[2]
+
+                Dimensions(width, height, depth)
+            }
         }
     }
 

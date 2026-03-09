@@ -41,10 +41,9 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -56,6 +55,7 @@ import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.xr.glimmer.testutils.captureToImage
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
@@ -223,7 +223,7 @@ class ButtonTest {
         var actualTrailingIconSize: Dp? = null
         var expectedIconSize: Dp? = null
         rule.setGlimmerThemeContent {
-            expectedIconSize = GlimmerTheme.iconSizes.medium
+            expectedIconSize = GlimmerTheme.iconSizes.small
             Button(
                 onClick = {},
                 leadingIcon = { actualLeadingIconSize = LocalIconSize.current },
@@ -243,7 +243,7 @@ class ButtonTest {
         var actualTrailingIconSize: Dp? = null
         var expectedIconSize: Dp? = null
         rule.setGlimmerThemeContent {
-            expectedIconSize = GlimmerTheme.iconSizes.large
+            expectedIconSize = GlimmerTheme.iconSizes.small
             Button(
                 onClick = {},
                 buttonSize = ButtonSize.Large,
@@ -272,16 +272,16 @@ class ButtonTest {
             rule.onNodeWithTag("text", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (textBounds.left - buttonBounds.left).assertIsEqualTo(
-            16.dp,
+            Spacing.Large,
             "padding between the start of the button and the start of the text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
-            16.dp,
+            Spacing.Large,
             "padding between the end of the text and the end of the button.",
         )
 
-        buttonBounds.height.assertIsEqualTo(56.dp, "height of button.")
+        buttonBounds.height.assertIsEqualTo(48.dp, "height of button.")
     }
 
     @Test
@@ -302,12 +302,12 @@ class ButtonTest {
             rule.onNodeWithTag("text", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (textBounds.left - buttonBounds.left).assertIsEqualTo(
-            20.dp,
+            Spacing.Large,
             "padding between the start of the button and the start of the text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
-            20.dp,
+            Spacing.Large,
             "padding between the end of the text and the end of the button.",
         )
 
@@ -349,26 +349,26 @@ class ButtonTest {
             rule.onNodeWithTag("button", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (leadingIconBounds.left - buttonBounds.left).assertIsEqualTo(
-            16.dp,
+            Spacing.Large,
             "Padding between start of button and start of leading icon.",
         )
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            8.dp,
+            Spacing.ExtraSmall,
             "Padding between end of leading icon and start of text.",
         )
 
         (trailingIconBounds.left - textBounds.right).assertIsEqualTo(
-            8.dp,
+            Spacing.ExtraSmall,
             "Padding between end of text and start of trailing icon.",
         )
 
         (buttonBounds.right - trailingIconBounds.right).assertIsEqualTo(
-            16.dp,
+            Spacing.Large,
             "padding between end of leading icon and end of button.",
         )
 
-        buttonBounds.height.assertIsEqualTo(56.dp, "height of button.")
+        buttonBounds.height.assertIsEqualTo(48.dp, "height of button.")
     }
 
     @Test
@@ -407,22 +407,22 @@ class ButtonTest {
             rule.onNodeWithTag("button", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (leadingIconBounds.left - buttonBounds.left).assertIsEqualTo(
-            20.dp,
+            Spacing.Large,
             "Padding between start of button and start of leading icon.",
         )
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            8.dp,
+            Spacing.ExtraSmall,
             "Padding between end of leading icon and start of text.",
         )
 
         (trailingIconBounds.left - textBounds.right).assertIsEqualTo(
-            8.dp,
+            Spacing.ExtraSmall,
             "Padding between end of text and start of trailing icon.",
         )
 
         (buttonBounds.right - trailingIconBounds.right).assertIsEqualTo(
-            20.dp,
+            Spacing.Large,
             "padding between end of leading icon and end of button.",
         )
 

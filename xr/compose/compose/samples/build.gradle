@@ -20,7 +20,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -46,9 +45,9 @@ androidx {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     namespace = "androidx.xr.compose.samples"
     defaultConfig {
-        minSdk = 34
+        minSdk { version = release(34) }
     }
 }

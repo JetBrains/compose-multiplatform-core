@@ -87,18 +87,15 @@ public class ConversionUtils {
 
         public fun convertToJetpackRequest(
             request: ImportCredentialsForDeviceSetupRequest
-        ): ImportCredentialsRequest {
-            return ImportCredentialsRequest(request.requestJson)
+        ): ImportCredentialsRequest? {
+            return ImportCredentialsRequest.createFrom(request.requestJson)
         }
 
         public fun convertToJetpackRequest(
             request: GetCredentialTransferCapabilitiesRequest
         ): CredentialTransferCapabilitiesRequest? {
-            val requestJson = request.requestData.getString(BUNDLE_REQUEST_JSON_KEY)
-            if (requestJson == null) {
-                return null
-            }
-            return CredentialTransferCapabilitiesRequest(requestJson)
+            val requestJson = request.requestData.getString(BUNDLE_REQUEST_JSON_KEY) ?: return null
+            return CredentialTransferCapabilitiesRequest.createFrom(requestJson)
         }
 
         @Suppress("RestrictedApiAndroidX")

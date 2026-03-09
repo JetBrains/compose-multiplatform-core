@@ -17,8 +17,6 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    // Remove when b/442128557 is fixed
-    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
 
@@ -54,7 +52,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     namespace = "androidx.paging.integration.testapp"
 }
 

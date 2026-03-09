@@ -16,14 +16,11 @@
 
 package androidx.xr.scenecore.testing
 
-import android.os.Build
-import androidx.test.filters.SdkSuppress
 import androidx.xr.scenecore.runtime.AnchorEntity
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
 
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class FakeAnchorEntityTest {
     private lateinit var underTest: FakeAnchorEntity
 

@@ -18,7 +18,9 @@ package androidx.xr.compose.subspace.layout
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Build
 import android.view.Surface
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -26,6 +28,8 @@ import androidx.compose.ui.unit.Density
 import androidx.xr.compose.subspace.ActionQueue
 import androidx.xr.compose.subspace.SceneCoreEntitySizeAdapter
 import androidx.xr.compose.subspace.SpatialPanelDefaults
+import androidx.xr.compose.subspace.draw.SpatialFeatheringEffect
+import androidx.xr.compose.subspace.draw.SpatialSmoothFeatheringEffect
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
@@ -37,8 +41,9 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.Component
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.GltfAnimation
 import androidx.xr.scenecore.GltfModelEntity
-import androidx.xr.scenecore.GroupEntity
+import androidx.xr.scenecore.GltfModelNode
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
@@ -54,7 +59,8 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
      * If [entity] is null, this will contain the set of mutations that are queued to be applied to
      * the entity once it is attached.
      */
-    private val entityActionQueue = ActionQueue(initialValue = initialEntity)
+    private val entityActionQueue =
+        ActionQueue(initialValue = initialEntity, isValid = { !it.isDisposed })
 
     protected val entity: Entity?
         get() = entityActionQueue.value
@@ -73,24 +79,15 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
         get() = layout?.density
 
     open val layoutPoseInPixels: Pose
-        get() = layout?.measurableLayout?.poseInParentEntity ?: Pose.Identity
+        get() = layout?.measurableLayout?.poseInParent ?: Pose.Identity
 
     internal open var poseInMeters: Pose
-        // TODO: b/440426914 - Avoid eating the IllegalStateException silently.
-        get() {
-            return try {
-                entity?.getPose() ?: Pose.Identity
-            } catch (_: IllegalStateException) {
-                Pose.Identity
-            }
-        }
+        get() = entity?.getPose() ?: Pose.Identity
         set(value) {
-            entityActionQueue.executeWhenAvailable {
-                try {
-                    if (getPose() != value) {
-                        setPose(value)
-                    }
-                } catch (_: IllegalStateException) {}
+            entityActionQueue.executeWhenAvailable { entity ->
+                if (entity.getPose() != value) {
+                    entity.setPose(value)
+                }
             }
         }
 
@@ -126,9 +123,9 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
     open var enabled: Boolean
         get() = entity?.isEnabled(includeParents = true) ?: false
         set(value) {
-            entityActionQueue.executeWhenAvailable {
-                if (isEnabled(includeParents = false) != value) {
-                    setEnabled(value)
+            entityActionQueue.executeWhenAvailable { entity ->
+                if (entity.isEnabled(includeParents = false) != value) {
+                    entity.setEnabled(value)
                 }
             }
         }
@@ -142,7 +139,7 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
     internal open var scale = 1f
         set(value) {
             if (field != value) {
-                entityActionQueue.executeWhenAvailable { setScale(value) }
+                entityActionQueue.executeWhenAvailable { it.setScale(value) }
             }
             field = value
         }
@@ -154,7 +151,7 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
     internal var alpha = 1f
         set(value) {
             if (field != value) {
-                entityActionQueue.executeWhenAvailable { setAlpha(value) }
+                entityActionQueue.executeWhenAvailable { it.setAlpha(value) }
             }
             field = value
         }
@@ -170,7 +167,7 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
             field = value
             // When the Compose-level parent is set to null, restore the original parent
             // (saved during the initial creation)
-            entityActionQueue.executeWhenAvailable { parent = value?.entity ?: originalParent }
+            entityActionQueue.executeWhenAvailable { it.parent = value?.entity ?: originalParent }
         }
 
     fun updatePoseFromLayout() {
@@ -190,7 +187,7 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
      * @return true if the component was added successfully, false otherwise.
      */
     fun addComponent(component: Component): Boolean? {
-        return entityActionQueue.executeWhenAvailable { addComponent(component) }
+        return entityActionQueue.executeWhenAvailable { it.addComponent(component) }
     }
 
     /**
@@ -199,7 +196,7 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
      * @param component The [Component] to remove.
      */
     fun removeComponent(component: Component) {
-        entityActionQueue.executeWhenAvailable { removeComponent(component) }
+        entityActionQueue.executeWhenAvailable { it.removeComponent(component) }
     }
 
     fun onEntityAttached(onEntityAttached: (Entity) -> Unit) {
@@ -230,21 +227,15 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
     }
 }
 
-/** Wrapper class for group entities from SceneCore. */
-internal class CoreGroupEntity(entity: Entity) : CoreEntity(entity) {
-    init {
-        require(entity is GroupEntity) {
-            "Entity passed to CoreGroupEntity should be a GroupEntity."
-        }
-    }
-}
+/** Wrapper class for Entity interfaces from SceneCore. */
+internal class CoreGroupEntity(entity: Entity) : CoreEntity(entity)
 
 /**
  * Wrapper class for [PanelEntity] to provide convenience methods for working with panel entities
  * from SceneCore.
  */
 internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) :
-    CoreEntity(panelEntity), MovableCoreEntity, ResizableCoreEntity {
+    CoreEntity(panelEntity), MovableCoreEntity, ResizableCoreEntity, InteractableCoreEntity {
     // Density set from setShape.
     private var shapeDensity: Density? = null
 
@@ -342,7 +333,7 @@ internal class CoreMainPanelEntity(session: Session) :
 internal class CoreSurfaceEntity(
     internal val surfaceEntity: SurfaceEntity,
     private val localDensity: Density,
-) : CoreEntity(surfaceEntity), ResizableCoreEntity, MovableCoreEntity {
+) : CoreEntity(surfaceEntity), ResizableCoreEntity, MovableCoreEntity, InteractableCoreEntity {
     private var pendingOnSurfaceDestroyed: ((Surface) -> Unit)? = null
 
     internal var stereoMode: SurfaceEntity.StereoMode
@@ -353,7 +344,7 @@ internal class CoreSurfaceEntity(
             }
         }
 
-    private var currentFeatheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect
+    private var currentFeatheringEffect: SpatialFeatheringEffect? = null
 
     override var size: IntVolumeSize
         get() = super.size
@@ -381,18 +372,21 @@ internal class CoreSurfaceEntity(
         pendingOnSurfaceDestroyed = onSurfaceDestroyed
     }
 
-    internal fun setFeatheringEffect(featheringEffect: SpatialFeatheringEffect) {
+    internal fun setFeatheringEffect(featheringEffect: SpatialFeatheringEffect?) {
         currentFeatheringEffect = featheringEffect
         updateFeathering()
     }
 
     private fun updateFeathering() {
-        (currentFeatheringEffect as? SpatialSmoothFeatheringEffect)?.let {
+        val featheringEffect = currentFeatheringEffect as? SpatialSmoothFeatheringEffect
+        if (featheringEffect != null) {
             surfaceEntity.edgeFeatheringParams =
                 SurfaceEntity.EdgeFeatheringParams.RectangleFeather(
-                    it.size.toWidthPercent(size.width.toFloat(), localDensity),
-                    it.size.toHeightPercent(size.height.toFloat(), localDensity),
+                    featheringEffect.size.toWidthPercent(size.width.toFloat(), localDensity),
+                    featheringEffect.size.toHeightPercent(size.height.toFloat(), localDensity),
                 )
+        } else {
+            surfaceEntity.edgeFeatheringParams = SurfaceEntity.EdgeFeatheringParams.NoFeathering()
         }
     }
 }
@@ -421,7 +415,7 @@ internal class AdaptableCoreEntity<T : Entity>(
 internal class CoreSphereSurfaceEntity(
     internal val surfaceEntity: SurfaceEntity,
     val initialDensity: Density,
-) : CoreEntity(surfaceEntity) {
+) : CoreEntity(surfaceEntity), InteractableCoreEntity {
     private var pendingOnSurfaceDestroyed: ((Surface) -> Unit)? = null
 
     internal var stereoMode: SurfaceEntity.StereoMode
@@ -453,7 +447,7 @@ internal class CoreSphereSurfaceEntity(
             }
         }
 
-    private var currentFeatheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect
+    private var currentFeatheringEffect: SpatialFeatheringEffect? = null
 
     // Layout's density is automatically updated during a configuration change, and may differ from
     // initialDensity.
@@ -484,7 +478,7 @@ internal class CoreSphereSurfaceEntity(
         throw IllegalStateException("Shape must be spherical")
     }
 
-    internal fun setFeatheringEffect(featheringEffect: SpatialFeatheringEffect) {
+    internal fun setFeatheringEffect(featheringEffect: SpatialFeatheringEffect?) {
         currentFeatheringEffect = featheringEffect
         updateFeathering()
     }
@@ -506,18 +500,22 @@ internal class CoreSphereSurfaceEntity(
                 SurfaceEntity.EdgeFeatheringParams.RectangleFeather(radius, radius)
             } else {
                 val semicircleArcLength = Meter((radius * PI).toFloat()).toPx(localDensity)
-                (currentFeatheringEffect as? SpatialSmoothFeatheringEffect)?.let {
+                val featheringEffect = currentFeatheringEffect as? SpatialSmoothFeatheringEffect
+                if (featheringEffect != null) {
                     val radiusX =
-                        it.size.toWidthPercent(
+                        featheringEffect.size.toWidthPercent(
                             if (surfaceEntity.shape is SurfaceEntity.Shape.Hemisphere)
                                 semicircleArcLength / 2
                             else semicircleArcLength,
                             localDensity,
                         )
-                    val radiusY = it.size.toHeightPercent(semicircleArcLength, localDensity)
+                    val radiusY =
+                        featheringEffect.size.toHeightPercent(semicircleArcLength, localDensity)
                     SurfaceEntity.EdgeFeatheringParams.RectangleFeather(radiusX, radiusY)
+                } else {
+                    SurfaceEntity.EdgeFeatheringParams.NoFeathering()
                 }
-            } ?: surfaceEntity.edgeFeatheringParams
+            }
     }
 
     private val isHemisphere
@@ -525,6 +523,9 @@ internal class CoreSphereSurfaceEntity(
 }
 
 internal class CoreModelEntity() : CoreEntity() {
+    val nodes: List<GltfModelNode>
+        get() = (entity as? GltfModelEntity)?.nodes ?: emptyList()
+
     /**
      * The size of the glTF entity will be scaled uniformly such that it fits within the most
      * restrictive dimension according to the constraints.
@@ -548,37 +549,14 @@ internal class CoreModelEntity() : CoreEntity() {
         get() =
             density?.let { density ->
                 (entity as? GltfModelEntity)
-                    ?.getGltfModelBoundingBox()
+                    ?.gltfModelBoundingBox
                     ?.halfExtents
                     ?.times(2)
                     ?.toIntVolumeSize(density)
             } ?: IntVolumeSize.Zero
 
-    val isAnimating: Boolean
-        get() {
-            return (entity as? GltfModelEntity)?.animationState ==
-                GltfModelEntity.AnimationState.PLAYING
-        }
-
-    fun startAnimation(name: String? = null) {
-        if (name == null) {
-            onEntity { startAnimation(loop = false) }
-        } else {
-            onEntity { startAnimation(loop = false, animationName = name) }
-        }
-    }
-
-    fun loopAnimation(name: String? = null) {
-        if (name == null) {
-            onEntity { startAnimation(loop = true) }
-        } else {
-            onEntity { startAnimation(loop = true, animationName = name) }
-        }
-    }
-
-    fun stopAllAnimations() {
-        onEntity { stopAnimation() }
-    }
+    val animations: List<GltfAnimation>?
+        @RequiresApi(Build.VERSION_CODES.O) get() = (entity as? GltfModelEntity)?.animations
 
     private fun onEntity(action: GltfModelEntity.() -> Unit) {
         onEntityAttached { entity -> (entity as GltfModelEntity).action() }
@@ -590,3 +568,6 @@ internal interface ResizableCoreEntity
 
 /** [CoreEntity] types that implement this interface may have the MovableComponent attached. */
 internal interface MovableCoreEntity
+
+/** [CoreEntity] types that implement this interface may have the InteractableComponent attached. */
+internal interface InteractableCoreEntity

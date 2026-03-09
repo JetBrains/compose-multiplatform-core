@@ -39,77 +39,77 @@ androidXMultiplatform {
     }
     ios()
     jvm()
+    js()
     linux()
     mac()
     tvos()
     watchos()
+    wasmJs()
 
     sourceSets {
         commonTest {
             dependencies {
+                implementation(project(":room3:integration-tests:room-testapp-multiplatform-library"))
                 implementation(project(":room3:room3-runtime"))
                 implementation(project(":room3:room3-testing"))
-                implementation(project(":room3:room3-paging"))
-                implementation(project(":sqlite:sqlite-bundled"))
                 implementation(project(":kruth:kruth"))
-                implementation(project(":paging:paging-common"))
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
             }
         }
+        nonWebTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(project(":sqlite:sqlite-bundled"))
+            }
+        }
         // b/432783733: Test source set dedicating to room-paging since watchOS and tvOS are not
         // supported targets.
         pagingCommonTest {
-            dependsOn(commonTest)
-        }
-        androidDeviceTest {
-            dependsOn(commonTest)
-            dependsOn(pagingCommonTest)
+            dependsOn(nonWebTest)
             dependencies {
-                implementation(libs.kotlinTestJunit)
-                implementation(libs.testRunner)
-                implementation(libs.testCore)
+                implementation(project(":room3:room3-paging"))
+                implementation(project(":paging:paging-common"))
             }
         }
-        jvmTest {
-            dependsOn(commonTest)
+        jvmAndAndroidTest {
             dependsOn(pagingCommonTest)
-            dependencies {
-                implementation(libs.kotlinTestJunit)
-            }
         }
-        nativeTest {
-            dependsOn(commonTest)
+        androidDeviceTest.dependencies {
+            implementation(libs.kotlinTestJunit)
+            implementation(libs.testRunner)
+            implementation(libs.testCore)
         }
+        jvmTest.dependencies {
+            implementation(libs.kotlinTestJunit)
+        }
+
+        nativeTest.dependsOn(nonWebTest)
+
         // Host OSes (Linux and Mac)
         hostNativeTest {
             dependsOn(nativeTest)
             dependsOn(pagingCommonTest)
+
         }
+        macosTest.dependsOn(hostNativeTest)
+        linuxTest.dependsOn(hostNativeTest)
+
         // iOS, watchOS and tvOS families, but not Mac OS
-        appleOsNativeTest {
-            dependsOn(nativeTest)
-        }
+        create("appleOsNativeTest").dependsOn(nativeTest)
+        tvosTest.dependsOn(appleOsNativeTest)
+        watchosTest.dependsOn(appleOsNativeTest)
+
         // iOS family
         iosTest {
             dependsOn(appleOsNativeTest)
             dependsOn(pagingCommonTest)
         }
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["test"].defaultSourceSet {
-                    if (target.konanTarget.family in [Family.IOS, Family.WATCHOS, Family.TVOS]) {
-                        if (target.konanTarget.family == Family.IOS) {
-                            dependsOn(iosTest)
-                        } else {
-                            dependsOn(appleOsNativeTest)
-                        }
-                    } else {
-                        dependsOn(hostNativeTest)
-                    }
-                }
-            }
+
+        webTest.dependencies {
+            implementation(project(":sqlite:sqlite-web"))
+            implementation(project(":sqlite:sqlite-web-worker-test"))
         }
     }
 }
@@ -123,16 +123,16 @@ dependencies {
     add("kspLinuxX64Test", roomCompilerDependency)
     if (KmpPlatformsKt.enableMac(project)) {
         add("kspIosArm64Test", roomCompilerDependency)
-        add("kspIosX64Test", roomCompilerDependency)
         add("kspIosSimulatorArm64Test", roomCompilerDependency)
-        add("kspMacosX64Test", roomCompilerDependency)
         add("kspMacosArm64Test", roomCompilerDependency)
         add("kspTvosArm64Test", roomCompilerDependency)
-        add("kspTvosX64Test", roomCompilerDependency)
         add("kspTvosSimulatorArm64Test", roomCompilerDependency)
         add("kspWatchosArm64Test", roomCompilerDependency)
-        add("kspWatchosX64Test", roomCompilerDependency)
         add("kspWatchosSimulatorArm64Test", roomCompilerDependency)
+    }
+    if (!androidx.isIsolatedProjectsEnabled()) { // KT-80311
+        add("kspJsTest", roomCompilerDependency)
+        add("kspWasmJsTest", roomCompilerDependency)
     }
 }
 

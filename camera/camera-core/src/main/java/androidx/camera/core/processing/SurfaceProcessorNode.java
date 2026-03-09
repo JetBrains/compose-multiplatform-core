@@ -28,6 +28,7 @@ import static androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThre
 import static androidx.camera.core.processing.TargetUtils.getHumanReadableName;
 import static androidx.core.util.Preconditions.checkArgument;
 
+import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.Size;
@@ -85,17 +86,21 @@ public class SurfaceProcessorNode implements
     // Guarded by main thread.
     private @Nullable Out mOutput;
     private @Nullable In mInput;
+    private final @Nullable String mDebugInfo;
 
     /**
      * Constructs the {@link SurfaceProcessorNode}.
      *
      * @param cameraInternal   the associated camera instance.
      * @param surfaceProcessor the interface to wrap around.
+     * @param debugInfo the debug information to be shown in the log
      */
+    @SuppressLint("LambdaLast")
     public SurfaceProcessorNode(@NonNull CameraInternal cameraInternal,
-            @NonNull SurfaceProcessorInternal surfaceProcessor) {
+            @NonNull SurfaceProcessorInternal surfaceProcessor, @Nullable String debugInfo) {
         mCameraInternal = cameraInternal;
         mSurfaceProcessor = surfaceProcessor;
+        mDebugInfo = debugInfo;
     }
 
     /**
@@ -105,7 +110,8 @@ public class SurfaceProcessorNode implements
     @MainThread
     public @NonNull Out transform(@NonNull In input) {
         Threads.checkMainThread();
-        Logger.d(TAG, "SurfaceProcessorNode Transform (Processor=" + mSurfaceProcessor
+        String info = mDebugInfo == null ? "" : "[" + mDebugInfo + "] ";
+        Logger.d(TAG, info + "SurfaceProcessorNode Transform (Processor=" + mSurfaceProcessor
                 + "\n   inputEdge = " + input.getSurfaceEdge());
         for (OutConfig outConfig : input.getOutConfigs()) {
             Logger.d(TAG, "   outputConfig = " + outConfig);

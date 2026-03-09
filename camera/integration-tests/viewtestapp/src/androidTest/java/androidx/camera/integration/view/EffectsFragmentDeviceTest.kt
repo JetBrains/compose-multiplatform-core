@@ -17,16 +17,15 @@
 package androidx.camera.integration.view
 
 import android.net.Uri
+import android.os.Build.MODEL
 import android.util.Log
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.integration.view.TestUtil.assertPreviewStreamingState
 import androidx.camera.integration.view.TestUtil.getFragment
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.view.PreviewView
@@ -40,6 +39,7 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -53,10 +53,6 @@ class EffectsFragmentDeviceTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
 ) {
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
-
     @get:Rule
     val useCameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
@@ -77,6 +73,11 @@ class EffectsFragmentDeviceTest(
 
     @Before
     fun setup() {
+        assumeFalse(
+            "Test fails on cuttlefish (b/465855844)",
+            MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
+
         // Clear the device UI and check if there is no dialog or lock screen on the top of the
         // window before start the test.
         CoreAppTestUtil.prepareDeviceUI(instrumentation)
@@ -163,10 +164,6 @@ class EffectsFragmentDeviceTest(
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
     }
 }

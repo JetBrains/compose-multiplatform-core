@@ -97,7 +97,7 @@ public final class GenericDocumentToPlatformConverter {
                 }
                 platformBuilder.setPropertyDocument(propertyName, platformSubDocuments);
             } else if (property instanceof EmbeddingVector[]) {
-                if (!AppSearchVersionUtil.isAtLeastB()) {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
                     throw new UnsupportedOperationException(
                             Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
                                     + " is not available on this AppSearch implementation.");
@@ -106,7 +106,7 @@ public final class GenericDocumentToPlatformConverter {
                 ApiHelperForB.setPlatformPropertyEmbedding(platformBuilder, propertyName,
                         embeddingVectors);
             } else if (property instanceof AppSearchBlobHandle[]) {
-                if (!AppSearchVersionUtil.isAtLeastB()) {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
                     throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
                             + " is not available on this AppSearch implementation.");
                 }
@@ -169,13 +169,13 @@ public final class GenericDocumentToPlatformConverter {
                     jetpackSubDocuments[j] = toJetpackGenericDocument(documentValues[j]);
                 }
                 jetpackBuilder.setPropertyDocument(propertyName, jetpackSubDocuments);
-            } else if (AppSearchVersionUtil.isAtLeastB()
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
                     && property instanceof android.app.appsearch.EmbeddingVector[]) {
                 android.app.appsearch.EmbeddingVector[] embeddingVectors =
                         (android.app.appsearch.EmbeddingVector[]) property;
                 ApiHelperForB.setJetpackPropertyEmbedding(jetpackBuilder, propertyName,
                         embeddingVectors);
-            } else if (AppSearchVersionUtil.isAtLeastB()
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
                     && property instanceof android.app.appsearch.AppSearchBlobHandle[]) {
                 android.app.appsearch.AppSearchBlobHandle[] blobHandles =
                         (android.app.appsearch.AppSearchBlobHandle[]) property;

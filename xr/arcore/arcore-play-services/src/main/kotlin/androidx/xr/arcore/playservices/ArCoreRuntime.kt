@@ -18,14 +18,22 @@ package androidx.xr.arcore.playservices
 
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
+import androidx.xr.runtime.CameraFacingDirection
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.ConfigMode
+import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.FaceTrackingMode
+import androidx.xr.runtime.GeospatialMode
+import androidx.xr.runtime.PlaneTrackingMode
+import com.google.ar.core.Config as ArCoreConfig
 import kotlin.time.ComparableTimeMark
 
 /**
  * Implementation of the [androidx.xr.arcore.runtime.PerceptionRuntime] interface using ARCore.
  *
- * @property lifecycleManager that manages the lifecycle of the ARCore session.
- * @property perceptionManager that manages the perception capabilities of a runtime using ARCore.
+ * @property lifecycleManager that manages the lifecycle of the ARCore session
+ * @property perceptionManager that manages the perception capabilities of a runtime using ARCore
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ArCoreRuntime
@@ -54,7 +62,50 @@ internal constructor(
         lifecycleManager.configure(config)
     }
 
+    override fun isSupported(configMode: ConfigMode): Boolean {
+        if (configMode is DepthEstimationMode) {
+            return isDepthModeSupportedInArCore1x(configMode)
+        } else if (configMode is GeospatialMode) {
+            return isGeoSpatialModeSupportedInArCore1x(configMode)
+        }
+        return SUPPORTED_CONFIG_MODES.contains(configMode)
+    }
+
     override fun destroy() {
         lifecycleManager.stop()
+    }
+
+    private fun isDepthModeSupportedInArCore1x(depthEstimationMode: DepthEstimationMode): Boolean {
+        val arCoreDepthMode =
+            when (depthEstimationMode) {
+                DepthEstimationMode.SMOOTH_ONLY,
+                DepthEstimationMode.SMOOTH_AND_RAW -> ArCoreConfig.DepthMode.AUTOMATIC
+                DepthEstimationMode.RAW_ONLY -> ArCoreConfig.DepthMode.RAW_DEPTH_ONLY
+                else -> ArCoreConfig.DepthMode.DISABLED
+            }
+        return lifecycleManager._session.isDepthModeSupported(arCoreDepthMode)
+    }
+
+    private fun isGeoSpatialModeSupportedInArCore1x(geospatialMode: GeospatialMode): Boolean {
+        val arCoreGeospatialMode =
+            when (geospatialMode) {
+                GeospatialMode.VPS_AND_GPS -> ArCoreConfig.GeospatialMode.ENABLED
+                else -> ArCoreConfig.GeospatialMode.DISABLED
+            }
+        return lifecycleManager._session.isGeospatialModeSupported(arCoreGeospatialMode)
+    }
+
+    internal companion object {
+        internal val SUPPORTED_CONFIG_MODES: Set<ConfigMode> =
+            setOf(
+                CameraFacingDirection.WORLD,
+                CameraFacingDirection.USER,
+                DeviceTrackingMode.DISABLED,
+                DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+                FaceTrackingMode.DISABLED,
+                FaceTrackingMode.MESHES,
+                PlaneTrackingMode.DISABLED,
+                PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+            )
     }
 }

@@ -17,6 +17,8 @@
 package androidx.wear.compose.material3.demos
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -39,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.AppCard
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonGroup
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.CheckboxButton
@@ -129,6 +132,29 @@ fun SurfaceTransformationDemo() {
                 transformation = SurfaceTransformation(transformationSpec),
                 modifier = Modifier.transformedHeight(this, transformationSpec),
             )
+        }
+        item {
+            val interactionSource1 = remember { MutableInteractionSource() }
+            val interactionSource2 = remember { MutableInteractionSource() }
+            ButtonGroup(
+                Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                transformation = SurfaceTransformation(transformationSpec),
+            ) {
+                Button(
+                    onClick = {},
+                    modifier = Modifier.animateWidth(interactionSource1),
+                    interactionSource = interactionSource1,
+                ) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("L") }
+                }
+                Button(
+                    onClick = {},
+                    modifier = Modifier.animateWidth(interactionSource2),
+                    interactionSource = interactionSource2,
+                ) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("R") }
+                }
+            }
         }
         item {
             var checked by remember { mutableStateOf(true) }

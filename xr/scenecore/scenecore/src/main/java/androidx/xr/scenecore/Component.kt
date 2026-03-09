@@ -30,7 +30,7 @@ public interface Component {
      * @return True if the Component was attached to the given Entity. False if the Entity did not
      *   support having this Component attached.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public fun onAttach(entity: Entity): Boolean
+    @RestrictTo(RestrictTo.Scope.LIBRARY) public fun onAttach(entity: Entity): Boolean
 
     /**
      * Called by an [Entity] when it attempts to detach this Component from itself.
@@ -39,5 +39,5 @@ public interface Component {
      *
      * @param entity Entity from which this Component was detached.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public fun onDetach(entity: Entity)
+    @RestrictTo(RestrictTo.Scope.LIBRARY) public fun onDetach(entity: Entity)
 }

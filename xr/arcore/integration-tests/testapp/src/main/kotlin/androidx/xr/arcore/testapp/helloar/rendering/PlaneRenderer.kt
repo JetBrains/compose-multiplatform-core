@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("BanConcurrentHashMap")
 
 package androidx.xr.arcore.testapp.helloar.rendering
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.res.Resources
 import android.graphics.Color
@@ -27,12 +29,14 @@ import androidx.xr.arcore.Plane
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
-import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.GltfModel
+import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.scene
+import java.nio.file.Paths
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -44,6 +48,7 @@ import kotlinx.coroutines.launch
 internal class PlaneRenderer(val session: Session, val coroutineScope: CoroutineScope) :
     DefaultLifecycleObserver {
 
+    private val _planesModelsMap = ConcurrentHashMap<String, GltfModel?>()
     private val _renderedPlanes: MutableStateFlow<List<PlaneModel>> =
         MutableStateFlow(mutableListOf<PlaneModel>())
     internal val renderedPlanes: StateFlow<Collection<PlaneModel>> = _renderedPlanes.asStateFlow()
@@ -53,7 +58,10 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
     override fun onResume(owner: LifecycleOwner) {
         updateJob =
             SupervisorJob(
-                coroutineScope.launch { Plane.subscribe(session).collect { updatePlaneModels(it) } }
+                coroutineScope.launch {
+                    preloadModels()
+                    Plane.subscribe(session).collect { updatePlaneModels(it) }
+                }
             )
     }
 
@@ -62,7 +70,25 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
         _renderedPlanes.value = emptyList<PlaneModel>()
     }
 
-    private fun updatePlaneModels(planes: Collection<Plane>) {
+    private suspend fun preloadModels() {
+        if (_planesModelsMap.isNotEmpty()) return
+
+        val assetsToLoad =
+            SUPPORTED_OBJECT_MODELS.values.toMutableSet().apply { add(DEFAULT_OBJECT_MODEL) }
+
+        val assetToModel =
+            assetsToLoad.associateWith { assetName ->
+                GltfModel.create(session, Paths.get("models", assetName))
+            }
+
+        for ((category, assetName) in SUPPORTED_OBJECT_MODELS) {
+            _planesModelsMap[category] = assetToModel[assetName]
+        }
+
+        _planesModelsMap["DEFAULT"] = assetToModel[DEFAULT_OBJECT_MODEL]
+    }
+
+    private suspend fun updatePlaneModels(planes: Collection<Plane>) {
         val planesToRender = _renderedPlanes.value.toMutableList()
         // Create renderers for new planes.
         for (plane in planes) {
@@ -80,9 +106,20 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
         _renderedPlanes.value = planesToRender
     }
 
-    private fun addPlaneModel(plane: Plane, planesToRender: MutableList<PlaneModel>) {
-        val view = createPanelDebugViewUsingCompose(plane, session.activity)
-        val entity = createPlanePanelEntity(plane, view)
+    private suspend fun addPlaneModel(plane: Plane, planesToRender: MutableList<PlaneModel>) {
+        val label = plane.state.value.label.toString()
+        val asset =
+            if (SUPPORTED_OBJECT_MODELS.containsKey(label)) {
+                SUPPORTED_OBJECT_MODELS[label]
+            } else {
+                DEFAULT_OBJECT_MODEL
+            }
+        val model =
+            _planesModelsMap.getOrPut(label) {
+                GltfModel.create(session, Paths.get("models", asset))
+            }
+        val modelEntity = GltfModelEntity.create(session, _planesModelsMap[label]!!)
+
         // The counter starts at max to trigger the resize on the first update loop since emulators
         // only
         // update their static planes once.
@@ -93,11 +130,12 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
                 plane.state.collect { state ->
                     if (state.trackingState == TrackingState.TRACKING) {
                         if (state.label == Plane.Label.UNKNOWN) {
-                            entity.setEnabled(false)
+                            modelEntity.setEnabled(false)
                         } else {
-                            entity.setEnabled(true)
+                            modelEntity.setEnabled(true)
+                            modelEntity.setAlpha(.5f)
                             counter++
-                            entity.setPose(
+                            modelEntity.setPose(
                                 session.scene.perceptionSpace
                                     .transformPoseTo(state.centerPose, session.scene.activitySpace)
                                     // Planes are X-Y while Panels are X-Z, so we need to rotate the
@@ -106,33 +144,20 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
                                     .compose(PANEL_TO_PLANE_ROTATION)
                             )
 
-                            updateViewText(view, plane, state)
                             if (counter > PANEL_RESIZE_UPDATE_COUNT) {
-                                val panelExtentsInPixels = convertMetersToPixels(state.extents)
-                                entity.sizeInPixels =
-                                    IntSize2d(
-                                        width = panelExtentsInPixels.width.toInt(),
-                                        height = panelExtentsInPixels.height.toInt(),
-                                    )
+                                @SuppressLint("RestrictedApiAndroidX")
+                                modelEntity.setScale(scaledExtents(state.extents))
                                 counter = 0
                             }
                         }
                     } else if (state.trackingState == TrackingState.STOPPED) {
-                        entity.setEnabled(false)
+                        modelEntity.setEnabled(false)
                     }
                 }
             }
 
-        planesToRender.add(PlaneModel(plane.hashCode(), plane.type, plane.state, entity, renderJob))
-    }
-
-    private fun createPlanePanelEntity(plane: Plane, view: View): PanelEntity {
-        return PanelEntity.create(
-            session,
-            view,
-            IntSize2d(320, 320),
-            plane.hashCode().toString(),
-            plane.state.value.centerPose,
+        planesToRender.add(
+            PlaneModel(plane.hashCode(), plane.type, plane.state, modelEntity!!, renderJob)
         )
     }
 
@@ -144,28 +169,20 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
         return view
     }
 
-    private fun updateViewText(view: View, plane: Plane, state: Plane.State) {
-        val textView = view as TextView
-        textView.setBackgroundColor(convertPlaneLabelToColor(state.label))
-        textView.text = "Plane: ${plane.hashCode()}"
-    }
-
-    private fun convertPlaneLabelToColor(label: Plane.Label): Int =
-        when (label) {
-            Plane.Label.WALL -> Color.GREEN
-            Plane.Label.FLOOR -> Color.BLUE
-            Plane.Label.CEILING -> Color.YELLOW
-            Plane.Label.TABLE -> Color.MAGENTA
-            // Planes with Unknown Label are currently not rendered.
-            else -> Color.RED
-        }
-
     private fun convertMetersToPixels(input: FloatSize2d): FloatSize2d = input * PX_PER_METER
 
     private fun removePlaneModel(planeModel: PlaneModel, planesToRender: MutableList<PlaneModel>) {
         planeModel.renderJob?.cancel()
-        planeModel.entity.dispose()
+        planeModel.modelEntity.dispose()
         planesToRender.remove(planeModel)
+    }
+
+    private fun scaledExtents(extents: FloatSize2d): Vector3 {
+        return Vector3(
+            extents.width * MODEL_SCALING_FACTOR,
+            extents.height * MODEL_SCALING_FACTOR,
+            MODEL_DEPTH,
+        )
     }
 
     private companion object {
@@ -173,5 +190,15 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
         private val PANEL_TO_PLANE_ROTATION =
             Pose(Vector3(), Quaternion.fromEulerAngles(-90f, 0f, 0f))
         private const val PANEL_RESIZE_UPDATE_COUNT = 50
+        private const val MODEL_SCALING_FACTOR = 1f / 1.7f / 2f
+        private const val MODEL_DEPTH = .001f
+        private val DEFAULT_OBJECT_MODEL = "BoundingBoxGreen.glb"
+        private val SUPPORTED_OBJECT_MODELS =
+            mapOf(
+                "WALL" to "BoundingBoxGreen.glb",
+                "FLOOR" to "BoundingBoxBlue.glb",
+                "CEILING" to "BoundingBoxYellow.glb",
+                "TABLE" to "BoundingBoxMagenta.glb",
+            )
     }
 }

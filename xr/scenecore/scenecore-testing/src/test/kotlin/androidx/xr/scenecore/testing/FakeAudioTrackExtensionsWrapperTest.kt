@@ -26,6 +26,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FakeAudioTrackExtensionsWrapperTest {
 
     private val fakeWrapper = FakeAudioTrackExtensionsWrapper()
@@ -82,7 +83,7 @@ class FakeAudioTrackExtensionsWrapperTest {
         check(fakeWrapper.getSoundFieldAttributes(track) == null)
 
         val attributes = SoundFieldAttributes(SpatializerConstants.AMBISONICS_ORDER_FIRST_ORDER)
-        fakeWrapper.soundFieldAttributesMap = mutableMapOf(track to attributes)
+        fakeWrapper.setSoundFieldAttributes(track, attributes)
 
         assertThat(fakeWrapper.getSoundFieldAttributes(track)).isEqualTo(attributes)
     }

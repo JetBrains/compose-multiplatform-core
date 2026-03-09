@@ -17,7 +17,6 @@
 package androidx.room3.compiler.processing
 
 import androidx.kruth.assertThat
-import androidx.room3.compiler.processing.util.CompilationTestCapabilities
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.compileFiles
 import androidx.room3.compiler.processing.util.runKaptTest
@@ -61,7 +60,6 @@ class InternalModifierTest {
 
     @OptIn(ExperimentalStdlibApi::class)
     private fun buildSignatures(config: XProcessingEnvConfig): Signatures {
-        CompilationTestCapabilities.assumeKspIsEnabled()
         /** parse same file w/ kapt and KSP and ensure results are the same. */
         fun buildSource(pkg: String) =
             Source.kotlin(

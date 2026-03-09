@@ -19,6 +19,7 @@ package androidx.glance.wear
 import android.content.ComponentName
 import android.content.Context
 import androidx.compose.remote.creation.compose.layout.RemoteText
+import androidx.glance.wear.core.WearWidgetParams
 import androidx.glance.wear.parcel.WidgetUpdateClient
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -27,6 +28,7 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 
 @RunWith(AndroidJUnit4::class)
@@ -36,19 +38,46 @@ class GlanceWearWidgetTest {
     fun triggerUpdate_clientRequestsUpdateForAll() {
         val mockUpdateClient = mock<WidgetUpdateClient>()
         val widget = TestWidget(mockUpdateClient)
-        val componentName = ComponentName("my.package", "my.package.MyClass")
 
-        widget.triggerUpdate(getApplicationContext(), componentName)
+        widget.triggerUpdate(getApplicationContext(), TEST_COMPONENT)
 
-        verify(mockUpdateClient).requestUpdate(any(), eq(componentName))
+        verify(mockUpdateClient).requestUpdate(any(), eq(TEST_COMPONENT))
     }
 
-    @Suppress("RestrictedApiAndroidX")
+    @Test
+    fun triggerUpdate_debuggable_sendsUpdateBroadcast() {
+        val mockUpdateClient = mock<WidgetUpdateClient>()
+        val widget = TestWidget(mockUpdateClient)
+        val context = getApplicationContext<Context>()
+        context.applicationInfo.flags =
+            context.applicationInfo.flags or android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE
+
+        widget.triggerUpdate(context, TEST_COMPONENT)
+
+        verify(mockUpdateClient).sendUpdateBroadcast(any(), eq(TEST_COMPONENT))
+    }
+
+    @Test
+    fun triggerUpdate_notDebuggable_doesNotSendUpdateBroadcast() {
+        val mockUpdateClient = mock<WidgetUpdateClient>()
+        val widget = TestWidget(mockUpdateClient)
+        val context = getApplicationContext<Context>()
+        context.applicationInfo.flags =
+            context.applicationInfo.flags and
+                android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE.inv()
+
+        widget.triggerUpdate(context, TEST_COMPONENT)
+
+        verify(mockUpdateClient, never()).sendUpdateBroadcast(any(), eq(TEST_COMPONENT))
+    }
+
     private class TestWidget(updateClient: WidgetUpdateClient) : GlanceWearWidget(updateClient) {
 
-        override suspend fun provideWidgetContent(context: Context, request: WearWidgetRequest) =
-            WearWidgetContent {
-                RemoteText("Testing...")
-            }
+        override suspend fun provideWidgetData(context: Context, params: WearWidgetParams) =
+            WearWidgetDocument(background = WearWidgetBrush) { RemoteText("Testing...") }
+    }
+
+    private companion object {
+        val TEST_COMPONENT = ComponentName("my.package", "my.package.MyClass")
     }
 }

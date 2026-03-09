@@ -37,6 +37,7 @@ import org.robolectric.shadows.ShadowLooper
 
 /** Tests for [ComplicationDataSourceUpdateRequesterImpl]. */
 @RunWith(ComplicationsTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class ComplicationDataSourceUpdateRequesterImplTest {
     private val context: Context = getApplicationContext()
 

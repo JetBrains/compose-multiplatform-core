@@ -95,10 +95,10 @@ internal abstract class GenerateApiTask @Inject constructor(workerExecutor: Work
             ApiLintMode.CheckBaseline(baselines.get().apiLintFile, targetsJavaConsumers.get()),
             generateRestrictToLibraryGroupAPIs,
             levelsArgs,
-            k2UastEnabled.get(),
             kotlinSourceLevel.get(),
             workerExecutor,
             manifestPath.orNull?.asFile?.absolutePath,
+            multiplatform.get(),
         )
     }
 }

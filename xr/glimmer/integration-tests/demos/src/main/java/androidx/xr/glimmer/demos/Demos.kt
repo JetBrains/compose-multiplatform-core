@@ -30,7 +30,7 @@ import androidx.xr.glimmer.samples.TypographySample
 
 val Demos =
     DemoCategory(
-        "Glimmer Demos",
+        "Jetpack Compose Glimmer Demos",
         listOf(
             ComposableDemo("Colors") { ColorsSample() },
             ComposableDemo("Typography") { TypographySample() },
@@ -43,7 +43,7 @@ val Demos =
             ComposableDemo("ListItems") { ListItemSampleUsage() },
             ComposableDemo("TitleChips") { TitleChipSampleUsage() },
             DemoCategory("Focus", FocusDemos),
-            DemoCategory("List", ListDemos),
+            DemoCategory("Lists", ListDemos),
             DemoCategory("Stack", StackDemos),
             ComposableDemo("Gesture") { OnIndirectPointerGestureSampleUsage() },
             ComposableDemo("Settings") { DemoSettings() },

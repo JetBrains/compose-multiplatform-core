@@ -16,7 +16,11 @@
 
 package androidx.xr.glimmer.stack
 
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.runtime.Composable
@@ -25,27 +29,34 @@ import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.ClipOp
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.addOutline
-import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.zIndex
+import kotlin.math.roundToInt
 
 /**
  * [VerticalStack] is a lazy scrollable layout that displays its children in a form of a stack where
  * the item on top of the stack is prominently displayed. [VerticalStack] implements the item
  * traversal in a vertical direction.
+ *
+ * Note: When displaying text within a [VerticalStack], it is strongly recommended to set
+ * [androidx.compose.ui.text.TextStyle.textMotion] to
+ * [androidx.compose.ui.text.style.TextMotion.Animated]. This ensures smooth rendering during layout
+ * animations or scaling transitions, preventing pixel-snapping artifacts.
  *
  * @sample androidx.xr.glimmer.samples.VerticalStackSample
  * @param modifier the modifier to apply to this layout.
@@ -64,7 +75,7 @@ public fun VerticalStack(
         remember(state) {
             // Re-run the DSL to parse items only when the content lambda instance changes.
             derivedStateOf(referentialEqualityPolicy()) {
-                    StackItemHolder(latestContent.value).also {
+                    StackItemHolder(state, latestContent.value).also {
                         // Set the item count on the StackState immediately when the derived state
                         // re-evaluates (i.e., when content changes), even before recomposition.
                         state.itemCount = it.itemCount
@@ -77,24 +88,33 @@ public fun VerticalStack(
                 }
         }
 
+    val singleItemScrollConstraintConnection =
+        remember(state.pagerState) { SingleItemScrollConstraintConnection(state.pagerState) }
+
     VerticalPager(
         state = state.pagerState,
-        modifier = modifier,
+        modifier =
+            modifier
+                .then(StackInitialFocusElement(state))
+                .stackScrim()
+                .nestedScroll(singleItemScrollConstraintConnection),
         contentPadding = PaddingValues(bottom = RevealAreaSize),
         key = { page -> stackItemHolderState.value.getKey(page) },
         beyondViewportPageCount = MaxNextVisibleItemCount,
+        flingBehavior =
+            PagerDefaults.flingBehavior(
+                state = state.pagerState,
+                pagerSnapDistance = PagerSnapDistance.atMost(1),
+                snapAnimationSpec = SnapAnimationSpec,
+            ),
     ) { page ->
         val stackItemHolder = stackItemHolderState.value
         stackItemHolder.withInterval(page) { localIndex, itemInterval ->
             val key =
                 itemInterval.getKeyOrDefault(globalIndex = page, localIntervalIndex = localIndex)
             val itemScope = itemInterval.getOrCreateItemScope(key)
-            StackItemLayout(
-                page = page,
-                state = state,
-                stackItemHolder = stackItemHolder,
-                itemScope = itemScope,
-            ) {
+            itemScope.index = page
+            StackItemLayout(page = page, state = state, itemScope = itemScope) {
                 itemInterval.item(itemScope, localIndex)
             }
         }
@@ -105,14 +125,20 @@ public fun VerticalStack(
 private fun StackItemLayout(
     page: Int,
     state: StackState,
-    stackItemHolder: StackItemHolder,
     itemScope: StackItemScopeImpl,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    val focusRequester = remember { FocusRequester() }
     Layout(
         content = content,
-        modifier = modifier.zIndex(-page.toFloat()).clipToItemAbove(page, state, stackItemHolder),
+        modifier =
+            modifier
+                .zIndex(-page.toFloat())
+                .onPlaced { itemScope.coordinates = it }
+                .maskItemsBelow(state, itemScope)
+                .focusRequester(focusRequester)
+                .onFocusChanged { state.onItemFocusChanged(page, it) },
     ) { measurables, constraints ->
         var maxWidth = 0
         var maxHeight = 0
@@ -135,35 +161,36 @@ private fun StackItemLayout(
                     val topItem = state.topItem
                     when {
                         page.isTopItem(topItem = topItem) -> {
-                            state
-                                .topItemTranslationY(
+                            translationY =
+                                state.topItemTranslationY(
                                     revealHeight = revealHeight,
                                     topItemHeight = placeable.height,
                                 )
-                                .ifNonNaN { translationY = it }
+
+                            state.notifyAutoFocus(page, focusRequester)
                         }
 
                         page.isNextItem(topItem = topItem) -> {
-                            state
-                                .nextItemTranslationY(
+                            translationY =
+                                state.nextItemTranslationY(
                                     revealHeight = revealHeight,
                                     topItem = topItem,
                                     nextItemHeight = placeable.height,
                                 )
-                                .ifNonNaN { translationY = it }
                             val scale = state.nextItemScale()
                             scaleX = scale
                             scaleY = scale
+
+                            state.notifyAutoFocus(page, focusRequester)
                         }
 
                         page.isNextNextItem(topItem = topItem) -> {
-                            state
-                                .nextNextItemTranslationY(
+                            translationY =
+                                state.nextNextItemTranslationY(
                                     revealHeight = revealHeight,
                                     topItem = topItem,
                                     nextNextItemHeight = placeable.height,
                                 )
-                                .ifNonNaN { translationY = it }
                             scaleX = NextItemMinScale
                             scaleY = NextItemMinScale
                         }
@@ -174,96 +201,32 @@ private fun StackItemLayout(
     }
 }
 
-/** Clips the item at the given index such that only the part below the item above is displayed. */
-private fun Modifier.clipToItemAbove(
-    index: Int,
-    state: StackState,
-    stackItemHolder: StackItemHolder,
-): Modifier =
-    this.drawWithCache {
-        if (index == 0) {
-            // The first item is never clipped.
-            return@drawWithCache onDrawWithContent { drawContent() }
+/**
+ * Masks the items following the current item (items that are below the current item on Z-axis) if
+ * the item's decoration fills the viewport width.
+ */
+private fun Modifier.maskItemsBelow(state: StackState, itemScope: StackItemScopeImpl): Modifier =
+    this.drawWithContent {
+        val viewportSize = state.layoutInfoInternal.viewportSize
+        val viewportWidth = viewportSize.width.toFloat()
+
+        if (itemScope.maskWidth >= (viewportWidth - DecorationWidthNoiseThresholdPx)) {
+            // Only apply the mask to the items below (Z-axis) if the mask fills the viewport width.
+            val viewportHeight = viewportSize.height.toFloat()
+            drawRect(
+                Color.Black,
+                blendMode = BlendMode.DstOut,
+                // The coordinate space here is for the item's layout, which changes position in the
+                // stack viewport depending on the scroll position. We need to deduct the viewport
+                // height to make the starting Y offset negative, so that the mask region extends
+                // upwards to the top of the stack viewport.
+                topLeft = Offset(x = 0f, y = itemScope.maskBottomY - viewportHeight),
+                size = Size(width = viewportWidth, height = viewportHeight),
+            )
         }
 
-        val clipPath = Path() // Ensure the clip path is cached.
-        var previousClipOffset = Float.NaN
-        var cachedItemAboveSize: Size? = null
-        var cachedItemAboveShape: Shape? = null
-
-        onDrawWithContent {
-            val clipOffset =
-                state.calculateClipOffset(
-                    index = index,
-                    topItem = state.topItem,
-                    revealHeight = RevealAreaSize.roundToPx(),
-                )
-            if (clipOffset.isNaN()) {
-                drawContent()
-                return@onDrawWithContent
-            }
-
-            val clipOffsetDiff =
-                if (previousClipOffset.isNaN()) clipOffset else clipOffset - previousClipOffset
-            previousClipOffset = clipOffset
-
-            val itemAboveScope = stackItemHolder.getItemScope(index - 1)
-            if (itemAboveScope == null) {
-                drawContent()
-                return@onDrawWithContent
-            }
-
-            // TODO(b/446933128): add support for multiple item decorations.
-            val itemAboveDecoration = itemAboveScope.firstDecoration()
-            val itemAboveSize = itemAboveDecoration?.size
-            val itemAboveShape = itemAboveDecoration?.shape
-
-            if (cachedItemAboveSize != itemAboveSize || cachedItemAboveShape != itemAboveShape) {
-                cachedItemAboveSize = itemAboveSize
-                cachedItemAboveShape = itemAboveShape
-
-                // The size or shape of the item above changed, we have to update the clip path.
-                clipPath.apply {
-                    reset()
-                    if (itemAboveSize != null && itemAboveShape != null) {
-                        addOutline(
-                            itemAboveShape.createOutline(
-                                size = itemAboveSize,
-                                layoutDirection = this@drawWithCache.layoutDirection,
-                                density = this@drawWithCache,
-                            )
-                        )
-                        // Extend the clip region from the middle of the item above to the top of
-                        // the viewport so that larger items are fully clipped.
-                        addRect(
-                            Rect(
-                                left = 0f,
-                                top = (itemAboveSize.height / 2f) - size.height,
-                                right = itemAboveSize.width,
-                                bottom = itemAboveSize.height / 2f,
-                            )
-                        )
-                    }
-                }
-            }
-
-            if (clipPath.isEmpty) {
-                drawContent()
-                return@onDrawWithContent
-            }
-
-            clipPath.translate(Offset(x = 0f, y = -clipOffsetDiff))
-            clipPath(path = clipPath, clipOp = ClipOp.Difference) {
-                this@onDrawWithContent.drawContent()
-            }
-        }
+        drawContent()
     }
-
-private fun Int.isTopItem(topItem: Int) = this == topItem
-
-private fun Int.isNextItem(topItem: Int) = this == topItem + 1
-
-private fun Int.isNextNextItem(topItem: Int) = this == topItem + 2
 
 /**
  * The translation Y of the top item in pixels, which is always equal to the snapped position
@@ -278,7 +241,7 @@ private fun StackState.nextItemTranslationY(
     topItem: Int,
     nextItemHeight: Int,
 ): Float {
-    val nextPageOffset = pagerState.pageOffset(topItem + 1) ?: return Float.NaN
+    val nextPageOffset = pagerState.pageOffset(topItem + 1)
     val progress = topItemOffsetFraction
     val topItemHeight = layoutInfoInternal.measuredTopItemHeight
 
@@ -311,84 +274,60 @@ private fun StackState.nextNextItemTranslationY(
     topItem: Int,
     nextNextItemHeight: Int,
 ): Float {
-    val nextNextPageOffset = pagerState.pageOffset(topItem + 2) ?: return Float.NaN
-    val viewportHeight = layoutInfoInternal.viewportSize.height
+    val nextNextPageOffset = pagerState.pageOffset(topItem + 2)
     val nextItemHeight = layoutInfoInternal.measuredNextItemHeight
 
-    // How much of the reveal area the item has scrolled into, as it moves up from the bottom.
-    val progress = ((viewportHeight - nextNextPageOffset) / revealHeight.toFloat()).coerceIn(0f, 1f)
+    // Calculate where the next item *would* be if it were currently the top item.
+    val nextItemTopPositionOffset = calculateTopPositionOffset(nextItemHeight, revealHeight)
+    val nextItemTopPositionBottom = nextItemTopPositionOffset + nextItemHeight
 
-    val nextPageTopPositionOffset = calculateTopPositionOffset(nextItemHeight, revealHeight)
-    val nextItemBottom = nextPageTopPositionOffset + nextItemHeight
-
-    // startOffset is the initial offset of the next-next item.
-    val startOffset =
+    // Calculate the static target position the next-next item.
+    // We add revealHeight to nextItemBottom to ensure the item waits at the exact position
+    // where it will need to be when it transitions to being the next item.
+    val offset =
         calculateInitialBehindPosition(
-            itemAboveBottom = nextItemBottom,
+            itemAboveBottom = nextItemTopPositionBottom + revealHeight,
             itemBehindHeight = nextNextItemHeight,
         )
-    val currentOffset = startOffset + revealHeight * progress
 
-    return currentOffset - nextNextPageOffset
+    return offset - nextNextPageOffset
 }
 
 /**
  * Calculates the offset from the top of the viewport for an item of a given height for the item's
- * top snapped position.
+ * top snapped position. Items are aligned to the bottom of the stack layout.
  */
 private fun StackState.calculateTopPositionOffset(itemHeight: Int, revealHeight: Int): Float {
     val viewportHeight = layoutInfoInternal.viewportSize.height
-    // If the item is too large to be centered in the viewport such that there is space for a reveal
-    // area, we shift it towards the top of the viewport, so that the reveal area fully fits between
-    // the bottom of the item and the bottom of the viewport. Otherwise, the item is centered in the
-    // viewport.
-    return if (itemHeight > viewportHeight - 2f * revealHeight) {
-        (viewportHeight - itemHeight - revealHeight).coerceAtLeast(0).toFloat()
-    } else {
-        (viewportHeight - itemHeight) / 2f
-    }
+    return (viewportHeight - itemHeight - revealHeight).coerceAtLeast(0).toFloat()
 }
 
 /** Calculates the initial offset for an item when it is positioned behind the item above it. */
 private fun calculateInitialBehindPosition(itemAboveBottom: Float, itemBehindHeight: Int): Float =
     itemAboveBottom - itemBehindHeight * NextItemPositioningScale
 
-/** Calculates the offset for the clip shape to clip the item at the given index. */
-private fun StackState.calculateClipOffset(index: Int, topItem: Int, revealHeight: Int): Float =
-    when {
-        index.isNextItem(topItem = topItem) -> {
-            val topItemTranslationY =
-                topItemTranslationY(
-                    revealHeight = revealHeight,
-                    topItemHeight = layoutInfoInternal.measuredTopItemHeight,
-                )
-            val maxItemHeight = layoutInfoInternal.viewportSize.height - revealHeight
-            maxItemHeight - topItemTranslationY
-        }
+/**
+ * The main axis offset of the item in pixels from the top of the viewport.
+ *
+ * If the page is in the visible list (inside the viewport), we return its exact offset. If it's not
+ * in the list but is composed (due to beyondViewportPageCount), we calculate where it *should* be
+ * based on the current page and offset fraction.
+ *
+ * Note: this method assumes that the Pager's layoutInfo is already available.
+ */
+private fun PagerState.pageOffset(page: Int): Int {
+    val layoutInfo = layoutInfo
 
-        index.isNextNextItem(topItem = topItem) -> {
-            val nextItemTranslationY =
-                nextItemTranslationY(
-                    revealHeight = revealHeight,
-                    topItem = topItem,
-                    nextItemHeight = layoutInfoInternal.measuredNextItemHeight,
-                )
-            if (nextItemTranslationY.isNaN()) Float.NaN
-            else {
-                val maxItemHeight = layoutInfoInternal.viewportSize.height - revealHeight
-                maxItemHeight - nextItemTranslationY
-            }
-        }
+    // First check if the page is already visible.
+    val visiblePage = layoutInfo.visiblePagesInfo.fastFirstOrNull { it.index == page }
+    if (visiblePage != null) return visiblePage.offset
 
-        else -> Float.NaN
-    }
-
-/** The main axis offset of the item in pixels from the top of the viewport. */
-private fun PagerState.pageOffset(page: Int): Int? =
-    layoutInfo.visiblePagesInfo.fastFirstOrNull { it.index == page }?.offset
-
-private inline fun Float.ifNonNaN(block: (Float) -> Unit) {
-    if (!isNaN()) block.invoke(this)
+    // Calculate the distance in "pages" from the current snap position.
+    // (page - currentPage) gives the index distance.
+    // (- currentPageOffsetFraction) accounts for the sub-page scroll.
+    val offsetFromCurrentPage = page - currentPage - currentPageOffsetFraction
+    val stride = layoutInfo.pageSize + layoutInfo.pageSpacing
+    return (offsetFromCurrentPage * stride).roundToInt()
 }
 
 /** The size of the area where the items beneath the top of the stack item are revealed. */
@@ -405,3 +344,11 @@ private const val NextItemMinScale = 0.94f
 
 /** The scale factor that's between 1.0 and [NextItemMinScale], which is used in positioning. */
 private const val NextItemPositioningScale = 0.97f // (1f + NextItemMinScale) / 2f
+
+/** The animation spec used for snapping stack items. */
+private val SnapAnimationSpec =
+    spring(
+        dampingRatio = 0.56f,
+        stiffness = 118f,
+        visibilityThreshold = Int.VisibilityThreshold.toFloat(),
+    )

@@ -83,6 +83,58 @@ class ScatterMapTest {
     }
 
     @Test
+    fun mutableScatterMapFromMap() {
+        val from = mapOf("Hello" to "World", "Bonjour" to "Monde")
+        val map = from.toMutableScatterMap()
+        assertEquals(2, map.size)
+        assertEquals("World", map["Hello"])
+        assertEquals("Monde", map["Bonjour"])
+    }
+
+    @Test
+    fun mutableScatterMapFromScatterMap() {
+        val from = mutableScatterMapOf("Hello" to "World", "Bonjour" to "Monde")
+        val map = from.toMutableScatterMap()
+        assertEquals(2, map.size)
+        assertEquals("World", map["Hello"])
+        assertEquals("Monde", map["Bonjour"])
+    }
+
+    @Test
+    fun scatterMapFromMap() {
+        val from = mapOf("Hello" to "World", "Bonjour" to "Monde")
+        val map = from.toScatterMap()
+        assertEquals(2, map.size)
+        assertEquals("World", map["Hello"])
+        assertEquals("Monde", map["Bonjour"])
+    }
+
+    @Test
+    fun scatterMapFromScatterMap() {
+        val from = mutableScatterMapOf("Hello" to "World", "Bonjour" to "Monde")
+        val map = from.toScatterMap()
+        assertEquals(2, map.size)
+        assertEquals("World", map["Hello"])
+        assertEquals("Monde", map["Bonjour"])
+    }
+
+    @Test
+    fun scatterMapFromEmptyMap() {
+        val from = mapOf<String, String>()
+        val map = from.toScatterMap()
+        assertEquals(0, map.size)
+        assertSame(emptyScatterMap<String, String>(), map)
+    }
+
+    @Test
+    fun scatterMapFromEmptyScatterMap() {
+        val from = mutableScatterMapOf<String, String>()
+        val map = from.toScatterMap()
+        assertEquals(0, map.size)
+        assertSame(emptyScatterMap<String, String>(), map)
+    }
+
+    @Test
     fun addToMap() {
         val map = MutableScatterMap<String, String>()
         map["Hello"] = "World"

@@ -28,7 +28,7 @@ import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.arcore.testing.FakeRuntimeAnchor
 import androidx.xr.arcore.testing.FakeRuntimeFace
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.FaceTrackingMode
+import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.TrackingState
@@ -51,7 +51,6 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -110,7 +109,7 @@ class FaceTest {
     @Test
     fun getUserFace_returnsFaceWithUpdatedTrackingStateAndBlendShapes() {
         runTest(testDispatcher) {
-            session.configure(Config(faceTracking = FaceTrackingMode.USER))
+            session.configure(Config(faceTracking = FaceTrackingMode.BLEND_SHAPES))
             val perceptionManager =
                 session.perceptionRuntime.perceptionManager as FakePerceptionManager
             val userFace = Face.getUserFace(session)
@@ -137,7 +136,6 @@ class FaceTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun collect_collectReturnsFaceMeshes() =
         runTest(testDispatcher) {
             session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
@@ -169,7 +167,7 @@ class FaceTest {
 
     @Test
     fun getUserFace_stateMatchesRuntimeFace() = runBlocking {
-        session.configure(Config(faceTracking = FaceTrackingMode.USER))
+        session.configure(Config(faceTracking = FaceTrackingMode.BLEND_SHAPES))
         val runtimeFace = FakeRuntimeFace()
         val underTest = Face(runtimeFace, xrResourcesManager)
         val expectedBlendShapeValues = floatArrayOf(0.1f, 0.2f, 0.3f)
@@ -193,71 +191,8 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
-    fun createAnchor_unsupported_throws_UnsupportedOperationException() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
-        val runtimeFace = FakeRuntimeFace()
-        runtime.perceptionManager.addTrackable(runtimeFace)
-        xrResourcesManager.syncTrackables(listOf(runtimeFace))
-        val underTest = xrResourcesManager.trackablesMap.values.first() as Face
-        runtimeFace.canCreateAnchors = false
-
-        assertFailsWith<UnsupportedOperationException> { underTest.createAnchor(Pose()) }
-    }
-
-    @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
-    fun createAnchor_usesGivenPose() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
-        val runtimeFace = FakeRuntimeFace()
-        runtime.perceptionManager.addTrackable(runtimeFace)
-        xrResourcesManager.syncTrackables(listOf(runtimeFace))
-        val underTest = xrResourcesManager.trackablesMap.values.first() as Face
-        val pose = Pose(Vector3(1.0f, 2.0f, 3.0f), Quaternion(1.0f, 2.0f, 3.0f, 4.0f))
-
-        val anchorResult = underTest.createAnchor(pose)
-
-        assertThat(anchorResult).isInstanceOf(AnchorCreateSuccess::class.java)
-        val anchor = (anchorResult as AnchorCreateSuccess).anchor
-        assertThat(anchor.state.value.pose).isEqualTo(pose)
-    }
-
-    @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
-    fun createAnchor_anchorLimitReached_returnsAnchorResourcesExhaustedResult() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
-        val runtimeFace = FakeRuntimeFace()
-        runtime.perceptionManager.addTrackable(runtimeFace)
-        xrResourcesManager.syncTrackables(listOf(runtimeFace))
-        val underTest = xrResourcesManager.trackablesMap.values.first() as Face
-
-        repeat(FakeRuntimeAnchor.ANCHOR_RESOURCE_LIMIT) {
-            val result = underTest.createAnchor(Pose())
-        }
-
-        assertThat(underTest.createAnchor(Pose()))
-            .isInstanceOf(AnchorCreateResourcesExhausted::class.java)
-    }
-
-    @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
-    fun createAnchor_anchorLimitReached_returns_AnchorCreateResourcesExhausted() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
-        val runtimeFace = FakeRuntimeFace()
-        runtime.perceptionManager.addTrackable(runtimeFace)
-        xrResourcesManager.syncTrackables(listOf(runtimeFace))
-        val underTest = xrResourcesManager.trackablesMap.values.first() as Face
-
-        repeat(FakeRuntimeAnchor.ANCHOR_RESOURCE_LIMIT) { underTest.createAnchor(Pose()) }
-
-        assertThat(underTest.createAnchor(Pose()))
-            .isInstanceOf(AnchorCreateResourcesExhausted::class.java)
-    }
-
-    @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_trackingStateMatchesRuntime() = runBlocking {
-        session.configure(Config(faceTracking = FaceTrackingMode.USER))
+        session.configure(Config(faceTracking = FaceTrackingMode.BLEND_SHAPES))
         val runtimeFace = FakeRuntimeFace()
         xrResourcesManager.syncTrackables(listOf(runtimeFace))
         val underTest = xrResourcesManager.trackablesMap[runtimeFace] as Face
@@ -270,7 +205,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_centerPoseMatchesRuntime() = runBlocking {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -284,7 +218,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_noseTipPoseMatchesRuntime() = runBlocking {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -299,7 +232,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_foreheadLeftPoseMatchesRuntime() = runBlocking {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -314,7 +246,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_foreheadRightPoseMatchesRuntime() = runBlocking {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -329,7 +260,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_mesh_matchesRuntime() = runBlocking {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -347,9 +277,5 @@ class FaceTest {
 
         assertThat(underTest.state.value.mesh?.triangleIndices)
             .isEqualTo(runtimeFace.mesh.triangleIndices)
-    }
-
-    private fun getFakePerceptionManager(): FakePerceptionManager {
-        return session.perceptionRuntime.perceptionManager as FakePerceptionManager
     }
 }

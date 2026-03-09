@@ -29,6 +29,10 @@ import androidx.camera.core.featuregroup.GroupableFeature.Companion.FPS_60
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.HDR_HLG10
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.PREVIEW_STABILIZATION
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.GroupableFeatures.FHD_RECORDING
+import androidx.camera.video.GroupableFeatures.UHD_RECORDING
+import androidx.camera.video.Recorder
+import androidx.camera.video.VideoCapture
 import androidx.lifecycle.LifecycleOwner
 
 @Sampled
@@ -58,6 +62,17 @@ fun configureSessionConfigWithFeatureGroups(effects: List<CameraEffect>) {
         useCases =
             listOf(Preview.Builder().apply { setDynamicRange(DynamicRange.HLG_10_BIT) }.build()),
         preferredFeatureGroup = listOf(FPS_60, PREVIEW_STABILIZATION),
+    )
+
+    // Creating the following SessionConfig will throw an exception due to the conflicting
+    // information. The features UHD_RECORDING and FHD_RECORDING share the same type
+    // (FEATURE_TYPE_RECORDING_QUALITY), meaning both can't be simultaneously required. This is
+    // akin to requesting the final video recording size to be both UHD and FHD at the same time.
+    SessionConfig(
+        useCases =
+            listOf(Preview.Builder().build(), VideoCapture.withOutput(Recorder.Builder().build())),
+        requiredFeatureGroup = setOf(HDR_HLG10, UHD_RECORDING, FHD_RECORDING),
+        preferredFeatureGroup = listOf(FPS_60),
     )
 
     // Creating the following SessionConfig will throw an exception as ImageAnalysis is not yet

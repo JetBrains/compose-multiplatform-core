@@ -22,8 +22,6 @@ import androidx.room3.compiler.processing.XConstructorElement
 import androidx.room3.compiler.processing.XExecutableElement
 import androidx.room3.compiler.processing.XMethodElement
 import androidx.room3.compiler.processing.XTypeElement
-import androidx.room3.compiler.processing.util.CompilationTestCapabilities
-import androidx.room3.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.compileFiles
@@ -45,7 +43,6 @@ class KspTypeNamesGoldenTest {
 
     @Before
     fun setup() {
-        CompilationTestCapabilities.assumeKspIsEnabled()
         val (mainSources, mainSubjects) = createSubjects(pkg = "main")
         val (libSources, libSubjects) = createSubjects(pkg = "lib")
         sources = mainSources
@@ -70,32 +67,6 @@ class KspTypeNamesGoldenTest {
 
         // make sure none of the signatures contain duplicate names
         assertThat(kaptSignatures.map { it.name }).containsNoDuplicates()
-    }
-
-    @Test
-    fun ksp1SignatureTest() {
-        var kaptSignatures = listOf<MethodSignature>()
-        runKaptTest(sources = sources, classpath = classpath) { invocation ->
-            kaptSignatures = collectSignatures(invocation, subjects)
-        }
-
-        var ksp1Signatures = listOf<MethodSignature>()
-        runKspTest(
-            sources = sources,
-            classpath = classpath,
-            kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS,
-        ) { invocation ->
-            ksp1Signatures = collectSignatures(invocation, subjects)
-        }
-
-        // make sure none of the signatures contain duplicate names
-        assertThat(ksp1Signatures.map { it.name }).containsNoDuplicates()
-
-        // Check that the KSP1 signatures match KAPT
-        assertKspSignaturesMatchKapt(
-            kaptSignatures = kaptSignatures.associateBy { it.name },
-            kspSignatures = ksp1Signatures.associateBy { it.name },
-        )
     }
 
     @Test
@@ -786,7 +757,7 @@ class KspTypeNamesGoldenTest {
                 suspend fun suspendDefinedTypesFinal2(objList: List<List<Long>>): List<List<Long>>
                 suspend fun suspendDefinedTypesOpen2(objList: List<List<Number>>): List<List<Number>>
             }
-        """
+            """
                 .trimIndent()
 
         fun buildInterface(name: String, typeArg: String) =
@@ -849,7 +820,7 @@ class KspTypeNamesGoldenTest {
                 fun receiveTArrayOverridden(t: Array<T>): Unit
                 suspend fun suspendReceiveTArrayOverridden(t: Array<T>): Unit
             }
-        """
+            """
                 .trimIndent()
 
         fun buildInterface(name: String, typeArg: String) =
@@ -1027,7 +998,7 @@ class KspTypeNamesGoldenTest {
                 fun subReceiveReturnRListOverridden(r : List<R>): List<R>
                 suspend fun subSuspendReceiveReturnRListOverridden(r : List<R>): List<R>
             }
-        """
+            """
                 .trimIndent()
 
         fun buildInterface(name: String, typeArg: String) =
@@ -1126,7 +1097,7 @@ class KspTypeNamesGoldenTest {
             class FinalCloseable(): Closeable {
                 override open fun close() { TODO() }
             }
-        """
+            """
                 .trimIndent()
 
         fun buildInterface(name: String, typeArg: String) =
@@ -1199,7 +1170,7 @@ class KspTypeNamesGoldenTest {
                 override fun foo() { TODO() }
                 override fun bar() { TODO() }
             }
-        """
+            """
                 .trimIndent()
 
         fun buildInterface(name: String, typeArg: String) =

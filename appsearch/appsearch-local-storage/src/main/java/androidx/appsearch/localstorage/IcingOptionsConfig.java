@@ -19,6 +19,7 @@ package androidx.appsearch.localstorage;
 import android.app.appsearch.SearchSpec;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.flags.Flags;
 
 import com.google.android.icing.proto.IcingSearchEngineOptions;
@@ -291,6 +292,12 @@ public interface IcingOptionsConfig {
     int getEmbeddingIndexNumShards();
 
     /**
+     * Controls whether repeated fields may set joinable value type to
+     * {@link AppSearchSchema.StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
+     */
+    boolean enableRepeatedFieldJoins();
+
+    /**
      * Converts to an {@link IcingSearchEngineOptions} instance.
      *
      * @param baseDir base directory of the icing instance.
@@ -327,9 +334,12 @@ public interface IcingOptionsConfig {
                 .setEnableScorableProperties(Flags.enableScorableProperty())
                 .setIcuDataFileAbsolutePath(getIcuDataFileAbsolutePath())
                 .setManageBlobFiles(!Flags.enableAppSearchManageBlobFiles())
-                // Join index v3 is a prerequisite for delete propagation.
+                // Join index v3 and soft index restoration are prerequisites for delete
+                // propagation.
                 .setEnableDeletePropagationFrom(
-                        Flags.enableDeletePropagationType() && Flags.enableQualifiedIdJoinIndexV3())
+                        Flags.enableDeletePropagationRw()
+                                && Flags.enableQualifiedIdJoinIndexV3()
+                                && Flags.enableSoftIndexRestoration())
                 .setCalculateTimeSinceLastAttemptedOptimize(
                         Flags.enableCalculateTimeSinceLastAttemptedOptimize())
                 .setEnableQualifiedIdJoinIndexV3(Flags.enableQualifiedIdJoinIndexV3())
@@ -350,17 +360,14 @@ public interface IcingOptionsConfig {
                                 : getCompressionMemLevel())
                 .setEnableSchemaDatabase(
                         Flags.enableDatabaseScopedSchemaOperations() || isVMEnabled)
-                .setEnableSmallerDecompressionBufferSize(
-                        Flags.enableSmallerDecompressionBufferSize() || isVMEnabled)
+                .setEnableSmallerDecompressionBufferSize(true)
                 .setEnableEigenEmbeddingScoring(Flags.enableEigenEmbeddingScoring() || isVMEnabled)
                 .setEnablePassingFilterToChildren(
                         Flags.enablePassingFilterToChildren() || isVMEnabled)
                 .setEnableProtoLogNewHeaderFormat(
                         Flags.enableProtoLogNewHeaderFormat() || isVMEnabled)
-                .setEnableEmbeddingIteratorV2(
-                        Flags.enableEmbeddingIteratorV2() || isVMEnabled)
-                .setEnableReusableDecompressionBuffer(
-                        Flags.enableReusableDecompressionBuffer() || isVMEnabled)
+                .setEnableEmbeddingIteratorV2(true)
+                .setEnableReusableDecompressionBuffer(true)
                 .setEmbeddingIndexNumShards(
                         Flags.enableShardedEmbeddingStorage()
                                 ? Math.max(1, getEmbeddingIndexNumShards()) : 1)
@@ -368,6 +375,11 @@ public interface IcingOptionsConfig {
                         Flags.enableSchemaTypeIdOptimization())
                 .setEnableOptimizeImprovements(
                         Flags.enableOptimizeImprovements())
+                .setEnableRepeatedFieldJoins(enableRepeatedFieldJoins())
+                .setEnableNonExistentQualifiedIdJoin(Flags.enableNonExistentQualifiedIdJoin())
+                .setEnableSkipSetSchemaTypeEqualityCheck(
+                        Flags.enableSkipSetSchemaTypeEqualityCheck())
+                .setEnableEmbedQueryOptimization(Flags.enableEmbedQueryOptimization())
                 .build();
     }
 }

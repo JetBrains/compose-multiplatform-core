@@ -29,14 +29,14 @@ import android.util.Range
 import android.util.Size
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.camera2.pipe.integration.adapter.awaitUntil
+import androidx.camera.camera2.adapter.awaitUntil
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ExtendableBuilder
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.getImageCaptureCapabilities
 import androidx.camera.core.Preview
@@ -53,12 +53,12 @@ import androidx.camera.core.impl.utils.AspectRatioUtil
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.takePicture
-import androidx.camera.integration.featurecombo.FeatureGroupTestBase.Companion.SupportedUseCase.IMAGE_CAPTURE
-import androidx.camera.integration.featurecombo.FeatureGroupTestBase.Companion.SupportedUseCase.PREVIEW
-import androidx.camera.integration.featurecombo.FeatureGroupTestBase.Companion.SupportedUseCase.VIDEO_CAPTURE
+import androidx.camera.integration.featurecombo.AppUseCase.IMAGE_ANALYSIS
+import androidx.camera.integration.featurecombo.AppUseCase.IMAGE_CAPTURE
+import androidx.camera.integration.featurecombo.AppUseCase.PREVIEW
+import androidx.camera.integration.featurecombo.AppUseCase.VIDEO_CAPTURE
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.Camera2CaptureCallbackImpl
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.GLUtil
 import androidx.camera.testing.impl.SurfaceTextureProvider
@@ -71,6 +71,7 @@ import androidx.camera.video.GroupableFeatures.FHD_RECORDING
 import androidx.camera.video.GroupableFeatures.HD_RECORDING
 import androidx.camera.video.GroupableFeatures.SD_RECORDING
 import androidx.camera.video.GroupableFeatures.UHD_RECORDING
+import androidx.camera.video.GroupableFeatures.VIDEO_STABILIZATION
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.test.core.app.ApplicationProvider
@@ -78,10 +79,10 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.collections.forEach
 import kotlin.math.min
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.After
@@ -97,18 +98,8 @@ open class FeatureGroupTestBase(
     @get:Rule
     val useCamera =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
-            CameraUtil.PreTestCameraIdList(
-                if (implName == Camera2Config::class.simpleName) {
-                    Camera2Config.defaultConfig()
-                } else {
-                    CameraPipeConfig.defaultConfig()
-                }
-            )
+            CameraUtil.PreTestCameraIdList(Camera2Config.defaultConfig())
         )
-
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
 
@@ -165,6 +156,25 @@ open class FeatureGroupTestBase(
             }
             .build()
 
+    private fun createImageAnalysis(aspectRatio: Int) =
+        ImageAnalysis.Builder()
+            .apply {
+                applyResolutionSelector(
+                    aspectRatio,
+                    resolutionSelectorSetter = ::setResolutionSelector,
+                )
+
+                applySessionCaptureCallback()
+            }
+            .build()
+            .apply {
+                setAnalyzer(Dispatchers.Default.asExecutor()) {
+                    // Fake analyzer, do nothing. Close the ImageProxy immediately to prevent
+                    // the closing of the CameraDevice from being stuck.
+                    it.close()
+                }
+            }
+
     private fun createVideoCapture(aspectRatio: Int) =
         VideoCapture.Builder(Recorder.Builder().setAspectRatio(aspectRatio).build())
             .apply { applySessionCaptureCallback() }
@@ -185,14 +195,14 @@ open class FeatureGroupTestBase(
         }
     }
 
-    protected fun List<SupportedUseCase>.toUseCases(aspectRatio: Int = AspectRatio.RATIO_DEFAULT) =
-        map {
-            when (it) {
-                PREVIEW -> createPreview(aspectRatio)
-                IMAGE_CAPTURE -> createImageCapture(aspectRatio)
-                VIDEO_CAPTURE -> createVideoCapture(aspectRatio)
-            }
+    protected fun List<AppUseCase>.toUseCases(aspectRatio: Int = AspectRatio.RATIO_DEFAULT) = map {
+        when (it) {
+            PREVIEW -> createPreview(aspectRatio)
+            IMAGE_CAPTURE -> createImageCapture(aspectRatio)
+            IMAGE_ANALYSIS -> createImageAnalysis(aspectRatio)
+            VIDEO_CAPTURE -> createVideoCapture(aspectRatio)
         }
+    }
 
     @Before
     fun setUp() = runBlocking {
@@ -367,28 +377,31 @@ open class FeatureGroupTestBase(
     }
 
     companion object {
-        enum class SupportedUseCase {
-            PREVIEW,
-            IMAGE_CAPTURE,
-            VIDEO_CAPTURE,
-        }
-
         /** The most common use case combinations expected for feature group API. */
         val useCaseCombinationsToTest =
             listOf(
                 listOf(PREVIEW, IMAGE_CAPTURE),
                 listOf(PREVIEW, VIDEO_CAPTURE),
                 listOf(PREVIEW, IMAGE_CAPTURE, VIDEO_CAPTURE),
+                listOf(PREVIEW, VIDEO_CAPTURE, IMAGE_ANALYSIS),
             )
 
         val allHighQualityFeatures =
-            setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION, IMAGE_ULTRA_HDR, UHD_RECORDING)
+            setOf(
+                HDR_HLG10,
+                FPS_60,
+                PREVIEW_STABILIZATION,
+                VIDEO_STABILIZATION,
+                IMAGE_ULTRA_HDR,
+                UHD_RECORDING,
+            )
 
         val allFeatures =
             setOf(
                 HDR_HLG10,
                 FPS_60,
                 PREVIEW_STABILIZATION,
+                VIDEO_STABILIZATION,
                 IMAGE_ULTRA_HDR,
                 UHD_RECORDING,
                 FHD_RECORDING,

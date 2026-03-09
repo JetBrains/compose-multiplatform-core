@@ -18,7 +18,6 @@ package androidx.room3.vo
 
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
-import androidx.room3.compiler.codegen.buildCodeBlock
 import androidx.room3.compiler.codegen.compat.XConverters.toString
 import androidx.room3.compiler.processing.XNullability
 import androidx.room3.compiler.processing.XType
@@ -73,22 +72,11 @@ data class PropertyGetter(
         }
     }
 
-    private fun getterExpression(ownerVar: String) = buildCodeBlock { language ->
-        when (language) {
-            CodeLanguage.JAVA ->
-                when (callType) {
-                    CallType.PROPERTY -> add("%L.%L", ownerVar, jvmName)
-                    CallType.FUNCTION,
-                    CallType.SYNTHETIC_FUNCTION -> add("%L.%L()", ownerVar, jvmName)
-                    CallType.CONSTRUCTOR -> error("Getters should never be of type 'constructor'!")
-                }
-            CodeLanguage.KOTLIN ->
-                when (callType) {
-                    CallType.PROPERTY,
-                    CallType.SYNTHETIC_FUNCTION -> add("%L.%L", ownerVar, propertyName)
-                    CallType.FUNCTION -> add("%L.%L()", ownerVar, jvmName)
-                    CallType.CONSTRUCTOR -> error("Getters should never be of type 'constructor'!")
-                }
+    private fun getterExpression(ownerVar: String) =
+        when (callType) {
+            CallType.PROPERTY,
+            CallType.SYNTHETIC_FUNCTION -> XCodeBlock.of("%L.%L", ownerVar, propertyName)
+            CallType.FUNCTION -> XCodeBlock.of("%L.%L()", ownerVar, jvmName)
+            CallType.CONSTRUCTOR -> error("Getters should never be of type 'constructor'!")
         }
-    }
 }

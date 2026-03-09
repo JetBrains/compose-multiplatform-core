@@ -3357,7 +3357,7 @@ package androidx.compose.ui.layout {
     method public boolean containsAll(java.util.Collection<? extends java.lang.Object?> elements);
     method public inline void fastForEach(kotlin.jvm.functions.Function1<java.lang.Object?,kotlin.Unit> block);
     method public void forEach(kotlin.jvm.functions.Function1<java.lang.Object?,kotlin.Unit> block);
-    method @BytecodeOnly @kotlin.PublishedApi internal androidx.collection.MutableOrderedScatterSet<java.lang.Object!> getSet();
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal androidx.collection.MutableOrderedScatterSet<java.lang.Object?> getSet();
     method @InaccessibleFromKotlin public int getSize();
     method public boolean isEmpty();
     method public java.util.Iterator<java.lang.Object?> iterator();

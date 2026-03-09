@@ -33,8 +33,10 @@ import kotlinx.coroutines.sync.withLock
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import org.robolectric.annotation.Config
 
 @RunWith(JUnit4::class)
+@Config(sdk = [Config.ALL_SDKS])
 class CoroutineMutexTest {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 

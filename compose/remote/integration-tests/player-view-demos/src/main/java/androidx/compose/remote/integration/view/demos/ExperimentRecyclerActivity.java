@@ -15,7 +15,6 @@
  */
 package androidx.compose.remote.integration.view.demos;
 
-
 import static android.widget.LinearLayout.VERTICAL;
 
 import static androidx.compose.remote.integration.view.demos.DemosComposeKt.getRemoteComposable;
@@ -30,6 +29,7 @@ import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapShader;
@@ -81,28 +81,44 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @SuppressLint("RestrictedApiAndroidX")
 public class ExperimentRecyclerActivity extends Activity {
     static Bitmap sPersonImage3;
     static RemoteComposeBuffer sCurrentBuffer = DemoPaths.pathTest().getBuffer();
     private FrameMetrics mMetrics;
-    private static final String CHANNEL_ID = "custom_notification_channel";
-    private static int sNotificationId = 1;
+    static final String CHANNEL_ID = "custom_notification_channel";
+    static int sNotificationId = 1;
     public static final boolean BACKGROUND = false;
+
 
     public static @NonNull RemoteComposeBuffer getCurrentDoc() {
         return sCurrentBuffer;
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        paletteChange();
     }
 
     /**
@@ -115,7 +131,7 @@ public class ExperimentRecyclerActivity extends Activity {
 
         sPersonImage3 = BitmapFactory.decodeResource(context.getResources(),
                 R.drawable.mostly_cloudy);
-        ArrayList<RCDoc> list = new ArrayList<>(DemosCreation.getDemos());
+        ArrayList<RCDoc> list = new ArrayList<>(DemosCreation.getDemos(this));
         list.addAll(getRemoteComposable(context));
 
         return list;
@@ -151,6 +167,12 @@ public class ExperimentRecyclerActivity extends Activity {
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
         // Sample data
         mDocList = getDocs(getBaseContext());
+        mDocList.sort(new Comparator<RCDoc>() {
+            @Override
+            public int compare(RCDoc d1, RCDoc d2) {
+                return d1.toString().compareTo(d2.toString());
+            }
+        });
         sCurrentBuffer = Objects.requireNonNull(mDocList.get(0).getDoc()).getDocument().getBuffer();
 
         // Set adapter to RecyclerView
@@ -195,19 +217,23 @@ public class ExperimentRecyclerActivity extends Activity {
 
         layout.addView(docControl);
         LinearLayout row = new LinearLayout(this);
+        float textSize = 15;
+        // ==================== ExperimentActivity  launch ==========================
 
         Button launch = new Button(this);
         LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.MATCH_PARENT);
         p.weight = 1;
+
         launch.setLayoutParams(p);
-        launch.setTextSize(24);
+        launch.setTextSize(textSize);
 
         launch.setText("Menu");
         launch.setOnClickListener(this::launch);
 
+        // ==================== WIDGET ==========================
         Button toLWidget = new Button(this);
-        toLWidget.setTextSize(24);
+        toLWidget.setTextSize(textSize);
         p = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT);
         p.weight = 1;
         toLWidget.setLayoutParams(p);
@@ -216,8 +242,9 @@ public class ExperimentRecyclerActivity extends Activity {
         row.addView(launch);
         row.addView(toLWidget);
 
+        // ==================== NOTIFICATION ==========================
         Button toNotification = new Button(this);
-        toNotification.setTextSize(24);
+        toNotification.setTextSize(textSize);
         p = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT);
         p.weight = 1;
         toNotification.setTextColor(Color.RED);
@@ -226,6 +253,27 @@ public class ExperimentRecyclerActivity extends Activity {
         toNotification.setOnClickListener(this::sendToNotify);
         row.addView(toNotification);
         createNotificationChannel();
+        // ==================== To Player ==========================
+        Button toPlayer = new Button(this);
+        toPlayer.setTextSize(textSize);
+        p = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT);
+        p.weight = 1;
+        toPlayer.setTextColor(Color.RED);
+        toPlayer.setLayoutParams(p);
+        toPlayer.setText("Player");
+        toPlayer.setOnClickListener(this::setToPlayer);
+        row.addView(toPlayer);
+        // ==================== Save All ==========================
+        Button saveAll = new Button(this);
+        saveAll.setTextSize(textSize);
+        p = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT);
+        p.weight = 1;
+        saveAll.setLayoutParams(p);
+        saveAll.setText("SaveAll");
+        saveAll.setOnClickListener(this::saveAll);
+        row.addView(saveAll);
+        createNotificationChannel();
+        // ================================ ==========================
 
         layout.addView(row);
         layout.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
@@ -302,6 +350,37 @@ public class ExperimentRecyclerActivity extends Activity {
         setUpMetrics();
     }
 
+    private void saveAll(View v) {
+        File storageDir = new File("/storage/self/primary/Download/");
+        File[] toRemove = storageDir.listFiles();
+        for (int i = 0; i < toRemove.length; i++) {
+            File file = toRemove[i];
+            if (file.getName().endsWith(".rc")) {
+                file.delete();
+            }
+        }
+
+        for (RCDoc doc : mDocList) {
+            saveDoc(doc.toString(), docToBytes(doc), getApplicationContext(), false);
+        }
+    }
+
+    private void sendDoc(RCDoc doc) {
+        sCurrentBuffer = Objects.requireNonNull(doc.getDoc()).getDocument().getBuffer();
+        byte[] buffer = Arrays.copyOf(sCurrentBuffer.getBuffer().getBuffer(),
+                sCurrentBuffer.getBuffer().getSize());
+        int bufferSize = buffer.length;
+        byte[] bytes = new byte[bufferSize];
+        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buffer, 0,
+                bufferSize)) {
+            int read = byteArrayInputStream.read(bytes);
+            Log.v("MAIN", "save   " + read + " bytes");
+            saveDoc(doc.toString(), bytes, getApplicationContext(), false);
+        } catch (IOException e) {
+            Log.e("MAIN", "Error reading bytes");
+        }
+    }
+
     // ========================= Notification ====================================
     private void toNotify() {
         Log.v("MAIN", "toNotify");
@@ -323,7 +402,7 @@ public class ExperimentRecyclerActivity extends Activity {
                 bufferSize)) {
             int read = byteArrayInputStream.read(bytes);
             System.out.println("read " + read);
-            saveDoc(doc.toString(), bytes, getApplicationContext());
+            saveDoc(doc.toString(), bytes, getApplicationContext(), false);
         } catch (IOException e) {
             Log.e("MAIN", "Error reading bytes");
         }
@@ -401,6 +480,68 @@ public class ExperimentRecyclerActivity extends Activity {
         }
     }
 
+    private void setToPlayer(View v) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    == PackageManager.PERMISSION_GRANTED) {
+                toPlayer();
+            } else {
+                System.out.println("requesting permission");
+                askNotificationPermission();
+            }
+        } else {
+            toPlayer();
+        }
+    }
+
+    void toPlayer() {
+        RCDoc doc = getDoc();
+        sendDoc(doc); // for debugging
+        if (DEBUG) {
+            sendToPlayerViaIntent(docToBytes(doc), doc.toString());
+        }
+    }
+
+    void sendToPlayerViaIntent(byte[] data, String name) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.putExtra("RC_DOC_NAME", name);
+        intent.putExtra("RC_DOC_DATA", data);
+        intent.setType("application/remote-compose-doc");
+        startActivity(Intent.createChooser(intent, "Open with…"));
+    }
+
+    static byte[] docToBytes(RCDoc doc) {
+        RemoteDocument rcdoc = doc.getDoc();
+        if (rcdoc == null) {
+            return null;
+        }
+        sCurrentBuffer = rcdoc.getDocument().getBuffer();
+
+        byte[] buffer = Arrays.copyOf(sCurrentBuffer.getBuffer().getBuffer(),
+                sCurrentBuffer.getBuffer().getSize());
+        int bufferSize = buffer.length;
+        byte[] bytes = new byte[bufferSize];
+        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buffer, 0,
+                bufferSize)) {
+            int read = byteArrayInputStream.read(bytes);
+            Log.v("MAIN", "read " + read);
+        } catch (IOException e) {
+            Log.d("MAIN", "Unable to read doc ");
+        }
+        return bytes;
+    }
+
+    RCDoc getDoc() {
+        Log.v("MAIN", "toNotify");
+        int off = mLinearLayoutManager.findFirstVisibleItemPosition();
+        int left = Objects.requireNonNull(mLinearLayoutManager.findViewByPosition(off)).getLeft();
+        if (left < -sScrWidth / 2) off++;
+        View view = mLinearLayoutManager.findViewByPosition(off);
+        System.out.println(view);
+
+        return mDocList.get(off);
+    }
+
     private void sendToNotify(View v) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -439,8 +580,8 @@ public class ExperimentRecyclerActivity extends Activity {
                 bufferSize)) {
             int read = byteArrayInputStream.read(bytes);
             System.out.println("read " + read);
-            saveDoc(doc.toString(), bytes, getApplicationContext());
-        } catch (IOException e) {
+            saveDoc(doc.toString(), bytes, getApplicationContext(), false);
+        } catch (Exception e) {
             // Handle the exception
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
@@ -501,6 +642,23 @@ public class ExperimentRecyclerActivity extends Activity {
     /**
      * Called when the checked state of a compound button has changed.
      *
+     */
+    public void paletteChange() {
+        int off = mLinearLayoutManager.findFirstVisibleItemPosition();
+
+        Card card = (Card) mLinearLayoutManager.findViewByPosition(off);
+        if (card == null) {
+            System.err.println("card is null");
+            return;
+        }
+
+        card.mPlayer.reloadPalette();
+
+    }
+
+    /**
+     * Called when the checked state of a compound button has changed.
+     *
      * @param buttonView The button view whose state has changed.
      * @param isChecked  The new checked state of buttonView.
      */
@@ -554,7 +712,10 @@ public class ExperimentRecyclerActivity extends Activity {
                     return true;
                 }
             });
-            mTitle.setTextSize(32);
+//            int mode =(mPlayer.getResources().getConfiguration().isNightModeActive())?Rc.Theme
+//            .DARK:Rc.Theme.LIGHT;
+//            mPlayer.setTheme(mode);
+            mTitle.setTextSize(24);
             mTitle.setTypeface(mTitle.getTypeface(), Typeface.BOLD);
             mTitle.setTextColor(Color.BLACK);
             mTitle.setBackgroundColor(0xFFDDDDDD);
@@ -563,7 +724,7 @@ public class ExperimentRecyclerActivity extends Activity {
             mStats.setTypeface(Typeface.MONOSPACE);
             mTitle.setLines(1);
             mStats.setLines(4);
-            setBackgroundColor(0xFF000000);
+            setBackgroundColor(0xFF444444);
             int size = sScrWidth - 20;
             if (sHeight > sWidth) {
                 Log.v("MAIN", "portrait mode");
@@ -571,8 +732,11 @@ public class ExperimentRecyclerActivity extends Activity {
                 Log.v("MAIN", "landscape mode");
                 size = sHeight / 2;
             }
+            if (size < 200) {
+                size = 1200;
+            }
             LayoutParams params = new LayoutParams(size, size);
-           // mPlayer.setBackground(sDrawable);
+            // mPlayer.setBackground(sDrawable);
             addView(mPlayer, params);
             addView(mTitle);
             addView(mStats);
@@ -648,7 +812,9 @@ public class ExperimentRecyclerActivity extends Activity {
         private final Card mUi;
         RCDoc mItem;
         String mTimeStr;
-        int mDocOpps;
+        int mDocOps;
+        int mSize;
+        int mZipSize;
         Handler mHandler = new Handler(Looper.getMainLooper());
 
         // In your Activity or Fragment
@@ -742,21 +908,37 @@ public class ExperimentRecyclerActivity extends Activity {
                     }
                 });
             } else {
-                mUi.mPlayer.setDocument(Objects.requireNonNull(item.getDoc()));
+                RemoteDocument docData = item.getDoc();
+                byte[] byteData = docToBytes(item);
+                String update = "\n"
+                        + "data = 0, 1, -1, 0, 0, 0.4, 0.2, 0\n";
+                if (byteData.length < 1) { // not used
+                    byteData = addUpdateData(byteData, update);
+                }
+                if (docData != null) {
+                    mUi.mPlayer.setDocument(byteData);
+                }
             }
 
             // ui.player.setDebug(1);
             String[] data = doc.getStats();
 
-            mDocOpps = Integer.parseInt(data[0].split(":")[1].trim());
-            Log.v("perf", "doc has " + mDocOpps + " opps");
+            mDocOps = Integer.parseInt(data[0].split(":")[1].trim());
+            Log.v("perf", "doc has " + mDocOps + " opps");
             // int ops = ui.player.getOpsPerFrame();
             mUi.mTitle.setText(item.toString());
         }
 
         void populateStats(int ops, float evalTime) {
-            String stats = "  Load time: " + mTimeStr + "\ncmds/fr doc: " + ops + " / " + mDocOpps
-                    + "\n       Size: " + mDf2.format(mItem.size()) + " bytes" + "\n  Per Frame: "
+            if (mSize == 0) {
+                mSize = mItem.size();
+                mZipSize = mItem.zipSize();
+            }
+            float build = mItem.getBuildTime();
+            String stats = "  Load: " + mTimeStr + " bld: " + mDf2.format(build) + "ms\n   cmd: "
+                    + ops + " / " + mDocOps
+                    + "\n  Size: " + mDf2.format(mSize) + "/" + mDf2.format(mZipSize)
+                    + " B" + "\n Frame: "
                     + mDf2.format(evalTime) + " ms";
             mUi.mStats.setText(stats);
         }
@@ -793,6 +975,12 @@ public class ExperimentRecyclerActivity extends Activity {
             @NonNull Supplier<RemoteComposeWriter> writerSupplier) {
         return new RCDoc() {
             private RemoteComposeWriter mWriter;
+            float mBuildTime = 0;
+
+            @Override
+            public float getBuildTime() {
+                return mBuildTime;
+            }
 
             public RemoteComposeWriter writer() {
                 if (mWriter == null) {
@@ -817,6 +1005,24 @@ public class ExperimentRecyclerActivity extends Activity {
             }
 
             @Override
+            public int zipSize() {
+                RemoteComposeWriter writer = writer();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try {
+                    DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(baos);
+
+
+                    deflaterOutputStream.write(writer.buffer(), 0, writer.bufferSize());
+                    deflaterOutputStream.finish();
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                return baos.size();
+            }
+
+            @Override
             @NonNull
             public String toString() {
                 return name;
@@ -825,9 +1031,13 @@ public class ExperimentRecyclerActivity extends Activity {
             @Override
             public RemoteDocument getDoc() {
                 Log.v("perf", "build doc \"" + name + "\"");
+                long time = System.nanoTime();
+
                 mWriter = writer();
-                return new RemoteDocument(
+                RemoteDocument ret = new RemoteDocument(
                         new ByteArrayInputStream(writer().buffer(), 0, writer().bufferSize()));
+                mBuildTime = (System.nanoTime() - time) * 1E-6f;
+                return ret;
             }
         };
     }
@@ -846,6 +1056,12 @@ public class ExperimentRecyclerActivity extends Activity {
         return new RCDoc() {
             private RemoteComposeWriter mWriter;
             private RemoteComposeWriter mWriter2;
+            float mBuildTime = 0;
+
+            @Override
+            public float getBuildTime() {
+                return mBuildTime;
+            }
 
             public RemoteComposeWriter writer() {
                 if (mWriter == null) {
@@ -877,6 +1093,24 @@ public class ExperimentRecyclerActivity extends Activity {
             }
 
             @Override
+            public int zipSize() {
+                RemoteComposeWriter writer = writer();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try {
+                    DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(baos);
+
+
+                    deflaterOutputStream.write(writer.buffer(), 0, writer.bufferSize());
+                    deflaterOutputStream.finish();
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                return baos.size();
+            }
+
+            @Override
             @NonNull
             public String toString() {
                 return name;
@@ -892,8 +1126,11 @@ public class ExperimentRecyclerActivity extends Activity {
             @Override
             public RemoteDocument getDoc() {
                 Log.v("perf", "build doc \"" + name + "\"");
-                return new RemoteDocument(
+                long time = System.nanoTime();
+                RemoteDocument ret = new RemoteDocument(
                         new ByteArrayInputStream(writer().buffer(), 0, writer().bufferSize()));
+                mBuildTime = (System.nanoTime() - time) * 1E-6f;
+                return ret;
             }
         };
     }
@@ -905,31 +1142,80 @@ public class ExperimentRecyclerActivity extends Activity {
      * @param buff       the document
      * @param appContext the application context
      */
-    public static void saveDoc(@NonNull String name, byte @NonNull [] buff, @NonNull Context
-            appContext) {
+    public static void saveDoc(@NonNull String name, byte @Nullable [] buff, @NonNull Context
+            appContext, boolean compress) {
+        if (buff == null) {
+            return;
+        }
         int len = buff.length;
+        if (name.indexOf('/') >= 0) {
+            name = name.substring(name.lastIndexOf('/') + 1);
+        }
 
+        name = name.replaceFirst("^\\d+", "");
+        // convert to snake case
+        name = name.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
         File storageDir = appContext.getExternalFilesDir(
                 Environment.DIRECTORY_PICTURES); // Using internal storage
-        if (storageDir == null) {
-            return;
+        if (storageDir != null) {
+            storageDir = new File("/storage/self/primary/Download/");
         }
         if (!storageDir.exists()) {
             boolean mkdirs = storageDir.mkdirs();
             if (!mkdirs) {
                 return;
             }
-
         }
-        File imageFile = new File(storageDir, name);
+        System.out.println("saving " + name);
+        if (DEBUG) {
+            String str = Base64.getEncoder().encodeToString(buff);
+            StringBuilder output = new StringBuilder("\ndata = ");
+            int chunk = 72;
+            for (int i = 0; i < str.length(); i += chunk) {
+                int endIndex = Math.min(i + chunk, str.length());
+                if (i != 0) output.append("+");
+                output.append("\"").append(str.substring(i, endIndex)).append("\"\n");
+            }
+            Log.v("MAIN", "base64String: " + output);
+        }
+
+        File imageFile = new File(storageDir, name + ".rc");
+        if (imageFile.exists()) {
+            System.out.println("WARNING IMAGE EXIST " + name + " len = " + buff.length + "  "
+                    + imageFile.length());
+            if (buff.length != imageFile.length()) {
+                imageFile = new File(storageDir, name + "_c.rc");
+            }
+        }
+        if (compress) {
+            imageFile = new File(storageDir, name + ".rcz");
+        }
         System.out.println("adb pull " + imageFile.getAbsolutePath() + " /tmp/");
 
-        try (FileOutputStream fos = new FileOutputStream(imageFile)) {
-            // Compress and write the bitmap to the file
-            fos.write(buff, 0, len);
-            System.out.println("writing " + len + " bytes");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (compress) {
+            try
+                    (FileOutputStream fos = new FileOutputStream(imageFile);
+                     BufferedOutputStream bos = new BufferedOutputStream(fos);
+                     ZipOutputStream zos = new ZipOutputStream(bos)) {
+
+                // optional: choose compression level [0..9]
+                zos.setLevel(Deflater.DEFAULT_COMPRESSION);
+
+                ZipEntry entry = new ZipEntry("data.rcz"); // name inside the zip
+                zos.putNextEntry(entry);
+                zos.write(buff);
+                zos.closeEntry();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            try (FileOutputStream fos = new FileOutputStream(imageFile)) {
+                // Compress and write the bitmap to the file
+                fos.write(buff, 0, len);
+                System.out.println("writing " + len + " bytes");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         System.out.println("done.");
     }
@@ -961,4 +1247,22 @@ public class ExperimentRecyclerActivity extends Activity {
             }
         }).start(); // Don't forget to start the thread!
     }
+
+    private static byte[] addUpdateData(byte[] rcData, String update) {
+        byte[] strData = update.getBytes(StandardCharsets.UTF_8);
+        int len = strData.length;
+        byte[] ret = new byte[rcData.length + 5 + len];
+        int off = rcData.length;
+        ret[off++] = (byte) 195;
+        System.out.println("............" + (int) (0xFF & ret[off]) + ".......");
+        ret[off++] = (byte) ((len >> 24) & 0xFF);
+        ret[off++] = (byte) ((len >> 16) & 0xFF);
+        ret[off++] = (byte) ((len >> 8) & 0xFF);
+        ret[off++] = (byte) (len & 0xFF);
+
+        System.arraycopy(rcData, 0, ret, 0, rcData.length);
+        System.arraycopy(strData, 0, ret, rcData.length + 5, strData.length);
+        return ret;
+    }
+
 }

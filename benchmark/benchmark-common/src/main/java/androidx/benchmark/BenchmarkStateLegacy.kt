@@ -135,7 +135,7 @@ class BenchmarkStateLegacy internal constructor(phaseConfig: MicrobenchmarkPhase
      * Decreasing iteration count used when running a multi-iteration measurement phase Used to
      * determine when a main measurement stage finishes.
      */
-    @Suppress("ShowingMemberInHiddenClass")
+    @field:Suppress("ShowingMemberInHiddenClass")
     @JvmField
     @PublishedApi // previously used by [BenchmarkState.keepRunningInline()]
     internal var iterationsRemaining: Int = -1

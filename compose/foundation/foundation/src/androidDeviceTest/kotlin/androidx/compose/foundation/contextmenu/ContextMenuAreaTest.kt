@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.contextmenu
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.contextmenu.ContextMenuState.Status
 import androidx.compose.foundation.layout.Box
@@ -33,7 +34,6 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -41,7 +41,7 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.isRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -56,6 +56,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.StandardTestDispatcher
+import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -63,9 +64,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class ContextMenuAreaTest {
-    @OptIn(ExperimentalTestApi::class)
-    @get:Rule
-    val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val tag = "testTag"
     private val itemTag = "itemTag"
@@ -175,6 +174,10 @@ class ContextMenuAreaTest {
 
     @Test
     fun whenContextMenu_clickOffPopup_closesPopup() {
+        assumeFalse(
+            "Test fails on cuttlefish b/465855446",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         val state = ContextMenuState(Status.Open(Offset.Zero))
         rule.setContent {
             Box(Modifier.fillMaxSize()) { TestMenu(state = state, onDismiss = { state.close() }) }

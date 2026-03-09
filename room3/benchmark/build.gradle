@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -31,8 +30,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    // Remove when b/442128557 is fixed
-    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("androidx.benchmark")
 }
@@ -40,6 +37,7 @@ plugins {
 dependencies {
     androidTestImplementation(project(":room3:room3-common"))
     androidTestImplementation(project(":room3:room3-runtime"))
+    androidTestImplementation(project(":room3:room3-sqlite-wrapper"))
     androidTestImplementation(project(":sqlite:sqlite-bundled"))
     kspAndroidTest(project(":room3:room3-compiler"))
     androidTestImplementation("androidx.arch.core:core-runtime:2.2.0")

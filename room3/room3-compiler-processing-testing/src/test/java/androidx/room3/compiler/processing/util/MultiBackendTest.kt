@@ -58,19 +58,15 @@ abstract class MultiBackendTest {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun runners(): List<TestRunner> =
-            listOfNotNull(
+            listOf(
                 TestRunner("java") { sources, options, handlers ->
                     runJavaProcessorTest(sources = sources, options = options, handlers = handlers)
                 },
                 TestRunner("kapt") { sources, options, handlers ->
                     runKaptTest(sources = sources, options = options, handlers = handlers)
                 },
-                if (CompilationTestCapabilities.canTestWithKsp) {
-                    TestRunner("ksp") { sources, options, handlers ->
-                        runKspTest(sources = sources, options = options, handlers = handlers)
-                    }
-                } else {
-                    null
+                TestRunner("ksp") { sources, options, handlers ->
+                    runKspTest(sources = sources, options = options, handlers = handlers)
                 },
             )
     }

@@ -19,7 +19,6 @@ package androidx.appsearch.platformstorage.converter;
 import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_NONE;
 import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_PLAIN;
 import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_RFC822;
-import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_VERBATIM;
 
 import android.annotation.SuppressLint;
 import android.os.Build;
@@ -156,8 +155,8 @@ public final class SchemaToPlatformConverter {
             // Check delete propagation type.
             if (stringProperty.getDeletePropagationType()
                     != AppSearchSchema.StringPropertyConfig.DELETE_PROPAGATION_TYPE_NONE) {
-                // TODO(b/376913014): add isAtLeastW check to allow
-                //  DELETE_PROPAGATION_TYPE_PROPAGATE_FROM after Android W.
+                // TODO(b/376913014): add isAtLeastC check to allow
+                //  DELETE_PROPAGATION_TYPE_PROPAGATE_FROM after Android C.
                 throw new UnsupportedOperationException(
                         "StringPropertyConfig.DELETE_PROPAGATION_TYPE_PROPAGATE_FROM is not"
                                 + " supported on this AppSearch implementation.");
@@ -252,7 +251,7 @@ public final class SchemaToPlatformConverter {
             }
             return platformBuilder.build();
         } else if (jetpackProperty instanceof AppSearchSchema.EmbeddingPropertyConfig) {
-            if (!AppSearchVersionUtil.isAtLeastB()) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
                 throw new UnsupportedOperationException(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
                         + " is not available on this AppSearch implementation.");
             }
@@ -260,7 +259,7 @@ public final class SchemaToPlatformConverter {
                     (AppSearchSchema.EmbeddingPropertyConfig) jetpackProperty;
             return ApiHelperForB.createPlatformEmbeddingPropertyConfig(embeddingProperty);
         } else if (jetpackProperty instanceof AppSearchSchema.BlobHandlePropertyConfig) {
-            if (!AppSearchVersionUtil.isAtLeastB()) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
                 throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
                         + " is not available on this AppSearch implementation.");
             }
@@ -369,13 +368,13 @@ public final class SchemaToPlatformConverter {
                 jetpackBuilder.addIndexableNestedProperties(indexableNestedProperties);
             }
             return jetpackBuilder.build();
-        } else if (AppSearchVersionUtil.isAtLeastB() && platformProperty
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA && platformProperty
                 instanceof android.app.appsearch.AppSearchSchema.EmbeddingPropertyConfig) {
             android.app.appsearch.AppSearchSchema.EmbeddingPropertyConfig embeddingProperty =
                     (android.app.appsearch.AppSearchSchema
                             .EmbeddingPropertyConfig) platformProperty;
             return ApiHelperForB.createJetpackEmbeddingPropertyConfig(embeddingProperty);
-        } else if (AppSearchVersionUtil.isAtLeastB() && platformProperty
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA && platformProperty
                 instanceof android.app.appsearch.AppSearchSchema.BlobHandlePropertyConfig) {
             android.app.appsearch.AppSearchSchema.BlobHandlePropertyConfig blobHandleProperty =
                     (android.app.appsearch.AppSearchSchema

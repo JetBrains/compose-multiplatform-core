@@ -84,8 +84,9 @@ internal fun TransformingLazyColumnSemanticState(
                         if (!canScrollBackward) {
                             return@with 0f
                         }
-                        visibleItemsAverageHeight * anchorItemIndex - anchorItemScrollOffset +
-                            itemSpacing * (anchorItemIndex - 1)
+
+                        (visibleItemsAverageHeight + itemSpacing) * anchorItemIndex +
+                            anchorItemScrollOffset
                     }
                     .toFloat()
                     .coerceAtLeast(0f)

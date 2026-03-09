@@ -16,15 +16,15 @@
 
 package androidx.appsearch.platformstorage.converter;
 
-import android.annotation.SuppressLint;
 import android.os.Build;
-import android.os.ext.SdkExtensions;
 
 import androidx.annotation.DoNotInline;
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresExtension;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.Migrator;
 import androidx.appsearch.app.PackageIdentifier;
@@ -56,6 +56,7 @@ public final class SetSchemaRequestToPlatformConverter {
      * Translates a jetpack {@link SetSchemaRequest} into a platform
      * {@link android.app.appsearch.SetSchemaRequest}.
      */
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static android.app.appsearch.@NonNull SetSchemaRequest toPlatformSetSchemaRequest(
             @NonNull SetSchemaRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
@@ -112,6 +113,13 @@ public final class SetSchemaRequestToPlatformConverter {
                         "Publicly visible schema are not supported on this AppSearch "
                                 + "implementation.");
             }
+        }
+
+        // TODO(b/413089233) support this feature once its ready in appsearch platform
+        if (!jetpackRequest.getSchemasWipeoutAccountPropertyPaths().isEmpty()) {
+            throw new UnsupportedOperationException(
+                    "set schema wipeout account property paths are not supported on this AppSearch "
+                            + "implementation.");
         }
 
         if (!jetpackRequest.getSchemasVisibleToConfigs().isEmpty()) {

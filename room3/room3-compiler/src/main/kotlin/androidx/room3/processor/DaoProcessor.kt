@@ -32,7 +32,6 @@ import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.verifier.DatabaseVerifier
 import androidx.room3.vo.Dao
 import androidx.room3.vo.KotlinBoxedPrimitiveFunctionDelegate
-import androidx.room3.vo.KotlinDefaultFunctionDelegate
 import androidx.room3.vo.Warning
 
 class DaoProcessor(
@@ -68,8 +67,6 @@ class DaoProcessor(
                 deleteFunctions = emptyList(),
                 updateFunctions = emptyList(),
                 transactionFunctions = emptyList(),
-                kotlinBoxedPrimitiveFunctionDelegates = emptyList(),
-                kotlinDefaultFunctionDelegates = emptyList(),
                 constructorParamType = null,
             )
         }
@@ -229,23 +226,6 @@ class DaoProcessor(
                 emptyList()
             }
 
-        val kotlinDefaultFunctionDelegates =
-            if (element.isInterface()) {
-                val allProcessedFunctions =
-                    functions.values.flatten() + transactionFunctions.map { it.element }
-                allFunctions
-                    .filterNot { allProcessedFunctions.contains(it) }
-                    .mapNotNull { function ->
-                        if (function.hasKotlinDefaultImpl()) {
-                            KotlinDefaultFunctionDelegate(element = function)
-                        } else {
-                            null
-                        }
-                    }
-            } else {
-                emptySequence()
-            }
-
         val constructors = element.getConstructors()
         val goodConstructor =
             constructors.firstOrNull {
@@ -288,8 +268,6 @@ class DaoProcessor(
             updateFunctions = updateFunctions,
             upsertFunctions = upsertFunctions,
             transactionFunctions = transactionFunctions.toList(),
-            kotlinBoxedPrimitiveFunctionDelegates = kotlinBoxedPrimitiveBridgeFunctions,
-            kotlinDefaultFunctionDelegates = kotlinDefaultFunctionDelegates.toList(),
             constructorParamType = constructorParamType,
         )
     }

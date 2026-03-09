@@ -35,29 +35,36 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.background
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.node.Owner
+import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isRoot
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.round
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.test.espresso.Espresso
@@ -711,6 +718,341 @@ class PopupTest {
         // Verify inner popup still anchors to outer popup after scroll
         assertThat(scrolledInnerPopupPosition.x).isWithin(1f).of(scrolledOuterPopupPosition.x)
         assertThat(scrolledInnerPopupPosition.y).isWithin(1f).of(scrolledOuterPopupPosition.y)
+    }
+
+    @Test
+    fun nonNestedPopup_LocalView_isAndroidComposeView() {
+        var localView: View? = null
+
+        rule.setContent {
+            Box(Modifier.fillMaxSize()) {
+                Popup(alignment = Alignment.Center) {
+                    localView = LocalView.current
+                    Box(Modifier.size(10.dp).testTag("popupContent"))
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertThat(localView).isNotNull()
+            assertThat(localView).isInstanceOf(AndroidComposeView::class.java)
+        }
+    }
+
+    @Test
+    fun anyPopup_Content_LocalIsInPopupLayout_isTrue() {
+        var isInPopupLayout: Boolean? = null
+
+        rule.setContent {
+            Box(Modifier.fillMaxSize()) {
+                Popup(alignment = Alignment.Center) {
+                    isInPopupLayout = LocalIsInPopupLayout.current
+                    Box(Modifier.size(10.dp))
+                }
+            }
+        }
+        rule.runOnIdle { assertThat(isInPopupLayout).isTrue() }
+    }
+
+    /**
+     * Verifies the LocalIsInPopupLayout values at different nesting levels and how they influence
+     * the isNested flag for PopupLayout.
+     */
+    @Test
+    fun nestedPopup_LocalIsInPopupLayout_TrueInNested() {
+        var isInPopupOnL1Entry: Boolean? = null
+        var isInPopupInL1Content: Boolean? = null
+        var isInPopupOnL2Entry: Boolean? = null
+        var isInPopupInL2Content: Boolean? = null
+
+        rule.setContent {
+            // Capture the value of LocalIsInPopupLayout *before* L1 Popup's provider.
+            // This value determines PopupLayout L1's 'isNested' flag.
+            isInPopupOnL1Entry = LocalIsInPopupLayout.current
+
+            Popup(alignment = Alignment.TopStart) { // L1
+                // Capture the value of LocalIsInPopupLayout *within* L1's content,
+                // after L1's CompositionLocalProvider has set it to true.
+                isInPopupInL1Content = LocalIsInPopupLayout.current
+
+                // Capture the value of LocalIsInPopupLayout *before* L2 Popup's provider.
+                // This value determines PopupLayout L2's 'isNested' flag.
+                isInPopupOnL2Entry = LocalIsInPopupLayout.current
+
+                Popup(alignment = Alignment.TopStart) { // L2
+                    // Capture the value of LocalIsInPopupLayout *within* L2's content,
+                    // after L2's CompositionLocalProvider has set it to true.
+                    isInPopupInL2Content = LocalIsInPopupLayout.current
+                    Box(Modifier.size(10.dp))
+                }
+            }
+        }
+        rule.runOnIdle {
+            // L1 Popup is not nested within another Popup, so on entry, LocalIsInPopupLayout is
+            // false.
+            // This means PopupLayout for L1 gets isNested = false.
+            assertThat(isInPopupOnL1Entry).isFalse()
+            // Inside L1's content, its provider sets LocalIsInPopupLayout to true.
+            assertThat(isInPopupInL1Content).isTrue()
+
+            // L2 Popup is called from within L1's content, so on entry, LocalIsInPopupLayout is
+            // true.
+            // This means PopupLayout for L2 gets isNested = true.
+            assertThat(isInPopupOnL2Entry).isTrue()
+            // Inside L2's content, its provider also sets LocalIsInPopupLayout to true.
+            assertThat(isInPopupInL2Content).isTrue()
+        }
+    }
+
+    /**
+     * Tests that a non-nested Popup is positioned correctly based on the absolute screen
+     * coordinates returned by the PopupPositionProvider, assuming the root ComposeView is at the
+     * screen origin (0,0). This is the default for most test setups and Edge-to-Edge enabled apps.
+     */
+    @Test
+    fun nonNestedPopup_positioningIsBasedOnScreenCoordinates() {
+        val popupTag = "popupContent"
+        val popupSize = 20.dp
+        // Define an arbitrary desired absolute screen position for the popup.
+        val desiredScreenPos = IntOffset(123, 456)
+
+        var actualPopupScreenOffset by mutableStateOf(IntOffset.Zero)
+
+        // Custom position provider that always returns the desiredScreenPos.
+        val fixedScreenPositionProvider =
+            object : PopupPositionProvider {
+                override fun calculatePosition(
+                    anchorBounds: IntRect,
+                    windowSize: IntSize,
+                    layoutDirection: LayoutDirection,
+                    popupContentSize: IntSize,
+                ): IntOffset {
+                    return desiredScreenPos
+                }
+            }
+
+        rule.setContent {
+            Box(Modifier.fillMaxSize()) {
+                Popup(popupPositionProvider = fixedScreenPositionProvider, onDismissRequest = {}) {
+                    Box(
+                        Modifier.size(popupSize)
+                            .background(Color.Green)
+                            .testTag(popupTag)
+                            .onGloballyPositioned {
+                                actualPopupScreenOffset = it.positionOnScreen().round()
+                            }
+                    )
+                }
+            }
+        }
+        rule.waitForIdle()
+
+        rule.runOnIdle {
+            // In a default test setup, the ComposeView's on-screen location is (0,0).
+            // PopupLayout should calculate the window origin as (0,0).
+            // Thus, params.x/y should equal desiredScreenPos.x/y.
+            // The WindowManager places the popup at the window's origin (0,0) + params,
+            // resulting in the popup appearing at desiredScreenPos on the screen.
+            assertThat(actualPopupScreenOffset.x).isEqualTo(desiredScreenPos.x)
+            assertThat(actualPopupScreenOffset.y).isEqualTo(desiredScreenPos.y)
+        }
+    }
+
+    /**
+     * Verifies that for a non-nested popup (standard case), the PopupPositionProvider receives
+     * coordinates relative to the window, not absolute screen coordinates. This ensures that
+     * floating windows (which are smaller than the screen) don't confuse the provider into thinking
+     * the anchor is off-screen or positioned incorrectly relative to the window content.
+     */
+    @Test
+    fun popupPositionProvider_receivesWindowRelativeCoordinates_whenNotNested() {
+        val anchorTag = "anchor"
+        var suppliedAnchorBounds: IntRect? = null
+        var anchorPositionInWindow: Offset? = null
+
+        val capturingProvider =
+            object : PopupPositionProvider {
+                override fun calculatePosition(
+                    anchorBounds: IntRect,
+                    windowSize: IntSize,
+                    layoutDirection: LayoutDirection,
+                    popupContentSize: IntSize,
+                ): IntOffset {
+                    suppliedAnchorBounds = anchorBounds
+                    return IntOffset.Zero
+                }
+            }
+
+        rule.setContent {
+            Box(Modifier.fillMaxSize()) {
+                Box(
+                    Modifier.align(Alignment.Center)
+                        .size(50.dp)
+                        .testTag(anchorTag)
+                        .onGloballyPositioned { anchorPositionInWindow = it.positionInWindow() }
+                ) {
+                    Popup(popupPositionProvider = capturingProvider) { Box(Modifier.size(10.dp)) }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(suppliedAnchorBounds).isNotNull()
+            assertThat(anchorPositionInWindow).isNotNull()
+
+            val anchorPos = anchorPositionInWindow!!
+            // Verification: The bounds passed to the provider must match the window-relative
+            // coordinates, NOT absolute screen coordinates.
+            assertThat(suppliedAnchorBounds!!.left).isEqualTo(anchorPos.x.roundToInt())
+            assertThat(suppliedAnchorBounds.top).isEqualTo(anchorPos.y.roundToInt())
+        }
+    }
+
+    /**
+     * Verifies that for a nested popup (a popup inside another popup), the PopupPositionProvider
+     * receives absolute screen coordinates. This is required because nested popups are implemented
+     * as sub-panels which the WindowManager expects to be positioned in absolute screen
+     * coordinates.
+     */
+    @Test
+    fun popupPositionProvider_receivesScreenCoordinates_whenNested() {
+        val anchorTag = "anchor"
+        var suppliedAnchorBounds: IntRect? = null
+        var anchorPositionOnScreen: Offset? = null
+
+        val capturingProvider =
+            object : PopupPositionProvider {
+                override fun calculatePosition(
+                    anchorBounds: IntRect,
+                    windowSize: IntSize,
+                    layoutDirection: LayoutDirection,
+                    popupContentSize: IntSize,
+                ): IntOffset {
+                    suppliedAnchorBounds = anchorBounds
+                    return IntOffset.Zero
+                }
+            }
+
+        rule.setContent {
+            Box(Modifier.fillMaxSize()) {
+                Popup(alignment = Alignment.Center) {
+                    Box(
+                        Modifier.size(50.dp).testTag(anchorTag).onGloballyPositioned {
+                            anchorPositionOnScreen = it.positionOnScreen()
+                        }
+                    ) {
+                        Popup(popupPositionProvider = capturingProvider) {
+                            Box(Modifier.size(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(suppliedAnchorBounds).isNotNull()
+            assertThat(anchorPositionOnScreen).isNotNull()
+
+            val anchorPos = anchorPositionOnScreen!!
+            // Verification: The bounds passed to the provider must match the absolute screen
+            // coordinates.
+            assertThat(suppliedAnchorBounds!!.left).isEqualTo(anchorPos.x.roundToInt())
+            assertThat(suppliedAnchorBounds.top).isEqualTo(anchorPos.y.roundToInt())
+        }
+    }
+
+    /**
+     * Validates that non-nested Popups are correctly positioned on the screen, even when the host
+     * ComposeView is offset from the screen origin.
+     *
+     * This test simulates legacy Android system inset behavior (relevant to b/454527215) by
+     * embedding the ComposeView within a padded Android FrameLayout.
+     *
+     * It asserts that the Popup appears at the desired *absolute* screen coordinates returned by a
+     * fixed PopupPositionProvider, confirming that the PopupLayout correctly calculates the parent
+     * window's on-screen origin (0,0 in this test setup) and provides the appropriate
+     * window-relative coordinates to the WindowManager.
+     */
+    @Test
+    fun nonNestedPopup_withOffsetRootView_isPositionedCorrectlyOnScreen() {
+        val popupTag = "popupContent"
+        // An arbitrary absolute screen position a custom PopupPositionProvider will return.
+        val desiredScreenPos = IntOffset(111, 222)
+        // Simulate a status bar pushing the content down.
+        val rootPaddingTop = 55.dp
+        var actualPopupScreenOffset = IntOffset.Zero
+        val composeViewLocationOnScreen = IntArray(2)
+
+        // This provider always requests the popup to be at desiredScreenPos on the screen.
+        val fixedScreenPositionProvider =
+            object : PopupPositionProvider {
+                override fun calculatePosition(
+                    anchorBounds: IntRect,
+                    windowSize: IntSize,
+                    layoutDirection: LayoutDirection,
+                    popupContentSize: IntSize,
+                ): IntOffset {
+                    return desiredScreenPos
+                }
+            }
+
+        var composeView: View? = null
+
+        rule.setContent {
+            // Use AndroidView to host a FrameLayout, which will contain the ComposeView.
+            // Applying padding to the FrameLayout will offset the ComposeView on the screen.
+            AndroidView(
+                factory = { context ->
+                    FrameLayout(context).apply {
+                        val paddingPx = with(rule.density) { rootPaddingTop.roundToPx() }
+                        setPadding(0, paddingPx, 0, 0) // Apply padding to the FrameLayout
+
+                        val cv =
+                            ComposeView(context).apply {
+                                composeView = this // Capture the ComposeView instance
+                                setContent {
+                                    Popup(
+                                        popupPositionProvider = fixedScreenPositionProvider,
+                                        onDismissRequest = {},
+                                    ) {
+                                        Box(
+                                            Modifier.size(10.dp)
+                                                .background(Color.Red)
+                                                .testTag(popupTag)
+                                                .onGloballyPositioned { coordinates ->
+                                                    actualPopupScreenOffset =
+                                                        coordinates.positionOnScreen().round()
+                                                }
+                                        )
+                                    }
+                                }
+                            }
+                        addView(cv) // Add ComposeView to the padded FrameLayout
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        rule.waitForIdle() // Wait for layout and composition
+
+        rule.runOnIdle {
+            assertThat(composeView).isNotNull()
+            // Get the on-screen location of the ComposeView
+            composeView!!.getLocationOnScreen(composeViewLocationOnScreen)
+            val composeViewY = composeViewLocationOnScreen[1]
+
+            // Verify the ComposeView is offset from the screen top.
+            val expectedOffset = with(rule.density) { rootPaddingTop.roundToPx() }
+            assertThat(composeViewY).isEqualTo(expectedOffset)
+            assertThat(composeViewY).isGreaterThan(0)
+
+            // Despite the ComposeView being offset, the Popup should still appear at the
+            // 'desiredScreenPos' on the screen. This confirms the PopupLayout
+            // correctly calculated the window's on-screen origin (which should be (0,0)
+            // in this test setup) and computed the WindowManager.LayoutParams relatively.
+            assertThat(actualPopupScreenOffset.x).isEqualTo(desiredScreenPos.x)
+            assertThat(actualPopupScreenOffset.y).isEqualTo(desiredScreenPos.y)
+        }
     }
 
     private fun matchesSize(width: Int, height: Int): BoundedMatcher<View, View> {

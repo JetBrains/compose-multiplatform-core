@@ -53,6 +53,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,7 +65,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
-import androidx.xr.compose.platform.LocalSpatialConfiguration
+import androidx.xr.compose.platform.requestFullSpace
+import androidx.xr.compose.platform.requestHomeSpace
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
@@ -80,12 +82,12 @@ import androidx.xr.compose.subspace.SpatialCurvedRow
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SubspaceComposable
+import androidx.xr.compose.subspace.draw.alpha
 import androidx.xr.compose.subspace.layout.PlaneOrientation
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialArrangement
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.alpha
 import androidx.xr.compose.subspace.layout.aspectRatio
 import androidx.xr.compose.subspace.layout.depth
 import androidx.xr.compose.subspace.layout.fillMaxHeight
@@ -94,25 +96,28 @@ import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.rotate
-import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testapp.common.AnotherActivity
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.components.TestDialog
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.GltfAnimation.AnimationState
+import androidx.xr.scenecore.GltfAnimationStartOptions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
-import androidx.xr.scenecore.GltfModelEntity.AnimationState
 import java.nio.file.Paths
 import java.time.Clock
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class SpatialCompose : ComponentActivity() {
 
@@ -141,8 +146,10 @@ class SpatialCompose : ComponentActivity() {
 
     @Composable
     fun MainPanelContent() {
+        val scope = rememberCoroutineScope()
         var title = intent.getStringExtra("TITLE")
         if (title == null) title = "Spatial Compose Test"
+
         CommonTestScaffold(
             title = title,
             showBottomBar = true,
@@ -156,14 +163,15 @@ class SpatialCompose : ComponentActivity() {
                 ) {
                     Text("Panel Center - main task window")
                     val isSpatialUiEnabled = LocalSpatialCapabilities.current.isSpatialUiEnabled
-                    val config = LocalSpatialConfiguration.current
 
                     Button(
                         onClick = {
-                            if (isSpatialUiEnabled) {
-                                config.requestHomeSpaceMode()
-                            } else {
-                                config.requestFullSpaceMode()
+                            scope.launch {
+                                if (isSpatialUiEnabled) {
+                                    requestHomeSpace()
+                                } else {
+                                    requestFullSpace()
+                                }
                             }
                         }
                     ) {
@@ -178,19 +186,6 @@ class SpatialCompose : ComponentActivity() {
                         }
                     ) {
                         Text("Launch Video Player")
-                    }
-
-                    Button(
-                        onClick = {
-                            val intent =
-                                Intent(
-                                    this@SpatialCompose,
-                                    FragmentBasedVideoPlayerActivity::class.java,
-                                )
-                            startActivity(intent)
-                        }
-                    ) {
-                        Text("Launch Video Player Fragment")
                     }
 
                     Button(
@@ -225,7 +220,7 @@ class SpatialCompose : ComponentActivity() {
         SpatialColumn(SubspaceModifier.testTag("PanelGridColumn")) {
             SpatialCurvedRow(
                 modifier = SubspaceModifier.width(2000.dp).height(1200.dp).testTag("PanelGridRow"),
-                alignment = SpatialAlignment.BottomCenter,
+                verticalAlignment = SpatialAlignment.Bottom,
                 curveRadius = curveRadius,
             ) {
                 SpatialColumn(
@@ -248,7 +243,7 @@ class SpatialCompose : ComponentActivity() {
 
                     AppPanel(modifier = sidePanelModifier, text = "Panel Top Left")
                     AnchorPanel(
-                        modifier = SubspaceModifier.height(200.dp),
+                        modifier = sidePanelModifier.height(200.dp),
                         text = "Anchorable Panel",
                     )
                     ViewBasedAppPanel(
@@ -262,7 +257,7 @@ class SpatialCompose : ComponentActivity() {
                             .fillMaxHeight()
                             .padding(horizontal = 20.dp)
                             .testTag("CenterColumn"),
-                    alignment = SpatialAlignment.TopCenter,
+                    horizontalAlignment = SpatialAlignment.CenterHorizontally,
                     verticalArrangement = SpatialArrangement.SpaceAround,
                 ) {
                     SpatialMainPanel(modifier = SubspaceModifier.fillMaxWidth().height(600.dp))
@@ -334,7 +329,7 @@ class SpatialCompose : ComponentActivity() {
     fun AnchorPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
         val session = LocalSession.current ?: return
         // This is required to use the AnchorPolicy.
-        session.configure(Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
 
         // TODO(b/424834805): It's possible to have multiple movable overloads in place which are
         // not compatible with each other.
@@ -420,6 +415,7 @@ class SpatialCompose : ComponentActivity() {
         val session = LocalSession.current ?: return
         val dragonModel = remember { mutableStateOf<GltfModel?>(null) }
         val dragonEntity = remember { mutableStateOf<GltfModelEntity?>(null) }
+
         val dragonAnimationState = remember {
             androidx.compose.runtime.mutableStateOf(AnimationState.STOPPED)
         }
@@ -437,9 +433,10 @@ class SpatialCompose : ComponentActivity() {
                     Pose(Vector3(1.0f, 0.0f, 0.0f), Quaternion.Identity),
                 )
 
-            dragonEntity.value?.let {
-                it.startAnimation(false, "Fast_Flying")
-                dragonAnimationState.value = it.animationState
+            dragonEntity.value?.let { entity ->
+                val animation = entity.animations.find { it.name == "Fast_Flying" }
+                animation?.start(GltfAnimationStartOptions(shouldLoop = false))
+                dragonAnimationState.value = animation?.animationState ?: AnimationState.STOPPED
             }
         }
 
@@ -447,13 +444,16 @@ class SpatialCompose : ComponentActivity() {
         LaunchedEffect(dragonEntity.value) {
             val entity = dragonEntity.value
             if (entity != null) {
+                val animation = entity.animations.find { it.name == "Fast_Flying" }
                 while (true) {
+                    val currentState = animation?.animationState ?: AnimationState.STOPPED
+
                     // 1. Update the animation state on every frame.
-                    dragonAnimationState.value = entity.animationState
+                    dragonAnimationState.value = currentState
 
                     // 2. Only calculate the bounding box if the animation is actually playing.
-                    if (entity.animationState == AnimationState.PLAYING) {
-                        entitySize = entity.getGltfModelBoundingBox().halfExtents.times(2f)
+                    if (currentState == AnimationState.PLAYING) {
+                        entitySize = entity.gltfModelBoundingBox.halfExtents.times(2f)
                     }
 
                     delay(16L)

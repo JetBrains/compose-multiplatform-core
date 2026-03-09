@@ -36,6 +36,8 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.unit.IntSize
 import androidx.xr.glimmer.stack.StackState.Companion.Saver
 
@@ -143,6 +145,9 @@ public class StackState(@IntRange(from = 0) initialTopItem: Int = 0) : Scrollabl
     // TODO(b/446933128): when making layoutInfo public, consider making it a State.
     internal val layoutInfoInternal = StackLayoutInfoImpl(pagerState, topItemState)
 
+    private var hasFocus: Boolean = false
+    private var focusedItem: Int = initialTopItem
+
     /**
      * Scroll (jump immediately) to a given [item] index.
      *
@@ -205,6 +210,46 @@ public class StackState(@IntRange(from = 0) initialTopItem: Int = 0) : Scrollabl
     override val lastScrolledBackward: Boolean
         get() = pagerState.lastScrolledBackward
 
+    /** Callback for top-level (pager-level) focus state changes. */
+    internal fun onTopLevelFocusChanged(focusState: FocusState) {
+        hasFocus = focusState.hasFocus
+    }
+
+    /** Callback for item-level focus state changes for the item at [index]. */
+    internal fun onItemFocusChanged(index: Int, focusState: FocusState) {
+        if (focusState.isFocused) focusedItem = index
+    }
+
+    /**
+     * Moves focus to [index] either to the current top item or the next item depending on whether
+     * the top item has moved past [FocusMoveThreshold] and if the item is not already in focus.
+     *
+     * If the stack doesn't already have focus, the auto focus logic doesn't apply.
+     */
+    internal fun notifyAutoFocus(index: Int, focusRequester: FocusRequester) {
+        if (!hasFocus) {
+            // Do not move focus if the stack doesn't already have focus.
+            return
+        }
+
+        val topItemValue = topItem
+        val intendedFocusedItem =
+            if (topItemOffsetFraction < FocusMoveThreshold) topItemValue
+            else (topItemValue + 1).coerceAtMost(itemCount - 1)
+
+        if (intendedFocusedItem != index) {
+            // The intended focused item is not the item at the requested index.
+            return
+        }
+
+        if (intendedFocusedItem == focusedItem) {
+            // No need to move focus if the intended focused item is already in focus.
+            return
+        }
+
+        focusRequester.requestFocus()
+    }
+
     public companion object {
         /** The default [Saver] implementation for [StackState]. */
         public val Saver: Saver<StackState, Int> =
@@ -265,3 +310,9 @@ internal constructor(private val pagerState: PagerState, private val topItemStat
         }
     }
 }
+
+/**
+ * The threshold of [StackState.topItemOffsetFraction] past which focus should automatically move to
+ * the next item.
+ */
+private const val FocusMoveThreshold = 0.6f

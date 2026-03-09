@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -26,7 +25,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -44,7 +42,7 @@ androidx {
 
 android {
     defaultConfig {
-        minSdk = 25
+        minSdk { version = release(25) }
     }
 
     buildTypes {
@@ -53,11 +51,6 @@ android {
 	    shrinkResources = true
 	    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
 	}
-    }
-
-    compileOptions {
-        sourceCompatibility 1.8
-        targetCompatibility 1.8
     }
     namespace = "androidx.wear.samples.ambient"
 }

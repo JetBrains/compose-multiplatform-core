@@ -19,8 +19,6 @@ package androidx.xr.scenecore.testing
 import android.graphics.ImageFormat
 import android.media.ImageReader
 import androidx.xr.runtime.math.FloatSize2d
-import androidx.xr.scenecore.runtime.PerceivedResolutionResult
-import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.TextureResource
 import com.google.common.truth.Truth.assertThat
@@ -31,6 +29,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FakeSurfaceEntityTest {
     val testCanvasShape = SurfaceEntity.Shape.Quad(FloatSize2d(1f, 1f))
 
@@ -50,10 +49,6 @@ class FakeSurfaceEntityTest {
     @Test
     fun getDefaultValue_returnsDefaultValue() {
         check(underTest.stereoMode == SurfaceEntity.StereoMode.SIDE_BY_SIDE)
-        check(
-            underTest.getPerceivedResolution().javaClass ==
-                PerceivedResolutionResult.InvalidCameraView::class.java
-        )
     }
 
     @Test
@@ -85,28 +80,6 @@ class FakeSurfaceEntityTest {
         underTest.setAuxiliaryAlphaMaskTexture(fakeTextureResource)
 
         assertThat(underTest.auxiliaryAlphaMask).isEqualTo(fakeTextureResource)
-    }
-
-    @Test
-    fun getPerceivedResolution_setEntityTooCloseResult_returnsEntityTooClose() {
-        underTest.perceivedResolutionResult = PerceivedResolutionResult.EntityTooClose()
-
-        assertThat(underTest.getPerceivedResolution())
-            .isInstanceOf(PerceivedResolutionResult.EntityTooClose::class.java)
-    }
-
-    @Test
-    fun getPerceivedResolution_setSuccessResult_returnsSuccessValue() {
-        underTest.perceivedResolutionResult =
-            PerceivedResolutionResult.Success(PixelDimensions(640, 480))
-
-        assertThat(underTest.getPerceivedResolution())
-            .isInstanceOf(PerceivedResolutionResult.Success::class.java)
-        assertThat(
-                (underTest.getPerceivedResolution() as PerceivedResolutionResult.Success)
-                    .perceivedResolution
-            )
-            .isEqualTo(PixelDimensions(640, 480))
     }
 
     @Test

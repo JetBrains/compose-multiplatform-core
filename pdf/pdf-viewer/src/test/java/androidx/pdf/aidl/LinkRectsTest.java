@@ -27,6 +27,7 @@ import androidx.pdf.models.LinkRects;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class LinkRectsTest {
 
     private LinkRects mLinkRects = createLinkRects(5, new Integer[]{0, 2, 3},

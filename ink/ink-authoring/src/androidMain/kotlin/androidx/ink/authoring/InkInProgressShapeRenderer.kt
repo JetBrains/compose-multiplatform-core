@@ -28,12 +28,13 @@ import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
  * [androidx.ink.rendering.android.canvas.CanvasStrokeRenderer].
  */
 @OpenForTesting
+@ExperimentalCustomShapeWorkflowApi
 internal open class InkInProgressShapeRenderer(
     private val canvasStrokeRenderer: CanvasStrokeRenderer
 ) : InProgressShapeRenderer<InkInProgressShape> {
 
     override fun draw(canvas: Canvas, shape: InkInProgressShape, strokeToScreenTransform: Matrix) {
-        check(!shape.canceled) { "Internal error: Tried to draw canceled stroke shape" }
+        check(!shape.isCanceled()) { "Internal error: Tried to draw canceled stroke shape" }
         val textureAnimationDurationMillis = shape.textureAnimationDurationMillis
         @OptIn(ExperimentalInkCustomBrushApi::class)
         canvasStrokeRenderer.draw(

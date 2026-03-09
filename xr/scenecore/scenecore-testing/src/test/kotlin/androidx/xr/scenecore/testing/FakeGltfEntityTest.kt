@@ -41,8 +41,8 @@ class FakeGltfEntityTest {
         check(underTest.animationState == GltfEntity.AnimationState.STOPPED)
         check(!underTest.isLooping)
         check(underTest.currentAnimationName == null)
-        check(underTest.getGltfModelBoundingBox().center == Vector3(0.5f, 0.5f, 0.5f))
-        check(underTest.getGltfModelBoundingBox().halfExtents == FloatSize3d(0.5f, 0.5f, 0.5f))
+        check(underTest.gltfModelBoundingBox.center == Vector3(0.5f, 0.5f, 0.5f))
+        check(underTest.gltfModelBoundingBox.halfExtents == FloatSize3d(0.5f, 0.5f, 0.5f))
     }
 
     @Test
@@ -86,33 +86,28 @@ class FakeGltfEntityTest {
     }
 
     @Test
-    fun setMaterialOverride_setMaterialCorrectly() {
-        val material = FakeResource(123)
-        val nodeName = "glTF node"
-        val primitiveIndex = 0
+    fun startAnimationWithSupportedAnimation_setsAnimationStateToPlayingAfterPause() {
+        check(underTest.supportedAnimationNames.contains("animation_name"))
 
-        check(underTest.node.materialArray[primitiveIndex] == FakeResource(1))
+        underTest.startAnimation(loop = true, animationName = "animation_name")
 
-        underTest.setMaterialOverride(material, nodeName, primitiveIndex)
+        assertThat(underTest.isLooping).isTrue()
+        assertThat(underTest.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
+        assertThat(underTest.currentAnimationName).isEqualTo("animation_name")
 
-        assertThat(underTest.node.materialArray[primitiveIndex]).isEqualTo(material)
+        underTest.pauseAnimation()
+
+        // Verifies that pauseAnimation works by the animation state.
+        assertThat(underTest.animationState).isEqualTo(GltfEntity.AnimationState.PAUSED)
+
+        underTest.resumeAnimation()
+
+        // Verifies that resumeAnimation works by the animation state.
+        assertThat(underTest.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
     }
 
     @Test
-    fun clearMaterialOverride_setAndClearOverrideMaterial_getMaterialAfterClearCorrectly() {
-        val material = FakeResource(123)
-        val nodeName = "glTF node"
-        val primitiveIndex = 0
-
-        check(underTest.node.materialArray[primitiveIndex] == FakeResource(1))
-
-        underTest.setMaterialOverride(material, nodeName, primitiveIndex)
-
-        assertThat(underTest.node.materialArray[primitiveIndex]).isEqualTo(material)
-
-        underTest.clearMaterialOverride(nodeName, primitiveIndex)
-
-        assertThat(underTest.node.materialArray[primitiveIndex])
-            .isEqualTo(FakeResource(primitiveIndex.toLong()))
+    fun getAnimations_returnsEmptyList() {
+        assertThat(underTest.animations).isEmpty()
     }
 }

@@ -59,9 +59,13 @@ import java.util.concurrent.Executor
  * **[requiredFeatureGroup] and [preferredFeatureGroup]:**
  * - Avoid using non-groupable APIs for any feature that is groupable (see [GroupableFeature] to
  *   know which features are groupable). Doing so can lead to conflicting configurations.
- * - [CameraEffect] or [ImageAnalysis] use case is currently not supported with these
- *   `GroupableFeature`s. Not complying with these constraints will lead to an
- *   [IllegalArgumentException]. The following code sample explains this further.
+ * - Avoid setting multiple `GroupableFeature`s with the same [GroupableFeature.featureType] as
+ *   required, as they conflict with each other. If they are set as preferred, only one will be
+ *   selected according to the feature priorities, which are defined by the ordering in the
+ *   `preferredFeatureGroup` list.
+ *
+ * Not complying with these constraints will lead to an [IllegalArgumentException]. The following
+ * code sample explains this further.
  *
  * @sample androidx.camera.core.samples.configureSessionConfigWithFeatureGroups
  * @property useCases The list of [UseCase] to be attached to the camera and receive camera data.
@@ -84,9 +88,10 @@ import java.util.concurrent.Executor
  *       brighter, less noisy images.
  *     - Conversely, a **fixed range** (e.g., `[30, 30]`) ensures a stable frame rate crucial for
  *       **video recording**, though it can lead to darker, noisier video in low light due to
- *       shorter exposure times. * @throws IllegalArgumentException If the combination of config
- *       options are conflicting or unsupported, or if the `useCases` list is empty.
+ *       shorter exposure times.
  *
+ * @throws IllegalArgumentException If the combination of config options are conflicting or
+ *   unsupported, or if the `useCases` list is empty.
  * @see androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle
  */
 public open class SessionConfig
@@ -108,6 +113,8 @@ constructor(
     public open val requireNonEmptyUseCases: Boolean = true
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public open val cameraFilter: CameraFilter? = null
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public open val isAutoRotationEnabled: Boolean = false
 
     /**
      * Gets the feature selection listener set to this session config.
@@ -176,8 +183,6 @@ constructor(
 
             useCase.validateDefaultGroupableFeatureValues()
         }
-
-        require(effects.isEmpty()) { "Effects aren't supported with feature group yet" }
     }
 
     /**
@@ -299,8 +304,25 @@ constructor(
         private var frameRateRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED
         private val requiredFeatureGroup = mutableListOf<GroupableFeature>()
         private val preferredFeatureGroup = mutableListOf<GroupableFeature>()
+        private var isAutoRotationEnabled = false
+        private var cameraFilter: CameraFilter? = null
+        private var sessionType: Int = SESSION_TYPE_REGULAR
+        private var requireNonEmptyUseCases: Boolean = true
 
         public constructor(vararg useCases: UseCase) : this(useCases.toList())
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public constructor(sessionConfig: SessionConfig) : this(sessionConfig.useCases) {
+            viewPort = sessionConfig.viewPort
+            effects = sessionConfig.effects.toMutableList()
+            frameRateRange = sessionConfig.frameRateRange
+            requiredFeatureGroup.addAll(sessionConfig.requiredFeatureGroup)
+            preferredFeatureGroup.addAll(sessionConfig.preferredFeatureGroup)
+            isAutoRotationEnabled = sessionConfig.isAutoRotationEnabled
+            cameraFilter = sessionConfig.cameraFilter
+            sessionType = sessionConfig.sessionType
+            requireNonEmptyUseCases = sessionConfig.requireNonEmptyUseCases
+        }
 
         /** Sets the [ViewPort] to be applied on the camera session. */
         public fun setViewPort(viewPort: ViewPort): Builder {
@@ -340,10 +362,10 @@ constructor(
          * Alternatively, the [CameraInfo.isSessionConfigSupported] API can be used before binding
          * to check if the features are supported or not.
          *
-         * Note that [CameraEffect] or [ImageAnalysis] use case is currently not supported when a
-         * feature is set to a session config. Furthermore, unlike the [setPreferredFeatureGroup]
-         * API, the order of the features doesn't matter for this API since each and every one of
-         * these features must be configured.
+         * Unlike the [setPreferredFeatureGroup] API, the order of the features doesn't matter for
+         * this API since each and every one of these features must be configured.
+         *
+         * See the [SessionConfig] documentation for all of the constraints related to this API.
          *
          * @param features The vararg of `GroupableFeature` objects to add to the required features.
          * @return The [Builder] instance, allowing for method chaining.
@@ -380,8 +402,7 @@ constructor(
          * The final set of selected features will be notified to the listener set by the
          * [SessionConfig.setFeatureSelectionListener] API.
          *
-         * Note that [CameraEffect] or [ImageAnalysis] use case is currently not supported when a
-         * feature is set to a session config.
+         * See the [SessionConfig] documentation for all of the constraints related to this API.
          *
          * @param features The list of preferred features, ordered by preference.
          * @return The [Builder] instance, allowing for method chaining.
@@ -394,16 +415,34 @@ constructor(
             return this
         }
 
+        /**
+         * Sets whether to use auto rotation.
+         *
+         * When enabled, CameraX will monitor the device motion sensor and set the target rotation
+         * for ImageCapture, VideoCapture and ImageAnalysis.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun setAutoRotationEnabled(isAutoRotationEnabled: Boolean): Builder {
+            this.isAutoRotationEnabled = isAutoRotationEnabled
+            return this
+        }
+
         /** Builds a [SessionConfig] from the current configuration. */
         public fun build(): SessionConfig {
-            return SessionConfig(
-                useCases = useCases,
-                viewPort = viewPort,
-                effects = effects.toList(),
-                frameRateRange = frameRateRange,
-                requiredFeatureGroup = requiredFeatureGroup.toSet(),
-                preferredFeatureGroup = preferredFeatureGroup.toList(),
-            )
+            return object :
+                SessionConfig(
+                    useCases = useCases,
+                    viewPort = viewPort,
+                    effects = effects.toList(),
+                    frameRateRange = frameRateRange,
+                    requiredFeatureGroup = requiredFeatureGroup.toSet(),
+                    preferredFeatureGroup = preferredFeatureGroup.toList(),
+                ) {
+                override val isAutoRotationEnabled: Boolean = this@Builder.isAutoRotationEnabled
+                override val cameraFilter: CameraFilter? = this@Builder.cameraFilter
+                override val sessionType: Int = this@Builder.sessionType
+                override val requireNonEmptyUseCases: Boolean = this@Builder.requireNonEmptyUseCases
+            }
         }
     }
 }

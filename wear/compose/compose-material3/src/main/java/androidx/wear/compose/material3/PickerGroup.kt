@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrNull
+import androidx.compose.ui.util.fastSumBy
 import androidx.wear.compose.foundation.hierarchicalFocusGroup
 import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import kotlin.math.roundToInt
@@ -131,7 +132,8 @@ public class PickerGroupScope {
      *   which can be useful for Text if it has plenty of whitespace.
      * @param readOnlyLabel A slot for providing a label, displayed above the selected option when
      *   the [Picker] is read-only. The label is overlaid with the currently selected option within
-     *   a Box, so it is recommended that the label is given [Alignment.TopCenter].
+     *   a Box, so it is recommended that the label is given
+     *   [androidx.compose.ui.Alignment.TopCenter].
      * @param option A block which describes the content. The integer parameter to the composable
      *   denotes the index of the option and boolean denotes whether the picker is selected or not.
      */
@@ -296,7 +298,7 @@ private fun computeDefaultCenteringOffset(placeables: List<Placeable>, autoCente
         placeables.first().width / 2
     } else {
         // Fallback to centering the whole group.
-        placeables.sumOf { it.width } / 2
+        placeables.fastSumBy { it.width } / 2
     }
 }
 

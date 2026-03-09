@@ -515,7 +515,8 @@ class SpatialAlignmentTest {
     @Test
     fun spatialBiasAlignment_Horizontal_toString() {
         val original = SpatialBiasAlignment.Horizontal(0.75f)
-        assertThat(original.toString()).isEqualTo("Horizontal(bias=${0.75f})")
+        assertThat(original.toString())
+            .isEqualTo("SpatialBiasAlignment#Horizontal(horizontalBias=${0.75f})")
     }
 
     @Test
@@ -527,7 +528,7 @@ class SpatialAlignmentTest {
 
         val copyNewBias = original.copy(bias = -0.25f)
         assertThat(copyNewBias).isNotEqualTo(original)
-        assertThat(copyNewBias.bias).isEqualTo(-0.25f)
+        assertThat(copyNewBias.horizontalBias).isEqualTo(-0.25f)
     }
 
     @Test
@@ -555,7 +556,8 @@ class SpatialAlignmentTest {
     @Test
     fun spatialBiasAlignment_Vertical_toString() {
         val original = SpatialBiasAlignment.Vertical(0.75f)
-        assertThat(original.toString()).isEqualTo("Vertical(bias=${0.75f})")
+        assertThat(original.toString())
+            .isEqualTo("SpatialBiasAlignment#Vertical(verticalBias=${0.75f})")
     }
 
     @Test
@@ -567,7 +569,7 @@ class SpatialAlignmentTest {
 
         val copyNewBias = original.copy(bias = -0.25f)
         assertThat(copyNewBias).isNotEqualTo(original)
-        assertThat(copyNewBias.bias).isEqualTo(-0.25f)
+        assertThat(copyNewBias.verticalBias).isEqualTo(-0.25f)
     }
 
     @Test
@@ -595,7 +597,7 @@ class SpatialAlignmentTest {
     @Test
     fun spatialBiasAlignment_Depth_toString() {
         val original = SpatialBiasAlignment.Depth(0.75f)
-        assertThat(original.toString()).isEqualTo("Depth(bias=${0.75f})")
+        assertThat(original.toString()).isEqualTo("SpatialBiasAlignment#Depth(depthBias=${0.75f})")
     }
 
     @Test
@@ -607,7 +609,7 @@ class SpatialAlignmentTest {
 
         val copyNewBias = original.copy(bias = -0.25f)
         assertThat(copyNewBias).isNotEqualTo(original)
-        assertThat(copyNewBias.bias).isEqualTo(-0.25f)
+        assertThat(copyNewBias.depthBias).isEqualTo(-0.25f)
     }
 
     // --- Tests for SpatialAbsoluteAlignment APIs ---
@@ -934,7 +936,7 @@ class SpatialAlignmentTest {
     fun spatialBiasAbsoluteAlignment_Horizontal_toString() {
         val original = SpatialBiasAbsoluteAlignment.Horizontal(0.75f)
         assertThat(original.toString())
-            .isEqualTo("SpatialBiasAbsoluteAlignment#Horizontal(bias=0.75)")
+            .isEqualTo("SpatialBiasAbsoluteAlignment#Horizontal(horizontalBias=0.75)")
     }
 
     @Test
@@ -946,241 +948,5 @@ class SpatialAlignmentTest {
 
         val copyNewBias = original.copy(bias = -0.25f)
         assertThat(copyNewBias).isNotEqualTo(original)
-    }
-
-    // --- Tests for SpatialAlignment.Companion (Deprecated Absolute) ---
-
-    @Test
-    fun spatialAlignment_TopLeft_deprecated() {
-        @Suppress("DEPRECATION")
-        val alignment = SpatialAlignment.TopLeft // Bias H:-1, V:1, D:0 (Absolute)
-        // Horizontal Offset
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Ltr)
-            )
-            .isEqualTo(offsetBiasNegativeOne)
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Rtl)
-            )
-            .isEqualTo(offsetBiasNegativeOne) // Absolute
-        // Vertical Offset
-        assertThat(alignment.verticalOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasOne)
-        // Depth Offset
-        assertThat(alignment.depthOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasZero)
-        // Position
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Ltr))
-            .isEqualTo(
-                Vector3(
-                    offsetBiasNegativeOne.toFloat(),
-                    offsetBiasOne.toFloat(),
-                    offsetBiasZero.toFloat(),
-                )
-            )
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Rtl))
-            .isEqualTo(
-                Vector3(
-                    offsetBiasNegativeOne.toFloat(),
-                    offsetBiasOne.toFloat(),
-                    offsetBiasZero.toFloat(),
-                )
-            ) // Absolute
-    }
-
-    @Test
-    fun spatialAlignment_TopRight_deprecated() {
-        @Suppress("DEPRECATION")
-        val alignment = SpatialAlignment.TopRight // Bias H:1, V:1, D:0 (Absolute)
-        // Horizontal Offset
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Ltr)
-            )
-            .isEqualTo(offsetBiasOne)
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Rtl)
-            )
-            .isEqualTo(offsetBiasOne) // Absolute
-        // Vertical Offset
-        assertThat(alignment.verticalOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasOne)
-        // Depth Offset
-        assertThat(alignment.depthOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasZero)
-        // Position
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Ltr))
-            .isEqualTo(
-                Vector3(offsetBiasOne.toFloat(), offsetBiasOne.toFloat(), offsetBiasZero.toFloat())
-            )
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Rtl))
-            .isEqualTo(
-                Vector3(offsetBiasOne.toFloat(), offsetBiasOne.toFloat(), offsetBiasZero.toFloat())
-            ) // Absolute
-    }
-
-    @Test
-    fun spatialAlignment_CenterLeft_deprecated() {
-        @Suppress("DEPRECATION")
-        val alignment = SpatialAlignment.CenterLeft // Bias H:-1, V:0, D:0 (Absolute)
-        // Horizontal Offset
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Ltr)
-            )
-            .isEqualTo(offsetBiasNegativeOne)
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Rtl)
-            )
-            .isEqualTo(offsetBiasNegativeOne) // Absolute
-        // Vertical Offset
-        assertThat(alignment.verticalOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasZero)
-        // Depth Offset
-        assertThat(alignment.depthOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasZero)
-        // Position
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Ltr))
-            .isEqualTo(
-                Vector3(
-                    offsetBiasNegativeOne.toFloat(),
-                    offsetBiasZero.toFloat(),
-                    offsetBiasZero.toFloat(),
-                )
-            )
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Rtl))
-            .isEqualTo(
-                Vector3(
-                    offsetBiasNegativeOne.toFloat(),
-                    offsetBiasZero.toFloat(),
-                    offsetBiasZero.toFloat(),
-                )
-            ) // Absolute
-    }
-
-    @Test
-    fun spatialAlignment_CenterRight_deprecated() {
-        @Suppress("DEPRECATION")
-        val alignment = SpatialAlignment.CenterRight // Bias H:1, V:0, D:0 (Absolute)
-        // Horizontal Offset
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Ltr)
-            )
-            .isEqualTo(offsetBiasOne)
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Rtl)
-            )
-            .isEqualTo(offsetBiasOne) // Absolute
-        // Vertical Offset
-        assertThat(alignment.verticalOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasZero)
-        // Depth Offset
-        assertThat(alignment.depthOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasZero)
-        // Position
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Ltr))
-            .isEqualTo(
-                Vector3(offsetBiasOne.toFloat(), offsetBiasZero.toFloat(), offsetBiasZero.toFloat())
-            )
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Rtl))
-            .isEqualTo(
-                Vector3(offsetBiasOne.toFloat(), offsetBiasZero.toFloat(), offsetBiasZero.toFloat())
-            ) // Absolute
-    }
-
-    @Test
-    fun spatialAlignment_BottomLeft_deprecated() {
-        @Suppress("DEPRECATION")
-        val alignment = SpatialAlignment.BottomLeft // Bias H:-1, V:-1, D:0 (Absolute)
-        // Horizontal Offset
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Ltr)
-            )
-            .isEqualTo(offsetBiasNegativeOne)
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Rtl)
-            )
-            .isEqualTo(offsetBiasNegativeOne) // Absolute
-        // Vertical Offset
-        assertThat(alignment.verticalOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasNegativeOne)
-        // Depth Offset
-        assertThat(alignment.depthOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasZero)
-        // Position
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Ltr))
-            .isEqualTo(
-                Vector3(
-                    offsetBiasNegativeOne.toFloat(),
-                    offsetBiasNegativeOne.toFloat(),
-                    offsetBiasZero.toFloat(),
-                )
-            )
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Rtl))
-            .isEqualTo(
-                Vector3(
-                    offsetBiasNegativeOne.toFloat(),
-                    offsetBiasNegativeOne.toFloat(),
-                    offsetBiasZero.toFloat(),
-                )
-            ) // Absolute
-    }
-
-    @Test
-    fun spatialAlignment_BottomRight_deprecated() {
-        @Suppress("DEPRECATION")
-        val alignment = SpatialAlignment.BottomRight // Bias H:1, V:-1, D:0 (Absolute)
-        // Horizontal Offset
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Ltr)
-            )
-            .isEqualTo(offsetBiasOne)
-        assertThat(
-                alignment.horizontalOffset(contentDimension, spaceDimension, LayoutDirection.Rtl)
-            )
-            .isEqualTo(offsetBiasOne) // Absolute
-        // Vertical Offset
-        assertThat(alignment.verticalOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasNegativeOne)
-        // Depth Offset
-        assertThat(alignment.depthOffset(contentDimension, spaceDimension))
-            .isEqualTo(offsetBiasZero)
-        // Position
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Ltr))
-            .isEqualTo(
-                Vector3(
-                    offsetBiasOne.toFloat(),
-                    offsetBiasNegativeOne.toFloat(),
-                    offsetBiasZero.toFloat(),
-                )
-            )
-        assertThat(alignment.position(contentSize, spaceSize, LayoutDirection.Rtl))
-            .isEqualTo(
-                Vector3(
-                    offsetBiasOne.toFloat(),
-                    offsetBiasNegativeOne.toFloat(),
-                    offsetBiasZero.toFloat(),
-                )
-            ) // Absolute
-    }
-
-    @Test
-    fun spatialAlignment_Left_deprecated() {
-        @Suppress("DEPRECATION")
-        val alignment = SpatialAlignment.Left // Bias H:-1, V:0, D:0 (Absolute)
-        // Horizontal Offset
-        assertThat(alignment.offset(contentDimension, spaceDimension, LayoutDirection.Ltr))
-            .isEqualTo(offsetBiasNegativeOne)
-        assertThat(alignment.offset(contentDimension, spaceDimension, LayoutDirection.Rtl))
-            .isEqualTo(offsetBiasNegativeOne)
-    }
-
-    @Test
-    fun spatialAlignment_Right_deprecated() {
-        @Suppress("DEPRECATION")
-        val alignment = SpatialAlignment.Right // Bias H:1, V:0, D:0 (Absolute)
-        // Horizontal Offset
-        assertThat(alignment.offset(contentDimension, spaceDimension, LayoutDirection.Ltr))
-            .isEqualTo(offsetBiasOne)
-        assertThat(alignment.offset(contentDimension, spaceDimension, LayoutDirection.Rtl))
-            .isEqualTo(offsetBiasOne)
     }
 }

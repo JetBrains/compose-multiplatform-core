@@ -63,6 +63,7 @@ public class DataWithInlineClassJUnitTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 public class DataWithInlineClassRobolectricTest {
     @Test
     public fun inlineClassesAreEqualInRobolectric() {

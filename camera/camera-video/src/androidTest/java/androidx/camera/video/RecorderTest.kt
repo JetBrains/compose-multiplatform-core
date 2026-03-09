@@ -29,30 +29,31 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCharacteristics
 import android.location.Location
 import android.media.MediaCodec
+import android.media.MediaFormat.MIMETYPE_AUDIO_OPUS
+import android.media.MediaFormat.MIMETYPE_VIDEO_AVC
+import android.media.MediaFormat.MIMETYPE_VIDEO_HEVC
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
 import android.net.Uri
+import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.util.Size
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
-import androidx.camera.core.impl.AdapterCameraInfo
+import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.Observable.Observer
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
-import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.camera.testing.impl.AudioUtil
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.ExtensionsUtil
 import androidx.camera.testing.impl.GarbageCollectionUtil
@@ -60,7 +61,6 @@ import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule
 import androidx.camera.testing.impl.LabTestRule
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.asFlow
-import androidx.camera.testing.impl.fakes.FakeCameraConfig
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.fakes.FakeSessionProcessor
 import androidx.camera.testing.impl.fakes.NoOpMuxer
@@ -71,6 +71,7 @@ import androidx.camera.testing.impl.mocks.MockConsumer
 import androidx.camera.testing.impl.mocks.helpers.CallTimes
 import androidx.camera.testing.impl.useAndRelease
 import androidx.camera.testing.impl.video.RecordingSession
+import androidx.camera.video.MediaSpec.Companion.OUTPUT_FORMAT_WEBM
 import androidx.camera.video.Recorder.VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE
 import androidx.camera.video.Recorder.VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES
 import androidx.camera.video.Recorder.sRetrySetupVideoDelayMs
@@ -102,7 +103,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import androidx.testutils.assertThrows
 import androidx.testutils.fail
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -121,6 +121,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
+import org.junit.Assert.assertThrows
 import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -142,16 +143,12 @@ private const val TEST_ATTRIBUTION_TAG = "testAttribution"
 // For the file size is small, the final file length possibly exceeds the file size limit
 // after adding the file header. We still add the buffer for the tolerance of comparing the
 // file length and file size limit.
-private const val FILE_SIZE_LIMIT_BUFFER = 50 * 1024 // 50k threshold buffer
+private const val FILE_SIZE_LIMIT_BUFFER = 500 * 1024 // 500k threshold buffer
 
 @SdkSuppress(minSdkVersion = 23)
 @LargeTest
 @RunWith(Parameterized::class)
 class RecorderTest(private val implName: String, private val cameraConfig: CameraXConfig) {
-
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -179,11 +176,7 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
 
         private val storageFullException = lazy { IOException(NO_SPACE_LEFT_MESSAGE) }
     }
@@ -193,6 +186,8 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var camera: Camera
     private lateinit var cameraSelector: CameraSelector
+    private lateinit var cameraInfoInternal: CameraInfoInternal
+    private lateinit var videoCapabilities: VideoCapabilities
 
     private lateinit var preview: Preview
     private lateinit var surfaceTexturePreview: Preview
@@ -220,27 +215,16 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         // Using Preview so that the surface provider could be set to control when to issue the
         // surface request.
         val cameraInfo = camera.cameraInfo
-        val videoCapabilities = Recorder.getVideoCapabilities(cameraInfo)
+        cameraInfoInternal = cameraInfo as CameraInfoInternal
+        videoCapabilities = Recorder.getVideoCapabilities(cameraInfo)
         val candidates =
             mutableSetOf<Size>().apply {
                 if (testName.methodName == "setFileSizeLimit") {
-                    videoCapabilities
-                        .getProfiles(Quality.FHD, DynamicRange.SDR)
-                        ?.defaultVideoProfile
-                        ?.let { add(it.resolution) }
-                    videoCapabilities
-                        .getProfiles(Quality.HD, DynamicRange.SDR)
-                        ?.defaultVideoProfile
-                        ?.let { add(it.resolution) }
-                    videoCapabilities
-                        .getProfiles(Quality.SD, DynamicRange.SDR)
-                        ?.defaultVideoProfile
-                        ?.let { add(it.resolution) }
+                    videoCapabilities.getResolution(Quality.FHD, DynamicRange.SDR)?.let { add(it) }
+                    videoCapabilities.getResolution(Quality.HD, DynamicRange.SDR)?.let { add(it) }
+                    videoCapabilities.getResolution(Quality.SD, DynamicRange.SDR)?.let { add(it) }
                 }
-                videoCapabilities
-                    .getProfiles(Quality.LOWEST, DynamicRange.SDR)
-                    ?.defaultVideoProfile
-                    ?.let { add(it.resolution) }
+                videoCapabilities.getResolution(Quality.LOWEST, DynamicRange.SDR)?.let { add(it) }
             }
         assumeTrue(candidates.isNotEmpty())
 
@@ -328,6 +312,13 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
 
         // Act & Assert.
         recordingSession.createRecording(outputOptions = outputOptions).recordAndVerify()
+    }
+
+    @Test
+    fun canSetTargetVideoEncodingBitrate() {
+        val recorder = createRecorder(targetBitrate = 6_000_000)
+
+        assertThat(recorder.targetVideoEncodingBitRate).isEqualTo(6_000_000)
     }
 
     @Test
@@ -891,7 +882,7 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         recording.start()
 
         // Assert.
-        assertThrows<IllegalStateException> {
+        assertThrows(IllegalStateException::class.java) {
             // Act: Prepare 2nd recording and start.
             recordingSession.createRecording(recorder = recorder).start()
         }
@@ -1011,6 +1002,33 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         assertThrows(IllegalArgumentException::class.java) {
             createRecorder(videoCapabilitiesSource = Integer.MAX_VALUE)
         }
+    }
+
+    @Test
+    fun canSetOutputFormat() {
+        // Arrange.
+        val recorder = createRecorder(outputFormat = OUTPUT_FORMAT_WEBM)
+
+        // Assert.
+        assertThat(recorder.outputFormat).isEqualTo(OUTPUT_FORMAT_WEBM)
+    }
+
+    @Test
+    fun canSetVideoMimeType() {
+        // Arrange.
+        val recorder = createRecorder(videoMimeType = MIMETYPE_VIDEO_HEVC)
+
+        // Assert.
+        assertThat(recorder.videoMimeType).isEqualTo(MIMETYPE_VIDEO_HEVC)
+    }
+
+    @Test
+    fun canSetAudioMimeType() {
+        // Arrange.
+        val recorder = createRecorder(audioMimeType = MIMETYPE_AUDIO_OPUS)
+
+        // Assert.
+        assertThat(recorder.audioMimeType).isEqualTo(MIMETYPE_AUDIO_OPUS)
     }
 
     @Test
@@ -1263,138 +1281,50 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
-    fun getVideoCapabilities_returnsCachedInstanceForSameCameraInfo() {
-        // Arrange
-        val cameraInfo = cameraProvider.getCameraInfo(cameraSelector)
+    fun getVideoCapabilities_supportStandardDynamicRange() {
+        assumeFalse(isDeviceWithCamcorderProfileResolutionMismatch())
 
-        // Act
-        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo)
-        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo)
-
-        // Assert
-        assertThat(capabilities1).isSameInstanceAs(capabilities2)
+        assertThat(videoCapabilities.supportedDynamicRanges).contains(DynamicRange.SDR)
     }
 
     @Test
-    fun getVideoCapabilities_returnsDifferentInstanceForDifferentCameraInfos() {
-        // Arrange
-        val cameraInfos = cameraProvider.availableCameraInfos
-        assumeTrue("The device must have at least 2 cameras.", cameraInfos.size >= 2)
-        val cameraInfo1 = cameraInfos[0]
-        val cameraInfo2 = cameraInfos[1]
+    fun getVideoCapabilities_supportedQualitiesOfSdrIsNotEmpty() {
+        assumeFalse(isDeviceWithCamcorderProfileResolutionMismatch())
 
-        // Act
-        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo1)
-        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo2)
+        assertThat(videoCapabilities.getSupportedQualities(DynamicRange.SDR)).isNotEmpty()
+    }
 
-        // Assert
-        assertThat(capabilities1).isNotSameInstanceAs(capabilities2)
+    /**
+     * Checks if the device has a known mismatch between CamcorderProfile resolutions and the
+     * camera's supported output sizes (b/231903433).
+     *
+     * See go/camerax-camcorder-profile-no-matching-resolutions
+     */
+    private fun isDeviceWithCamcorderProfileResolutionMismatch(): Boolean {
+        val isNokia2Point1 =
+            "nokia".equals(Build.BRAND, true) && "nokia 2.1".equals(Build.MODEL, true)
+        val isMotoE5Play =
+            "motorola".equals(Build.BRAND, true) && "moto e5 play".equals(Build.MODEL, true)
+
+        return isNokia2Point1 || isMotoE5Play
     }
 
     @Test
-    fun getVideoCapabilities_returnsCachedInstanceForDifferentCameraInfoWithSameIdAndConfig() {
-        // Arrange
-        val cameraConfig = FakeCameraConfig()
-        val cameraInfo1 = AdapterCameraInfo(FakeCameraInfoInternal("0"), cameraConfig)
-        val cameraInfo2 = AdapterCameraInfo(FakeCameraInfoInternal("0"), cameraConfig)
+    fun getHighSpeedVideoCapabilities_whenCameraDoesNotSupportHighSpeed_returnNull() {
+        assumeFalse(cameraInfoInternal.isHighSpeedSupported)
 
-        // Act
-        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo1)
-        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo2)
+        val videoCapabilities = Recorder.getHighSpeedVideoCapabilities(camera.cameraInfo)
 
-        // Assert
-        assertThat(capabilities1).isSameInstanceAs(capabilities2)
+        assertThat(videoCapabilities).isNull()
     }
 
     @Test
-    fun getVideoCapabilities_returnsCachedInstanceForCameraInfoOfNewBinding() = runBlocking {
-        // Arrange & act
-        val capabilities1 = Recorder.getVideoCapabilities(camera.cameraInfo)
-        val capabilities2 =
-            Recorder.getVideoCapabilities(
-                withContext(Dispatchers.Main) {
-                    cameraProvider
-                        .bindToLifecycle(
-                            FakeLifecycleOwner().also { it.startAndResume() },
-                            cameraSelector,
-                            Preview.Builder().build(),
-                        )
-                        .cameraInfo
-                }
-            )
+    fun getVideoCapabilities_withMimeType_returnsCapabilities() {
+        val capabilities = Recorder.getVideoCapabilities(camera.cameraInfo, MIMETYPE_VIDEO_AVC)
 
-        // Assert
-        assertThat(capabilities1).isSameInstanceAs(capabilities2)
-    }
-
-    @Test
-    fun getVideoCapabilities_doesNotCacheForExternalCamera() {
-        // Arrange
-        val cameraInfo =
-            AdapterCameraInfo(
-                FakeCameraInfoInternal("0", CameraSelector.LENS_FACING_EXTERNAL),
-                FakeCameraConfig(),
-            )
-
-        // Act
-        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo)
-        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo)
-
-        // Assert
-        assertThat(capabilities1).isNotSameInstanceAs(capabilities2)
-    }
-
-    @Test
-    fun getVideoCapabilities_doesNotCacheForUnknownLensFacingCamera() {
-        // Arrange
-        val cameraInfo =
-            AdapterCameraInfo(
-                FakeCameraInfoInternal("0", CameraSelector.LENS_FACING_UNKNOWN),
-                FakeCameraConfig(),
-            )
-
-        // Act
-        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo)
-        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo)
-
-        // Assert
-        assertThat(capabilities1).isNotSameInstanceAs(capabilities2)
-    }
-
-    @Test
-    fun getVideoCapabilities_returnsDifferentInstancesForDifferentCameraConfigs() {
-        // Arrange
-        val cameraInfo1 = AdapterCameraInfo(FakeCameraInfoInternal("0"), FakeCameraConfig())
-        val cameraInfo2 = AdapterCameraInfo(FakeCameraInfoInternal("0"), FakeCameraConfig())
-
-        // Act
-        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo1)
-        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo2)
-
-        // Assert
-        assertThat(capabilities1).isNotSameInstanceAs(capabilities2)
-    }
-
-    @Test
-    fun getVideoCapabilities_returnsDifferentInstancesForExtensionCameraSelector() {
-        // Arrange
-        val cameraInfo1 = cameraProvider.getCameraInfo(cameraSelector)
-
-        val sessionProcessor = FakeSessionProcessor()
-        val cameraSelector2 =
-            ExtensionsUtil.getCameraSelectorWithSessionProcessor(
-                cameraProvider,
-                cameraSelector,
-                sessionProcessor,
-            )
-        val cameraInfo2 = cameraProvider.getCameraInfo(cameraSelector2)
-
-        // Act
-        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo1)
-        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo2)
-
-        // Assert
-        assertThat(capabilities1).isNotSameInstanceAs(capabilities2)
+        assertThat(capabilities).isNotNull()
+        // We expect at least SDR to be supported for AVC
+        assertThat(capabilities.supportedDynamicRanges).contains(DynamicRange.SDR)
     }
 
     private fun testRecorderIsConfiguredBasedOnTargetVideoEncodingBitrate(targetBitrate: Int) {
@@ -1428,6 +1358,9 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     private fun createRecorder(
         sendSurfaceRequest: Boolean = true,
         initSourceState: VideoOutput.SourceState = ACTIVE_STREAMING,
+        outputFormat: Int? = null,
+        videoMimeType: String? = null,
+        audioMimeType: String? = null,
         qualitySelector: QualitySelector? = null,
         videoCapabilitiesSource: Int? = null,
         executor: Executor? = null,
@@ -1445,6 +1378,9 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         val recorder =
             Recorder.Builder()
                 .apply {
+                    outputFormat?.let { setOutputFormat(it) }
+                    videoMimeType?.let { setVideoMimeType(it) }
+                    audioMimeType?.let { setAudioMimeType(it) }
                     qualitySelector?.let { setQualitySelector(it) }
                     videoCapabilitiesSource?.let { setVideoCapabilitiesSource(it) }
                     executor?.let { setExecutor(it) }

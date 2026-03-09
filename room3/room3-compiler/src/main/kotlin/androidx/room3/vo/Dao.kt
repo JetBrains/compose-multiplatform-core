@@ -31,8 +31,6 @@ data class Dao(
     val updateFunctions: List<UpdateFunction>,
     val upsertFunctions: List<UpsertFunction>,
     val transactionFunctions: List<TransactionFunction>,
-    val kotlinBoxedPrimitiveFunctionDelegates: List<KotlinBoxedPrimitiveFunctionDelegate>,
-    val kotlinDefaultFunctionDelegates: List<KotlinDefaultFunctionDelegate>,
     val constructorParamType: XTypeName?,
 ) {
     // parsed dao might have a suffix if it is used in multiple databases.

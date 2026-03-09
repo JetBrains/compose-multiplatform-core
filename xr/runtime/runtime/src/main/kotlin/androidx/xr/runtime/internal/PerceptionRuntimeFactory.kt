@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
  */
 package androidx.xr.runtime.internal
 
-import android.app.Activity
+import android.content.Context
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.interfaces.Service
 import kotlin.coroutines.CoroutineContext
 
-/** Factory for creating instances of Runtime. */
+/** Factory for creating instances of a PerceptionRuntime. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface PerceptionRuntimeFactory : Service {
     /**
@@ -28,8 +29,8 @@ public interface PerceptionRuntimeFactory : Service {
      * The provided [coroutineContext] will be used for any asynchronous operations initiated by the
      * runtime.
      *
-     * @param activity The host [Activity].
+     * @param context The host [Context].
      * @param coroutineContext The [CoroutineContext] for the runtime to use.
      */
-    public fun createRuntime(activity: Activity, coroutineContext: CoroutineContext): JxrRuntime
+    public fun createRuntime(context: Context, coroutineContext: CoroutineContext): JxrRuntime
 }

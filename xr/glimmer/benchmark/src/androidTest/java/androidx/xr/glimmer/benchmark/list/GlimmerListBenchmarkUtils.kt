@@ -71,12 +71,13 @@ internal fun ComposeBenchmarkRule.toggleStateBenchmark(
 }
 
 /**
- * This benchmark is specific to Glimmer's lazy lists. It measures draw phase after scrolling.
+ * This benchmark is specific to Jetpack Compose Glimmer's lazy lists. It measures draw phase after
+ * scrolling.
  *
  * It's forked from LazyBenchmarkCommon for common lists. We use a separate implementation because
- * Glimmer lists have a few extra changes, and the common version is still internal. Once both of
- * these issues are addressed, we might delete this method and use a shared version instead
- * (b/448365164).
+ * Jetpack Compose Glimmer lists have a few extra changes, and the common version is still internal.
+ * Once both of these issues are addressed, we might delete this method and use a shared version
+ * instead (b/448365164).
  */
 // TODO: b/448365164 - Migrate to use common LazyList benchmarks.
 internal fun ComposeBenchmarkRule.toggleStateBenchmarkDraw(

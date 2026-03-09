@@ -40,7 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
@@ -56,11 +56,12 @@ import androidx.wear.compose.foundation.pager.VerticalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 class PagerScaffoldTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun horizontal_pager_scaffold_is_composed() {
@@ -326,8 +327,7 @@ class PagerScaffoldTest {
             ) {
                 HorizontalPager(
                     state = pagerState,
-                    flingBehavior =
-                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
+                    flingBehavior = PagerScaffoldDefaults.snapWithSpringFlingBehavior(pagerState),
                 ) { page ->
                     AnimatedPage(pageIndex = page, pagerState = pagerState) {
                         ScreenScaffold {
@@ -366,8 +366,7 @@ class PagerScaffoldTest {
             ) {
                 VerticalPager(
                     state = pagerState,
-                    flingBehavior =
-                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
+                    flingBehavior = PagerScaffoldDefaults.snapWithSpringFlingBehavior(pagerState),
                 ) { page ->
                     AnimatedPage(pageIndex = page, pagerState = pagerState) {
                         ScreenScaffold {

@@ -17,8 +17,6 @@ limitations under the License.
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <application>
     <activity
-        android:name="androidx.ink.rendering.android.canvas.CanvasStrokeRendererTestActivity"/>
-    <activity
         android:name="androidx.ink.rendering.android.canvas.internal.CanvasMeshRendererScreenshotTestActivity"/>
     <activity
         android:name="androidx.ink.rendering.android.view.ViewStrokeRendererTestActivity"/>

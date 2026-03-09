@@ -16,10 +16,8 @@
 
 package androidx.room3.solver.transaction.result
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XCodeBlock
-import androidx.room3.ext.DEFAULT_IMPLS_CLASS_NAME
 import androidx.room3.solver.CodeGenScope
 import androidx.room3.vo.TransactionFunction
 
@@ -42,23 +40,9 @@ class TransactionFunctionAdapter(
         scope.builder.apply {
             val delegateInvokeArgs = mutableListOf<Any>()
             val delegateInvokeFormat = buildString {
-                val invokeExpr =
-                    when (scope.language) {
-                        CodeLanguage.JAVA -> getJavaInvokeExpr(daoName, daoImplName)
-                        CodeLanguage.KOTLIN -> getKotlinInvokeExpr(daoImplName)
-                    }
+                val invokeExpr = getKotlinInvokeExpr(daoImplName)
                 append("%L")
                 delegateInvokeArgs.add(invokeExpr)
-
-                if (
-                    scope.language == CodeLanguage.JAVA &&
-                        callType == TransactionFunction.CallType.DEFAULT_KOTLIN &&
-                        parameterNames.isNotEmpty()
-                ) {
-                    // An invoke to DefaultImpls has an extra 1st param so we need a comma if there
-                    // are more params.
-                    append(", ")
-                }
                 parameterNames.forEachIndexed { i, param ->
                     append("%L")
                     delegateInvokeArgs.add(param)
@@ -71,25 +55,6 @@ class TransactionFunctionAdapter(
             add(delegateInvokeFormat, *delegateInvokeArgs.toTypedArray())
         }
     }
-
-    private fun getJavaInvokeExpr(daoName: XClassName, daoImplName: XClassName): XCodeBlock =
-        when (callType) {
-            TransactionFunction.CallType.CONCRETE -> {
-                XCodeBlock.of("%T.super.%N(", daoImplName, jvmMethodName)
-            }
-            TransactionFunction.CallType.DEFAULT_JAVA8 -> {
-                XCodeBlock.of("%T.super.%N(", daoName, jvmMethodName)
-            }
-            TransactionFunction.CallType.DEFAULT_KOTLIN -> {
-                XCodeBlock.of(
-                    "%T.%N.%N(%T.this",
-                    daoName,
-                    DEFAULT_IMPLS_CLASS_NAME,
-                    jvmMethodName,
-                    daoImplName,
-                )
-            }
-        }
 
     private fun getKotlinInvokeExpr(daoImplName: XClassName): XCodeBlock =
         if (typeParamNames.isEmpty()) {

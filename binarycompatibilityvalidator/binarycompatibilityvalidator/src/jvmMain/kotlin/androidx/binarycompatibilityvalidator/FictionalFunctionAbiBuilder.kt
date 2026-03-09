@@ -40,6 +40,7 @@ object FictionalFunctionAbiBuilder {
         builder.append(metadata)
         builder.append("\n")
         builder.append("abstract interface <#A: out kotlin/Any?> kotlin/Function\n")
+        builder.append("abstract interface <#A: out kotlin/Any?> kotlin/Function0\n")
         repeat(NUM_FUNCTIONS_TO_CREATE) { num ->
             val outTag = tags[num]
             val typeParams = (0..num).joinToString(", ") { idx -> "#${tags[idx]}: in kotlin/Any?" }
@@ -73,6 +74,6 @@ object FictionalFunctionAbiBuilder {
         // - Show manifest properties: true
         // - Show declarations: true
         // Library unique name: <stub:stub>
-    """
+        """
             .trimIndent()
 }

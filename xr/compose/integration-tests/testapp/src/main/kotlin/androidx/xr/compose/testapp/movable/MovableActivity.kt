@@ -51,8 +51,8 @@ import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.rotate
-import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.common.AnotherActivity
 import androidx.xr.compose.testapp.ui.components.ColumnWithCenterText
@@ -104,7 +104,7 @@ class MovableActivity : ComponentActivity() {
         SpatialColumn(SubspaceModifier.testTag("PanelGridSpatialColumn")) {
             SpatialRow(
                 modifier = SubspaceModifier.fillMaxWidth(),
-                alignment = SpatialAlignment.BottomCenter,
+                verticalAlignment = SpatialAlignment.Bottom,
             ) {
                 SpatialColumn(
                     modifier =

@@ -23,7 +23,7 @@ import androidx.compose.ui.inspection.util.createAllParametersChecks
 import androidx.compose.ui.inspection.util.filter
 import androidx.compose.ui.inspection.util.nodes
 import androidx.compose.ui.test.hasScrollAction
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.inspection.testing.InspectorTester
 import androidx.test.filters.LargeTest
@@ -87,7 +87,7 @@ class LazyColumnTest {
 
     @Test
     fun rowsInOrder(): Unit = runBlocking {
-        rootId = getGlobalWindowViews().map { it.uniqueDrawingId }.single().toLong()
+        rootId = getGlobalWindowViews().map { it.uniqueDrawingId }.single()
         textComponentsInOrder(0)
         rule.onNode(hasScrollAction()).performScrollToIndex(30)
         rule.waitForIdle()
@@ -103,7 +103,7 @@ class LazyColumnTest {
     @Test
     fun testDrawModifierNodes() = runBlocking {
         generation++
-        rootId = getGlobalWindowViews().map { it.uniqueDrawingId }.single().toLong()
+        rootId = getGlobalWindowViews().map { it.uniqueDrawingId }.single()
         val checks = createAllParametersChecks(inspectorTester, rootId, generation)
         val withChildDrawModifiers =
             checks.composableResponse

@@ -14,7 +14,14 @@
   limitations under the License.
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <queries>
-        <package android:name="com.google.android.app.notes" />
-    </queries>
+
+    <application
+        android:name=".TestApplication"
+        android:supportsRtl="true">
+        <provider
+            android:name=".TestContentProvider"
+            android:authorities="androidx.appfunctions.integration.testapp.provider"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+    </application>
 </manifest>

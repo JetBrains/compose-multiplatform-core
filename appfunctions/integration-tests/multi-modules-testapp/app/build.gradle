@@ -13,85 +13,78 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import com.google.devtools.ksp.gradle.KspAATask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.android.build.api.artifact.SingleArtifact
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    // Remove when b/442128557 is fixed
-    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
 
 android {
     namespace = "androidx.appfunctions.integration.testapp"
-    compileSdk = 36
+    compileSdk { version = release(36) }
     defaultConfig {
-        applicationId = "androidx.appfunctions.integration.testapp"
-        minSdk = 33
-        ksp {
-            arg("appfunctions:aggregateAppFunctions", "true")
-            arg("appfunctions:generateMetadataFromSchema", "true")
-        }
+        minSdk { version = release(33) }
+    }
+    // Prevent assets file from being compressed. This is for Uri access test.
+    aaptOptions {
+        noCompress += "txt"
     }
     buildTypes {
-        // Release build is not used when running AndroidX Test. This is only used to
-        // manually examine the output APK.
         release {
             minifyEnabled = true
             shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
-    // Prevent assets file from being compressed. This is for Uri access test.
-    aaptOptions {
-        noCompress  += "txt"
-    }
 }
 
 dependencies {
-    androidTestImplementation(libs.kotlinCoroutinesAndroid)
-    androidTestImplementation(project(":appfunctions:appfunctions"))
-    androidTestImplementation(project(":appfunctions:appfunctions-service"))
+    implementation(libs.guavaAndroid)
+    implementation(libs.kotlinCoroutinesAndroid)
+    implementation(project(":appfunctions:appfunctions"))
+    implementation(project(":appfunctions:appfunctions-service"))
+    implementation(project(":appfunctions:integration-tests:multi-modules-testapp:shared-library"))
+    implementation(project(":appfunctions:integration-tests:shared-schema"))
+    implementation("androidx.appsearch:appsearch:1.1.0-rc01")
+    implementation("androidx.appsearch:appsearch-platform-storage:1.1.0-rc01")
+    implementation('androidx.concurrent:concurrent-futures-ktx:1.1.0')
+    ksp(project(":appfunctions:appfunctions-compiler"))
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.guavaAndroid)
     androidTestImplementation(libs.testMonitor)
     androidTestImplementation(libs.kotlinTest)
-    androidTestImplementation("androidx.appsearch:appsearch:1.1.0-rc01")
-    androidTestImplementation("androidx.appsearch:appsearch-platform-storage:1.1.0-rc01")
-    androidTestImplementation('androidx.concurrent:concurrent-futures-ktx:1.1.0')
-    androidTestImplementation(project(":appfunctions:integration-tests:multi-modules-testapp:shared-library"))
-   kspAndroidTest(project(":appfunctions:appfunctions-compiler"))
 }
 
-// TODO(b/452807124): Remove when we migrate to built-in-kotlin.
-// Work-around for b/452908579. We "undo" the change that the org.jetbrains.kotlin.android plugin
-// applies when configuring the default stdlib:
-// https://github.com/JetBrains/kotlin/blob/master/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/stdlibDependencyManagement.kt
-kotlin.target.compilations.configureEach { compilation ->
-    compilation.kotlinSourceSets.forAll { sourceSet ->
-        if (sourceSet.name != "main") return
+ksp {
+    arg("appfunctions:aggregateAppFunctions", "true")
+}
 
-        project.configurations.named(sourceSet.apiConfigurationName).configure { config ->
-            config.withDependencies { dependencySet ->
-                dependencySet.remove(
-                        project.dependencies.create(
-                                "org.jetbrains.kotlin:kotlin-stdlib:${kotlin.coreLibrariesVersion}"
-                        )
-                )
-            }
+// Define a configuration that can be consumed, as this project is a provider of test apks for
+// profile verification integration test.
+configurations {
+    apkAssets {
+        canBeConsumed = true
+        canBeResolved = false
+        attributes {
+            attribute(
+                    LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                    objects.named(LibraryElements, 'appfunction-integrationTests-apkAssets')
+            )
         }
     }
 }
 
-// TODO(b/456071824): Remove this workaround
-tasks.withType(KotlinCompile).configureEach {
-    incremental = false
-}
-tasks.withType(KspAATask).configureEach {
-    it.kspConfig.incremental.set(false)
+// Release apk variants are added as output artifacts to the apkAssets configuration.
+// The apkAssets configuration is consumed by profile-verification integration test and
+// artifacts are placed in the assets folder.
+androidComponents {
+    onVariants(selector().all().withBuildType("release"), { variant ->
+        artifacts {
+            apkAssets(variant.artifacts.get(SingleArtifact.APK.INSTANCE))
+        }
+    })
 }

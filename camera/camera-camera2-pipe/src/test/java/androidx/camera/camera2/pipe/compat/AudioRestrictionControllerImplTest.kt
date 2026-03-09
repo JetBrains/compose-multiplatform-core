@@ -34,9 +34,11 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 class AudioRestrictionControllerImplTest {
     private val testScope = TestScope()
     private val threads = FakeThreads.fromTestScope(testScope)
@@ -225,6 +227,7 @@ class AudioRestrictionControllerImplTest {
         }
 
     @Test
+    @Config(sdk = [Config.ALL_SDKS])
     fun belowRBuild_addListenerNoOp() =
         testScope.runTest {
             val mode = AUDIO_RESTRICTION_VIBRATION

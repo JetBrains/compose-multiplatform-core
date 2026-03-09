@@ -56,7 +56,7 @@ import androidx.compose.ui.focus.setFocusableContent
 import androidx.compose.ui.graphics.toComposeIntRect
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
@@ -65,7 +65,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.FlakyTest
 import androidx.test.filters.MediumTest
 import androidx.window.layout.WindowMetricsCalculator
 import com.google.common.collect.Range
@@ -74,8 +73,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.math.roundToInt
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
@@ -87,23 +84,20 @@ import org.junit.runner.RunWith
 class WindowInfoCompositionLocalTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
-    @FlakyTest(bugId = 173088588)
     @Test
     fun windowIsFocused_onLaunch() {
         // Arrange.
         lateinit var windowInfo: WindowInfo
-        val windowFocusGain = CountDownLatch(1)
         rule.setContent {
             BasicText("Main Window")
             windowInfo = LocalWindowInfo.current
-            WindowFocusObserver { if (it) windowFocusGain.countDown() }
         }
 
         // Act.
         rule.waitForIdle()
 
         // Assert.
-        windowFocusGain.await(5, SECONDS)
+        rule.waitUntil(5000) { windowInfo.isWindowFocused }
         assertThat(windowInfo.isWindowFocused).isTrue()
     }
 
@@ -112,13 +106,10 @@ class WindowInfoCompositionLocalTest {
         // Arrange.
         lateinit var mainWindowInfo: WindowInfo
         lateinit var popupWindowInfo: WindowInfo
-        val mainWindowFocusLoss = CountDownLatch(1)
-        val popupFocusGain = CountDownLatch(1)
         val showPopup = mutableStateOf(false)
         rule.setContent {
             BasicText("Main Window")
             mainWindowInfo = LocalWindowInfo.current
-            WindowFocusObserver { if (!it) mainWindowFocusLoss.countDown() }
             if (showPopup.value) {
                 Popup(
                     properties = PopupProperties(focusable = true),
@@ -126,7 +117,6 @@ class WindowInfoCompositionLocalTest {
                 ) {
                     BasicText("Popup Window")
                     popupWindowInfo = LocalWindowInfo.current
-                    WindowFocusObserver { if (it) popupFocusGain.countDown() }
                 }
             }
         }
@@ -136,8 +126,7 @@ class WindowInfoCompositionLocalTest {
 
         // Assert.
         rule.waitForIdle()
-        assertThat(mainWindowFocusLoss.await(5, SECONDS)).isTrue()
-        assertThat(popupFocusGain.await(5, SECONDS)).isTrue()
+        rule.waitUntil(5000) { !mainWindowInfo.isWindowFocused && popupWindowInfo.isWindowFocused }
         assertThat(mainWindowInfo.isWindowFocused).isFalse()
         assertThat(popupWindowInfo.isWindowFocused).isTrue()
     }
@@ -146,34 +135,32 @@ class WindowInfoCompositionLocalTest {
     fun windowIsFocused_whenPopupIsDismissed() {
         // Arrange.
         lateinit var mainWindowInfo: WindowInfo
-        var mainWindowFocusGain = CountDownLatch(1)
-        val popupFocusGain = CountDownLatch(1)
+        lateinit var popupWindowInfo: WindowInfo
         val showPopup = mutableStateOf(false)
         rule.setContent {
             BasicText(text = "Main Window")
             mainWindowInfo = LocalWindowInfo.current
-            WindowFocusObserver { if (it) mainWindowFocusGain.countDown() }
             if (showPopup.value) {
                 Popup(
                     properties = PopupProperties(focusable = true),
                     onDismissRequest = { showPopup.value = false },
                 ) {
                     BasicText(text = "Popup Window")
-                    WindowFocusObserver { if (it) popupFocusGain.countDown() }
+                    popupWindowInfo = LocalWindowInfo.current
                 }
             }
         }
         rule.runOnIdle { showPopup.value = true }
         rule.waitForIdle()
-        assertThat(popupFocusGain.await(5, SECONDS)).isTrue()
-        mainWindowFocusGain = CountDownLatch(1)
+        rule.waitUntil(5000) { popupWindowInfo.isWindowFocused }
+        assertThat(popupWindowInfo.isWindowFocused).isTrue()
 
         // Act.
         rule.runOnIdle { showPopup.value = false }
 
         // Assert.
         rule.waitForIdle()
-        assertThat(mainWindowFocusGain.await(5, SECONDS)).isTrue()
+        rule.waitUntil(5000) { mainWindowInfo.isWindowFocused }
         assertThat(mainWindowInfo.isWindowFocused).isTrue()
     }
 
@@ -182,18 +169,14 @@ class WindowInfoCompositionLocalTest {
         // Arrange.
         lateinit var mainWindowInfo: WindowInfo
         lateinit var dialogWindowInfo: WindowInfo
-        val mainWindowFocusLoss = CountDownLatch(1)
-        val dialogFocusGain = CountDownLatch(1)
         val showDialog = mutableStateOf(false)
         rule.setContent {
             BasicText("Main Window")
             mainWindowInfo = LocalWindowInfo.current
-            WindowFocusObserver { if (!it) mainWindowFocusLoss.countDown() }
             if (showDialog.value) {
                 Dialog(onDismissRequest = { showDialog.value = false }) {
                     BasicText("Popup Window")
                     dialogWindowInfo = LocalWindowInfo.current
-                    WindowFocusObserver { if (it) dialogFocusGain.countDown() }
                 }
             }
         }
@@ -203,8 +186,7 @@ class WindowInfoCompositionLocalTest {
 
         // Assert.
         rule.waitForIdle()
-        assertThat(mainWindowFocusLoss.await(5, SECONDS)).isTrue()
-        assertThat(dialogFocusGain.await(5, SECONDS)).isTrue()
+        rule.waitUntil(5000) { !mainWindowInfo.isWindowFocused && dialogWindowInfo.isWindowFocused }
         assertThat(mainWindowInfo.isWindowFocused).isFalse()
         assertThat(dialogWindowInfo.isWindowFocused).isTrue()
     }
@@ -213,31 +195,30 @@ class WindowInfoCompositionLocalTest {
     fun windowIsFocused_whenDialogIsDismissed() {
         // Arrange.
         lateinit var mainWindowInfo: WindowInfo
-        var mainWindowFocusGain = CountDownLatch(1)
-        val dialogFocusGain = CountDownLatch(1)
+        lateinit var dialogWindowInfo: WindowInfo
         val showDialog = mutableStateOf(false)
         rule.setContent {
             BasicText(text = "Main Window")
             mainWindowInfo = LocalWindowInfo.current
-            WindowFocusObserver { if (it) mainWindowFocusGain.countDown() }
             if (showDialog.value) {
                 Dialog(onDismissRequest = { showDialog.value = false }) {
                     BasicText(text = "Popup Window")
-                    WindowFocusObserver { if (it) dialogFocusGain.countDown() }
+                    dialogWindowInfo = LocalWindowInfo.current
                 }
             }
         }
         rule.runOnIdle { showDialog.value = true }
         rule.waitForIdle()
-        assertThat(dialogFocusGain.await(5, SECONDS)).isTrue()
-        mainWindowFocusGain = CountDownLatch(1)
+        rule.waitUntil(5000) { dialogWindowInfo.isWindowFocused }
+        assertThat(dialogWindowInfo.isWindowFocused).isTrue()
+        assertThat(mainWindowInfo.isWindowFocused).isFalse()
 
         // Act.
         rule.runOnIdle { showDialog.value = false }
 
         // Assert.
         rule.waitForIdle()
-        assertThat(mainWindowFocusGain.await(5, SECONDS)).isTrue()
+        rule.waitUntil(5000) { mainWindowInfo.isWindowFocused }
         assertThat(mainWindowInfo.isWindowFocused).isTrue()
     }
 
@@ -506,6 +487,28 @@ class WindowInfoCompositionLocalTest {
         assertThat(containerSize.width).isIn(widthRange)
         assertThat(containerSize.height).isIn(heightRange)
         assertThat(recompositions).isEqualTo(1)
+    }
+
+    @Test
+    fun containerSizeUpdatesWhenDeviceSizeChanges() {
+        var containerSize = IntSize.Zero
+        lateinit var view: View
+        rule.setContent {
+            view = LocalView.current
+            containerSize = LocalWindowInfo.current.containerSize
+        }
+        rule.runOnIdle {
+            val composeViewContext = view.findViewTreeComposeViewContext()
+            val resources = rule.activity.resources
+            val configuration = Configuration(resources.configuration)
+            configuration.screenWidthDp = (1000 / resources.displayMetrics.density).roundToInt()
+            configuration.screenHeightDp = (2000 / resources.displayMetrics.density).roundToInt()
+            configuration.smallestScreenWidthDp = 1000
+            composeViewContext?.testWindowSize = IntSize(1000, 2000)
+            composeViewContext?.onConfigurationChanged(configuration)
+        }
+
+        rule.runOnIdle { assertThat(containerSize).isEqualTo(IntSize(1000, 2000)) }
     }
 }
 
@@ -962,6 +965,8 @@ private class CustomWrappedContext(private val base: Activity) : Context() {
         base.createDeviceProtectedStorageContext()
 
     override fun isDeviceProtectedStorage(): Boolean = base.isDeviceProtectedStorage
+
+    override fun getDeviceId(): Int = base.deviceId
 
     // Optional overrides
 

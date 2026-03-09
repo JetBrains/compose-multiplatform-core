@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.spatial
 
+import android.app.Activity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -46,17 +47,15 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.size
-import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSceneRuntime
-import androidx.xr.compose.testing.createFakeRuntime
-import androidx.xr.compose.testing.createFakeSession
-import androidx.xr.compose.testing.disableXr
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.session
 import androidx.xr.compose.testing.toDp
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
@@ -70,7 +69,12 @@ import org.mockito.kotlin.verify
 @RunWith(AndroidJUnit4::class)
 class OrbiterTest {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     private val parentTestTag = "parent"
 
@@ -88,7 +92,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_nonXr_contentIsInline() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
 
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) {
@@ -101,8 +105,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_homeSpaceMode_contentIsInline() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) {
@@ -115,8 +118,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_nonSpatial_doesNotRenderContent() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box {
@@ -143,8 +145,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_afterSwitchToFullSpaceMode_isSpatial() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) {
@@ -169,7 +170,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_settingChange_contentIsInline() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
 
         var shouldRenderInNonSpatial by mutableStateOf(false)
         composeTestRule.setContent {
@@ -187,8 +188,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_orbiterRendered() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box {
@@ -204,9 +204,7 @@ class OrbiterTest {
     @Test
     fun orbiter_orbiterCanBeRemoved() {
         var showOrbiter by mutableStateOf(true)
-
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box(modifier = Modifier.size(100.dp)) {
@@ -272,20 +270,23 @@ class OrbiterTest {
 
         composeTestRule
             .onNodeWithTag("orbiterContentBox")
-            .assertWidthIsEqualTo(session.activity.window.decorView.width.toDp())
-            .assertHeightIsEqualTo(session.activity.window.decorView.height.toDp())
+            .assertWidthIsEqualTo((session.context as Activity).window.decorView.width.toDp())
+            .assertHeightIsEqualTo((session.context as Activity).window.decorView.height.toDp())
     }
 
     @Test
     fun orbiter_inSubspace_spatialPanelParent_usesSpatialPanelSize() {
         val testMainPanelEntity = mock<RtPanelEntity>()
-        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-        val testSceneRuntime =
-            TestSceneRuntime.create(fakeRuntime).apply { mainPanelEntity = testMainPanelEntity }
-        composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
+        composeTestRule.configureFakeSession(
+            sceneRuntime = { runtime ->
+                object : SceneRuntime by runtime {
+                    override var mainPanelEntity: RtPanelEntity = testMainPanelEntity
+                }
+            }
+        )
 
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(SubspaceModifier.width(200.dp).height(200.dp).testTag("panel")) {
                     Orbiter(ContentEdge.Top) {
                         // The content of the Orbiter. We'll use its size, which is constrained
@@ -312,7 +313,7 @@ class OrbiterTest {
         var panelHeightDp by mutableStateOf(200.dp)
 
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     modifier =
                         SubspaceModifier.width(panelWidthDp)
@@ -345,13 +346,17 @@ class OrbiterTest {
     @Test
     fun orbiter_inSubspace_mainPanelParent_usesMainPanelSize() {
         val testMainPanelEntity = mock<RtPanelEntity>()
-        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-        val testSceneRuntime =
-            TestSceneRuntime.create(fakeRuntime).apply { mainPanelEntity = testMainPanelEntity }
-        composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
+
+        composeTestRule.configureFakeSession(
+            sceneRuntime = { runtime ->
+                object : SceneRuntime by runtime {
+                    override val mainPanelEntity = testMainPanelEntity
+                }
+            }
+        )
 
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialMainPanel(SubspaceModifier.width(200.dp).height(200.dp).testTag("panel"))
                 Orbiter(ContentEdge.Top) {
                     // The content of the Orbiter. We'll use its size, which is constrained
@@ -375,7 +380,7 @@ class OrbiterTest {
         var panelHeightDp by mutableStateOf(200.dp)
 
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialMainPanel(
                     modifier =
                         SubspaceModifier.width(panelWidthDp)
@@ -407,7 +412,7 @@ class OrbiterTest {
     @Test
     fun orbiter_contentLargerThanParent_isConstrainedBySpatialPanel() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 // Parent panel with a fixed size
                 SpatialPanel(SubspaceModifier.size(200.dp)) {
                     Orbiter(ContentEdge.Top) {
@@ -428,7 +433,7 @@ class OrbiterTest {
     @Test
     fun orbiter_contentLargerThanParent_isConstrainedByMainPanel() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 // Main panel with a fixed size
                 SpatialMainPanel(SubspaceModifier.size(200.dp))
                 Orbiter(ContentEdge.Top) {
@@ -475,7 +480,7 @@ class OrbiterTest {
     @Test
     fun orbiter_inSubspace_noMainPanel_isSizeZero() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 Orbiter(ContentEdge.Top) {
                     // The content of the Orbiter. We'll use its size, which is constrained
                     // by the parent's panel size, to verify the change.
@@ -493,7 +498,7 @@ class OrbiterTest {
     @Test
     fun orbiter_inSubspace_noSpatialCapabilities_doesNotThrow() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 CompositionLocalProvider(
                     LocalSpatialCapabilities provides SpatialCapabilities.NoCapabilities
                 ) {
@@ -519,8 +524,8 @@ class OrbiterTest {
         composeTestRule.setContent {
             val session = checkNotNull(LocalSession.current)
 
-            initialWidth = session.activity.window.decorView.width
-            initialHeight = session.activity.window.decorView.height
+            initialWidth = (session.context as Activity).window.decorView.width
+            initialHeight = (session.context as Activity).window.decorView.height
             targetResizeWidth = initialWidth + 100
             targetResizeHeight = initialHeight + 100
 
@@ -528,12 +533,10 @@ class OrbiterTest {
             // true.
             LaunchedEffect(triggerResize) {
                 if (triggerResize) {
-                    session.activity.window.decorView.layout(
-                        0,
-                        0,
-                        targetResizeWidth,
-                        targetResizeHeight,
-                    )
+                    (session.context as Activity)
+                        .window
+                        .decorView
+                        .layout(0, 0, targetResizeWidth, targetResizeHeight)
                 }
             }
 

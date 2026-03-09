@@ -21,7 +21,6 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomRawQuery
-import androidx.room3.paging.CommonLimitOffsetImpl.Companion.BUG_LINK
 import androidx.room3.paging.util.getClippedRefreshKey
 
 /**
@@ -52,13 +51,8 @@ actual constructor(
     actual override fun getRefreshKey(state: PagingState<Int, Value>): Int? =
         state.getClippedRefreshKey()
 
-    protected actual open suspend fun convertRows(
+    protected actual abstract suspend fun convertRows(
         limitOffsetQuery: RoomRawQuery,
         itemCount: Int,
-    ): List<Value> {
-        throw NotImplementedError(
-            "Unexpected call to a function with no implementation that Room is suppose to " +
-                "generate. Please file a bug at: $BUG_LINK."
-        )
-    }
+    ): List<Value>
 }

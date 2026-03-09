@@ -90,7 +90,6 @@ object InMemoryTracing {
             counterTracks.map { (name, uuid) ->
                 TracePacket(
                     timestamp_clock_id = CLOCK_ID,
-                    incremental_state_cleared = true,
                     track_descriptor =
                         TrackDescriptor(
                             uuid = uuid,
@@ -106,7 +105,6 @@ object InMemoryTracing {
             listOf(
                 TracePacket(
                     timestamp_clock_id = CLOCK_ID,
-                    incremental_state_cleared = true,
                     track_descriptor =
                         TrackDescriptor(
                             uuid = UUID,

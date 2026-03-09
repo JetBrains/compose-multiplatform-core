@@ -36,15 +36,167 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
         Source.kotlin(
             "MyDatabase.kt",
             """
-        import androidx.room3.*
+            import androidx.room3.*
 
-        @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
-        abstract class MyDatabase : RoomDatabase() {
-          abstract fun getDao(): MyDao
-        }
-        """
+            @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+            abstract class MyDatabase : RoomDatabase() {
+              abstract fun getDao(): MyDao
+            }
+            """
                 .trimIndent(),
         )
+
+    @Test
+    fun customInheritedDaoReturnType() {
+        val src =
+            Source.kotlin(
+                "MyDao.kt",
+                """
+                import androidx.room3.*
+
+                @DaoReturnTypeConverters(FooReturnTypeConverter::class)
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  suspend fun getFoo(): Foo<MyEntity>
+                  @Query("SELECT * FROM MyEntity")
+                  suspend fun getBar(): Bar<MyEntity>
+                }
+
+                @Entity
+                data class MyEntity(@PrimaryKey val pk: Int)
+
+                open class Bar<T>(val data: T)
+                class Foo<T>(data: T): Bar<T>(data)
+
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
+                    suspend fun <T> convert(
+                        database: RoomDatabase,
+                        tableNames: Array<String>,
+                        executeAndConvert: suspend () -> T,
+                    ): Foo<T> {
+                        return Foo(executeAndConvert.invoke())
+                    }
+                }
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(src, databaseSrc),
+            expectedFilePath = getTestGoldenPath(testName.methodName),
+            compiledFiles = compileFiles(listOf()),
+        )
+    }
+
+    @Test
+    fun customReadDaoReturnType() {
+        val src =
+            Source.kotlin(
+                "MyDao.kt",
+                """
+                import androidx.room3.*
+                import kotlinx.coroutines.runBlocking
+
+                @DaoReturnTypeConverters(FooReturnTypeConverter::class)
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  suspend fun getFooSingleColumn(): Foo<MyEntity>
+                  @Query("SELECT * FROM MyEntity")
+                  suspend fun getFooList(): Foo<List<MyEntity>>
+                  @Query("SELECT * FROM MyEntity")
+                  fun getBlockingFooList(): Foo<List<MyEntity>>
+                }
+
+                @Entity
+                data class MyEntity(@PrimaryKey val pk: Int)
+
+                open class Bar<T>(val data: T)
+                class Foo<T>(data: T): Bar<T>(data)
+
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
+                    suspend fun <T> convert(
+                        database: RoomDatabase,
+                        tableNames: Array<String>,
+                        executeAndConvert: suspend () -> T,
+                    ): Foo<T> {
+                        return Foo(executeAndConvert.invoke())
+                    }
+
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
+                    fun <T> convertBlocking(
+                        database: RoomDatabase,
+                        tableNames: Array<String>,
+                        executeAndConvert: suspend () -> T,
+                    ): Foo<T> {
+                        return runBlocking {
+                            Foo(executeAndConvert.invoke())
+                        }
+                    }
+
+                }
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(src, databaseSrc),
+            expectedFilePath = getTestGoldenPath(testName.methodName),
+            compiledFiles = compileFiles(listOf()),
+        )
+    }
+
+    @Test
+    fun customDaoReturnTypeWithCollectionLambda() {
+        val src =
+            Source.kotlin(
+                "MyDao.kt",
+                """
+                import androidx.room3.*
+
+                @DaoReturnTypeConverters(FooReturnTypeConverter::class)
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  suspend fun getFooList(): FooList<MyEntity>
+
+                  @Query("SELECT * FROM MyEntity")
+                  suspend fun getFooArray(): FooArray<MyEntity>
+                }
+
+                @Entity
+                data class MyEntity(@PrimaryKey val pk: Int)
+
+                class FooList<T>(val data: List<T>)
+                class FooArray<T>(val data: Array<T>)
+
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
+                    suspend fun <T> convertArray(
+                        executeAndConvert: suspend () -> Array<T>,
+                    ): FooArray<T> {
+                        return FooArray(executeAndConvert.invoke())
+                    }
+
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
+                    suspend fun <T> convertList(
+                        database: RoomDatabase,
+                        tableNames: Array<String>,
+                        executeAndConvert: suspend () -> List<T>,
+                    ): FooList<T> {
+                        return FooList(executeAndConvert.invoke())
+                    }
+                }
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(src, databaseSrc),
+            expectedFilePath = getTestGoldenPath(testName.methodName),
+            compiledFiles = compileFiles(listOf()),
+        )
+    }
 
     @Test
     fun dataClassRowAdapter_variableProperty() {
@@ -52,27 +204,27 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            class MyEntity(
-                @PrimaryKey
-                var pk: Int
-            ) {
-                var variablePrimitive: Long = 0
-                var variableString: String = ""
-                var variableNullableString: String? = null
-            }
-            """
+                @Entity
+                class MyEntity(
+                    @PrimaryKey
+                    var pk: Int
+                ) {
+                    var variablePrimitive: Long = 0
+                    var variableString: String = ""
+                    var variableNullableString: String? = null
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -87,44 +239,44 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
 
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
-            """
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
+                """
                     .trimIndent(),
             )
         val javaEntity =
             Source.java(
                 "MyEntity",
                 """
-            import androidx.annotation.Nullable;
-            import androidx.room3.*;
-            
-            @Entity
-            public class MyEntity {
-              @PrimaryKey
-              private long mValue;
+                import androidx.annotation.Nullable;
+                import androidx.room3.*;
 
-              @Nullable
-              private String mNullableValue;
+                @Entity
+                public class MyEntity {
+                  @PrimaryKey
+                  private long mValue;
 
-              public long getValue() { return mValue; }
-              public void setValue(long value) { mValue = value; }
+                  @Nullable
+                  private String mNullableValue;
 
-              @Nullable
-              public String getNullableValue() { return mNullableValue; }
-              public void setNullableValue(@Nullable String nullableValue) {
-                mNullableValue = nullableValue;
-              }
-            }
-            """
+                  public long getValue() { return mValue; }
+                  public void setValue(long value) { mValue = value; }
+
+                  @Nullable
+                  public String getNullableValue() { return mNullableValue; }
+                  public void setNullableValue(@Nullable String nullableValue) {
+                    mNullableValue = nullableValue;
+                  }
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -143,25 +295,25 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                         Source.kotlin(
                             "MyEntity.kt",
                             """
-                import androidx.room3.*
+                            import androidx.room3.*
 
-                @Entity
-                class MyEntity(
-                    @PrimaryKey
-                    val pk: Int,
-                    val primitive: Long = 0,
-                    val string: String = "",
-                    val nullableString: String? = null,
-                    @JvmField val fieldString: String = "",
-                    @JvmField val nullableFieldString: String? = null
-                ) {
-                    var variablePrimitive: Long = 0
-                    var variableString: String = ""
-                    var variableNullableString: String? = null
-                    @JvmField var variableFieldString: String = ""
-                    @JvmField var variableNullableFieldString: String? = null
-                }
-                """
+                            @Entity
+                            class MyEntity(
+                                @PrimaryKey
+                                val pk: Int,
+                                val primitive: Long = 0,
+                                val string: String = "",
+                                val nullableString: String? = null,
+                                @JvmField val fieldString: String = "",
+                                @JvmField val nullableFieldString: String? = null
+                            ) {
+                                var variablePrimitive: Long = 0
+                                var variableString: String = ""
+                                var variableNullableString: String? = null
+                                @JvmField var variableFieldString: String = ""
+                                @JvmField var variableNullableFieldString: String? = null
+                            }
+                            """
                                 .trimIndent(),
                         )
                     )
@@ -170,17 +322,17 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
 
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
-            """
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -196,28 +348,28 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                internal val internalVal: Long
-            ) {
-                internal var internalVar: Long = 0
-                var internalSetterVar: Long = 0
-                    internal set
-            }
-            """
+                @Entity
+                class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    internal val internalVal: Long
+                ) {
+                    internal var internalVar: Long = 0
+                    var internalSetterVar: Long = 0
+                        internal set
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -232,29 +384,29 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val int: Int,
-                val short: Short,
-                val byte: Byte,
-                val long: Long,
-                val char: Char,
-                val float: Float,
-                val double: Double,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val int: Int,
+                    val short: Short,
+                    val byte: Byte,
+                    val long: Long,
+                    val char: Char,
+                    val float: Float,
+                    val double: Double,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -269,29 +421,29 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val int: Int?,
-                val short: Short?,
-                val byte: Byte?,
-                val long: Long?,
-                val char: Char?,
-                val float: Float?,
-                val double: Double?,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val int: Int?,
+                    val short: Short?,
+                    val byte: Byte?,
+                    val long: Long?,
+                    val char: Char?,
+                    val float: Float?,
+                    val double: Double?,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -306,25 +458,25 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val boolean: Boolean,
-                val nullableBoolean: Boolean?,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val boolean: Boolean,
+                    val nullableBoolean: Boolean?,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -339,24 +491,24 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val string: String,
-                val nullableString: String?,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val string: String,
+                    val nullableString: String?,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -372,17 +524,17 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
-            """
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
+                """
                     .trimIndent(),
             )
         val record =
@@ -393,7 +545,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
 
                 @Entity
                 record MyEntity(@PrimaryKey long id, String data) {}
-            """
+                """
                     .trimIndent(),
             )
         runTest(
@@ -408,25 +560,25 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val byteArray: ByteArray,
-                val nullableByteArray: ByteArray?,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val byteArray: ByteArray,
+                    val nullableByteArray: ByteArray?,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -441,30 +593,30 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val enum: Fruit,
-                val nullableEnum: Fruit?,
-            )
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val enum: Fruit,
+                    val nullableEnum: Fruit?,
+                )
 
-            enum class Fruit {
-                APPLE,
-                BANANA
-            }
-            """
+                enum class Fruit {
+                    APPLE,
+                    BANANA
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -479,31 +631,31 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import java.util.UUID
+                import androidx.room3.*
+                import java.util.UUID
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val uuid: UUID,
-                val nullableUuid: UUID?,
-            )
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val uuid: UUID,
+                    val nullableUuid: UUID?,
+                )
 
-            enum class Fruit {
-                APPLE,
-                BANANA
-            }
-            """
+                enum class Fruit {
+                    APPLE,
+                    BANANA
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -518,32 +670,32 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                @Embedded
-                val foo: Foo,
-                @Embedded(prefix = "nullable")
-                val nullableFoo: Foo?,
-            )
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    @Embedded
+                    val foo: Foo,
+                    @Embedded(prefix = "nullable")
+                    val nullableFoo: Foo?,
+                )
 
-            data class Foo(
-                val numberData: Long,
-                val stringData: String
-            )
-            """
+                data class Foo(
+                    val numberData: Long,
+                    val stringData: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -558,30 +710,30 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
 
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            class MyEntity {
-                @PrimaryKey
-                var pk: Int = 0
-                @Embedded(prefix = "nullable")
-                var nullableFoo: Foo? = null
-            }
+                @Entity
+                class MyEntity {
+                    @PrimaryKey
+                    var pk: Int = 0
+                    @Embedded(prefix = "nullable")
+                    var nullableFoo: Foo? = null
+                }
 
-            data class Foo(
-                val numberData: Long,
-                val stringData: String
-            )
-            """
+                data class Foo(
+                    val numberData: Long,
+                    val stringData: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -596,22 +748,22 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
 
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            data class Foo(
-                val numberData: Long,
-                val stringData: String
-            )
-            """
+                data class Foo(
+                    val numberData: Long,
+                    val stringData: String
+                )
+                """
                     .trimIndent(),
             )
         val javaEntity =
@@ -651,7 +803,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                         mNullableFoo = nullableFoo;
                     }
                 }
-            """
+                """
                     .trimIndent(),
             )
         runTest(
@@ -666,34 +818,34 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            @TypeConverters(FooConverter::class)
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val foo: Foo,
-            )
+                @Entity
+                @TypeConverters(FooConverter::class)
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val foo: Foo,
+                )
 
-            data class Foo(val data: String)
+                data class Foo(val data: String)
 
-            class FooConverter {
-                @TypeConverter
-                fun fromString(data: String): Foo = Foo(data)
-                @TypeConverter
-                fun toString(foo: Foo): String = foo.data
-            }
-            """
+                class FooConverter {
+                    @TypeConverter
+                    fun fromString(data: String): Foo = Foo(data)
+                    @TypeConverter
+                    fun toString(foo: Foo): String = foo.data
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -708,55 +860,55 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-              
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                  
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            @TypeConverters(FooConverter::class)
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Foo,
-                val data: Bar
-            )
+                @Entity
+                @TypeConverters(FooConverter::class)
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Foo,
+                    val data: Bar
+                )
 
-            data class Foo(val num: Long)
-            data class Bar(val data: String)
-            """
+                data class Foo(val num: Long)
+                data class Bar(val data: String)
+                """
                     .trimIndent(),
             )
         val converterSrc =
             Source.java(
                 "FooConverter",
                 """
-            import androidx.room3.TypeConverter;
+                import androidx.room3.TypeConverter;
 
-            public class FooConverter {
-                @TypeConverter
-                public static Foo fromLong(Long num) {
-                    return new Foo(num);
+                public class FooConverter {
+                    @TypeConverter
+                    public static Foo fromLong(Long num) {
+                        return new Foo(num);
+                    }
+                    @TypeConverter
+                    public static Long toLong(Foo foo) {
+                        return foo.getNum();
+                    }
+                    @TypeConverter
+                    public static Bar fromString(String data) {
+                        return new Bar(data);
+                    }
+                    @TypeConverter
+                    public static String toString(Bar bar) {
+                        return bar.getData();
+                    }
                 }
-                @TypeConverter
-                public static Long toLong(Foo foo) {
-                    return foo.getNum();
-                }
-                @TypeConverter
-                public static Bar fromString(String data) {
-                    return new Bar(data);
-                }
-                @TypeConverter
-                public static String toString(Bar bar) {
-                    return bar.getData();
-                }
-            }
-            """
+                """
                     .trimIndent(),
             )
         runTest(
@@ -771,35 +923,35 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
 
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            @TypeConverters(FooConverter::class)
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val foo: Foo,
-            )
+                @Entity
+                @TypeConverters(FooConverter::class)
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val foo: Foo,
+                )
 
-            data class Foo(val data: String)
+                data class Foo(val data: String)
 
-            @ProvidedTypeConverter
-            class FooConverter(val default: String) {
-                @TypeConverter
-                fun fromString(data: String?): Foo = Foo(data ?: default)
-                @TypeConverter
-                fun toString(foo: Foo): String = foo.data
-            }
-            """
+                @ProvidedTypeConverter
+                class FooConverter(val default: String) {
+                    @TypeConverter
+                    fun fromString(data: String?): Foo = Foo(data ?: default)
+                    @TypeConverter
+                    fun toString(foo: Foo): String = foo.data
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -814,40 +966,40 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
 
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            @TypeConverters(FooBarConverter::class)
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val bar: Bar,
-            )
+                @Entity
+                @TypeConverters(FooBarConverter::class)
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val bar: Bar,
+                )
 
-            data class Foo(val data: String)
-            data class Bar(val data: String)
+                data class Foo(val data: String)
+                data class Bar(val data: String)
 
-            object FooBarConverter {
-                @TypeConverter
-                fun fromString(data: String): Foo = Foo(data)
-                @TypeConverter
-                fun toString(foo: Foo): String = foo.data
+                object FooBarConverter {
+                    @TypeConverter
+                    fun fromString(data: String): Foo = Foo(data)
+                    @TypeConverter
+                    fun toString(foo: Foo): String = foo.data
 
-                @TypeConverter
-                fun fromFoo(foo: Foo): Bar = Bar(foo.data)
-                @TypeConverter
-                fun toFoo(bar: Bar): Foo = Foo(bar.data)
-            }
-            """
+                    @TypeConverter
+                    fun fromFoo(foo: Foo): Bar = Bar(foo.data)
+                    @TypeConverter
+                    fun toFoo(bar: Bar): Foo = Foo(bar.data)
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -862,41 +1014,41 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
 
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            @TypeConverters(FooBarConverter::class)
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val foo: Foo,
-                val bar: Bar
-            )
+                @Entity
+                @TypeConverters(FooBarConverter::class)
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val foo: Foo,
+                    val bar: Bar
+                )
 
-            data class Foo(val data: String)
-            data class Bar(val data: String)
+                data class Foo(val data: String)
+                data class Bar(val data: String)
 
-            object FooBarConverter {
-                @TypeConverter
-                fun fromString(data: String?): Foo? = data?.let { Foo(it) }
-                @TypeConverter
-                fun toString(foo: Foo?): String? = foo?.data
+                object FooBarConverter {
+                    @TypeConverter
+                    fun fromString(data: String?): Foo? = data?.let { Foo(it) }
+                    @TypeConverter
+                    fun toString(foo: Foo?): String? = foo?.data
 
-                @TypeConverter
-                fun fromFoo(foo: Foo): Bar = Bar(foo.data)
-                @TypeConverter
-                fun toFoo(bar: Bar): Foo = Foo(bar.data)
-            }
-            """
+                    @TypeConverter
+                    fun fromFoo(foo: Foo): Bar = Bar(foo.data)
+                    @TypeConverter
+                    fun toFoo(bar: Bar): Foo = Foo(bar.data)
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -911,35 +1063,35 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            abstract class MyDao {
-              @Query("SELECT * FROM MyEntity")
-              internal abstract fun getEntity(): MyEntity
-              
-              @Insert
-              internal abstract fun addEntity(item: MyEntity)
-            }
+                @Dao
+                abstract class MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  internal abstract fun getEntity(): MyEntity
+                  
+                  @Insert
+                  internal abstract fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            @TypeConverters(FooConverter::class)
-            @ConsistentCopyVisibility
-            internal data class MyEntity internal constructor(
-                @PrimaryKey
-                internal val pk: Int,
-                internal val foo: Foo,
-            )
+                @Entity
+                @TypeConverters(FooConverter::class)
+                @ConsistentCopyVisibility
+                internal data class MyEntity internal constructor(
+                    @PrimaryKey
+                    internal val pk: Int,
+                    internal val foo: Foo,
+                )
 
-            internal data class Foo(internal val data: String)
+                internal data class Foo(internal val data: String)
 
-            internal class FooConverter internal constructor() {
-                @TypeConverter
-                internal fun fromString(data: String): Foo = Foo(data)
-                @TypeConverter
-                internal fun toString(foo: Foo): String = foo.data
-            }
-            """
+                internal class FooConverter internal constructor() {
+                    @TypeConverter
+                    internal fun fromString(data: String): Foo = Foo(data)
+                    @TypeConverter
+                    internal fun toString(foo: Foo): String = foo.data
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -954,25 +1106,25 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import java.util.UUID
+                import androidx.room3.*
+                import java.util.UUID
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              suspend fun getEntity(): MyEntity
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  suspend fun getEntity(): MyEntity
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
-            sources = listOf(src, databaseSrc, COMMON.COROUTINES_ROOM),
+            sources = listOf(src, databaseSrc),
             expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
@@ -983,31 +1135,34 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import androidx.paging.*
-            import androidx.paging.rxjava3.*
+                import androidx.room3.*
+                import androidx.paging.*
+                import androidx.room3.paging.PagingSourceDaoReturnTypeConverter
+                import androidx.room3.paging.rxjava3.RxPagingSourceDaoReturnTypeConverter
+                import androidx.room3.paging.guava.ListenableFuturePagingSourceDaoReturnTypeConverter
 
-            @Dao
-            abstract class MyDao {
-              @Query("SELECT pk FROM MyEntity")
-              abstract fun getAllIds(): androidx.paging.PagingSource<Int, MyEntity>
+                @Dao
+                @DaoReturnTypeConverters(ListenableFuturePagingSourceDaoReturnTypeConverter::class, PagingSourceDaoReturnTypeConverter::class, RxPagingSourceDaoReturnTypeConverter::class)
+                abstract class MyDao {
+                  @Query("SELECT pk FROM MyEntity")
+                  abstract fun getAllIds(): androidx.paging.PagingSource<Int, MyEntity>
 
-              @Query("SELECT * FROM MyEntity WHERE pk > :gt ORDER BY pk ASC")
-              abstract fun getAllIdsWithArgs(gt: Long): androidx.paging.PagingSource<Int, MyEntity>
+                  @Query("SELECT * FROM MyEntity WHERE pk > :gt ORDER BY pk ASC")
+                  abstract fun getAllIdsWithArgs(gt: Long): androidx.paging.PagingSource<Int, MyEntity>
 
-              @Query("SELECT pk FROM MyEntity")
-              abstract fun getAllIdsRx3(): androidx.paging.rxjava3.RxPagingSource<Int, MyEntity>
+                  @Query("SELECT pk FROM MyEntity")
+                  abstract fun getAllIdsRx3(): androidx.paging.rxjava3.RxPagingSource<Int, MyEntity>
 
-              @Query("SELECT pk FROM MyEntity")
-              abstract fun getAllIdsGuava(): androidx.paging.ListenableFuturePagingSource<Int, MyEntity>
-            }
+                  @Query("SELECT pk FROM MyEntity")
+                  abstract fun getAllIdsGuava(): androidx.paging.ListenableFuturePagingSource<Int, MyEntity>
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: String,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: String,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1032,23 +1187,23 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity WHERE string = :arg")
-              fun stringParam(arg: String): MyEntity
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity WHERE string = :arg")
+                  fun stringParam(arg: String): MyEntity
 
-              @Query("SELECT * FROM MyEntity WHERE string = :arg")
-              fun nullableStringParam(arg: String?): MyEntity
-            }
+                  @Query("SELECT * FROM MyEntity WHERE string = :arg")
+                  fun nullableStringParam(arg: String?): MyEntity
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val string: String,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val string: String,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1063,29 +1218,29 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity WHERE string IN (:arg)")
-              fun listOfString(arg: List<String>): MyEntity
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity WHERE string IN (:arg)")
+                  fun listOfString(arg: List<String>): MyEntity
 
-              @Query("SELECT * FROM MyEntity WHERE string IN (:arg)")
-              fun nullableListOfString(arg: List<String>?): MyEntity
+                  @Query("SELECT * FROM MyEntity WHERE string IN (:arg)")
+                  fun nullableListOfString(arg: List<String>?): MyEntity
 
-              @Query("SELECT * FROM MyEntity WHERE string IN (:arg)")
-              fun listOfNullableString(arg: List<String?>): MyEntity
+                  @Query("SELECT * FROM MyEntity WHERE string IN (:arg)")
+                  fun listOfNullableString(arg: List<String?>): MyEntity
 
-              @Query("SELECT * FROM MyEntity WHERE string IN (:arg)")
-              fun setOfString(arg: Set<String>): MyEntity
-            }
+                  @Query("SELECT * FROM MyEntity WHERE string IN (:arg)")
+                  fun setOfString(arg: Set<String>): MyEntity
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val string: String,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val string: String,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1100,38 +1255,38 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
-              fun arrayOfString(arg: Array<String>): MyEntity
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
+                  fun arrayOfString(arg: Array<String>): MyEntity
 
-              @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
-              fun nullableArrayOfString(arg: Array<String>?): MyEntity
+                  @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
+                  fun nullableArrayOfString(arg: Array<String>?): MyEntity
 
-              @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
-              fun arrayOfNullableString(arg: Array<String?>): MyEntity
+                  @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
+                  fun arrayOfNullableString(arg: Array<String?>): MyEntity
 
-              @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
-              fun varargOfString(vararg arg: String): MyEntity
+                  @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
+                  fun varargOfString(vararg arg: String): MyEntity
 
-              @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
-              fun varargOfNullableString(vararg arg: String?): MyEntity
+                  @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
+                  fun varargOfNullableString(vararg arg: String?): MyEntity
 
-              @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
-              fun primitiveIntArray(arg: IntArray): MyEntity
+                  @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
+                  fun primitiveIntArray(arg: IntArray): MyEntity
 
-              @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
-              fun nullablePrimitiveIntArray(arg: IntArray?): MyEntity
-            }
+                  @Query("SELECT * FROM MyEntity WHERE id IN (:arg)")
+                  fun nullablePrimitiveIntArray(arg: IntArray?): MyEntity
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val id: String,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val id: String,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1146,42 +1301,42 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("INSERT INTO MyEntity (id) VALUES (:id)")
-              fun insertEntity(id: Long)
+                @Dao
+                interface MyDao {
+                  @Query("INSERT INTO MyEntity (id) VALUES (:id)")
+                  fun insertEntity(id: Long)
 
-              @Query("INSERT INTO MyEntity (id) VALUES (:id)")
-              fun insertEntityReturnLong(id: Long): Long
+                  @Query("INSERT INTO MyEntity (id) VALUES (:id)")
+                  fun insertEntityReturnLong(id: Long): Long
 
-              @Query("INSERT INTO MyEntity (id) VALUES (:id)")
-              fun insertEntityReturnVoid(id: Long): Void?
+                  @Query("INSERT INTO MyEntity (id) VALUES (:id)")
+                  fun insertEntityReturnVoid(id: Long): Void?
 
-              @Query("UPDATE MyEntity SET text = :text")
-              fun updateEntity(text: String)
+                  @Query("UPDATE MyEntity SET text = :text")
+                  fun updateEntity(text: String)
 
-              @Query("UPDATE MyEntity SET text = :text WHERE id = :id")
-              fun updateEntityReturnInt(id: Long, text: String): Int
+                  @Query("UPDATE MyEntity SET text = :text WHERE id = :id")
+                  fun updateEntityReturnInt(id: Long, text: String): Int
 
-              @Query("DELETE FROM MyEntity")
-              fun deleteEntity()
+                  @Query("DELETE FROM MyEntity")
+                  fun deleteEntity()
 
-              @Query("DELETE FROM MyEntity")
-              fun deleteEntityReturnInt(): Int
+                  @Query("DELETE FROM MyEntity")
+                  fun deleteEntityReturnInt(): Int
 
-              @Query("DELETE FROM MyEntity WHERE id IN (:ids)")
-              fun deleteEntitiesIn(ids: List<Long>)
-            }
+                  @Query("DELETE FROM MyEntity WHERE id IN (:ids)")
+                  fun deleteEntitiesIn(ids: List<Long>)
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val id: Long,
-                val text: String
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val id: Long,
+                    val text: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1196,30 +1351,30 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import androidx.sqlite.db.SupportSQLiteQuery
-            import kotlinx.coroutines.flow.Flow
+                import androidx.room3.*
+                import androidx.sqlite.db.SupportSQLiteQuery
+                import kotlinx.coroutines.flow.Flow
 
-            @Dao
-            interface MyDao {
-                @RawQuery
-                fun getEntitySupport(sql: RoomRawQuery): MyEntity
+                @Dao
+                interface MyDao {
+                    @RawQuery
+                    fun getEntitySupport(sql: RoomRawQuery): MyEntity
 
-                @RawQuery
-                fun getNullableEntitySupport(sql: RoomRawQuery): MyEntity?
+                    @RawQuery
+                    fun getNullableEntitySupport(sql: RoomRawQuery): MyEntity?
 
-                @RawQuery(observedEntities = [MyEntity::class])
-                fun getEntitySupportFlow(sql: RoomRawQuery): Flow<MyEntity>
-            }
+                    @RawQuery(observedEntities = [MyEntity::class])
+                    fun getEntitySupportFlow(sql: RoomRawQuery): Flow<MyEntity>
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Long,
-                val doubleColumn: Double,
-                val floatColumn: Float,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Long,
+                    val doubleColumn: Double,
+                    val floatColumn: Float,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1234,29 +1389,29 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.java(
                 "MyDao",
                 """
-            import androidx.room3.*;
-            import androidx.sqlite.db.SupportSQLiteQuery;
+                import androidx.room3.*;
+                import androidx.sqlite.db.SupportSQLiteQuery;
 
-            @Dao
-            public interface MyDao {
-                @RawQuery
-                MyEntity getEntitySupport(RoomRawQuery sql);
-            }
-            """
+                @Dao
+                public interface MyDao {
+                    @RawQuery
+                    MyEntity getEntitySupport(RoomRawQuery sql);
+                }
+                """
                     .trimIndent(),
             )
         val entity =
             Source.java(
                 "MyEntity",
                 """
-            import androidx.room3.*;
+                import androidx.room3.*;
 
-            @Entity
-            public class MyEntity {
-                @PrimaryKey
-                public long pk;
-            }
-        """
+                @Entity
+                public class MyEntity {
+                    @PrimaryKey
+                    public long pk;
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1267,7 +1422,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
 
     @Test
     fun delegatingFunctions_defaultImplBridge(
-        @TestParameter("disable", "all-compatibility", "all") jvmDefaultMode: String
+        @TestParameter("disable", "enable", "no-compatibility") jvmDefaultMode: String
     ) {
         // For parametrized tests, use method name from reflection
         val testName = object {}.javaClass.enclosingMethod!!.name
@@ -1275,24 +1430,24 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-  
-              fun implemented() {
-                TODO("")
-              }
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Long,
-            )
-            """
+                  fun implemented() {
+                    TODO("")
+                  }
+                }
+
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Long,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1308,29 +1463,29 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            interface BaseDao<T> {
-                fun getEntity(id: T): MyEntity
+                interface BaseDao<T> {
+                    fun getEntity(id: T): MyEntity
 
-                fun insertEntity(id: T): T
-            }
+                    fun insertEntity(id: T): T
+                }
 
-            @Dao
-            interface MyDao : BaseDao<Long> {
-              @Query("SELECT * FROM MyEntity WHERE pk = :id")
-              override fun getEntity(id: Long): MyEntity
+                @Dao
+                interface MyDao : BaseDao<Long> {
+                  @Query("SELECT * FROM MyEntity WHERE pk = :id")
+                  override fun getEntity(id: Long): MyEntity
 
-              @Query("INSERT INTO MyEntity (pk) VALUES (:id)")
-              override fun insertEntity(id: Long): Long
-            }
+                  @Query("INSERT INTO MyEntity (pk) VALUES (:id)")
+                  override fun insertEntity(id: Long): Long
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Long,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Long,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1341,7 +1496,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
 
     @Test
     fun transactionFunctionAdapter_interface(
-        @TestParameter("disable", "all-compatibility", "all") jvmDefaultMode: String
+        @TestParameter("disable", "enable", "no-compatibility") jvmDefaultMode: String
     ) {
         // For parametrized tests, use method name from reflection
         val testName = object {}.javaClass.enclosingMethod!!.name
@@ -1349,63 +1504,63 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            interface BaseDao {
-                @Transaction
-                open fun baseConcrete() {
+                interface BaseDao {
+                    @Transaction
+                    open fun baseConcrete() {
+                    }
+
+                    @Transaction
+                    open suspend fun baseSuspendConcrete() {
+                    }
                 }
 
-                @Transaction
-                open suspend fun baseSuspendConcrete() {
+                @Dao
+                interface MyDao : BaseDao {
+                  @Transaction
+                  fun concrete() {
+                  }
+
+                  @Transaction
+                  fun concreteWithReturn(): String {
+                    TODO("")
+                  }
+
+                  @Transaction
+                  fun concreteWithParamsAndReturn(text: String, num: Long): String {
+                    TODO("")
+                  }
+
+                  @Transaction
+                  fun concreteWithFunctionalParam(block: () -> Unit) {
+                  }
+
+                  @Transaction
+                  suspend fun suspendConcrete() {
+
+                  }
+
+                  @Transaction
+                  suspend fun suspendConcreteWithReturn(): String {
+                    TODO("")
+                  }
+
+                  @Transaction
+                  suspend fun suspendConcreteWithSuspendFunctionalParam(block: suspend () -> Unit) {
+                  }
                 }
-            }
 
-            @Dao
-            interface MyDao : BaseDao {
-              @Transaction
-              fun concrete() {
-              }
-
-              @Transaction
-              fun concreteWithReturn(): String {
-                TODO("")
-              }
-
-              @Transaction
-              fun concreteWithParamsAndReturn(text: String, num: Long): String {
-                TODO("")
-              }
-
-              @Transaction
-              fun concreteWithFunctionalParam(block: () -> Unit) {
-              }
-
-              @Transaction
-              suspend fun suspendConcrete() {
-
-              }
-
-              @Transaction
-              suspend fun suspendConcreteWithReturn(): String {
-                TODO("")
-              }
-
-              @Transaction
-              suspend fun suspendConcreteWithSuspendFunctionalParam(block: suspend () -> Unit) {
-              }
-            }
-
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Long,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Long,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
-            sources = listOf(src, databaseSrc, COMMON.COROUTINES_ROOM, COMMON.ROOM_DATABASE_KTX),
+            sources = listOf(src, databaseSrc),
             expectedFilePath = getTestGoldenPath(testName),
             jvmDefaultMode = jvmDefaultMode,
         )
@@ -1417,72 +1572,72 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            interface BaseDao {
-                @Transaction
-                open fun baseConcrete() {
+                interface BaseDao {
+                    @Transaction
+                    open fun baseConcrete() {
+                    }
+
+                    @Transaction
+                    open suspend fun baseSuspendConcrete() {
+                    }
                 }
 
-                @Transaction
-                open suspend fun baseSuspendConcrete() {
+                @Dao
+                abstract class MyDao : BaseDao {
+                  @Transaction
+                  open fun concrete() {
+                  }
+
+                  @Transaction
+                  internal open fun concreteInternal() {
+                  }
+
+                  @Transaction
+                  open suspend fun suspendConcrete() {
+                  }
+
+                  @Transaction
+                  internal open fun concreteInternalWithReturn(): Long {
+                    return 0L
+                  }
+
+                  @Transaction
+                  open suspend fun suspendConcreteWithReturn(): Long {
+                    return 0L
+                  }
+
+
+                  @Transaction
+                  open fun concreteWithVararg(vararg arr: Long) {
+                  }
+
+                  @Transaction
+                  open suspend fun suspendConcreteWithVararg(vararg arr: Long) {
+                  }
+
+                  @Transaction
+                  open fun <R> concreteWithTypeParam() {
+                  
+                  }
+
+                  @Transaction
+                  open suspend fun <R> suspendConcreteWithTypeParam() {
+                  
+                  }
                 }
-            }
 
-            @Dao
-            abstract class MyDao : BaseDao {
-              @Transaction
-              open fun concrete() {
-              }
-
-              @Transaction
-              internal open fun concreteInternal() {
-              }
-
-              @Transaction
-              open suspend fun suspendConcrete() {
-              }
-
-              @Transaction
-              internal open fun concreteInternalWithReturn(): Long {
-                return 0L
-              }
-
-              @Transaction
-              open suspend fun suspendConcreteWithReturn(): Long {
-                return 0L
-              }
-
-
-              @Transaction
-              open fun concreteWithVararg(vararg arr: Long) {
-              }
-
-              @Transaction
-              open suspend fun suspendConcreteWithVararg(vararg arr: Long) {
-              }
-
-              @Transaction
-              open fun <R> concreteWithTypeParam() {
-              
-              }
-
-              @Transaction
-              open suspend fun <R> suspendConcreteWithTypeParam() {
-              
-              }
-            }
-
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Long,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Long,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
-            sources = listOf(src, databaseSrc, COMMON.COROUTINES_ROOM, COMMON.ROOM_DATABASE_KTX),
+            sources = listOf(src, databaseSrc),
             expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
@@ -1493,30 +1648,30 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Update
-              fun updateEntity(item: MyEntity)
+                @Dao
+                interface MyDao {
+                  @Update
+                  fun updateEntity(item: MyEntity)
 
-              @Delete
-              fun deleteEntity(item: MyEntity)
+                  @Delete
+                  fun deleteEntity(item: MyEntity)
 
-              @Update
-              fun updateEntityAndReturnCount(item: MyEntity): Int
+                  @Update
+                  fun updateEntityAndReturnCount(item: MyEntity): Int
 
-              @Delete
-              fun deleteEntityAndReturnCount(item: MyEntity): Int
-            }
+                  @Delete
+                  fun deleteEntityAndReturnCount(item: MyEntity): Int
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Long,
-                val data: String,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Long,
+                    val data: String,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1531,54 +1686,54 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Insert
-              fun insertEntity(item: MyEntity)
+                @Dao
+                interface MyDao {
+                  @Insert
+                  fun insertEntity(item: MyEntity)
 
-              @Upsert
-              fun upsertEntity(item: MyEntity)
+                  @Upsert
+                  fun upsertEntity(item: MyEntity)
 
-              @Insert
-              fun insertEntityAndReturnVoid(item: MyEntity): java.lang.Void?
+                  @Insert
+                  fun insertEntityAndReturnVoid(item: MyEntity): java.lang.Void?
 
-              @Upsert
-              fun upsertEntityAndReturnVoid(item: MyEntity): java.lang.Void?
+                  @Upsert
+                  fun upsertEntityAndReturnVoid(item: MyEntity): java.lang.Void?
 
-              @Insert
-              fun insertEntityAndReturnRowId(item: MyEntity): Long
+                  @Insert
+                  fun insertEntityAndReturnRowId(item: MyEntity): Long
 
-              @Upsert
-              fun upsertEntityAndReturnRowId(item: MyEntity): Long
+                  @Upsert
+                  fun upsertEntityAndReturnRowId(item: MyEntity): Long
 
-              @Insert
-              fun insertEntityListAndReturnRowIds(items: List<MyEntity>): List<Long>
+                  @Insert
+                  fun insertEntityListAndReturnRowIds(items: List<MyEntity>): List<Long>
 
-              @Insert
-              fun insertEntityListAndReturnMutableRowIds(items: List<MyEntity>): MutableList<Long>
+                  @Insert
+                  fun insertEntityListAndReturnMutableRowIds(items: List<MyEntity>): MutableList<Long>
 
-              @Upsert
-              fun upsertEntityListAndReturnRowIds(items: List<MyEntity>): List<Long>
+                  @Upsert
+                  fun upsertEntityListAndReturnRowIds(items: List<MyEntity>): List<Long>
 
-              @Upsert
-              fun upsertEntityListAndReturnMutableRowIds(items: List<MyEntity>): MutableList<Long>
+                  @Upsert
+                  fun upsertEntityListAndReturnMutableRowIds(items: List<MyEntity>): MutableList<Long>
 
-              @Upsert
-              fun upsertEntityListAndReturnRowIdsArray(items: List<MyEntity>): Array<Long>
+                  @Upsert
+                  fun upsertEntityListAndReturnRowIdsArray(items: List<MyEntity>): Array<Long>
 
-              @Upsert
-              fun upsertEntityListAndReturnRowIdsOutArray(items: List<MyEntity>): Array<out Long>
-            }
+                  @Upsert
+                  fun upsertEntityListAndReturnRowIdsOutArray(items: List<MyEntity>): Array<out Long>
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Long,
-                val data: String,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Long,
+                    val data: String,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1593,26 +1748,26 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT count(*) FROM MyEntity")
-              fun count(): Int
+                @Dao
+                interface MyDao {
+                  @Query("SELECT count(*) FROM MyEntity")
+                  fun count(): Int
 
-              @Query("SELECT 'Tom' FROM MyEntity LIMIT 1")
-              fun text(): String
+                  @Query("SELECT 'Tom' FROM MyEntity LIMIT 1")
+                  fun text(): String
 
-              @Query("SELECT 'Tom' FROM MyEntity LIMIT 1")
-              fun nullableText(): String?
-            }
+                  @Query("SELECT 'Tom' FROM MyEntity LIMIT 1")
+                  fun nullableText(): String?
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1627,13 +1782,13 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDatabase.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(entities = [MyEntity::class, MyNullableEntity::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-                abstract fun getDao(): MyDao
-            }
-            """
+                @Database(entities = [MyEntity::class, MyNullableEntity::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                    abstract fun getDao(): MyDao
+                }
+                """
                     .trimIndent(),
             )
 
@@ -1641,27 +1796,27 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun queryOfList(): List<MyEntity>
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun queryOfList(): List<MyEntity>
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            @Entity
-            data class MyNullableEntity(
-                @PrimaryKey
-                val pk: Int?,
-                val other: String?
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String
+                )
+                @Entity
+                data class MyNullableEntity(
+                    @PrimaryKey
+                    val pk: Int?,
+                    val other: String?
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1676,52 +1831,52 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDatabase.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-                abstract fun getDao(): MyDao
-            }
-            """
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                    abstract fun getDao(): MyDao
+                }
+                """
                     .trimIndent(),
             )
         val src =
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun queryOfArray(): Array<MyEntity>
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun queryOfArray(): Array<MyEntity>
 
-              @Suppress(RoomWarnings.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE)
-              @Query("SELECT * FROM MyEntity")
-              fun queryOfNullableArray(): Array<MyEntity?>
+                  @Suppress(RoomWarnings.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE)
+                  @Query("SELECT * FROM MyEntity")
+                  fun queryOfNullableArray(): Array<MyEntity?>
 
-              @Query("SELECT pk FROM MyEntity")
-              fun queryOfArrayWithLong(): Array<Long>
+                  @Query("SELECT pk FROM MyEntity")
+                  fun queryOfArrayWithLong(): Array<Long>
 
-              @Suppress(RoomWarnings.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE)
-              @Query("SELECT pk FROM MyEntity")
-              fun queryOfArrayWithNullableLong(): Array<Long?>
+                  @Suppress(RoomWarnings.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE)
+                  @Query("SELECT pk FROM MyEntity")
+                  fun queryOfArrayWithNullableLong(): Array<Long?>
 
-              @Query("SELECT pk FROM MyEntity")
-              fun queryOfLongArray(): LongArray
+                  @Query("SELECT pk FROM MyEntity")
+                  fun queryOfLongArray(): LongArray
 
-              @Query("SELECT pk FROM MyEntity")
-              fun queryOfShortArray(): ShortArray
-            }
+                  @Query("SELECT pk FROM MyEntity")
+                  fun queryOfShortArray(): ShortArray
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String,
-                val other2: Long
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String,
+                    val other2: Long
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1736,20 +1891,20 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            abstract class MyDao(val db: RoomDatabase) {
-              @Query("SELECT * FROM MyEntity")
-              abstract fun getEntity(): MyEntity
-            }
+                @Dao
+                abstract class MyDao(val db: RoomDatabase) {
+                  @Query("SELECT * FROM MyEntity")
+                  abstract fun getEntity(): MyEntity
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1764,35 +1919,35 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.java(
                 "MyDao",
                 """
-            import androidx.room3.*;
+                import androidx.room3.*;
 
-            @Dao
-            public abstract class MyDao {
+                @Dao
+                public abstract class MyDao {
 
-              private RoomDatabase mDb;
+                  private RoomDatabase mDb;
 
-              public MyDao(RoomDatabase db) {
-                mDb = db;
-              }
+                  public MyDao(RoomDatabase db) {
+                    mDb = db;
+                  }
 
-              @Query("SELECT * FROM MyEntity")
-              abstract MyEntity getEntity();
-            }
-            """
+                  @Query("SELECT * FROM MyEntity")
+                  abstract MyEntity getEntity();
+                }
+                """
                     .trimIndent(),
             )
         val entity =
             Source.java(
                 "MyEntity",
                 """
-            import androidx.room3.*;
+                import androidx.room3.*;
 
-            @Entity
-            public class MyEntity {
-                @PrimaryKey
-                public long pk;
-            }
-        """
+                @Entity
+                public class MyEntity {
+                    @PrimaryKey
+                    public long pk;
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1807,21 +1962,21 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun queryOfOptional(): java.util.Optional<MyEntity>
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun queryOfOptional(): java.util.Optional<MyEntity>
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1836,21 +1991,21 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun queryOfOptional(): com.google.common.base.Optional<MyEntity>
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun queryOfOptional(): com.google.common.base.Optional<MyEntity>
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1865,22 +2020,22 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import com.google.common.collect.ImmutableList
+                import androidx.room3.*
+                import com.google.common.collect.ImmutableList
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun queryOfList(): ImmutableList<MyEntity>
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun queryOfList(): ImmutableList<MyEntity>
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -1895,56 +2050,52 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(entities = [Artist::class, Song::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract fun getDao(): MyDao
-            }
+                @Database(entities = [Artist::class, Song::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract fun getDao(): MyDao
+                }
 
-            @Dao
-            interface MyDao {
-                @Query("SELECT * FROM Song JOIN Artist ON Song.artistKey = Artist.artistId")
-                fun getSongsWithArtist(): Map<Song, Artist>
+                @Dao
+                interface MyDao {
+                    @Query("SELECT * FROM Song JOIN Artist ON Song.artistKey = Artist.artistId")
+                    fun getSongsWithArtist(): Map<Song, Artist>
 
-                @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
-                fun getArtistWithSongs(): Map<Artist, List<Song>>
+                    @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
+                    fun getArtistWithSongs(): Map<Artist, List<Song>>
 
-                @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
-                fun getArtistWithMutableSongs(): Map<Artist, MutableList<Song>>
+                    @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
+                    fun getArtistWithMutableSongs(): Map<Artist, MutableList<Song>>
 
-                @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
-                fun getArtistWithSongsSet(): Map<Artist, Set<Song>>
+                    @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
+                    fun getArtistWithSongsSet(): Map<Artist, Set<Song>>
 
-                @Suppress("DEPRECATION") // For @MapInfo
-                @MapInfo(valueColumn = "songCount")
-                @Query(
-                    "SELECT Artist.*, COUNT(songId) as songCount " +
-                    "FROM Artist JOIN Song ON Artist.artistId = Song.artistKey " +
-                    "GROUP BY artistId"
+                    @Query(
+                        "SELECT Artist.*, COUNT(songId) as songCount " +
+                        "FROM Artist JOIN Song ON Artist.artistId = Song.artistKey " +
+                        "GROUP BY artistId"
+                    )
+                    fun getArtistSongCount(): Map<Artist, @MapColumn("songCount") Int>
+
+                    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+                    @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
+                    fun getArtistWithSongIds(): Map<Artist, List<@MapColumn("songId") String>>
+                }
+
+                @Entity
+                data class Artist(
+                    @PrimaryKey
+                    val artistId: String
                 )
-                fun getArtistSongCount(): Map<Artist, Int>
 
-                @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-                @Suppress("DEPRECATION") // For @MapInfo
-                @MapInfo(valueColumn = "songId")
-                @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
-                fun getArtistWithSongIds(): Map<Artist, List<String>>
-            }
-
-            @Entity
-            data class Artist(
-                @PrimaryKey
-                val artistId: String
-            )
-
-            @Entity
-            data class Song(
-                @PrimaryKey
-                val songId: String,
-                val artistKey: String
-            )
-            """
+                @Entity
+                data class Song(
+                    @PrimaryKey
+                    val songId: String,
+                    val artistKey: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
@@ -1956,45 +2107,45 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(entities = [Artist::class, Song::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract fun getDao(): MyDao
-            }
+                @Database(entities = [Artist::class, Song::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract fun getDao(): MyDao
+                }
 
-            @Entity
-            data class Artist(
-                @PrimaryKey
-                val artistId: String
-            )
+                @Entity
+                data class Artist(
+                    @PrimaryKey
+                    val artistId: String
+                )
 
-            @Entity
-            data class Song(
-                @PrimaryKey
-                val songId: String,
-                val artistKey: String
-            )
-            """
+                @Entity
+                data class Song(
+                    @PrimaryKey
+                    val songId: String,
+                    val artistKey: String
+                )
+                """
                     .trimIndent(),
             )
         val dao =
             Source.java(
                 "MyDao",
                 """
-            import androidx.room3.*;
-            import java.util.List;
-            import java.util.Map;
+                import androidx.room3.*;
+                import java.util.List;
+                import java.util.Map;
 
-            @Dao
-            public interface MyDao {
-                @Query("SELECT * FROM Song JOIN Artist ON Song.artistKey = Artist.artistId")
-                Map<Song, Artist> getSongsWithArtist();
+                @Dao
+                public interface MyDao {
+                    @Query("SELECT * FROM Song JOIN Artist ON Song.artistKey = Artist.artistId")
+                    Map<Song, Artist> getSongsWithArtist();
 
-                @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
-                Map<Artist, List<Song>> getArtistWithSongs();
-            }
-            """
+                    @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
+                    Map<Artist, List<Song>> getArtistWithSongs();
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -2009,66 +2160,66 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(
-                entities = [Artist::class, Song::class, Album::class, Playlist::class],
-                version = 1,
-                exportSchema = false
-            )
-            abstract class MyDatabase : RoomDatabase() {
-              abstract fun getDao(): MyDao
-            }
-
-            @Dao
-            interface MyDao {
-                @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-                @Query(
-                    "SELECT * FROM Artist JOIN (Album JOIN Song ON Album.albumName = Song.album) " +
-                    "ON Artist.artistName = Album.albumArtist"
+                @Database(
+                    entities = [Artist::class, Song::class, Album::class, Playlist::class],
+                    version = 1,
+                    exportSchema = false
                 )
-                fun singleNested(): Map<Artist, Map<Album, List<Song>>>
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract fun getDao(): MyDao
+                }
 
-                @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-                @Query(
-                    "SELECT * FROM Playlist JOIN (Artist JOIN (Album JOIN Song " +
-                    "ON Album.albumName = Song.album) " +
-                    "ON Artist.artistName = Album.albumArtist)" +
-                    "ON Playlist.playlistArtist = Artist.artistName"
+                @Dao
+                interface MyDao {
+                    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+                    @Query(
+                        "SELECT * FROM Artist JOIN (Album JOIN Song ON Album.albumName = Song.album) " +
+                        "ON Artist.artistName = Album.albumArtist"
+                    )
+                    fun singleNested(): Map<Artist, Map<Album, List<Song>>>
+
+                    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+                    @Query(
+                        "SELECT * FROM Playlist JOIN (Artist JOIN (Album JOIN Song " +
+                        "ON Album.albumName = Song.album) " +
+                        "ON Artist.artistName = Album.albumArtist)" +
+                        "ON Playlist.playlistArtist = Artist.artistName"
+                    )
+                    fun doubleNested(): Map<Playlist, Map<Artist, Map<Album, List<Song>>>>
+                }
+
+                @Entity
+                data class Artist(
+                    @PrimaryKey
+                    val artistId: String,
+                    val artistName: String,
                 )
-                fun doubleNested(): Map<Playlist, Map<Artist, Map<Album, List<Song>>>>
-            }
 
-            @Entity
-            data class Artist(
-                @PrimaryKey
-                val artistId: String,
-                val artistName: String,
-            )
+                @Entity
+                data class Album(
+                    @PrimaryKey
+                    val albumId: String,
+                    val albumName: String,
+                    val albumArtist: String
+                )
 
-            @Entity
-            data class Album(
-                @PrimaryKey
-                val albumId: String,
-                val albumName: String,
-                val albumArtist: String
-            )
+                @Entity
+                data class Playlist(
+                    @PrimaryKey
+                    val playlistId: String,
+                    val playlistArtist: String,
+                )
 
-            @Entity
-            data class Playlist(
-                @PrimaryKey
-                val playlistId: String,
-                val playlistArtist: String,
-            )
-
-            @Entity
-            data class Song(
-                @PrimaryKey
-                val songId: String,
-                val album: String,
-                val songArtist: String
-            )
-            """
+                @Entity
+                data class Song(
+                    @PrimaryKey
+                    val songId: String,
+                    val album: String,
+                    val songArtist: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
@@ -2080,35 +2231,35 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(entities = [Artist::class, Song::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract fun getDao(): MyDao
-            }
+                @Database(entities = [Artist::class, Song::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract fun getDao(): MyDao
+                }
 
-            @Dao
-            interface MyDao {
-                @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
-                fun getArtistWithSongs(): com.google.common.collect.ImmutableSetMultimap<Artist, Song>
+                @Dao
+                interface MyDao {
+                    @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
+                    fun getArtistWithSongs(): com.google.common.collect.ImmutableSetMultimap<Artist, Song>
 
-                @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
-                fun getArtistWithSongIds(): com.google.common.collect.ImmutableListMultimap<Artist, Song>
-            }
+                    @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
+                    fun getArtistWithSongIds(): com.google.common.collect.ImmutableListMultimap<Artist, Song>
+                }
 
-            @Entity
-            data class Artist(
-                @PrimaryKey
-                val artistId: String
-            )
+                @Entity
+                data class Artist(
+                    @PrimaryKey
+                    val artistId: String
+                )
 
-            @Entity
-            data class Song(
-                @PrimaryKey
-                val songId: String,
-                val artistKey: String
-            )
-            """
+                @Entity
+                data class Song(
+                    @PrimaryKey
+                    val songId: String,
+                    val artistKey: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
@@ -2120,32 +2271,32 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(entities = [Artist::class, Song::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract fun getDao(): MyDao
-            }
+                @Database(entities = [Artist::class, Song::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract fun getDao(): MyDao
+                }
 
-            @Dao
-            interface MyDao {
-                @Query("SELECT * FROM Song JOIN Artist ON Song.artistKey = Artist.artistId")
-                fun getSongsWithArtist(): com.google.common.collect.ImmutableMap<Song, Artist>
-            }
+                @Dao
+                interface MyDao {
+                    @Query("SELECT * FROM Song JOIN Artist ON Song.artistKey = Artist.artistId")
+                    fun getSongsWithArtist(): com.google.common.collect.ImmutableMap<Song, Artist>
+                }
 
-            @Entity
-            data class Artist(
-                @PrimaryKey
-                val artistId: String
-            )
+                @Entity
+                data class Artist(
+                    @PrimaryKey
+                    val artistId: String
+                )
 
-            @Entity
-            data class Song(
-                @PrimaryKey
-                val songId: String,
-                val artistKey: String
-            )
-            """
+                @Entity
+                data class Song(
+                    @PrimaryKey
+                    val songId: String,
+                    val artistKey: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
@@ -2157,42 +2308,42 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(entities = [User::class, Comment::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract fun getDao(): MyDao
-            }
+                @Database(entities = [User::class, Comment::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract fun getDao(): MyDao
+                }
 
-            @Dao
-            interface MyDao {
-                @Query("SELECT * FROM User JOIN Comment ON User.id = Comment.userId")
-                fun getUserCommentMap(): Map<User, List<Comment>>
+                @Dao
+                interface MyDao {
+                    @Query("SELECT * FROM User JOIN Comment ON User.id = Comment.userId")
+                    fun getUserCommentMap(): Map<User, List<Comment>>
 
-                @Query(
-                    "SELECT User.id, name, Comment.id, userId, text " +
-                    "FROM User JOIN Comment ON User.id = Comment.userId"
+                    @Query(
+                        "SELECT User.id, name, Comment.id, userId, text " +
+                        "FROM User JOIN Comment ON User.id = Comment.userId"
+                    )
+                    fun getUserCommentMapWithoutStarProjection(): Map<User, List<Comment>>
+
+                    @SkipQueryVerification
+                    @Query("SELECT * FROM User JOIN Comment ON User.id = Comment.userId")
+                    fun getUserCommentMapWithoutQueryVerification(): Map<User, List<Comment>>
+                }
+
+                @Entity
+                data class User(
+                    @PrimaryKey val id: Int,
+                    val name: String,
                 )
-                fun getUserCommentMapWithoutStarProjection(): Map<User, List<Comment>>
 
-                @SkipQueryVerification
-                @Query("SELECT * FROM User JOIN Comment ON User.id = Comment.userId")
-                fun getUserCommentMapWithoutQueryVerification(): Map<User, List<Comment>>
-            }
-
-            @Entity
-            data class User(
-                @PrimaryKey val id: Int,
-                val name: String,
-            )
-
-            @Entity
-            data class Comment(
-                @PrimaryKey val id: Int,
-                val userId: Int,
-                val text: String,
-            )
-            """
+                @Entity
+                data class Comment(
+                    @PrimaryKey val id: Int,
+                    val userId: Int,
+                    val text: String,
+                )
+                """
                     .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
@@ -2204,47 +2355,47 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import java.nio.ByteBuffer
+                import androidx.room3.*
+                import java.nio.ByteBuffer
 
-            @Database(
-                entities = [User::class, Comment::class, Avatar::class],
-                version = 1,
-                exportSchema = false
-            )
-            abstract class MyDatabase : RoomDatabase() {
-              abstract fun getDao(): MyDao
-            }
-
-            @Dao
-            interface MyDao {
-                @Query(
-                    "SELECT * FROM User JOIN Avatar ON User.id = Avatar.userId JOIN " +
-                    "Comment ON Avatar.userId = Comment.userId"
+                @Database(
+                    entities = [User::class, Comment::class, Avatar::class],
+                    version = 1,
+                    exportSchema = false
                 )
-                fun getLeftJoinUserNestedMap(): Map<User, Map<Avatar, List<Comment>>>
-            }
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract fun getDao(): MyDao
+                }
 
-            @Entity
-            data class User(
-                @PrimaryKey val id: Int,
-                val name: String,
-            )
+                @Dao
+                interface MyDao {
+                    @Query(
+                        "SELECT * FROM User JOIN Avatar ON User.id = Avatar.userId JOIN " +
+                        "Comment ON Avatar.userId = Comment.userId"
+                    )
+                    fun getLeftJoinUserNestedMap(): Map<User, Map<Avatar, List<Comment>>>
+                }
 
-            @Entity
-            data class Comment(
-                @PrimaryKey val id: Int,
-                val userId: Int,
-                val text: String,
-            )
+                @Entity
+                data class User(
+                    @PrimaryKey val id: Int,
+                    val name: String,
+                )
 
-            @Entity
-            data class Avatar(
-                @PrimaryKey val userId: Int,
-                val url: String,
-                val data: ByteBuffer,
-            )
-            """
+                @Entity
+                data class Comment(
+                    @PrimaryKey val id: Int,
+                    val userId: Int,
+                    val text: String,
+                )
+
+                @Entity
+                data class Avatar(
+                    @PrimaryKey val userId: Int,
+                    val url: String,
+                    val data: ByteBuffer,
+                )
+                """
                     .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
@@ -2256,48 +2407,48 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
+                @Dao
+                interface MyDao {
 
-              @SkipQueryVerification // To make Room use EntityRowAdapter
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
+                  @SkipQueryVerification // To make Room use EntityRowAdapter
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
 
-              @SkipQueryVerification // To make Room use EntityRowAdapter
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                  @SkipQueryVerification // To make Room use EntityRowAdapter
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @Entity
-            class MyEntity(
-                @PrimaryKey
-                val valuePrimitiveLong: Long,
-                val valuePrimitiveInt: Int,
-                val valuePrimitiveByte: Byte,
-                val valuePrimitiveShort: Short,
-                val valueFloat: Float,
-                val valueDouble: Double,
-                val valueBoolean: Boolean,
-                val valueNullableBoolean: Boolean?,
-                val valueString: String,
-                val valueNullableString: String?,
-                val valueChar: Char,
-            ) {
-                var variablePrimitiveLong: Long = 0
-                var variablePrimitiveInt: Int = 0
-                var variablePrimitiveByte: Byte = 0
-                var variablePrimitiveShort: Short = 0
-                var variableFloat: Float = 0f
-                var variableDouble: Double = 0.0
-                var variableBoolean: Boolean = false
-                var variableNullableBoolean: Boolean? = null
-                var variableString: String = ""
-                var variableNullableString: String? = null
-                var variableChar: Char = ' '
-            }
-            """
+                @Entity
+                class MyEntity(
+                    @PrimaryKey
+                    val valuePrimitiveLong: Long,
+                    val valuePrimitiveInt: Int,
+                    val valuePrimitiveByte: Byte,
+                    val valuePrimitiveShort: Short,
+                    val valueFloat: Float,
+                    val valueDouble: Double,
+                    val valueBoolean: Boolean,
+                    val valueNullableBoolean: Boolean?,
+                    val valueString: String,
+                    val valueNullableString: String?,
+                    val valueChar: Char,
+                ) {
+                    var variablePrimitiveLong: Long = 0
+                    var variablePrimitiveInt: Int = 0
+                    var variablePrimitiveByte: Byte = 0
+                    var variablePrimitiveShort: Short = 0
+                    var variableFloat: Float = 0f
+                    var variableDouble: Double = 0.0
+                    var variableBoolean: Boolean = false
+                    var variableNullableBoolean: Boolean? = null
+                    var variableString: String = ""
+                    var variableNullableString: String? = null
+                    var variableChar: Char = ' '
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -2312,35 +2463,52 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import io.reactivex.rxjava3.core.*
+                    import androidx.room3.*
+                    import io.reactivex.rxjava3.core.*
+                    import com.google.common.base.Optional
+                    import androidx.room3.rxjava3.RxDaoReturnTypeConverters
 
-            @Dao
-            interface MyDao {
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getFlowable(vararg arg: String?): Flowable<MyEntity>
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                @DaoReturnTypeConverters(RxDaoReturnTypeConverters::class)
+                abstract class MyDatabase : RoomDatabase() {
+                    abstract fun getDao(): MyDao
+                }
 
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getObservable(vararg arg: String?): Observable<MyEntity>
+                @Dao
+                    interface MyDao {
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getFlowable(vararg arg: String?): Flowable<MyEntity>
 
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getSingle(vararg arg: String?): Single<MyEntity>
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getFlowableOptional(vararg arg: String?): Flowable<Optional<MyEntity>>
 
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getMaybe(vararg arg: String?): Maybe<MyEntity>
-            }
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getObservable(vararg arg: String?): Observable<MyEntity>
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getSingle(vararg arg: String?): Single<MyEntity>
+
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getMaybe(vararg arg: String?): Maybe<MyEntity>
+
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getMaybeList(vararg arg: String?): Maybe<List<MyEntity>>
+
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getMaybeMutableList(vararg arg: String?): Maybe<MutableList<MyEntity>>
+                    }
+
+                    @Entity
+                    data class MyEntity(
+                        @PrimaryKey
+                        val pk: Int,
+                        val other: String
+                    )
+                """
                     .trimIndent(),
             )
         runTest(
-            sources = listOf(src, databaseSrc),
+            sources = listOf(src),
             compiledFiles =
                 compileFiles(
                     listOf(
@@ -2364,28 +2532,31 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import io.reactivex.rxjava3.core.*
+                import androidx.room3.*
+                import io.reactivex.rxjava3.core.*
 
-            @Dao
-            interface MyDao {
-                @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
-                fun insertPublisherSingle(id: String, name: String): Single<Long>
+                @Dao
+                @DaoReturnTypeConverters(
+                    androidx.room3.rxjava3.RxDaoReturnTypeConverters::class
+                )
+                interface MyDao {
+                    @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
+                    fun insertPublisherSingle(id: String, name: String): Single<Long>
 
-                @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
-                fun insertPublisherMaybe(id: String, name: String): Maybe<Long>
+                    @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
+                    fun insertPublisherMaybe(id: String, name: String): Maybe<Long>
 
-                @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
-                fun insertPublisherCompletable(id: String, name: String): Completable
-            }
+                    @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
+                    fun insertPublisherCompletable(id: String, name: String): Completable
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -2413,56 +2584,56 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import kotlinx.coroutines.flow.Flow
+                import androidx.room3.*
+                import kotlinx.coroutines.flow.Flow
 
-            @Dao
-            interface MyDao {
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getFlow(vararg arg: String?): Flow<MyEntity>
+                @Dao
+                interface MyDao {
+                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                    fun getFlow(vararg arg: String?): Flow<MyEntity>
 
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getFlowNullable(vararg arg: String?): Flow<MyEntity?>
+                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                    fun getFlowNullable(vararg arg: String?): Flow<MyEntity?>
 
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                suspend fun getSuspendList(vararg arg: String?): List<MyEntity>
+                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                    suspend fun getSuspendList(vararg arg: String?): List<MyEntity>
 
-                @Query("SELECT count(*) FROM MyEntity")
-                suspend fun getCount(): Int
+                    @Query("SELECT count(*) FROM MyEntity")
+                    suspend fun getCount(): Int
 
-                @Query("INSERT INTO MyEntity (pk) VALUES (:pk)")
-                suspend fun insertEntity(pk: Long)
+                    @Query("INSERT INTO MyEntity (pk) VALUES (:pk)")
+                    suspend fun insertEntity(pk: Long)
 
-                @Query("INSERT INTO MyEntity (pk) VALUES (:pk)")
-                suspend fun insertEntityReturnLong(pk: Long): Long
+                    @Query("INSERT INTO MyEntity (pk) VALUES (:pk)")
+                    suspend fun insertEntityReturnLong(pk: Long): Long
 
-                @Query("UPDATE MyEntity SET other = :text")
-                suspend fun updateEntity(text: String)
+                    @Query("UPDATE MyEntity SET other = :text")
+                    suspend fun updateEntity(text: String)
 
-                @Query("UPDATE MyEntity SET other = :text WHERE pk = :pk")
-                suspend fun updateEntityReturnInt(pk: Long, text: String): Int
+                    @Query("UPDATE MyEntity SET other = :text WHERE pk = :pk")
+                    suspend fun updateEntityReturnInt(pk: Long, text: String): Int
 
-                @Query("DELETE FROM MyEntity")
-                suspend fun deleteEntity()
+                    @Query("DELETE FROM MyEntity")
+                    suspend fun deleteEntity()
 
-                @Query("DELETE FROM MyEntity")
-                suspend fun deleteEntityReturnInt(): Int
+                    @Query("DELETE FROM MyEntity")
+                    suspend fun deleteEntityReturnInt(): Int
 
-                @Query("DELETE FROM MyEntity WHERE pk IN (:pks)")
-                suspend fun deleteEntitiesIn(pks: List<Long>)
-            }
+                    @Query("DELETE FROM MyEntity WHERE pk IN (:pks)")
+                    suspend fun deleteEntitiesIn(pks: List<Long>)
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
-            sources = listOf(src, databaseSrc, COMMON.FLOW, COMMON.COROUTINES_ROOM),
+            sources = listOf(src, databaseSrc, COMMON.FLOW),
             expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
@@ -2473,47 +2644,55 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import io.reactivex.rxjava3.core.*
+                    import androidx.room3.*
+                    import io.reactivex.rxjava3.core.*
 
-            @Dao
-            interface MyDao {
-                @Insert
-                fun insertSingle(vararg entities: MyEntity): Single<List<Long>>
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                @DaoReturnTypeConverters(
+                    androidx.room3.rxjava3.RxDaoReturnTypeConverters::class
+                )
+                abstract class MyDatabase : RoomDatabase() {
+                    abstract fun getDao(): MyDao
+                }
 
-                @Upsert
-                fun upsertSingle(vararg entities: MyEntity): Single<List<Long>>
+                @Dao
+                    interface MyDao {
+                        @Insert
+                        fun insertSingle(vararg entities: MyEntity): Single<List<Long>>
 
-                @Delete
-                fun deleteSingle(entity: MyEntity): Single<Int>
+                        @Upsert
+                        fun upsertSingle(vararg entities: MyEntity): Single<List<Long>>
 
-                @Update
-                fun updateSingle(entity: MyEntity): Single<Int>
-                
-                @Insert
-                fun insertCompletable(vararg entities: MyEntity): Completable
+                        @Delete
+                        fun deleteSingle(entity: MyEntity): Single<Int>
 
-                @Upsert
-                fun upsertCompletable(vararg entities: MyEntity): Completable
+                        @Update
+                        fun updateSingle(entity: MyEntity): Single<Int>
 
-                @Delete
-                fun deleteCompletable(entity: MyEntity): Completable
+                        @Insert
+                        fun insertCompletable(vararg entities: MyEntity): Completable
 
-                @Update
-                fun updateCompletable(entity: MyEntity): Completable
-            }
+                        @Upsert
+                        fun upsertCompletable(vararg entities: MyEntity): Completable
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                        @Delete
+                        fun deleteCompletable(entity: MyEntity): Completable
+
+                        @Update
+                        fun updateCompletable(entity: MyEntity): Completable
+                    }
+
+                    @Entity
+                    data class MyEntity(
+                        @PrimaryKey
+                        val pk: Int,
+                        val other: String
+                    )
+                """
                     .trimIndent(),
             )
         runTest(
-            sources = listOf(src, databaseSrc),
+            sources = listOf(src),
             compiledFiles =
                 compileFiles(
                     listOf(
@@ -2537,43 +2716,45 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import com.google.common.util.concurrent.ListenableFuture
-            import androidx.room3.*
+                import com.google.common.util.concurrent.ListenableFuture
+                import androidx.room3.*
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter
 
-            @Dao
-            interface MyDao {
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getListenableFuture(vararg arg: String?): ListenableFuture<MyEntity>
+                @Dao
+                @DaoReturnTypeConverters(GuavaDaoReturnTypeConverter::class)
+                interface MyDao {
+                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                    fun getListenableFuture(vararg arg: String?): ListenableFuture<MyEntity>
 
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getListenableFutureNullable(vararg arg: String?): ListenableFuture<MyEntity?>
+                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                    fun getListenableFutureNullable(vararg arg: String?): ListenableFuture<MyEntity?>
 
-                @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
-                fun insertListenableFuture(id: String, name: String): ListenableFuture<Long>
+                    @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
+                    fun insertListenableFuture(id: String, name: String): ListenableFuture<Long>
 
-                @Query("UPDATE MyEntity SET other = :name WHERE pk = :id")
-                fun updateListenableFuture(id: String, name: String): ListenableFuture<Void?>
+                    @Query("UPDATE MyEntity SET other = :name WHERE pk = :id")
+                    fun updateListenableFuture(id: String, name: String): ListenableFuture<Void?>
 
-                @Insert
-                fun insertListenableFuture(vararg entities: MyEntity): ListenableFuture<List<Long>>
+                    @Insert
+                    fun insertListenableFuture(vararg entities: MyEntity): ListenableFuture<List<Long>>
 
-                @Upsert
-                fun upsertListenableFuture(vararg entities: MyEntity): ListenableFuture<List<Long>>
+                    @Upsert
+                    fun upsertListenableFuture(vararg entities: MyEntity): ListenableFuture<List<Long>>
 
-                @Delete
-                fun deleteListenableFuture(entity: MyEntity): ListenableFuture<Int>
+                    @Delete
+                    fun deleteListenableFuture(entity: MyEntity): ListenableFuture<Int>
 
-                @Update
-                fun updateListenableFuture(entity: MyEntity): ListenableFuture<Int>
-            }
+                    @Update
+                    fun updateListenableFuture(entity: MyEntity): ListenableFuture<Int>
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -2588,30 +2769,32 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.java(
                 "MyDao",
                 """
-            import com.google.common.util.concurrent.ListenableFuture;
-            import androidx.room3.*;
+                import com.google.common.util.concurrent.ListenableFuture;
+                import androidx.room3.*;
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter;
 
-            @Dao
-            public interface MyDao {
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                ListenableFuture<MyEntity> getListenableFuture(String... arg);
-            }
-            """
+                @Dao
+                @DaoReturnTypeConverters(GuavaDaoReturnTypeConverter.class)
+                public interface MyDao {
+                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                    ListenableFuture<MyEntity> getListenableFuture(String... arg);
+                }
+                """
                     .trimIndent(),
             )
         val entitySrc =
             Source.kotlin(
                 "MyEntity.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -2627,31 +2810,36 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import androidx.lifecycle.*
+                import androidx.room3.*
+                import androidx.lifecycle.*
+                import kotlinx.coroutines.flow.map
+                import androidx.lifecycle.LiveData
+                import androidx.lifecycle.asLiveData
+                import androidx.room3.livedata.LiveDataDaoReturnTypeConverter
 
-            @Dao
-            interface MyDao {
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getLiveData(vararg arg: String?): LiveData<MyEntity>
+                @Dao
+                @DaoReturnTypeConverters(LiveDataDaoReturnTypeConverter::class)
+                interface MyDao {
+                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                    fun getLiveData(vararg arg: String?): LiveData<MyEntity>
 
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getLiveDataNullable(vararg arg: String?): LiveData<MyEntity?>
-            }
+                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                    fun getLiveDataNullable(vararg arg: String?): LiveData<MyEntity?>
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
-            sources = listOf(src, databaseSrc, COMMON.COROUTINES_ROOM),
+            sources = listOf(src, databaseSrc),
             expectedFilePath = getTestGoldenPath(testName.methodName),
-            compiledFiles = compileFiles(listOf(COMMON.LIVE_DATA)),
+            compiledFiles = compileFiles(listOf(COMMON.LIVE_DATA, COMMON.FLOW_LIVE_DATA)),
         )
     }
 
@@ -2661,34 +2849,34 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-                @Insert
-                suspend fun insert(vararg entities: MyEntity): List<Long>
+                @Dao
+                interface MyDao {
+                    @Insert
+                    suspend fun insert(vararg entities: MyEntity): List<Long>
 
-                @Upsert
-                suspend fun upsert(vararg entities: MyEntity): List<Long>
+                    @Upsert
+                    suspend fun upsert(vararg entities: MyEntity): List<Long>
 
-                @Delete
-                suspend fun delete(entity: MyEntity): Int
+                    @Delete
+                    suspend fun delete(entity: MyEntity): Int
 
-                @Update
-                suspend fun update(entity: MyEntity): Int
-            }
+                    @Update
+                    suspend fun update(entity: MyEntity): Int
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
-            sources = listOf(src, databaseSrc, COMMON.COROUTINES_ROOM),
+            sources = listOf(src, databaseSrc),
             expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }
@@ -2700,51 +2888,51 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.java(
                 "MyDao",
                 """
-            import androidx.room3.*;
-            import java.util.List;
+                import androidx.room3.*;
+                import java.util.List;
 
-            @Dao
-            public interface MyDao {
-                @Insert
-                List<Long> insert(MyEntity... entities);
+                @Dao
+                public interface MyDao {
+                    @Insert
+                    List<Long> insert(MyEntity... entities);
 
-                @Insert
-                long[] insertList(List<MyEntity> entities);
+                    @Insert
+                    long[] insertList(List<MyEntity> entities);
 
-                @Upsert
-                List<Long> upsert(MyEntity... entities);
+                    @Upsert
+                    List<Long> upsert(MyEntity... entities);
 
-                @Upsert
-                long[] upsertList(List<MyEntity> entities);
+                    @Upsert
+                    long[] upsertList(List<MyEntity> entities);
 
-                @Delete
-                void delete(MyEntity entity);
+                    @Delete
+                    void delete(MyEntity entity);
 
-                @Delete
-                int deleteList(List<MyEntity> entity);
+                    @Delete
+                    int deleteList(List<MyEntity> entity);
 
-                @Update
-                void update(MyEntity entity);
-                
-                @Update
-                int updateList(List<MyEntity> entity);
-            }
-            """
+                    @Update
+                    void update(MyEntity entity);
+                    
+                    @Update
+                    int updateList(List<MyEntity> entity);
+                }
+                """
                     .trimIndent(),
             )
         val entitySrc =
             Source.kotlin(
                 "MyEntity.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val other: String
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -2759,48 +2947,48 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import java.util.UUID
+                import androidx.room3.*
+                import java.util.UUID
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
 
-              @SkipQueryVerification
-              @Query("SELECT * FROM MyEntity")
-              fun getEntitySkipVerification(): MyEntity
+                  @SkipQueryVerification
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntitySkipVerification(): MyEntity
 
-              @Query("SELECT uuidData FROM MyEntity")
-              fun getValueClass(): UUIDValueClass
+                  @Query("SELECT uuidData FROM MyEntity")
+                  fun getValueClass(): UUIDValueClass
 
-              @Insert
-              fun addEntity(item: MyEntity)
-            }
+                  @Insert
+                  fun addEntity(item: MyEntity)
+                }
 
-            @JvmInline
-            value class LongValueClass(val data: Long)
+                @JvmInline
+                value class LongValueClass(val data: Long)
 
-            @JvmInline
-            value class NullableLongValueClass(val data: Long?)
+                @JvmInline
+                value class NullableLongValueClass(val data: Long?)
 
-            @JvmInline
-            value class UUIDValueClass(val data: UUID)
+                @JvmInline
+                value class UUIDValueClass(val data: UUID)
 
-            @JvmInline
-            value class GenericValueClass<T>(val password: T)
+                @JvmInline
+                value class GenericValueClass<T>(val password: T)
 
-            @Entity
-            data class MyEntity (
-                @PrimaryKey
-                val pk: LongValueClass,
-                val uuidData: UUIDValueClass,
-                val nullableUuidData: UUIDValueClass?,
-                val nullableLongData: NullableLongValueClass,
-                val doubleNullableLongData: NullableLongValueClass?,
-                val genericData: GenericValueClass<String>
-            )
-            """
+                @Entity
+                data class MyEntity (
+                    @PrimaryKey
+                    val pk: LongValueClass,
+                    val uuidData: UUIDValueClass,
+                    val nullableUuidData: UUIDValueClass?,
+                    val nullableLongData: NullableLongValueClass,
+                    val doubleNullableLongData: NullableLongValueClass?,
+                    val genericData: GenericValueClass<String>
+                )
+                """
                     .trimIndent(),
             )
         runTest(
@@ -2815,20 +3003,20 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            interface MyDao {
-              @get:Query("SELECT * FROM MyEntity")
-              val entities: List<MyEntity>
-            }
+                @Dao
+                interface MyDao {
+                  @get:Query("SELECT * FROM MyEntity")
+                  val entities: List<MyEntity>
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int
+                )
+                """
                     .trimIndent(),
             )
         runTest(

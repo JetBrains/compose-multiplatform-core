@@ -26,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.xr.runtime.Session
@@ -35,23 +36,25 @@ import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.accessibilitytest.AccessibilityTestActivity
 import androidx.xr.scenecore.testapp.activitypanel.ActivityPanelActivity
 import androidx.xr.scenecore.testapp.anchorentity.AnchorEntityActivity
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import androidx.xr.scenecore.testapp.environment.EnvironmentActivity
 import androidx.xr.scenecore.testapp.fieldofviewvisibility.FieldOfViewVisibilityActivity
 import androidx.xr.scenecore.testapp.fsmhsmtransition.FsmHsmTransitionActivity
-import androidx.xr.scenecore.testapp.gravityaligned.GravityAlignedPoseTest
 import androidx.xr.scenecore.testapp.headlockedui.HeadLockedUiActivity
 import androidx.xr.scenecore.testapp.hittest.HitTestActivity
 import androidx.xr.scenecore.testapp.inputmoveresize.InputMoveResizeTestActivity
 import androidx.xr.scenecore.testapp.memoryleak.MemoryLeakActivity
-import androidx.xr.scenecore.testapp.model.GltfModelActivity
+import androidx.xr.scenecore.testapp.model.GltfModelAnimationActivity
+import androidx.xr.scenecore.testapp.model.GltfModelMaterialTextureActivity
 import androidx.xr.scenecore.testapp.movable.MovableActivity
+import androidx.xr.scenecore.testapp.panelcoordinate.PanelCoordinateActivity
 import androidx.xr.scenecore.testapp.panelroundedcorner.PanelRoundedCornerActivity
 import androidx.xr.scenecore.testapp.sceneviewer.SceneViewerActivity
 import androidx.xr.scenecore.testapp.spatialaudio.SpatialAudioActivity
 import androidx.xr.scenecore.testapp.spatialcapabilities.SpatialCapabilitiesActivity
 import androidx.xr.scenecore.testapp.spatialuser.SpatialUserActivity
 import androidx.xr.scenecore.testapp.standalone.StandaloneActivity
+import androidx.xr.scenecore.testapp.surfacecustommesh.SurfaceEntityCustomMeshActivity
 import androidx.xr.scenecore.testapp.surfaceimage.SurfaceEntityImageActivity
 import androidx.xr.scenecore.testapp.surfaceinteraction.SurfaceEntityInteractionActivity
 import androidx.xr.scenecore.testapp.surfaceplayback.SurfaceEntityPlaybackActivity
@@ -59,10 +62,16 @@ import androidx.xr.scenecore.testapp.transformation.TransformationActivity
 import androidx.xr.scenecore.testapp.ui.BuildInfoRecyclerViewAdapter
 import androidx.xr.scenecore.testapp.ui.TestCasesRecyclerViewAdapter
 import androidx.xr.scenecore.testapp.visibility.VisibilityActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
     private var session: Session? = null
+
+    private val sessionManager = SessionManager(this)
+    private var pendingPanelSize: FloatSize2d? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,9 +83,7 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        session = createSession(this)
-        if (session == null) this.finish()
-        setUpMainPanelMovable()
+        createSessionAndSetupUi()
 
         // Top bar
         createTopToolBarView()
@@ -86,6 +93,24 @@ class MainActivity : AppCompatActivity() {
 
         // Test cases & bottom bar
         createTestCasesRecyclerView()
+    }
+
+    private fun createSessionAndSetupUi() {
+        // Create the session in a separate thread to avoid StrictMode DiskRead Violations
+        lifecycleScope.launch {
+            val createdSession = withContext(Dispatchers.IO) { sessionManager.createSession() }
+            if (createdSession == null) {
+                finish()
+            } else {
+                session = createdSession
+                session?.scene?.keyEntity = session?.scene?.mainPanelEntity
+                setUpMainPanelMovable()
+                pendingPanelSize?.let {
+                    session?.scene?.mainPanelEntity?.size = it // restore panel size
+                    pendingPanelSize = null // reset
+                }
+            }
+        }
     }
 
     private fun setUpMainPanelMovable() {
@@ -134,7 +159,7 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.cuj_input_move_resize_test),
                 getString(R.string.cuj_movable_component_test),
                 getString(R.string.cuj_resizeable_component_test),
-                getString(R.string.cuj_gltf_model_test),
+                getString(R.string.cuj_gltf_model_material_texture_test),
                 getString(R.string.cuj_movable_test),
                 getString(R.string.cuj_spatial_user_test),
                 getString(R.string.cuj_visibility_test),
@@ -148,8 +173,10 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.dev_memory_leak_test),
                 getString(R.string.cuj_surface_entity_interaction_test),
                 getString(R.string.cuj_surface_entity_playbacktest),
-                getString(R.string.cuj_gravity_aligned_pose_test),
                 getString(R.string.cuj_surface_entity_imagetest),
+                getString(R.string.cuj_panel_coordinates_test),
+                getString(R.string.cuj_gltf_model_animation_test),
+                getString(R.string.cuj_surface_entity_custom_mesh_test),
             )
         val customAdapter = TestCasesRecyclerViewAdapter(dataset)
         val recyclerView: RecyclerView = findViewById(R.id.cuj_buttons_recycler)
@@ -180,11 +207,8 @@ class MainActivity : AppCompatActivity() {
 
             Tests.FSM_HSM_TRANSITION_TEST.test -> {
                 val intent = Intent(this@MainActivity, FsmHsmTransitionActivity::class.java)
-                fsmHsmTransitionLauncher.launch(intent)
+                activityLauncher.launch(intent)
             }
-
-            Tests.GRAVITY_ALIGNED_POSE_TEST.test ->
-                startActivity(createIntent<GravityAlignedPoseTest>())
 
             Tests.SPATIAL_USER_TEST.test -> startActivity(createIntent<SpatialUserActivity>())
 
@@ -201,29 +225,30 @@ class MainActivity : AppCompatActivity() {
 
             Tests.HEAD_LOCKED_UI_TEST.test -> startActivity(createIntent<HeadLockedUiActivity>())
 
-            Tests.GLTF_MODEL_TEST.test -> startActivity(createIntent<GltfModelActivity>())
+            Tests.GLTF_MODEL_MATERIAL_TEXTURE_TEST.test ->
+                startActivity(createIntent<GltfModelMaterialTextureActivity>())
 
             Tests.MOVABLE_PANEL_TEST.test -> startActivity(createIntent<MovableActivity>())
 
             Tests.INPUT_MOVE_RESIZE_1_TEST.test -> {
-                val intent = createIntent<InputMoveResizeTestActivity>()
+                val intent = Intent(this@MainActivity, InputMoveResizeTestActivity::class.java)
                 intent.putExtra("MAIN_PANEL_TITLE", getString(R.string.cuj_input_move_resize_test))
-                startActivity(intent)
+                activityLauncher.launch(intent)
             }
 
             Tests.INPUT_MOVE_RESIZE_2_TEST.test -> {
-                val intent = createIntent<InputMoveResizeTestActivity>()
+                val intent = Intent(this@MainActivity, InputMoveResizeTestActivity::class.java)
                 intent.putExtra("MAIN_PANEL_TITLE", getString(R.string.cuj_movable_component_test))
-                startActivity(intent)
+                activityLauncher.launch(intent)
             }
 
             Tests.INPUT_MOVE_RESIZE_3_TEST.test -> {
-                val intent = createIntent<InputMoveResizeTestActivity>()
+                val intent = Intent(this@MainActivity, InputMoveResizeTestActivity::class.java)
                 intent.putExtra(
                     "MAIN_PANEL_TITLE",
                     getString(R.string.cuj_resizeable_component_test),
                 )
-                startActivity(intent)
+                activityLauncher.launch(intent)
             }
 
             Tests.SPATIAL_AUDIO_1_TEST.test -> {
@@ -260,6 +285,9 @@ class MainActivity : AppCompatActivity() {
 
             Tests.MEMORY_LEAK_TEST.test -> startActivity(createIntent<MemoryLeakActivity>())
 
+            Tests.SURFACE_CUSTOM_MESH_TEST.test ->
+                startActivity(createIntent<SurfaceEntityCustomMeshActivity>())
+
             Tests.SURFACE_ENTITY_IMAGE_TEST.test ->
                 startActivity(createIntent<SurfaceEntityImageActivity>())
 
@@ -268,6 +296,12 @@ class MainActivity : AppCompatActivity() {
 
             Tests.SURFACE_PLAYBACK_TEST.test ->
                 startActivity(createIntent<SurfaceEntityPlaybackActivity>())
+
+            Tests.PANEL_COORDINATES_TEST.test ->
+                startActivity(createIntent<PanelCoordinateActivity>())
+
+            Tests.GLTF_MODEL_ANIMATION_TEST.test ->
+                startActivity(createIntent<GltfModelAnimationActivity>())
 
             else -> {
                 Log.i(ACTIVITY_NAME, "DO_NOTHING")
@@ -279,7 +313,7 @@ class MainActivity : AppCompatActivity() {
 
     // TODO: b/451293148 - Main Panel size is changed after a child activity with a resizable
     //  component resized the panel and finished.
-    private val fsmHsmTransitionLauncher =
+    private val activityLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             run {
                 if (result.resultCode == RESULT_OK) {
@@ -293,12 +327,19 @@ class MainActivity : AppCompatActivity() {
                     if (defaultPanelSizeWidth != null && defaultPanelSizeHeight != null) {
                         val defaultPanelSize =
                             FloatSize2d(defaultPanelSizeWidth, defaultPanelSizeHeight)
-                        session?.scene?.mainPanelEntity?.size = defaultPanelSize
-
-                        Log.d(
-                            "MainActivity",
-                            "FsmHsmTransitionActivity finished, defaultPanelSize: $defaultPanelSize",
-                        )
+                        if (session == null) {
+                            Log.d(
+                                ACTIVITY_NAME,
+                                "Session is null, pending size update: $defaultPanelSize",
+                            )
+                            pendingPanelSize = defaultPanelSize
+                        } else {
+                            Log.d(
+                                ACTIVITY_NAME,
+                                "Session exists, recover defaultPanelSize directly: $defaultPanelSize",
+                            )
+                            session?.scene?.mainPanelEntity?.size = defaultPanelSize
+                        }
                     }
                 }
             }
@@ -321,7 +362,7 @@ class MainActivity : AppCompatActivity() {
         INPUT_MOVE_RESIZE_1_TEST(9),
         INPUT_MOVE_RESIZE_2_TEST(10),
         INPUT_MOVE_RESIZE_3_TEST(11),
-        GLTF_MODEL_TEST(12),
+        GLTF_MODEL_MATERIAL_TEXTURE_TEST(12),
         MOVABLE_PANEL_TEST(13),
         SPATIAL_USER_TEST(14),
         VISIBILITY_TEST(15),
@@ -335,7 +376,9 @@ class MainActivity : AppCompatActivity() {
         MEMORY_LEAK_TEST(23),
         SURFACE_INTERACTION_TEST(24),
         SURFACE_PLAYBACK_TEST(25),
-        GRAVITY_ALIGNED_POSE_TEST(26),
-        SURFACE_ENTITY_IMAGE_TEST(27),
+        SURFACE_ENTITY_IMAGE_TEST(26),
+        PANEL_COORDINATES_TEST(27),
+        GLTF_MODEL_ANIMATION_TEST(28),
+        SURFACE_CUSTOM_MESH_TEST(29),
     }
 }

@@ -40,9 +40,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 internal class Controller3AUpdate3ATest {
     private val graphState3A = GraphState3A()
     private val graphProcessor = FakeGraphProcessor()

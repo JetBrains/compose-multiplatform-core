@@ -29,8 +29,6 @@ import androidx.camera.camera2.adapter.ZslControl
 import androidx.camera.camera2.compat.DynamicRangeProfilesCompat
 import androidx.camera.camera2.compat.quirk.CameraQuirks
 import androidx.camera.camera2.compat.quirk.CaptureSessionStuckQuirk
-import androidx.camera.camera2.compat.quirk.CloseCaptureSessionOnDisconnectQuirk
-import androidx.camera.camera2.compat.quirk.CloseCaptureSessionOnVideoQuirk
 import androidx.camera.camera2.compat.quirk.DeviceQuirks
 import androidx.camera.camera2.compat.quirk.DisableAbortCapturesOnStopQuirk
 import androidx.camera.camera2.compat.quirk.DisableAbortCapturesOnStopWithSessionProcessorQuirk
@@ -85,6 +83,8 @@ constructor(
     private val zslControl: ZslControl,
     private val templateParamsOverride: TemplateParamsOverride,
     private val cameraMetadata: CameraMetadata?,
+    private val cameraXConfig: CameraXConfig? = null,
+    private val cameraInteropStateCallbackRepository: CameraInteropStateCallbackRepository? = null,
 ) {
     private val closeCameraOnCameraGraphClose = CloseCameraOnCameraGraphClose()
     private val supportedDynamicRangeProfiles =
@@ -96,31 +96,26 @@ constructor(
             null
         }
 
-    public data class CameraGraphCreationResult(
-        val config: CameraGraph.Config,
-        val streamConfigMap: Map<CameraStream.Config, DeferrableSurface>,
-    )
-
     public fun create(
         operatingMode: OperatingMode,
         sessionConfig: SessionConfig?,
+        setOutputType: Boolean,
         graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter? = null,
         camera2ExtensionMode: Int? = null,
-        setOutputType: Boolean = false,
         surfaceToStreamUseCaseMap: Map<DeferrableSurface, Long> = emptyMap(),
         surfaceToStreamUseHintMap: Map<DeferrableSurface, Long> = emptyMap(),
-        cameraXConfig: CameraXConfig? = null,
-    ): CameraGraphCreationResult {
+    ): GraphConfigBundle {
         val isExtensions = operatingMode == OperatingMode.EXTENSION
         val enableStreamUseCase = !isExtensions // Enable StreamUseCase if not in Extension mode
 
-        var containsVideo = false
         val streamGroupMap = mutableMapOf<Int, MutableList<CameraStream.Config>>()
         val inputStreams = mutableListOf<InputStream.Config>()
         var sessionTemplate = RequestTemplate(TEMPLATE_PREVIEW)
         val sessionParameters: MutableMap<Any, Any> = mutableMapOf()
         val streamConfigMap: MutableMap<CameraStream.Config, DeferrableSurface> = mutableMapOf()
         sessionConfig?.let { sessionConfig ->
+            cameraInteropStateCallbackRepository?.updateCallbacks(sessionConfig)
+
             if (sessionConfig.templateType != CaptureConfig.TEMPLATE_TYPE_NONE) {
                 sessionTemplate = RequestTemplate(sessionConfig.templateType)
             }
@@ -210,9 +205,6 @@ constructor(
                             streamList.add(stream)
                         }
                     }
-                    if (surface.containerClass == MediaCodec::class.java) {
-                        containsVideo = true
-                    }
                     if (surface != deferrableSurface) continue
                     if (zslControl.isZslSurface(surface, sessionConfig)) {
                         zslStream = stream
@@ -232,7 +224,7 @@ constructor(
             }
         }
 
-        val combinedFlags = createCameraGraphFlags(cameraQuirks, containsVideo, isExtensions)
+        val combinedFlags = createCameraGraphFlags(cameraQuirks, isExtensions)
 
         // Set video stabilization mode to capture request
         var videoStabilizationMode: Int? = null
@@ -312,9 +304,9 @@ constructor(
                 graphStateListeners = listOfNotNull(graphStateToCameraStateAdapter),
             )
 
-        return CameraGraphCreationResult(
-            config = graphConfig,
-            streamConfigMap = streamConfigMap.toMap(),
+        return GraphConfigBundle(
+            graphConfig = graphConfig,
+            streamToSurfaceMap = streamConfigMap.toMap(),
         )
     }
 
@@ -382,7 +374,6 @@ constructor(
 
     private fun createCameraGraphFlags(
         cameraQuirks: CameraQuirks,
-        containsVideo: Boolean,
         isExtensions: Boolean,
     ): CameraGraph.Flags {
         if (cameraQuirks.quirks.contains(CaptureSessionStuckQuirk::class.java)) {
@@ -397,18 +388,11 @@ constructor(
         //  which the test is running.
         val shouldFinalizeSessionOnCloseBehavior = FinalizeSessionOnCloseQuirk.getBehavior()
 
-        val shouldCloseCaptureSessionOnDisconnect =
-            when {
-                isExtensions -> true
-                // If we can release Surfaces immediately, we'll finalize the session when the
-                // camera graph is closed (through FinalizeSessionOnCloseQuirk), and thus we
-                // won't need to explicitly close the capture session.
-                CameraQuirks.isImmediateSurfaceReleaseAllowed() -> false
-                cameraQuirks.quirks.contains(CloseCaptureSessionOnVideoQuirk::class.java) &&
-                    containsVideo -> true
-                DeviceQuirks[CloseCaptureSessionOnDisconnectQuirk::class.java] != null -> true
-                else -> false
-            }
+        // SurfaceRequest API documentation stipulates that previous SurfaceRequests are guaranteed
+        // to be detached when a new request is made. This means whenever we need a new session,
+        // all Surfaces should be disconnected. To do this, we need to close the capture session
+        // unconditionally.
+        val shouldCloseCaptureSessionOnDisconnect = true
 
         val shouldCloseCameraDeviceOnClose =
             closeCameraOnCameraGraphClose.shouldCloseCameraDevice(isExtensions)
@@ -501,3 +485,12 @@ constructor(
 
     override fun toString(): String = "CameraGraphConfigProvider<${cameraConfig.cameraId}>"
 }
+
+/**
+ * A bundle containing the [CameraGraph.Config] and the mapping of [CameraStream.Config] to
+ * [DeferrableSurface] used to bridge CameraPipe and CameraX.
+ */
+public data class GraphConfigBundle(
+    val graphConfig: CameraGraph.Config,
+    val streamToSurfaceMap: Map<CameraStream.Config, DeferrableSurface>,
+)

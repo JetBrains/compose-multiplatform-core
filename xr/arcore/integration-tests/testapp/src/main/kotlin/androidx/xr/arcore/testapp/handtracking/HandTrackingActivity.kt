@@ -48,6 +48,7 @@ import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
@@ -150,7 +151,7 @@ class HandTrackingActivity : ComponentActivity() {
         sessionHelper =
             SessionLifecycleHelper(
                 this,
-                Config(handTracking = Config.HandTrackingMode.BOTH),
+                Config(handTracking = HandTrackingMode.BOTH),
                 onSessionAvailable = { session ->
                     this.session = session
 
@@ -177,14 +178,26 @@ class HandTrackingActivity : ComponentActivity() {
                                 }
 
                             launch {
-                                Hand.left(session)?.state?.collect { leftHandState ->
-                                    renderHandGizmos(leftHandState, leftHandJointEntityMap)
+                                try {
+                                    Hand.left(session)?.state?.collect { leftHandState ->
+                                        renderHandGizmos(leftHandState, leftHandJointEntityMap)
+                                    }
+                                } finally {
+                                    for (entity in leftHandJointEntityMap.values) {
+                                        entity.dispose()
+                                    }
                                 }
                             }
 
                             launch {
-                                Hand.right(session)?.state?.collect { rightHandState ->
-                                    renderHandGizmos(rightHandState, rightHandJointEntityMap)
+                                try {
+                                    Hand.right(session)?.state?.collect { rightHandState ->
+                                        renderHandGizmos(rightHandState, rightHandJointEntityMap)
+                                    }
+                                } finally {
+                                    for (entity in rightHandJointEntityMap.values) {
+                                        entity.dispose()
+                                    }
                                 }
                             }
                         }

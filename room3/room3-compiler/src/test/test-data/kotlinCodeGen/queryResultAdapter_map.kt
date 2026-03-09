@@ -2,6 +2,8 @@ import androidx.room3.RoomDatabase
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performBlocking
 import androidx.sqlite.SQLiteStatement
+import androidx.sqlite.prepare
+import androidx.sqlite.step
 import javax.`annotation`.processing.Generated
 import kotlin.Int
 import kotlin.String
@@ -192,7 +194,7 @@ internal class MyDao_Impl(
           _tmpArtistId = _stmt.getText(_columnIndexOfArtistId)
           _key = Artist(_tmpArtistId)
           if (_stmt.isNull(_columnIndexOfSongCount)) {
-            error("The column(s) of the map value object of type 'Int' are NULL but the map's value type argument expect it to be NON-NULL")
+            error("The column(s) of the map value object of type '[@MapColumn(\"songCount\")] Int' are NULL but the map's value type argument expect it to be NON-NULL")
           }
           val _value: Int
           val _tmp: Int

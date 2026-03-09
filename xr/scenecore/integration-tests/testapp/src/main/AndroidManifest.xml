@@ -33,9 +33,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.IntegrationTestsApp">
         <activity
-            android:name=".gravityaligned.GravityAlignedPoseTest"
-            android:exported="false" />
-        <activity
             android:name=".sceneviewer.SceneViewerActivity"
             android:exported="false" />
         <activity
@@ -79,7 +76,13 @@
             android:name=".headlockedui.HeadLockedUiActivity"
             android:exported="true" />
         <activity
-            android:name=".model.GltfModelActivity"
+            android:name=".model.GltfModelMaterialTextureActivity"
+            android:exported="true" />
+        <activity
+            android:name=".model.GltfModelAnimationActivity"
+            android:exported="true" />
+        <activity
+            android:name=".surfacecustommesh.SurfaceEntityCustomMeshActivity"
             android:exported="true" />
         <activity
             android:name=".surfaceimage.SurfaceEntityImageActivity"
@@ -107,6 +110,9 @@
             android:exported="true" />
         <activity
             android:name=".memoryleak.MemoryLeakActivity"
+            android:exported="true" />
+        <activity
+            android:name=".panelcoordinate.PanelCoordinateActivity"
             android:exported="true" />
         <property
             android:name="android.window.PROPERTY_XR_ACTIVITY_START_MODE"

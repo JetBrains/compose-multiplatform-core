@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.input.pointer
 
+import android.os.Handler
+import android.os.Looper
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_DOWN
@@ -33,11 +35,13 @@ import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.debugInspectorInfo
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.unit.IntSize
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.Subject
-import com.google.common.truth.Subject.Factory
 import com.google.common.truth.Truth
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.Assert
 
 internal fun PointerInputEventData(
@@ -54,6 +58,8 @@ internal fun PointerInputEventData(
         down,
         pressure = 1.0f,
         PointerType.Touch,
+        scaleGestureFactor = 0f,
+        panGestureOffset = Offset.Zero,
     )
 }
 
@@ -266,6 +272,8 @@ internal fun InternalPointerEvent(
                 down = data.pressed,
                 pressure = data.pressure,
                 type = data.type,
+                scaleGestureFactor = data.scaleFactor,
+                panGestureOffset = data.panOffset,
             )
         )
     }
@@ -385,6 +393,8 @@ internal fun internalPointerEventOf(vararg changes: PointerInputChange): Interna
                 type = it.type,
                 activeHover = false,
                 historical = emptyList(),
+                scaleGestureFactor = 0f,
+                panGestureOffset = Offset.Zero,
             )
         }
     val pointerEvent = PointerInputEvent(0L, pointers, event)
@@ -420,6 +430,8 @@ internal fun hoverInternalPointerEvent(
             type = change.type,
             activeHover = true,
             historical = emptyList(),
+            scaleGestureFactor = 0f,
+            panGestureOffset = Offset.Zero,
         )
     val pointerEvent = PointerInputEvent(0L, listOf(pointer), createHoverMotionEvent(action, x, y))
 
@@ -601,3 +613,11 @@ internal fun elementFor(key1: Any? = null, instance: Modifier.Node) =
             return key1?.hashCode() ?: 0
         }
     }
+
+internal fun waitForPointerUpdate(rule: ComposeTestRule, delayMillis: Long = 200L) {
+    rule.waitForIdle()
+    val latch = CountDownLatch(1)
+    Handler(Looper.getMainLooper()).postDelayed({ latch.countDown() }, delayMillis)
+    latch.await(2, TimeUnit.SECONDS)
+    rule.waitForIdle()
+}

@@ -39,7 +39,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isToggleable
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
@@ -67,7 +67,7 @@ class CheckboxScreenshotTest(
     @OptIn(ExperimentalMaterial3Api::class)
     @Before
     fun setUp() {
-        isCheckboxStylingFixEnabled = isCheckboxStyleM3FixEnabled
+        ComposeMaterial3Flags.isCheckboxStylingFixEnabled = isCheckboxStyleM3FixEnabled
     }
 
     @get:Rule val rule = createComposeRule(StandardTestDispatcher())

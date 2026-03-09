@@ -31,8 +31,8 @@ import androidx.room3.paging.util.queryContext
 import androidx.room3.paging.util.queryDatabase
 import androidx.room3.paging.util.queryItemCount
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -58,7 +58,7 @@ public expect abstract class LimitOffsetPagingSource<Value : Any>(
 
     override fun getRefreshKey(state: PagingState<Int, Value>): Int?
 
-    protected open suspend fun convertRows(
+    protected abstract suspend fun convertRows(
         limitOffsetQuery: RoomRawQuery,
         itemCount: Int,
     ): List<Value>
@@ -75,6 +75,7 @@ internal class CommonLimitOffsetImpl<Value : Any>(
     internal val itemCount = AtomicInt(INITIAL_ITEM_COUNT)
 
     private val refreshComplete = AtomicBoolean(false)
+    private val collectorLatch = CompletableDeferred<Unit>()
 
     private var invalidationFlowJob: Job? = null
 
@@ -82,9 +83,16 @@ internal class CommonLimitOffsetImpl<Value : Any>(
         // register db listeners right away
         invalidationFlowJob =
             db.getCoroutineScope().launch {
-                db.invalidationTracker.createFlow(*tables, emitInitialState = false).collect {
+                db.invalidationTracker.createFlow(*tables, emitInitialState = true).collect {
+                    // Signal even before checking if we're still valid, to ensure the load function
+                    // doesn't block.
+                    val initialState = collectorLatch.complete(Unit)
                     if (pagingSource.invalid) {
                         throw CancellationException("PagingSource is invalid")
+                    }
+                    if (initialState) {
+                        // The first emit essentially just lets us know the flow has started.
+                        return@collect
                     }
                     if (refreshComplete.get()) {
                         pagingSource.invalidate()
@@ -97,10 +105,16 @@ internal class CommonLimitOffsetImpl<Value : Any>(
 
     suspend fun load(params: LoadParams<Int>): LoadResult<Int, Value> {
         val tempCount = itemCount.get()
-        // if itemCount is < 0, then it is initial load
+        // if itemCount is == INITIAL_ITEM_COUNT, then it is initial load
         return try {
+            // Wait until we know the collector has started, which means we're guaranteed to get an
+            // invalidation for any updates that happen after this point.
+            collectorLatch.await()
             if (tempCount == INITIAL_ITEM_COUNT) {
-                initialLoad(params).also { refreshComplete.compareAndSet(false, true) }
+                // Mark the load started for invalidation purposes; once we pass this point, we
+                // want to ensure we process any invalidations by the flow collector.
+                refreshComplete.compareAndSet(false, true)
+                initialLoad(params)
             } else {
                 nonInitialLoad(params, tempCount)
             }

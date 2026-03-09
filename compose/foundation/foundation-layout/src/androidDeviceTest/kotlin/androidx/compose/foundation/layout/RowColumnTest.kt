@@ -944,6 +944,74 @@ class RowColumnTest : LayoutTest() {
         }
     }
 
+    @Test
+    fun testRow_withColumnAlignModifier_usesCorrectCrossAxisSize() {
+        with(density) {
+            val childWidth = 20.toDp()
+            val childHeight = 50.toDp()
+            val rowHeight = 100.toDp()
+
+            val drawLatch = CountDownLatch(1)
+            var childPosition = Offset.Zero
+
+            show {
+                Column {
+                    val columnModifier = Modifier.align(Alignment.End) // Horizontal.End
+
+                    // Row under test (Cross axis is Vertical)
+                    Row(Modifier.height(rowHeight)) {
+                        Box(
+                            modifier =
+                                columnModifier.size(childWidth, childHeight).onGloballyPositioned {
+                                    childPosition = it.positionInRoot()
+                                    drawLatch.countDown()
+                                }
+                        )
+                    }
+                }
+            }
+
+            assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
+
+            val expectedY = (rowHeight.toPx() - childHeight.toPx()).roundToInt().toFloat()
+            assertEquals(Offset(0f, expectedY), childPosition)
+        }
+    }
+
+    @Test
+    fun testColumn_withRowAlignModifier_usesCorrectCrossAxisSize() {
+        with(density) {
+            val childWidth = 50.toDp()
+            val childHeight = 20.toDp()
+            val colWidth = 100.toDp()
+
+            val drawLatch = CountDownLatch(1)
+            var childPosition = Offset.Zero
+
+            show {
+                Row {
+                    val rowModifier = Modifier.align(Alignment.Bottom) // Vertical.Bottom
+
+                    // Column under test (Cross axis is Horizontal)
+                    Column(Modifier.width(colWidth)) {
+                        Box(
+                            modifier =
+                                rowModifier.size(childWidth, childHeight).onGloballyPositioned {
+                                    childPosition = it.positionInRoot()
+                                    drawLatch.countDown()
+                                }
+                        )
+                    }
+                }
+            }
+
+            assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
+
+            val expectedX = (colWidth.toPx() - childWidth.toPx()).roundToInt().toFloat()
+            assertEquals(Offset(expectedX, 0f), childPosition)
+        }
+    }
+
     // endregion
 
     // region Cross axis alignment tests in Row
@@ -1968,36 +2036,6 @@ class RowColumnTest : LayoutTest() {
         }
 
     @Test
-    fun testRow_withInfiniteWidth_measuresWeightedChildrenCorrectly() =
-        with(density) {
-            val weightedChildWidth = 100.toDp()
-            val nonWeightedChildWidth = 30.toDp()
-            val latch = CountDownLatch(2)
-            show {
-                WithInfiniteConstraints {
-                    Row {
-                        FixedSizeLayout(nonWeightedChildWidth.roundToPx(), 0, mapOf())
-
-                        BoxWithConstraints(Modifier.weight(1f, fill = true)) {
-                            assertEquals(0, constraints.minWidth)
-                            assertEquals(Constraints.Infinity, constraints.maxWidth)
-                            FixedSizeLayout(weightedChildWidth.roundToPx(), 0, mapOf())
-                            latch.countDown()
-                        }
-
-                        BoxWithConstraints(Modifier.weight(1f, fill = false)) {
-                            assertEquals(0, constraints.minWidth)
-                            assertEquals(Constraints.Infinity, constraints.maxWidth)
-                            FixedSizeLayout(weightedChildWidth.roundToPx(), 0, mapOf())
-                            latch.countDown()
-                        }
-                    }
-                }
-            }
-            assertTrue(latch.await(1, TimeUnit.SECONDS))
-        }
-
-    @Test
     fun testRow_protectsAgainstOverflow() =
         with(density) {
             val rowMinWidth = 0.toDp()
@@ -2515,36 +2553,6 @@ class RowColumnTest : LayoutTest() {
                     }
                 }
             }
-        }
-
-    @Test
-    fun testColumn_withInfiniteHeight_measuresWeightedChildrenCorrectly() =
-        with(density) {
-            val weightedChildHeight = 100.toDp()
-            val nonWeightedChildHeight = 30.toDp()
-            val latch = CountDownLatch(2)
-            show {
-                WithInfiniteConstraints {
-                    Column {
-                        FixedSizeLayout(0, nonWeightedChildHeight.roundToPx(), mapOf())
-
-                        BoxWithConstraints(Modifier.weight(1f, fill = true)) {
-                            assertEquals(0, constraints.minHeight)
-                            assertEquals(Constraints.Infinity, constraints.maxHeight)
-                            FixedSizeLayout(0, weightedChildHeight.roundToPx(), mapOf())
-                            latch.countDown()
-                        }
-
-                        BoxWithConstraints(Modifier.weight(1f, fill = false)) {
-                            assertEquals(0, constraints.minHeight)
-                            assertEquals(Constraints.Infinity, constraints.maxHeight)
-                            FixedSizeLayout(0, weightedChildHeight.roundToPx(), mapOf())
-                            latch.countDown()
-                        }
-                    }
-                }
-            }
-            assertTrue(latch.await(1, TimeUnit.SECONDS))
         }
 
     @Test

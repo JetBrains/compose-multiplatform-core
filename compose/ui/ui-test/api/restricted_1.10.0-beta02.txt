@@ -278,11 +278,10 @@ package androidx.compose.ui.test {
 
   @Deprecated public final class GestureScope {
     ctor @Deprecated public GestureScope(androidx.compose.ui.semantics.SemanticsNode node, androidx.compose.ui.test.TestContext testContext);
-    method @BytecodeOnly @Deprecated @kotlin.PublishedApi internal androidx.compose.ui.test.MultiModalInjectionScope getDelegateScope();
+    method @InaccessibleFromKotlin @Deprecated @kotlin.PublishedApi internal androidx.compose.ui.test.MultiModalInjectionScope getDelegateScope();
     method @BytecodeOnly @Deprecated public long getVisibleSize-YbymL2g();
     property @Deprecated @kotlin.PublishedApi internal androidx.compose.ui.test.MultiModalInjectionScope delegateScope;
     property @Deprecated public androidx.compose.ui.unit.IntSize visibleSize;
-    field @Deprecated @kotlin.PublishedApi internal final androidx.compose.ui.test.MultiModalInjectionScope delegateScope;
   }
 
   public final class GestureScopeKt {

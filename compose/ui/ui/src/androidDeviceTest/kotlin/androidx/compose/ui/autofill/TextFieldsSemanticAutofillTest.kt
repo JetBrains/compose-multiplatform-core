@@ -32,8 +32,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertDoesNotContainColor
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -46,15 +44,13 @@ import androidx.compose.ui.semantics.semanticsId
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -63,21 +59,6 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 26)
 class TextFieldsSemanticAutofillTest {
     @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
-
-    @OptIn(ExperimentalComposeUiApi::class)
-    private val previousFlagValue = ComposeUiFlags.isSemanticAutofillEnabled
-
-    @Before
-    fun enableAutofill() {
-        @OptIn(ExperimentalComposeUiApi::class)
-        ComposeUiFlags.isSemanticAutofillEnabled = true
-    }
-
-    @After
-    fun disableAutofill() {
-        @OptIn(ExperimentalComposeUiApi::class)
-        ComposeUiFlags.isSemanticAutofillEnabled = previousFlagValue
-    }
 
     // ============================================================================================
     // Tests to verify legacy TextField populating and filling.

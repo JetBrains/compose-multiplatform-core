@@ -19,6 +19,7 @@ package androidx.wear.compose.material3.demos
 import android.content.Context
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.wear.compose.integration.demos.common.Centralize
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.integration.demos.common.Material3DemoCategory
@@ -28,6 +29,7 @@ import androidx.wear.compose.material3.samples.AnimatedTextSampleSharedFontRegis
 import androidx.wear.compose.material3.samples.ButtonGroupSample
 import androidx.wear.compose.material3.samples.ButtonGroupThreeButtonsSample
 import androidx.wear.compose.material3.samples.ButtonWithImageSample
+import androidx.wear.compose.material3.samples.CustomCompositingStrategyTransformationSpecSample
 import androidx.wear.compose.material3.samples.EdgeButtonListSample
 import androidx.wear.compose.material3.samples.EdgeButtonSample
 import androidx.wear.compose.material3.samples.EdgeSwipeForSwipeToDismiss
@@ -45,10 +47,7 @@ import androidx.wear.compose.material3.samples.SwipeToRevealSingleActionCardSamp
 import androidx.wear.compose.material3.samples.SwipeToRevealWithScalingLazyColumnSample
 import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnSample
 import androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitleSample
-import androidx.wear.compose.material3.samples.TransformingLazyColumnAnimationSample
-import androidx.wear.compose.material3.samples.TransformingLazyColumnExpandableCardSample
-import androidx.wear.compose.material3.samples.TransformingLazyColumnReducedMotionSample
-import androidx.wear.compose.material3.samples.TransformingLazyColumnReverseLayoutSample
+import androidx.wear.compose.material3.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
 
 val WearMaterial3Demos =
     Material3DemoCategory(
@@ -80,6 +79,7 @@ val WearMaterial3Demos =
                         ComposableDemo("Fading Expanding Label") {
                             FadingExpandingLabelButtonSample()
                         },
+                        ComposableDemo("Text Entry Button") { TextEntryButtonDemo() },
                     ),
                 ),
                 ComposableDemo("Color Scheme") { ColorSchemeDemos() },
@@ -250,10 +250,15 @@ val WearMaterial3Demos =
                 ),
                 ComposableDemo("Settings Demo") { SettingsDemo() },
                 Material3DemoCategory(
-                    title = "TransformingLazyColumn",
+                    title = "Transforming Lazy Column",
                     listOf(
                         ComposableDemo("Notifications") {
                             TransformingLazyColumnNotificationsDemo()
+                        },
+                        ComposableDemo("Notifications with Offscreen compositing") {
+                            TransformingLazyColumnNotificationsDemo(
+                                containerCompositingStrategy = CompositingStrategy.Offscreen
+                            )
                         },
                         ComposableDemo("Morphing Notifications") {
                             TransformingLazyColumnMorphingNotificationsDemo()
@@ -268,9 +273,16 @@ val WearMaterial3Demos =
                         ComposableDemo("Reversed layout") {
                             TransformingLazyColumnReverseLayoutSample()
                         },
+                        ComposableDemo("Content Padding") {
+                            TransformingLazyColumnMinimumVerticalContentPaddingSample()
+                        },
                         ComposableDemo("Reduced Motion") {
                             TransformingLazyColumnReducedMotionSample()
                         },
+                        ComposableDemo("Custom container CompositingStrategy") {
+                            CustomCompositingStrategyTransformationSpecSample()
+                        },
+                        ComposableDemo("Snapping behavior") { TransformingLazyColumnSnappingDemo() },
                     ),
                 ),
                 ComposableDemo("Text Block") { TextBlockDemo() },

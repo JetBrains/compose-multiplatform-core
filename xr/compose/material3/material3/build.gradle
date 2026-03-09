@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -29,24 +28,22 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     // Add dependencies here
     implementation("androidx.compose.ui:ui-unit:1.8.0")
-    implementation("androidx.compose.material3:material3:1.4.0-beta01")
-    implementation("androidx.compose.material3.adaptive:adaptive:1.2.0-alpha10")
-    implementation("androidx.compose.material3.adaptive:adaptive-layout:1.2.0-alpha10")
-    implementation(project(":compose:material3:material3-adaptive-navigation-suite"))
-
+    implementation("androidx.compose.material3:material3:1.4.0")
+    implementation("androidx.compose.material3.adaptive:adaptive:1.2.0")
+    implementation("androidx.compose.material3.adaptive:adaptive-layout:1.2.0")
+    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.5.0-alpha11")
     implementation(project(":xr:compose:compose"))
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     defaultConfig {
-        minSdk = 24
+        minSdk { version = release(24) }
     }
     namespace = "androidx.xr.compose.material3"
 }

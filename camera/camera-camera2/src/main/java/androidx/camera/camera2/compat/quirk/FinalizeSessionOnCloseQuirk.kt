@@ -42,10 +42,7 @@ public class FinalizeSessionOnCloseQuirk : Quirk {
         public fun isEnabled(): Boolean = true
 
         public fun getBehavior(): FinalizeSessionOnCloseBehavior =
-            if (CameraQuirks.isImmediateSurfaceReleaseAllowed()) {
-                // Finalize immediately for devices that allow immediate Surface reuse.
-                FinalizeSessionOnCloseBehavior.IMMEDIATE
-            } else if (Build.MODEL.lowercase(Locale.getDefault()).startsWith("cph")) {
+            if (Build.MODEL.lowercase(Locale.getDefault()).startsWith("cph")) {
                 // During shutdown, the test app often experiences ANR which prevents us from
                 // eventually closing the camera device and releasing the Surfaces. As a workaround,
                 // we leverage CloseCaptureSessionOnDisconnectQuirk to close the capture session,

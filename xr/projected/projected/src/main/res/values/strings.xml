@@ -1,6 +1,4 @@
 <resources>
-    <!-- Required annotation for activities designated for an xr projected device [DO NOT TRANSLATE] -->
-    <string name="display_category_xr_projected" translatable="false">xr_projected</string>
     <string name="projected_continue_button">Continue</string>
     <string name="projected_cancel_button">Cancel</string>
     <string name="go_to_host_projected_activity_text">Please review the permission request on your host device</string>

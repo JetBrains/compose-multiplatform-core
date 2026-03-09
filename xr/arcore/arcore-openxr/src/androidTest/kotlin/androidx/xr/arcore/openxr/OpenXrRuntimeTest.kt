@@ -22,12 +22,13 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.runtime.XrDevice.DisplayBlendMode
+import androidx.xr.runtime.DisplayBlendMode
+import androidx.xr.runtime.GeospatialMode
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.runtime.openxr.test"
+// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.arcore.openxr.test"
 // supports a
 // lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
@@ -37,7 +38,7 @@ class OpenXrRuntimeTest {
 
     companion object {
         init {
-            System.loadLibrary("androidx.xr.runtime.openxr.test")
+            System.loadLibrary("androidx.xr.arcore.openxr.test")
         }
     }
 
@@ -52,6 +53,12 @@ class OpenXrRuntimeTest {
         // Result comes from `kBlendModes` defined in
         // //third_party/jetpack_xr_natives/openxr/openxr_stub.cc.
         assertThat(underTest.getPreferredDisplayBlendMode()).isEqualTo(DisplayBlendMode.ADDITIVE)
+    }
+
+    @Test
+    fun isSupported_geospatialVpsAndGps_returnsTrue() = initOpenXrRuntimeAndRunTest {
+        // Result comes from //third_party/jetpack_xr_natives/openxr/openxr_stub.cc.
+        assertThat(underTest.isSupported(GeospatialMode.VPS_AND_GPS)).isTrue()
     }
 
     private fun initOpenXrRuntimeAndRunTest(testBody: () -> Unit) {

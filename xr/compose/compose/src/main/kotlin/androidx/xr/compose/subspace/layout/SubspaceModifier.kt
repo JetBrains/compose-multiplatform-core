@@ -20,6 +20,9 @@ import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNodeCoordinator
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 
 /**
  * An ordered, immutable collection of [subspace modifier elements][SubspaceModifierNodeElement]
@@ -72,6 +75,8 @@ public interface SubspaceModifier {
 
         internal var parent: Node? = null
         internal var child: Node? = null
+        internal var kindSet: Int = 0
+        internal var aggregateChildKindSet: Int = 0.inv()
         internal var layoutNode: SubspaceLayoutNode? = null
         internal val coordinator: SubspaceLayoutModifierNodeCoordinator? =
             if (this is SubspaceLayoutModifierNode) {
@@ -79,6 +84,24 @@ public interface SubspaceModifier {
             } else {
                 null
             }
+
+        private var scope: CoroutineScope? = null
+
+        /**
+         * A [CoroutineScope] that can be used to launch tasks that should run while the node is
+         * attached.
+         *
+         * The scope is accessible between [onAttach] and [onDetach] calls, and will be cancelled
+         * after the node is detached (after [onDetach] returns).
+         */
+        public val coroutineScope: CoroutineScope
+            get() =
+                scope
+                    ?: CoroutineScope(
+                            requireOwner().coroutineContext +
+                                Job(parent = requireOwner().coroutineContext[Job])
+                        )
+                        .also { scope = it }
 
         /**
          * Indicates that the node is attached to a [SubspaceLayout] which is part of the UI tree.
@@ -99,6 +122,11 @@ public interface SubspaceModifier {
         internal open fun markAsDetached() {
             check(isAttached) { "Cannot detach node that is not attached!" }
             isAttached = false
+
+            scope?.let {
+                it.cancel("SubspaceModifier.Node was detached")
+                scope = null
+            }
         }
 
         /** Called when the node is attached to a [SubspaceLayout] which is part of the UI tree. */
@@ -176,32 +204,3 @@ internal class CombinedSubspaceModifier(
             } +
             "]"
 }
-
-/**
- * Generates a lazy sequence that walks up the node tree to the root.
- *
- * If this node is the root, an empty sequence is returned.
- */
-internal fun SubspaceModifier.Node.traverseAncestors(): Sequence<SubspaceModifier.Node> {
-    return generateSequence(seed = parent) { it.parent }
-}
-
-/** Generates a sequence with self and elements up the node tree to the root. */
-internal fun SubspaceModifier.Node.traverseSelfThenAncestors(): Sequence<SubspaceModifier.Node> =
-    sequenceOf(this) + traverseAncestors()
-
-/**
- * Generates a lazy sequence that walks down the node tree.
- *
- * If this node is a leaf node, an empty sequence is returned.
- */
-internal fun SubspaceModifier.Node.traverseDescendants(): Sequence<SubspaceModifier.Node> {
-    return generateSequence(seed = child) { it.child }
-}
-
-/** Generates a sequence with self and elements down the node tree. */
-internal fun SubspaceModifier.Node.traverseSelfThenDescendants(): Sequence<SubspaceModifier.Node> =
-    sequenceOf(this) + traverseDescendants()
-
-/** Returns the first element of type [T] in the sequence, or `null` if none match. */
-internal inline fun <reified T> Sequence<*>.findInstance(): T? = firstOrNull { it is T } as T?

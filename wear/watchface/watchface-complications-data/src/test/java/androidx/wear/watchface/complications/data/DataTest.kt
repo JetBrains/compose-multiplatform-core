@@ -53,6 +53,7 @@ import org.junit.runner.RunWith
 import org.robolectric.shadows.ShadowLog
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 @Suppress("NewApi")
 public class AsWireComplicationDataTest {
     val resources = ApplicationProvider.getApplicationContext<Context>().resources
@@ -1859,6 +1860,7 @@ public class AsWireComplicationDataTest {
 }
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 @Suppress("NewApi")
 public class FromWireComplicationDataTest {
     @Test
@@ -2272,6 +2274,7 @@ public class FromWireComplicationDataTest {
 }
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 @SuppressLint("NewApi")
 class GetContentDescriptionTest {
     @get:Rule val expect = Expect.create()
@@ -2408,6 +2411,7 @@ class GetContentDescriptionTest {
 }
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 public class TapActionTest {
     private val mPendingIntent =
         PendingIntent.getBroadcast(ApplicationProvider.getApplicationContext(), 0, Intent(), 0)
@@ -2555,6 +2559,7 @@ public class TapActionTest {
 }
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 public class RoundtripTapActionTest {
     private val mPendingIntent =
         PendingIntent.getBroadcast(ApplicationProvider.getApplicationContext(), 0, Intent(), 0)
@@ -2710,6 +2715,7 @@ public class RoundtripTapActionTest {
 }
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 @Suppress("NewApi")
 public class ValidTimeRangeTest {
     private val testStartInstant = Instant.ofEpochMilli(1000L)
@@ -3124,6 +3130,7 @@ public class ValidTimeRangeTest {
 }
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 public class RedactionTest {
     @Before
     fun setup() {

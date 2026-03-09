@@ -19,7 +19,6 @@ package androidx.compose.ui.viewinterop
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
-import android.util.DisplayMetrics
 import android.view.ContextThemeWrapper
 import android.view.View
 import android.view.ViewGroup
@@ -44,12 +43,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
-import androidx.compose.ui.ComposeUiFlags.isCanScrollUsingLastDownEventFixEnabled
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -58,12 +56,15 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ComposeViewContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.platform.compositionContext
+import androidx.compose.ui.platform.findViewTreeComposeViewContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollTo
@@ -89,6 +90,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import kotlin.test.assertNotEquals
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert.assertEquals
@@ -96,7 +98,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -626,10 +627,8 @@ class ComposeViewTest {
         rule.runOnIdle { composeView.assertCanScroll() }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun canScrollVertically_returnsTrue_ifWeMoveOutsideScrollable() {
-        Assume.assumeTrue(isCanScrollUsingLastDownEventFixEnabled)
         lateinit var composeView: View
         rule.setContent {
             composeView = LocalView.current
@@ -787,11 +786,8 @@ class ComposeViewTest {
             assertEquals(composeView.width, with(density) { 100.dp.roundToPx() })
 
             rule.activity.resources.displayMetrics.density = newDensity
-            val newConfig =
-                Configuration().apply {
-                    setTo(rule.activity.resources.configuration)
-                    densityDpi = (newDensity * DisplayMetrics.DENSITY_DEFAULT).roundToInt()
-                }
+            rule.activity.resources.configuration.densityDpi = (newDensity * 160).roundToInt()
+            val newConfig = Configuration().apply { setTo(rule.activity.resources.configuration) }
             composeView.dispatchConfigurationChanged(newConfig)
         }
 
@@ -804,6 +800,35 @@ class ComposeViewTest {
             // reset density to initial value to prevent it leaking to other tests
             rule.activity.resources.displayMetrics.density = density.density
         }
+    }
+
+    @Test
+    fun composeView_changeComposeViewContext() {
+        rule.setContent { Box(Modifier.fillMaxSize()) }
+
+        val composeView =
+            rule.runOnUiThread {
+                rule.activity.findViewById<ViewGroup>(android.R.id.content).getChildAt(0)
+                    as ComposeView
+            }
+
+        val originalComposeViewContext = composeView.findViewTreeComposeViewContext()
+        assertNotNull(originalComposeViewContext)
+        val originalCompositionContext = originalComposeViewContext!!.compositionContext
+
+        rule.runOnUiThread {
+            composeView.composeViewContext =
+                ComposeViewContext(
+                    view = originalComposeViewContext.view,
+                    compositionContext = Recomposer(Dispatchers.Main),
+                    lifecycleOwner = originalComposeViewContext.lifecycleOwner,
+                    savedStateRegistryOwner = originalComposeViewContext.savedStateRegistryOwner,
+                    viewModelStoreOwner = originalComposeViewContext.viewModelStoreOwner,
+                )
+        }
+        val androidComposeViewContext = composeView.getChildAt(0) as AndroidComposeView
+        assertNotEquals(originalComposeViewContext, androidComposeViewContext.composeViewContext)
+        assertNotEquals(originalCompositionContext, androidComposeViewContext.compositionContext)
     }
 }
 

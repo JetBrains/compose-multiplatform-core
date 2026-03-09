@@ -25,12 +25,17 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SubspaceLayout
+import androidx.xr.compose.subspace.layout.SubspaceMeasurable
+import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
+import androidx.xr.compose.subspace.layout.SubspaceMeasureResult
+import androidx.xr.compose.subspace.layout.SubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.testTag
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
+import androidx.xr.compose.testing.TestLogger
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.scenecore.Entity
-import androidx.xr.scenecore.GroupEntity
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -40,7 +45,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SubspaceLayoutNodeTest {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun subspaceLayoutNode_shouldParentNodesProperly() {
@@ -49,10 +59,10 @@ class SubspaceLayoutNodeTest {
         composeTestRule.setContent {
             Subspace {
                 val session = checkNotNull(LocalSession.current)
-                parentEntity = GroupEntity.create(session, "ParentEntity")
+                parentEntity = Entity.create(session, "ParentEntity")
                 EntityLayout(entity = parentEntity) {
                     EntityLayout(
-                        entity = GroupEntity.create(session, "ChildEntity"),
+                        entity = Entity.create(session, "ChildEntity"),
                         modifier = SubspaceModifier.testTag("Child"),
                     )
                 }
@@ -67,6 +77,63 @@ class SubspaceLayoutNodeTest {
                     ?.parent
             )
             .isEqualTo(parentEntity)
+    }
+
+    @Test
+    fun subspaceLayoutNode_updatesToMeasurePolicy_triggersRemeasure() {
+        val owner = AndroidComposeSpatialElement()
+        val logger = TestLogger().also { owner.logger = it }
+        val node = SubspaceLayoutNode()
+        owner.root.insertAt(0, node)
+        logger
+            .log { node.measurePolicy = TestMeasurePolicy() }
+            .assertMeasureRequested(node)
+            .assertIsEmpty()
+    }
+
+    @Test
+    fun subspaceLayoutNode_insertingChild_triggersRemeasure() {
+        val owner = AndroidComposeSpatialElement()
+        val logger = TestLogger().also { owner.logger = it }
+        val node = SubspaceLayoutNode()
+        logger
+            .log { owner.root.insertAt(0, node) }
+            .assertMeasureRequested(node)
+            .assertMeasureRequested(node.parent!!)
+            .assertNodeInserted(node)
+            .assertIsEmpty()
+    }
+
+    @Test
+    fun subspaceLayoutNode_movingChild_triggersRemeasure() {
+        val owner = AndroidComposeSpatialElement()
+        val logger = TestLogger().also { owner.logger = it }
+        val node1 = SubspaceLayoutNode()
+        owner.root.insertAt(0, node1)
+        val node2 = SubspaceLayoutNode()
+        owner.root.insertAt(1, node2)
+        logger
+            .log { owner.root.move(0, 1, 1) }
+            .assertMeasureRequested(owner.root)
+            .assertNodeMoved(node1)
+            .assertIsEmpty()
+    }
+
+    @Test
+    fun subspaceLayoutNode_removingChild_triggersRemeasure() {
+        val owner = AndroidComposeSpatialElement()
+        val logger = TestLogger().also { owner.logger = it }
+        val node1 = SubspaceLayoutNode()
+        owner.root.insertAt(0, node1)
+        val node2 = SubspaceLayoutNode()
+        owner.root.insertAt(1, node2)
+        logger
+            .log { owner.root.removeAt(0, 2) }
+            .assertMeasureRequested(owner.root)
+            .assertNodeRemoved(node1)
+            .assertMeasureRequested(owner.root)
+            .assertNodeRemoved(node2)
+            .assertIsEmpty()
     }
 
     @Test
@@ -128,6 +195,15 @@ class SubspaceLayoutNodeTest {
             coreEntity = CoreGroupEntity(entity),
         ) { _, _ ->
             layout(0, 0, 0) {}
+        }
+    }
+
+    private class TestMeasurePolicy : SubspaceMeasurePolicy {
+        override fun SubspaceMeasureScope.measure(
+            measurables: List<SubspaceMeasurable>,
+            constraints: VolumeConstraints,
+        ): SubspaceMeasureResult {
+            return layout(0, 0, 0) {}
         }
     }
 }

@@ -73,12 +73,11 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isFocusable
 import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.isNotFocusable
 import androidx.compose.ui.test.isNotFocused
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -90,6 +89,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.matchers.MSSIMMatcher
+import androidx.xr.glimmer.testutils.captureToImage
+import androidx.xr.glimmer.testutils.createGlimmerRule
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -110,7 +111,7 @@ class SurfaceTest {
 
     @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
 
-    @get:Rule(1) val inputModeRule = nonTouchInputModeRule()
+    @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     @Before
     fun before() {
@@ -321,7 +322,7 @@ class SurfaceTest {
     @Test
     fun focusableSurface_semantics_focusable() {
         val focusRequester = FocusRequester()
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             Box(Modifier.size(100.dp).focusRequester(focusRequester).surface().testTag("surface"))
         }
         rule.onNodeWithTag("surface").assert(isFocusable()).assert(isNotFocused())
@@ -375,7 +376,7 @@ class SurfaceTest {
         rule
             .onNodeWithTag("surface")
             .assert(isFocusable())
-            .assert(isNotFocused())
+            .assert(isFocused())
             .assertHasClickAction()
             .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
             .assertIsEnabled()
@@ -401,7 +402,7 @@ class SurfaceTest {
         rule
             .onNodeWithTag("surface")
             .assert(isFocusable())
-            .assert(isNotFocused())
+            .assert(isFocused())
             .assertHasClickAction()
             .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
             .assertIsEnabled()
@@ -427,7 +428,7 @@ class SurfaceTest {
         rule
             .onNodeWithTag("surface")
             .assert(isFocusable())
-            .assert(isNotFocused())
+            .assert(isFocused())
             .assertHasClickAction()
             .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
             .assertIsEnabled()
@@ -452,7 +453,7 @@ class SurfaceTest {
         rule
             .onNodeWithTag("surface")
             .assert(isFocusable())
-            .assert(isNotFocused())
+            .assert(isFocused())
             .assertHasClickAction()
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
             .assertIsEnabled()
@@ -630,7 +631,7 @@ class SurfaceTest {
     fun focusableSurface_changeShape_borderChanges() {
         var roundedCorners by mutableStateOf(true)
 
-        rule.setContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             with(LocalDensity.current) {
                 Box(
                     Modifier.size(40f.toDp())
@@ -668,7 +669,7 @@ class SurfaceTest {
     fun clickableSurface_changeShape_borderChanges() {
         var roundedCorners by mutableStateOf(true)
 
-        rule.setContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             with(LocalDensity.current) {
                 Box(
                     Modifier.size(40f.toDp())
@@ -723,7 +724,7 @@ class SurfaceTest {
                 }
             }
 
-        rule.setContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             with(LocalDensity.current) {
                 Box(
                     Modifier.size(40f.toDp())
@@ -777,7 +778,7 @@ class SurfaceTest {
                 }
             }
 
-        rule.setContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             with(LocalDensity.current) {
                 Box(
                     Modifier.size(40f.toDp())
@@ -836,7 +837,7 @@ class SurfaceTest {
                 }
             }
 
-        rule.setContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             with(LocalDensity.current) {
                 Box(
                     Modifier.size(400f.toDp())
@@ -898,7 +899,7 @@ class SurfaceTest {
                 }
             }
 
-        rule.setContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             with(LocalDensity.current) {
                 Box(
                     Modifier.size(400f.toDp())
@@ -1101,7 +1102,7 @@ class SurfaceTest {
                     ),
             )
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             Box(Modifier.testTag("outerBox")) {
                 Box(
                     Modifier.padding(40.dp)
@@ -1159,7 +1160,7 @@ class SurfaceTest {
                     ),
             )
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             Box(Modifier.testTag("outerBox")) {
                 Box(
                     Modifier.padding(40.dp)
@@ -1209,7 +1210,7 @@ class SurfaceTest {
         val surfaceDepth =
             SurfaceDepth(depth = null, focusedDepth = Depth(layer1 = shadow, layer2 = shadow))
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             Box(Modifier.testTag("outerBox")) {
                 Box(
                     Modifier.padding(40.dp)
@@ -1325,7 +1326,7 @@ class SurfaceTest {
                     ),
             )
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             Column {
                 Box(
                     Modifier.padding(40.dp)
@@ -1385,7 +1386,7 @@ class SurfaceTest {
                     ),
             )
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             Column {
                 Box(
                     Modifier.padding(40.dp)
@@ -1434,7 +1435,7 @@ class SurfaceTest {
 
         lateinit var scope: CoroutineScope
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             scope = rememberCoroutineScope()
             Box {
                 Box(
@@ -1478,7 +1479,7 @@ class SurfaceTest {
 
         lateinit var scope: CoroutineScope
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             scope = rememberCoroutineScope()
             Box {
                 Box(
@@ -1523,7 +1524,7 @@ class SurfaceTest {
 
         lateinit var scope: CoroutineScope
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             scope = rememberCoroutineScope()
             Box(
                 Modifier.size(100.dp)
@@ -1566,7 +1567,7 @@ class SurfaceTest {
 
         lateinit var scope: CoroutineScope
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             scope = rememberCoroutineScope()
             Box(
                 Modifier.size(100.dp)
@@ -1770,7 +1771,7 @@ class SurfaceTest {
         val matcher = MSSIMMatcher()
         val focusRequester = FocusRequester()
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             Column {
                 Box(
                     Modifier.size(100.dp)
@@ -2182,7 +2183,7 @@ class SurfaceTest {
 
         lateinit var scope: CoroutineScope
 
-        rule.setGlimmerThemeContent {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
             scope = rememberCoroutineScope()
             Box(
                 Modifier.size(100.dp)

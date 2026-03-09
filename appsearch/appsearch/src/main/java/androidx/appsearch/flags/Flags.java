@@ -20,6 +20,7 @@ package androidx.appsearch.flags;
 
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
+import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
 
 import java.util.Collection;
 
@@ -192,10 +193,6 @@ public final class Flags {
     public static final String FLAG_ENABLE_SEARCH_RESULT_PARENT_TYPES =
             FLAG_PREFIX + "enable_search_result_parent_types";
 
-    /** Enables delete propagation type related APIs. */
-    public static final String FLAG_ENABLE_DELETE_PROPAGATION_TYPE =
-            FLAG_PREFIX + "enable_delete_propagation_type";
-
     /** Enables AppSearch to manage blob files. */
     public static final String FLAG_ENABLE_APP_SEARCH_MANAGE_BLOB_FILES =
             FLAG_PREFIX + "enable_app_search_manage_blob_files";
@@ -230,10 +227,6 @@ public final class Flags {
     public static final String FLAG_ENABLE_EMBEDDING_MATCH_INFO =
             FLAG_PREFIX + "enable_embedding_match_info";
 
-    /** Enables to query visibility documents rather than get. */
-    public static final String FLAG_ENABLE_QUERY_VISIBILITY_DOCUMENTS =
-            FLAG_PREFIX + "enable_query_visibility_documents";
-
     /** Enables strict byte size enforcement on a result page. */
     public static final String FLAG_ENABLE_STRICT_PAGE_BYTE_SIZE_LIMIT =
             FLAG_PREFIX + "enable_strict_page_byte_size_limit";
@@ -246,9 +239,6 @@ public final class Flags {
     public static final String FLAG_ENABLE_COMPRESSION_MEM_LEVEL_ONE =
             FLAG_PREFIX + "enable_compression_mem_level_one";
 
-    /** Enables gzip decompression buffer size memory optimization. */
-    public static final String FLAG_ENABLE_SMALLER_DECOMPRESSION_BUFFER_SIZE =
-            FLAG_PREFIX + "enable_smaller_decompression_buffer_size";
 
     /** Enables {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED}. */
     public static final String FLAG_ENABLE_RESULT_ABORTED =
@@ -291,10 +281,6 @@ public final class Flags {
     public static final String FLAG_ENABLE_PASSING_FILTER_TO_CHILDREN =
             FLAG_PREFIX + "enable_passing_filter_to_children";
 
-    /** Whether to enable using removeByQuery to implement removeById. */
-    public static final String FLAG_ENABLE_REMOVE_BY_ID_USES_QUERY =
-            FLAG_PREFIX + "enable_remove_by_id_uses_query";
-
     /**
      * Whether to enable the new header format (refactor legacy format and introduce unsynced tail
      * checksum) related changes in PortableFileBackedProtoLog.
@@ -307,19 +293,6 @@ public final class Flags {
      */
     public static final String FLAG_ENABLE_EARLY_SET_SCHEMA_EXIT =
             FLAG_PREFIX + "enable_early_set_schema_exit";
-
-    /**
-     * Whether to enable the new embedding iterator which has improved access order.
-     */
-    public static final String FLAG_ENABLE_EMBEDDING_ITERATOR_V2 =
-            FLAG_PREFIX + "enable_embedding_iterator_v2";
-
-    /**
-     * Whether to enable reusing a single buffer of memory to avoid reallocating a new buffer for
-     * every single document read..
-     */
-    public static final String FLAG_ENABLE_REUSABLE_DECOMPRESSION_BUFFER =
-            FLAG_PREFIX + "enable_reusable_decompression_buffer";
 
     /**
      * Whether to enable sharded storage for embedding index.
@@ -348,6 +321,50 @@ public final class Flags {
      */
     public static final String FLAG_ENABLE_OPTIMIZE_IMPROVEMENTS =
             FLAG_PREFIX + "enable_optimize_improvements";
+
+    /**
+     * Controls whether repeated fields may set joinable value type to
+     * {@link StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
+     */
+    public static final String FLAG_ENABLE_REPEATED_FIELD_JOINS =
+            FLAG_PREFIX + "enable_repeated_field_joins";
+
+    /** Enables delete propagation API. */
+    public static final String FLAG_ENABLE_DELETE_PROPAGATION_RW =
+            FLAG_PREFIX + "enable_delete_propagation_rw";
+
+    /**
+     * Whether to enable wipe out documents under specific property paths when an account is
+     * removed.
+     */
+    public static final String FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS =
+            FLAG_PREFIX + "enable_schemas_wipeout_account_property_paths";
+
+    /**
+     * Whether to enable indexing non existent parent qualified id in the join index.
+     */
+    public static final String FLAG_ENABLE_NON_EXISTENT_QUALIFIED_ID_JOIN =
+            FLAG_PREFIX + "enable_non_existent_qualified_id_join";
+
+    /** Enables visibility access for Private Compute Core UIDs. */
+    public static final String FLAG_ENABLE_PRIVATE_COMPUTE_CORE_UID_ACCESS =
+            FLAG_PREFIX + "enable_private_compute_core_uid_access";
+
+    /**
+     * Whether to enable skipping the unnecessary schema type equality check.
+     */
+    public static final String FLAG_ENABLE_SKIP_SET_SCHEMA_TYPE_EQUALITY_CHECK =
+            FLAG_PREFIX + "enable_skip_set_schema_type_equality_check";
+
+    /**
+     * Whether to enable the query optimization to rewrite AND'd embedding queries.
+     */
+    public static final String FLAG_ENABLE_EMBED_QUERY_OPTIMIZATION =
+            FLAG_PREFIX + "enable_embed_query_optimization";
+
+    /** Enables set SearchFeatures and RankingFeatures APIs. */
+    public static final String FLAG_ENABLE_SET_SEARCH_AND_RANKING_FEATURE =
+            FLAG_PREFIX + "enable_set_search_and_ranking_feature";
 
     // Whether the features should be enabled.
     //
@@ -542,18 +559,6 @@ public final class Flags {
     }
 
     /**
-     * Whether delete propagation related APIs should be enabled.
-     *
-     * <p>Note: delete propagation depends on qualified id join index v3, so
-     * {@link #enableQualifiedIdJoinIndexV3()} should also be true.
-     */
-    public static boolean enableDeletePropagationType() {
-        // TODO(b/384947619): enable this flag once expiry propagation and dependency check are
-        //   implemented.
-        return false;
-    }
-
-    /**
      * Whether to calculate time since last optimize using last attempted optimize run time instead
      * of last successful optimize run time.
      */
@@ -588,13 +593,6 @@ public final class Flags {
      * Whether to enable retrieving embedding match info during snippetting.
      */
     public static boolean enableEmbeddingMatchInfo() {
-        return true;
-    }
-
-    /**
-     * Whether to query visibility documents rather than get.
-     */
-    public static boolean enableQueryVisibilityDocuments() {
         return true;
     }
 
@@ -656,13 +654,6 @@ public final class Flags {
         return true;
     }
 
-    /**
-     * Whether to enable gzip decompression buffer memory optimization that uses a smaller buffer
-     * size.
-     */
-    public static boolean enableSmallerDecompressionBufferSize() {
-        return true;
-    }
 
     /** Whether to enable the Eigen library for embedding scoring */
     public static boolean enableEigenEmbeddingScoring() {
@@ -695,14 +686,6 @@ public final class Flags {
     }
 
     /**
-     * Whether to enable using removeByQuery to implement removeById.
-     */
-    public static boolean enableRemoveByIdUsesQuery() {
-        // TODO(b/401245772): Enable this once the feature is rolled out to Nextfood in platform.
-        return false;
-    }
-
-    /**
      * Whether to enable the new header format (refactor legacy format and introduce unsynced tail
      * checksum) related changes in PortableFileBackedProtoLog.
      */
@@ -716,23 +699,6 @@ public final class Flags {
      */
     public static boolean enableEarlySetSchemaExit() {
         // TODO(b/436813583): Enable this once the feature is rolled out to Nextfood in platform.
-        return false;
-    }
-
-    /**
-     * Whether to enable the new embedding iterator which has improved access order.
-     */
-    public static boolean enableEmbeddingIteratorV2() {
-        // TODO(b/435005853): Enable this once the feature is rolled out to Nextfood in platform.
-        return false;
-    }
-
-    /**
-     * Whether to enable reusing a single buffer of memory to avoid reallocating a new buffer for
-     * every single document read..
-     */
-    public static boolean enableReusableDecompressionBuffer() {
-        // TODO(b/435754056): Enable this once the feature is rolled out to Nextfood in platform.
         return false;
     }
 
@@ -770,5 +736,67 @@ public final class Flags {
     public static boolean enableOptimizeImprovements() {
         // TODO(b/455903084): Enable this once the feature is rolled out to Nextfood in platform.
         return false;
+    }
+
+    /**
+     * Controls whether repeated fields may set joinable value type to
+     * {@link StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
+     */
+    public static boolean enableRepeatedFieldJoins() {
+        return true;
+    }
+
+    /**
+     * Whether delete propagation API should be enabled.
+     *
+     * <p>Note: delete propagation depends on qualified id join index v3 and soft index restoration,
+     * so {@link #enableQualifiedIdJoinIndexV3()} and {@link #enableSoftIndexRestoration()} should
+     * also be true.
+     */
+    public static boolean enableDeletePropagationRw() {
+        return true;
+    }
+
+    /**
+     * Whether to enable wipe out document when an account is removed.
+     */
+    public static boolean enableSchemasWipeoutAccountPropertyPaths() {
+        return true;
+    }
+
+    /**
+     * Whether to enable indexing non existent parent qualified id in the join index.
+     */
+    public static boolean enableNonExistentQualifiedIdJoin() {
+        return true;
+    }
+
+    /**
+     * Whether visibility access for Private Compute Core UIDs should be enabled.
+     */
+    public static boolean enablePrivateComputeCoreUidAccess() {
+        return true;
+    }
+
+    /*
+     * Whether to enable skipping the unnecessary schema type equality check.
+     */
+    public static boolean enableSkipSetSchemaTypeEqualityCheck() {
+        return true;
+    }
+
+    /**
+     * Whether to enable the query optimization to rewrite AND'd embedding queries.
+     */
+    public static boolean enableEmbedQueryOptimization() {
+        return true;
+    }
+
+    /**
+     * Whether {@link androidx.appsearch.app.SearchFeatures} and
+     * {@link androidx.appsearch.app.RankingFeatures} related APIs should be enabled.
+     */
+    public static boolean enableSetSearchAndRankingFeature() {
+        return true;
     }
 }

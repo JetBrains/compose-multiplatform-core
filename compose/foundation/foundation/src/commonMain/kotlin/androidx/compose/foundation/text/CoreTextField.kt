@@ -42,11 +42,9 @@ import androidx.compose.foundation.text.selection.SimpleLayout
 import androidx.compose.foundation.text.selection.TextFieldSelectionHandle
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.foundation.text.selection.addBasicTextFieldTextContextMenuComponents
-import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.foundation.text.selection.isSelectionHandleInVisibleBound
 import androidx.compose.foundation.text.selection.rememberPlatformSelectionBehaviors
 import androidx.compose.foundation.text.selection.textFieldMagnifier
-import androidx.compose.foundation.text.selection.updateSelectionTouchMode
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.DontMemoize
@@ -75,8 +73,6 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.IntrinsicMeasurable
@@ -387,54 +383,17 @@ internal fun CoreTextField(
     }
 
     val pointerModifier =
-        Modifier.updateSelectionTouchMode { state.isInTouchMode = it }
-            .tapPressTextFieldModifier(interactionSource, enabled) { offset ->
-                tapToFocus(state, focusRequester, !readOnly)
-                if (state.hasFocus && enabled) {
-                    if (state.handleState != HandleState.Selection) {
-                        state.layoutResult?.let { layoutResult ->
-                            TextFieldDelegate.setCursorOffset(
-                                offset,
-                                layoutResult,
-                                state.processor,
-                                offsetMapping,
-                                state.onValueChange,
-                            )
-                            // Won't enter cursor state when text is empty.
-                            if (state.textDelegate.text.isNotEmpty()) {
-                                state.handleState = HandleState.Cursor
-                            }
-                        }
-                    } else {
-                        manager.deselect(offset)
-                    }
-                }
-            }
-            .pointerInput(manager.mouseSelectionObserver, manager.touchSelectionObserver) {
-                awaitSelectionGestures(
-                    manager.mouseSelectionObserver,
-                    manager.touchSelectionObserver,
-                )
-            }
-            .pointerHoverIcon(PointerIcon.Text)
+        Modifier.textFieldPointer(
+            manager,
+            enabled,
+            interactionSource,
+            state,
+            focusRequester,
+            readOnly,
+            offsetMapping,
+        )
 
-    val drawModifier =
-        Modifier.drawBehind {
-            state.layoutResult?.let { layoutResult ->
-                drawIntoCanvas { canvas ->
-                    TextFieldDelegate.draw(
-                        canvas,
-                        value,
-                        state.selectionPreviewHighlightRange,
-                        state.deletionPreviewHighlightRange,
-                        offsetMapping,
-                        layoutResult.value,
-                        state.highlightPaint,
-                        state.selectionBackgroundColor,
-                    )
-                }
-            }
-        }
+    val drawModifier = Modifier.textFieldDraw(state, value, offsetMapping)
 
     val onPositionedModifier =
         Modifier.onGloballyPositioned {
@@ -488,7 +447,8 @@ internal fun CoreTextField(
         )
 
     val showCursor = enabled && !readOnly && windowInfo.isWindowFocused && !state.hasHighlight()
-    val cursorModifier = Modifier.cursor(state, value, offsetMapping, cursorBrush, showCursor)
+    val cursorModifier =
+        Modifier.textFieldCursor(state, value, offsetMapping, cursorBrush, showCursor)
 
     DisposableEffect(manager) { onDispose { manager.hideSelectionToolbar() } }
 
@@ -965,7 +925,7 @@ internal class LegacyTextFieldState(
 }
 
 /** Request focus on tap. If already focused, makes sure the keyboard is requested. */
-internal fun tapToFocus(
+internal fun requestFocusAndShowKeyboardIfNeeded(
     state: LegacyTextFieldState,
     focusRequester: FocusRequester,
     allowKeyboard: Boolean,
@@ -1130,6 +1090,69 @@ internal fun TextFieldCursorHandle(manager: TextFieldSelectionManager) {
         )
     }
 }
+
+/**
+ * Applies a modifier to a text field to handle cursor rendering.
+ *
+ * The default common implementation provided in [cursor].
+ *
+ * @param state The state representing the internal configuration and status of the text field.
+ * @param value The current value of the text field including text and selection information.
+ * @param offsetMapping Maps character offsets between the visual text and the composable's internal
+ *   representation.
+ * @param cursorBrush The brush used to draw the cursor, allowing customization of its appearance.
+ * @param showCursor A flag indicating whether the cursor should be visible.
+ * @return A [Modifier] that applies the cursor functionality to the text field.
+ */
+internal expect fun Modifier.textFieldCursor(
+    state: LegacyTextFieldState,
+    value: TextFieldValue,
+    offsetMapping: OffsetMapping,
+    cursorBrush: Brush,
+    showCursor: Boolean,
+): Modifier
+
+/**
+ * Applies drawing behavior for a text field on the given [Modifier].
+ *
+ * This function modifies the provided [Modifier] to include logic for rendering visual aspects of a
+ * composable text field: text, text selection highlight and selection and deletion preview
+ * highlight
+ *
+ * The default common implementation is stored in [defaultTextFieldDraw]
+ *
+ * @param state The state object managing the internal state of the legacy text field.
+ * @param value The current text field value, including the text content and selection info.
+ * @param offsetMapping A mapping between character offsets and visual cursor positions.
+ * @return A [Modifier] instance that includes the text field drawing behavior.
+ */
+internal expect fun Modifier.textFieldDraw(
+    state: LegacyTextFieldState,
+    value: TextFieldValue,
+    offsetMapping: OffsetMapping,
+): Modifier
+
+internal fun Modifier.defaultTextFieldDraw(
+    state: LegacyTextFieldState,
+    value: TextFieldValue,
+    offsetMapping: OffsetMapping,
+): Modifier =
+    this.drawBehind {
+        state.layoutResult?.let { layoutResult ->
+            drawIntoCanvas { canvas ->
+                TextFieldDelegate.draw(
+                    canvas,
+                    value,
+                    state.selectionPreviewHighlightRange,
+                    state.deletionPreviewHighlightRange,
+                    offsetMapping,
+                    layoutResult.value,
+                    state.highlightPaint,
+                    state.selectionBackgroundColor,
+                )
+            }
+        }
+    }
 
 @Composable
 internal expect fun CursorHandle(

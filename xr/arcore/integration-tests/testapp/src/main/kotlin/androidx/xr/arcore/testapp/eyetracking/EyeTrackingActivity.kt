@@ -42,6 +42,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.xr.arcore.Eye
 import androidx.xr.arcore.perceptionState
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
@@ -54,18 +55,21 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.launch
 
 class EyeTrackingActivity : ComponentActivity() {
 
-    private lateinit var gazeRenderer: GazeRenderer
+    private var gazeRenderer = GazeRenderer()
     private lateinit var session: Session
     private lateinit var sessionHelper: SessionLifecycleHelper
     private var config: Config =
         Config(
-            deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
-            eyeTracking = Config.EyeTrackingMode.COARSE_TRACKING,
+            deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+            eyeTracking = EyeTrackingMode.COARSE_TRACKING,
         )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,9 +81,6 @@ class EyeTrackingActivity : ComponentActivity() {
                 config,
                 onSessionAvailable = { newSession ->
                     session = newSession
-
-                    gazeRenderer = GazeRenderer(session, lifecycleScope, config)
-                    lifecycle.addObserver(gazeRenderer)
 
                     lifecycleScope.launch {
                         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
@@ -104,22 +105,32 @@ class EyeTrackingActivity : ComponentActivity() {
         sessionHelper.tryCreateSession()
     }
 
+    override fun onPause() {
+        super.onPause()
+        gazeRenderer.stopRendering()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        gazeRenderer.startRendering(session, lifecycleScope)
+    }
+
     private fun toggleEyeTrackingConfigMode() {
         val currentMode = config.eyeTracking
         val newMode =
             when (currentMode) {
                 // cycle through the 3 different eye tracking config modes
-                Config.EyeTrackingMode.COARSE_TRACKING -> Config.EyeTrackingMode.FINE_TRACKING
-                Config.EyeTrackingMode.FINE_TRACKING -> Config.EyeTrackingMode.COARSE_TRACKING
+                EyeTrackingMode.COARSE_TRACKING -> EyeTrackingMode.FINE_TRACKING
+                EyeTrackingMode.FINE_TRACKING -> EyeTrackingMode.COARSE_TRACKING
                 else -> {
                     throw IllegalStateException("Invalid Eye Tracking mode")
                 }
             }
+
         // reconfigure the session
         config =
-            Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN, eyeTracking = newMode)
+            Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN, eyeTracking = newMode)
         sessionHelper.tryUpdateConfig(config)
-        gazeRenderer.config = config
     }
 
     @Composable
@@ -158,8 +169,8 @@ class EyeTrackingActivity : ComponentActivity() {
                 if (perceptionState == null) {
                     Row { Text("Perception State is null", fontSize = 20.sp) }
                 } else {
-                    val leftEye = getEyePose(config, perceptionState.leftEye)
-                    val rightEye = getEyePose(config, perceptionState.rightEye)
+                    val leftEye = getEyePose(perceptionState.leftEye)
+                    val rightEye = getEyePose(perceptionState.rightEye)
                     Row {
                         Button(onClick = { toggleEyeTrackingConfigMode() }) {
                             // button displays current eyetracking mode. click it to change.
@@ -183,22 +194,23 @@ class EyeTrackingActivity : ComponentActivity() {
                     // Display eye dot color legend.
                     Row {
                         Text(text = "Color Legend", fontSize = 15.sp)
-                        Text(text = "\tGreen = Left Eye Gazing", fontSize = 12.sp)
-                        Text(text = "\tBlue = Left Eye Shut", fontSize = 12.sp)
-                        Text(text = "\tRed = Right Eye Gazing", fontSize = 12.sp)
-                        Text(text = "\tYellow = Right Eye Shut", fontSize = 12.sp)
-                        Text(text = "\tWhite = Unknown/Invalid", fontSize = 12.sp)
+                        Text(text = "\tGreen = Left Eye", fontSize = 12.sp)
+                        Text(text = "\tBlue = Right Eye", fontSize = 12.sp)
+                        Text(text = "\tBoxes are opaque when eyes are open", fontSize = 12.sp)
+                        Text(text = "\tand translucent when eyes are shut.", fontSize = 12.sp)
                     }
                 }
             }
         }
     }
 
-    private fun Config.EyeTrackingMode.asString(): String {
+    private fun getEyePose(eye: Eye?): Pose? = eye?.state?.value?.pose
+
+    private fun EyeTrackingMode.asString(): String {
         return when (this) {
-            Config.EyeTrackingMode.COARSE_TRACKING -> "Coarse Tracking"
-            Config.EyeTrackingMode.FINE_TRACKING -> "Fine Tracking"
-            Config.EyeTrackingMode.DISABLED -> "Disabled"
+            EyeTrackingMode.COARSE_TRACKING -> "Coarse Tracking"
+            EyeTrackingMode.FINE_TRACKING -> "Fine Tracking"
+            EyeTrackingMode.DISABLED -> "Disabled"
             else -> "Unknown"
         }
     }

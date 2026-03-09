@@ -29,17 +29,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Dp
@@ -47,8 +43,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.glimmer.Text
-import androidx.xr.glimmer.nonTouchInputModeRule
 import androidx.xr.glimmer.performIndirectSwipe
+import androidx.xr.glimmer.testutils.createGlimmerRule
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,9 +52,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import org.junit.After
 import org.junit.Assert.assertThrows
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -69,21 +63,7 @@ class StackStateTest {
 
     @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
 
-    @get:Rule(1) val inputModeRule = nonTouchInputModeRule()
-
-    private val focusRequester = FocusRequester()
-    private val savedInitialFocusAvailabilityFlag =
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable
-
-    @Before
-    fun setup() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = true
-    }
-
-    @After
-    fun tearDown() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = savedInitialFocusAvailabilityFlag
-    }
+    @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     @Test
     fun initialState_propertiesReturnDefaultValues() {
@@ -148,7 +128,7 @@ class StackStateTest {
     fun topItem_scrollForward_updatesToNextWhenTopItemLeavesViewport() {
         var itemHeight = 0
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state) {
                 items(5) { index -> StackItem("Item $index") { itemHeight = it } }
             }
@@ -172,7 +152,7 @@ class StackStateTest {
     fun topItem_scrollBackward_updatesToPreviousWhenPreviousItemEntersViewport() = runTest {
         var itemHeight = 0
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state) {
                 items(5) { index -> StackItem("Item $index") { itemHeight = it } }
             }
@@ -284,7 +264,7 @@ class StackStateTest {
     fun isScrollInProgress_isTrueDuringSwipe() {
         var itemHeight = 0
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state) {
                 items(5) { index -> StackItem("Item $index") { itemHeight = it } }
             }
@@ -335,7 +315,7 @@ class StackStateTest {
     fun lastScrolledForwardAndBackward_areUpdatedAfterSwipe() {
         var itemHeight = 0
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state) {
                 items(5) { index -> StackItem("Item $index") { itemHeight = it } }
             }
@@ -351,8 +331,6 @@ class StackStateTest {
         assertThat(state.lastScrolledBackward).isFalse()
         assertThat(state.lastScrolledForward).isTrue()
 
-        // TODO(b/413429531): remove once VerticalStack supports moving focus automatically.
-        requestFocus()
         performIndirectSwipe(-itemHeight)
         rule.waitForIdle()
 
@@ -374,7 +352,7 @@ class StackStateTest {
     @Test
     fun layoutInfo_viewportSizeIsCorrect() {
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(modifier = Modifier.size(100.dp), state = state) {
                 items(5) { index -> StackItem("Item $index") }
             }
@@ -635,17 +613,8 @@ class StackStateTest {
         }
     }
 
-    private fun ComposeContentTestRule.setContentWithInitialFocus(content: @Composable () -> Unit) {
-        setContent { Box(Modifier.focusRequester(focusRequester)) { content() } }
-    }
-
     private fun performIndirectSwipe(distancePx: Int) {
         rule.onRoot().performIndirectSwipe(rule, distancePx.toFloat())
-    }
-
-    private fun requestFocus() {
-        rule.runOnIdle { focusRequester.requestFocus() }
-        rule.waitForIdle()
     }
 
     suspend fun runOnUiThread(action: suspend () -> Unit) {

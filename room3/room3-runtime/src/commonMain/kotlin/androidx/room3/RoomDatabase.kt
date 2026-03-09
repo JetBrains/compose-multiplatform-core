@@ -23,6 +23,7 @@ import androidx.room3.concurrent.CloseBarrier
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.migration.Migration
 import androidx.room3.util.getCoroutineContext
+import androidx.room3.util.getQualifiedName
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteException
@@ -38,7 +39,7 @@ import kotlinx.coroutines.withContext
  * Base class for all Room databases. All classes that are annotated with [Database] must extend
  * this class.
  *
- * RoomDatabase provides direct access to the underlying database implementation but you should
+ * RoomDatabase provides direct access to the underlying database implementation, but you should
  * prefer using [Dao] classes.
  *
  * @see Database
@@ -177,7 +178,7 @@ constructor() {
      * @param connection The database connection.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected fun internalInitInvalidationTracker(connection: SQLiteConnection)
+    protected suspend fun internalInitInvalidationTracker(connection: SQLiteConnection)
 
     /**
      * Closes the database.
@@ -428,21 +429,21 @@ constructor() {
          *
          * @param connection The database connection.
          */
-        public open fun onCreate(connection: SQLiteConnection)
+        public open suspend fun onCreate(connection: SQLiteConnection)
 
         /**
          * Called after the database was destructively migrated.
          *
          * @param connection The database connection.
          */
-        public open fun onDestructiveMigration(connection: SQLiteConnection)
+        public open suspend fun onDestructiveMigration(connection: SQLiteConnection)
 
         /**
          * Called when the database has been opened.
          *
          * @param connection The database connection.
          */
-        public open fun onOpen(connection: SQLiteConnection)
+        public open suspend fun onOpen(connection: SQLiteConnection)
     }
 }
 
@@ -515,7 +516,6 @@ public suspend fun <R> RoomDatabase.useWriterConnection(block: suspend (Transact
  * roomDatabase.useReaderConnection { it.withTransaction(DEFERRED) { block() } }
  * ```
  */
-@ExperimentalRoomApi
 public suspend fun <R> RoomDatabase.withReadTransaction(
     block: suspend TransactionScope<R>.() -> R
 ): R = useReaderConnection { it.withTransaction(Transactor.SQLiteTransactionType.DEFERRED, block) }
@@ -529,7 +529,6 @@ public suspend fun <R> RoomDatabase.withReadTransaction(
  * roomDatabase.useWriterConnection { it.withTransaction(IMMEDIATE) { block() } }
  * ```
  */
-@ExperimentalRoomApi
 public suspend fun <R> RoomDatabase.withWriteTransaction(
     block: suspend TransactionScope<R>.() -> R
 ): R = useWriterConnection { it.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE, block) }
@@ -581,7 +580,7 @@ internal fun RoomDatabase.validateAutoMigrations(configuration: DatabaseConfigur
             }
         }
         require(foundIndex >= 0) {
-            "A required auto migration spec (${spec.qualifiedName}) is missing in the " +
+            "A required auto migration spec (${spec.getQualifiedName()}) is missing in the " +
                 "database configuration."
         }
         autoMigrationSpecs[spec] = configuration.autoMigrationSpecs[foundIndex]
@@ -626,8 +625,8 @@ internal fun RoomDatabase.validateTypeConverters(configuration: DatabaseConfigur
                 }
             }
             require(foundIndex >= 0) {
-                "A required type converter (${converter.qualifiedName}) for" +
-                    " ${daoName.qualifiedName} is missing in the database configuration."
+                "A required type converter (${converter.getQualifiedName()}) for" +
+                    " ${daoName.getQualifiedName()} is missing in the database configuration."
             }
             addTypeConverter(converter, configuration.typeConverters[foundIndex])
         }

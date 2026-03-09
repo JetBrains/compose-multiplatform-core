@@ -27,7 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.click
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
@@ -50,6 +50,7 @@ import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -152,7 +153,7 @@ class PdfViewerTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
         val topPageMarginPx = context.resources.getDimension(androidx.pdf.R.dimen.top_page_margin)
         val pageSpacingPx =
-            context.resources.getDimension(androidx.pdf.R.dimen.vertical_page_spacing)
+            context.resources.getDimension(androidx.pdf.R.dimen.pdf_vertical_page_spacing)
 
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
@@ -558,6 +559,7 @@ class PdfViewerTest {
         assertThat(resIdsThumbBitmap.sameAs(resIdsAndDpThumbBitmap)).isTrue()
     }
 
+    @SdkSuppress(maxSdkVersion = 35)
     @Test
     fun testCommentMenuItemAppended() {
         val pdfDocument =
