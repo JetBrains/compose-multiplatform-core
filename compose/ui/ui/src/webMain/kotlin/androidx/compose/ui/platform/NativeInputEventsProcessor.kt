@@ -209,7 +209,7 @@ private fun isTypedEvent(evt: KeyboardEvent): Boolean =
     js("!evt.metaKey && !evt.ctrlKey && evt.key.charAt(0) === evt.key")
 
 
-class ComposeKeyDownStatus(
+private class ComposeKeyDownStatus(
     val event: KeyboardEvent,
     val processed: Boolean
 )
