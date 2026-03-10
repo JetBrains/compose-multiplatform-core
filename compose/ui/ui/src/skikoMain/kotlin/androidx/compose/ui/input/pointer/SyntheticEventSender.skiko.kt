@@ -275,10 +275,10 @@ internal class SyntheticEventSender(
         pressure = pressure,
         type = type,
         activeHover = activeHover,
-        scrollDelta = Offset(0f, 0f),
+        scrollDelta = Offset.Zero,
         historical = emptyList(), // we don't copy historical for synthetic
         scaleGestureFactor = 1.0f,
-        panGestureOffset = Offset(0f, 0f),
+        panGestureOffset = Offset.Zero,
         originalEventPosition = position,
     )
 }
