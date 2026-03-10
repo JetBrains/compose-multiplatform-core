@@ -71,7 +71,7 @@ internal class MyDao_Impl(
           val _tmpLong: Long
           _tmpLong = _stmt.getLong(_columnIndexOfLong)
           val _tmpChar: Char
-          _tmpChar = _stmt.getLong(_columnIndexOfChar).toChar()
+          _tmpChar = _stmt.getLong(_columnIndexOfChar).toInt().toChar()
           val _tmpFloat: Float
           _tmpFloat = _stmt.getDouble(_columnIndexOfFloat).toFloat()
           val _tmpDouble: Double

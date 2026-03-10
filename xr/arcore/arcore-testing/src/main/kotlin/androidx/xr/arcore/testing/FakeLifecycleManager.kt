@@ -31,12 +31,19 @@ import kotlin.time.TestTimeSource
 import kotlinx.coroutines.sync.Semaphore
 
 /**
- * Test-only implementation of [androidx.xr.runtime.internal.LifecycleManager] used to validate
- * state transitions.
+ * Fake implementation of [LifecycleManager] used to validate state transitions.
+ *
+ * @property hasCreatePermission if false, [create] will throw an exception during testing
+ * @property state the current [State] of the runtime
+ * @property timeSource the [TestTimeSource] used for this runtime
+ * @property hasMissingPermission if true, [configure] will emulate the failure case for missing
+ *   permissions
+ * @property shouldSupportPlaneTracking if false, [configure] will throw an exception if the config
+ *   enables plane tracking
+ * @property config the current [Config] of the session
  */
 @Suppress("NotCloseable")
 public class FakeLifecycleManager(
-    /** If false, [create] will throw an exception during testing. */
     @get:JvmName("hasCreatePermission") public var hasCreatePermission: Boolean = true
 ) : LifecycleManager {
 
@@ -55,22 +62,17 @@ public class FakeLifecycleManager(
         DESTROYED,
     }
 
-    /** The current state of the runtime. */
     public var state: State = State.NOT_INITIALIZED
         private set
 
-    /** The time source used for this runtime. */
     public val timeSource: TestTimeSource = TestTimeSource()
 
     private val semaphore = Semaphore(1)
 
-    /** If true, [configure] will emulate the failure case for missing permissions. */
     @get:JvmName("hasMissingPermission") public var hasMissingPermission: Boolean = false
 
-    /** If false, [configure] will throw an Exception if the config enables PlaneTracking. */
     @get:JvmName("shouldSupportPlaneTracking") public var shouldSupportPlaneTracking: Boolean = true
 
-    /** If false, [configure] will throw an exception if the config enables FaceTracking */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -94,15 +96,10 @@ public class FakeLifecycleManager(
         Config(
             PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
             HandTrackingMode.BOTH,
-            DeviceTrackingMode.LAST_KNOWN,
+            DeviceTrackingMode.SPATIAL_LAST_KNOWN,
             DepthEstimationMode.SMOOTH_AND_RAW,
             AnchorPersistenceMode.LOCAL,
-            augmentedObjectCategories =
-                listOf(
-                    AugmentedObjectCategory.KEYBOARD,
-                    AugmentedObjectCategory.MOUSE,
-                    AugmentedObjectCategory.LAPTOP,
-                ),
+            augmentedObjectCategories = AugmentedObjectCategory.allSupported(),
         )
 
     override fun configure(config: Config) {
@@ -130,8 +127,10 @@ public class FakeLifecycleManager(
     }
 
     /**
-     * Retrieves the latest time mark. The first call to this method will execute immediately.
-     * Subsequent calls will be blocked until [allowOneMoreCallToUpdate] is called.
+     * Retrieves the latest time mark.
+     *
+     * The first call to this method will execute immediately. Subsequent calls will be blocked
+     * until [allowOneMoreCallToUpdate] is called.
      */
     override suspend fun update(): ComparableTimeMark {
         check(state == State.RESUMED)
@@ -140,9 +139,10 @@ public class FakeLifecycleManager(
     }
 
     /**
-     * Allows an additional call to [update] to not be blocked. Requires that [update] has been
-     * called exactly once before each call to this method. Failure to do so will result in an
-     * [IllegalStateException].
+     * Allows an additional call to [update] to not be blocked.
+     *
+     * Requires that [update] has been called exactly once before each call to this method. Failure
+     * to do so will result in an [IllegalStateException].
      */
     public fun allowOneMoreCallToUpdate() {
         semaphore.release()

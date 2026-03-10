@@ -24,8 +24,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.Feature
-import androidx.xr.runtime.internal.Service
+import androidx.xr.runtime.interfaces.Feature
+import androidx.xr.runtime.interfaces.Service
 import androidx.xr.runtime.manifest.FEATURE_XR_API_OPENXR
 import androidx.xr.runtime.manifest.FEATURE_XR_API_SPATIAL
 import java.util.ServiceLoader

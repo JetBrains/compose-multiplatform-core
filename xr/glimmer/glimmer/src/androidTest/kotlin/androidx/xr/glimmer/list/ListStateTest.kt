@@ -40,7 +40,6 @@ import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.setGlimmerThemeContent
 import androidx.xr.glimmer.testutils.NoFlingBehavior
 import androidx.xr.glimmer.testutils.setContentWithDensity
-import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -203,11 +202,11 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
         }
 
         // Check the auto focus parameters were calculated correctly.
-        Truth.assertThat(state.autoFocusState.properties?.focusScroll).isEqualTo(200f)
+        assertThat(state.autoFocusState.properties?.focusScroll).isEqualTo(200.0)
         // TODO(b/462040962): Investigate how viewport adjustments reverses contentScroll by
         //  firstVisibleItemScrollOffset when TestList is focused.
-        Truth.assertThat(state.autoFocusState.properties?.contentScroll)
-            .isEqualTo(if (orientation == Orientation.Vertical) 5042f else 5000f)
+        assertThat(state.autoFocusState.properties?.contentScroll)
+            .isEqualTo(if (vertical) 5042.0 else 5000.0)
     }
 
     @Test
@@ -230,8 +229,8 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
         state.scrollByAndCheckConsumedValue(-0.5f)
         state.scrollByAndCheckConsumedValue(-200f)
 
-        Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(0)
-        Truth.assertThat(state.firstVisibleItemScrollOffset).isEqualTo(0)
+        assertThat(state.firstVisibleItemIndex).isEqualTo(0)
+        assertThat(state.firstVisibleItemScrollOffset).isEqualTo(0)
     }
 
     @Test
@@ -304,14 +303,14 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
 
     private fun ListState.scrollByAndCheckConsumedValue(delta: Float, consumed: Float = delta) {
         val actualConsumed = scrollByAndWaitForIdle(delta)
-        Truth.assertThat(actualConsumed).isWithin(1f).of(consumed)
+        assertThat(actualConsumed).isWithin(1f).of(consumed)
         rule.waitForIdle()
     }
 
     /** Calculates the total consumed scroll of the list, including the carried-over part. */
     private val ListState.totalScroll: Float
         // Autofocus properties and scroll have opposite signs for the same direction.
-        get() = requireNotNull(autoFocusState.properties).userScroll - carryOverScroll
+        get() = requireNotNull(autoFocusState.properties).userScroll.toFloat() - carryOverScroll
 
     companion object {
         @JvmStatic

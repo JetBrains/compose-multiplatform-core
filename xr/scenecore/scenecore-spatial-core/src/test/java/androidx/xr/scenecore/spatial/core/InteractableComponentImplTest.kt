@@ -17,8 +17,8 @@ package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.testing.FakeSpatialApiVersionProvider.Companion.testSpatialApiVersion
 import androidx.xr.scenecore.runtime.Entity
+import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.InteractableComponent
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
@@ -53,22 +53,14 @@ class InteractableComponentImplTest {
 
     @Before
     fun setUp() {
-        testSpatialApiVersion = 1
         fakeRuntime =
-            SpatialSceneRuntime.create(
-                activity,
-                fakeExecutor,
-                xrExtensions!!,
-                EntityManager(),
-                /* unscaledGravityAlignedActivitySpace= */ false,
-            )
+            SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions!!, EntityManager())
     }
 
     @After
     fun tearDown() {
         // Destroy the runtime between test cases to clean up lingering references.
         fakeRuntime.destroy()
-        testSpatialApiVersion = null
     }
 
     private fun createTestEntity(): Entity {
@@ -168,7 +160,7 @@ class InteractableComponentImplTest {
 
     @Test
     fun interactableComponent_enablesColliderForGltfEntity() {
-        val gltfEntity = mock<GltfEntityImpl>()
+        val gltfEntity = mock<GltfEntity>()
         val executor = MoreExecutors.directExecutor()
         val mockInputEventListener = mock<InputEventListener>()
         val interactableComponent: InteractableComponent =

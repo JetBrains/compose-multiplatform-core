@@ -54,7 +54,6 @@ class PerceptionSpaceScenePoseImplTest {
             xrExtensions,
             entityManager,
             { xrExtensions.getSpatialState(activity) },
-            /* unscaledGravityAlignedActivitySpace= */ false,
             fakeScheduledExecutor,
         )
 
@@ -146,9 +145,6 @@ class PerceptionSpaceScenePoseImplTest {
         val activitySpaceScale = 5f
         activitySpace.setOpenXrReferenceSpaceTransform(fromScale(activitySpaceScale))
 
-        assertVector3(
-            mPerceptionSpaceScenePose!!.activitySpaceScale,
-            Vector3(1f, 1f, 1f).div(activitySpaceScale),
-        )
+        assertVector3(mPerceptionSpaceScenePose!!.activitySpaceScale, Vector3.One)
     }
 }

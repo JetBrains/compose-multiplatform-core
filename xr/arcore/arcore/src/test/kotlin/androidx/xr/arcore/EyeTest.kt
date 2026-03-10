@@ -20,6 +20,7 @@ import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.testing.FakeLifecycleManager
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.arcore.testing.FakeRuntimeAnchor
 import androidx.xr.arcore.testing.FakeRuntimeEye
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.EyeTrackingMode
@@ -48,7 +49,6 @@ class EyeTest {
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var testScope: TestScope
     private lateinit var session: Session
-    private lateinit var xrResourcesManager: XrResourcesManager
 
     @Before
     fun setUp() {
@@ -56,13 +56,14 @@ class EyeTest {
         testScope = TestScope(testDispatcher)
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
         activity = activityController.get()
-        xrResourcesManager = XrResourcesManager()
+        val xrResourcesManager = XrResourcesManager()
 
         val shadowApplication = shadowOf(activity.application)
         FakeLifecycleManager.TestPermissions.forEach { permission ->
             shadowApplication.grantPermissions(permission)
         }
         FakePerceptionRuntimeFactory.hasCreatePermission = true
+        FakeRuntimeAnchor.anchorsCreatedCount = 0
         activityController.create()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session

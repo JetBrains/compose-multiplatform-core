@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
@@ -103,7 +102,7 @@ public fun RemoteTextButton(
 public object RemoteTextButtonDefaults {
     /** Recommended [RemoteShape] for [RemoteTextButton]. */
     public val shape: RemoteRoundedCornerShape
-        @Composable get() = RemoteCircleShape
+        get() = RemoteCircleShape
 
     /**
      * Returns a [TextButtonColors] for a text button - by default, a transparent background with
@@ -185,7 +184,6 @@ public object RemoteTextButtonDefaults {
  */
 @Immutable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("RestrictedApiAndroidX")
 public class RemoteTextButtonColors(
     public val containerColor: RemoteColor,
     public val contentColor: RemoteColor,

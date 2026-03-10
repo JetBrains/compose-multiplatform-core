@@ -52,7 +52,7 @@ import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer
 
 /**
  * Implementation of [RenderingRuntime] for devices that support the
- * [androidx.xr.runtime.internal.Feature.SPATIAL] system feature.
+ * [androidx.xr.runtime.interfaces.Feature.SPATIAL] system feature.
  */
 internal class SpatialRenderingRuntime
 private constructor(

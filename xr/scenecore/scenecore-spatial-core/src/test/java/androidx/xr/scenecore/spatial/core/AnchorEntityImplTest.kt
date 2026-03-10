@@ -81,7 +81,6 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
                 xrExtensions,
                 entityManager,
                 { xrExtensions.getSpatialState(activity) },
-                /* unscaledGravityAlignedActivitySpace= */ false,
                 executor,
             )
         val currentTimeMillis = 1000000000L
@@ -258,7 +257,7 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
         val activitySpaceScale = 5f
         activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.fromScale(activitySpaceScale))
         val anchorEntity = createAnchorEntityWithRuntimeAnchor()
-        assertVector3(anchorEntity.activitySpaceScale, Vector3(1f, 1f, 1f).div(activitySpaceScale))
+        assertVector3(anchorEntity.activitySpaceScale, Vector3.One)
     }
 
     @Test
@@ -325,8 +324,9 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
             )
         )
         // A 90-degree rotation around the z axis is a clockwise rotation of the XY plane.
+        // ActivitySpace ignores scale, so we calculate difference pose assuming scale 1.
         val expectedPose =
-            Pose(Vector3(-1.0f, 0.5f, -1.5f), Quaternion.fromEulerAngles(Vector3(0f, 0f, -90f)))
+            Pose(Vector3(-2.0f, 1.0f, -3.0f), Quaternion.fromEulerAngles(Vector3(0f, 0f, -90f)))
 
         assertPose(anchorEntity.poseInActivitySpace, expectedPose)
     }

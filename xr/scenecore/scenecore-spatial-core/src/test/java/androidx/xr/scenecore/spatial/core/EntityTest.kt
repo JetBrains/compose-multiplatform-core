@@ -18,11 +18,9 @@ package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
 import android.content.Context
-import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.FakeSpatialApiVersionProvider
 import androidx.xr.runtime.testing.math.assertPose
 import androidx.xr.runtime.testing.math.assertVector3
 import androidx.xr.scenecore.runtime.Dimensions
@@ -76,7 +74,6 @@ class EntityTest {
     fun setUp() {
         expect(true, "XrExtensions should not be null") { xrExtensions != null }
 
-        FakeSpatialApiVersionProvider.testSpatialApiVersion = 1
         activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
 
         spatialSceneRuntime =
@@ -85,7 +82,6 @@ class EntityTest {
                 fakeScheduledExecutorService,
                 xrExtensions!!,
                 entityManager,
-                /* unscaledGravityAlignedActivitySpace= */ false,
             )
         entity =
             TestEntity(
@@ -102,7 +98,6 @@ class EntityTest {
     fun tearDown() {
         spatialSceneRuntime.destroy()
         xrExtensions = null
-        FakeSpatialApiVersionProvider.testSpatialApiVersion = null
     }
 
     @Test
@@ -112,32 +107,8 @@ class EntityTest {
     }
 
     @Test
-    fun getPose_parentSpace_returnsParentPose() {
-        val activitySpace = spatialSceneRuntime.activitySpace as ActivitySpaceImpl
-        activitySpace.setOpenXrReferenceSpaceTransform(
-            Matrix4.fromTrs(
-                Vector3(5f, 6f, 7f),
-                Quaternion.fromEulerAngles(22f, 33f, 44f),
-                Vector3(2f, 2f, 2f),
-            )
-        )
-        assertVector3(activitySpace.getScale(Space.REAL_WORLD), Vector3(2f, 2f, 2f))
-
-        entity.setPose(testPose, Space.PARENT)
-        assertPose(entity.getPose(Space.PARENT), testPose)
-    }
-
-    @Test
     fun getPose_activitySpace_returnsActivitySpacePose() {
         val activitySpace = spatialSceneRuntime.activitySpace as ActivitySpaceImpl
-        activitySpace.setOpenXrReferenceSpaceTransform(
-            Matrix4.fromTrs(
-                Vector3(5f, 6f, 7f),
-                Quaternion.fromEulerAngles(22f, 33f, 44f),
-                Vector3(2f, 2f, 2f),
-            )
-        )
-        assertVector3(activitySpace.getScale(Space.REAL_WORLD), Vector3(2f, 2f, 2f))
 
         entity.parent = activitySpace
         entity.setPose(testPose, Space.PARENT)
@@ -217,12 +188,12 @@ class EntityTest {
 
     @Test
     fun getScale_worldSpace_returnsWorldSpaceScale() {
-        val activitySpace = spatialSceneRuntime.activitySpace as ActivitySpaceImpl
-        activitySpace._worldSpaceScale = Vector3(2.0f, 2.0f, 2.0f)
         val scale = Vector3(1.0f, 2.0f, 3.0f)
         entity.setScale(scale, Space.PARENT)
 
-        assertVector3(entity.getScale(Space.REAL_WORLD), scale.scale(activitySpace.worldSpaceScale))
+        // ActivitySpace scale is ignored (always 1), so world scale is just the entity scale
+        // relative to parent
+        assertVector3(entity.getScale(Space.REAL_WORLD), scale)
     }
 
     @Test
@@ -253,8 +224,6 @@ class EntityTest {
 
     @Test
     fun setScale_worldSpace_setsWorldSpaceScale() {
-        val activitySpace = spatialSceneRuntime.activitySpace as ActivitySpaceImpl
-        activitySpace._worldSpaceScale = Vector3(2.0f, 2.0f, 2.0f)
         val scale = Vector3(1.0f, 2.0f, 3.0f)
         entity.setScale(scale, Space.PARENT)
         val child =
@@ -266,12 +235,10 @@ class EntityTest {
                 fakeScheduledExecutorService,
             )
         child.parent = entity
-        child.setScale(scale.scale(scale.scale(activitySpace.worldSpaceScale)), Space.REAL_WORLD)
+        // With ActivitySpace scale 1, we don't need to compensate for it.
+        child.setScale(scale.scale(scale), Space.REAL_WORLD)
 
-        assertVector3(
-            child.getScale(Space.REAL_WORLD),
-            scale.scale(scale.scale(activitySpace.worldSpaceScale)),
-        )
+        assertVector3(child.getScale(Space.REAL_WORLD), scale.scale(scale))
     }
 
     @Test
@@ -300,14 +267,7 @@ class EntityTest {
         grandchild.setPose(testPose, Space.PARENT)
         grandchild.parent = child
         val activitySpace = spatialSceneRuntime.activitySpace as ActivitySpaceImpl
-        activitySpace.setOpenXrReferenceSpaceTransform(
-            Matrix4.fromTrs(
-                Vector3(5f, 6f, 7f),
-                Quaternion.fromEulerAngles(22f, 33f, 44f),
-                Vector3(2f, 2f, 2f),
-            )
-        )
-        assertVector3(activitySpace.getScale(Space.REAL_WORLD), Vector3(2f, 2f, 2f))
+        assertVector3(activitySpace.getScale(Space.REAL_WORLD), Vector3.One)
 
         assertPose(entity.getPose(Space.PARENT), testPose)
         assertPose(entity.getPose(Space.ACTIVITY), testPose)
@@ -428,54 +388,9 @@ class EntityTest {
 
         assertThat(hitTestResult).isNotNull()
         assertThat(hitTestResult.distance).isEqualTo(distance)
-        // Since the entity is rotated 90 degrees about the x axis, the hit position should be
-        // rotated 90 degrees about the x axis.
+        // Since the entity is rotated 90 degrees about the x-axis, the hit position should be
+        // rotated 90 degrees about the x-axis.
         assertVector3(hitTestResult.hitPosition!!, Vector3(0f, 2f, -1f))
-        assertVector3(hitTestResult.surfaceNormal!!, Vector3(0f, 0f, -1f))
-        assertThat(hitTestResult.surfaceType)
-            .isEqualTo(HitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE)
-    }
-
-    @Test
-    fun hitTest_withScaledActivitySpace_returnsTransformedHitTest() = runBlocking {
-        val distance = 2.0f
-        val hitPosition = Vec3(0.5f, 1.0f, 1.5f)
-        val surfaceNormal = Vec3(0.0f, 1.0f, 0.0f)
-        val surfaceType = com.android.extensions.xr.space.HitTestResult.SURFACE_PANEL
-        (spatialSceneRuntime.activitySpace as ActivitySpaceImpl).setOpenXrReferenceSpaceTransform(
-            Matrix4.fromScale(2f)
-        )
-        val extensionsHitTestResult =
-            com.android.extensions.xr.space.HitTestResult.Builder(
-                    distance,
-                    hitPosition,
-                    true,
-                    surfaceType,
-                )
-                .setSurfaceNormal(surfaceNormal)
-                .build()
-        entity.setPose(
-            Pose(Vector3(0.5f, 0.5f, 0.5f), Quaternion.fromEulerAngles(Vector3(90f, 0f, 0f))),
-            Space.ACTIVITY,
-        )
-        ShadowXrExtensions.extract(xrExtensions!!)
-            .setHitTestResult(activity, extensionsHitTestResult)
-
-        val deferredHitTestResult =
-            async(start = CoroutineStart.UNDISPATCHED) {
-                entity.hitTest(
-                    Vector3(1f, 1f, 1f),
-                    Vector3(1f, 1f, 1f),
-                    ScenePose.HitTestFilter.SELF_SCENE,
-                )
-            }
-        fakeScheduledExecutorService.runAll()
-        val hitTestResult = deferredHitTestResult.await()
-
-        assertThat(hitTestResult.distance).isEqualTo(distance)
-        // Since the entity is rotated 90 degrees about the x axis, the hit position should be
-        // rotated 90 degrees about the x axis.
-        assertVector3(hitTestResult.hitPosition!!, Vector3(0f, 1f, -0.5f))
         assertVector3(hitTestResult.surfaceNormal!!, Vector3(0f, 0f, -1f))
         assertThat(hitTestResult.surfaceType)
             .isEqualTo(HitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE)

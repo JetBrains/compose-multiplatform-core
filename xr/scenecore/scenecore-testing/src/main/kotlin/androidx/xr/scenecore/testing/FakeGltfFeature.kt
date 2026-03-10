@@ -25,7 +25,6 @@ import androidx.xr.scenecore.runtime.GltfAnimationFeature
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.GltfModelNodeFeature
-import androidx.xr.scenecore.runtime.MaterialResource
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
@@ -65,18 +64,6 @@ public class FakeGltfFeature(nodeHolder: NodeHolder<*>) :
 
     override fun resumeAnimation() {
         mockGltfFeature?.resumeAnimation()
-    }
-
-    override fun setMaterialOverride(
-        material: MaterialResource,
-        nodeName: String,
-        primitiveIndex: Int,
-    ) {
-        mockGltfFeature?.setMaterialOverride(material, nodeName, primitiveIndex)
-    }
-
-    override fun clearMaterialOverride(nodeName: String, primitiveIndex: Int) {
-        mockGltfFeature?.clearMaterialOverride(nodeName, primitiveIndex)
     }
 
     override fun setColliderEnabled(enableCollider: Boolean) {

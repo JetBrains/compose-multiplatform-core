@@ -17,6 +17,7 @@
 package androidx.xr.arcore.testapp.common
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.content.Context
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
@@ -28,17 +29,20 @@ import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureCalibrationRequired
-import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
+import androidx.xr.runtime.SessionConfigureLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
+import androidx.xr.runtime.SessionConfigureUnknownError
 import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreateResult
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.SessionCreateTimedOut
+import androidx.xr.runtime.SessionCreateUnknownError
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.manifest.EYE_TRACKING_COARSE
 import androidx.xr.runtime.manifest.EYE_TRACKING_FINE
 import androidx.xr.runtime.manifest.FACE_TRACKING
@@ -57,6 +61,7 @@ class SessionLifecycleHelper(
     val onSessionAvailable: (Session) -> Unit = {},
     val onSessionCreateActionRequired: (SessionCreateResult) -> Unit = {},
     val onSessionCalibrationRequired: (RequiredCalibrationType) -> Unit = {},
+    val context: Context? = activity,
 ) {
 
     /** Accessed through the [onSessionAvailable] callback. */
@@ -121,23 +126,27 @@ class SessionLifecycleHelper(
     @Suppress("deprecation")
     internal fun tryCreateSession() {
         try {
-            when (
-                val result = Session.create(activity, unscaledGravityAlignedActivitySpace = false)
-            ) {
+            when (val result = Session.create(context!!, activity)) {
                 is SessionCreateSuccess -> {
                     session = result.session
                     try {
                         when (val configResult = session.configure(config)) {
-                            is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                                Log.error {
-                                    "Google Play Services Location Library is not linked, this should not happen."
-                                }
+                            is SessionConfigureLibraryNotLinked -> {
+                                showErrorMessage(
+                                    "Library \"${configResult.libraryName}\" not linked."
+                                )
                             }
                             is SessionConfigureCalibrationRequired -> {
                                 onSessionCalibrationRequired(configResult.calibrationType)
                             }
                             is SessionConfigureSuccess -> {
                                 onSessionAvailable(session)
+                            }
+                            is SessionConfigureUnknownError -> {
+                                showErrorMessage(configResult.errorMessage)
+                            }
+                            else -> {
+                                showErrorMessage("Unexpected ${configResult::class.simpleName}")
                             }
                         }
                     } catch (e: SecurityException) {
@@ -156,6 +165,14 @@ class SessionLifecycleHelper(
                     showErrorMessage("Session could not be created, device is Unsupported.")
                     activity.finish()
                 }
+                is SessionCreateTimedOut -> {
+                    showErrorMessage("Timed out")
+                    activity.finish()
+                }
+                is SessionCreateUnknownError -> {
+                    showErrorMessage(result.errorMessage)
+                    activity.finish()
+                }
             }
         } catch (e: SecurityException) {
             requestPermissionLauncher.launch(getRequiredPermissions(config).toTypedArray())
@@ -164,21 +181,25 @@ class SessionLifecycleHelper(
 
     internal fun tryUpdateConfig(config: Config) {
         if (!::session.isInitialized) {
-            Log.error { "Can't update config, session has not been initialized" }
+            XrLog.error { "Can't update config, session has not been initialized" }
             return
         }
         try {
             when (val result = session.configure(config)) {
-                is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                    Log.error {
-                        "Google Play Services Location Library is not linked, this should not happen."
-                    }
+                is SessionConfigureLibraryNotLinked -> {
+                    showErrorMessage("Library \"${result.libraryName}\" not linked.")
                 }
                 is SessionConfigureCalibrationRequired -> {
                     onSessionCalibrationRequired(result.calibrationType)
                 }
                 is SessionConfigureSuccess -> {
                     onSessionAvailable(session)
+                }
+                is SessionConfigureUnknownError -> {
+                    showErrorMessage(result.errorMessage)
+                }
+                else -> {
+                    showErrorMessage("Unexpected ${result::class.simpleName}")
                 }
             }
         } catch (e: SecurityException) {
@@ -194,7 +215,7 @@ class SessionLifecycleHelper(
     }
 
     private fun <F> showErrorMessage(error: F) {
-        Log.error { error.toString() }
+        XrLog.error { error.toString() }
         Toast.makeText(activity, error.toString(), Toast.LENGTH_LONG).show()
     }
 }

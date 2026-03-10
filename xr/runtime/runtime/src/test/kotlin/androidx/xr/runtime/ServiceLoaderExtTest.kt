@@ -26,9 +26,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.testing.AnotherFakeStateExtender
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.arcore.testing.FakeStateExtender
-import androidx.xr.runtime.internal.Feature
+import androidx.xr.runtime.interfaces.Feature
+import androidx.xr.runtime.interfaces.Service
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
-import androidx.xr.runtime.internal.Service
 import androidx.xr.runtime.manifest.FEATURE_XR_API_OPENXR
 import androidx.xr.runtime.manifest.FEATURE_XR_API_SPATIAL
 import com.google.common.truth.Truth.assertThat

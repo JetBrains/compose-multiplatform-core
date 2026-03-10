@@ -44,6 +44,10 @@ public object SpatialApiVersions {
     public const val SPATIAL_API_V2: Int = 2
     /** API version 3. */
     public const val SPATIAL_API_V3: Int = 3
+
+    /** The latest stable Spatial API version. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public const val LATEST_STABLE_API_LEVEL: Int = SPATIAL_API_V2
 }
 
 /**

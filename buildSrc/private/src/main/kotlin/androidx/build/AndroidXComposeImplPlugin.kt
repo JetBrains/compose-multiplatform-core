@@ -36,6 +36,7 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinNativeCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 
 /** Plugin to apply common configuration for Compose projects. */
@@ -118,8 +119,6 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                     disable.add("PrimitiveInCollection")
                 }
 
-                // Disable lambda creation in subcompose check in projects where we're less
-                // concerned about performance.
                 if (
                     type in
                         setOf(
@@ -130,7 +129,11 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                             SoftwareType.UNSET,
                         )
                 ) {
+                    // Disable lambda creation in subcompose check in projects where we're less
+                    // concerned about performance.
                     disable.add("ComposableLambdaInMeasurePolicy")
+                    // Disable lint rule for feature flag development outside shipped libraries
+                    disable.add("FeatureFlagSetup")
                 }
             }
 
@@ -206,7 +209,13 @@ private fun configureComposeCompilerPlugin(project: Project) {
         project.tasks.withType(KotlinCompilationTask::class.java).configureEach { compile ->
             compile.applyPlugin(kotlinPlugin)
 
-            compile.addPluginOption(ComposeCompileOptions.SourceOption, "true")
+            val isAndroidOrJvm = compile is KotlinJvmCompile
+
+            compile.addPluginOption(ComposeCompileOptions.SourceOption, isAndroidOrJvm.toString())
+            compile.addPluginOption(
+                ComposeCompileOptions.TraceMarkersOption,
+                isAndroidOrJvm.toString(),
+            )
         }
     }
 }
@@ -244,6 +253,7 @@ private const val ComposePluginId = "androidx.compose.compiler.plugins.kotlin"
 
 private enum class ComposeCompileOptions(val pluginId: String, val key: String) {
     SourceOption(ComposePluginId, "sourceInformation"),
+    TraceMarkersOption(ComposePluginId, "traceMarkersEnabled"),
     StrongSkipping(ComposePluginId, "strongSkipping"),
     NonSkippingGroupOptimization(ComposePluginId, "nonSkippingGroupOptimization"),
     FeatureFlagOption(ComposePluginId, "featureFlag"),

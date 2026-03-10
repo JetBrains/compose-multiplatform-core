@@ -163,7 +163,7 @@ fun RemoteComposeContextAndroid.stock(name: String, price: Float, change: String
             .clip(RoundedRectShape(s, s, s, s))
             .backgroundId(color.panelsId)
             .horizontalWeight(1f)
-            .widthIn(160f, Float.MAX_VALUE)
+            .widthIn(120f, Float.MAX_VALUE)
             .padding(24)
     ) {
         column {

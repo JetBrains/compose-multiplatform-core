@@ -54,8 +54,7 @@ final class ImpressApiTestHelper {
             boolean loop,
             float speed,
             float startTime,
-            int channelId
-    );
+            int channelId);
 
     // TODO: b/465818627 - Remove old animation APIs once all clients are
     // migrated to new animation system.
@@ -72,8 +71,8 @@ final class ImpressApiTestHelper {
     // migrated to new animation system.
     static native void nativeSetExpectedStopGltfModelAnimation(int nodeId);
 
-    static native void nativeSetExpectedToggleGltfModelAnimationNew(int nodeId,
-            boolean toggle, int channelId);
+    static native void nativeSetExpectedToggleGltfModelAnimationNew(
+            int nodeId, boolean toggle, int channelId);
 
     // TODO: b/465818627 - Remove old animation APIs once all clients are
     // migrated to new animation system.
@@ -83,11 +82,11 @@ final class ImpressApiTestHelper {
 
     static native void nativeSetGetGltfModelAnimationDurationSecondsSuccess(float duration);
 
-    static native void nativeSetExpectedSetGltfModelAnimationSpeed(int nodeId, float speed,
-            int channelId);
+    static native void nativeSetExpectedSetGltfModelAnimationSpeed(
+            int nodeId, float speed, int channelId);
 
-    static native void nativeSetExpectedSetGltfModelAnimationPlaybackTime(int nodeId,
-            float playbackTime, int channelId);
+    static native void nativeSetExpectedSetGltfModelAnimationPlaybackTime(
+            int nodeId, float playbackTime, int channelId);
 
     static native void nativeSetExpectedGetGltfModelAnimationCount(int nodeId);
 
@@ -100,12 +99,6 @@ final class ImpressApiTestHelper {
     static native void nativeSetExpectedGetGltfModelLocalBounds(int nodeId);
 
     static native void nativeSetGetGltfModelLocalBoundsSuccess(float[] center, float[] halfExtents);
-
-    static native void nativeSetExpectedSetMaterialOverride(
-            int nodeId, long materialHandle, String nodeName, int primitiveIndex);
-
-    static native void nativeSetExpectedClearMaterialOverride(
-            int nodeId, String nodeName, int primitiveIndex);
 
     // Hooks for the skybox operations.
     static native void nativeSetExpectedLoadIblPath(String path);

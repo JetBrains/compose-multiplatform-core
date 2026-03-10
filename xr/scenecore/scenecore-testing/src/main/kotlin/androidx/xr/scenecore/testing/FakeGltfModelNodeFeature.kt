@@ -43,4 +43,8 @@ public class FakeGltfModelNodeFeature(override val name: String? = "test_node") 
     override fun clearMaterialOverride(primitiveIndex: Int) {
         materialOverrides.remove(primitiveIndex)
     }
+
+    override fun clearMaterialOverrides() {
+        materialOverrides.clear()
+    }
 }

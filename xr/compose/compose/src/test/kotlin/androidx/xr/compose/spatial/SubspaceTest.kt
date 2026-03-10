@@ -189,7 +189,7 @@ class SubspaceTest {
         val result = Session.create(composeTestRule.activity, testDispatcher)
         val session = assertIs<SessionCreateSuccess>(result).session
         session.configure(
-            config = session.config.copy(deviceTracking = DeviceTrackingMode.LAST_KNOWN)
+            config = session.config.copy(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN)
         )
 
         return session

@@ -134,6 +134,22 @@ internal class RemoteRowNodeV2 : RemoteComposeNodeV2() {
     }
 }
 
+internal class RemoteFlowRowNodeV2 : RemoteComposeNodeV2() {
+    var horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start
+    var verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val recordingModifier = creationState.toRecordingModifier(modifier)
+        creationState.document.startFlow(
+            recordingModifier,
+            horizontalArrangement.toRemote(),
+            verticalArrangement.toRemote(),
+        )
+        renderChildren(creationState, remoteCanvas)
+        creationState.document.endFlow()
+    }
+}
+
 internal class RemoteColumnNodeV2 : RemoteComposeNodeV2() {
     var verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top
     var horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start

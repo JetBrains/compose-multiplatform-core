@@ -77,7 +77,7 @@ class HelloArPlaneActivity : ComponentActivity() {
                 this,
                 Config(
                     planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                    deviceTracking = DeviceTrackingMode.LAST_KNOWN,
+                    deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
                 ),
                 onSessionAvailable = { session ->
                     this.session = session
@@ -105,6 +105,7 @@ class HelloArPlaneActivity : ComponentActivity() {
     }
 
     @Composable
+    @Suppress("deprecation")
     fun HelloPlanes(session: Session) {
         val state by session.state.collectAsStateWithLifecycle()
         val perceptionState = state.perceptionState

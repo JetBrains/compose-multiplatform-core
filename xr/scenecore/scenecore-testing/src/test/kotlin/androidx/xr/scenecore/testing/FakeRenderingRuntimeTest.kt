@@ -51,11 +51,7 @@ class FakeRenderingRuntimeTest {
 
         assertThat(activity).isNotNull()
 
-        val fakeSceneRuntime =
-            FakeSceneRuntime(
-                unscaledGravityAlignedActivitySpace = false,
-                FakeScheduledExecutorService(),
-            )
+        val fakeSceneRuntime = FakeSceneRuntime(FakeScheduledExecutorService())
         sceneRuntime = fakeSceneRuntime
         fakeRenderingRuntime = FakeRenderingRuntime(sceneRuntime)
         renderingRuntime = fakeRenderingRuntime

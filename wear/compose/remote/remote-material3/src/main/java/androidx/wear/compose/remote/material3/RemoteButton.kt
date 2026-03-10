@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
@@ -65,10 +64,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.DefaultAlpha
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ButtonDefaults.scrimGradientEndColor
 import androidx.wear.compose.material3.ButtonDefaults.scrimGradientStartColor
@@ -106,7 +104,6 @@ import androidx.wear.compose.material3.TextConfiguration
 @Composable
 @RemoteComposable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("RestrictedApiAndroidX")
 public fun RemoteButton(
     onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
@@ -385,7 +382,7 @@ public fun RemoteCompactButton(
     RemoteBox(
         modifier =
             modifier
-                .semantics(mergeDescendants = true) {}
+                .semantics(mergeDescendants = true) { role = Role.Button }
                 .compactButtonModifier()
                 .padding(tapPadding)
                 .clickable(onClick, enabled = enabled.constantValueOrNull ?: false)
@@ -476,7 +473,7 @@ private fun RemoteButtonImpl(
                 enabled = enabled.constantValueOrNull ?: false && onClick != null,
             )
             .padding(contentPadding)
-            .semantics(mergeDescendants = true) {}
+            .semantics(mergeDescendants = true) { role = Role.Button }
 
     RemoteRow(
         verticalAlignment = RemoteAlignment.CenterVertically,
@@ -557,15 +554,16 @@ private fun RemoteButtonImpl(
 
 /** Contains the default values used by [RemoteButton] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("RestrictedApiAndroidX")
 public object RemoteButtonDefaults {
     /** Recommended [RemoteRoundedCornerShape] for [RemoteButton]. */
+    @Suppress("RestrictedApiAndroidX")
     public val shape: RemoteRoundedCornerShape
-        @Composable get() = RemoteRoundedCornerShape(16.rdp)
+        get() = RemoteRoundedCornerShape(16.rdp)
 
     /** Recommended [RemoteRoundedCornerShape] for [RemoteCompactButton]. */
+    @Suppress("RestrictedApiAndroidX")
     public val compactButtonShape: RemoteRoundedCornerShape
-        @Composable get() = RemoteRoundedCornerShape(18.rdp)
+        get() = RemoteRoundedCornerShape(18.rdp)
 
     /**
      * Creates a [RemoteButtonColors] that represents the default background and content colors used
@@ -626,6 +624,7 @@ public object RemoteButtonDefaults {
      * Creates a [RemoteButtonColors] for the content in a [RemoteButton], returns default
      * [buttonColors] if painter is null, else return [defaultButtonWithContainerPainterColors]
      */
+    @Suppress("RestrictedApiAndroidX")
     @Composable
     internal fun buttonWithNullableContainerPainterColors(
         containerPainter: RemotePainter?
@@ -637,10 +636,10 @@ public object RemoteButtonDefaults {
         }
 
     /** The default minimum height applied for the [RemoteButton]. */
-    public val Height: Dp = 52.dp
+    public val Height: RemoteDp = 52.rdp
 
     /** The default minimum width applied for the [RemoteButton]. */
-    public val Width: Dp = 12.dp
+    public val Width: RemoteDp = 12.rdp
 
     /**
      * The default size of the spacing between an icon and a text when they are used inside a
@@ -751,6 +750,7 @@ public object RemoteButtonDefaults {
      *   that any text drawn over the image is legible.
      * @param alpha Opacity of the container image painter and scrim.
      */
+    @Suppress("RestrictedApiAndroidX")
     @Composable
     public fun containerPainter(
         image: RemotePainter,
@@ -770,6 +770,7 @@ public object RemoteButtonDefaults {
      * @param containerPainter The [RemotePainter] to use to draw the container background of the
      *   [RemoteButton].
      */
+    @Suppress("RestrictedApiAndroidX")
     @Composable
     public fun disabledContainerPainter(containerPainter: RemotePainter): RemotePainter {
         return disabledRemoteContainerPainter(
@@ -782,6 +783,7 @@ public object RemoteButtonDefaults {
      * Creates a [RemoteBrush] for the recommended scrim drawn on top of image container
      * backgrounds.
      */
+    @Suppress("RestrictedApiAndroidX")
     @Composable
     public fun scrimBrush(size: RemoteSize): RemoteBrush {
         val startColor = scrimGradientStartColor.rc
@@ -810,7 +812,6 @@ public object RemoteButtonDefaults {
  */
 @Immutable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("RestrictedApiAndroidX")
 public class RemoteButtonColors(
     public val containerColor: RemoteColor,
     public val contentColor: RemoteColor,
@@ -864,6 +865,7 @@ public class RemoteButtonColors(
 }
 
 /** Draws a colored and shaped background with when clipping is not supported. */
+@Suppress("RestrictedApiAndroidX")
 internal fun RemoteDrawScope.drawShapedBackground(
     shape: RemoteShape,
     color: RemoteColor,
@@ -943,13 +945,10 @@ private fun RemoteDrawScope.drawSolidColorShape(
     }
 }
 
-// TODO(b/451927368): Adds HeightInModifier and WidthInModifier that accept RemoteDp
 // TODO(b/459724215): Constraint shouldn't be enforced when there is not enough space.
-@Composable
 public fun RemoteModifier.buttonSizeModifier(): RemoteModifier =
     this.heightIn(min = RemoteButtonDefaults.Height).widthIn(min = RemoteButtonDefaults.Width)
 
-@Composable
 private fun RemoteModifier.compactButtonModifier(): RemoteModifier {
     return this.height(RemoteButtonDefaults.CompactButtonHeight)
 }

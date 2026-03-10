@@ -108,26 +108,11 @@ public class FakeImpressApiImpl : ImpressApi {
     /** Test bookkeeping data for a Gltf gltfToken */
     public class GltfNodeData {
         public var entityId: Int = 0
-        public var materialOverride: MaterialData? = null
         public var name: String = ""
         public val children: MutableList<GltfNodeData> = ArrayList()
         public val transform: FloatArray = floatArrayOf(0f, 0f, 0f, 0f, 0f, 0f, 1f, 1f, 1f, 1f)
         public var isReskinningScheduled: Boolean = false
         public val nodeMaterialOverrides: MutableMap<Int, MaterialData> = HashMap()
-
-        /** Sets the material override for a specific mesh of a node */
-        public fun setMaterialOverride(
-            materialOverride: MaterialData?,
-            nodeName: String,
-            primitiveIndex: Int,
-        ) {
-            this.materialOverride = materialOverride
-        }
-
-        /** Clears a material override for a specific mesh of a node. */
-        public fun clearMaterialOverride(nodeName: String, primitiveIndex: Int) {
-            this.materialOverride = null
-        }
 
         /** Sets the material override for a specific mesh of a specific node */
         public fun setGltfModelNodeMaterialOverride(
@@ -580,26 +565,6 @@ public class FakeImpressApiImpl : ImpressApi {
         val nodeData =
             getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
         nodeData.isReskinningScheduled = true
-    }
-
-    /** Sets a material override for a specific primitive of a specific glTF model node. */
-    override fun setGltfModelNodeMaterialOverride(
-        impressNode: ImpressNode,
-        nativeMaterial: Long,
-        primitiveIndex: Int,
-    ) {
-        val gltfNodeData =
-            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
-        val materialData =
-            materials[nativeMaterial] ?: throw IllegalArgumentException("Material not found")
-        gltfNodeData.setGltfModelNodeMaterialOverride(materialData, primitiveIndex)
-    }
-
-    /** Clears a material override for a specific primitive of a specific glTF model node. */
-    override fun clearGltfModelNodeMaterialOverride(impressNode: ImpressNode, primitiveIndex: Int) {
-        val gltfNodeData =
-            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
-        gltfNodeData.clearGltfModelNodeMaterialOverride(primitiveIndex)
     }
 
     /** Gets the impress nodes for glTF models that match the given token. */
@@ -1186,25 +1151,24 @@ public class FakeImpressApiImpl : ImpressApi {
         textureImages.remove(nativeHandle)
     }
 
-    override fun setMaterialOverride(
+    /** Sets a material override for a specific primitive of a specific glTF model node. */
+    override fun setGltfModelNodeMaterialOverride(
         impressNode: ImpressNode,
         nativeMaterial: Long,
-        nodeName: String,
         primitiveIndex: Int,
     ) {
         val gltfNodeData =
             getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
-        gltfNodeData.setMaterialOverride(materials[nativeMaterial], nodeName, primitiveIndex)
+        val materialData =
+            materials[nativeMaterial] ?: throw IllegalArgumentException("Material not found")
+        gltfNodeData.setGltfModelNodeMaterialOverride(materialData, primitiveIndex)
     }
 
-    override fun clearMaterialOverride(
-        impressNode: ImpressNode,
-        nodeName: String,
-        primitiveIndex: Int,
-    ) {
+    /** Clears a material override for a specific primitive of a specific glTF model node. */
+    override fun clearGltfModelNodeMaterialOverride(impressNode: ImpressNode, primitiveIndex: Int) {
         val gltfNodeData =
             getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
-        gltfNodeData.clearMaterialOverride(nodeName, primitiveIndex)
+        gltfNodeData.clearGltfModelNodeMaterialOverride(primitiveIndex)
     }
 
     override fun setPreferredEnvironmentLight(iblToken: Long) {

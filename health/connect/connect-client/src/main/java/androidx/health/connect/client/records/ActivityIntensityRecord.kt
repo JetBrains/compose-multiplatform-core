@@ -52,7 +52,10 @@ class ActivityIntensityRecord(
      * See b/400965398 for more context.
      */
     init {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                isAtLeastSdkExtension16()
+        ) {
             this.toPlatformRecord()
         } else {
             require(startTime.isBefore(endTime)) { "startTime must be before endTime." }

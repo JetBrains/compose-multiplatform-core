@@ -81,17 +81,23 @@ public abstract class BaseRoomConnectionManager {
                             "callbacks?"
                     }
                     val connection = delegate.open(resolvedFileName)
-                    if (!isConfigured) {
-                        // Perform initial connection configuration
-                        try {
-                            isInitializing = true
-                            configureDatabase(connection)
-                        } finally {
-                            isInitializing = false
+                    try {
+                        if (!isConfigured) {
+                            // Perform initial connection configuration
+                            try {
+                                isInitializing = true
+                                configureDatabase(connection)
+                            } finally {
+                                isInitializing = false
+                            }
+                        } else {
+                            // Perform other non-initial connection configuration
+                            configurationConnection(connection)
                         }
-                    } else {
-                        // Perform other non-initial connection configuration
-                        configurationConnection(connection)
+                    } catch (th: Throwable) {
+                        // Close connection if anything goes wrong during configuration, avoids leak
+                        connection.close()
+                        throw th
                     }
                     return@withLock connection
                 },

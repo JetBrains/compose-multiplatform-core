@@ -4450,7 +4450,7 @@ public class RemoteComposeWriter {
 
     /**
      * begin a section of global commands.
-     * Theses commands will be moved to before the root
+     * These commands will be moved to before the root
      */
     public void beginGlobal() {
         if (mStartGlobalSection != -1) {
@@ -4473,6 +4473,36 @@ public class RemoteComposeWriter {
             mInsertPoint += bytes;
         }
         mStartGlobalSection = -1;
+    }
+
+
+    /**
+     * Add a message to the log
+     * This is for debugging purposes only it is used by debugging software
+     *
+     * @param message
+     */
+    public void rem(@NonNull String message) {
+        mBuffer.rem(message);
+    }
+
+    /**
+     * This allows you to conditionally skip a segment
+     *
+     * @return number to use in the call to endSkip
+     */
+    public int beginSkip(short type, int value) {
+        return mBuffer.beginSkip(type, value);
+    }
+
+    /**
+     * This defines the section to end skipping
+     * Warning using this with startGlobal endGlobal can be tricky
+     *
+     * @param offset the value returned by the end skip
+     */
+    public void endSkip(int offset) {
+        mBuffer.endSkip(offset);
     }
 
     /**

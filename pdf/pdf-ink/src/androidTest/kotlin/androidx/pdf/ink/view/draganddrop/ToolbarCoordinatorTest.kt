@@ -16,9 +16,9 @@
 
 package androidx.pdf.ink.view.draganddrop
 
-import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.pdf.PdfTestActivity
 import androidx.pdf.ink.view.AnnotationToolbar
 import androidx.pdf.ink.view.draganddrop.ToolbarDockState.Companion.DOCK_STATE_BOTTOM
@@ -85,16 +85,18 @@ class ToolbarCoordinatorTest {
     fun attachToolbar_setsInitialStateOnTabAndPhone() {
         onIdle()
         val screenWidthDp = instrumentation.context.resources.configuration.smallestScreenWidthDp
+        val params = toolbar.layoutParams as ConstraintLayout.LayoutParams
+
         if (screenWidthDp >= TABLET_SMALLEST_SCREEN_WIDTH_DP) {
-            // Assert for tablets
             assertThat(toolbar.dockState).isEqualTo(DOCK_STATE_END)
-            val params = toolbar.layoutParams as FrameLayout.LayoutParams
-            assertThat(params.gravity).isEqualTo(Gravity.END or Gravity.CENTER_VERTICAL)
+            // Verify pinned to End
+            assertThat(params.horizontalBias).isEqualTo(1f)
+            assertThat(params.verticalBias).isEqualTo(0.5f)
         } else {
-            // Assert for phones
             assertThat(toolbar.dockState).isEqualTo(DOCK_STATE_BOTTOM)
-            val params = toolbar.layoutParams as FrameLayout.LayoutParams
-            assertThat(params.gravity).isEqualTo(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
+            // Verify pinned to Bottom
+            assertThat(params.verticalBias).isEqualTo(1f)
+            assertThat(params.horizontalBias).isEqualTo(0.5f)
         }
     }
 
@@ -106,11 +108,13 @@ class ToolbarCoordinatorTest {
         performDragAndDrop(toolbarId = TOOLBAR_VIEW_ID, to = ToolbarViewActions.DragTarget.LEFT)
         onIdle()
 
-        // Verify dock state updated to START
         assertThat(toolbar.dockState).isEqualTo(DOCK_STATE_START)
 
-        val params = toolbar.layoutParams as FrameLayout.LayoutParams
-        assertThat(params.gravity).isEqualTo(Gravity.CENTER_VERTICAL or Gravity.START)
+        val params = toolbar.layoutParams as ConstraintLayout.LayoutParams
+        // Center vertical (0.5) and snapped to start (0.0)
+        assertThat(params.horizontalBias).isEqualTo(0f)
+        assertThat(params.verticalBias).isEqualTo(0.5f)
+        assertThat(params.leftMargin).isAtLeast(1) // Verify margin applied
     }
 
     @Test
@@ -122,8 +126,9 @@ class ToolbarCoordinatorTest {
         onIdle()
 
         assertThat(toolbar.dockState).isEqualTo(DOCK_STATE_END)
-        val params = toolbar.layoutParams as FrameLayout.LayoutParams
-        assertThat(params.gravity).isEqualTo(Gravity.CENTER_VERTICAL or Gravity.END)
+        val params = toolbar.layoutParams as ConstraintLayout.LayoutParams
+        assertThat(params.horizontalBias).isEqualTo(1f)
+        assertThat(params.verticalBias).isEqualTo(0.5f)
     }
 
     @Test
@@ -139,8 +144,9 @@ class ToolbarCoordinatorTest {
         onIdle()
 
         assertThat(toolbar.dockState).isEqualTo(DOCK_STATE_BOTTOM)
-        val params = toolbar.layoutParams as FrameLayout.LayoutParams
-        assertThat(params.gravity).isEqualTo(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
+        val params = toolbar.layoutParams as ConstraintLayout.LayoutParams
+        assertThat(params.verticalBias).isEqualTo(1f)
+        assertThat(params.horizontalBias).isEqualTo(0.5f)
     }
 
     companion object {

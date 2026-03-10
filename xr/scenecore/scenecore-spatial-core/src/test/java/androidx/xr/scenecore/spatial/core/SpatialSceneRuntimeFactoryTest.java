@@ -20,11 +20,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.app.Activity;
 
-import androidx.xr.runtime.testing.FakeSpatialApiVersionProvider;
 import androidx.xr.scenecore.runtime.SceneRuntime;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -35,23 +32,12 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = {Config.TARGET_SDK})
 public class SpatialSceneRuntimeFactoryTest {
-
-    @Before
-    public void setUp() {
-        FakeSpatialApiVersionProvider.Companion.setTestSpatialApiVersion(1);
-    }
-
-    @After
-    public void tearDown() {
-        FakeSpatialApiVersionProvider.Companion.setTestSpatialApiVersion(null);
-    }
-
     @Test
     public void createSceneRuntime_returnsNonNullInstance() {
         Activity activity = Robolectric.buildActivity(Activity.class).create().start().get();
         SpatialSceneRuntimeFactory factory = new SpatialSceneRuntimeFactory();
 
-        SceneRuntime sceneRuntime = factory.create(activity, false);
+        SceneRuntime sceneRuntime = factory.create(activity);
 
         assertThat(sceneRuntime).isNotNull();
         assertThat(sceneRuntime).isInstanceOf(SpatialSceneRuntime.class);

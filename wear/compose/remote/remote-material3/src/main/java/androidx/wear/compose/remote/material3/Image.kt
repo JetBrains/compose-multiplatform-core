@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
@@ -181,19 +180,16 @@ public object ImageDefaults {
     internal val AVATAR_SIZE_DP = 24.rdp
     internal val BACKGROUND_CORNER_RADIUS_DP = 26.rdp
 
-    @RemoteComposable @Composable public fun avatarSize(): RemoteDp = AVATAR_SIZE_DP
+    public fun avatarSize(): RemoteDp = AVATAR_SIZE_DP
 
-    @Composable
     public fun avatarShape(): RemoteRoundedCornerShape = RemoteRoundedCornerShape(AVATAR_SIZE_DP)
 
-    @Suppress("RestrictedApiAndroidX")
     @RemoteComposable
     @Composable
     public fun backgroundOverlayColor(): RemoteColor {
         return RemoteMaterialTheme.colorScheme.background.copy(alpha = 0.6f.rf)
     }
 
-    @Composable
     public fun backgroundShape(): RemoteRoundedCornerShape =
         RemoteRoundedCornerShape(BACKGROUND_CORNER_RADIUS_DP)
 }

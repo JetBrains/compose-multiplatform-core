@@ -32,7 +32,7 @@ class LayoutFlowTest : BaseLayoutTest() {
     @Test
     fun testFlowLayoutBasic() {
         val ops =
-            arrayListOf<TestOperation?>(
+            arrayListOf<TestOperation>(
                 TestLayout {
                     flow(
                         Modifier.fillMaxSize().background(Color.YELLOW).padding(8),
@@ -59,7 +59,7 @@ class LayoutFlowTest : BaseLayoutTest() {
     @Test
     fun testFlowLayoutOverflow() {
         val ops =
-            arrayListOf<TestOperation?>(
+            arrayListOf<TestOperation>(
                 TestLayout {
                     flow(
                         Modifier.width(300).background(Color.YELLOW).padding(8),
@@ -89,7 +89,7 @@ class LayoutFlowTest : BaseLayoutTest() {
     @Test
     fun testFlowLayoutSpacing() {
         val ops =
-            arrayListOf<TestOperation?>(
+            arrayListOf<TestOperation>(
                 TestLayout {
                     flow(
                         Modifier.fillMaxWidth().spacedBy(10f).background(Color.LTGRAY).padding(10),
@@ -115,7 +115,7 @@ class LayoutFlowTest : BaseLayoutTest() {
     @Test
     fun testFlowLayoutMixedSizing() {
         val ops =
-            arrayListOf<TestOperation?>(
+            arrayListOf<TestOperation>(
                 TestLayout {
                     flow(
                         Modifier.width(400).background(Color.YELLOW).padding(8),
@@ -142,7 +142,7 @@ class LayoutFlowTest : BaseLayoutTest() {
     @Test
     fun testFlowLayoutWeightsSimple() {
         val ops =
-            arrayListOf<TestOperation?>(
+            arrayListOf<TestOperation>(
                 TestLayout {
                     flow(Modifier.width(600).background(Color.YELLOW).padding(8)) {
                         box(Modifier.horizontalWeight(1f).height(50).background(Color.RED))
@@ -164,7 +164,7 @@ class LayoutFlowTest : BaseLayoutTest() {
     @Test
     fun testFlowLayoutWeightsMixed() {
         val ops =
-            arrayListOf<TestOperation?>(
+            arrayListOf<TestOperation>(
                 TestLayout {
                     flow(Modifier.width(600).background(Color.YELLOW).padding(8)) {
                         box(Modifier.width(100).height(50).background(Color.RED))
@@ -187,7 +187,7 @@ class LayoutFlowTest : BaseLayoutTest() {
     @Test
     fun testFlowLayoutWeightsMultipleRows() {
         val ops =
-            arrayListOf<TestOperation?>(
+            arrayListOf<TestOperation>(
                 TestLayout {
                     flow(Modifier.width(300).background(Color.YELLOW).padding(8)) {
                         // First row: 100 + weight(1) + 100 -> weight takes remaining space in row

@@ -152,8 +152,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull XrExtensions extensions,
             @NonNull EntityManager entityManager,
             @NonNull Node sceneRootNode,
-            @NonNull Node taskWindowLeashNode,
-            boolean unscaledGravityAlignedActivitySpace) {
+            @NonNull Node taskWindowLeashNode) {
         mActivity = activity;
         mExecutor = executor;
         mExtensions = extensions;
@@ -194,7 +193,6 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                         extensions,
                         entityManager,
                         mLazySpatialStateProvider,
-                        unscaledGravityAlignedActivitySpace,
                         executor);
         mEntityManager.addSystemSpaceActivityPose(mActivitySpace);
         mPerceptionSpaceScenePose = new PerceptionSpaceScenePoseImpl(mActivitySpace);
@@ -213,14 +211,12 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull Activity activity,
             @NonNull ScheduledExecutorService executor,
             @NonNull XrExtensions extensions,
-            @NonNull EntityManager entityManager,
-            boolean unscaledGravityAlignedActivitySpace) {
+            @NonNull EntityManager entityManager) {
         return create(
                 activity,
                 executor,
                 extensions,
                 entityManager,
-                unscaledGravityAlignedActivitySpace,
                 /* sceneRootNode= */ extensions.createNode(),
                 /* taskWindowLeashNode= */ extensions.createNode());
     }
@@ -235,7 +231,6 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                 executor,
                 Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()),
                 new EntityManager(),
-                /* unscaledGravityAlignedActivitySpace= */ true,
                 /* sceneRootNode= */ sceneRootNode,
                 /* taskWindowLeashNode= */ taskWindowLeashNode);
     }
@@ -245,7 +240,6 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull ScheduledExecutorService executor,
             @NonNull XrExtensions extensions,
             @NonNull EntityManager entityManager,
-            boolean unscaledGravityAlignedActivitySpace,
             @NonNull Node sceneRootNode,
             @NonNull Node taskWindowLeashNode) {
         // TODO: b/376934871 - Check async results.
@@ -260,26 +254,17 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
         }
 
         return new SpatialSceneRuntime(
-                activity,
-                executor,
-                extensions,
-                entityManager,
-                sceneRootNode,
-                taskWindowLeashNode,
-                unscaledGravityAlignedActivitySpace);
+                activity, executor, extensions, entityManager, sceneRootNode, taskWindowLeashNode);
     }
 
     /** Create a new @c SpatialSceneRuntime. */
     public static @NonNull SpatialSceneRuntime create(
-            @NonNull Activity activity,
-            boolean unscaledGravityAlignedActivitySpace,
-            @NonNull ScheduledExecutorService executor) {
+            @NonNull Activity activity, @NonNull ScheduledExecutorService executor) {
         return create(
                 activity,
                 executor,
                 Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()),
-                new EntityManager(),
-                unscaledGravityAlignedActivitySpace);
+                new EntityManager());
     }
 
     @Override
@@ -733,7 +718,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                 scaleInZ,
                 userAnchorable,
                 mActivitySpace,
-                new PanelShadowRendererImpl(
+                new EntityShadowRendererImpl(
                         mActivitySpace, mPerceptionSpaceScenePose, mActivity, mExtensions),
                 mExecutor);
     }

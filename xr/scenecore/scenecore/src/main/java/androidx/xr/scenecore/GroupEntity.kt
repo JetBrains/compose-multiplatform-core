@@ -17,8 +17,8 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.Entity as RtEntity
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -43,7 +43,7 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
                     pose,
                     name,
                     if (parent != null && parent !is BaseEntity<*>) {
-                        Log.warn(
+                        XrLog.warn(
                             "The provided parent is not a BaseEntity. The GroupEntity will " +
                                 "be created without a parent."
                         )

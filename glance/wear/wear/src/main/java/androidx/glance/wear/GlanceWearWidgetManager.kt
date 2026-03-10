@@ -30,7 +30,6 @@ import com.google.wear.services.tiles.TileInstance
 import com.google.wear.services.tiles.TilesManager
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.reflect.KClass
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -75,29 +74,6 @@ public class GlanceWearWidgetManager {
             }
         this.activeWidgetStore = lazy { ActiveWidgetStore(context) }
     }
-
-    /**
-     * Returns the currently active widgets associated with the specified component class.
-     *
-     * This method filters the results to only include widgets belonging to the provided [clazz]. A
-     * widget instance is considered active when the user has added it to a system surface (such as
-     * a widget host or carousel).
-     *
-     * **Note:** A [ContainerInfo.CONTAINER_TYPE_FULLSCREEN] result indicates that the widget is
-     * running in compatibility or fullscreen mode.
-     *
-     * **Legacy Behavior (Pre-API 34):** On SDKs prior to Android 14 (U), this method uses a
-     * best-effort approach to approximate platform behavior and may be incomplete. Results may omit
-     * pre-installed widgets, those not visited within the last 60 days, or all widgets if the user
-     * has cleared app data. Conversely, widgets removed via an app update may incorrectly persist
-     * as "active" for up to 60 days post-removal.
-     *
-     * @param clazz The component class of the [GlanceWearWidgetService] used to filter the results.
-     */
-    public suspend fun fetchActiveWidgetsForProvider(
-        clazz: KClass<out GlanceWearWidgetService>
-    ): List<ActiveWearWidgetHandle> =
-        fetchActiveWidgets().filter { it.provider.className == clazz.java.name }
 
     /**
      * Returns all currently active widgets and tiles associated with the calling package.

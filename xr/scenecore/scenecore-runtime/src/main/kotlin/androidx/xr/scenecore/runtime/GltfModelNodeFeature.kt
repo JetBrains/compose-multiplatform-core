@@ -21,7 +21,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 
-/** Provide the rendering implementation for [GltfModelNode] */
+/** Provide the rendering implementation for [androidx.xr.scenecore.GltfModelNode] */
 // TODO(b/481429599): Audit usage of LIBRARY_GROUP_PREFIX in SceneCore and migrate it over to
 // LIBRARY_GROUP.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -60,4 +60,7 @@ public interface GltfModelNodeFeature {
      *   node.
      */
     @MainThread public fun clearMaterialOverride(primitiveIndex: Int)
+
+    /** Clears a material override for a all primitive indices of this node. */
+    @MainThread public fun clearMaterialOverrides()
 }

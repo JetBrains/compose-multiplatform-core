@@ -18,7 +18,7 @@ package androidx.xr.arcore.projected
 import android.content.Context
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
-import androidx.xr.runtime.internal.Feature
+import androidx.xr.runtime.interfaces.Feature
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import kotlin.coroutines.CoroutineContext
 

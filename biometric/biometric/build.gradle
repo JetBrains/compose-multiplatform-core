@@ -21,6 +21,8 @@
  * modifying its settings.
  */
 import androidx.build.SoftwareType
+import com.android.build.api.variant.HasAndroidTest
+import com.android.build.api.variant.HasUnitTest
 
 plugins {
     id("AndroidXPlugin")
@@ -92,6 +94,14 @@ android {
     defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.biometric"
     compileSdk = 35
+}
+
+androidComponents {
+    def sharedTestDir = "src/test-common/java"
+    onVariants(selector().all()) { variant ->
+        (variant as HasUnitTest).unitTest.sources.java.addStaticSourceDirectory(sharedTestDir)
+        (variant as HasAndroidTest).androidTest.sources.java.addStaticSourceDirectory(sharedTestDir)
+    }
 }
 
 androidx {

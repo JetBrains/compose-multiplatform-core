@@ -32,7 +32,7 @@ class LayoutFitBoxTest : BaseLayoutTest() {
     @Test
     fun testFitBoxSelection() {
         val ops =
-            arrayListOf<TestOperation?>(
+            arrayListOf<TestOperation>(
                 TestLayout {
                     column(Modifier.fillMaxSize()) {
                         // FitBox that will resize based on document resize
@@ -78,7 +78,7 @@ class LayoutFitBoxTest : BaseLayoutTest() {
     @Test
     fun testFitBoxWithConstraints() {
         val ops =
-            arrayListOf<TestOperation?>(
+            arrayListOf<TestOperation>(
                 TestLayout {
                     column(Modifier.fillMaxSize()) {
                         fitBox(

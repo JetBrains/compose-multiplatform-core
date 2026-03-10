@@ -115,7 +115,6 @@ class ReleaseApkTest(private val config: CameraXExtensionTestParams) {
                 putExtra(
                     INTENT_EXTRA_BUNDLE,
                     Bundle().apply {
-                        putString(INTENT_EXTRA_CAMERA_IMPLEMENTATION, CAMERA2_IMPLEMENTATION_OPTION)
                         putString(INTENT_EXTRA_RUNNING_MODE_CHECK, "release")
                         putString(INTENT_EXTRA_KEY_CAMERA_ID, config.cameraId)
                         putInt(INTENT_EXTRA_KEY_EXTENSION_MODE, config.extensionMode)
@@ -142,9 +141,6 @@ class ReleaseApkTest(private val config: CameraXExtensionTestParams) {
     }
 
     companion object {
-        /** Launches the activity with the specified CameraX implementation. */
-        private const val INTENT_EXTRA_CAMERA_IMPLEMENTATION = "camera_implementation"
-
         /** Launches the activity with the specified id of camera. */
         private const val INTENT_EXTRA_KEY_CAMERA_ID = "camera_id"
 
@@ -156,8 +152,6 @@ class ReleaseApkTest(private val config: CameraXExtensionTestParams) {
 
         /** Result error code - no error */
         private const val RESULT_ERROR_NONE = 0
-
-        private const val CAMERA2_IMPLEMENTATION_OPTION: String = "camera2"
 
         private val context = ApplicationProvider.getApplicationContext<Context>()!!
 

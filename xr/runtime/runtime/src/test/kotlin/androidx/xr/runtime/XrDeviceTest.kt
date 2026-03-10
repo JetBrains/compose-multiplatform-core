@@ -16,8 +16,6 @@
 package androidx.xr.runtime
 
 import androidx.activity.ComponentActivity
-import androidx.lifecycle.LifecycleOwner
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.testing.FakeLifecycleManager
 import androidx.xr.arcore.testing.FakePerceptionRuntime
@@ -33,6 +31,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
+@Suppress("deprecation")
 class XrDeviceTest {
 
     private lateinit var session: Session
@@ -69,15 +68,9 @@ class XrDeviceTest {
     @Test
     fun lifecycle_returnsLifecycleFromSession() {
         val session = createSession()
-        val xrDevice =
-            XrDevice.getCurrentDevice(
-                ApplicationProvider.getApplicationContext(),
-                session,
-                testDispatcher,
-            )
+        val xrDevice = XrDevice.getCurrentDevice(session)
 
-        assertThat(xrDevice.getLifecycle())
-            .isEqualTo((session.activity as LifecycleOwner).lifecycle)
+        assertThat(xrDevice.getLifecycle()).isEqualTo((session.lifecycleOwner.lifecycle))
     }
 
     private fun createSession(coroutineDispatcher: CoroutineDispatcher = testDispatcher): Session {

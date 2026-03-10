@@ -22,7 +22,6 @@ import android.view.ViewGroup
 import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.testing.FakeSpatialApiVersionProvider.Companion.testSpatialApiVersion
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.MoveEventListener
@@ -66,7 +65,7 @@ class ResizableComponentImplTest {
     private val fakeExecutor = FakeScheduledExecutorService()
     private val xrExtensions = getXrExtensions()!!
     private val entityManager = EntityManager()
-    private val panelShadowRenderer: PanelShadowRenderer = mock<PanelShadowRenderer>()
+    private val panelShadowRenderer: EntityShadowRenderer = mock<EntityShadowRenderer>()
     private val nodeRepository: NodeRepository = NodeRepository.getInstance()
     private lateinit var activitySpaceImpl: ActivitySpaceImpl
     private lateinit var fakeSceneRuntime: SpatialSceneRuntime
@@ -74,7 +73,6 @@ class ResizableComponentImplTest {
     @Before
     fun setUp() {
         TruthJUnit.assume().that(xrExtensions).isNotNull()
-        testSpatialApiVersion = 1
         val activitySpaceNode = xrExtensions.createNode()
         activitySpaceImpl =
             ActivitySpaceImpl(
@@ -83,24 +81,16 @@ class ResizableComponentImplTest {
                 xrExtensions,
                 entityManager,
                 { xrExtensions.getSpatialState(activity) },
-                unscaledGravityAlignedActivitySpace = false,
                 fakeExecutor,
             )
         fakeSceneRuntime =
-            SpatialSceneRuntime.create(
-                activity,
-                fakeExecutor,
-                xrExtensions,
-                entityManager,
-                /* unscaledGravityAlignedActivitySpace= */ false,
-            )
+            SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions, entityManager)
     }
 
     @After
     fun tearDown() {
         // Destroy the runtime between test cases to clean up lingering references.
         fakeSceneRuntime.destroy()
-        testSpatialApiVersion = null
     }
 
     private fun createTestEntity(): Entity {

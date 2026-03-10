@@ -611,6 +611,18 @@ public class Component extends PaintOperation
         m.setH(mHeight);
     }
 
+    /**
+     * Apply the measurement to the component.
+     * @param m the ComponentMeasure to apply
+     */
+    public void applyMeasure(@NonNull ComponentMeasure m) {
+        mWidth = m.getW();
+        mHeight = m.getH();
+        mX = m.getX();
+        mY = m.getY();
+        mVisibility = m.getVisibility();
+    }
+
     @Override
     public void layout(@NonNull RemoteContext context, @NonNull MeasurePass measure) {
         ComponentMeasure m = measure.get(this);
@@ -645,15 +657,11 @@ public class Component extends PaintOperation
                                     mAnimationSpec.getVisibilityEasingType());
                 }
             } else {
-                mAnimateMeasure.updateTarget(m, context.currentTime);
+                mAnimateMeasure.updateTarget(context, m, context.currentTime);
             }
-        } else {
-            mVisibility = m.getVisibility();
         }
         if (mAnimateMeasure == null) {
-            setWidth(m.getW());
-            setHeight(m.getH());
-            setLayoutPosition(m.getX(), m.getY());
+            applyMeasure(m);
             updateComponentValues(context);
             clearNeedsBoundsAnimation();
         } else {

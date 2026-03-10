@@ -37,7 +37,9 @@ import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
- * Currently unimplemented implementation of [androidx.xr.arcore.runtime.Geospatial] on Projected.
+ * Currently unimplemented implementation of [Geospatial] on Projected.
+ *
+ * @property state the [Geospatial.State] of the geospatial instance
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedGeospatial internal constructor(private val xrResources: XrResources) :

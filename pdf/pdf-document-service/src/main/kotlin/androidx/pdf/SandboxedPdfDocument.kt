@@ -21,6 +21,7 @@ import android.graphics.Color
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.Build
 import android.os.DeadObjectException
@@ -41,9 +42,11 @@ import androidx.pdf.content.PageSelection
 import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.service.PdfDocumentServiceImpl
 import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
+import java.util.Collections
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeoutException
@@ -57,7 +60,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -80,8 +82,9 @@ import kotlinx.coroutines.withContext
  *   I/O-bound tasks such as interacting with the PDF service. It is recommended to use a dispatcher
  *   appropriate for blocking I/O operations, such as `Dispatchers.IO`.
  * @param pageCount The total number of pages in the document.
- * @param isLinearized Indicates whether the document is linearized.
+ * @param linearizationStatus Indicates the linearization status of the document.
  * @param formType The type of form present in the document.
+ * @param isLinearized Indicates whether the document is linearized.
  * @constructor Creates a new [SandboxedPdfDocument] instance.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -92,10 +95,14 @@ public class SandboxedPdfDocument(
     private val fileDescriptor: ParcelFileDescriptor,
     private val coroutineContext: CoroutineContext,
     override val pageCount: Int,
-    override val isLinearized: Boolean,
+    override val linearizationStatus: Int,
     override val formType: Int,
     override val renderParams: RenderParams,
-    private val batchPdfAnnotationsProcessor: BatchPdfAnnotationsProcessor,
+    @Deprecated(
+        "Deprecated, Use linearizationStatus instead",
+        replaceWith = ReplaceWith("linearizationStatus"),
+    )
+    override val isLinearized: Boolean,
 ) : EditablePdfDocument() {
 
     private val refCount = AtomicInteger(1)
@@ -106,6 +113,12 @@ public class SandboxedPdfDocument(
     private val onPdfContentInvalidatedListeners:
         CopyOnWriteArrayList<PdfContentInvalidationEntry> =
         CopyOnWriteArrayList()
+
+    private val onEditsAppliedListenerEntries: MutableList<OnEditsAppliedListenerEntry> =
+        Collections.synchronizedList(mutableListOf())
+
+    private val batchPdfAnnotationsProcessor =
+        BatchPdfAnnotationsProcessor(requireNotNull(connection.documentBinder))
 
     /**
      * Indicates whether this [androidx.pdf.SandboxedPdfDocument] is closed explicitly by calling
@@ -269,7 +282,15 @@ public class SandboxedPdfDocument(
     }
 
     override suspend fun applyEdits(editsDraft: EditsDraft): List<String> {
-        return batchPdfAnnotationsProcessor.process(editsDraft)
+        return batchPdfAnnotationsProcessor.process(editsDraft) { appliedBatchEdits ->
+            appliedBatchEdits.forEach { appliedEdit ->
+                onEditsAppliedListenerEntries.forEach { entry ->
+                    entry.executor.execute {
+                        entry.listener.onEditApplied(appliedEdit.pageNum, appliedEdit.editId)
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -284,6 +305,19 @@ public class SandboxedPdfDocument(
 
     override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> =
         getKeyedAnnotationsForPage(pageNum)
+
+    override fun addOnEditsAppliedListener(executor: Executor, listener: OnEditsAppliedListener) {
+        onEditsAppliedListenerEntries.add(OnEditsAppliedListenerEntry(executor, listener))
+    }
+
+    override fun removeOnEditsAppliedListener(listener: OnEditsAppliedListener) {
+        for (onEditsAppliedListener in onEditsAppliedListenerEntries) {
+            if (onEditsAppliedListener.listener == listener) {
+                onEditsAppliedListenerEntries.remove(onEditsAppliedListener)
+                break
+            }
+        }
+    }
 
     @WorkerThread
     override fun close() {
@@ -477,6 +511,11 @@ public class SandboxedPdfDocument(
     private data class PdfContentInvalidationEntry(
         val executor: Executor,
         val listener: PdfDocument.OnPdfContentInvalidatedListener,
+    )
+
+    private data class OnEditsAppliedListenerEntry(
+        val executor: Executor,
+        val listener: OnEditsAppliedListener,
     )
 
     private companion object {

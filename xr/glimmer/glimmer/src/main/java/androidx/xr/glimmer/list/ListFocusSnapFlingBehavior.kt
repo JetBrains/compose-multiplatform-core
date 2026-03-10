@@ -37,10 +37,11 @@ public fun SnapLayoutInfoProvider(state: ListState): SnapLayoutInfoProvider =
          * smoother animation.
          */
         override fun calculateApproachOffset(velocity: Float, decayOffset: Float): Float {
-            if (state.layoutInfo.totalItemsCount == 0) {
+            val layoutInfo = state.layoutInfoState.value
+            if (layoutInfo.totalItemsCount == 0) {
                 return 0f
             }
-            val averageItemSize = state.layoutInfo.visibleItemsAverageSize()
+            val averageItemSize = layoutInfo.visibleItemsAverageSize
             return (abs(decayOffset) - averageItemSize).coerceAtLeast(0.0f) * decayOffset.sign
         }
 
@@ -53,13 +54,14 @@ public fun SnapLayoutInfoProvider(state: ListState): SnapLayoutInfoProvider =
                 return 0f
             }
             val autoFocusMeasureResult = state.autoFocusState.properties ?: return 0f
+            val focusScroll = autoFocusMeasureResult.focusScroll.toFloat()
 
             var lowerBoundOffset = Float.NEGATIVE_INFINITY
             var upperBoundOffset = Float.POSITIVE_INFINITY
 
             state.layoutInfo.visibleItemsInfo.fastForEach { item ->
                 // Measure the distance between the center of the item and the focus line.
-                val offset = item.offset + item.size / 2 - autoFocusMeasureResult.focusScroll
+                val offset = item.offset + item.size / 2 - focusScroll
 
                 // Find the closest item before the focus line
                 if (offset <= 0 && offset > lowerBoundOffset) {

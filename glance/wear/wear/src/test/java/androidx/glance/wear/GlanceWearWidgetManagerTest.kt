@@ -107,39 +107,6 @@ class GlanceWearWidgetManagerTest {
     }
 
     @Test
-    @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    fun fetchActiveWidgetsForProviderApi34_returnsAllActiveWidgets() = runTest {
-        whenever(tilesManager.getActiveTiles(any(), any())).thenAnswer { invocationOnMock ->
-            val executor = invocationOnMock.getArgument<Executor>(0)
-            val outcomeReceiver =
-                invocationOnMock.getArgument<OutcomeReceiver<List<TileInstance>, Exception>>(1)
-            executor.execute { outcomeReceiver.onResult(listOf(tileInstance1, tileInstance2)) }
-        }
-
-        val widgets = widgetManager.fetchActiveWidgetsForProvider(TestWidgetService1::class)
-
-        assertThat(widgets.size).isEqualTo(1)
-        assertThat(widgets[0].instanceId.id).isEqualTo(1)
-        assertThat(widgets[0].instanceId.namespace)
-            .isEqualTo(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE)
-        assertThat(widgets[0].provider).isEqualTo(component1)
-        assertThat(widgets[0].containerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_FULLSCREEN)
-    }
-
-    @Test(expected = RuntimeException::class)
-    @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    fun fetchActiveWidgetsForProviderApi34_ifError_throwsException() = runTest {
-        whenever(tilesManager.getActiveTiles(any(), any())).thenAnswer { invocationOnMock ->
-            val executor = invocationOnMock.getArgument<Executor>(0)
-            val outcomeReceiver =
-                invocationOnMock.getArgument<OutcomeReceiver<List<TileInstance>, Exception>>(1)
-            executor.execute { outcomeReceiver.onError(RuntimeException()) }
-        }
-
-        val unused = widgetManager.fetchActiveWidgetsForProvider(TestWidgetService1::class)
-    }
-
-    @Test
     @Config(maxSdk = Build.VERSION_CODES.TIRAMISU)
     fun fetchActiveWidgetsApi33_returnsAllActiveWidgets() = runTest {
         activeWidgetStore.markWidgetAsActive(component1, 1)

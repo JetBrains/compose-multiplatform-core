@@ -59,10 +59,8 @@ import java.util.function.Consumer
  * @param executor This used to input [executor] for tests.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeSceneRuntime(
-    unscaledGravityAlignedActivitySpace: Boolean,
-    public val executor: Executor? = null,
-) : SceneRuntime, RenderingEntityFactory {
+public class FakeSceneRuntime(public val executor: Executor? = null) :
+    SceneRuntime, RenderingEntityFactory {
 
     /* Tracks the current state of the adapter according to where it is in its lifecycle. */
     public enum class State {
@@ -96,8 +94,7 @@ public class FakeSceneRuntime(
             }
         }
 
-    override val activitySpace: FakeActivitySpace =
-        FakeActivitySpace(unscaledGravityAlignedActivitySpace)
+    override val activitySpace: FakeActivitySpace = FakeActivitySpace()
 
     override val perceptionSpaceActivityPose: PerceptionSpaceScenePose =
         FakePerceptionSpaceScenePose()

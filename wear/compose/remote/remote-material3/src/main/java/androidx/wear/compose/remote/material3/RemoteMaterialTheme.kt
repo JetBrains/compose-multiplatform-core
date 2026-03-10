@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
@@ -62,4 +61,5 @@ internal val LocalRemoteColorScheme = staticCompositionLocalOf { RemoteColorSche
 
 internal val LocalRemoteTypography = staticCompositionLocalOf { RemoteTypography() }
 
+@Suppress("RestrictedApiAndroidX")
 internal val LocalRemoteTextStyle = staticCompositionLocalOf { RemoteTextStyle() }

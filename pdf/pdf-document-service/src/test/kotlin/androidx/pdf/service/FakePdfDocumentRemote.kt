@@ -113,7 +113,7 @@ class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
         TODO("Not yet implemented")
     }
 
-    override fun isPdfLinearized(): Boolean {
+    override fun getLinearizationStatus(): Int {
         TODO("Not yet implemented")
     }
 

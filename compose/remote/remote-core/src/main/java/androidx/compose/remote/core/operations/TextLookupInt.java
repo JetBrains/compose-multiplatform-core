@@ -75,6 +75,7 @@ public class TextLookupInt extends Operation implements VariableSupport, Compone
     @Override
     public void registerListening(@NonNull RemoteContext context) {
         context.listensTo(mIndex, this);
+        context.listensTo(mDataSetId, this);
     }
 
     /**

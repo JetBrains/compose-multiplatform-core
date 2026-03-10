@@ -30,6 +30,7 @@ import androidx.tracing.benchmark.CATEGORY
 import androidx.tracing.wire.TraceSink
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.assertEquals
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -111,6 +112,7 @@ class TracingBenchmark {
     fun referenceForBeginEndCoroutine() = runTest {
         benchmarkRule.measureRepeated {
             runBlocking {
+                val coroutineContext = currentCoroutineContext()
                 withContext(coroutineContext + TestThreadContextElement()) {
                     repeat(32) { BlackHole.consume(it) }
                 }

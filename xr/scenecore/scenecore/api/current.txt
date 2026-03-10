@@ -102,23 +102,23 @@ package androidx.xr.scenecore {
     method public void addChild(androidx.xr.scenecore.Entity child);
     method public boolean addComponent(androidx.xr.scenecore.Component component);
     method public void dispose();
-    method public float getAlpha(androidx.xr.scenecore.Space relativeTo);
+    method public float getAlpha(optional androidx.xr.scenecore.Space relativeTo);
     method @InaccessibleFromKotlin public java.util.List<androidx.xr.scenecore.Entity> getChildren();
     method public java.util.List<androidx.xr.scenecore.Component> getComponents();
     method public <T extends androidx.xr.scenecore.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
     method @InaccessibleFromKotlin public CharSequence getContentDescription();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.Entity? getParent();
-    method public androidx.xr.runtime.math.Pose getPose(androidx.xr.scenecore.Space relativeTo);
-    method public float getScale(androidx.xr.scenecore.Space relativeTo);
-    method public boolean isEnabled(boolean includeParents);
+    method public androidx.xr.runtime.math.Pose getPose(optional androidx.xr.scenecore.Space relativeTo);
+    method public float getScale(optional androidx.xr.scenecore.Space relativeTo);
+    method public boolean isEnabled(optional boolean includeParents);
     method public void removeAllComponents();
     method public void removeComponent(androidx.xr.scenecore.Component component);
     method public void setAlpha(float alpha);
     method @InaccessibleFromKotlin public void setContentDescription(CharSequence);
     method public void setEnabled(boolean enabled);
     method @InaccessibleFromKotlin public void setParent(androidx.xr.scenecore.Entity?);
-    method public void setPose(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.Space relativeTo);
-    method public void setScale(float scale, androidx.xr.scenecore.Space relativeTo);
+    method public void setPose(androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.Space relativeTo);
+    method public void setScale(float scale, optional androidx.xr.scenecore.Space relativeTo);
     property public java.util.List<androidx.xr.scenecore.Entity> children;
     property public CharSequence contentDescription;
     property public androidx.xr.scenecore.Entity? parent;
@@ -276,37 +276,13 @@ package androidx.xr.scenecore {
   }
 
   public final class GltfModelEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.scenecore.runtime.GltfEntity> {
-    method @MainThread public void clearMaterialOverride(String nodeName);
-    method @MainThread public void clearMaterialOverride(String nodeName, optional int primitiveIndex);
-    method @BytecodeOnly @MainThread public static void clearMaterialOverride$default(androidx.xr.scenecore.GltfModelEntity!, String!, int, int, Object!);
     method @MainThread public static androidx.xr.scenecore.GltfModelEntity create(androidx.xr.runtime.Session session, androidx.xr.scenecore.GltfModel model);
     method @MainThread public static androidx.xr.scenecore.GltfModelEntity create(androidx.xr.runtime.Session session, androidx.xr.scenecore.GltfModel model, optional androidx.xr.runtime.math.Pose pose);
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.GltfModelEntity.AnimationState getAnimationState();
     method @InaccessibleFromKotlin @MainThread @RequiresApi(android.os.Build.VERSION_CODES.O) public java.util.List<androidx.xr.scenecore.GltfAnimation> getAnimations();
     method @InaccessibleFromKotlin @MainThread public java.util.List<androidx.xr.scenecore.GltfModelNode> getNodes();
-    method @MainThread public void setMaterialOverride(androidx.xr.scenecore.Material material, String nodeName);
-    method @MainThread public void setMaterialOverride(androidx.xr.scenecore.Material material, String nodeName, optional int primitiveIndex);
-    method @BytecodeOnly @MainThread public static void setMaterialOverride$default(androidx.xr.scenecore.GltfModelEntity!, androidx.xr.scenecore.Material!, String!, int, int, Object!);
-    method @MainThread public void startAnimation();
-    method @MainThread public void startAnimation(optional boolean loop);
-    method @MainThread public void startAnimation(boolean loop, String animationName);
-    method @BytecodeOnly @MainThread public static void startAnimation$default(androidx.xr.scenecore.GltfModelEntity!, boolean, int, Object!);
-    method @MainThread public void stopAnimation();
-    property public androidx.xr.scenecore.GltfModelEntity.AnimationState animationState;
     property @MainThread @RequiresApi(android.os.Build.VERSION_CODES.O) public java.util.List<androidx.xr.scenecore.GltfAnimation> animations;
     property @MainThread public java.util.List<androidx.xr.scenecore.GltfModelNode> nodes;
     field public static final androidx.xr.scenecore.GltfModelEntity.Companion Companion;
-  }
-
-  public static final class GltfModelEntity.AnimationState {
-    field public static final androidx.xr.scenecore.GltfModelEntity.AnimationState.Companion Companion;
-    field public static final androidx.xr.scenecore.GltfModelEntity.AnimationState PLAYING;
-    field public static final androidx.xr.scenecore.GltfModelEntity.AnimationState STOPPED;
-  }
-
-  public static final class GltfModelEntity.AnimationState.Companion {
-    property public androidx.xr.scenecore.GltfModelEntity.AnimationState PLAYING;
-    property public androidx.xr.scenecore.GltfModelEntity.AnimationState STOPPED;
   }
 
   public static final class GltfModelEntity.Companion {

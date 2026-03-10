@@ -25,15 +25,17 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.GeospatialMode
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
+import androidx.xr.runtime.SessionConfigureLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreateResult
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.SessionCreateTimedOut
+import androidx.xr.runtime.SessionCreateUnknownError
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
+import androidx.xr.runtime.XrLog
 
 /**
  * Observer class to manage the lifecycle of the JXR Runtime Session based on the lifecycle owner
@@ -92,9 +94,9 @@ class SessionLifecycleHelper(
                     session = result.session
                     try {
                         when (val configResult = session.configure(config)) {
-                            is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                                Log.error {
-                                    "Google Play Services Location Library is not linked, this should not happen."
+                            is SessionConfigureLibraryNotLinked -> {
+                                XrLog.error {
+                                    "Library \"${configResult.libraryName}\" not linked."
                                 }
                             }
 
@@ -123,6 +125,14 @@ class SessionLifecycleHelper(
                     showErrorMessage("Session could not be created, device is Unsupported.")
                     activity.finish()
                 }
+                is SessionCreateTimedOut -> {
+                    showErrorMessage("Time out")
+                    activity.finish()
+                }
+                is SessionCreateUnknownError -> {
+                    showErrorMessage(result.errorMessage)
+                    activity.finish()
+                }
             }
         } catch (e: SecurityException) {
             requestPermissionLauncher.launch(getRequiredPermissions(config).toTypedArray())
@@ -134,7 +144,7 @@ class SessionLifecycleHelper(
     }
 
     private fun <F> showErrorMessage(error: F) {
-        Log.error { error.toString() }
+        XrLog.error { error.toString() }
         Toast.makeText(activity, error.toString(), Toast.LENGTH_LONG).show()
     }
 }

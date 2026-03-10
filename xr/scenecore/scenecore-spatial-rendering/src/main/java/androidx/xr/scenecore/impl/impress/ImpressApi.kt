@@ -515,7 +515,7 @@ public interface ImpressApi {
      *
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
      * @return An int impress node ID which can be used for updating the surface later
-     * @throws InvalidArgumentException if stereoMode is invalid.
+     * @throws IllegalArgumentException if stereoMode is invalid.
      */
     // TODO - b/411225487: Remove this method.
     public fun createStereoSurface(@StereoMode stereoMode: Int): ImpressNode
@@ -528,7 +528,7 @@ public interface ImpressApi {
      * @param contentSecurityLevel The [Int] contentSecurityLevel to apply. Must be a member of
      *   ContentSecurityLevel.
      * @return An int impress node ID which can be used for updating the surface later
-     * @throws InvalidArgumentException if stereoMode or contentSecurityLevel are invalid.
+     * @throws IllegalArgumentException if stereoMode or contentSecurityLevel are invalid.
      */
     public fun createStereoSurface(
         @StereoMode stereoMode: Int,
@@ -545,7 +545,7 @@ public interface ImpressApi {
      * @param useSuperSampling This [Boolean] specifies if the super sampling filter is enabled when
      *   rendering the surface.
      * @return An int impress node ID which can be used for updating the surface later
-     * @throws InvalidArgumentException if stereoMode or contentSecurityLevel are invalid.
+     * @throws IllegalArgumentException if stereoMode or contentSecurityLevel are invalid.
      */
     public fun createStereoSurface(
         @StereoMode stereoMode: Int,
@@ -565,7 +565,7 @@ public interface ImpressApi {
      * @param useSuperSampling This [Boolean] specifies if the super sampling filter is enabled when
      *   rendering the surface.
      * @return An int impress node ID which can be used for updating the surface later
-     * @throws InvalidArgumentException if stereoMode, mediaBlendingMode or contentSecurityLevel are
+     * @throws IllegalArgumentException if stereoMode, mediaBlendingMode or contentSecurityLevel are
      *   invalid.
      */
     public fun createStereoSurface(
@@ -668,7 +668,7 @@ public interface ImpressApi {
      *
      * @param panelImpressNode The Impress node which hosts the panel to be updated.
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode
-     * @throws InvalidArgumentException if stereoMode is invalid.
+     * @throws IllegalArgumentException if stereoMode is invalid.
      */
     public fun setStereoModeForStereoSurface(
         panelImpressNode: ImpressNode,
@@ -1307,34 +1307,6 @@ public interface ImpressApi {
     public fun destroyNativeObject(nativeHandle: Long)
 
     /**
-     * Sets the material override for a specific mesh of a node.
-     *
-     * @param impressNode The object of the Impress node for the instance of the glTF model.
-     * @param nativeMaterial The native handle of the material to be used as the override.
-     * @param nodeName The name of the node containing the mesh to be overridden.
-     * @param primitiveIndex The zero-based index of the primitive to override within the mesh.
-     */
-    public fun setMaterialOverride(
-        impressNode: ImpressNode,
-        nativeMaterial: Long,
-        nodeName: String,
-        primitiveIndex: Int,
-    )
-
-    /**
-     * Clears a material override for a specific mesh of a node.
-     *
-     * @param impressNode The object of the Impress node for the instance of the glTF model.
-     * @param nodeName The name of the node containing the mesh for which to clear the override.
-     * @param primitiveIndex The zero-based index of the primitive to clear within the mesh.
-     */
-    public fun clearMaterialOverride(
-        impressNode: ImpressNode,
-        nodeName: String,
-        primitiveIndex: Int,
-    )
-
-    /**
      * Schedules reskinning of a glTF model. This should be called after modifying node transforms
      * that affect skinned meshes.
      *
@@ -1367,7 +1339,8 @@ public interface ImpressApi {
      * This method sets the IBL asset preference of the client to be set by the system.
      *
      * @param iblToken The native handle of the IBL asset to be used by the system.
-     * @throws NotFoundException if iblToken is not a previously loaded IBL asset.
+     * @throws android.content.res.Resources.NotFoundException if iblToken is not a previously
+     *   loaded IBL asset.
      * @throws IllegalStateException if the SplitEngineSerializer is not valid.
      */
     public fun setPreferredEnvironmentLight(iblToken: Long)

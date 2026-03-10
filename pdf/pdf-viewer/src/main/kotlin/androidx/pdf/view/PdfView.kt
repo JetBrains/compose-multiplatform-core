@@ -28,8 +28,10 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Build
 import android.os.Looper
 import android.os.Parcelable
+import android.os.ext.SdkExtensions
 import android.util.AttributeSet
 import android.util.Range
 import android.util.SparseArray
@@ -46,13 +48,13 @@ import androidx.annotation.FloatRange
 import androidx.annotation.IntDef
 import androidx.annotation.IntRange
 import androidx.annotation.MainThread
+import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.core.animation.addListener
 import androidx.core.graphics.toRectF
 import androidx.core.os.HandlerCompat
 import androidx.core.util.Pools
-import androidx.core.util.forEach
 import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
 import androidx.core.view.ViewCompat
@@ -268,10 +270,21 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             invalidate()
         }
 
-    /** Enable or disable the image-selection feature surface. */
+    /**
+     * Enable or disable the image-selection feature surface.
+     *
+     * **Important:** Enabling this feature (setting to `true`) requires the device to run Android
+     * S+ (API Level 31 or above) with SDK Extension version 19 or higher. This requirement is due
+     * to dependencies on platform APIs introduced in that sdk-extension.
+     */
+    @set:RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
+    @get:RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
     public var isImageSelectionEnabled: Boolean = false
         set(value) {
             if (field == value) return
+            val isApiReqSatisfied = isSdkExtensionGreaterEqualTo(19)
+            if (!isApiReqSatisfied) return
+
             field = value
             selectionStateManager?.isImageSelectionEnabled = value
         }
@@ -366,7 +379,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             isFormFillingEnabled =
                 typedArray.getBoolean(R.styleable.PdfView_isFormFillingEnabled, false)
         }
-        if (typedArray.hasValue(R.styleable.PdfView_isImageSelectionEnabled)) {
+
+        if (
+            typedArray.hasValue(R.styleable.PdfView_isImageSelectionEnabled) &&
+                isSdkExtensionGreaterEqualTo(19)
+        ) {
             isImageSelectionEnabled =
                 typedArray.getBoolean(R.styleable.PdfView_isImageSelectionEnabled, false)
         }
@@ -1510,7 +1527,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
         state.isFormFillingEnabled = isFormFillingEnabled
         state.isFormFillingTooltipEnabled = isFormFillingTooltipEnabled
-        state.isImageSelectionEnabled = isImageSelectionEnabled
+        if (isSdkExtensionGreaterEqualTo(19)) {
+            state.isImageSelectionEnabled = isImageSelectionEnabled
+        }
         state.pagesPerRow = pagesPerRow
         state.horizontalPageSpacing = horizontalPageSpacing
         state.verticalPageSpacing = verticalPageSpacing
@@ -1685,7 +1704,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         isFormFillingEnabled = localStateToRestore.isFormFillingEnabled
         isFormFillingTooltipEnabled = localStateToRestore.isFormFillingTooltipEnabled
-        isImageSelectionEnabled = localStateToRestore.isImageSelectionEnabled
+        if (isSdkExtensionGreaterEqualTo(19)) {
+            isImageSelectionEnabled = localStateToRestore.isImageSelectionEnabled
+        }
         setAccessibility()
 
         restoreFormFillingEditText()
@@ -1951,6 +1972,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         isFormFillingEnabled = { isFormFillingEnabled },
                     )
                     .apply { onViewportChanged() }
+
+            val isImageSelectionAvailable =
+                isSdkExtensionGreaterEqualTo(19) && isImageSelectionEnabled
             selectionStateManager =
                 SelectionStateManager(
                     pdfDocument = localPdfDocument,
@@ -1960,7 +1984,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     errorFlow = errorFlow,
                     pageLayoutManager = pageLayoutManager,
                     pageManager = pageManager,
-                    isImageSelectionEnabled = isImageSelectionEnabled,
+                    isImageSelectionEnabled = isImageSelectionAvailable,
                 )
             setAccessibility()
         }
@@ -2808,4 +2832,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             return (contentCoord * zoom) - scroll
         }
     }
+}
+
+private fun isSdkExtensionGreaterEqualTo(sdkExtension: Int): Boolean {
+    return SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= sdkExtension
 }

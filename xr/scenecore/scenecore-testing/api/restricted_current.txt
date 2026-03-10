@@ -16,13 +16,12 @@ package androidx.xr.scenecore.testing {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeActivitySpace extends androidx.xr.scenecore.testing.FakeSystemSpaceEntity implements androidx.xr.scenecore.runtime.ActivitySpace {
-    ctor public FakeActivitySpace(boolean unscaledGravityAlignedActivitySpace);
+    ctor public FakeActivitySpace();
     method public void addOnBoundsChangedListener(androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener listener);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.HitTestResult getActivitySpaceHitTestResult();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getBounds();
     method @InaccessibleFromKotlin public java.util.Set<androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener> getOnBoundsChangedListeners();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.BoundingBox getRecommendedContentBoxInFullSpace();
-    method @InaccessibleFromKotlin public boolean getUnscaledGravityAlignedActivitySpace();
     method public suspend Object? hitTestRelativeToActivityPose(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue int hitTestFilter, androidx.xr.scenecore.runtime.ScenePose scenePose, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.HitTestResult>);
     method public void onBoundsChanged(androidx.xr.scenecore.runtime.Dimensions bounds);
     method public void removeOnBoundsChangedListener(androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener listener);
@@ -31,7 +30,6 @@ package androidx.xr.scenecore.testing {
     property public androidx.xr.scenecore.runtime.Dimensions bounds;
     property public java.util.Set<androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener> onBoundsChangedListeners;
     property public androidx.xr.runtime.math.BoundingBox recommendedContentBoxInFullSpace;
-    property public boolean unscaledGravityAlignedActivitySpace;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeAnchorEntity extends androidx.xr.scenecore.testing.FakeSystemSpaceEntity implements androidx.xr.scenecore.runtime.AnchorEntity {
@@ -103,7 +101,7 @@ package androidx.xr.scenecore.testing {
     method public void addChild(androidx.xr.scenecore.runtime.Entity child);
     method public void addChildren(java.util.List<? extends androidx.xr.scenecore.runtime.Entity> children);
     method public boolean addComponent(androidx.xr.scenecore.runtime.Component component);
-    method public void addInputEventListener(java.util.concurrent.Executor? executor, androidx.xr.scenecore.runtime.InputEventListener listener);
+    method public void addInputEventListener(optional java.util.concurrent.Executor? executor, androidx.xr.scenecore.runtime.InputEventListener listener);
     method public void dispose();
     method public float getAlpha(@androidx.xr.scenecore.runtime.SpaceValue int relativeTo);
     method @InaccessibleFromKotlin public java.util.List<androidx.xr.scenecore.runtime.Entity> getChildren();
@@ -174,20 +172,21 @@ package androidx.xr.scenecore.testing {
     ctor @BytecodeOnly public FakeGltfEntity(androidx.xr.scenecore.runtime.GltfFeature!, java.util.concurrent.Executor!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public final void addAnimation(androidx.xr.scenecore.runtime.GltfAnimationFeature animation);
     method public void addAnimationStateListener(java.util.concurrent.Executor executor, java.util.function.Consumer<java.lang.Integer> listener);
-    method public void clearMaterialOverride(String nodeName, int primitiveIndex);
+    method public void addOnBoundsUpdateListener(java.util.function.Consumer<androidx.xr.runtime.math.BoundingBox> listener);
     method @InaccessibleFromKotlin public int getAnimationState();
     method @InaccessibleFromKotlin public java.util.List<androidx.xr.scenecore.runtime.GltfAnimationFeature> getAnimations();
     method @InaccessibleFromKotlin public final String? getCurrentAnimationName();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.BoundingBox getGltfModelBoundingBox();
-    method @InaccessibleFromKotlin public final androidx.xr.scenecore.testing.FakeGltfEntity.Node getNode();
     method @InaccessibleFromKotlin public java.util.List<androidx.xr.scenecore.runtime.GltfModelNodeFeature> getNodes();
     method @InaccessibleFromKotlin public final java.util.List<java.lang.String> getSupportedAnimationNames();
     method @InaccessibleFromKotlin public final boolean isLooping();
     method public void pauseAnimation();
     method public void removeAnimationStateListener(java.util.function.Consumer<java.lang.Integer> listener);
+    method public void removeOnBoundsUpdateListener(java.util.function.Consumer<androidx.xr.runtime.math.BoundingBox> listener);
     method public void resumeAnimation();
+    method public void setColliderEnabled(boolean enabled);
     method @InaccessibleFromKotlin public final void setLooping(boolean);
-    method public void setMaterialOverride(androidx.xr.scenecore.runtime.MaterialResource material, String nodeName, int primitiveIndex);
+    method public void setReformAffordanceEnabled(boolean enabled, boolean systemMovable);
     method @InaccessibleFromKotlin public final void setSupportedAnimationNames(java.util.List<java.lang.String>);
     method public void startAnimation(boolean loop, String? animationName);
     method public void stopAnimation();
@@ -196,24 +195,14 @@ package androidx.xr.scenecore.testing {
     property public final String? currentAnimationName;
     property public androidx.xr.runtime.math.BoundingBox gltfModelBoundingBox;
     property public final boolean isLooping;
-    property public final androidx.xr.scenecore.testing.FakeGltfEntity.Node node;
     property public java.util.List<androidx.xr.scenecore.runtime.GltfModelNodeFeature> nodes;
     property public final java.util.List<java.lang.String> supportedAnimationNames;
-  }
-
-  public static final class FakeGltfEntity.Node {
-    ctor public FakeGltfEntity.Node();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.FakeResource[] getMaterialArray();
-    method @InaccessibleFromKotlin public String getNodeName();
-    property public androidx.xr.scenecore.testing.FakeResource[] materialArray;
-    property public String nodeName;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeGltfFeature extends androidx.xr.scenecore.testing.FakeBaseRenderingFeature implements androidx.xr.scenecore.runtime.GltfFeature {
     ctor public FakeGltfFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
     method public void addAnimationStateListener(java.util.concurrent.Executor executor, java.util.function.Consumer<java.lang.Integer> listener);
     method public void addOnBoundsUpdateListener(java.util.function.Consumer<androidx.xr.runtime.math.BoundingBox> listener);
-    method public void clearMaterialOverride(String nodeName, int primitiveIndex);
     method @InaccessibleFromKotlin public int getAnimationState();
     method public java.util.List<androidx.xr.scenecore.runtime.GltfAnimationFeature> getAnimations(java.util.concurrent.Executor executor);
     method public androidx.xr.runtime.math.BoundingBox getGltfModelBoundingBox();
@@ -224,7 +213,6 @@ package androidx.xr.scenecore.testing {
     method public void removeOnBoundsUpdateListener(java.util.function.Consumer<androidx.xr.runtime.math.BoundingBox> listener);
     method public void resumeAnimation();
     method public void setColliderEnabled(boolean enableCollider);
-    method public void setMaterialOverride(androidx.xr.scenecore.runtime.MaterialResource material, String nodeName, int primitiveIndex);
     method public void setReformAffordanceEnabled(androidx.xr.scenecore.runtime.GltfEntity entity, boolean enabled, java.util.concurrent.Executor executor, boolean systemMovable);
     method public void startAnimation(boolean loop, String? animationName, java.util.concurrent.Executor executor);
     method public void stopAnimation();
@@ -243,6 +231,7 @@ package androidx.xr.scenecore.testing {
     ctor public FakeGltfModelNodeFeature(optional String? name);
     ctor @BytecodeOnly public FakeGltfModelNodeFeature(String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public void clearMaterialOverride(int primitiveIndex);
+    method public void clearMaterialOverrides();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getLocalPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getLocalScale();
     method @InaccessibleFromKotlin public java.util.Map<java.lang.Integer,androidx.xr.scenecore.runtime.MaterialResource> getMaterialOverrides();
@@ -602,8 +591,8 @@ package androidx.xr.scenecore.testing {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRenderingRuntimeFactory implements androidx.xr.runtime.internal.RenderingRuntimeFactory {
     ctor public FakeRenderingRuntimeFactory();
     method public androidx.xr.scenecore.runtime.RenderingRuntime create(java.util.List<? extends androidx.xr.runtime.internal.JxrRuntime> runtimes, android.app.Activity activity);
-    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
-    property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
+    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.interfaces.Feature> getRequirements();
+    property public java.util.Set<androidx.xr.runtime.interfaces.Feature> requirements;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeResizableComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.ResizableComponent {
@@ -661,8 +650,9 @@ package androidx.xr.scenecore.testing {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSceneRuntime implements androidx.xr.scenecore.runtime.RenderingEntityFactory androidx.xr.scenecore.runtime.SceneRuntime {
-    ctor public FakeSceneRuntime(boolean unscaledGravityAlignedActivitySpace, optional java.util.concurrent.Executor? executor);
-    ctor @BytecodeOnly public FakeSceneRuntime(boolean, java.util.concurrent.Executor!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public FakeSceneRuntime();
+    ctor public FakeSceneRuntime(optional java.util.concurrent.Executor? executor);
+    ctor @BytecodeOnly public FakeSceneRuntime(java.util.concurrent.Executor!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public void addOnBoundaryConsentChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<java.lang.Boolean> listener);
     method public void addPerceivedResolutionChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions> listener);
     method public void addSpatialCapabilitiesChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialCapabilities> listener);
@@ -761,9 +751,9 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSceneRuntimeFactory implements androidx.xr.runtime.internal.SceneRuntimeFactory {
     ctor public FakeSceneRuntimeFactory();
-    method public androidx.xr.scenecore.testing.FakeSceneRuntime create(android.app.Activity activity, boolean unscaledGravityAlignedActivitySpace);
-    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
-    property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
+    method public androidx.xr.scenecore.testing.FakeSceneRuntime create(android.app.Activity activity);
+    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.interfaces.Feature> getRequirements();
+    property public java.util.Set<androidx.xr.runtime.interfaces.Feature> requirements;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeScheduledExecutorService extends java.util.concurrent.AbstractExecutorService implements java.lang.AutoCloseable java.util.concurrent.ScheduledExecutorService {
@@ -847,8 +837,9 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSpatialPointerComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.SpatialPointerComponent {
     ctor public FakeSpatialPointerComponent();
-    method @androidx.xr.scenecore.runtime.SpatialPointerIconType public int getSpatialPointerIcon();
-    method public void setSpatialPointerIcon(@androidx.xr.scenecore.runtime.SpatialPointerIconType int iconType);
+    method @InaccessibleFromKotlin public int getSpatialPointerIcon();
+    method @InaccessibleFromKotlin public void setSpatialPointerIcon(int);
+    property @androidx.xr.scenecore.runtime.SpatialPointerIconType public int spatialPointerIcon;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface FakeSubspaceNode {

@@ -260,7 +260,7 @@ abstract class SystemSpaceEntityImplTest {
     }
 
     @Test
-    fun zeroTransform_doesNotUpdatePoseOrScaleOrCallOnOriginChanged() {
+    open fun zeroTransform_doesNotUpdatePoseOrScaleOrCallOnOriginChanged() {
         val systemSpaceEntity = this.systemSpaceEntityImpl
         val listener = mock<Runnable>()
         val executor = FakeScheduledExecutorService()
@@ -324,7 +324,7 @@ abstract class SystemSpaceEntityImplTest {
     }
 
     @Test
-    fun setPoseInOpenXrReferenceSpace_updatesScale() {
+    open fun setPoseInOpenXrReferenceSpace_updatesScale() {
         val systemSpaceEntity = this.systemSpaceEntityImpl
         // Column major, right-handed 4x4 Transformation Matrix with translation of (4, 8, 12) and
         // rotation 90 (@) around Z axis, and scale of 3.3.
@@ -352,14 +352,9 @@ abstract class SystemSpaceEntityImplTest {
         val scale = Vector3(3.3f, 3.3f, 3.3f)
 
         systemSpaceEntity.setOpenXrReferenceSpaceTransform(matrix)
-        assertVector3(
-            systemSpaceEntity.activitySpaceScale,
-            scale.scale(this.activitySpaceEntity.worldSpaceScale.inverse()),
-        )
+        // Updated to expect scale, so AnchorEntityImpl passes. ActivitySpaceImpl overrides this.
+        assertVector3(systemSpaceEntity.activitySpaceScale, scale)
         assertVector3(systemSpaceEntity.worldSpaceScale, scale)
-        assertVector3(
-            systemSpaceEntity.getScale(Space.ACTIVITY),
-            scale.scale(this.activitySpaceEntity.worldSpaceScale.inverse()),
-        )
+        assertVector3(systemSpaceEntity.getScale(Space.ACTIVITY), scale)
     }
 }

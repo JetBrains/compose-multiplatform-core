@@ -53,7 +53,6 @@ import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.runtime.testing.FakeSpatialApiVersionProvider;
 import androidx.xr.scenecore.runtime.ActivitySpace;
 import androidx.xr.scenecore.runtime.AnchorEntity;
 import androidx.xr.scenecore.runtime.AnchorEntity.State;
@@ -158,7 +157,6 @@ public class SpatialSceneRuntimeTest {
 
     @Before
     public void setUp() {
-        FakeSpatialApiVersionProvider.Companion.setTestSpatialApiVersion(1);
         mActivity = Robolectric.buildActivity(Activity.class).create().start().get();
         mShadowContentResolver = shadowOf(mActivity.getContentResolver());
         mContentResolver = mActivity.getContentResolver();
@@ -166,8 +164,7 @@ public class SpatialSceneRuntimeTest {
         ShadowXrExtensions.extract(mXrExtensions)
                 .setOpenXrWorldSpaceType(OPEN_XR_REFERENCE_SPACE_TYPE);
         mRuntime =
-                SpatialSceneRuntime.create(
-                        mActivity, mFakeExecutor, mXrExtensions, mEntityManager, false);
+                SpatialSceneRuntime.create(mActivity, mFakeExecutor, mXrExtensions, mEntityManager);
     }
 
     @After
@@ -175,7 +172,6 @@ public class SpatialSceneRuntimeTest {
         // Destroy the runtime between test cases to clean up lingering references.
         mRuntime.destroy();
         mRuntime = null;
-        FakeSpatialApiVersionProvider.Companion.setTestSpatialApiVersion(null);
     }
 
     private GltfEntityImpl createGltfEntity() {
@@ -199,8 +195,7 @@ public class SpatialSceneRuntimeTest {
     }
 
     private SpatialSceneRuntime createRuntime() {
-        return SpatialSceneRuntime.create(
-                mActivity, mFakeExecutor, mXrExtensions, mEntityManager, false);
+        return SpatialSceneRuntime.create(mActivity, mFakeExecutor, mXrExtensions, mEntityManager);
     }
 
     @Test
@@ -629,7 +624,8 @@ public class SpatialSceneRuntimeTest {
         mRuntime.setSpatialModeChangeListener(mockSpatialModeChangeListener);
         ShadowSpatialState.extract(spatialState)
                 .setSpatialCapabilities(ShadowSpatialCapabilities.createAll());
-        ShadowSpatialState.extract(spatialState).setSceneParentTransform(new Mat4f(new float[16]));
+        ShadowSpatialState.extract(spatialState)
+                .setSceneParentTransform(new Mat4f(Matrix4.Identity.getData()));
         mRuntime.onSpatialStateChanged(spatialState);
 
         verify(mockSpatialModeChangeListener).onSpatialModeChanged(any(), any());
@@ -1009,7 +1005,8 @@ public class SpatialSceneRuntimeTest {
     @Test
     public void createPointerCaptureComponent_returnsComponent() {
         PointerCaptureComponent pointerCaptureComponent =
-                mRuntime.createPointerCaptureComponent(null, (inputEvent) -> {}, (state) -> {});
+                mRuntime.createPointerCaptureComponent(
+                        mFakeExecutor, (inputEvent) -> {}, (state) -> {});
 
         assertThat(pointerCaptureComponent).isNotNull();
     }

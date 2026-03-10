@@ -189,7 +189,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val session = (Session.create(this) as SessionCreateSuccess).session
-        session.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
+        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN))
         val arDevice = ArDevice.getInstance(session)
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
         session.scene.keyEntity = session.scene.mainPanelEntity

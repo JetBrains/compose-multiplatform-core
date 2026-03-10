@@ -34,7 +34,6 @@ import androidx.annotation.VisibleForTesting;
 import androidx.core.content.pm.PackageInfoCompat;
 import androidx.webkit.BackForwardCacheSettings;
 import androidx.webkit.Navigation;
-import androidx.webkit.OutcomeReceiverCompat;
 import androidx.webkit.Page;
 import androidx.webkit.PrerenderOperationCallback;
 import androidx.webkit.Profile;
@@ -58,6 +57,7 @@ import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewClientCompat;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
+import androidx.webkit.WebViewOutcomeReceiver;
 import androidx.webkit.WebViewStartUpConfig;
 import androidx.webkit.WebViewStartUpResult;
 
@@ -708,9 +708,8 @@ public class WebViewFeatureInternal {
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers
-     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, CancellationSignal, Executor, SpeculativeLoadingParameters, OutcomeReceiverCompat)}
-     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, CancellationSignal, Executor, OutcomeReceiverCompat)}
-     * {@link androidx.webkit.Profile#clearPrefetchAsync(String, Executor, OutcomeReceiverCompat)}
+     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, CancellationSignal, Executor, SpeculativeLoadingParameters, WebViewOutcomeReceiver)}
+     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, CancellationSignal, Executor, WebViewOutcomeReceiver)}
      */
     public static final ApiFeature.NoFramework PROFILE_URL_PREFETCH =
             new ApiFeature.NoFramework(WebViewFeature.PROFILE_URL_PREFETCH,
@@ -787,7 +786,6 @@ public class WebViewFeatureInternal {
      * {@link Navigation#getWebResourceError()}
      * {@link WebResourceErrorCompat#getDebugCode()}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final ApiFeature.NoFramework NAVIGATION_GET_WEB_RESOURCE_ERROR =
             new ApiFeature.NoFramework(
                     WebViewFeature.NAVIGATION_GET_WEB_RESOURCE_ERROR,

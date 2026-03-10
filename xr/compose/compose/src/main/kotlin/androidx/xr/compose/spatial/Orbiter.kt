@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.spatial
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import android.view.View
@@ -271,7 +272,7 @@ private fun PanelScrim() {
 }
 
 private fun getWindowBoundsInPixels(session: Session): IntSize2d =
-    session.activity.window.decorView.run { IntSize2d(width, height) }
+    (session.context as Activity).window.decorView.run { IntSize2d(width, height) }
 
 /**
  * Provides the dimensions of the Android main window.
@@ -292,7 +293,7 @@ private fun getMainWindowSize(session: Session): IntVolumeSize {
             )
         }
 
-    val mainView = session.activity.window.decorView
+    val mainView = (session.context as Activity).window.decorView
 
     DisposableEffect(Unit) {
         val listener =

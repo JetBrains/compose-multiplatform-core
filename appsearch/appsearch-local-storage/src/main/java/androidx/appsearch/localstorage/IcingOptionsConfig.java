@@ -360,8 +360,7 @@ public interface IcingOptionsConfig {
                                 : getCompressionMemLevel())
                 .setEnableSchemaDatabase(
                         Flags.enableDatabaseScopedSchemaOperations() || isVMEnabled)
-                .setEnableSmallerDecompressionBufferSize(
-                        Flags.enableSmallerDecompressionBufferSize() || isVMEnabled)
+                .setEnableSmallerDecompressionBufferSize(true)
                 .setEnableEigenEmbeddingScoring(Flags.enableEigenEmbeddingScoring() || isVMEnabled)
                 .setEnablePassingFilterToChildren(
                         Flags.enablePassingFilterToChildren() || isVMEnabled)

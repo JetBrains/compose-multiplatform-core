@@ -60,8 +60,16 @@ package androidx.xr.arcore {
     ctor public AnchorCreateUnsupportedLocation();
   }
 
+  public final class AnchorCreateUnsupportedObject extends androidx.xr.arcore.AnchorCreateResult {
+    ctor public AnchorCreateUnsupportedObject();
+  }
+
   public final class AnchorLoadInvalidUuid extends androidx.xr.arcore.AnchorCreateResult {
     ctor public AnchorLoadInvalidUuid();
+  }
+
+  public interface Anchorable<T> extends androidx.xr.arcore.Trackable<T> {
+    method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
   }
 
   public final class ArDevice {
@@ -82,7 +90,6 @@ package androidx.xr.arcore {
   }
 
   public final class AugmentedObject implements androidx.xr.arcore.Trackable<androidx.xr.arcore.AugmentedObject.State> {
-    method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.AugmentedObject.State> getState();
     method public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.AugmentedObject>> subscribe(androidx.xr.runtime.Session session);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -170,7 +177,7 @@ package androidx.xr.arcore {
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalGesturesApi {
   }
 
-  public final class Eye {
+  public final class Eye implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Eye.State> {
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Eye.State> getState();
     method public static androidx.xr.arcore.Eye? left(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.Eye? right(androidx.xr.runtime.Session session);
@@ -184,7 +191,7 @@ package androidx.xr.arcore {
     method public androidx.xr.arcore.Eye? right(androidx.xr.runtime.Session session);
   }
 
-  public static final class Eye.State {
+  public static final class Eye.State implements androidx.xr.arcore.Trackable.State {
     ctor public Eye.State(boolean isOpen, androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.TrackingState trackingState);
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
@@ -194,26 +201,30 @@ package androidx.xr.arcore {
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
-  public final class Face {
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
+  public final class Face implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Face.State> {
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> getState();
     method public static androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Face>> subscribe(androidx.xr.runtime.Session session);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Face>> subscribe(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> state;
     field public static final androidx.xr.arcore.Face.Companion Companion;
   }
 
   public static final class Face.Companion {
     method public androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Face>> subscribe(androidx.xr.runtime.Session session);
+    method public kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Face>> subscribe(androidx.xr.runtime.Session session);
   }
 
-  public static final class Face.State {
+  public static final class Face.State implements androidx.xr.arcore.Trackable.State {
     method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> getBlendShapes();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getCenterPose();
     method @FloatRange(from=0.0, to=1.0, fromInclusive=true, toInclusive=true) public float getConfidence(androidx.xr.arcore.FaceConfidenceRegion region);
+    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Mesh? getMesh();
+    method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.FaceMeshRegion,androidx.xr.runtime.math.Pose?> getRegionPoses();
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     property public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> blendShapes;
+    property public androidx.xr.runtime.math.Pose? centerPose;
+    property public androidx.xr.arcore.runtime.Mesh? mesh;
+    property public java.util.Map<androidx.xr.arcore.FaceMeshRegion,androidx.xr.runtime.math.Pose?> regionPoses;
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
@@ -373,7 +384,7 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.FaceConfidenceRegion FACE_CONFIDENCE_REGION_RIGHT_UPPER;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FaceMeshRegion {
+  public final class FaceMeshRegion {
     field public static final androidx.xr.arcore.FaceMeshRegion.Companion Companion;
     field public static final androidx.xr.arcore.FaceMeshRegion FOREHEAD_LEFT;
     field public static final androidx.xr.arcore.FaceMeshRegion FOREHEAD_RIGHT;
@@ -433,7 +444,7 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.Geospatial.Surface TERRAIN;
   }
 
-  public final class Hand {
+  public final class Hand implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Hand.State> {
     method public static androidx.xr.arcore.Hand.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> getState();
     method public static androidx.xr.arcore.Hand? left(androidx.xr.runtime.Session session);
@@ -455,7 +466,7 @@ package androidx.xr.arcore {
     enum_constant public static final androidx.xr.arcore.Hand.HandSide UNKNOWN;
   }
 
-  public static final class Hand.State {
+  public static final class Hand.State implements androidx.xr.arcore.Trackable.State {
     method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.HandJointType,androidx.xr.runtime.math.Pose> getHandJoints();
     method @InaccessibleFromKotlin public java.nio.FloatBuffer getHandJointsBuffer();
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
@@ -554,7 +565,7 @@ package androidx.xr.arcore {
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.arcore.PerceptionState? androidx.xr.runtime.CoreState.perceptionState;
   }
 
-  public final class Plane implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Plane.State> {
+  public final class Plane implements androidx.xr.arcore.Anchorable<androidx.xr.arcore.Plane.State> {
     method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Plane.State> getState();
     method @InaccessibleFromKotlin public androidx.xr.arcore.Plane.Type getType();
@@ -666,7 +677,6 @@ package androidx.xr.arcore {
   }
 
   public interface Trackable<State> {
-    method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Trackable.State> getState();
     property public abstract kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Trackable.State> state;
   }

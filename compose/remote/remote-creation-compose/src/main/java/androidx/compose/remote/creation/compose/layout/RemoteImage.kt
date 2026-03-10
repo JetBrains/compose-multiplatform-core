@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @file:Suppress("RestrictedApiAndroidX")
 
 package androidx.compose.remote.creation.compose.layout
@@ -59,14 +58,15 @@ internal class RemoteComposeImageModifier(
  * A composable that lays out and draws a given [ImageBitmap]. This is the remote equivalent of
  * [androidx.compose.foundation.Image].
  *
- * @param bitmap The [ImageBitmap] to be drawn.
- * @param contentDescription Text used by accessibility services to describe what this image
+ * @param bitmap the [ImageBitmap] to be drawn.
+ * @param contentDescription the Text used by accessibility services to describe what this image
  *   represents.
- * @param modifier The [RemoteModifier] to be applied to this layout node.
- * @param contentScale The rule to apply to scale the image when its size does not match the layout
- *   size. Defaults to [ContentScale.Fit].
- * @param alpha Optional opacity to be applied to the [ImageBitmap] when it is rendered.
+ * @param modifier the [RemoteModifier] to be applied to this layout node.
+ * @param contentScale the rule to apply to scale the image when its size does not match the layout
+ *   size, Defaults to [ContentScale.Fit].
+ * @param alpha the optional opacity to be applied to the [ImageBitmap] when it is rendered.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
 @RemoteComposable
 public fun RemoteImage(
@@ -83,13 +83,13 @@ public fun RemoteImage(
  * A composable that lays out and draws a given [RemoteBitmap]. This is the remote equivalent of
  * [androidx.compose.foundation.Image].
  *
- * @param remoteBitmap The [RemoteBitmap] to be drawn.
- * @param contentDescription Text used by accessibility services to describe what this image
+ * @param remoteBitmap the [RemoteBitmap] to be drawn.
+ * @param contentDescription the Text used by accessibility services to describe what this image
  *   represents.
- * @param modifier The [RemoteModifier] to be applied to this layout node.
- * @param contentScale The rule to apply to scale the image when its size does not match the layout
- *   size. Defaults to [ContentScale.Fit].
- * @param alpha Optional opacity to be applied to the [remoteBitmap] when it is rendered.
+ * @param modifier the [RemoteModifier] to be applied to this layout node.
+ * @param contentScale the rule to apply to scale the image when its size does not match the layout
+ *   size, Defaults to [ContentScale.Fit].
+ * @param alpha the Optional opacity to be applied to the [remoteBitmap] when it is rendered.
  */
 @Composable
 @RemoteComposable

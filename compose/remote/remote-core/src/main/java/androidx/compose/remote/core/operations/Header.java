@@ -131,6 +131,9 @@ public class Header extends Operation implements RemoteComposeOperation {
     /** Fix priority logic in collapsible layouts */
     public static final short FEATURE_PRIORITY_FIX = 23;
 
+    /** Support for origin-aware resizing animations */
+    public static final short FEATURE_LT_RESIZE = 24;
+
     /** The object is an integer */
     private static final short DATA_TYPE_INT = 0;
 
@@ -157,7 +160,8 @@ public class Header extends Operation implements RemoteComposeOperation {
             DEBUG,
             FEATURE_MEASURE_VERSION,
             FEATURE_TOUCH_VERSION,
-            FEATURE_PRIORITY_FIX
+            FEATURE_PRIORITY_FIX,
+            FEATURE_LT_RESIZE
     };
     private static final String[] KEY_NAMES = {
             "DOC_WIDTH",
@@ -173,7 +177,8 @@ public class Header extends Operation implements RemoteComposeOperation {
             "DEBUG",
             "MEASURE_VERSION",
             "TOUCH_VERSION",
-            "PRIORITY_FIX"
+            "PRIORITY_FIX",
+            "LT_RESIZE"
     };
 
     /**

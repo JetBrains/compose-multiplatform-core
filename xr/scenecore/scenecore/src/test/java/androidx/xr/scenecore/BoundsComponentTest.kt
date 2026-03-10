@@ -81,6 +81,7 @@ class BoundsComponentTest {
                         fakeSceneRuntime,
                         fakeRenderingRuntime,
                     ),
+                lifecycleOwner = activity,
             )
         session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
 

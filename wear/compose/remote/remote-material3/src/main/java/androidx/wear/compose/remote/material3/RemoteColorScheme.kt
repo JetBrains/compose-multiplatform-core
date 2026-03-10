@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
@@ -36,7 +35,6 @@ import androidx.wear.compose.material3.ColorScheme
  *
  * @param colorScheme The local `ColorScheme` to retrieve colors from.
  */
-@Suppress("RestrictedApiAndroidX")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public open class RemoteColorScheme(internal val colorScheme: ColorScheme = ColorScheme()) {
 

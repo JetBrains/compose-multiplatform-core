@@ -108,9 +108,10 @@ import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.GltfAnimation.AnimationState
+import androidx.xr.scenecore.GltfAnimationStartOptions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
-import androidx.xr.scenecore.GltfModelEntity.AnimationState
 import java.nio.file.Paths
 import java.time.Clock
 import kotlin.math.cos
@@ -414,6 +415,7 @@ class SpatialCompose : ComponentActivity() {
         val session = LocalSession.current ?: return
         val dragonModel = remember { mutableStateOf<GltfModel?>(null) }
         val dragonEntity = remember { mutableStateOf<GltfModelEntity?>(null) }
+
         val dragonAnimationState = remember {
             androidx.compose.runtime.mutableStateOf(AnimationState.STOPPED)
         }
@@ -431,9 +433,10 @@ class SpatialCompose : ComponentActivity() {
                     Pose(Vector3(1.0f, 0.0f, 0.0f), Quaternion.Identity),
                 )
 
-            dragonEntity.value?.let {
-                it.startAnimation(false, "Fast_Flying")
-                dragonAnimationState.value = it.animationState
+            dragonEntity.value?.let { entity ->
+                val animation = entity.animations.find { it.name == "Fast_Flying" }
+                animation?.start(GltfAnimationStartOptions(shouldLoop = false))
+                dragonAnimationState.value = animation?.animationState ?: AnimationState.STOPPED
             }
         }
 
@@ -441,12 +444,15 @@ class SpatialCompose : ComponentActivity() {
         LaunchedEffect(dragonEntity.value) {
             val entity = dragonEntity.value
             if (entity != null) {
+                val animation = entity.animations.find { it.name == "Fast_Flying" }
                 while (true) {
+                    val currentState = animation?.animationState ?: AnimationState.STOPPED
+
                     // 1. Update the animation state on every frame.
-                    dragonAnimationState.value = entity.animationState
+                    dragonAnimationState.value = currentState
 
                     // 2. Only calculate the bounding box if the animation is actually playing.
-                    if (entity.animationState == AnimationState.PLAYING) {
+                    if (currentState == AnimationState.PLAYING) {
                         entitySize = entity.gltfModelBoundingBox.halfExtents.times(2f)
                     }
 

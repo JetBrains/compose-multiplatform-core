@@ -19,7 +19,6 @@
 package androidx.compose.remote.creation.compose.capture
 
 import android.content.Context
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
 import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
@@ -29,9 +28,7 @@ import androidx.compose.remote.creation.compose.v2.captureSingleRemoteDocumentV2
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.runtime.Composable
-import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
@@ -55,39 +52,6 @@ public suspend fun captureSingleRemoteDocument(
     profile: Profile = RcPlatformProfiles.ANDROIDX,
     content: @Composable @RemoteComposable () -> Unit,
 ): CapturedDocument {
-    return captureSingleRemoteDocument(
-        context,
-        creationDisplayInfo,
-        profile,
-        Dispatchers.Default.limitedParallelism(1),
-        content,
-    )
-}
-
-/**
- * Capture a RemoteCompose document by rendering the specified [content] Composable in a virtual
- * display and returning the resulting bytes.
- *
- * This can be used for testing, or for generating documents on the fly to be sent to a remote
- * client.
- *
- * This API is experimental and is likely to change in the future before becoming API stable.
- *
- * @param context the Android [Context] to use for the capture.
- * @param creationDisplayInfo details about the virtual display to create.
- * @param profile the [Profile] to use for the capture, determining which operations are supported.
- * @param content the Composable content to render and capture.
- * @param coroutineContext the [CoroutineContext] to use for capture.
- * @return a [ByteArray] containing the RemoteCompose document.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public suspend fun captureSingleRemoteDocument(
-    context: Context,
-    creationDisplayInfo: CreationDisplayInfo = createCreationDisplayInfo(context),
-    profile: Profile = RcPlatformProfiles.ANDROIDX,
-    coroutineContext: CoroutineContext = Dispatchers.Default,
-    content: @Composable @RemoteComposable () -> Unit,
-): CapturedDocument {
     val layoutDirection = toLayoutDirection(context.resources.configuration.layoutDirection)
 
     if (RemoteComposeCreationComposeFlags.isRemoteApplierEnabled) {
@@ -105,7 +69,6 @@ public suspend fun captureSingleRemoteDocument(
             profile = profile,
             content = content,
             context = context,
-            coroutineContext = coroutineContext,
         )
     }
 

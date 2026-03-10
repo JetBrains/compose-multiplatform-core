@@ -178,7 +178,7 @@ private fun ListLayoutProperties.applyMeasureResultWithAutoFocus(
     val unconsumedContentDelta = expectedContentScrollDelta - consumedContentScrollDelta
     val unconsumedFocusDelta = expectedFocusScrollDelta - consumedFocusScrollDelta
 
-    val consumedScroll =
+    val consumedScroll: Float =
         when {
             // Reports that we consume all because we carry it over to the next pass.
             abs(expectedContentScrollDelta) <= 0.5f -> incomingScroll
@@ -188,7 +188,7 @@ private fun ListLayoutProperties.applyMeasureResultWithAutoFocus(
             else -> consumedContentScrollDelta + consumedFocusScrollDelta
         }
 
-    val scrollToCarryOver =
+    val scrollToCarryOver: Float =
         when {
             // We pretend that we consume all, but we will actually use it in the next pass.
             abs(expectedContentScrollDelta) <= 0.5f -> scrollToBeConsumed
@@ -230,7 +230,7 @@ private fun convertUserScrollDeltaToContentScrollDelta(
     val dSc = nextSc - prevSc
 
     // Restore the original sign.
-    return -dSc
+    return -dSc.toFloat()
 }
 
 /** Uses the previous measure results to correctly calculate how much focus scroll was consumed. */
@@ -255,7 +255,7 @@ private fun calculateConsumedFocusDelta(
     val nextSf = nextSu - nextSc
     val dSf = nextSf - prevAutoFocusProperties.focusScroll
     // Restore the original sign.
-    return -dSf
+    return -dSf.toFloat()
 }
 
 // TODO: b/431258694 - Support reverse scrolling.
@@ -267,13 +267,13 @@ private fun calculateAutoFocusProperties(
         return null
     }
 
-    val viewportSize = layoutProperties.mainAxisAvailableSize.toFloat()
+    val viewportSize = layoutProperties.mainAxisAvailableSize.toDouble()
     val scrollThreshold = viewportSize * ProportionalThresholdFactor
     val contentLength =
-        measureResult.visibleItemsAverageSize() * measureResult.totalItemsCount -
-            measureResult.mainAxisItemSpacing.toFloat()
+        measureResult.visibleItemsAverageSize * measureResult.totalItemsCount -
+            measureResult.mainAxisItemSpacing.toDouble()
 
-    val contentScroll = getTotalContentScrollDistance(measureResult).toFloat()
+    val contentScroll = getTotalContentScrollDistance(measureResult).toDouble()
 
     val userScroll =
         AutoFocusScrollConverter.convertContentScrollToUserScroll(
@@ -302,7 +302,7 @@ private fun calculateAutoFocusProperties(
 private fun getTotalContentScrollDistance(measureResult: GlimmerListMeasureResult): Int {
     val firstVisibleItem = measureResult.visibleItemsInfo.first()
     val nonRenderedItemSizes =
-        safeMultiply(measureResult.visibleItemsAverageSize(), firstVisibleItem.index)
+        safeMultiply(measureResult.visibleItemsAverageSize, firstVisibleItem.index)
     return nonRenderedItemSizes - firstVisibleItem.offset
 }
 

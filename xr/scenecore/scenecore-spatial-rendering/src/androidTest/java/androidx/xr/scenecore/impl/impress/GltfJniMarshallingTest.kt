@@ -400,38 +400,4 @@ class GltfJniMarshallingTest : BaseJniMarshallingTest() {
         assertThat(box.halfExtents.height).isEqualTo(expectedHalfExtents[1])
         assertThat(box.halfExtents.depth).isEqualTo(expectedHalfExtents[2])
     }
-
-    @Test
-    fun setMaterialOverride_marshalsParams() {
-        ImpressApiTestHelper.nativeSetExpectedSetMaterialOverride(
-            TEST_NODE_ID,
-            TEST_NATIVE_TOKEN,
-            TEST_MESH_NODE_NAME,
-            TEST_PRIMITIVE_INDEX,
-        )
-        val node = ImpressNode(TEST_NODE_ID)
-
-        mImpressApi.setMaterialOverride(
-            node,
-            TEST_NATIVE_TOKEN,
-            TEST_MESH_NODE_NAME,
-            TEST_PRIMITIVE_INDEX,
-        )
-
-        // This JNI call does not return any data, so the only assertion is on the native side.
-    }
-
-    @Test
-    fun clearMaterialOverride_marshalsParams() {
-        ImpressApiTestHelper.nativeSetExpectedClearMaterialOverride(
-            TEST_NODE_ID,
-            TEST_MESH_NODE_NAME,
-            TEST_PRIMITIVE_INDEX,
-        )
-        val node = ImpressNode(TEST_NODE_ID)
-
-        mImpressApi.clearMaterialOverride(node, TEST_MESH_NODE_NAME, TEST_PRIMITIVE_INDEX)
-
-        // This JNI call does not return any data, so the only assertion is on the native side.
-    }
 }

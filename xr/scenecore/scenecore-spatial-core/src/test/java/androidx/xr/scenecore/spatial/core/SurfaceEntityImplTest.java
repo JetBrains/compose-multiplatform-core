@@ -92,7 +92,6 @@ public final class SurfaceEntityImplTest {
                         mXrExtensions,
                         mEntityManager,
                         mSpatialStateProvider,
-                        false,
                         mExecutor);
         mEntityManager.addSystemSpaceActivityPose(new PerceptionSpaceScenePoseImpl(mActivitySpace));
 

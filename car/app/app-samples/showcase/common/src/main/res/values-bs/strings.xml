@@ -242,8 +242,7 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"2. lista"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Podtekst ispod svake liste"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"Završi demonstraciju slike i radnji"</string>
-    <!-- no translation found for filter_chip_demo_title (92190365856639582) -->
-    <skip />
+    <string name="filter_chip_demo_title" msgid="92190365856639582">"Demonstracija čipa za filtriranje"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Demo verzija šablona okna"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Demo verzija šablona za listu mjesta"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Pregledajte mjesta"</string>
@@ -302,7 +301,7 @@
     <string name="rows_demo_title" msgid="3198566660454251007">"Demo verzija redova"</string>
     <string name="text_icons_demo_title" msgid="8732943920672143201">"Demo verzije teksta i ikona"</string>
     <string name="row_text_icons_demo_title" msgid="135167694047524905">"Demo verzija redova s tekstom i ikonama"</string>
-    <string name="radio_button_list_demo_title" msgid="9082264324855338774">"Demo verzija lista s dugmadima za izbor"</string>
+    <string name="radio_button_list_demo_title" msgid="9082264324855338774">"Demo verzija lista s dugmadi za izbor"</string>
     <string name="selectable_lists_demo_title" msgid="5492658731113129386">"Demo verzija listi s odabirima"</string>
     <string name="option_1_title" msgid="7221252541651471199">"1. opcija"</string>
     <string name="option_2_title" msgid="1905146448697963818">"2. opcija"</string>

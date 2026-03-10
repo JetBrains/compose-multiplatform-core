@@ -13,7 +13,6 @@ package androidx.glance.wear {
   public final class GlanceWearWidgetManager {
     ctor public GlanceWearWidgetManager(android.content.Context context);
     method public suspend Object? fetchActiveWidgets(kotlin.coroutines.Continuation<? super java.util.List<androidx.glance.wear.core.ActiveWearWidgetHandle>>);
-    method public suspend Object? fetchActiveWidgetsForProvider(kotlin.reflect.KClass<? extends androidx.glance.wear.GlanceWearWidgetService> clazz, kotlin.coroutines.Continuation<? super java.util.List<androidx.glance.wear.core.ActiveWearWidgetHandle>>);
   }
 
   public abstract class GlanceWearWidgetService extends androidx.lifecycle.LifecycleService {

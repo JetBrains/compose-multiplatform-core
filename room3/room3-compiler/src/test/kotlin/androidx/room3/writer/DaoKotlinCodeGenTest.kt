@@ -70,7 +70,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 class Foo<T>(data: T): Bar<T>(data)
 
                 class FooReturnTypeConverter {
-                    @DaoReturnTypeConverter
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
                     suspend fun <T> convert(
                         database: RoomDatabase,
                         tableNames: Array<String>,
@@ -116,7 +116,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 class Foo<T>(data: T): Bar<T>(data)
 
                 class FooReturnTypeConverter {
-                    @DaoReturnTypeConverter
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
                     suspend fun <T> convert(
                         database: RoomDatabase,
                         tableNames: Array<String>,
@@ -125,7 +125,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                         return Foo(executeAndConvert.invoke())
                     }
 
-                    @DaoReturnTypeConverter
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
                     fun <T> convertBlocking(
                         database: RoomDatabase,
                         tableNames: Array<String>,
@@ -136,6 +136,57 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                         }
                     }
 
+                }
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(src, databaseSrc),
+            expectedFilePath = getTestGoldenPath(testName.methodName),
+            compiledFiles = compileFiles(listOf()),
+        )
+    }
+
+    @Test
+    fun customDaoReturnTypeWithCollectionLambda() {
+        val src =
+            Source.kotlin(
+                "MyDao.kt",
+                """
+                import androidx.room3.*
+
+                @DaoReturnTypeConverters(FooReturnTypeConverter::class)
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  suspend fun getFooList(): FooList<MyEntity>
+
+                  @Query("SELECT * FROM MyEntity")
+                  suspend fun getFooArray(): FooArray<MyEntity>
+                }
+
+                @Entity
+                data class MyEntity(@PrimaryKey val pk: Int)
+
+                class FooList<T>(val data: List<T>)
+                class FooArray<T>(val data: Array<T>)
+
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
+                    suspend fun <T> convertArray(
+                        executeAndConvert: suspend () -> Array<T>,
+                    ): FooArray<T> {
+                        return FooArray(executeAndConvert.invoke())
+                    }
+
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
+                    suspend fun <T> convertList(
+                        database: RoomDatabase,
+                        tableNames: Array<String>,
+                        executeAndConvert: suspend () -> List<T>,
+                    ): FooList<T> {
+                        return FooList(executeAndConvert.invoke())
+                    }
                 }
                 """
                     .trimIndent(),
@@ -1086,9 +1137,12 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 """
                 import androidx.room3.*
                 import androidx.paging.*
-                import androidx.paging.rxjava3.*
+                import androidx.room3.paging.PagingSourceDaoReturnTypeConverter
+                import androidx.room3.paging.rxjava3.RxPagingSourceDaoReturnTypeConverter
+                import androidx.room3.paging.guava.ListenableFuturePagingSourceDaoReturnTypeConverter
 
                 @Dao
+                @DaoReturnTypeConverters(ListenableFuturePagingSourceDaoReturnTypeConverter::class, PagingSourceDaoReturnTypeConverter::class, RxPagingSourceDaoReturnTypeConverter::class)
                 abstract class MyDao {
                   @Query("SELECT pk FROM MyEntity")
                   abstract fun getAllIds(): androidx.paging.PagingSource<Int, MyEntity>
@@ -2412,11 +2466,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                     import androidx.room3.*
                     import io.reactivex.rxjava3.core.*
                     import com.google.common.base.Optional
+                    import androidx.room3.rxjava3.RxDaoReturnTypeConverters
 
                 @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
-                @DaoReturnTypeConverters(
-                    androidx.room3.rxjava3.Rx3DaoReturnTypeConverters::class
-                )
+                @DaoReturnTypeConverters(RxDaoReturnTypeConverters::class)
                 abstract class MyDatabase : RoomDatabase() {
                     abstract fun getDao(): MyDao
                 }
@@ -2483,6 +2536,9 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 import io.reactivex.rxjava3.core.*
 
                 @Dao
+                @DaoReturnTypeConverters(
+                    androidx.room3.rxjava3.RxDaoReturnTypeConverters::class
+                )
                 interface MyDao {
                     @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
                     fun insertPublisherSingle(id: String, name: String): Single<Long>
@@ -2593,7 +2649,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
 
                 @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
                 @DaoReturnTypeConverters(
-                    androidx.room3.rxjava3.Rx3DaoReturnTypeConverters::class
+                    androidx.room3.rxjava3.RxDaoReturnTypeConverters::class
                 )
                 abstract class MyDatabase : RoomDatabase() {
                     abstract fun getDao(): MyDao
@@ -2662,8 +2718,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 """
                 import com.google.common.util.concurrent.ListenableFuture
                 import androidx.room3.*
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter
 
                 @Dao
+                @DaoReturnTypeConverters(GuavaDaoReturnTypeConverter::class)
                 interface MyDao {
                     @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
                     fun getListenableFuture(vararg arg: String?): ListenableFuture<MyEntity>
@@ -2713,8 +2771,10 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 """
                 import com.google.common.util.concurrent.ListenableFuture;
                 import androidx.room3.*;
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter;
 
                 @Dao
+                @DaoReturnTypeConverters(GuavaDaoReturnTypeConverter.class)
                 public interface MyDao {
                     @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
                     ListenableFuture<MyEntity> getListenableFuture(String... arg);

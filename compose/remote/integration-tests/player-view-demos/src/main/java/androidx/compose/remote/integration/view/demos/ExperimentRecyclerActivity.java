@@ -715,7 +715,7 @@ public class ExperimentRecyclerActivity extends Activity {
 //            int mode =(mPlayer.getResources().getConfiguration().isNightModeActive())?Rc.Theme
 //            .DARK:Rc.Theme.LIGHT;
 //            mPlayer.setTheme(mode);
-            mTitle.setTextSize(32);
+            mTitle.setTextSize(24);
             mTitle.setTypeface(mTitle.getTypeface(), Typeface.BOLD);
             mTitle.setTextColor(Color.BLACK);
             mTitle.setBackgroundColor(0xFFDDDDDD);

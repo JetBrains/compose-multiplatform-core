@@ -637,6 +637,8 @@ class RawQueryFunctionProcessorTest {
             """
                 package foo.bar
                 import androidx.room3.*
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter
+                import androidx.sqlite.db.SupportSQLiteQuery
                 import java.util.*
                 import io.reactivex.*         
                 import io.reactivex.rxjava3.core.*
@@ -644,7 +646,7 @@ class RawQueryFunctionProcessorTest {
                 import com.google.common.util.concurrent.*
                 import org.reactivestreams.*
                 import kotlinx.coroutines.flow.*
-                
+                @DaoReturnTypeConverters(GuavaDaoReturnTypeConverter::class)
                 @Dao
                 abstract class MyClass {
                 """

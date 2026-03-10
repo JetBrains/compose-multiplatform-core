@@ -192,7 +192,7 @@ class PerceivedResolutionManager(
     }
 
     private fun createPanelEntity() {
-        mTextView = DebugTextLinearView(context = session.activity)
+        mTextView = DebugTextLinearView(context = session.context)
         mTextView?.setName("Perceived Resolution")
         // Create PanelEntity and Components if they don't exist.
         if (mPanelEntity == null) {

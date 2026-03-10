@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.AuthenticationCallback
+import androidx.biometric.internal.data.CanceledFrom
 import androidx.biometric.internal.ui.FingerprintDialogActivity
 import androidx.biometric.internal.viewmodel.AuthenticationViewModel
 import androidx.biometric.utils.ErrorUtils
@@ -132,10 +133,7 @@ internal class AuthenticationHandlerFingerprintManager(
     private fun onAuthenticationError(errorCode: Int, errorMessage: CharSequence?) {
         // Ensure we're only sending publicly defined errors.
         val knownErrorCode = ErrorUtils.toKnownErrorCodeForAuthenticate(errorCode)
-        if (
-            ErrorUtils.isLockoutError(knownErrorCode) &&
-                context.isManagingDeviceCredentialButton(viewModel.allowedAuthenticators)
-        ) {
+        if (ErrorUtils.isLockoutError(knownErrorCode) && viewModel.isOverriddenDeviceCredential) {
             showKMAsFallback()
             return
         }
@@ -146,8 +144,7 @@ internal class AuthenticationHandlerFingerprintManager(
 
         if (knownErrorCode == BiometricPrompt.ERROR_CANCELED) {
             // User-initiated cancellation errors should already be handled.
-            val canceledFrom: CanceledFrom = viewModel.canceledFrom
-            if (canceledFrom == CanceledFrom.INTERNAL || canceledFrom == CanceledFrom.CLIENT) {
+            if (viewModel.canceledFrom.isNotUserInitiated()) {
                 resultDispatcher.sendErrorToClient(knownErrorCode, errorString)
             }
 

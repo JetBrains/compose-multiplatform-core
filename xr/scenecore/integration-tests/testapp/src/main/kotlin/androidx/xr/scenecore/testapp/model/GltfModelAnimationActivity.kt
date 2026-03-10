@@ -91,11 +91,7 @@ class GltfModelAnimationActivity : AppCompatActivity() {
     private var gltfModel: GltfModel? = null
     private var gltfModelEntity: GltfModelEntity? = null
 
-    @Suppress("DEPRECATION")
-    private val session by lazy {
-        (Session.create(this, unscaledGravityAlignedActivitySpace = true) as SessionCreateSuccess)
-            .session
-    }
+    private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

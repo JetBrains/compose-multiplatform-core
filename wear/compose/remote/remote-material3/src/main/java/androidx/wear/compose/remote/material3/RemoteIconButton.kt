@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
+import android.annotation.SuppressLint
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -70,7 +70,6 @@ import androidx.compose.ui.graphics.Color
 @Composable
 @RemoteComposable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("RestrictedApiAndroidX")
 public fun RemoteIconButton(
     onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
@@ -103,7 +102,7 @@ public fun RemoteIconButton(
 public object RemoteIconButtonDefaults {
     /** Recommended [RemoteShape] for [RemoteIconButton]. */
     public val shape: RemoteRoundedCornerShape
-        @Composable get() = RemoteCircleShape
+        get() = RemoteCircleShape
 
     /** Recommended alpha to apply to an IconButton with Image content with disabled */
     public val DisabledImageOpacity: RemoteFloat = DisabledContentAlpha.rf
@@ -151,6 +150,7 @@ public object RemoteIconButtonDefaults {
      *
      * @param buttonSize The size of the icon button
      */
+    @SuppressLint("RestrictedApiAndroidX")
     public fun iconSizeFor(buttonSize: RemoteDp): RemoteDp =
         buttonSize.value
             .gt(LargeButtonSize.value)
@@ -211,7 +211,6 @@ public object RemoteIconButtonDefaults {
  */
 @Immutable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("RestrictedApiAndroidX")
 public class RemoteIconButtonColors(
     public val containerColor: RemoteColor,
     public val contentColor: RemoteColor,

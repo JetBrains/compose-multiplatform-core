@@ -135,6 +135,7 @@ internal class AnnotationToolbarConstraintSet(context: Context) {
             DOCK_STATE_START -> {
                 constrainWidth(R.id.color_palette, ConstraintSet.WRAP_CONTENT)
                 constrainMaxWidth(R.id.color_palette, colorPaletteMaxWidth)
+                constrainedWidth(R.id.color_palette, true)
                 constrainHeight(R.id.color_palette, ConstraintSet.MATCH_CONSTRAINT)
                 connect(
                     R.id.color_palette,
@@ -154,12 +155,27 @@ internal class AnnotationToolbarConstraintSet(context: Context) {
                     R.id.scrollable_tool_tray_container,
                     ConstraintSet.END,
                 )
+                connect(
+                    R.id.color_palette,
+                    ConstraintSet.END,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.END,
+                )
+
                 setMargin(R.id.color_palette, ConstraintSet.START, margin16dp)
             }
             DOCK_STATE_END -> {
                 constrainWidth(R.id.color_palette, ConstraintSet.WRAP_CONTENT)
                 constrainMaxWidth(R.id.color_palette, colorPaletteMaxWidth)
+                constrainedWidth(R.id.color_palette, true)
                 constrainHeight(R.id.color_palette, ConstraintSet.MATCH_CONSTRAINT)
+
+                connect(
+                    R.id.color_palette,
+                    ConstraintSet.START,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.START,
+                )
                 connect(
                     R.id.color_palette,
                     ConstraintSet.TOP,
@@ -183,7 +199,15 @@ internal class AnnotationToolbarConstraintSet(context: Context) {
             DOCK_STATE_BOTTOM -> {
                 constrainWidth(R.id.color_palette, ConstraintSet.MATCH_CONSTRAINT)
                 constrainHeight(R.id.color_palette, ConstraintSet.WRAP_CONTENT)
+                constrainedHeight(R.id.color_palette, true)
                 constrainMaxHeight(R.id.color_palette, colorPaletteMaxHeight)
+
+                connect(
+                    R.id.color_palette,
+                    ConstraintSet.TOP,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.TOP,
+                )
                 connect(
                     R.id.color_palette,
                     ConstraintSet.START,
@@ -219,7 +243,9 @@ internal class AnnotationToolbarConstraintSet(context: Context) {
         when (dockState) {
             DOCK_STATE_START -> {
                 constrainWidth(R.id.brush_size_selector, ConstraintSet.WRAP_CONTENT)
+                constrainedWidth(R.id.brush_size_selector, true)
                 constrainHeight(R.id.brush_size_selector, ConstraintSet.MATCH_CONSTRAINT)
+
                 connect(
                     R.id.brush_size_selector,
                     ConstraintSet.TOP,
@@ -238,11 +264,25 @@ internal class AnnotationToolbarConstraintSet(context: Context) {
                     R.id.scrollable_tool_tray_container,
                     ConstraintSet.END,
                 )
+                connect(
+                    R.id.brush_size_selector,
+                    ConstraintSet.END,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.END,
+                )
                 setMargin(R.id.brush_size_selector, ConstraintSet.START, margin16dp)
             }
             DOCK_STATE_END -> {
                 constrainWidth(R.id.brush_size_selector, ConstraintSet.WRAP_CONTENT)
+                constrainedWidth(R.id.brush_size_selector, true)
                 constrainHeight(R.id.brush_size_selector, ConstraintSet.MATCH_CONSTRAINT)
+
+                connect(
+                    R.id.brush_size_selector,
+                    ConstraintSet.START,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.START,
+                )
                 connect(
                     R.id.brush_size_selector,
                     ConstraintSet.TOP,
@@ -266,6 +306,14 @@ internal class AnnotationToolbarConstraintSet(context: Context) {
             DOCK_STATE_BOTTOM -> {
                 constrainWidth(R.id.brush_size_selector, ConstraintSet.MATCH_CONSTRAINT)
                 constrainHeight(R.id.brush_size_selector, ConstraintSet.WRAP_CONTENT)
+                constrainedHeight(R.id.brush_size_selector, true)
+
+                connect(
+                    R.id.brush_size_selector,
+                    ConstraintSet.TOP,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.TOP,
+                )
                 connect(
                     R.id.brush_size_selector,
                     ConstraintSet.START,

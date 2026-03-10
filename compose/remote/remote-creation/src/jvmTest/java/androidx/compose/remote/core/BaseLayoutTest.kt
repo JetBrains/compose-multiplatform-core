@@ -38,8 +38,21 @@ open class BaseLayoutTest : LayoutTestPlayer() {
         apiLevel: Int,
         profile: Int,
         description: String,
-        ops: ArrayList<TestOperation?>,
+        ops: ArrayList<TestOperation>,
         testClock: RemoteClock = TestClock(1234),
+    ) {
+        checkLayout(w, h, apiLevel, profile, description, ops, testClock, false)
+    }
+
+    fun checkLayout(
+        w: Int,
+        h: Int,
+        apiLevel: Int,
+        profile: Int,
+        description: String,
+        ops: ArrayList<TestOperation>,
+        testClock: RemoteClock = TestClock(1234),
+        overridePlayerSize: Boolean = false,
     ) {
         if (ops.size == 0) {
             return
@@ -60,7 +73,11 @@ open class BaseLayoutTest : LayoutTestPlayer() {
                     { root { function.invoke(this) } },
                 )
                 .writer
-        play(writer, ops, testParameters)
+        if (overridePlayerSize) {
+            play(writer, ops as ArrayList<TestOperation>, testParameters, w, h, true)
+        } else {
+            play(writer, ops as ArrayList<TestOperation>, testParameters)
+        }
     }
 
     data class TestLayout(var layout: RemoteComposeContext.() -> Unit) : TestOperation() {
@@ -68,12 +85,83 @@ open class BaseLayoutTest : LayoutTestPlayer() {
             context: RemoteContext,
             document: CoreDocument,
             testParameters: TestParameters,
-            commands: List<Map<String?, Any?>?>?,
+            commands: MutableList<Map<String, Any>>?,
         ): Boolean {
             // Nothing here
             return false
         }
     }
+
+    class ValidateX(val expectedX: Float) : TestOperation() {
+        override fun apply(
+            context: RemoteContext,
+            document: CoreDocument,
+            testParameters: TestParameters,
+            commands: MutableList<Map<String, Any>>?,
+        ): Boolean {
+            val root = document.rootLayoutComponent
+            if (root!!.getX() != expectedX) {
+                throw AssertionError("Expected X: $expectedX, actual X: ${root.getX()}")
+            }
+            return false
+        }
+    }
+
+    class ValidateY(val expectedY: Float) : TestOperation() {
+        override fun apply(
+            context: RemoteContext,
+            document: CoreDocument,
+            testParameters: TestParameters,
+            commands: MutableList<Map<String, Any>>?,
+        ): Boolean {
+            val root = document.rootLayoutComponent
+            if (root!!.getY() != expectedY) {
+                throw AssertionError("Expected Y: $expectedY, actual Y: ${root.getY()}")
+            }
+            return false
+        }
+    }
+
+    class ValidatePosition(val expectedX: Float, val expectedY: Float) : TestOperation() {
+        override fun apply(
+            context: RemoteContext,
+            document: CoreDocument,
+            testParameters: TestParameters,
+            commands: MutableList<Map<String, Any>>?,
+        ): Boolean {
+            val root = document.rootLayoutComponent
+            if (root!!.getX() != expectedX || root.getY() != expectedY) {
+                throw AssertionError(
+                    "Expected ($expectedX, $expectedY), actual (${root.getX()}, ${root.getY()})"
+                )
+            }
+            return false
+        }
+    }
+
+    fun validateX(expectedX: Float): TestOperation = ValidateX(expectedX)
+
+    fun validateY(expectedY: Float): TestOperation = ValidateY(expectedY)
+
+    fun validatePosition(expectedX: Float, expectedY: Float): TestOperation =
+        ValidatePosition(expectedX, expectedY)
+
+    class ValidateNoAnimation() : TestOperation() {
+        override fun apply(
+            context: RemoteContext,
+            document: CoreDocument,
+            testParameters: TestParameters,
+            commands: MutableList<Map<String, Any>>?,
+        ): Boolean {
+            val root = document.rootLayoutComponent
+            if (root!!.mAnimateMeasure != null) {
+                throw AssertionError("Expected no animation, but mAnimateMeasure is not null")
+            }
+            return false
+        }
+    }
+
+    fun validateNoAnimation(): TestOperation = ValidateNoAnimation()
 
     internal fun TestClock(time: Int): RemoteClock {
         return SystemClock(Clock.fixed(Instant.ofEpochMilli(time.toLong()), ZoneId.of("UTC")))

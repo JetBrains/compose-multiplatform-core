@@ -176,7 +176,7 @@ class PlaneTest {
         xrResourcesManager.syncTrackables(listOf(runtimePlane))
         val underTest = xrResourcesManager.trackablesMap.values.first() as Plane
 
-        repeat(FakeRuntimeAnchor.ANCHOR_RESOURCE_LIMIT) {
+        repeat(FakeRuntimeAnchor.anchorResourceLimit) {
             val result = underTest.createAnchor(Pose())
         }
 

@@ -64,13 +64,22 @@ import kotlinx.coroutines.launch
 /**
  * Captures a single RemoteCompose document using the V2 implementation.
  *
- * This is a convenience wrapper around [captureRemoteDocumentV2] that waits for the first document
- * to be emitted and returns it.
+ * This function sets up a composition environment, executes the provided [content] Composable,
+ * waits for the [Recomposer] to reach an idle state, and then renders the resulting node tree into
+ * a [CapturedDocument].
  *
- * @param coroutineContext The [CoroutineContext] used for the [Recomposer] and related tasks. A
- *   single-threaded dispatcher (like [Dispatchers.Main] or
- *   `Dispatchers.Default.limitedParallelism(1)`) is required to ensure thread safety during
- *   recomposition.
+ * @param creationDisplayInfo Information about the display characteristics where the document will
+ *   be rendered.
+ * @param remoteDensity The density settings for the remote document. Defaults to the density from
+ *   [creationDisplayInfo] and the current system font scale.
+ * @param layoutDirection The layout direction (LTR/RTL). If null, it is resolved from the provided
+ *   [context].
+ * @param context The Android [Context] used to resolve resources and system configurations.
+ * @param clock The [RemoteClock] used to provide frame timing for recomposition.
+ * @param profile The [Profile] defining the capabilities and constraints of the remote target.
+ * @param writerEvents A [WriterEvents] instance to track side effects like PendingIntents.
+ * @param content The Composable function that defines the UI to be captured.
+ * @return A [CapturedDocument] containing the encoded byte array and associated metadata.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public suspend fun captureSingleRemoteDocumentV2(
@@ -82,23 +91,86 @@ public suspend fun captureSingleRemoteDocumentV2(
     clock: RemoteClock = RemoteClock.SYSTEM,
     profile: Profile = RcPlatformProfiles.ANDROIDX,
     writerEvents: WriterEvents = WriterEvents(),
-    coroutineContext: CoroutineContext = Dispatchers.Default,
     content: @Composable () -> Unit,
 ): CapturedDocument {
-    val document =
-        captureRemoteDocumentV2(
+    val rootNode = RemoteRootNodeV2()
+    val applier = RemoteComposeApplierV2(rootNode)
+
+    val recomposerContext = currentCoroutineContext()
+    val recomposer = Recomposer(recomposerContext)
+    val composition = Composition(applier, recomposer)
+
+    try {
+        val layoutDirection =
+            (layoutDirection ?: toLayoutDirection(context.resources.configuration.layoutDirection))
+        val creationState =
+            RemoteComposeCreationState(
                 creationDisplayInfo = creationDisplayInfo,
-                remoteDensity = remoteDensity,
-                layoutDirection = layoutDirection,
-                clock = clock,
-                writerEvents = writerEvents,
                 profile = profile,
-                coroutineContext = coroutineContext,
-                context = context,
+                writerEvents = writerEvents,
+                layoutDirection = layoutDirection,
+                remoteDensity =
+                    RemoteDensity(
+                        creationDisplayInfo.density.rf,
+                        context.resources.configuration.fontScale.rf,
+                    ),
+            )
+
+        composition.setContent {
+            CompositionLocalProvider(
+                LocalRemoteComposeCreationState provides creationState,
+                LocalDensity provides
+                    Density(creationDisplayInfo.density, context.resources.configuration.fontScale),
+                LocalContext provides context,
+                LocalConfiguration provides context.resources.configuration,
+                LocalLayoutDirection provides layoutDirection,
                 content = content,
             )
-            .first()
-    return CapturedDocument(document, writerEvents.pendingIntents)
+        }
+
+        // Use coroutineScope to ensure the recomposer and all related collection tasks
+        // are properly cancelled when the flow execution finishes.
+        coroutineScope {
+            try {
+                lateinit var frameClock: BroadcastFrameClock
+                frameClock = BroadcastFrameClock {
+                    // Automatically send a frame when the recomposer starts waiting.
+                    // This avoids a race condition where sendFrame is called before runRecompose is
+                    // ready.
+                    launch(recomposerContext) { frameClock.sendFrame(clock.nanoTime()) }
+                }
+
+                launch(recomposerContext + frameClock) { recomposer.runRecomposeAndApplyChanges() }
+
+                // Wait for the first idle state.
+                val unused = recomposer.currentState.filter { it == Recomposer.State.Idle }.first()
+            } finally {
+                // nothing for now
+                recomposer.cancel()
+            }
+        }
+
+        val document =
+            Snapshot.withMutableSnapshot {
+                val recordingCanvas =
+                    RecordingCanvas(createBitmap(1, 1)).apply {
+                        setRemoteComposeCreationState(creationState)
+                    }
+
+                val remoteCanvas = RemoteCanvas(recordingCanvas)
+
+                rootNode.render(creationState, remoteCanvas)
+
+                // This is only safe for the first document
+                // since some ids might be generated early
+                creationState.document.encodeToByteArray()
+            }
+
+        return CapturedDocument(document, writerEvents.pendingIntents)
+    } finally {
+        // Ensure the composition is always disposed and cancelled to avoid leaks.
+        composition.dispose()
+    }
 }
 
 /**

@@ -50,6 +50,7 @@ dependencies {
     testImplementation(libs.mockitoCore)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.testExtJunit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("org.robolectric:robolectric")
     testImplementation(project(":xr:runtime:runtime-testing"))
     testImplementation(project(":xr:scenecore:scenecore-testing"))

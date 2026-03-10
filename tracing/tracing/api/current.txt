@@ -68,16 +68,18 @@ package androidx.tracing {
     field public int type;
   }
 
-  public abstract class PlatformThreadContextElement<S> extends kotlin.coroutines.AbstractCoroutineContextElement implements java.lang.AutoCloseable androidx.tracing.PropagationToken {
+  public abstract class PlatformThreadContextElement<S, T extends androidx.tracing.Tracer> extends kotlin.coroutines.AbstractCoroutineContextElement implements java.lang.AutoCloseable androidx.tracing.PropagationToken {
     method @SuppressCompatibility @androidx.tracing.DelicateTracingApi public kotlin.coroutines.CoroutineContext.Element? contextElementOrNull();
     method @InaccessibleFromKotlin public String getCategory();
     method @InaccessibleFromKotlin public java.util.List<java.lang.Long> getFlowIds();
     method @InaccessibleFromKotlin public String getName();
+    method @InaccessibleFromKotlin public T getTracer();
     method @InaccessibleFromKotlin public void setCategory(String);
     method @InaccessibleFromKotlin public void setName(String);
     property public String category;
     property public java.util.List<java.lang.Long> flowIds;
     property public String name;
+    property public T tracer;
   }
 
   public abstract class Poolable<T extends androidx.tracing.Poolable<T>> {
@@ -124,6 +126,7 @@ package androidx.tracing {
 
   @SuppressCompatibility @androidx.tracing.DelicateTracingApi public final class TraceEvent {
     ctor public TraceEvent();
+    method public void copyFrom(androidx.tracing.TraceEvent src);
     method public void reset();
     property public java.util.List<java.lang.String> categories;
     property public Long? correlationId;

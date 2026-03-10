@@ -1719,32 +1719,6 @@ public class ImpressApiImpl : ImpressApi {
     override fun destroyNativeObject(nativeHandle: Long): Unit =
         nDestroyNativeObject(getViewNativeHandle(view), nativeHandle)
 
-    override fun setMaterialOverride(
-        impressNode: ImpressNode,
-        nativeMaterial: Long,
-        nodeName: String,
-        primitiveIndex: Int,
-    ): Unit =
-        nSetMaterialOverride(
-            getViewNativeHandle(view),
-            impressNode.handle,
-            nativeMaterial,
-            nodeName,
-            primitiveIndex,
-        )
-
-    override fun clearMaterialOverride(
-        impressNode: ImpressNode,
-        nodeName: String,
-        primitiveIndex: Int,
-    ): Unit =
-        nClearMaterialOverride(
-            getViewNativeHandle(view),
-            impressNode.handle,
-            nodeName,
-            primitiveIndex,
-        )
-
     override fun setPreferredEnvironmentLight(iblToken: Long): Unit =
         nSetEnvironmentLight(getViewNativeHandle(view), iblToken)
 
@@ -2496,21 +2470,6 @@ public class ImpressApiImpl : ImpressApi {
     )
 
     private external fun nDestroyNativeObject(view: Long, nativeHandle: Long)
-
-    private external fun nSetMaterialOverride(
-        view: Long,
-        impressNode: Int,
-        nativeMaterial: Long,
-        nodeName: String,
-        primitiveIndex: Int,
-    )
-
-    private external fun nClearMaterialOverride(
-        view: Long,
-        impressNode: Int,
-        nodeName: String,
-        primitiveIndex: Int,
-    )
 
     private external fun nSetEnvironmentLight(view: Long, iblToken: Long)
 

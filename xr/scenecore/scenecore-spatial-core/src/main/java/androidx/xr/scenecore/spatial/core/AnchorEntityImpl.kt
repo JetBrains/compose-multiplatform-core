@@ -154,7 +154,7 @@ internal class AnchorEntityImpl(
     override val activitySpaceScale: Vector3
         get() = openXrScenePoseHelper.getActivitySpaceScale(worldSpaceScale)
 
-    override var parent: Entity?
+    override var parent: Entity? = null
         set(_) {
             throw UnsupportedOperationException("Cannot set 'parent' on an  AnchorEntity.")
         }

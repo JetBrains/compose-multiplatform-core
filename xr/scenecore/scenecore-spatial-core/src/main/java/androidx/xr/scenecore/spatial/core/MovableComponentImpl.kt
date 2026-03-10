@@ -18,11 +18,15 @@
 
 package androidx.xr.scenecore.spatial.core
 
+import android.content.res.Resources
+import androidx.xr.runtime.SpatialApiVersionHelper.spatialApiVersion
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.Entity
+import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.InputEvent
 import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.MovableComponent
@@ -30,6 +34,7 @@ import androidx.xr.scenecore.runtime.MoveEvent
 import androidx.xr.scenecore.runtime.MoveEventListener
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.Space
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getPose
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getVector3
 import com.android.extensions.xr.function.Consumer
@@ -39,6 +44,8 @@ import com.android.extensions.xr.node.Vec3
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 import java.util.concurrent.ScheduledExecutorService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
 /** Implementation of MovableComponent. */
 internal class MovableComponentImpl(
@@ -46,7 +53,7 @@ internal class MovableComponentImpl(
     private val scaleInZ: Boolean,
     private val userAnchorable: Boolean,
     private val activitySpaceImpl: ActivitySpaceImpl,
-    private val panelShadowRenderer: PanelShadowRenderer,
+    private val entityShadowRenderer: EntityShadowRenderer,
     private val runtimeExecutor: ScheduledExecutorService,
 ) : MovableComponent {
     private val moveEventListenersMap = ConcurrentHashMap<MoveEventListener, Executor>()
@@ -83,7 +90,11 @@ internal class MovableComponentImpl(
     private var grabPointToCenterOffset = Vector3.Zero
     private val inputEventListener = InputEventListener { inputEvent: InputEvent ->
         moveEventListenersMap.forEach { (listener: MoveEventListener, executor: Executor) ->
-            executor.execute { listener.onMoveEvent(getMoveEvent(inputEvent)) }
+            executor.execute {
+                val moveEvent = getMoveEventFromInputEvent(inputEvent)
+                // ignoring other events that are not UP, DOWN and END
+                moveEvent?.let { listener.onMoveEvent(it) }
+            }
         }
     }
 
@@ -99,7 +110,7 @@ internal class MovableComponentImpl(
             isMoving = true
         } else if (reformEvent.state == ReformEvent.REFORM_STATE_END) {
             isMoving = false
-            panelShadowRenderer.destroy()
+            entityShadowRenderer.destroy()
         }
 
         val newPose = getPose(reformEvent.proposedPosition, reformEvent.proposedOrientation)
@@ -107,14 +118,14 @@ internal class MovableComponentImpl(
 
         moveEventListenersMap.forEach { (listener: MoveEventListener, listenerExecutor: Executor) ->
             listenerExecutor.execute {
-                listener.onMoveEvent(getMoveEvent(reformEvent, newPose, newScale))
+                listener.onMoveEvent(getMoveEventFromReformEvent(reformEvent, newPose, newScale))
             }
         }
         lastPose = newPose
         lastScale = newScale
     }
 
-    private fun getMoveEvent(
+    private fun getMoveEventFromReformEvent(
         reformEvent: ReformEvent,
         newPose: Pose,
         newScale: Vector3,
@@ -139,37 +150,41 @@ internal class MovableComponentImpl(
         )
     }
 
-    private fun getMoveEvent(inputEvent: InputEvent): MoveEvent {
+    private fun getMoveEventFromInputEvent(inputEvent: InputEvent): MoveEvent? {
         var moveState = -1
 
-        val parent =
-            if (entity != null && entity!!.parent != null) entity!!.parent else activitySpaceImpl
+        val parent = entity?.parent ?: activitySpaceImpl
+        when (inputEvent.action) {
+            InputEvent.Action.DOWN -> {
+                moveState = MoveEvent.MOVE_STATE_START
+                initialRay = Ray(inputEvent.origin, inputEvent.direction)
+                initialParent = parent
+                isMoving = true
+                if (!inputEvent.hitInfoList.isEmpty()) {
+                    val hitPosition = inputEvent.hitInfoList[0].hitPosition
+                    hitPointToOriginDistance = hitPosition!!.minus(inputEvent.origin).length
+                    grabPointToCenterOffset =
+                        entity!!.getPose(Space.ACTIVITY).translation.minus(hitPosition)
+                }
+            }
+            InputEvent.Action.MOVE -> moveState = MoveEvent.MOVE_STATE_ONGOING
+            InputEvent.Action.UP -> {
+                moveState = MoveEvent.MOVE_STATE_END
+                isMoving = false
+                if (entity is GltfEntityImpl) entityShadowRenderer.destroy()
+            }
+            else -> return null
+        }
 
-        val originInParentSpace = activitySpaceImpl.transformPositionTo(inputEvent.origin, parent!!)
+        val originInParentSpace = activitySpaceImpl.transformPositionTo(inputEvent.origin, parent)
         val directionInParentSpace =
             activitySpaceImpl.transformDirectionTo(inputEvent.direction, parent)
         val currentRay = Ray(originInParentSpace, directionInParentSpace)
-
-        when (inputEvent.action) {
-            InputEvent.Action.DOWN -> {
-                moveState = MoveEvent.MoveState.MOVE_STATE_START
-                initialRay = Ray(inputEvent.origin, inputEvent.direction)
-                initialParent = parent
-                if (!inputEvent.hitInfoList.isEmpty()) {
-                    val hitPosition = inputEvent.hitInfoList[0].hitPosition
-                    hitPointToOriginDistance = hitPosition!!.minus(originInParentSpace).length
-                    grabPointToCenterOffset = entity!!.getPose().translation.minus(hitPosition)
-                }
-            }
-            InputEvent.Action.MOVE -> moveState = MoveEvent.MoveState.MOVE_STATE_ONGOING
-            InputEvent.Action.UP -> moveState = MoveEvent.MoveState.MOVE_STATE_END
-        }
-
         val grabPoint =
             originInParentSpace.plus(
                 directionInParentSpace.toNormalized().times(hitPointToOriginDistance)
             )
-        val proposedTranslation = grabPoint.plus(grabPointToCenterOffset)
+        var proposedTranslation = grabPoint.plus(grabPointToCenterOffset)
         val proposedPose = Pose(proposedTranslation, entity!!.getPose().rotation)
 
         val moveEvent =
@@ -185,7 +200,7 @@ internal class MovableComponentImpl(
                 null,
                 null,
             )
-        lastPose = entity!!.getPose()
+        lastPose = proposedPose
         lastScale = entity!!.getScale()
         return moveEvent
     }
@@ -198,7 +213,7 @@ internal class MovableComponentImpl(
         lastPose = entity.getPose(Space.PARENT)
         lastScale = entity.getScale(Space.PARENT)
 
-        if (entity is GltfEntityImpl) {
+        if (entity is GltfEntity) {
             entity.setReformAffordanceEnabled(
                 /* enabled */
                 true,
@@ -232,7 +247,7 @@ internal class MovableComponentImpl(
     }
 
     override fun onDetach(entity: Entity) {
-        if (entity is GltfEntityImpl) {
+        if (entity is GltfEntity) {
             entity.setReformAffordanceEnabled(
                 /* enabled */
                 false,
@@ -274,22 +289,79 @@ internal class MovableComponentImpl(
         if (!shouldRenderPlaneShadow()) {
             return
         }
-        panelShadowRenderer.updatePanelPose(proposedPose, planePose, entity as BasePanelEntity)
+        var shadowDim: FloatSize2d = FloatSize2d(0f, 0f)
+        when (entity) {
+            is BasePanelEntity -> {
+                shadowDim = calculateSizesForBasePanelEntity(entity as BasePanelEntity)
+            }
+            is GltfEntity -> {
+                shadowDim = calculateSizesForGltfEntity(entity as GltfEntity)
+            }
+        }
+
+        entityShadowRenderer.updateShadow(proposedPose, planePose, shadowDim = shadowDim)
     }
 
     private fun shouldRenderPlaneShadow(): Boolean {
-        return entity is BasePanelEntity && userAnchorable && isMoving
+        return (entity is BasePanelEntity || entity is GltfEntity) && userAnchorable && isMoving
     }
 
     override fun setPlanePoseForMoveUpdatePose(planePose: Pose?, moveUpdatePose: Pose) {
         if (planePose == null) {
-            panelShadowRenderer.hidePlane()
+            entityShadowRenderer.hidePlane()
         } else {
             tryRenderPlaneShadow(moveUpdatePose, planePose)
         }
     }
 
+    private fun calculateSizesForBasePanelEntity(panelEntity: BasePanelEntity): FloatSize2d {
+        // Scale the panel shadow to the size of the PanelEntity in the activity space.
+        val entityScale: Vector3 = panelEntity.worldSpaceScale
+        val sizeX: Float =
+            (panelEntity.sizeInPixels.width * entityScale.x / activitySpaceImpl.worldSpaceScale.x)
+        val sizeZ: Float =
+            (panelEntity.sizeInPixels.height * entityScale.z / activitySpaceImpl.worldSpaceScale.x)
+        return FloatSize2d(sizeX, sizeZ)
+    }
+
+    private fun calculateSizesForGltfEntity(gltfEntity: GltfEntity): FloatSize2d {
+        val (entityScale, gltfBounds) =
+        // TODO(b/486738199) Check if this can be replaced with suspend
+        runBlocking(Dispatchers.Main) {
+                gltfEntity.worldSpaceScale to gltfEntity.gltfModelBoundingBox
+            }
+
+        // TODO(b/484421916): Get rid of densityFactor once EntityShadowRenderer uses
+        // PanelEntityImpl
+        val xrExtensions = checkNotNull(XrExtensionsProvider.getXrExtensions())
+
+        // This factor is used to convert the size of the GltfEntity from meters to pixels
+        val densityFactor: Float
+        if (spatialApiVersion >= 2) {
+            densityFactor = xrExtensions.underlyingObject.config.defaultPixelsPerMeter()
+        } else {
+            densityFactor =
+                xrExtensions.config.defaultPixelsPerMeter(
+                    Resources.getSystem().displayMetrics.density
+                )
+        }
+
+        val width: Float =
+            gltfBounds.halfExtents.width.times(HALF_EXTENTS_MULTIPLIER) *
+                densityFactor *
+                entityScale.x / activitySpaceImpl.worldSpaceScale.x
+        val depth: Float =
+            gltfBounds.halfExtents.depth.times(HALF_EXTENTS_MULTIPLIER) *
+                densityFactor *
+                entityScale.z / activitySpaceImpl.worldSpaceScale.x
+
+        return FloatSize2d(width, depth)
+    }
+
     companion object {
+        // Multiplier to convert half extents to full width/depth.
+        private const val HALF_EXTENTS_MULTIPLIER: Float = 2.0f
+
         private fun translateScaleWithDistanceMode(
             @MovableComponent.ScaleWithDistanceMode scale: Int
         ): Int {

@@ -1114,51 +1114,6 @@ class FakeImpressApiImplTest {
     }
 
     @Test
-    fun setMaterialOverride_setsMaterialOverride() = runBlocking {
-        val entityNode = fakeImpressApi.createImpressNode()
-        val material = fakeImpressApi.createWaterMaterial(true)
-        val nodeName = "fake_node_name"
-        val primitiveIndex = 0
-
-        fakeImpressApi.setMaterialOverride(
-            entityNode,
-            material.nativeHandle,
-            nodeName,
-            primitiveIndex,
-        )
-        val nodes = fakeImpressApi.getImpressNodes()
-        val foundMaterial =
-            nodes.keys.any { node ->
-                node.entityId == entityNode.handle &&
-                    node.materialOverride?.materialHandle == material.nativeHandle
-            }
-        assertThat(foundMaterial).isTrue()
-    }
-
-    @Test
-    fun clearMaterialOverride_clearsMaterialOverride() = runBlocking {
-        val entityNode = fakeImpressApi.createImpressNode()
-        val material = fakeImpressApi.createWaterMaterial(true)
-        val nodeName = "fake_node_name"
-        val primitiveIndex = 0
-
-        fakeImpressApi.setMaterialOverride(
-            entityNode,
-            material.nativeHandle,
-            nodeName,
-            primitiveIndex,
-        )
-        fakeImpressApi.clearMaterialOverride(entityNode, nodeName, primitiveIndex)
-
-        val nodes = fakeImpressApi.getImpressNodes()
-        val overrideWasCleared =
-            nodes.keys.any { node ->
-                node.entityId == entityNode.handle && node.materialOverride == null
-            }
-        assertThat(overrideWasCleared).isTrue()
-    }
-
-    @Test
     fun setPreferredEnvironmentLight_setsPreferredEnvironmentLight() {
         val iblToken = 11L
         fakeImpressApi.setPreferredEnvironmentLight(iblToken)

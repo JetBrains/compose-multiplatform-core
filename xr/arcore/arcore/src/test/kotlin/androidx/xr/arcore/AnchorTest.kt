@@ -72,7 +72,7 @@ class AnchorTest {
 
     @Test
     fun create_anchorLimitReached_returnsAnchorResourcesExhausted() = createTestSessionAndRunTest {
-        repeat(FakeRuntimeAnchor.ANCHOR_RESOURCE_LIMIT) { Anchor.create(session, Pose()) }
+        repeat(FakeRuntimeAnchor.anchorResourceLimit) { Anchor.create(session, Pose()) }
 
         assertThat(Anchor.create(session, Pose()))
             .isInstanceOf(AnchorCreateResourcesExhausted::class.java)
@@ -253,7 +253,7 @@ class AnchorTest {
             val updateJob = launch { anchor.update() }
             updateJob.join()
             persistJob.join()
-            repeat(FakeRuntimeAnchor.ANCHOR_RESOURCE_LIMIT - 1) { Anchor.load(session, uuid!!) }
+            repeat(FakeRuntimeAnchor.anchorResourceLimit - 1) { Anchor.load(session, uuid!!) }
 
             assertThat(Anchor.load(session, uuid!!))
                 .isInstanceOf(AnchorCreateResourcesExhausted::class.java)

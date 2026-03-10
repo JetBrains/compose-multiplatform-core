@@ -16,6 +16,7 @@
 package androidx.xr.scenecore.spatial.core
 
 import androidx.xr.scenecore.runtime.Entity
+import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.InteractableComponent
 import java.util.concurrent.Executor
@@ -30,7 +31,7 @@ internal class InteractableComponentImpl(val executor: Executor, val consumer: I
         }
         this.entity = entity
         when (entity) {
-            is GltfEntityImpl -> entity.setColliderEnabled(true)
+            is GltfEntity -> entity.setColliderEnabled(true)
             is SurfaceEntityImpl -> entity.setColliderEnabled(true)
         }
         // InputEvent type translation happens here.
@@ -40,7 +41,7 @@ internal class InteractableComponentImpl(val executor: Executor, val consumer: I
 
     override fun onDetach(entity: Entity) {
         when (entity) {
-            is GltfEntityImpl -> entity.setColliderEnabled(false)
+            is GltfEntity -> entity.setColliderEnabled(false)
             is SurfaceEntityImpl -> entity.setColliderEnabled(false)
         }
         entity.removeInputEventListener(consumer)

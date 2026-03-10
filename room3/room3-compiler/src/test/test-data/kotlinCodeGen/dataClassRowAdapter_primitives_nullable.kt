@@ -125,7 +125,7 @@ internal class MyDao_Impl(
           if (_stmt.isNull(_columnIndexOfChar)) {
             _tmpChar = null
           } else {
-            _tmpChar = _stmt.getLong(_columnIndexOfChar).toChar()
+            _tmpChar = _stmt.getLong(_columnIndexOfChar).toInt().toChar()
           }
           val _tmpFloat: Float?
           if (_stmt.isNull(_columnIndexOfFloat)) {

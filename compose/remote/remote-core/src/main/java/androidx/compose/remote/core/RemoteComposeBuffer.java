@@ -86,6 +86,7 @@ import androidx.compose.remote.core.operations.PathTween;
 import androidx.compose.remote.core.operations.Rem;
 import androidx.compose.remote.core.operations.RootContentBehavior;
 import androidx.compose.remote.core.operations.RootContentDescription;
+import androidx.compose.remote.core.operations.Skip;
 import androidx.compose.remote.core.operations.TextAttribute;
 import androidx.compose.remote.core.operations.TextData;
 import androidx.compose.remote.core.operations.TextFromFloat;
@@ -898,6 +899,7 @@ public class RemoteComposeBuffer {
             return;
         }
         mMap = map;
+        mBuffer.setSystemInfo(getBuffer().mSystemInfo);
         while (mBuffer.available()) {
             int opId = mBuffer.readByte();
             if (DEBUG) {
@@ -2531,6 +2533,21 @@ public class RemoteComposeBuffer {
      */
     public void rem(@NonNull String text) {
         Rem.apply(mBuffer, text);
+    }
+
+    /**
+     * Insert a conditional skip. Warning this should be used with care.
+     * It is incompatible with being called between beginGlobal endGlobal
+     */
+    public int beginSkip(short type, int value) {
+        return Skip.apply(mBuffer, type, value, 0);
+    }
+
+    /**
+     * End a conditional skip
+     */
+    public void endSkip(int offset) {
+        Skip.applyEndSkip(mBuffer, offset);
     }
 
     /**

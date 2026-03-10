@@ -35,7 +35,7 @@ dependencies {
 
     implementation(libs.material)
     implementation("androidx.core:core:1.5.0")
-
+    implementation("androidx.compose.ui:ui-tooling-preview:1.4.0")
     compileOnly(project(":annotation:annotation-sampled"))
 
     implementation(project(":compose:animation:animation-core"))
@@ -43,6 +43,7 @@ dependencies {
     implementation(project(":compose:material:material"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:ui:ui"))
+    implementation(project(":compose:ui:ui-tooling"))
 }
 
 androidx {

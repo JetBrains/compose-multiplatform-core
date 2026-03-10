@@ -635,31 +635,6 @@ constructor(
     }
 
     /**
-     * Returns the Published Security Patch Level (PSPL) for System Modules (Mainline).
-     *
-     * Unlike the Device SPL, which reflects the version installed on the device, this value
-     * reflects the latest known security baseline documented in the Android Security Bulletin.
-     *
-     * Under the "Global Max" strategy, this returns the latest date found in the Vulnerability
-     * Report, regardless of whether that specific date included updates for Mainline modules. This
-     * ensures that the Published SPL aligns with the overall Bulletin date (e.g. 2026-01-05),
-     * preventing confusion when Mainline updates are released on a monthly cadence (e.g.
-     * 2026-01-01) but the Bulletin only lists System/Vendor patches for that month.
-     *
-     * @return The latest published [DateBasedSecurityPatchLevel].
-     * @throws IllegalStateException if the vulnerability report is not loaded or contains no data.
-     */
-    private fun getSystemModulesPublishedSecurityPatchLevel(): DateBasedSecurityPatchLevel {
-        checkVulnerabilityReport()
-
-        // Use the Global Max (Latest Bulletin Date) as the authoritative Published SPL.
-        // This decouples the signal from specific module entries in the JSON, which may be
-        // missing in non-quarterly months due to Risk Based Update System (RBUS) policies.
-        return getLatestBulletinDate()
-            ?: throw IllegalStateException("No SPL data available in Vulnerability Report.")
-    }
-
-    /**
      * Retrieves the latest security patch level date found in the entire vulnerability report.
      *
      * This date represents the "Global Maximum" SPL for the bulletin, effectively acting as the
@@ -667,9 +642,10 @@ constructor(
      * vulnerabilities map, regardless of which specific components (System, Vendor, Kernel, or
      * System Modules) are included in that date's entry.
      *
-     * This value is used to "upgrade" the reported SPL for components that are fully compliant with
-     * their specific requirements but may not have had an update in the most recent bulletin (e.g.,
-     * due to Risk Based Update System (RBUS) policies).
+     * This value is used to determine the Published SPL for components that track the overall
+     * Android Security Bulletin cadence, ensuring that they reflect the latest compliance date even
+     * if the bulletin did not include specific patches for that component (e.g., due to Risk Based
+     * Update System (RBUS) policies).
      *
      * @return The latest [DateBasedSecurityPatchLevel] found in the report, or null if the report
      *   is not loaded or contains no dates.
@@ -726,16 +702,25 @@ constructor(
 
     /**
      * Retrieves the published security patch level for a specified component. This patch level is
-     * based on the most recent vulnerability reports, which is a machine-readable data from Android
+     * based on the most recent vulnerability reports, which is machine-readable data from Android
      * and other security bulletins.
      *
-     * The published security patch level is the most recent value published in a bulletin.
+     * For **System** and **System Modules (Mainline)**, this method employs a "Global Max"
+     * strategy: it returns the latest date found in the entire Vulnerability Report, regardless of
+     * whether that specific date included updates for the requested component. This ensures that
+     * the Published SPL aligns with the overall Android Security Bulletin date (e.g. 2026-01-05),
+     * preventing stale reporting during months where the Bulletin may only list patches for other
+     * components (e.g. Vendor-only updates) or is advisory-only under Risk Based Update System
+     * (RBUS) policies.
+     *
+     * For **Kernel** and **Vendor** components, it returns the latest patch level specifically
+     * associated with those components in the report.
      *
      * @param component The component for which the published patch level is requested.
      * @return A list of [SecurityPatchLevel] representing the published patch levels. The list
-     *   contains single element for all components, except for KERNEL, where it lists kernel LTS
-     *   version numbers for all supported major kernel versions. For example: ``` [ "4.19.314",
-     *   "5.15.159", "6.1.91" ] ```
+     *   contains a single element for most components. For KERNEL, it lists kernel LTS version
+     *   numbers for all supported major kernel versions. For example: ``` [ "4.19.314", "5.15.159",
+     *   "6.1.91" ] ```
      * @throws IllegalStateException if the vulnerability report is not loaded or if patch level
      *   data is unavailable.
      * @throws IllegalArgumentException if the component name is unrecognized.
@@ -745,17 +730,24 @@ constructor(
     ): List<SecurityPatchLevel> {
         checkVulnerabilityReport()
 
+        val splDataMissingException = IllegalStateException("SPL data not available: $component")
+
         return when (component) {
-            COMPONENT_SYSTEM_MODULES -> listOf(getSystemModulesPublishedSecurityPatchLevel())
+            // Both System and System Modules use the "Global Max" strategy to support Risk Based
+            // Update System (RBUS) policies. This ensures they return the latest Bulletin date even
+            // if the Bulletin only lists Vendor patches or is an empty Advisory-only update.
             COMPONENT_SYSTEM,
+            COMPONENT_SYSTEM_MODULES -> {
+                listOf(getLatestBulletinDate() ?: throw splDataMissingException)
+            }
             COMPONENT_VENDOR -> {
-                val exception = IllegalStateException("SPL data not available: $component")
-                if (component == COMPONENT_VENDOR && !USE_VENDOR_SPL) {
-                    throw exception
+                // Vendor logic is guarded by an internal flag due to varying ecosystem policies.
+                if (!USE_VENDOR_SPL) {
+                    throw splDataMissingException
                 }
                 listOf(
                     getMaxComponentSecurityPatchLevel(componentToString(component))
-                        ?: throw exception
+                        ?: throw splDataMissingException
                 )
             }
             COMPONENT_KERNEL -> getPublishedKernelVersions()

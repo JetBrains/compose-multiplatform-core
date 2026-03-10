@@ -33,8 +33,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Contains the tracking information of one of the user's hands. */
-public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : Updatable {
+/**
+ * Contains the tracking information of one of the user's hands.
+ *
+ * @property state the current [State] of this hand
+ */
+public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
+    Trackable<Hand.State>, Updatable {
     /** * Companion object holding info to the left and right hands. */
     public companion object {
 
@@ -43,7 +48,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
         /**
          * Returns the Hand object that corresponds to the user's left hand when available.
          *
-         * @param session the currently active [Session].
+         * @param session the currently active [Session]
          * @throws [IllegalStateException] if [Session.config] is set to
          *   [androidx.xr.runtime.HandTrackingMode.DISABLED].
          */
@@ -60,7 +65,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
         /**
          * Returns the Hand object that corresponds to the user's right hand when available.
          *
-         * @param session the currently active [Session].
+         * @param session the currently active [Session]
          * @throws [IllegalStateException] if [Session.config] is set to
          *   [HandTrackingMode.DISABLED].
          */
@@ -77,7 +82,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
         /**
          * Returns the handedness of the user's primary hand.
          *
-         * @param resolver the [ContentResolver] to use to retrieve the setting.
+         * @param resolver the [ContentResolver] to use to retrieve the setting
          * @return the [HandSide] of the user's primary hand. If the setting is not configured,
          *   returns [HandSide.UNKNOWN].
          */
@@ -103,21 +108,24 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
     }
 
     /**
-     * The representation of the current state of [Hand].
+     * The representation of the current state of a [Hand].
      *
-     * @param trackingState the current [TrackingState] of the hand.
-     * @param handJointsBuffer the [FloatBuffer] containing the current state of the hand. It
-     *   contains an array of 182 floats (26 joints * 7 values per joint) which represent the poses
-     *   of all hand joints. Each hand joint pose consists of 7 float values that represent rotation
-     *   (x, y, z, w) and translation (x, y, z) as defined in [Quaternion] and [Vector3]
-     *   respectively.. The order of the joints within the array follows the order in which the
-     *   joints are defined in [HandJointType].
+     * The state consists of an array of 182 floats (26 joints * 7 values per joint) which represent
+     * the poses of all hand joints. Each hand joint pose consists of 7 float values that represent
+     * rotation (x, y, z, w) and translation (x, y, z) as defined in [Quaternion] and [Vector3]
+     * respectively. The order of the joints within the array follows the order in which the joints
+     * are defined in [HandJointType].
+     *
+     * @property trackingState the current [TrackingState] of the hand
+     * @property handJointsBuffer the [FloatBuffer] containing the current state of the hand
+     * @property handJoints a map of [HandJointType] to [Pose] representing the current pose of each
+     *   joint in the hand
      */
     public class State
     internal constructor(
-        public val trackingState: TrackingState,
+        public override val trackingState: TrackingState,
         public val handJointsBuffer: FloatBuffer,
-    ) {
+    ) : Trackable.State {
 
         private class JointsMap(
             val trackingState: TrackingState,
@@ -186,12 +194,6 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
             }
         }
 
-        /**
-         * Returns the current pose of each joint in the hand.
-         *
-         * @return a map of [HandJointType] to [Pose] representing the current pose of each joint in
-         *   the hand.
-         */
         public val handJoints: Map<HandJointType, Pose> = JointsMap(trackingState, handJointsBuffer)
 
         override fun equals(other: Any?): Boolean {
@@ -214,8 +216,9 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
 
     private val _state =
         MutableStateFlow<State>(State(TrackingState.PAUSED, ByteBuffer.allocate(0).asFloatBuffer()))
+
     /** The current [State] of this hand. */
-    public val state: StateFlow<State> = _state.asStateFlow()
+    public override val state: StateFlow<State> = _state.asStateFlow()
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {

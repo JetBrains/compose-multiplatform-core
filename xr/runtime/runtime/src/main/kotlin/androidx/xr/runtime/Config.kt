@@ -56,7 +56,7 @@ constructor(
         androidx.xr.runtime.FaceTrackingMode.DISABLED,
     public val geospatial: androidx.xr.runtime.GeospatialMode =
         androidx.xr.runtime.GeospatialMode.DISABLED,
-    public val augmentedObjectCategories: List<AugmentedObjectCategory> = listOf(),
+    public val augmentedObjectCategories: Set<AugmentedObjectCategory> = setOf(),
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val eyeTracking: EyeTrackingMode = EyeTrackingMode.DISABLED,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -103,7 +103,7 @@ constructor(
             androidx.xr.runtime.FaceTrackingMode.DISABLED,
         geospatial: androidx.xr.runtime.GeospatialMode =
             androidx.xr.runtime.GeospatialMode.DISABLED,
-        augmentedObjectCategories: List<AugmentedObjectCategory> = listOf(),
+        augmentedObjectCategories: Set<AugmentedObjectCategory> = setOf(),
     ) : this(
         planeTracking,
         handTracking,
@@ -133,7 +133,7 @@ constructor(
     @Suppress("DEPRECATION")
     public constructor(
         planeTracking: Config.PlaneTrackingMode
-    ) : this(planeTracking = planeTracking.toNewType(), augmentedObjectCategories = listOf())
+    ) : this(planeTracking = planeTracking.toNewType(), augmentedObjectCategories = setOf())
 
     /**
      * Defines a configuration state of all available features to be set at runtime.
@@ -163,7 +163,7 @@ constructor(
         handTracking: Config.HandTrackingMode,
     ) : this(
         planeTracking = planeTracking.toNewType(),
-        augmentedObjectCategories = listOf(),
+        augmentedObjectCategories = setOf(),
         handTracking = handTracking.toNewType(),
     )
 
@@ -199,7 +199,7 @@ constructor(
         deviceTracking: Config.DeviceTrackingMode,
     ) : this(
         planeTracking = planeTracking.toNewType(),
-        augmentedObjectCategories = listOf(),
+        augmentedObjectCategories = setOf(),
         handTracking = handTracking.toNewType(),
         deviceTracking = deviceTracking.toNewType(),
     )
@@ -240,7 +240,7 @@ constructor(
         depthEstimation: Config.DepthEstimationMode,
     ) : this(
         planeTracking = planeTracking.toNewType(),
-        augmentedObjectCategories = listOf(),
+        augmentedObjectCategories = setOf(),
         handTracking = handTracking.toNewType(),
         deviceTracking = deviceTracking.toNewType(),
         depthEstimation = depthEstimation.toNewType(),
@@ -286,7 +286,7 @@ constructor(
         anchorPersistence: Config.AnchorPersistenceMode,
     ) : this(
         planeTracking = planeTracking.toNewType(),
-        augmentedObjectCategories = listOf(),
+        augmentedObjectCategories = setOf(),
         handTracking = handTracking.toNewType(),
         deviceTracking = deviceTracking.toNewType(),
         depthEstimation = depthEstimation.toNewType(),
@@ -337,7 +337,7 @@ constructor(
         faceTracking: Config.FaceTrackingMode,
     ) : this(
         planeTracking = planeTracking.toNewType(),
-        augmentedObjectCategories = listOf(),
+        augmentedObjectCategories = setOf(),
         handTracking = handTracking.toNewType(),
         deviceTracking = deviceTracking.toNewType(),
         depthEstimation = depthEstimation.toNewType(),
@@ -393,7 +393,7 @@ constructor(
         geospatial: Config.GeospatialMode,
     ) : this(
         planeTracking = planeTracking.toNewType(),
-        augmentedObjectCategories = listOf(),
+        augmentedObjectCategories = setOf(),
         handTracking = handTracking.toNewType(),
         deviceTracking = deviceTracking.toNewType(),
         depthEstimation = depthEstimation.toNewType(),
@@ -466,7 +466,7 @@ constructor(
         anchorPersistence: androidx.xr.runtime.AnchorPersistenceMode = this.anchorPersistence,
         faceTracking: androidx.xr.runtime.FaceTrackingMode = this.faceTracking,
         geospatial: androidx.xr.runtime.GeospatialMode = this.geospatial,
-        augmentedObjectCategories: List<AugmentedObjectCategory> = this.augmentedObjectCategories,
+        augmentedObjectCategories: Set<AugmentedObjectCategory> = this.augmentedObjectCategories,
         eyeTracking: EyeTrackingMode = this.eyeTracking,
         cameraFacingDirection: CameraFacingDirection = this.cameraFacingDirection,
     ): Config {
@@ -592,6 +592,7 @@ constructor(
              * [androidx.xr.arcore.RenderViewpoint.State.pose].
              */
             @JvmField public val DISABLED: DeviceTrackingMode = DeviceTrackingMode(0)
+
             /**
              * The device pose will be tracked and the last known pose from the system at the time
              * of runtime update will be provided. Note that there is generally a delay between the
@@ -611,7 +612,7 @@ constructor(
         public fun toNewType(): androidx.xr.runtime.DeviceTrackingMode =
             when (this) {
                 DISABLED -> androidx.xr.runtime.DeviceTrackingMode.DISABLED
-                LAST_KNOWN -> androidx.xr.runtime.DeviceTrackingMode.LAST_KNOWN
+                LAST_KNOWN -> androidx.xr.runtime.DeviceTrackingMode.SPATIAL_LAST_KNOWN
                 else -> androidx.xr.runtime.DeviceTrackingMode.DISABLED
             }
     }
@@ -830,8 +831,7 @@ constructor(
              * - Include the Google Play Services Location Library as a dependency for your app. See
              *   [dependencies for Google Play services](https://developers.google.com/android/guides/setup#declare-dependencies)
              *   for instructions on how to include this library in your app. If this library is not
-             *   linked, [Session.configure] returns
-             *   [SessionConfigureGooglePlayServicesLocationLibraryNotLinked].
+             *   linked, [Session.configure] returns [SessionConfigureLibraryNotLinked].
              *
              * Location is tracked only while the [Session] is resumed.
              *

@@ -42,8 +42,10 @@ import androidx.compose.runtime.composer.linkbuffer.IsRecompositionRequiredFlag
 import androidx.compose.runtime.composer.linkbuffer.IsSubcompositionContextFlag
 import androidx.compose.runtime.composer.linkbuffer.KeyInfo
 import androidx.compose.runtime.composer.linkbuffer.LAZY_ADDRESS
+import androidx.compose.runtime.composer.linkbuffer.LinkAnchor
 import androidx.compose.runtime.composer.linkbuffer.NULL_ADDRESS
 import androidx.compose.runtime.composer.linkbuffer.NULL_GROUP_HANDLE
+import androidx.compose.runtime.composer.linkbuffer.NullAnchor
 import androidx.compose.runtime.composer.linkbuffer.SlotTable
 import androidx.compose.runtime.composer.linkbuffer.SlotTableAddressSpace
 import androidx.compose.runtime.composer.linkbuffer.SlotTableBuilder
@@ -452,7 +454,7 @@ internal class LinkComposer(
         var observerHolder = nextSlot() as? ReusableRememberObserverHolder
         if (observerHolder == null) {
             observerHolder =
-                ReusableRememberObserverHolder(
+                ReusableLinkRememberObserverHolder(
                     CompositionContextHolder(
                         CompositionContextImpl(
                             compositeKeyHashCode,
@@ -461,7 +463,7 @@ internal class LinkComposer(
                             composition.observerHolder,
                         )
                     ),
-                    NULL_ADDRESS,
+                    NullAnchor,
                 )
             updateValue(observerHolder)
         }
@@ -1311,7 +1313,12 @@ internal class LinkComposer(
             reader.next().let {
                 if (reusing && it !is ReusableRememberObserverHolder) Composer.Empty
                 else if (it is RememberObserverHolder) {
-                    it.apply { changeListWriter.updateRememberOrdering(it, lastPlacedChildGroup) }
+                    it.apply {
+                        changeListWriter.updateRememberOrdering(
+                            holder = it.asLinkRememberObserverHolder(),
+                            after = reader.table.addressSpace.anchorOfAddress(lastPlacedChildGroup),
+                        )
+                    }
                 } else it
             }
     }
@@ -2627,7 +2634,11 @@ internal class LinkComposer(
     internal fun updateCachedValue(value: Any?) {
         val toStore =
             if (value is RememberObserver) {
-                val holder = RememberObserverHolder(value, lastPlacedChildGroup)
+                val holder =
+                    LinkRememberObserverHolder(
+                        wrapped = value,
+                        after = slotTable.addressSpace.anchorOfAddress(lastPlacedChildGroup),
+                    )
                 if (inserting) changeListWriter.remember(holder)
                 abandonSet.add(value)
 
@@ -2990,6 +3001,20 @@ internal class LinkComposer(
 
 internal fun Composer.asLinkComposer(): LinkComposer =
     this as? LinkComposer ?: composeRuntimeError("Inconsistent composition")
+
+internal open class LinkRememberObserverHolder(
+    override var wrapped: RememberObserver,
+    var after: LinkAnchor,
+) : RememberObserverHolder
+
+internal class ReusableLinkRememberObserverHolder(wrapped: RememberObserver, after: LinkAnchor) :
+    LinkRememberObserverHolder(wrapped, after), ReusableRememberObserverHolder
+
+internal fun RememberObserverHolder.asLinkRememberObserverHolder() =
+    this as? LinkRememberObserverHolder ?: composeRuntimeError("Inconsistent composition")
+
+internal fun ReusableRememberObserverHolder.asLinkRememberObserverHolder() =
+    this as? ReusableLinkRememberObserverHolder ?: composeRuntimeError("Inconsistent composition")
 
 internal fun SlotTable.findSubcompositionContextGroup(context: CompositionContext): Int? {
     read {

@@ -32,6 +32,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,7 +54,6 @@ import androidx.xr.compose.spatial.FollowingSubspace
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.FollowBehavior
 import androidx.xr.compose.subspace.FollowTarget
-import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -67,7 +67,9 @@ import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorEntity
+import kotlinx.coroutines.delay
 
 /** Represents the different states of the AnchorFollowingSubspaceActivity. */
 sealed interface AppState {
@@ -95,6 +97,7 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
 
     companion object {
         private const val TAG = "FollowingSubspaceApp"
+        private val ANIMATION_DELTA = Vector3(.5f, 0f, 0f)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -213,37 +216,66 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
     @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
     private fun FollowingSubspaceContent(session: Session, anchorPose: Pose) {
         var rootAnchor by remember { mutableStateOf<AnchorEntity?>(null) }
+        var alternateAnchor by remember { mutableStateOf<AnchorEntity?>(null) }
+        var showAlternate by remember { mutableStateOf(false) }
+        var isAnimating by remember { mutableStateOf(false) }
 
-        LaunchedEffect(anchorPose) {
-            when (val anchorResult = Anchor.create(session, anchorPose)) {
-                is AnchorCreateSuccess -> {
-                    rootAnchor = AnchorEntity.create(session, anchor = anchorResult.anchor)
-                }
-                is AnchorCreateResourcesExhausted -> {
-                    Log.e(TAG, "Failed to create anchor: anchor resources exhausted.")
-                }
-                else -> {
-                    Log.e(TAG, "Failed to create anchor: ${anchorResult::class.simpleName}")
+        DisposableEffect(anchorPose) {
+            val localRoot = createAnchorEntity(session, anchorPose)
+            val alternatePose = Pose(anchorPose.translation + ANIMATION_DELTA, anchorPose.rotation)
+            val localAlternative = createAnchorEntity(session, alternatePose)
+            rootAnchor = localRoot
+            alternateAnchor = localAlternative
+
+            onDispose {
+                localRoot?.getAnchor()?.detach()
+                localAlternative?.getAnchor()?.detach()
+            }
+        }
+
+        LaunchedEffect(rootAnchor, alternateAnchor, isAnimating) {
+            if (rootAnchor != null && alternateAnchor != null) {
+                while (isAnimating) {
+                    showAlternate = !showAlternate
+                    delay(2000L)
                 }
             }
         }
 
-        if (rootAnchor != null) {
+        val currentAnchor = if (showAlternate) alternateAnchor else rootAnchor
+        currentAnchor?.let { activeAnchor ->
+            val buttonText = if (isAnimating) "Stop anchor animation" else "Start anchor animation"
+
             FollowingSubspace(
-                target = FollowTarget.Anchor(rootAnchor!!),
-                behavior = FollowBehavior.Tight,
+                target = FollowTarget.Anchor(activeAnchor),
+                behavior = FollowBehavior.Soft(),
                 modifier = SubspaceModifier.rotate(pitch = -90f, 0f, 0f),
             ) {
                 SpatialRow {
                     CustomSpatialPanel {
-                        Text("Anchored (row)", fontSize = 30.sp, color = Color(16, 156, 11))
-                    }
-                    SpatialColumn {
-                        CustomSpatialPanel {
-                            Text("Anchored (column)", fontSize = 30.sp, color = Color(16, 156, 11))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Anchored", fontSize = 30.sp, color = Color(16, 156, 11))
+                            Spacer(Modifier.height(8.dp))
+                            Button(onClick = { isAnimating = !isAnimating }) { Text(buttonText) }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun createAnchorEntity(session: Session, anchorPose: Pose): AnchorEntity? {
+        when (val anchorResult = Anchor.create(session, anchorPose)) {
+            is AnchorCreateSuccess -> {
+                return AnchorEntity.create(session, anchor = anchorResult.anchor)
+            }
+            is AnchorCreateResourcesExhausted -> {
+                Log.e(TAG, "Failed to create anchor: anchor resources exhausted.")
+                return null
+            }
+            else -> {
+                Log.e(TAG, "Failed to create anchor: ${anchorResult::class.simpleName}")
+                return null
             }
         }
     }

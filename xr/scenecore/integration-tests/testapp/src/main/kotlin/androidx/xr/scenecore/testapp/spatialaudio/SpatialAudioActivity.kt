@@ -20,7 +20,7 @@ import android.annotation.SuppressLint
 import android.content.res.Resources
 import android.media.AudioAttributes
 import android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION
-import android.media.AudioAttributes.USAGE_ASSISTANCE_SONIFICATION
+import android.media.AudioAttributes.USAGE_NOTIFICATION
 import android.media.AudioFormat
 import android.media.AudioFormat.CHANNEL_OUT_MONO
 import android.media.AudioTrack
@@ -56,11 +56,7 @@ import java.io.FileInputStream
 
 class SpatialAudioActivity : AppCompatActivity() {
 
-    @Suppress("DEPRECATION")
-    private val session by lazy {
-        (Session.create(this, unscaledGravityAlignedActivitySpace = true) as SessionCreateSuccess)
-            .session
-    }
+    private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
 
     private val mediaplayer = MediaPlayer()
 
@@ -107,7 +103,7 @@ class SpatialAudioActivity : AppCompatActivity() {
                 .setAudioAttributes(
                     AudioAttributes.Builder()
                         .setContentType(CONTENT_TYPE_SONIFICATION)
-                        .setUsage(USAGE_ASSISTANCE_SONIFICATION)
+                        .setUsage(USAGE_NOTIFICATION)
                         .build()
                 )
                 .build()

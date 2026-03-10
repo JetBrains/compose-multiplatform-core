@@ -34,6 +34,8 @@ internal class GltfModelNodeFeatureImpl(
 
     override val name: String? = name?.ifEmpty { null }
 
+    private val activeMaterialOverrides = mutableSetOf<Int>()
+
     override var localPose: Pose
         get() = impressApi.getImpressNodeLocalTransform(impressNode).pose
         set(value) {
@@ -75,9 +77,18 @@ internal class GltfModelNodeFeatureImpl(
     override fun setMaterialOverride(material: MaterialResource, primitiveIndex: Int) {
         val nativeMaterial = (material as Material).nativeHandle
         impressApi.setGltfModelNodeMaterialOverride(impressNode, nativeMaterial, primitiveIndex)
+        activeMaterialOverrides.add(primitiveIndex)
     }
 
     override fun clearMaterialOverride(primitiveIndex: Int) {
         impressApi.clearGltfModelNodeMaterialOverride(impressNode, primitiveIndex)
+        activeMaterialOverrides.remove(primitiveIndex)
+    }
+
+    override fun clearMaterialOverrides() {
+        for (index in activeMaterialOverrides) {
+            impressApi.clearGltfModelNodeMaterialOverride(impressNode, index)
+        }
+        activeMaterialOverrides.clear()
     }
 }

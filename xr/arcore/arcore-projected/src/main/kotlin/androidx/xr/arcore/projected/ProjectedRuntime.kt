@@ -33,11 +33,10 @@ import androidx.xr.runtime.PlaneTrackingMode
 import kotlin.time.ComparableTimeMark
 
 /**
- * Implementation of the [androidx.xr.arcore.runtime.PerceptionRuntime] interface using Projected.
+ * Implementation of the [PerceptionRuntime] interface using Projected.
  *
- * @property lifecycleManager that manages the lifecycle of the Projected session.
- * @property perceptionManager that manages the perception capabilities of a runtime using
- *   Projected.
+ * @property lifecycleManager that manages the lifecycle of the Projected session
+ * @property perceptionManager that manages the perception capabilities of a runtime using Projected
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedRuntime

@@ -118,8 +118,7 @@ public class RxJava3PlaneTest {
                                         .getSession();
                         mXrResourcesManager.setLifecycleManager$arcore(
                                 SessionExtKt.getPerceptionRuntime(mSession).getLifecycleManager());
-                        mSession.configure(
-                                new Config(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL));
+                        mSession.configure(new Config(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL));
                         try {
                             testBody.run();
                         } catch (Exception e) {

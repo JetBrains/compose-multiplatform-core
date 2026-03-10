@@ -191,7 +191,7 @@ class ListFocusSnapFlingBehaviorTest(orientation: Orientation) :
 
     private val ListState.focusLinePosition: Float
         get() {
-            val focusScroll = requireNotNull(autoFocusState.properties).focusScroll
+            val focusScroll = requireNotNull(autoFocusState.properties).focusScroll.toFloat()
             val startPadding = layoutInfo.beforeContentPadding
             return startPadding + focusScroll
         }

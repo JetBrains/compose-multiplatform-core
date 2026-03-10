@@ -18,8 +18,10 @@ package androidx.room3.ext
 
 import androidx.room3.compiler.processing.XConstructorElement
 import androidx.room3.compiler.processing.XElement
+import androidx.room3.compiler.processing.XExecutableElement
 import androidx.room3.compiler.processing.XExecutableParameterElement
 import androidx.room3.compiler.processing.XMethodElement
+import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
 import kotlin.contracts.contract
 
@@ -54,3 +56,17 @@ class ValueClassInfo(
     val parameter: XExecutableParameterElement,
     val getter: XMethodElement?,
 )
+
+/**
+ * Utility for getting the parameters needed to call a function from generated Kotlin code,
+ * excluding the Coroutine parameter if it is a suspend function.
+ */
+fun XExecutableElement.getRequiredFunctionParamTypes(): List<XType> {
+    val adjustedSize =
+        if (parameters.last().isContinuationParam()) {
+            parameters.size - 1
+        } else {
+            parameters.size
+        }
+    return parameters.subList(0, adjustedSize).map { it.type }
+}

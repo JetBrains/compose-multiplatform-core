@@ -29,13 +29,15 @@ import java.util.Locale
 /** Wraps a type converter specified by the developer and forwards calls to it. */
 class DaoReturnTypeConverterWrapper(
     val customDaoReturnTypeConverter: CustomDaoReturnTypeConverter
-) : DaoReturnTypeConverter(to = customDaoReturnTypeConverter.to) {
+) :
+    DaoReturnTypeConverter(
+        to = customDaoReturnTypeConverter.to,
+        operationTypes = customDaoReturnTypeConverter.operationTypes,
+    ) {
     override val isSuspend = customDaoReturnTypeConverter.function.isSuspendFunction()
-    override val rowAdapterTypeArgPosition = customDaoReturnTypeConverter.rowAdapterTypeArgPosition
-
-    override val hasNullableLambdaReturnType =
-        customDaoReturnTypeConverter.hasNullableLambdaReturnType
-
+    override val requiredFunctionParamTypes =
+        customDaoReturnTypeConverter.requiredFunctionParamTypes
+    override val executeAndReturnLambda = customDaoReturnTypeConverter.executeAndReturnLambda
     private val converterClassName = customDaoReturnTypeConverter.className
 
     override fun buildStatement(returnTypeArgName: XTypeName, scope: CodeGenScope): XCodeBlock {

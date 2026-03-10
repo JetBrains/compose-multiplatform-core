@@ -96,4 +96,19 @@ class FakeGltfModelNodeFeatureTest {
 
         assertThat(underTest.materialOverrides).doesNotContainKey(primitiveIndex)
     }
+
+    @Test
+    fun clearMaterialOverrides_removesAllMaterials() {
+        val material1 = FakeResource(123)
+        val material2 = FakeResource(456)
+
+        underTest.setMaterialOverride(material1, 0)
+        underTest.setMaterialOverride(material2, 1)
+
+        assertThat(underTest.materialOverrides).hasSize(2)
+
+        underTest.clearMaterialOverrides()
+
+        assertThat(underTest.materialOverrides).isEmpty()
+    }
 }
