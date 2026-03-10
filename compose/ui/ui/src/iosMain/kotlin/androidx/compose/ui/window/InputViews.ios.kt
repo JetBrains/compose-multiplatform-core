@@ -16,16 +16,18 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitBackGestureRecognizer
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer
-import androidx.compose.ui.uikit.utils.CMPHoverGestureHandler
+import androidx.compose.ui.uikit.utils.CMPHoverGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPPanGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPScrollView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.asDpOffset
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
+import kotlin.getValue
 import kotlin.math.abs
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
@@ -54,6 +56,7 @@ import platform.UIKit.UIGestureRecognizerStateChanged
 import platform.UIKit.UIGestureRecognizerStateEnded
 import platform.UIKit.UIGestureRecognizerStateFailed
 import platform.UIKit.UIGestureRecognizerStatePossible
+import platform.UIKit.UIHoverGestureRecognizer
 import platform.UIKit.UIPanGestureRecognizer
 import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIScreenEdgePanGestureRecognizer
@@ -500,8 +503,8 @@ private class ScrollGestureRecognizer(
 internal class OverlayInputView(
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
-    onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
-    onCancelAllTouches: (touches: Set<*>) -> Unit,
+    private var onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
+    private var onCancelAllTouches: (touches: Set<*>) -> Unit,
     onScrollEvent: (position: DpOffset, delta: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     onCancelScroll: () -> Unit,
     private var onHoverEvent: (position: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
@@ -516,8 +519,8 @@ internal class OverlayInputView(
      * passed to the Compose runtime or to the interop view.
      */
     private val touchesGestureRecognizer = TouchesGestureRecognizer(
-        onTouchesEvent = onTouchesEvent,
-        onCancelAllTouches = onCancelAllTouches,
+        onTouchesEvent = ::handleTouchesEvent,
+        onCancelAllTouches = ::handleCancelAllTouches,
         canIgnoreDragGesture = { canIgnoreDragGesture(it) },
         ignoreTouchesChanges = ignoreTouchChanges
     )
@@ -533,14 +536,21 @@ internal class OverlayInputView(
         }
     }
 
-    private val hoverGestureHandler by lazy {
-        CMPHoverGestureHandler(this, NSSelectorFromString(::onHover.name + ":"))
+    private val hoverGestureRecognizer by lazy {
+        CMPHoverGestureRecognizer(this, NSSelectorFromString(::onHover.name + ":")).apply {
+            delaysTouchesBegan = false
+            delaysTouchesEnded = false
+            cancelsTouchesInView = false
+        }
     }
 
     /**
      * See [androidx.compose.ui.draganddrop.UIKitDragAndDropManager] for more context
      */
     var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean = { false }
+
+    var isInterceptingOutsideEvents: Boolean = false
+    var onOutsidePointerEvent: (PointerEventType) -> Unit = {}
 
     init {
         multipleTouchEnabled = true
@@ -549,7 +559,8 @@ internal class OverlayInputView(
         scrollGestureRecognizer?.let {
             addGestureRecognizer(it)
         }
-        hoverGestureHandler.attachToView(this)
+
+        addGestureRecognizer(hoverGestureRecognizer)
 
         showsHorizontalScrollIndicator = false
         showsVerticalScrollIndicator = false
@@ -575,8 +586,65 @@ internal class OverlayInputView(
         super.pressesEnded(presses, withEvent)
     }
 
+    private val trackedTouchesOutside: MutableSet<UITouch> = mutableSetOf()
+    private fun handleTouchesEvent(
+        touches: Set<*>, event: UIEvent?, phase: TouchesEventKind
+    ): PointerEventResult {
+        if (isInterceptingOutsideEvents && event?.type == UIEventTypeTouches) {
+            when (phase) {
+                TouchesEventKind.BEGAN -> {
+                    touches.forEach { touch ->
+                        touch as UITouch
+                        if (!isPointInsideInteractionBounds(touch.locationInView(this))) {
+                            val isNewPressEvent = trackedTouchesOutside.isEmpty()
+                            trackedTouchesOutside.add(touch)
+                            if (isNewPressEvent) {
+                                onOutsidePointerEvent(PointerEventType.Press)
+                            }
+                        }
+                    }
+                }
+
+                TouchesEventKind.ENDED -> {
+                    touches.forEach { touch ->
+                        touch as UITouch
+                        if (touch in trackedTouchesOutside) {
+                            trackedTouchesOutside.remove(touch)
+                            if (trackedTouchesOutside.isEmpty()) {
+                                onOutsidePointerEvent(PointerEventType.Release)
+                            }
+                        }
+                    }
+                }
+
+                TouchesEventKind.MOVED -> {}
+            }
+        }
+
+        return onTouchesEvent(touches, event, phase)
+    }
+
+    private fun handleCancelAllTouches(touches: Set<*>) {
+        trackedTouchesOutside.clear()
+        onCancelAllTouches(touches)
+    }
+
+    private var previousSuccessHitTestTimestamp: Double? = null
+
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
         if (!isPointInsideInteractionBounds(point)) {
+            if (withEvent?.type != UIEventTypeTouches) {
+                return null
+            }
+            if (isInterceptingOutsideEvents) {
+                return this
+            }
+            if (previousSuccessHitTestTimestamp != withEvent.timestamp) {
+                // This workaround needs to send PointerEventType.Press just once
+                previousSuccessHitTestTimestamp = withEvent.timestamp
+                onOutsidePointerEvent(PointerEventType.Press)
+                onOutsidePointerEvent(PointerEventType.Release)
+            }
             return null
         }
         if (withEvent?.type != UIEventTypeTouches) {
@@ -602,9 +670,9 @@ internal class OverlayInputView(
     private var lastHoverPosition: DpOffset? = null
     @OptIn(BetaInteropApi::class)
     @ObjCAction
-    fun onHover(gestureRecognizer: UIPanGestureRecognizer) {
+    fun onHover(gestureRecognizer: CMPHoverGestureRecognizer) {
         val position = gestureRecognizer.locationInView(this).asDpOffset()
-        val lastEvent = hoverGestureHandler.lastHandledEvent
+        val lastEvent = hoverGestureRecognizer.lastReceivedEvent
         when (gestureRecognizer.state) {
             UIGestureRecognizerStateBegan ->
                 onHoverEvent(position, lastEvent, TouchesEventKind.BEGAN)
@@ -634,13 +702,17 @@ internal class OverlayInputView(
             removeGestureRecognizer(it)
             it.dispose()
         }
-        hoverGestureHandler.detachFromViewAndDispose(this)
+        removeGestureRecognizer(hoverGestureRecognizer)
         onHoverEvent = { _, _, _ -> }
 
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         canIgnoreDragGesture = { false }
         onKeyboardPresses = {}
+        onOutsidePointerEvent = {}
+        onTouchesEvent = { _, _, _ -> PointerEventResult() }
+        onCancelAllTouches = {}
+        trackedTouchesOutside.clear()
     }
 }
 
@@ -662,8 +734,8 @@ internal class BackgroundInputView(
 
     fun runOnceOnAppeared(block: () -> Unit) {
         onAppeared = {
-            block()
             onAppeared = null
+            block()
         }
 
         runOnAppearedIfEligible()
