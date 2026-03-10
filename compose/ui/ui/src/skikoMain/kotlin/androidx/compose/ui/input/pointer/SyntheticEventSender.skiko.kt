@@ -267,18 +267,18 @@ internal class SyntheticEventSender(
         position: Offset = this.position,
         down: Boolean = this.down
     ) = PointerInputEventData(
-        id,
-        uptime,
-        position,
-        position,
-        down,
-        pressure,
-        type,
-        activeHover,
+        id = id,
+        uptime = uptime,
+        positionOnScreen = position,
+        position = position,
+        down = down,
+        pressure = pressure,
+        type = type,
+        activeHover = activeHover,
         scrollDelta = Offset(0f, 0f),
         historical = emptyList(), // we don't copy historical for synthetic
+        scaleGestureFactor = 1.0f,
+        panGestureOffset = Offset(0f, 0f),
         originalEventPosition = position,
-        scaleGestureFactor = scaleGestureFactor,
-        panGestureOffset = panGestureOffset,
     )
 }

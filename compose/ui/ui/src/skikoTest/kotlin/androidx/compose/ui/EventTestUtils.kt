@@ -244,6 +244,9 @@ internal fun mouseEvent(
     x: Float,
     y: Float,
     pressed: Boolean,
+    scrollDelta: Offset = Offset.Zero,
+    scaleGestureFactor: Float = 1f,
+    panGestureOffset:Offset = Offset.Zero,
 ) = PointerInputEvent(
     type,
     0,
@@ -256,11 +259,11 @@ internal fun mouseEvent(
             down = pressed,
             pressure = 1f,
             type = PointerType.Mouse,
-            scrollDelta = Offset.Zero,
+            scrollDelta = scrollDelta,
             activeHover = true,
             historical = emptyList(),
-            scaleGestureFactor = 1f,
-            panGestureOffset = Offset.Zero,
+            scaleGestureFactor = scaleGestureFactor,
+            panGestureOffset = panGestureOffset,
         )
     ),
     buttons = PointerButtons(isPrimaryPressed = pressed)
