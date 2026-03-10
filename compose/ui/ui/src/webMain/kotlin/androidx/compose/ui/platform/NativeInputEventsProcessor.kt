@@ -46,7 +46,10 @@ internal abstract class NativeInputEventsProcessor(
 ) {
 
     private val collectedEvents = mutableListOf<UIEvent>()
-    private var isCheckpointScheduled = false
+
+    @get:TestOnly
+    @set:TestOnly
+    internal var isCheckpointScheduled = false
     private var lastCompositionEndTimestamp = 0.0 // Double because of k/wasm where Number.toLong() leads to a compilation error
     var isInIMEComposition = false
     private var lastKeydownStatus: ComposeKeyDownStatus? = null
