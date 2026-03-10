@@ -706,9 +706,7 @@ internal class ComposeWindow(
 
         // wheels event own buttons property is unreliable in Safari and Firefox
         // see CMP-9900 [web] Wheel event resolves buttons state incorrectly in Safari and Firefox
-        val buttons = event.composeButtons.takeIf { it.packedValue != 0 }
-            ?: actualActivePointerButtons
-            ?: event.composeButtons
+        val buttons = actualActivePointerButtons ?: event.composeButtons
 
         val result = scene.sendPointerEvent(
             eventType = PointerEventType.Scroll,
