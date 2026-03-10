@@ -643,7 +643,7 @@ internal class ComposeWindow(
             if (eventType == PointerEventType.Release) {
                 activeTouchPointers.remove(event.pointerId)
             }
-        } else if (isMouseEvent(event)) {
+        } else {
             keyboardModeState = KeyboardModeState.Hardware
 
             // validate event before sending it further - see
@@ -821,7 +821,6 @@ private fun clipTargetElement(canvas: HTMLCanvasElement): HTMLTextAreaElement {
 // strings checks are faster on a JS side
 // language=js
 private fun isTouchEvent(event: PointerEvent): Boolean = js("event.pointerType === 'touch'")
-private fun isMouseEvent(event: PointerEvent): Boolean = js("event.pointerType === 'mouse'")
 
 // strings checks are faster on a JS side
 // language=js
