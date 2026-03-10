@@ -22,17 +22,18 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFold
 
 internal actual fun CompositionLocalConsumerModifierNode.platformScrollConfig(): ScrollConfig = UiKitScrollConfig
 
 internal object UiKitScrollConfig : ScrollConfig {
     override fun Density.calculateMouseWheelScroll(event: PointerEvent, bounds: IntSize): Offset =
-        -event.changes.fastFold(Offset.Zero) { acc, c ->
+        event.changes.fastFold(Offset.Zero) { acc, c ->
             if (event.type == PointerEventType.Pan) {
                 acc + c.panGestureOffset
             } else {
                 acc + c.scrollDelta
             }
-        }
+        } * -64.dp.toPx()
 }

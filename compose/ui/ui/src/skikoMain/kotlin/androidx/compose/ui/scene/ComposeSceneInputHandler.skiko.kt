@@ -39,7 +39,6 @@ import androidx.compose.ui.node.RootNodeOwner
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
-import org.jetbrains.skiko.currentNanoTime
 
 /**
  * Handles input events for [ComposeScene].
@@ -75,8 +74,8 @@ internal class ComposeSceneInputHandler(
     fun onPointerEvent(
         eventType: PointerEventType,
         position: Offset,
-        scrollDelta: Offset = Offset(0f, 0f),
-        timeMillis: Long = (currentNanoTime() / 1E6).toLong(),
+        scrollDelta: Offset,
+        timeMillis: Long,
         type: PointerType,
         buttons: PointerButtons?,
         keyboardModifiers: PointerKeyboardModifiers?,
@@ -113,10 +112,10 @@ internal class ComposeSceneInputHandler(
     fun onPointerEvent(
         eventType: PointerEventType,
         pointers: List<ComposeScenePointer>,
-        buttons: PointerButtons = PointerButtons(),
-        keyboardModifiers: PointerKeyboardModifiers = PointerKeyboardModifiers(),
-        scrollDelta: Offset = Offset(0f, 0f),
-        timeMillis: Long = (currentNanoTime() / 1E6).toLong(),
+        buttons: PointerButtons,
+        keyboardModifiers: PointerKeyboardModifiers,
+        scrollDelta: Offset,
+        timeMillis: Long,
         nativeEvent: Any?,
         button: PointerButton?,
         scaleGestureFactor: Float,
@@ -132,7 +131,7 @@ internal class ComposeSceneInputHandler(
             keyboardModifiers = keyboardModifiers,
             changedButton = button,
             scaleGestureFactor = scaleGestureFactor,
-            panGestureOffset = panGestureOffset
+            panGestureOffset = panGestureOffset,
         )
         prepareForPointerInputEvent()
         val updatePointerPositionResult = updatePointerPosition()
