@@ -19,9 +19,11 @@ package androidx.compose.ui.awt
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
 import java.awt.Component
 import java.awt.EventQueue
@@ -71,9 +73,17 @@ internal fun IntRect.toAwtRectangle(density: Density) = toAwtRectangle(
     density = density.density
 )
 
-internal fun IntRect.toAwtRectangle() = Rectangle(left, top, right - left, bottom - top)
-
 internal fun Point.toIntOffset(): IntOffset = IntOffset(x, y)
+
+internal fun IntRect.toDpRect(): DpRect = DpRect(left.dp, top.dp, right.dp, bottom.dp)
+
+internal fun DpRect.toAwtRectangleRounded(): Rectangle {
+    val left = this.left.value.fastRoundToInt()
+    val top = this.top.value.fastRoundToInt()
+    val right = this.right.value.fastRoundToInt()
+    val bottom = this.bottom.value.fastRoundToInt()
+    return Rectangle(left, top, right - left, bottom - top)
+}
 
 /**
  * Returns a [java.awt.Rectangle] corresponding to this [Rect], in the given density.

@@ -23,7 +23,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.isFinite
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.window.WindowPlacement
 
 /**
@@ -70,8 +73,12 @@ fun WindowState(
 class WindowState internal constructor(
     placement: WindowPlacement,
     isMinimized: Boolean,
-    bounds: IntRect? = null,
+    bounds: DpRect? = null,
 ) {
+    init {
+        if (bounds != null) requireReal(bounds)
+    }
+
     /**
      * Describes how the window is placed on the screen.
      */
@@ -85,12 +92,12 @@ class WindowState internal constructor(
     /**
      * The backing property for the window bounds.
      */
-    private var _bounds: IntRect? by mutableStateOf(bounds)
+    private var _bounds: DpRect? by mutableStateOf(bounds)
 
     /**
      * The current bounds of the window; `null` if unknown (e.g., the window is not yet visible).
      */
-    val bounds: IntRect?
+    val bounds: DpRect?
         get() = _bounds
 
     /**
@@ -98,13 +105,16 @@ class WindowState internal constructor(
      *
      * Setting the bounds when the window placement is not [WindowPlacement.Floating] will change
      * the placement to floating.
+     *
+     * All the parameters of [bounds] must be specified and finite.
      */
-    fun setBounds(bounds: IntRect) {
+    fun setBounds(bounds: DpRect) {
+        requireReal(bounds)
         this.placement = WindowPlacement.Floating
         this._bounds = bounds
     }
 
-    internal fun setBoundsDirect(bounds: IntRect) {
+    internal fun setBoundsDirect(bounds: DpRect) {
         this._bounds = bounds
     }
 
@@ -119,10 +129,10 @@ class WindowState internal constructor(
                     it.placement.ordinal,
                     it.isMinimized,
                     bounds != null,
-                    bounds?.top ?: 0,
-                    bounds?.left ?: 0,
-                    bounds?.right ?: 0,
-                    bounds?.bottom ?: 0,
+                    bounds?.top?.value ?: 0f,
+                    bounds?.left?.value ?: 0f,
+                    bounds?.right?.value ?: 0f,
+                    bounds?.bottom?.value ?: 0f,
                 )
             },
             restore = { state ->
@@ -130,11 +140,11 @@ class WindowState internal constructor(
                     placement = WindowPlacement.entries[state[0] as Int],
                     isMinimized = state[1] as Boolean,
                     bounds = if (state[2] as Boolean) {
-                        IntRect(
-                            top = state[3] as Int,
-                            left = state[4] as Int,
-                            right = state[5] as Int,
-                            bottom = state[6] as Int
+                        DpRect(
+                            top = Dp(state[3] as Float),
+                            left = Dp(state[4] as Float),
+                            right = Dp(state[5] as Float),
+                            bottom = Dp(state[6] as Float)
                         )
                     } else null,
                 )
@@ -143,4 +153,13 @@ class WindowState internal constructor(
     }
 }
 
+private val Dp.isReal
+    get() = isSpecified && isFinite
 
+private fun requireReal(rect: DpRect): DpRect {
+    require(rect.left.isReal) { "left must be specified and finite" }
+    require(rect.top.isReal) { "top must be specified and finite" }
+    require(rect.right.isReal) { "right must be specified and finite" }
+    require(rect.bottom.isReal) { "bottom must be specified and finite" }
+    return rect
+}

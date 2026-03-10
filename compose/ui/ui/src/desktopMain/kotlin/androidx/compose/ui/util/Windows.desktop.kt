@@ -17,11 +17,12 @@
 package androidx.compose.ui.util
 
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.awt.toAwtRectangleRounded
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toAwtImage
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.isSpecified
@@ -83,16 +84,11 @@ internal fun Window.setPositionSafely(
  * position to go to when the user un-maximizes the window.
  */
 internal fun Window.setBoundsSafely(
-    bounds: IntRect,
+    bounds: DpRect,
     placement: WindowPlacement,
 ) {
     if (!isVisible || (placement == WindowPlacement.Floating)) {
-        setBounds(
-            bounds.left,
-            bounds.top,
-            bounds.width,
-            bounds.height
-        )
+        setBounds(bounds.toAwtRectangleRounded())
     }
 }
 

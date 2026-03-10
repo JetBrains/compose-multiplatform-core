@@ -25,10 +25,13 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
-import androidx.compose.ui.awt.toAwtRectangle
+import androidx.compose.ui.awt.toAwtRectangleRounded
+import androidx.compose.ui.awt.toDpRect
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.ComponentUpdater
 import androidx.compose.ui.util.componentListenerRef
 import androidx.compose.ui.util.setBoundsSafely
@@ -119,7 +122,7 @@ fun SwingWindow(
     // the state applied to the window. exist to avoid races between WindowState changes and the state stored inside the native window
     val appliedState = remember {
         object {
-            var bounds: IntRect? = null
+            var bounds: DpRect? = null
             var placement: WindowPlacement? = null
             var isMinimized: Boolean? = null
         }
@@ -172,8 +175,9 @@ fun SwingWindow(
                     object : ComponentAdapter() {
                         fun applyComponentBounds() {
                             val bounds = IntRect(x, y, x + width, y + height)
-                            currentState.setBoundsDirect(bounds)
-                            appliedState.bounds = bounds
+                            val dpBounds = bounds.toDpRect()
+                            currentState.setBoundsDirect(dpBounds)
+                            appliedState.bounds = dpBounds
                             currentOnBoundsChanged(bounds)
                         }
 
@@ -202,9 +206,13 @@ fun SwingWindow(
                         get() = this@apply
                 }
                 bounds = run {
-                    val boundsRect =
-                        currentState.bounds ?: with(initialBounds) { scope.getBounds() }
-                    boundsRect.toAwtRectangle()
+                    val boundsRect = currentState.bounds ?:
+                        with(initialBounds) {
+                            scope.getBounds().let {
+                                DpRect(it.left.dp, it.top.dp, it.right.dp, it.bottom.dp)
+                            }
+                        }
+                    boundsRect.toAwtRectangleRounded()
                 }
 
                 init(this)
