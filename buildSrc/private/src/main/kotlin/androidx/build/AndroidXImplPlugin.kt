@@ -81,6 +81,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.JavaVersion.VERSION_11
+import org.gradle.api.JavaVersion.VERSION_1_8
 import org.gradle.api.JavaVersion.VERSION_17
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -1406,7 +1407,7 @@ internal fun aospGetDefaultTargetJavaVersion(
         projectName != null && projectName.contains("desktop") -> VERSION_11
         targetName != null && (targetName == "desktop" || targetName == "jvmStubs") -> VERSION_11
         softwareType.compilationTarget == CompilationTarget.HOST -> VERSION_17
-        else -> VERSION_11
+        else -> VERSION_1_8
     }
 }
 
