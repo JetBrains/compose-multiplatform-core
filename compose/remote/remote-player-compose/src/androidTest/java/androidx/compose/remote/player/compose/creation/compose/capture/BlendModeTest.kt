@@ -17,8 +17,6 @@
 package androidx.compose.remote.player.compose.creation.compose.capture
 
 import android.content.Context
-import android.graphics.BlendMode
-import android.graphics.Paint
 import android.util.Log
 import androidx.compose.remote.core.WireBuffer
 import androidx.compose.remote.creation.CreationDisplayInfo
@@ -32,6 +30,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteOffset
 import androidx.compose.remote.creation.compose.layout.RemoteRow
 import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.layout.RemoteText
+import androidx.compose.remote.creation.compose.layout.toAndroidBlendMode
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.border
 import androidx.compose.remote.creation.compose.modifier.padding
@@ -44,8 +43,9 @@ import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.player.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
@@ -56,6 +56,40 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+
+private val BlendMode.Companion.entries: List<BlendMode>
+    get() =
+        listOf(
+            BlendMode.Clear,
+            BlendMode.Src,
+            BlendMode.Dst,
+            BlendMode.SrcOver,
+            BlendMode.DstOver,
+            BlendMode.SrcIn,
+            BlendMode.DstIn,
+            BlendMode.SrcOut,
+            BlendMode.DstOut,
+            BlendMode.SrcAtop,
+            BlendMode.DstAtop,
+            BlendMode.Xor,
+            BlendMode.Plus,
+            BlendMode.Modulate,
+            BlendMode.Screen,
+            BlendMode.Overlay,
+            BlendMode.Darken,
+            BlendMode.Lighten,
+            BlendMode.ColorDodge,
+            BlendMode.ColorBurn,
+            BlendMode.Hardlight,
+            BlendMode.Softlight,
+            BlendMode.Difference,
+            BlendMode.Exclusion,
+            BlendMode.Multiply,
+            BlendMode.Hue,
+            BlendMode.Saturation,
+            BlendMode.Color,
+            BlendMode.Luminosity,
+        )
 
 /**
  * A test for BlendMode in RemoteCanvas, see
@@ -103,13 +137,16 @@ class BlendModeTest {
     @RemoteComposable
     @Composable
     private fun AllBlendModes() {
-        val blendModes = BlendMode.entries.toTypedArray()
+        val blendModes = BlendMode.entries
         val chunkedBlendModes = blendModes.toList().chunked(4)
         RemoteColumn {
             for (rowItems in chunkedBlendModes) {
                 RemoteRow {
                     for (blendMode in rowItems) {
-                        RemoteBlendModeVisual(blendMode = blendMode, name = blendMode.name)
+                        RemoteBlendModeVisual(
+                            blendMode = blendMode,
+                            name = blendMode.toAndroidBlendMode().name,
+                        )
                     }
                 }
             }
@@ -128,11 +165,10 @@ class BlendModeTest {
                 val w = remoteWidth
                 val h = remoteHeight
 
-                val paint =
-                    RemotePaint().apply {
-                        style = Paint.Style.FILL
-                        this.color = Color.Magenta.toArgb()
-                    }
+                val paint = RemotePaint {
+                    style = PaintingStyle.Fill
+                    color = Color.Magenta.rc
+                }
 
                 // Draw dst
                 drawCircle(
@@ -142,7 +178,7 @@ class BlendModeTest {
                 )
 
                 // Draw src
-                paint.color = Color.Blue.toArgb()
+                paint.color = Color.Blue.rc
                 paint.blendMode = blendMode
                 drawRect(
                     paint = paint,

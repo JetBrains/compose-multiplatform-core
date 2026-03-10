@@ -16,6 +16,9 @@
 package androidx.lifecycle
 
 import androidx.annotation.RestrictTo
+import androidx.collection.MutableScatterMap
+import androidx.collection.ScatterMap
+import androidx.collection.emptyScatterMap
 import androidx.collection.mutableScatterMapOf
 
 /**
@@ -74,8 +77,9 @@ public open class ViewModelStore {
      * @see ViewModel.onCleared
      */
     public fun clear() {
-        map.forEachValue { viewModel -> viewModel.clear() }
+        val snapshot = map.toScatterMap()
         map.clear()
+        snapshot.forEachValue { viewModel -> viewModel.clear() }
     }
 
     override fun toString(): String {
@@ -86,3 +90,7 @@ public open class ViewModelStore {
         return "$className#$identity(keys=${keys()})"
     }
 }
+
+/** Returns a new read-only [ScatterMap] with the specified mappings. */
+private fun <K, V> ScatterMap<K, V>.toScatterMap(): ScatterMap<K, V> =
+    if (isEmpty()) emptyScatterMap() else MutableScatterMap<K, V>(size).also { it.putAll(this) }

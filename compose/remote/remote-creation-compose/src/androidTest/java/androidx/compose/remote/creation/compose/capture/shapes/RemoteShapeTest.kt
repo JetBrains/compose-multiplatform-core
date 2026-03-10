@@ -17,7 +17,6 @@
 package androidx.compose.remote.creation.compose.capture.shapes
 
 import android.content.Context
-import android.graphics.Color
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
@@ -33,6 +32,7 @@ import androidx.compose.remote.creation.compose.shapes.RemoteCircleShape
 import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
 import androidx.compose.remote.creation.compose.shapes.RemoteShape
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
@@ -167,7 +167,7 @@ class RemoteShapeTest {
                 val w = remoteWidth
                 val h = remoteHeight
                 val size = RemoteSize(w, h)
-                val paint = RemotePaint().apply { color = Color.RED }
+                val paint = RemotePaint { color = androidx.compose.ui.graphics.Color.Red.rc }
                 with(shape.createOutline(size, remoteDensity, layoutDirection)) {
                     drawOutline(paint)
                 }

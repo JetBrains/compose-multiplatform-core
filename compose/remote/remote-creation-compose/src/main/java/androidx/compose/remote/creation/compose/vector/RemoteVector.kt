@@ -16,7 +16,6 @@
 
 package androidx.compose.remote.creation.compose.vector
 
-import android.graphics.Paint
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.RemotePath
 import androidx.compose.remote.creation.compose.capture.toRemotePath
@@ -29,9 +28,8 @@ import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.graphics.vector.DefaultGroupName
@@ -126,17 +124,16 @@ internal class RemotePathComponent : RemoteVNode() {
     override fun RemoteDrawScope.draw(colorFilter: RemoteColorFilter?) {
         updatePath()
 
-        val paint = RemotePaint().apply { remoteColorFilter = colorFilter }
+        val paint = RemotePaint { this.colorFilter = colorFilter }
         fill?.let {
-            paint.style = Paint.Style.FILL
+            paint.style = PaintingStyle.Fill
             drawPath(renderPath, paint)
         }
         stroke?.let {
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = strokeLineWidth
-            paint.strokeMiter = strokeLineMiter
-            paint.strokeCap = strokeLineCap.toAndroidCap()
-            paint.strokeJoin = strokeLineJoin.toAndroidJoin()
+            paint.style = PaintingStyle.Stroke
+            paint.strokeWidth = strokeLineWidth.rf
+            paint.strokeCap = strokeLineCap
+            paint.strokeJoin = strokeLineJoin
             drawPath(renderPath, paint)
         }
     }
@@ -273,21 +270,3 @@ internal class RemoteGroupComponent : RemoteVNode() {
  */
 internal fun Color.rgbEqual(other: Color) =
     this.red == other.red && this.green == other.green && this.blue == other.blue
-
-internal fun StrokeJoin.toAndroidJoin(): Paint.Join {
-    return when (this) {
-        StrokeJoin.Miter -> Paint.Join.MITER
-        StrokeJoin.Round -> Paint.Join.ROUND
-        StrokeJoin.Bevel -> Paint.Join.BEVEL
-        else -> Paint.Join.MITER
-    }
-}
-
-internal fun StrokeCap.toAndroidCap(): Paint.Cap {
-    return when (this) {
-        StrokeCap.Butt -> Paint.Cap.BUTT
-        StrokeCap.Round -> Paint.Cap.ROUND
-        StrokeCap.Square -> Paint.Cap.SQUARE
-        else -> Paint.Cap.BUTT
-    }
-}

@@ -34,12 +34,12 @@ import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -97,22 +97,19 @@ class CaptureRemoteDocumentTest {
             withContext(Dispatchers.Main) {
                 captureSingleRemoteDocument(context, profile = customProfile) {
                         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
-                            val redPaint =
-                                RemotePaint().apply { color = android.graphics.Color.RED }
+                            val redPaint = RemotePaint { color = Color.Red.rc }
                             drawRect(paint = redPaint)
-                            val bluePaint =
-                                RemotePaint().apply { color = android.graphics.Color.BLUE }
+                            val bluePaint = RemotePaint { color = Color.Blue.rc }
                             drawCircle(
                                 paint = bluePaint,
                                 center = RemoteOffset(remoteWidth / 2f, remoteHeight / 2f),
                                 radius = remoteWidth / 4f,
                             )
-                            val textPaint =
-                                RemotePaint().apply {
-                                    isAntiAlias = true
-                                    color = Color.LightGray.toArgb()
-                                    textSize = 12f
-                                }
+                            val textPaint = RemotePaint {
+                                isAntiAlias = true
+                                color = Color.LightGray.rc
+                                textSize = 12f.rf
+                            }
 
                             drawTextOnCircle(
                                 text = "10:09".rs,

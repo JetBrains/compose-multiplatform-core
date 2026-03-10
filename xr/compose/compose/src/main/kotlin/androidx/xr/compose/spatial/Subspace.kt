@@ -70,7 +70,6 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Entity
-import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 
@@ -159,7 +158,7 @@ private fun Subspace(
     val context = LocalContext.current
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val compositionContext = rememberCompositionContext()
-    val subspaceRoot = remember { GroupEntity.create(session, "SubspaceRoot") }
+    val subspaceRoot = remember { Entity.create(session, "SubspaceRoot") }
     val scene by remember {
         if (SceneManager.getSceneCount(context) == 0) {
             session.scene.mainPanelEntity.setEnabled(false)
@@ -247,7 +246,7 @@ public fun PlanarEmbeddedSubspace(
     // subspace properly.
     val subspaceRootContainer by remember {
         disposableValueOf(
-            CoreGroupEntity(GroupEntity.create(session, "SubspaceRootContainer")).apply {
+            CoreGroupEntity(Entity.create(session, "SubspaceRootContainer")).apply {
                 enabled = false
                 parent = coreEntity
             }
@@ -257,7 +256,7 @@ public fun PlanarEmbeddedSubspace(
     }
     val scene by remember {
         val subspaceRoot =
-            CoreGroupEntity(GroupEntity.create(session, "SubspaceRoot")).apply {
+            CoreGroupEntity(Entity.create(session, "SubspaceRoot")).apply {
                 parent = subspaceRootContainer
             }
         disposableValueOf(
@@ -450,7 +449,7 @@ public fun FollowingSubspace(
         )
     } else {
         val subspaceRoot by remember {
-            disposableValueOf(GroupEntity.create(session, "subspaceRoot")) { it.dispose() }
+            disposableValueOf(Entity.create(session, "subspaceRoot")) { it.dispose() }
         }
         SideEffect {
             session.scene.keyEntity?.getScale(relativeTo = Space.REAL_WORLD)?.let { scale ->

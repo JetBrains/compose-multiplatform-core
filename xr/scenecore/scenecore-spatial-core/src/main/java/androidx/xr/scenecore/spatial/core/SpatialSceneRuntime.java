@@ -482,19 +482,28 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     }
 
     @Override
-    public @NonNull Entity createGroupEntity(
-            @NonNull Pose pose, @NonNull String name, @Nullable Entity parent) {
+    public @NonNull Entity createEntity(
+            @NonNull Pose pose, @Nullable String name, @Nullable Entity parent) {
         Node node = mExtensions.createNode();
-        try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
-            transaction.setName(node, name).apply();
+        if (name != null) {
+            try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
+                transaction.setName(node, name).apply();
+            }
         }
 
-        // This entity is used to back SceneCore's GroupEntity.
+        // This entity is used to back SceneCore's Entity.
         Entity entity =
                 new AndroidXrEntity(mActivity, node, mExtensions, mEntityManager, mExecutor) {};
         entity.setParent(parent);
         entity.setPose(pose, Space.PARENT);
         return entity;
+    }
+
+    @Override
+    @Deprecated
+    public @NonNull Entity createGroupEntity(
+            @NonNull Pose pose, @NonNull String name, @Nullable Entity parent) {
+        return createEntity(pose, name, parent);
     }
 
     @Override

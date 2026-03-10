@@ -31,6 +31,7 @@ import androidx.compose.runtime.currentComposer
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.nativeCanvas
 
 /**
@@ -81,8 +82,6 @@ internal class RemoteComposeCanvasModifier(public val modifier: RecordingModifie
 
 /** Provides access to draw directly with the underlying [RecordingCanvas]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public inline fun androidx.compose.ui.graphics.drawscope.DrawScope.drawIntoRemoteCanvas(
-    block: (RecordingCanvas) -> Unit
-) {
+public inline fun DrawScope.drawIntoRemoteCanvas(block: (RecordingCanvas) -> Unit) {
     (drawContext.canvas.nativeCanvas as? RecordingCanvas)?.let(block)
 }

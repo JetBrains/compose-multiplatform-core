@@ -39,7 +39,7 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
             parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): GroupEntity =
             GroupEntity(
-                sceneRuntime.createGroupEntity(
+                sceneRuntime.createEntity(
                     pose,
                     name,
                     if (parent != null && parent !is BaseEntity<*>) {
@@ -64,6 +64,11 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
          */
         @JvmOverloads
         @JvmStatic
+        @Deprecated(
+            message =
+                "Use Entity.create instead. Creating an Entity without any content is now done from the Entity class",
+            replaceWith = ReplaceWith("Entity.create", "androidx.xr.scenecore.Entity"),
+        )
         public fun create(session: Session, name: String, pose: Pose = Pose.Identity): GroupEntity =
             create(session.sceneRuntime, session.scene.entityManager, name, pose)
 

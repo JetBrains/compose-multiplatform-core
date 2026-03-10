@@ -66,7 +66,7 @@ fun SwitchWidgetOnState(modifier: RemoteModifier = RemoteModifier, id: Int = 0) 
         verticalArrangement = RemoteArrangement.Center,
     ) {
         RemoteCanvas(modifier = RemoteModifier.size(32.rdp)) {
-            val paint = RemotePaint().apply { remoteColor = Color(255, 255, 255).rc }
+            val paint = RemotePaint().apply { color = Color(255, 255, 255).rc }
             drawCircle(paint = paint, radius = 34f.rf)
         }
     }
@@ -92,7 +92,7 @@ fun SwitchWidgetOffState(modifier: RemoteModifier = RemoteModifier) {
         verticalArrangement = RemoteArrangement.Center,
     ) {
         RemoteCanvas(modifier = RemoteModifier.size(20.rdp)) {
-            val paint = RemotePaint().apply { remoteColor = Color(220, 220, 220).rc }
+            val paint = RemotePaint().apply { color = Color(220, 220, 220).rc }
             drawCircle(paint = paint, radius = 34f.rf)
         }
     }

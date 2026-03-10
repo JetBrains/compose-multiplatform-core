@@ -49,29 +49,3 @@ public fun TraceSink(
         bufferedSink = directory.perfettoTraceFile().appendingSink().buffer(),
         coroutineContext = coroutineContext,
     )
-
-// StreamFiles is not relevant because the provided File represents a directory
-// in which new trace files are dynamically created, rather than a specific file to read/write.
-@ExperimentalRingBufferApi
-@Suppress("StreamFiles")
-@JvmOverloads
-public fun TraceSink(
-    directory: File,
-    sequenceId: Int,
-    ringBufferCapacityInBytes: Long,
-    coroutineContext: CoroutineContext = Dispatchers.IO,
-): androidx.tracing.TraceSink {
-    return if (ringBufferCapacityInBytes > 0) {
-        RingBufferTraceSink(
-            capacityInBytes = ringBufferCapacityInBytes,
-            sequenceId = sequenceId,
-            bufferedSink = directory.perfettoTraceFile().appendingSink().buffer(),
-        )
-    } else {
-        TraceSink(
-            sequenceId = sequenceId,
-            bufferedSink = directory.perfettoTraceFile().appendingSink().buffer(),
-            coroutineContext = coroutineContext,
-        )
-    }
-}

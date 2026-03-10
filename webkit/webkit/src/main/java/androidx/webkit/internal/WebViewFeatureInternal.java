@@ -774,6 +774,24 @@ public class WebViewFeatureInternal {
 
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link Profile#setMaxPrefetches(Integer)},
+     * {@link Profile#setPrefetchTtlSeconds(Integer)}
+     */
+    public static final ApiFeature.NoFramework PREFETCH_CACHE =
+            new ApiFeature.NoFramework(WebViewFeature.PREFETCH_CACHE_V1,
+                    Features.PREFETCH_CACHE);
+
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link Profile#setMaxPrerenders(Integer)}
+     */
+    public static final ApiFeature.NoFramework SET_MAX_PRERENDERS =
+            new ApiFeature.NoFramework(WebViewFeature.SET_MAX_PRERENDERS_V1,
+                    Features.SET_MAX_PRERENDERS);
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers {@link WebViewCompat#saveState}.
      */
     public static final ApiFeature.NoFramework SAVE_STATE =
@@ -1003,6 +1021,21 @@ public class WebViewFeatureInternal {
             new ApiFeature.NoFramework(
                     WebViewFeature.PAGE_GET_URL,
                     Features.PAGE_GET_URL);
+
+    /**
+     * This feature covers {@link
+     * androidx.webkit.WebViewCompat#addJavaScriptOnEvent(android.webkit.WebView, String, int, Set,
+     * androidx.webkit.WebViewCompat.JsExecutionWorld)} {@link
+     * androidx.webkit.WebViewCompat#getExecutionWorld(android.webkit.WebView, String)} {@link
+     * androidx.webkit.WebViewCompat#addWebMessageListener(android.webkit.WebView, String, Set,
+     * WebMessageListener, JsExecutionWorld)} {@link
+     * androidx.webkit.WebViewCompat#removeWebMessageListener(android.webkit.WebView, String,
+     * JsExecutionWorld)}
+     */
+    public static final ApiFeature.NoFramework JS_INJECTION_IN_FRAME_AND_WORLD =
+            new ApiFeature.NoFramework(
+                    WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD,
+                    Features.JS_INJECTION_IN_FRAME_AND_WORLD);
 
     // --- Add new feature constants above this line ---
 

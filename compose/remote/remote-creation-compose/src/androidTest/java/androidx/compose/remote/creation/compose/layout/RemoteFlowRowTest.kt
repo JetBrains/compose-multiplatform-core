@@ -59,27 +59,27 @@ class RemoteFlowRowTest {
     @Test
     fun grid() {
         composeTestRule.runScreenshotTest(profile = experimentalProfile) {
-            val alignments =
+            val horizontalArrangements =
                 listOf(
                     RemoteArrangement.Start,
                     RemoteArrangement.CenterHorizontally,
                     RemoteArrangement.End,
                 )
-            val arrangements =
+            val verticalArrangements =
                 listOf(RemoteArrangement.Top, RemoteArrangement.Center, RemoteArrangement.Bottom)
 
             gridScreenshotUI.GridContent(
                 sequence {
-                        for (arrangement in arrangements) {
-                            for (alignment in alignments) {
+                        for (verticalArrangement in verticalArrangements) {
+                            for (horizontalArrangement in horizontalArrangements) {
                                 yield(
-                                    "${arrangement.propertyName()} ${alignment.propertyName()}" to
+                                    "${verticalArrangement.propertyName()} ${horizontalArrangement.propertyName()}" to
                                         @RemoteComposable @Composable {
                                             RemoteFlowRow(
                                                 // TODO(b/487167164): change to fillMaxSize
                                                 modifier = RemoteModifier.size(100.rdp),
-                                                horizontalArrangement = alignment,
-                                                verticalArrangement = arrangement,
+                                                horizontalArrangement = horizontalArrangement,
+                                                verticalArrangement = verticalArrangement,
                                             ) {
                                                 RemoteBox(
                                                     modifier =
@@ -157,26 +157,26 @@ class RemoteFlowRowTest {
     @Test
     fun fillMaxSize() {
         composeTestRule.runScreenshotTest(profile = experimentalProfile) {
-            val alignments =
+            val horizontalArrangements =
                 listOf(
                     RemoteArrangement.Start,
                     RemoteArrangement.CenterHorizontally,
                     RemoteArrangement.End,
                 )
-            val arrangements =
+            val verticalArrangements =
                 listOf(RemoteArrangement.Top, RemoteArrangement.Center, RemoteArrangement.Bottom)
 
             gridScreenshotUI.GridContent(
                 sequence {
-                        for (arrangement in arrangements) {
-                            for (alignment in alignments) {
+                        for (verticalArrangement in verticalArrangements) {
+                            for (horizontalArrangement in horizontalArrangements) {
                                 yield(
-                                    "${arrangement.propertyName()} ${alignment.propertyName()}" to
+                                    "${verticalArrangement.propertyName()} ${horizontalArrangement.propertyName()}" to
                                         @RemoteComposable @Composable {
                                             RemoteFlowRow(
                                                 modifier = RemoteModifier.fillMaxSize(),
-                                                horizontalArrangement = alignment,
-                                                verticalArrangement = arrangement,
+                                                horizontalArrangement = horizontalArrangement,
+                                                verticalArrangement = verticalArrangement,
                                             ) {
                                                 RemoteBox(
                                                     modifier =
@@ -196,6 +196,44 @@ class RemoteFlowRowTest {
                     }
                     .toList()
             )
+        }
+    }
+
+    // b/489510192: not drawing correctly when wrapping and vertical arrangement is Center or Bottom
+    @Test
+    fun wrapAndVerticalArrangement() =
+        composeTestRule.runScreenshotTest(profile = experimentalProfile) {
+            gridScreenshotUI.GridContent(
+                listOf(
+                    "Top" to { TestVerticalArrangementWrap(4, RemoteArrangement.Top) },
+                    "Center" to { TestVerticalArrangementWrap(4, RemoteArrangement.Center) },
+                    "Bottom" to { TestVerticalArrangementWrap(4, RemoteArrangement.Bottom) },
+                    "Top no wrap" to { TestVerticalArrangementWrap(3, RemoteArrangement.Top) },
+                    "Center no wrap" to
+                        {
+                            TestVerticalArrangementWrap(3, RemoteArrangement.Center)
+                        },
+                    "Bottom no wrap" to { TestVerticalArrangementWrap(3, RemoteArrangement.Bottom) },
+                )
+            )
+        }
+
+    @RemoteComposable
+    @Composable
+    private fun TestVerticalArrangementWrap(
+        size: Int,
+        verticalArrangement: RemoteArrangement.Vertical,
+    ) {
+        RemoteFlowRow(
+            // TODO(b/487167164): change to fillMaxSize
+            modifier = RemoteModifier.size(100.rdp),
+            horizontalArrangement = RemoteArrangement.Start,
+            verticalArrangement = verticalArrangement,
+        ) {
+            repeat(size) { index ->
+                val color = if (index % 2 == 0) Color(0xFF6200EE) else Color(0xFF03DAC6)
+                RemoteBox(modifier = RemoteModifier.size(30.rdp).background(color))
+            }
         }
     }
 }

@@ -19,7 +19,6 @@ package androidx.glance.wear
 import android.content.ComponentName
 import android.content.Context
 import androidx.compose.remote.creation.compose.layout.RemoteText
-import androidx.compose.ui.graphics.Color
 import androidx.glance.wear.core.WearWidgetParams
 import androidx.glance.wear.parcel.WidgetUpdateClient
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
@@ -75,7 +74,7 @@ class GlanceWearWidgetTest {
     private class TestWidget(updateClient: WidgetUpdateClient) : GlanceWearWidget(updateClient) {
 
         override suspend fun provideWidgetData(context: Context, params: WearWidgetParams) =
-            WearWidgetDocument(backgroundColor = Color.Transparent) { RemoteText("Testing...") }
+            WearWidgetDocument(background = WearWidgetBrush) { RemoteText("Testing...") }
     }
 
     private companion object {

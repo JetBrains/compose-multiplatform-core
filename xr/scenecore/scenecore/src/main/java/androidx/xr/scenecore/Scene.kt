@@ -43,10 +43,10 @@ import java.util.function.Consumer
  * Widget panels and geometric models, set the background environment, and anchor content to the
  * real world.
  */
-// TODO: b/455593773 - Restrict ctor once YTXR ports to JXR proper, and is no longer a chimeric app.
+// TODO: b/455593773 - Restrict ctor and other methods/fields once YTXR ports to JXR proper, and is
+// no longer a chimeric app.
 @Suppress("NotCloseable")
-public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public constructor() :
-    SessionConnector {
+public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY) public constructor() : SessionConnector {
 
     internal val entityManager = EntityManager()
 
@@ -166,8 +166,7 @@ public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public con
      * the boundary line to the user upon approach.
      */
     public val isBoundaryConsentGranted: Boolean
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-        get() = sceneRuntime.isBoundaryConsentGranted
+        @RestrictTo(RestrictTo.Scope.LIBRARY) get() = sceneRuntime.isBoundaryConsentGranted
 
     private var lastRecommendedPose: Pose? = null
     private var lastRecommendedScale: Vector3? = null
@@ -193,7 +192,7 @@ public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public con
             }
         }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     override fun initialize(runtimes: List<JxrRuntime>) {
         this.sceneRuntime = runtimes.filterIsInstance<SceneRuntime>().first()
         spatialEnvironment = SpatialEnvironment(sceneRuntime, entityManager)
@@ -222,7 +221,7 @@ public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public con
         )
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     override fun close() {
         entityManager.clear()
         sceneRuntime.removeSpatialCapabilitiesChangedListener(rtSpatialCapabilitiesListener)
@@ -256,7 +255,7 @@ public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public con
      *   granted, `false` otherwise). Refer to [Scene.isBoundaryConsentGranted] for a detailed
      *   explanation of the states.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public fun addOnBoundaryConsentChangedListener(listener: Consumer<Boolean>) {
         addOnBoundaryConsentChangedListener(HandlerExecutor.mainThreadExecutor, listener)
     }
@@ -270,7 +269,7 @@ public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public con
      *   with the new boundary consent state (`true` if granted, `false` otherwise). Refer to
      *   [Scene.isBoundaryConsentGranted] for a detailed explanation of the states.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public fun addOnBoundaryConsentChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<Boolean>,
@@ -286,7 +285,7 @@ public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public con
      *
      * @param listener The [Consumer] to be removed. It will no longer receive change events.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public fun removeOnBoundaryConsentChangedListener(listener: Consumer<Boolean>) {
         sceneRuntime.removeOnBoundaryConsentChangedListener(listener)
     }

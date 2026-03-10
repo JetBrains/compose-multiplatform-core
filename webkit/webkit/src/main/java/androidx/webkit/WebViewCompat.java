@@ -37,6 +37,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.AnyThread;
+import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
@@ -101,6 +102,28 @@ public class WebViewCompat {
          */
         @UiThread
         void onComplete(long requestId);
+    }
+
+    /**
+     * Injection event for when Document is first created, before the rest of the page loads.
+     * See {@link #addJavaScriptOnEvent} for usage.
+     */
+    public static final int INJECTION_EVENT_DOCUMENT_START =
+            WebViewProviderBoundaryInterface.JavaScriptInjectionTime.DOCUMENT_START;
+
+    /**
+     * Injection event for when all primary resources have been loaded. Corresponds to
+     * DomContentLoaded. See {@link #addJavaScriptOnEvent} for usage.
+     */
+    public static final int INJECTION_EVENT_DOCUMENT_END =
+            WebViewProviderBoundaryInterface.JavaScriptInjectionTime.DOCUMENT_END;
+
+    /** Events on which JavaScript can be injected. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @IntDef(value = {INJECTION_EVENT_DOCUMENT_START, INJECTION_EVENT_DOCUMENT_END})
+    @Retention(RetentionPolicy.SOURCE)
+    @Target({ElementType.PARAMETER, ElementType.METHOD})
+    public @interface JavaScriptInjectionEvent {
     }
 
     /**
@@ -425,10 +448,10 @@ public class WebViewCompat {
     private static PackageInfo getNotYetLoadedWebViewPackageInfo(Context context) {
         String webviewPackageName;
         try {
-                Class<?> webviewUpdateServiceClass =
-                        Class.forName("android.webkit.WebViewUpdateService");
-                webviewPackageName = (String) webviewUpdateServiceClass.getMethod(
-                        "getCurrentWebViewPackageName").invoke(null);
+            Class<?> webviewUpdateServiceClass =
+                    Class.forName("android.webkit.WebViewUpdateService");
+            webviewPackageName = (String) webviewUpdateServiceClass.getMethod(
+                    "getCurrentWebViewPackageName").invoke(null);
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException
                  | NoSuchMethodException e) {
             return null;
@@ -838,6 +861,169 @@ public class WebViewCompat {
         if (feature.isSupportedByWebView()) {
             return getProvider(webview)
                     .addDocumentStartJavaScript(script, allowedOriginRules.toArray(new String[0]));
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Returns a JavaScriptExecutionWorld for the given name.
+     *
+     * <p>Use {@link JavaScriptExecutionWorld#PAGE_WORLD_NAME} to get the default execution world.
+     * Worlds are associated with the {@link WebView} they are created for. Using a world from one
+     * WebView with another WebView will throw an exception.
+     *
+     * <p>This method should only be called if {@link WebViewFeature#isFeatureSupported(String)}
+     * returns true for {@link WebViewFeature#JS_INJECTION_IN_FRAME_AND_WORLD}.
+     *
+     * @param webview The WebView object to associate with the world.
+     * @param name    The name of the execution world.
+     */
+    @UiThread
+    @RequiresFeature(
+            name = WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static @NonNull JavaScriptExecutionWorld getExecutionWorld(
+            @NonNull WebView webview, @NonNull String name) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.JS_INJECTION_IN_FRAME_AND_WORLD;
+        if (feature.isSupportedByWebView()) {
+            getProvider(webview).getExecutionWorld(name);
+            return new JavaScriptExecutionWorld(name, webview);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Adds a JavaScript script to the {@link WebView} which will be executed in any frame whose
+     * origin matches {@code allowedOriginRules} at the page lifecycle event specified in the
+     * execution world specified.
+     *
+     * <p>An object injected through the
+     * {@link #addWebMessageListener(WebView, String, Set, JavaScriptExecutionWorld, WebMessageListener)} API will be injected first and the script
+     * can rely on the injected object to send messages to the app. The script will only be able
+     * to call message listeners registered in the same execution world.
+     *
+     * <p>The script will only run in frames which begin loading after the call returns, therefore
+     * it should typically be called before making any {@code loadUrl()}, {@code loadData()} or
+     * {@code loadDataWithBaseURL()} call to load the page.
+     *
+     * <p>This method can be called multiple times to inject multiple scripts. If more than one
+     * script matches a frame's origin, they will be executed in the order they were added.
+     *
+     * <p>See {@link #addWebMessageListener(WebView, String, Set, WebMessageListener)} for the rules
+     * of the {@code allowedOriginRules} parameter.
+     *
+     * <p>This method should only be called if {@link WebViewFeature#isFeatureSupported(String)}
+     * returns true for {@link WebViewFeature#JS_INJECTION_IN_FRAME_AND_WORLD}.
+     *
+     * @param webview            The {@link WebView} instance that we are interacting with.
+     * @param script             The JavaScript script to be executed.
+     * @param injectionEvent     The lifecycle event to inject the script: either
+     *                           {@link WebViewCompat.INJECTION_EVENT_DOCUMENT_START} or
+     *                           {@link WebViewCompat.INJECTION_EVENT_DOCUMENT_END}
+     * @param allowedOriginRules A set of matching rules for the allowed origins.
+     * @param world              The execution world to inject the script.
+     * @return the {@link ScriptHandler}, which is a handle for removing the script.
+     * @throws IllegalArgumentException If one of the {@code allowedOriginRules} is invalid or if
+     *                                  the {@code world} is invalid.
+     * @see #addWebMessageListener(WebView, String, Set, WebMessageListener)
+     * @see ScriptHandler
+     */
+    @UiThread
+    @RequiresFeature(
+            name = WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static @NonNull ScriptHandler addJavaScriptOnEvent(
+            @NonNull WebView webview,
+            @NonNull String script,
+            @JavaScriptInjectionEvent int injectionEvent,
+            @NonNull Set<String> allowedOriginRules,
+            @NonNull JavaScriptExecutionWorld world) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.JS_INJECTION_IN_FRAME_AND_WORLD;
+        if (feature.isSupportedByWebView()) {
+            world.checkWebviewRegistration(webview);
+            return getProvider(webview)
+                    .addJavaScriptOnEvent(
+                            script,
+                            injectionEvent,
+                            allowedOriginRules.toArray(new String[0]),
+                            world.getName());
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Adds a WebMessageListener to the {@link WebView} which will receive messages posted from the
+     * specified {@link JavaScriptExecutionWorld}.
+     *
+     * <p>Note that WebMessageListeners added through this API are keyed on both name and world.
+     * {@code jsObjectName} only need to be unique per world. That is, it is possible to add the
+     * same {@code jsObjectName} to 2 or more worlds.
+     *
+     * <p>This method should only be called if {@link WebViewFeature#isFeatureSupported(String)}
+     * returns true for {@link WebViewFeature#JS_INJECTION_IN_FRAME_AND_WORLD}.
+     *
+     * @param webView            The {@link WebView} instance that we are interacting with.
+     * @param jsObjectName       The name of the JavaScript object to be injected.
+     * @param allowedOriginRules A set of matching rules for the allowed origins.
+     * @param world              The {@link JavaScriptExecutionWorld} in which to add the listener.
+     * @param listener           The listener to receive messages.
+     * @throws IllegalArgumentException If the {@code world} is invalid.
+     */
+    @UiThread
+    @RequiresFeature(
+            name = WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void addWebMessageListener(
+            @NonNull WebView webView,
+            @NonNull String jsObjectName,
+            @NonNull Set<String> allowedOriginRules,
+            @NonNull JavaScriptExecutionWorld world,
+            @NonNull WebMessageListener listener) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.JS_INJECTION_IN_FRAME_AND_WORLD;
+        if (feature.isSupportedByWebView()) {
+            world.checkWebviewRegistration(webView);
+            getProvider(webView)
+                    .addWebMessageListener(
+                            jsObjectName, allowedOriginRules.toArray(new String[0]),
+                            world.getName(), listener);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Removes a WebMessageListener from the {@link WebView} in the specified execution world.
+     *
+     * <p>If there are 2 listeners with the same name but in different worlds, this will only remove
+     * the web listener from the world specified. If there is no listener with
+     * {@code jsObjectName} in the world, this will be a no-op.
+     *
+     * <p>This method should only be called if {@link WebViewFeature#isFeatureSupported(String)}
+     * returns true for {@link WebViewFeature#JS_INJECTION_IN_FRAME_AND_WORLD}.
+     *
+     * @param webview      The {@link WebView} instance that we are interacting with.
+     * @param world        The execution world from which to remove the listener.
+     * @param jsObjectName The name of the JavaScript object that was previously added.
+     */
+    @UiThread
+    @RequiresFeature(
+            name = WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void removeWebMessageListener(
+            @NonNull WebView webview,
+            @NonNull JavaScriptExecutionWorld world,
+            @NonNull String jsObjectName) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.JS_INJECTION_IN_FRAME_AND_WORLD;
+        if (feature.isSupportedByWebView()) {
+            world.checkWebviewRegistration(webview);
+            getProvider(webview).removeWebMessageListener(jsObjectName, world.getName());
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }

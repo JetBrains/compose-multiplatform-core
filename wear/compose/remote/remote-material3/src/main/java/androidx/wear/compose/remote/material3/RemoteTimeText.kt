@@ -133,12 +133,11 @@ private fun RemoteDrawScope.drawTimeText(
             }
         }
 
-    val textPaint =
-        RemotePaint().apply {
-            textSize = fontSize.floatId
-            typeface = fontTypeface
-            remoteColor = textColor
-        }
+    val textPaint = RemotePaint {
+        textSize = fontSize
+        typeface = fontTypeface
+        color = textColor
+    }
 
     drawTextOnCircle(
         text,

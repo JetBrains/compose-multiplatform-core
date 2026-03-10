@@ -23,6 +23,7 @@ import android.webkit.ServiceWorkerController;
 import android.webkit.WebStorage;
 
 import androidx.webkit.CustomHeader;
+import androidx.webkit.PrefetchCache;
 import androidx.webkit.PrefetchException;
 import androidx.webkit.Profile;
 import androidx.webkit.SpeculativeLoadingConfig;
@@ -78,6 +79,17 @@ public class ProfileImpl implements Profile {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             return mProfileImpl.getWebStorage();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Profile.ExperimentalUrlPrefetch
+    @Override
+    public @NonNull PrefetchCache getPrefetchCache() {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.PREFETCH_CACHE;
+        if (feature.isSupportedByWebView()) {
+            return new PrefetchCache(mProfileImpl);
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
@@ -150,6 +162,21 @@ public class ProfileImpl implements Profile {
                     BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
                             new SpeculativeLoadingConfigAdapter(speculativeLoadingConfig));
             mProfileImpl.setSpeculativeLoadingConfig(configInvocation);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Profile.ExperimentalUrlPrefetch
+    @Override
+    public void setMaxPrerenders(@Nullable Integer maxPrerenders) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.SET_MAX_PRERENDERS;
+        if (feature.isSupportedByWebView()) {
+            if (maxPrerenders != null && maxPrerenders < 1) {
+                throw new IllegalArgumentException(
+                        "maxPrerenders should be greater than or equal to 1");
+            }
+            mProfileImpl.setMaxPrerenders(maxPrerenders);
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }

@@ -661,8 +661,9 @@ package androidx.xr.scenecore.testing {
     method @RequiresApi(android.os.Build.VERSION_CODES.O) public androidx.xr.scenecore.runtime.AnchorEntity createAnchorEntity();
     method public androidx.xr.scenecore.testing.FakeAnchorPlacement createAnchorPlacementForPlanes(java.util.Set<androidx.xr.scenecore.runtime.PlaneType> planeTypeFilter, java.util.Set<androidx.xr.scenecore.runtime.PlaneSemantic> planeSemanticFilter);
     method public androidx.xr.scenecore.runtime.BoundsComponent createBoundsComponent();
+    method public androidx.xr.scenecore.runtime.Entity createEntity(androidx.xr.runtime.math.Pose pose, String? name, androidx.xr.scenecore.runtime.Entity? parent);
     method public androidx.xr.scenecore.testing.FakeGltfEntity createGltfEntity(androidx.xr.scenecore.runtime.GltfFeature feature, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.Entity? parentEntity);
-    method public androidx.xr.scenecore.runtime.Entity createGroupEntity(androidx.xr.runtime.math.Pose pose, String name, androidx.xr.scenecore.runtime.Entity? parent);
+    method @Deprecated public androidx.xr.scenecore.runtime.Entity createGroupEntity(androidx.xr.runtime.math.Pose pose, String name, androidx.xr.scenecore.runtime.Entity? parent);
     method public androidx.xr.scenecore.runtime.InteractableComponent createInteractableComponent(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.InputEventListener listener);
     method public androidx.xr.scenecore.runtime.LoggingEntity createLoggingEntity(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.scenecore.testing.FakeMovableComponent createMovableComponent(boolean systemMovable, boolean scaleInZ, boolean userAnchorable);

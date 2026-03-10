@@ -167,7 +167,7 @@ private fun BackgroundOverlay(modifier: RemoteModifier, overlayColor: RemoteColo
     RemoteCanvas(modifier = modifier.clip(ImageDefaults.backgroundShape())) {
         val cornerRadius = ImageDefaults.BACKGROUND_CORNER_RADIUS_DP.toPx()
         drawRoundRect(
-            paint = RemotePaint().apply { remoteColor = overlayColor },
+            paint = RemotePaint { color = overlayColor },
             cornerRadius = RemoteOffset(cornerRadius, cornerRadius),
         )
     }

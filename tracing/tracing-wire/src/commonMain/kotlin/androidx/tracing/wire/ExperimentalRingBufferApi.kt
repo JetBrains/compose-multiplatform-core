@@ -19,9 +19,9 @@ package androidx.tracing.wire
 /**
  * Marks declarations in the Tracing API that are highly experimental for ring buffer tracing.
  *
- * Ring buffer tracing, such as using a [RingBufferTraceSink], is particularly useful for scenarios
- * like anomaly or crash detection. In these cases, continuous tracing is needed but only the most
- * recent events are relevant when an anomaly occurs.
+ * Ring buffer tracing, such as using a [InMemoryRingBufferTraceSink], is particularly useful for
+ * scenarios like anomaly or crash detection. In these cases, continuous tracing is needed but only
+ * the most recent events are relevant when an anomaly occurs.
  *
  * Any use of an experimental ring buffer declaration has to be carefully reviewed.
  *

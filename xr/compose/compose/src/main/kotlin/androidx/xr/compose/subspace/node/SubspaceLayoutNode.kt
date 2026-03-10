@@ -24,12 +24,12 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CoreEntityNode
 import androidx.xr.compose.subspace.layout.LayoutSubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.OpaqueEntity
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable
-import androidx.xr.compose.subspace.layout.ParentLayoutParamsModifier
 import androidx.xr.compose.subspace.layout.SubspaceLayoutCoordinates
 import androidx.xr.compose.subspace.layout.SubspaceMeasurable
 import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
@@ -162,7 +162,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     private var ignoreMeasureRequests = false
 
     private val outerCoordinator
-        get() = nodes.getAll<SubspaceLayoutModifierNode>().firstOrNull()?.requireCoordinator()
+        get() = nodes.firstOf(SubspaceNodes.Layout)?.requireCoordinator()
 
     /** Inserts a child [SubspaceLayoutNode] at the given [index]. */
     internal fun insertAt(index: Int, instance: SubspaceLayoutNode) {
@@ -229,7 +229,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
     /** Removes all children nodes. */
     internal fun removeAll() {
-        children.reversed().forEachIndexed { i, child ->
+        children.reversed().fastForEachIndexed { i, child ->
             onChildRemoved(child, children.size - i - 1)
         }
 
@@ -269,7 +269,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         syncCoreEntityHierarchy()
 
         nodes.markAsAttached()
-        children.forEach { child -> child.attach(subspaceOwner) }
+        children.fastForEach { child -> child.attach(subspaceOwner) }
         nodes.runOnAttach()
 
         requestMeasure()
@@ -301,7 +301,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         parent?.requestMeasure()
 
         nodes.runOnDetach()
-        ignoreMeasureRequests { children.forEach { child -> child.detach() } }
+        ignoreMeasureRequests { children.fastForEach { child -> child.detach() } }
         nodes.markAsDetached()
         coreEntity?.dispose()
 
@@ -335,7 +335,9 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     internal fun updateCoreEntityProperties() {
         if (!isAttached) return
 
-        coreEntity?.applyCoreEntityNodes(nodes.getAll<CoreEntityNode>())
+        val entityNodes = mutableListOf<CoreEntityNode>()
+        nodes.forEachOf(SubspaceNodes.CoreEntity) { entityNodes.add(it) }
+        coreEntity?.applyCoreEntityNodes(entityNodes.asSequence())
 
         entityUpdatePending = false
     }
@@ -404,8 +406,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
          */
         override val parentCoordinates: SubspaceLayoutCoordinates?
             get() =
-                nodes.getLast<SubspaceLayoutModifierNode>()?.requireCoordinator()
-                    ?: parentLayoutCoordinates
+                nodes.lastOf(SubspaceNodes.Layout)?.requireCoordinator() ?: parentLayoutCoordinates
 
         /**
          * The coordinates of the parent layout, skipping any modifiers on this node.
@@ -430,7 +431,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
          */
         private val coordinatesInParentEntity: SubspaceLayoutCoordinates?
             get() =
-                nodes.getLast<SubspaceLayoutModifierNode>()?.requireCoordinator()
+                nodes.lastOf(SubspaceNodes.Layout)?.requireCoordinator()
                     ?: parentCoordinatesInParentEntity
 
         /** Traverse up the parent hierarchy until we reach a node with an entity. */
@@ -457,7 +458,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         override val config: SemanticsConfiguration
             get() =
                 SemanticsConfiguration().apply {
-                    nodes.getAll<SubspaceSemanticsModifierNode>().forEach { semanticsModifierNode ->
+                    nodes.forEachOf(SubspaceNodes.Semantics) { semanticsModifierNode ->
                         with(semanticsModifierNode) { applySemantics() }
                     }
                 }
@@ -528,7 +529,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             )
 
             // Call coordinates-aware callbacks after the node and its children are placed.
-            nodes.getAll<SubspaceLayoutAwareModifierNode>().forEach { it.onPlaced(this) }
+            nodes.forEachOf(SubspaceNodes.LayoutAware) { it.onPlaced(this) }
 
             this@SubspaceLayoutNode.layoutPending = false
             layoutState = LayoutState.Idle
@@ -540,7 +541,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         }
 
         override fun adjustParams(params: ParentLayoutParamsAdjustable) {
-            nodes.getAll<ParentLayoutParamsModifier>().forEach { it.adjustParams(params) }
+            nodes.forEachOf(SubspaceNodes.ParentData) { it.adjustParams(params) }
         }
 
         override fun toString(): String {
@@ -605,7 +606,7 @@ internal fun SubspaceLayoutNode.debugTreeToString(depth: Int = 0): String = buil
         currentNode = currentNode.child
     }
 
-    children.forEach { child -> append(child.debugTreeToString(depth + 1)) }
+    children.fastForEach { child -> append(child.debugTreeToString(depth + 1)) }
 
     if (depth == 0 && isNotEmpty()) {
         // Delete trailing newline
@@ -622,7 +623,7 @@ internal fun SubspaceLayoutNode.debugEntityTreeToString(depth: Int = 0): String 
         nextDepth++
     }
 
-    children.forEach { child -> append(child.debugEntityTreeToString(nextDepth)) }
+    children.fastForEach { child -> append(child.debugEntityTreeToString(nextDepth)) }
 
     if (depth == 0 && isNotEmpty()) {
         // Delete trailing newline
@@ -643,4 +644,4 @@ private fun SubspaceLayoutNode.fillOneLayerOfSemanticsWrappers(
 }
 
 private val SubspaceLayoutNode.hasSemantics: Boolean
-    get() = nodes.getLast<SubspaceSemanticsModifierNode>() != null
+    get() = nodes.lastOf(SubspaceNodes.Semantics) != null

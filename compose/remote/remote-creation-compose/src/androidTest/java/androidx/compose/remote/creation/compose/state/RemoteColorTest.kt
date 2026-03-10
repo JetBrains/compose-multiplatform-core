@@ -46,14 +46,14 @@ class RemoteColorTest {
         val colorName = "TEST"
         val coreDoc =
             remoteComposeTestRule.captureDocument(context = context) {
-                val color = rememberNamedRemoteColor(colorName, Color.Red)
+                val namedColor = rememberNamedRemoteColor(colorName, Color.Red)
 
-                val copy = color.copy(alpha = 0f.rf)
+                val copy = namedColor.copy(alpha = 0f.rf)
 
                 RemoteCanvas {
-                    drawRect(paint = RemotePaint().apply { remoteColor = copy })
+                    drawRect(paint = RemotePaint { color = copy })
                     drawCircle(
-                        paint = RemotePaint().apply { remoteColor = copy },
+                        paint = RemotePaint { color = copy },
                         radius = this.remoteSize.minDimension / 2f,
                     )
                 }

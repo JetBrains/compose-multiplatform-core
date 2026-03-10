@@ -17,7 +17,6 @@
 
 package androidx.compose.remote.creation.compose.capture
 
-import android.graphics.Path
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteFloat

@@ -412,7 +412,7 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                             .padding(8.dp)
                             .background(Color.LightGray)
                 ) {
-                    val color = Color.Blue
+                    val blue = Color.Blue
                     val w = remote.component.width
                     val h = remote.component.height
                     val topLeft = RemoteOffset(0f, 0f)
@@ -422,18 +422,18 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
 
                     drawLine(
                         paint =
-                            RemotePaint().apply {
-                                remoteColor = color.rc
-                                strokeWidth = 4f
+                            RemotePaint {
+                                color = blue.rc
+                                strokeWidth = 4f.rf
                             },
                         start = topLeft,
                         end = bottomRight,
                     )
                     drawLine(
                         paint =
-                            RemotePaint().apply {
-                                remoteColor = color.rc
-                                strokeWidth = 4f
+                            RemotePaint {
+                                color = blue.rc
+                                strokeWidth = 4f.rf
                             },
                         start = bottomLeft,
                         end = topRight,

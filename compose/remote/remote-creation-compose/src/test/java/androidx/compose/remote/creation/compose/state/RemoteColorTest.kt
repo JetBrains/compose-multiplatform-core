@@ -396,8 +396,8 @@ class RemoteColorTest {
 
     @Test
     fun extensionFunctionMatches() {
-        assertThat(Color.Black.rc.constantValue).isEqualTo(Color.Black)
-        assertThat(Color.Transparent.rc.constantValue).isEqualTo(Color.Transparent)
+        assertThat(Color.Black.rc.constantValue.toArgb()).isEqualTo(AndroidColor.BLACK)
+        assertThat(Color.Transparent.rc.constantValue.toArgb()).isEqualTo(AndroidColor.TRANSPARENT)
     }
 
     @Test

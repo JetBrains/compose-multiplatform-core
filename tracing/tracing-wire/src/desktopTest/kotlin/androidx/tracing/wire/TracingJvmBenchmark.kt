@@ -107,10 +107,6 @@ open class TracingJvmBenchmark {
     }
 
     fun buildInMemoryRingBufferSink(): androidx.tracing.TraceSink {
-        return RingBufferTraceSink(
-            capacityInBytes = 5_000_000,
-            sequenceId = 1,
-            bufferedSink = blackholeSink().buffer(),
-        )
+        return InMemoryRingBufferTraceSink(capacityInBytes = 5_000_000, sequenceId = 1)
     }
 }

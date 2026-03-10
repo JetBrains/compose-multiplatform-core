@@ -15,7 +15,6 @@
  */
 package androidx.wear.compose.remote.material3
 
-import android.graphics.Paint
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -39,6 +38,8 @@ import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.toDeg
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.PaintingStyle
+import androidx.compose.ui.graphics.StrokeCap
 
 /**
  * Material Design circular progress indicator.
@@ -91,13 +92,12 @@ public fun RemoteCircularProgressIndicator(
         val bottom = top + arcDimen
 
         // Track Background
-        val trackPaint =
-            RemotePaint().apply {
-                style = Paint.Style.STROKE
-                this.strokeWidth = strokePx.constantValueOrNull ?: 10f
-                strokeCap = Paint.Cap.ROUND
-                applyRemoteBrush(colors.trackBrush(enabled), remoteSize)
-            }
+        val trackPaint = RemotePaint {
+            style = PaintingStyle.Stroke
+            this.strokeWidth = strokePx
+            strokeCap = StrokeCap.Round
+            applyRemoteBrush(colors.trackBrush(enabled), remoteSize)
+        }
 
         val gapSizePx = gapSize.toPx(remoteDensity)
 
@@ -114,13 +114,12 @@ public fun RemoteCircularProgressIndicator(
         )
 
         // Progress Indicator
-        val indicatorPaint =
-            RemotePaint().apply {
-                style = Paint.Style.STROKE
-                this.strokeWidth = trackPaint.strokeWidth
-                strokeCap = Paint.Cap.ROUND
-                applyRemoteBrush(colors.indicatorBrush(enabled), remoteSize)
-            }
+        val indicatorPaint = RemotePaint {
+            style = PaintingStyle.Stroke
+            this.strokeWidth = trackPaint.strokeWidth
+            strokeCap = StrokeCap.Round
+            applyRemoteBrush(colors.indicatorBrush(enabled), remoteSize)
+        }
 
         drawArc(
             paint = indicatorPaint,

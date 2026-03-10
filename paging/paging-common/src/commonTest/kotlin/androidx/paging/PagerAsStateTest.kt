@@ -17,6 +17,7 @@
 package androidx.paging
 
 import androidx.kruth.assertThat
+import androidx.paging.PagingSource.LoadResult
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -25,11 +26,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -445,14 +449,187 @@ class PagerAsStateTest {
             result.job.cancel()
         }
     }
+
+    @Test
+    fun onLoadErrorIsCalled() {
+        val pagingSources = mutableListOf<TestPagingSource>()
+        val pagingSourceFactory = {
+            TestPagingSource(loadDelay = 500).also { pagingSources.add(it) }
+        }
+        val pager = Pager(config, pagingSourceFactory = pagingSourceFactory)
+        var loadError = false
+
+        testScope.runTest {
+            val result = collectOnPager(pager.flow) { loadError = true }
+            advanceTimeBy(100)
+
+            // make refresh return load error
+            pagingSources.first().errorNextLoad = true
+            advanceUntilIdle()
+            assertThat(result.loadedLists).isEmpty()
+            assertThat(loadError).isTrue()
+
+            result.job.cancel()
+        }
+    }
+
+    @Test
+    fun onLoadError_retryRefresh() {
+        val pagingSources = mutableListOf<TestPagingSource>()
+        val pagingSourceFactory = {
+            TestPagingSource(loadDelay = 500).also { pagingSources.add(it) }
+        }
+        val pager = Pager(config, pagingSourceFactory = pagingSourceFactory)
+
+        testScope.runTest {
+            val result = collectOnPager(pager.flow) { pager.retry() }
+            advanceTimeBy(100)
+
+            // make refresh return load error
+            pagingSources.first().errorNextLoad = true
+            // let this refresh complete but not the retry refresh
+            advanceTimeBy(600)
+            assertThat(pagingSources.size).isEqualTo(1)
+            assertThat(result.loadedLists).isEmpty()
+
+            // now let retry complete
+            advanceUntilIdle()
+            assertThat(pagingSources.size).isEqualTo(1) // retry reuses same generation
+            assertThat(result.loadedLists.size).isEqualTo(1)
+            assertThat(result.loadedLists.first().items).containsExactly(0, 1, 2, 3, 4).inOrder()
+
+            result.job.cancel()
+        }
+    }
+
+    @Test
+    fun onLoadError_retryAppend() {
+        val pagingSources = mutableListOf<TestPagingSource>()
+        val pagingSourceFactory = {
+            TestPagingSource(loadDelay = 500).also { pagingSources.add(it) }
+        }
+        val pager = Pager(config, pagingSourceFactory = pagingSourceFactory)
+
+        testScope.runTest {
+            val result = collectOnPager(pager.flow) { pager.retry() }
+            advanceUntilIdle()
+            assertThat(result.loadedLists.size).isEqualTo(1)
+            assertThat(result.loadedLists.first().items).containsExactly(0, 1, 2, 3, 4).inOrder()
+
+            // make append return load error
+            pagingSources.first().errorNextLoad = true
+            pager.append()
+            // let this append complete but not the retry append
+            advanceTimeBy(600)
+            assertThat(result.loadedLists.size).isEqualTo(1)
+            assertThat(result.loadedLists.first().items).containsExactly(0, 1, 2, 3, 4).inOrder()
+
+            // now let retry complete
+            advanceUntilIdle()
+            assertThat(pagingSources.size).isEqualTo(1) // retry reuses same generation
+            assertThat(result.loadedLists.size).isEqualTo(2)
+            assertThat(result.loadedLists.last().items)
+                .containsExactly(0, 1, 2, 3, 4, 5, 6)
+                .inOrder()
+
+            result.job.cancel()
+        }
+    }
+
+    @Test
+    fun onLoadError_retryPrepend() {
+        val pagingSources = mutableListOf<TestPagingSource>()
+        val pagingSourceFactory = {
+            TestPagingSource(loadDelay = 500).also { pagingSources.add(it) }
+        }
+        val pager = Pager(config, initialKey = 50, pagingSourceFactory = pagingSourceFactory)
+
+        testScope.runTest {
+            val result = collectOnPager(pager.flow) { pager.retry() }
+            advanceUntilIdle()
+            assertThat(result.loadedLists.size).isEqualTo(1)
+            assertThat(result.loadedLists.first().items)
+                .containsExactly(50, 51, 52, 53, 54)
+                .inOrder()
+
+            // make prepend return load error
+            pagingSources.first().errorNextLoad = true
+            pager.prepend()
+            // let this prepend complete but not the retry prepend
+            advanceTimeBy(600)
+            assertThat(result.loadedLists.size).isEqualTo(1)
+            assertThat(result.loadedLists.last().items)
+                .containsExactly(50, 51, 52, 53, 54)
+                .inOrder()
+
+            // now let retry complete
+            advanceUntilIdle()
+            assertThat(pagingSources.size).isEqualTo(1) // retry reuses same generation
+            assertThat(result.loadedLists.size).isEqualTo(2)
+            assertThat(result.loadedLists.last().items)
+                .containsExactly(48, 49, 50, 51, 52, 53, 54)
+                .inOrder()
+
+            result.job.cancel()
+        }
+    }
+
+    @Test
+    fun onLoadError_throwException() {
+        val exception = Exception()
+        val pager =
+            Pager(config) {
+                TestPagingSource(loadDelay = 500).also {
+                    // make refresh return load error
+                    it.nextLoadResult = LoadResult.Error(exception)
+                }
+            }
+        var error: IllegalStateException? = null
+        testScope.runTest {
+            launch {
+                pager.flow
+                    .asState { combinedLoadStates ->
+                        throw IllegalStateException("$combinedLoadStates")
+                    }
+                    .catch { error = it as? IllegalStateException }
+                    .collect {}
+            }
+
+            advanceUntilIdle()
+            assertThat(error).isNotNull()
+            assertThat(error!!.message)
+                .isEqualTo(localLoadStatesOf(refreshLocal = LoadState.Error(exception)).toString())
+        }
+    }
+
+    @Test
+    fun staticList() {
+        val staticList = listOf(55, 56, 57)
+        val staticPagingData = PagingData.from(staticList)
+        val pager =
+            Pager(config, pagingSourceFactory = pagingSourceFactory).flow.onStart {
+                emit(staticPagingData)
+            }
+
+        testScope.runTest {
+            val result = collectOnPager(pager)
+            advanceUntilIdle()
+            assertThat(result.loadedLists.size).isEqualTo(2)
+            assertThat(result.loadedLists.first().items).isEqualTo(staticList)
+            assertThat(result.loadedLists.last().items).containsExactly(0, 1, 2, 3, 4).inOrder()
+
+            result.job.cancel()
+        }
+    }
 }
 
 private fun <Value : Any> CoroutineScope.collectOnPager(
-    flow: Flow<PagingData<Value>>
+    flow: Flow<PagingData<Value>>,
+    onLoadError: (CombinedLoadStates) -> Unit = {},
 ): PagerResult<Value> {
     val dataList = arrayListOf<ItemSnapshotList<Value>>()
 
-    val job = launch { flow.asState().collect { dataList.add(it) } }
+    val job = launch { flow.asState(onLoadError).collect { dataList.add(it) } }
 
     return PagerResult(dataList, job)
 }

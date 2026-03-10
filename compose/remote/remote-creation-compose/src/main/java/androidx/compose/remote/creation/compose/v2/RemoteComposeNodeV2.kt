@@ -42,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeNode
 import androidx.compose.runtime.DisallowComposableCalls
 import androidx.compose.runtime.Updater
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
@@ -264,7 +265,7 @@ internal class RemoteTextNodeV2 : RemoteComposeNodeV2() {
         if (useCoreTextComponent) {
             val textIdValue = text.getIdForCreationState(creationState)
 
-            val colorInt = color.constantValueOrNull?.toArgb() ?: android.graphics.Color.BLACK
+            val colorInt = color.constantValueOrNull?.toArgb() ?: Color.Black.toArgb()
             val colorId =
                 if (!color.hasConstantValue) {
                     color.getIdForCreationState(creationState)
@@ -282,6 +283,7 @@ internal class RemoteTextNodeV2 : RemoteComposeNodeV2() {
             creationState.document.startTextComponent(
                 with(modifier) { creationState.toRecordingModifier() },
                 textIdValue,
+                -1,
                 colorInt,
                 colorId,
                 fontSizePx,
@@ -311,11 +313,7 @@ internal class RemoteTextNodeV2 : RemoteComposeNodeV2() {
             val textId = text.getIdForCreationState(creationState)
 
             val colorValue =
-                if (color.hasConstantValue) {
-                    color.constantValue.toArgb()
-                } else {
-                    color.getIdForCreationState(creationState)
-                }
+                color.constantValueOrNull?.toArgb() ?: color.getIdForCreationState(creationState)
 
             val flags =
                 if (color.hasConstantValue) {

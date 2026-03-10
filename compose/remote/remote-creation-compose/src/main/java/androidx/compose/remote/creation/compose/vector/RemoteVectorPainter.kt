@@ -25,7 +25,6 @@ import androidx.compose.remote.creation.compose.capture.RemoteVectorPath
 import androidx.compose.remote.creation.compose.layout.RemoteDrawScope
 import androidx.compose.remote.creation.compose.layout.RemoteOffset
 import androidx.compose.remote.creation.compose.layout.RemoteSize
-import androidx.compose.remote.creation.compose.layout.toAndroidBlendMode
 import androidx.compose.remote.creation.compose.painter.RemotePainter
 import androidx.compose.remote.creation.compose.state.RemoteBlendModeColorFilter
 import androidx.compose.remote.creation.compose.state.RemoteColor
@@ -106,11 +105,7 @@ public fun painterRemoteVector(
     vector: RemoteImageVector,
     tintColor: RemoteColor = RemoteColor(Color.Black),
 ): RemoteVectorPainter {
-    return createVectorPainterFromRemoteImageVector(
-        vector,
-        tintColor,
-        vector.tintBlendMode.toAndroidBlendMode(),
-    )
+    return createVectorPainterFromRemoteImageVector(vector, tintColor, vector.tintBlendMode)
 }
 
 /**
@@ -145,7 +140,7 @@ internal fun RemoteVectorPainter.configureRemoteVectorPainter(
 internal fun createVectorPainterFromRemoteImageVector(
     imageVector: RemoteImageVector,
     tintColor: RemoteColor,
-    blendMode: android.graphics.BlendMode,
+    blendMode: BlendMode,
 ): RemoteVectorPainter {
     val root = RemoteGroupComponent().createGroupComponent(imageVector.root)
     val viewport = RemoteSize(imageVector.viewportWidth, imageVector.viewportHeight)
@@ -179,8 +174,7 @@ internal fun createVectorPainterFromImageVector(
             root = root,
             viewportSize = viewport,
             name = imageVector.name,
-            intrinsicColorFilter =
-                RemoteBlendModeColorFilter(tintColor, BlendMode.SrcIn.toAndroidBlendMode()),
+            intrinsicColorFilter = RemoteBlendModeColorFilter(tintColor, BlendMode.SrcIn),
             autoMirror = imageVector.autoMirror,
         )
 }

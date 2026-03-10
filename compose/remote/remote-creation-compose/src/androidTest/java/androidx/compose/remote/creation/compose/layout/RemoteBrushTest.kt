@@ -224,14 +224,13 @@ class RemoteBrushTest {
                             .background(
                                 object : RemotePainter() {
                                     override fun RemoteDrawScope.onDraw() {
-                                        val paint =
-                                            RemotePaint().apply {
-                                                applyRemoteBrush(
-                                                    RemoteBrush.bitmap(image),
-                                                    remoteSize,
-                                                    matrix33,
-                                                )
-                                            }
+                                        val paint = RemotePaint {
+                                            applyRemoteBrush(
+                                                RemoteBrush.bitmap(image),
+                                                remoteSize,
+                                                matrix33,
+                                            )
+                                        }
                                         this.drawRoundRect(
                                             paint,
                                             RemoteOffset(topLeftX.rf, topLeftY.rf),

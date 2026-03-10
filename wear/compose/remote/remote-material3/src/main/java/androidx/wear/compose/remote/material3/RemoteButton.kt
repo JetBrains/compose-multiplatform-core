@@ -17,7 +17,6 @@
 
 package androidx.wear.compose.remote.material3
 
-import android.graphics.Paint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -64,6 +63,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.DefaultAlpha
+import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -879,7 +879,7 @@ internal fun RemoteDrawScope.drawShapedBackground(
     val h = remoteHeight
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-        drawRect(paint = RemotePaint().apply { remoteColor = color })
+        drawRect(paint = RemotePaint { this.color = color })
         return
     }
 
@@ -918,10 +918,10 @@ private fun RemoteDrawScope.drawBorder(
 ) {
     with(shape.createOutline(RemoteSize(w, h), remoteDensity, layoutDirection)) {
         drawOutline(
-            RemotePaint().apply {
-                remoteColor = borderColor
-                strokeWidth = borderStrokeWidth.floatId
-                style = Paint.Style.STROKE
+            RemotePaint {
+                color = borderColor
+                strokeWidth = borderStrokeWidth
+                style = PaintingStyle.Stroke
             }
         )
     }
@@ -937,9 +937,9 @@ private fun RemoteDrawScope.drawSolidColorShape(
 ) {
     with(shape.createOutline(RemoteSize(w, h), remoteDensity, layoutDirection)) {
         drawOutline(
-            RemotePaint().apply {
-                style = Paint.Style.FILL
-                remoteColor = color
+            RemotePaint {
+                style = PaintingStyle.Fill
+                color?.let { this.color = it }
             }
         )
     }

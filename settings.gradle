@@ -792,6 +792,7 @@ includeProject(":datastore:datastore-proto", [BuildType.MAIN, BuildType.INFRAROG
 includeProject(":datastore:datastore-rxjava2", [BuildType.MAIN, BuildType.INFRAROGUE, BuildType.KMP])
 includeProject(":datastore:datastore-rxjava3", [BuildType.MAIN, BuildType.INFRAROGUE, BuildType.KMP])
 includeProject(":datastore:datastore-sampleapp", [BuildType.MAIN, BuildType.INFRAROGUE, BuildType.KMP])
+includeProject(":datastore:datastore-tink", [BuildType.MAIN, BuildType.INFRAROGUE, BuildType.KMP])
 includeProject(":datastore:integration-tests:baselineprofile", [BuildType.MAIN])
 includeProject(":datastore:integration-tests:macrobenchmark", [BuildType.MAIN])
 includeProject(":datastore:integration-tests:macrobenchmark-target", [BuildType.MAIN])

@@ -22,9 +22,8 @@ import kotlin.jvm.JvmName
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flow
 
 /**
  * Converts a Flow of [PagingData] into a Flow of [ItemSnapshotList]. An emitted [ItemSnapshotList]
@@ -41,17 +40,50 @@ import kotlinx.coroutines.flow.flow
  * stateIn() or sharedIn().
  *
  * Note that this Flow remains as a cold flow and does not start any loading until collected upon.
+ *
+ * [T] - the paged item type
+ *
+ * @param [onLoadError] the callback invoked when any loads return
+ *   [androidx.paging.LoadState.Error]. Provides the [CombinedLoadStates] containing the error.
+ *   No-op by default. See [Pager.retry] for a recovery option.
  */
-public fun <T : Any> Flow<PagingData<T>>.asState(): Flow<ItemSnapshotList<T>> {
+public fun <T : Any> Flow<PagingData<T>>.asState(
+    onLoadError: (CombinedLoadStates) -> Unit = {}
+): Flow<ItemSnapshotList<T>> {
+    var errorCombinedLoadStates: CombinedLoadStates? = null
+
     return channelFlow {
         this@asState.collectLatest { pagingData ->
             pagingData.flow
-                .filter { it is PageEvent.Insert || it is PageEvent.Drop }
                 .simpleScan(null) { pageStore: PageStore<T>?, pageEvent ->
                     var currPageStore = pageStore
                     when {
+                        pageEvent is PageEvent.LoadStateUpdate -> {
+                            if (pageEvent.source.hasError || pageEvent.mediator?.hasError == true) {
+                                errorCombinedLoadStates =
+                                    errorCombinedLoadStates.computeNewState(
+                                        pageEvent.source,
+                                        pageEvent.mediator,
+                                    )
+                                onLoadError(errorCombinedLoadStates)
+                            }
+                        }
+                        pageEvent is PageEvent.StaticList -> {
+                            currPageStore =
+                                PageStore(
+                                    pages =
+                                        listOf(
+                                            TransformablePage(
+                                                originalPageOffset = 0,
+                                                data = pageEvent.data,
+                                            )
+                                        ),
+                                    placeholdersBefore = pageEvent.placeholdersBefore,
+                                    placeholdersAfter = pageEvent.placeholdersAfter,
+                                )
+                        }
                         pageEvent is PageEvent.Insert && pageEvent.loadType == LoadType.REFRESH -> {
-                            require(currPageStore == null) {
+                            require(pageStore == null) {
                                 "PageStore should be null on REFRESH. This likely " +
                                     "indicates an error in the library. Please file a bug " +
                                     "in the Buganizer"
@@ -75,6 +107,14 @@ public fun <T : Any> Flow<PagingData<T>>.asState(): Flow<ItemSnapshotList<T>> {
                     currPageStore
                 }
                 .filterNotNull()
+                .distinctUntilChangedBy {
+                    // distinctUntilChanged() doesn't work here because at this point the old
+                    // PageStore would have been mutated to the new PageStore after
+                    // processing events (if any), so the old store always equals new store.
+                    // Instead, we use distinctUntilChangedBy to take a snapshot of and cache
+                    // the old hashCode for comparing with the updated PagStore's new hashcode.
+                    it.hashCode()
+                }
                 .collect { pageStore ->
                     // send to outer channelFlow
                     send(pageStore.snapshot())

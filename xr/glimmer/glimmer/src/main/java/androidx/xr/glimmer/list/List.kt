@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
+import androidx.xr.glimmer.Spacing
 import androidx.xr.glimmer.edgeScrim
 import androidx.xr.glimmer.list.VerticalListDefaults.VerticalArrangement
 import kotlin.math.max
@@ -181,7 +182,7 @@ public object VerticalListDefaults {
      *
      * @see [VerticalArrangement] for the default arrangement that uses this spacing.
      */
-    public val ItemSpacing: Dp = 20.dp
+    public val ItemSpacing: Dp = Spacing.ExtraLarge
 
     /** The maximum height of the fade effects on the sides of the list. */
     public val ScrimMaxHeight: Dp = 46.dp

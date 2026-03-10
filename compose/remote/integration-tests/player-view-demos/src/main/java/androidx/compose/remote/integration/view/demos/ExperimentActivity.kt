@@ -100,6 +100,7 @@ import androidx.compose.remote.integration.view.demos.examples.RcTextDemo5
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo6
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo7
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo8
+import androidx.compose.remote.integration.view.demos.examples.RcTextDemo9
 import androidx.compose.remote.integration.view.demos.examples.RcTicker
 import androidx.compose.remote.integration.view.demos.examples.ScrollViewDemo
 import androidx.compose.remote.integration.view.demos.examples.ShaderCalendar
@@ -331,6 +332,7 @@ class ExperimentActivity : ComponentActivity() {
                     getpc("Fireworks") { shaderFireworks() },
                     getpc("Layout modifier 2") { LayoutModifierDemo2() },
                     getpc("Layout modifier 1") { LayoutModifierDemo1() },
+                    getpc("Text Styles") { RcTextDemo9() },
                     getpc("Card") { RcTextDemo8() },
                     getpc("Dynamic Style Text") { RcTextDemo7() },
                     getpc("Dynamic Size Text") { RcTextDemo6() },

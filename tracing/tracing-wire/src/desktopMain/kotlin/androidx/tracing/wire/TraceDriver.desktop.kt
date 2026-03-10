@@ -30,7 +30,7 @@ import kotlin.jvm.optionals.getOrNull
  */
 @JvmOverloads
 @Suppress("DEPRECATION")
-public fun TraceDriver(sink: TraceSink, isEnabled: Boolean = true): TraceDriver {
+public fun TraceDriver(sink: androidx.tracing.TraceSink, isEnabled: Boolean = true): TraceDriver {
     val driver = TraceDriver(sink = sink, isEnabled = isEnabled)
     val processHandle = ProcessHandle.current()
     val pid = processHandle.pid()

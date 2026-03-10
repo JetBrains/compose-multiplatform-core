@@ -50,6 +50,7 @@ androidXMultiplatform {
             implementation(project(":kruth:kruth"))
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesTest)
+            implementation(libs.kotlinSerializationJson)
         }
 
         androidMain.dependencies {

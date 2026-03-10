@@ -230,9 +230,10 @@ package androidx.xr.glimmer {
   }
 
   public final class TitleChipDefaults {
-    method public androidx.compose.foundation.layout.PaddingValues contentPadding(boolean hasIcon);
     method @BytecodeOnly public float getAssociatedContentSpacing-D9Ej5fM();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.layout.PaddingValues getContentPadding();
     property public androidx.compose.ui.unit.Dp AssociatedContentSpacing;
+    property public androidx.compose.foundation.layout.PaddingValues ContentPadding;
     field public static final androidx.xr.glimmer.TitleChipDefaults INSTANCE;
   }
 

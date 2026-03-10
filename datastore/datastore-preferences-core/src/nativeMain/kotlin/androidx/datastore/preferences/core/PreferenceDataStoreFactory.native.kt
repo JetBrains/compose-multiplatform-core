@@ -32,8 +32,8 @@ actual object PreferenceDataStoreFactory {
      * DataStore instance as a singleton.
      *
      * @param corruptionHandler The corruptionHandler is invoked if DataStore encounters a
-     *   [CorruptionException] when attempting to read data. CorruptionExceptions are thrown by
-     *   serializers when data cannot be de-serialized.
+     *   [androidx.datastore.core.CorruptionException] when attempting to read data.
+     *   CorruptionExceptions are thrown by serializers when data cannot be de-serialized.
      * @param migrations are run before any access to data can occur. Each producer and migration
      *   may be run more than once whether or not it already succeeded (potentially because another
      *   migration failed or a write to disk failed.)
@@ -75,8 +75,8 @@ actual object PreferenceDataStoreFactory {
      *
      * @param storage The storage object defines where and how the preferences will be stored.
      * @param corruptionHandler The corruptionHandler is invoked if DataStore encounters a
-     *   [CorruptionException] when attempting to read data. CorruptionExceptions are thrown by
-     *   serializers when data cannot be de-serialized.
+     *   [androidx.datastore.core.CorruptionException] when attempting to read data.
+     *   CorruptionExceptions are thrown by serializers when data cannot be de-serialized.
      * @param migrations are run before any access to data can occur. Each producer and migration
      *   may be run more than once whether or not it already succeeded (potentially because another
      *   migration failed or a write to disk failed.)

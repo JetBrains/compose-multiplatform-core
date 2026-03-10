@@ -427,8 +427,7 @@ class RuntimeUtilsTest {
     fun getHitInfo_convertsFromHitInfo() {
         val entityManager = EntityManager()
         val sceneRuntime = createSceneRuntime(entityManager)
-        val testEntity =
-            sceneRuntime.createGroupEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
+        val testEntity = sceneRuntime.createEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
         val testNode = (testEntity as AndroidXrEntity).getNode()
 
         val expectedTransform =
@@ -461,7 +460,7 @@ class RuntimeUtilsTest {
     fun getHitInfo_unKnownNode_returnsNull() {
         val entityManager = EntityManager()
         val sceneRuntime = createSceneRuntime(entityManager)
-        sceneRuntime.createGroupEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
+        sceneRuntime.createEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
         val testNode = getXrExtensions()!!.createNode()
 
         val transformData =
@@ -479,8 +478,7 @@ class RuntimeUtilsTest {
     fun getHitInfo_nullHitPosition_convertsFromHitInfo() {
         val entityManager = EntityManager()
         val sceneRuntime = createSceneRuntime(entityManager)
-        val testEntity =
-            sceneRuntime.createGroupEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
+        val testEntity = sceneRuntime.createEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
         val testNode = (testEntity as AndroidXrEntity).getNode()
 
         val expectedTransform =
@@ -780,7 +778,7 @@ class RuntimeUtilsTest {
         val scaleFactor = 3.0f
         activitySpace.sceneParentScaleAbs = Vector3(scaleFactor, scaleFactor, scaleFactor)
 
-        val testEntity = sceneRuntime.createGroupEntity(Pose(), "testGroup", activitySpace)
+        val testEntity = sceneRuntime.createEntity(Pose(), "testEntity", activitySpace)
         val testNode = (testEntity as AndroidXrEntity).getNode()
 
         val xrHitInfo =

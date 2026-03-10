@@ -20,6 +20,7 @@ dependencies {
     docs(project(":appcompat:appcompat-resources"))
     docs(project(":appfunctions:appfunctions"))
     docs(project(":appfunctions:appfunctions-service"))
+    stubs(project(":appfunctions:appfunctions-stubs"))
     docs(project(":appfunctions:appfunctions-testing"))
     docs(project(":appsearch:appsearch"))
     docs(project(":appsearch:appsearch-builtin-types"))
@@ -70,6 +71,7 @@ dependencies {
     kmpDocs(project(":compose:animation:animation"))
     kmpDocs(project(":compose:animation:animation-core"))
     kmpDocs(project(":compose:animation:animation-graphics"))
+    stubs(project(":compose:animation:animation-tooling-internal"))
     kmpDocs(project(":compose:foundation:foundation"))
     kmpDocs(project(":compose:foundation:foundation-layout"))
     kmpDocs(project(":compose:material3:adaptive:adaptive"))
@@ -93,6 +95,7 @@ dependencies {
     docs(project(":compose:remote:remote-player-view"))
     docs(project(":compose:remote:remote-tooling-preview"))
     docs(project(":core:core-pip"))
+    kmpDocs(project(":datastore:datastore-tink"))
     docs(project(":wear:compose:remote:remote-material3"))
     kmpDocs(project(":compose:runtime:runtime"))
     kmpDocs(project(":compose:runtime:runtime-annotation"))
@@ -390,6 +393,7 @@ dependencies {
     docs(project(":wear:wear"))
     docs(project(":wear:wear-core"))
     stubs(fileTree(dir: "../wear/wear_stubs/", include: ["com.google.android.wearable-stubs.jar"]))
+    stubs(files("../wear/wear_sdk/wear-sdk.jar"))
     docs(project(":wear:wear-input"))
     docs(project(":wear:wear-input-testing"))
     docs(project(":wear:wear-ongoing"))
@@ -402,6 +406,7 @@ dependencies {
     stubs(fileTree(dir: "../window/stubs/", include: ["window-sidecar-release.aar"]))
     docs(project(":window:extensions:core:core"))
     docs(project(":window:extensions:extensions"))
+    stubs(project(":window:sidecar:sidecar"))
     kmpDocs(project(":window:window-core"))
     docs(project(":window:window-java"))
     docs(project(":window:window-rxjava2"))
@@ -443,6 +448,7 @@ dependencies {
     docs(project(":xr:scenecore:scenecore-spatial-core"))
     docs(project(":xr:scenecore:scenecore-spatial-rendering"))
     docs(project(":xr:scenecore:scenecore-testing"))
+    stubs(libs.androidExtensionsXr)
 }
 afterEvaluate {
   tasks["docs"].doFirst {

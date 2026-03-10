@@ -39,23 +39,23 @@ public constructor(
     @param:ContainerInfo.ContainerType
     @get:ContainerInfo.ContainerType
     public val containerType: Int,
-    @param:Dimension(unit = Dimension.Companion.DP)
-    @get:Dimension(unit = Dimension.Companion.DP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
     public val widthDp: Float,
-    @param:Dimension(unit = Dimension.Companion.DP)
-    @get:Dimension(unit = Dimension.Companion.DP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
     public val heightDp: Float,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @param:Dimension(unit = Dimension.Companion.DP)
-    @get:Dimension(unit = Dimension.Companion.DP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
     public val horizontalPaddingDp: Float,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @param:Dimension(unit = Dimension.Companion.DP)
-    @get:Dimension(unit = Dimension.Companion.DP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
     public val verticalPaddingDp: Float,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @param:Dimension(unit = Dimension.Companion.DP)
-    @get:Dimension(unit = Dimension.Companion.DP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
     public val cornerRadiusDp: Float,
 ) {
 
@@ -117,7 +117,7 @@ public constructor(
     public companion object {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun fromParcel(parcel: WearWidgetRequestParcel): WearWidgetParams {
-            val requestProto = WearWidgetRequestProto.Companion.ADAPTER.decode(parcel.payload)
+            val requestProto = WearWidgetRequestProto.ADAPTER.decode(parcel.payload)
             return WearWidgetParams(
                 instanceId =
                     WidgetInstanceId(namespace = requestProto.id_namespace, requestProto.id),
