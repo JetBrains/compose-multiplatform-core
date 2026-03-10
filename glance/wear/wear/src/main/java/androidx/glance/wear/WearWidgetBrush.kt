@@ -48,7 +48,7 @@ public sealed class WearWidgetBrush {
 
     /** A single element contained within a [WearWidgetBrush] chain. */
     internal data class Element(
-        // TODO: b/464273091 - Change it to
+        // TODO: b/470080675 - Change it to
         // [androidx.compose.remote.creation.compose.shaders.RemoteBrush] when public.
         internal val color: RemoteColor
     ) : WearWidgetBrush() {

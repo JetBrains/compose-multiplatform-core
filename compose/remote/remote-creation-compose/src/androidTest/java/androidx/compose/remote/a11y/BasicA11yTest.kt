@@ -28,6 +28,7 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.modifier.semantics
+import androidx.compose.remote.creation.compose.modifier.text
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
@@ -54,8 +55,7 @@ class BasicA11yTest {
         remoteComposeTestRule.runTest {
             RemoteBox(
                 modifier = RemoteModifier.fillMaxSize(),
-                horizontalAlignment = RemoteAlignment.CenterHorizontally,
-                verticalArrangement = RemoteArrangement.Center,
+                contentAlignment = RemoteAlignment.Center,
             ) {
                 RemoteText("Hello World")
             }

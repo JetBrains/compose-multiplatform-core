@@ -31,7 +31,6 @@ import java.lang.annotation.Target;
  * Exception thrown when there was an error executing JavaScript via {@link
  * JavaScriptReplyProxy#executeJavaScript(String, OutcomeReceiverCompat)}.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class JavaScriptExecutionException extends Exception {
     /** Error code for a generic/unknown error occurred while executing JavaScript. */
     public static final int ERROR_GENERIC =

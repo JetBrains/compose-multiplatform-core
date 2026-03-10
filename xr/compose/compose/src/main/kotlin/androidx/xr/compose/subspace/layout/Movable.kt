@@ -24,6 +24,7 @@ import androidx.xr.compose.subspace.node.SubspaceLayoutAwareModifierNode
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.subspace.node.currentValueOf
+import androidx.xr.compose.subspace.node.invalidatePlacement
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.compose.unit.toDimensionsInMeters
@@ -451,6 +452,7 @@ internal class MovableNode(
         scaleFromMovement = scale
 
         invalidatePlacement()
+        invalidateCoreEntity()
     }
 
     companion object {

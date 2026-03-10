@@ -49,7 +49,7 @@ public fun RemoteButtonGroup(
     modifier: RemoteModifier = RemoteModifier,
     contentPadding: RemotePaddingValues = RemoteButtonGroupDefaults.fullWidthPaddings(),
     verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.CenterVertically,
-    horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.CenterHorizontally,
+    horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Center,
     content: @RemoteComposable @Composable (RemoteRowScope.() -> Unit),
 ) {
     RemoteRow(

@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.filterNotNull
 
 /**
@@ -56,7 +55,6 @@ public fun <T : Any> Flow<PagingData<T>>.asState(
     return channelFlow {
         this@asState.collectLatest { pagingData ->
             pagingData.flow
-                .filterNot { it is PageEvent.StaticList }
                 .simpleScan(null) { pageStore: PageStore<T>?, pageEvent ->
                     var currPageStore = pageStore
                     when {
@@ -69,6 +67,20 @@ public fun <T : Any> Flow<PagingData<T>>.asState(
                                     )
                                 onLoadError(errorCombinedLoadStates)
                             }
+                        }
+                        pageEvent is PageEvent.StaticList -> {
+                            currPageStore =
+                                PageStore(
+                                    pages =
+                                        listOf(
+                                            TransformablePage(
+                                                originalPageOffset = 0,
+                                                data = pageEvent.data,
+                                            )
+                                        ),
+                                    placeholdersBefore = pageEvent.placeholdersBefore,
+                                    placeholdersAfter = pageEvent.placeholdersAfter,
+                                )
                         }
                         pageEvent is PageEvent.Insert && pageEvent.loadType == LoadType.REFRESH -> {
                             require(pageStore == null) {

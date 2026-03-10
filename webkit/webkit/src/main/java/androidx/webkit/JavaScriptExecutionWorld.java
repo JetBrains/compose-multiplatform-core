@@ -32,7 +32,6 @@ import java.util.Objects;
  * is not registered to will throw an error.
  * See {@link WebViewCompat#getExecutionWorld(WebView, String)} for creating an instance.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class JavaScriptExecutionWorld {
     /** Name for the default page world. */
     public static final String PAGE_WORLD_NAME = "";

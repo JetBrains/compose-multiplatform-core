@@ -20,7 +20,6 @@ import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.isBoolean
-import androidx.room3.compiler.processing.isKotlinUnit
 import androidx.room3.ext.InvokeWithLambdaParameter
 import androidx.room3.ext.LambdaSpec
 import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_SUSPENDING
@@ -104,9 +103,6 @@ abstract class BaseDaoConverterShortcutBinder(val converter: DaoReturnTypeConver
                     ) {
                     override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
                         generateBlock(scope, connectionVar)
-                        if (typeArg.isKotlinUnit()) {
-                            scope.builder.addStatement("kotlin.Unit")
-                        }
                     }
                 },
         )

@@ -400,11 +400,13 @@ class LiveEditApiTests : BaseComposeTest() {
         assertTrue("Expected error state change", latch.await(1, TimeUnit.SECONDS))
 
         run {
+            latch = CountDownLatch(1)
             shouldThrow.value = true
             // Await until the error is reported
-            latch = CountDownLatch(1)
+            activity.waitForAFrame()
             assertTrue("Expected error state change", latch.await(1, TimeUnit.SECONDS))
 
+            latch = CountDownLatch(1)
             shouldThrow.value = false
             invalidateGroup(errorKey)
             activity.waitForAFrame()
@@ -412,7 +414,6 @@ class LiveEditApiTests : BaseComposeTest() {
             assertTrue("TestError should be invoked!", errorInvoked > start)
 
             // Await until the invalidation is settled
-            latch = CountDownLatch(1)
             assertTrue("Expected error state change", latch.await(1, TimeUnit.SECONDS))
         }
 

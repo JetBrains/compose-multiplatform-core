@@ -430,6 +430,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 createClasspathConfigurationForTarget(
                     project = project,
                     multiplatformDocsConfiguration = multiplatformDocsConfiguration,
+                    stubsConfiguration = stubsConfiguration,
                     target = target,
                     usageDescription = "api",
                     javaUsage = Usage.JAVA_API,
@@ -439,6 +440,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 createClasspathConfigurationForTarget(
                     project = project,
                     multiplatformDocsConfiguration = multiplatformDocsConfiguration,
+                    stubsConfiguration = stubsConfiguration,
                     target = target,
                     usageDescription = "runtime",
                     javaUsage = Usage.JAVA_RUNTIME,
@@ -466,6 +468,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
     private fun createClasspathConfigurationForTarget(
         project: Project,
         multiplatformDocsConfiguration: Configuration,
+        stubsConfiguration: Configuration,
         target: KotlinTarget,
         usageDescription: String,
         javaUsage: String,
@@ -481,7 +484,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         val configurationName = "docs-compile-classpath-${target.name}-$usageDescription"
         return project.configurations
             .register(configurationName) { config ->
-                config.extendsFrom(multiplatformDocsConfiguration)
+                config.extendsFrom(multiplatformDocsConfiguration, stubsConfiguration)
                 config.isCanBeConsumed = false
                 config.attributes {
                     it.attribute(KotlinPlatformType.attribute, target.platformType)

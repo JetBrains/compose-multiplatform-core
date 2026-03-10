@@ -945,7 +945,6 @@ public class WebViewFeature {
      * {@link WebViewCompat#getExecutionWorld(WebView, String)}, and
      * {@link JavaScriptReplyProxy#executeJavaScript(String, WebViewOutcomeReceiver)}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String JS_INJECTION_IN_FRAME_AND_WORLD = "JS_INJECTION_IN_FRAME_AND_WORLD";
 
     /**
