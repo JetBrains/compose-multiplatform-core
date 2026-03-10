@@ -163,13 +163,17 @@ private fun Project.configureComponentPublishing(
 
     // Workarounds for https://github.com/gradle/gradle/issues/20011
     project.tasks.withType(GenerateModuleMetadata::class.java).configureEach { task ->
+        val capabilitiesToRemove = publishedRedirectionCapabilities()
         task.doLast {
             val metadataFile = task.outputFile.asFile.get()
             val metadata = metadataFile.readText()
-            val sortedMetadata = sortGradleMetadataDependencies(metadata)
+            val modifiedMetadata = modifyGradleMetadata(metadata) { jsonObj ->
+                filterGradleMetadataCapabilities(jsonObj, capabilitiesToRemove)
+                sortGradleMetadataDependencies(jsonObj)
+            }
 
-            if (metadata != sortedMetadata) {
-                metadataFile.writeText(sortedMetadata)
+            if (metadata != modifiedMetadata) {
+                metadataFile.writeText(modifiedMetadata)
             }
         }
     }
@@ -322,9 +326,7 @@ private fun getEncoding(text: String): String? {
 /**
  * Looks for a dependencies JSON element within [metadata] and sorts its contents.
  */
-fun sortGradleMetadataDependencies(metadata: String): String {
-    val gson = GsonBuilder().create()
-    val jsonObj = gson.fromJson(metadata, JsonObject::class.java)!!
+private fun sortGradleMetadataDependencies(jsonObj: JsonObject) {
     jsonObj.getAsJsonArray("variants").forEach { entry ->
         (entry as? JsonObject)?.getAsJsonArray("dependencies")?.let { jsonArray ->
             val sortedSet = jsonArray.toSortedSet(compareBy { it.toString() })
@@ -332,13 +334,62 @@ fun sortGradleMetadataDependencies(metadata: String): String {
             sortedSet.forEach { element -> jsonArray.add(element) }
         }
     }
+}
 
+/**
+ * Filters out specific capabilities from the "capabilities" array within each variant
+ * of a Gradle metadata JSON object. If all capabilities are removed from a variant,
+ * the "capabilities" key is also removed from that variant.
+ */
+private fun filterGradleMetadataCapabilities(
+    jsonObj: JsonObject,
+    capabilitiesToRemove: Set<String>,
+) {
+    if (capabilitiesToRemove.isEmpty()) return
+
+    jsonObj.getAsJsonArray("variants").forEach { entry ->
+        val variant = entry as? JsonObject ?: return@forEach
+        val capabilities = variant.getAsJsonArray("capabilities") ?: return@forEach
+        capabilities.removeAll { capabilityElement ->
+            val capability = capabilityElement as? JsonObject ?: return@removeAll false
+            capability.notation() in capabilitiesToRemove
+        }
+        if (capabilities.isEmpty) {
+            variant.remove("capabilities")
+        }
+    }
+}
+
+/**
+ * Removes only the capability declarations introduced by [Project.configureRedirectionCapability].
+ * These capabilities are needed for local resolution inside the current build, but they should not
+ * leak into published module metadata.
+ */
+private fun modifyGradleMetadata(
+    metadata: String,
+    block: (JsonObject) -> Unit,
+): String {
+    val gson = GsonBuilder().create()
+    val jsonObj = gson.fromJson(metadata, JsonObject::class.java)!!
+    block(jsonObj)
     val stringWriter = StringWriter()
     val jsonWriter = JsonWriter(stringWriter)
     jsonWriter.setIndent("  ")
     gson.toJson(jsonObj, jsonWriter)
     return stringWriter.toString()
 }
+
+private fun Project.publishedRedirectionCapabilities(): Set<String> {
+    val redirection = artifactRedirection() ?: return emptySet()
+    if (redirection.targetNames.isEmpty()) return emptySet()
+
+    return setOf(
+        "$group:$name:$version",
+        "${redirection.groupId}:$name:${redirection.defaultVersion}",
+    )
+}
+
+private fun JsonObject.notation(): String = "${get("group").asString}:${get("name").asString}:${get("version").asString}"
 
 private fun Project.isMultiplatformPublicationEnabled(): Boolean {
     return extensions.findByType<KotlinMultiplatformExtension>() != null
