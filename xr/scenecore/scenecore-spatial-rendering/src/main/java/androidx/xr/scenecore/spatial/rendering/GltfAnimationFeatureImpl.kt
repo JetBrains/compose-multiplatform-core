@@ -140,19 +140,29 @@ internal class GltfAnimationFeatureImpl(
     }
 
     override fun seekAnimation(startTime: Float) {
-        impressApi.setGltfModelAnimationPlaybackTime(
-            modelImpressNode,
-            /* playbackTime= */ startTime,
-            /* channelId= */ index,
-        )
+        if (
+            animationState == GltfEntity.AnimationState.PLAYING ||
+                animationState == GltfEntity.AnimationState.PAUSED
+        ) {
+            impressApi.setGltfModelAnimationPlaybackTime(
+                modelImpressNode,
+                /* playbackTime= */ startTime,
+                /* channelId= */ index,
+            )
+        }
     }
 
     override fun setAnimationSpeed(speed: Float) {
-        impressApi.setGltfModelAnimationSpeed(
-            modelImpressNode,
-            /* speed= */ speed,
-            /* channelId= */ index,
-        )
+        if (
+            animationState == GltfEntity.AnimationState.PLAYING ||
+                animationState == GltfEntity.AnimationState.PAUSED
+        ) {
+            impressApi.setGltfModelAnimationSpeed(
+                modelImpressNode,
+                /* speed= */ speed,
+                /* channelId= */ index,
+            )
+        }
     }
 
     override fun addAnimationStateListener(executor: Executor, listener: Consumer<Int>) {

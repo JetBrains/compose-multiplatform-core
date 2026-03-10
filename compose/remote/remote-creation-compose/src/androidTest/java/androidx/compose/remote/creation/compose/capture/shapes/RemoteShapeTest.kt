@@ -20,7 +20,6 @@ import android.content.Context
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -159,8 +158,7 @@ class RemoteShapeTest {
     @RemoteComposable
     private fun DrawRemoteShape(shape: RemoteShape) {
         RemoteBox(
-            horizontalAlignment = RemoteAlignment.CenterHorizontally,
-            verticalArrangement = RemoteArrangement.Center,
+            contentAlignment = RemoteAlignment.Center,
             modifier = RemoteModifier.width(200.rdp).height(200.rdp),
         ) {
             RemoteCanvas(RemoteModifier.width(100.rdp).height(100.rdp)) {

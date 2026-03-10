@@ -26,7 +26,7 @@ import java.io.PrintWriter;
 class StandardGrid extends Grid {
 
     private final Location mTmpLocation = new Location(0);
-    private Object[] mTmpItems;
+    Object[] mTmpItems;
     private int[] mTmpItemsSize;
 
     SpanSupport mSpanSupport;
@@ -267,6 +267,7 @@ class StandardGrid extends Grid {
                 }
             }
         }
+        mTmpItem[0] = null;
         return filledOne;
     }
 
@@ -344,6 +345,7 @@ class StandardGrid extends Grid {
                 }
             }
         }
+        mTmpItem[0] = null;
         return filledOne;
     }
 

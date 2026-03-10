@@ -258,9 +258,9 @@ class SpatialCompose : ComponentActivity() {
                             .padding(horizontal = 20.dp)
                             .testTag("CenterColumn"),
                     horizontalAlignment = SpatialAlignment.CenterHorizontally,
-                    verticalArrangement = SpatialArrangement.SpaceAround,
+                    verticalArrangement = SpatialArrangement.Center,
                 ) {
-                    SpatialMainPanel(modifier = SubspaceModifier.fillMaxWidth().height(600.dp))
+                    SpatialMainPanel(modifier = SubspaceModifier.fillMaxHeight(0.7f).fillMaxWidth())
                     val intent = remember {
                         Intent(this@SpatialCompose, AnotherActivity::class.java)
                     }
@@ -270,7 +270,9 @@ class SpatialCompose : ComponentActivity() {
                     SpatialActivityPanel(
                         intent = intent,
                         modifier =
-                            SubspaceModifier.width(800.dp).height(600.dp).testTag("ActivityPanel"),
+                            SubspaceModifier.fillMaxHeight()
+                                .fillMaxWidth()
+                                .testTag("ActivityPanel"),
                         dragPolicy = MovePolicy(true),
                     )
                 }

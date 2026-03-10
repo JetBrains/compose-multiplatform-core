@@ -190,11 +190,7 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 mUnlimitedConfig,
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
     }
 
@@ -600,11 +596,7 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir, new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                initStatsBuilder,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder().setInitStatsBuilder(initStatsBuilder).build(),
                 ALWAYS_OPTIMIZE);
 
         // Check recovery state
@@ -690,12 +682,9 @@ public class AppSearchImplTest {
                         mAppSearchDir,
                         new AppSearchConfigImpl(
                                 new UnlimitedLimitConfig(), new LocalStorageIcingOptionsConfig()),
-                        initStatsBuilder,
-                        /*callStatsBuilder=*/ null,
-                        /* visibilityChecker= */ null,
-                        /* revocableFileDescriptorStore= */ null,
-                        mMockIcingSearchEngine,
-                        ALWAYS_OPTIMIZE);
+                        new AppSearchUserPlugins.Builder().setInitStatsBuilder(initStatsBuilder)
+                                .setIcingSearchEngine(mMockIcingSearchEngine).build(),
+                ALWAYS_OPTIMIZE);
 
         // Check recovery state
         InitializeStats initStats = initStatsBuilder.build();
@@ -722,12 +711,9 @@ public class AppSearchImplTest {
                         mAppSearchDir,
                         new AppSearchConfigImpl(
                                 new UnlimitedLimitConfig(), new LocalStorageIcingOptionsConfig()),
-                        initStatsBuilder,
-                        /*callStatsBuilder=*/ null,
-                        /* visibilityChecker= */ null,
-                        /* revocableFileDescriptorStore= */ null,
-                        mMockIcingSearchEngine,
-                        ALWAYS_OPTIMIZE);
+                        new AppSearchUserPlugins.Builder().setInitStatsBuilder(initStatsBuilder)
+                                .setIcingSearchEngine(mMockIcingSearchEngine).build(),
+                ALWAYS_OPTIMIZE);
 
         // Check recovery state
         InitializeStats initStats = initStatsBuilder.build();
@@ -756,12 +742,9 @@ public class AppSearchImplTest {
                         mAppSearchDir,
                         new AppSearchConfigImpl(
                                 new UnlimitedLimitConfig(), new LocalStorageIcingOptionsConfig()),
-                        initStatsBuilder,
-                        /*callStatsBuilder=*/ null,
-                        /* visibilityChecker= */ null,
-                        /* revocableFileDescriptorStore= */ null,
-                        mMockIcingSearchEngine,
-                        ALWAYS_OPTIMIZE);
+                        new AppSearchUserPlugins.Builder().setInitStatsBuilder(initStatsBuilder)
+                                .setIcingSearchEngine(mMockIcingSearchEngine).build(),
+                ALWAYS_OPTIMIZE);
 
         // Check recovery state
         InitializeStats initStats = initStatsBuilder.build();
@@ -790,12 +773,9 @@ public class AppSearchImplTest {
                         mAppSearchDir,
                         new AppSearchConfigImpl(
                                 new UnlimitedLimitConfig(), new LocalStorageIcingOptionsConfig()),
-                        initStatsBuilder,
-                        /*callStatsBuilder=*/ null,
-                        /* visibilityChecker= */ null,
-                        /* revocableFileDescriptorStore= */ null,
-                        mMockIcingSearchEngine,
-                        ALWAYS_OPTIMIZE);
+                        new AppSearchUserPlugins.Builder().setInitStatsBuilder(initStatsBuilder)
+                                .setIcingSearchEngine(mMockIcingSearchEngine).build(),
+                ALWAYS_OPTIMIZE);
 
         // Check recovery state
         InitializeStats initStats = initStatsBuilder.build();
@@ -823,12 +803,9 @@ public class AppSearchImplTest {
                         mAppSearchDir,
                         new AppSearchConfigImpl(
                                 new UnlimitedLimitConfig(), new LocalStorageIcingOptionsConfig()),
-                        initStatsBuilder,
-                        /*callStatsBuilder=*/ null,
-                        /* visibilityChecker= */ null,
-                        /* revocableFileDescriptorStore= */ null,
-                        mMockIcingSearchEngine,
-                        ALWAYS_OPTIMIZE);
+                        new AppSearchUserPlugins.Builder().setInitStatsBuilder(initStatsBuilder)
+                                .setIcingSearchEngine(mMockIcingSearchEngine).build(),
+                ALWAYS_OPTIMIZE);
 
         // Check recovery state
         InitializeStats initStats = initStatsBuilder.build();
@@ -859,12 +836,9 @@ public class AppSearchImplTest {
                         mAppSearchDir,
                         new AppSearchConfigImpl(
                                 new UnlimitedLimitConfig(), new LocalStorageIcingOptionsConfig()),
-                        initStatsBuilder,
-                        /*callStatsBuilder=*/ null,
-                        /* visibilityChecker= */ null,
-                        /* revocableFileDescriptorStore= */ null,
-                        mMockIcingSearchEngine,
-                        ALWAYS_OPTIMIZE);
+                        new AppSearchUserPlugins.Builder().setInitStatsBuilder(initStatsBuilder)
+                                .setIcingSearchEngine(mMockIcingSearchEngine).build(),
+                ALWAYS_OPTIMIZE);
 
         // Check recovery state
         InitializeStats initStats = initStatsBuilder.build();
@@ -906,12 +880,9 @@ public class AppSearchImplTest {
                         mAppSearchDir,
                         new AppSearchConfigImpl(
                                 new UnlimitedLimitConfig(), new LocalStorageIcingOptionsConfig()),
-                        initStatsBuilder,
-                        /*callStatsBuilder=*/ null,
-                        /* visibilityChecker= */ null,
-                        /* revocableFileDescriptorStore= */ null,
-                        mMockIcingSearchEngine,
-                        ALWAYS_OPTIMIZE);
+                        new AppSearchUserPlugins.Builder().setInitStatsBuilder(initStatsBuilder)
+                                .setIcingSearchEngine(mMockIcingSearchEngine).build(),
+                ALWAYS_OPTIMIZE);
 
         // Check recovery state
         InitializeStats initStats = initStatsBuilder.build();
@@ -927,11 +898,8 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                 new AppSearchUserPlugins.Builder().setRevocableFileDescriptorStore(
+                        new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         File blobFilesDir = new File(mAppSearchDir, "blob_dir/blob_files");
 
@@ -1023,11 +991,10 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                initStatsBuilder,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setInitStatsBuilder(initStatsBuilder)
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
 
         // Check recovery state
@@ -1135,14 +1102,11 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 mUnlimitedConfig,
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                // Initializing with a custom icing instance will cause AppSearch to assume
-                // isVMEnabled. Therefore we cannot call AppSearch::setSchema below since it'll
-                // still use database-scoped operations.
-                icingSearchEngine,
+                new AppSearchUserPlugins.Builder()
+                        // Initializing with a custom icing instance will cause AppSearch to assume
+                        // isVMEnabled. Therefore we cannot call AppSearch::setSchema below since
+                        // it'll still use database-scoped operations.
+                        .setIcingSearchEngine(icingSearchEngine).build(),
                 ALWAYS_OPTIMIZE);
 
         SchemaProto existingSchema = mAppSearchImpl.getSchemaProtoLocked(
@@ -1194,11 +1158,9 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 mUnlimitedConfig,
-                initStatsBuilder,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                icingSearchEngine,
+                new AppSearchUserPlugins.Builder()
+                        .setInitStatsBuilder(initStatsBuilder)
+                        .setIcingSearchEngine(icingSearchEngine).build(),
                 ALWAYS_OPTIMIZE);
 
         // Initialization should NOT trigger a recovery
@@ -1314,11 +1276,9 @@ public class AppSearchImplTest {
                         mAppSearchDir,
                         new AppSearchConfigImpl(
                                 new UnlimitedLimitConfig(), new LocalStorageIcingOptionsConfig()),
-                        initStatsBuilder,
-                        /*callStatsBuilder=*/ null,
-                        /* visibilityChecker= */ null,
-                        /* revocableFileDescriptorStore= */ null,
-                        mMockIcingSearchEngine,
+                        new AppSearchUserPlugins.Builder()
+                                .setInitStatsBuilder(initStatsBuilder)
+                                .setIcingSearchEngine(mMockIcingSearchEngine).build(),
                         ALWAYS_OPTIMIZE);
 
         // Check recovery state
@@ -1365,11 +1325,8 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 appSearchConfig,
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                icingSearchEngine,
+                new AppSearchUserPlugins.Builder()
+                        .setIcingSearchEngine(icingSearchEngine).build(),
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -1769,12 +1726,9 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
-                ALWAYS_OPTIMIZE
-        );
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(mockVisibilityChecker).build(),
+                ALWAYS_OPTIMIZE);
 
         // Insert package1 schema
         List<AppSearchSchema> personSchema =
@@ -1960,12 +1914,9 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
-                ALWAYS_OPTIMIZE
-        );
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(mockVisibilityChecker).build(),
+                ALWAYS_OPTIMIZE);
 
         AppSearchSchema.StringPropertyConfig personField =
                 new AppSearchSchema.StringPropertyConfig.Builder("personId")
@@ -3717,11 +3668,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
         byte[] digest = calculateDigest(data);
@@ -3754,11 +3703,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
         byte[] digest = calculateDigest(data);
@@ -3794,11 +3741,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
         byte[] digest = calculateDigest(data);
@@ -3834,11 +3779,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
         byte[] digest = calculateDigest(data);
@@ -3871,11 +3814,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
         byte[] wrongData = generateRandomBytes(10 * 1024); // 10 KiB
@@ -3923,11 +3864,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20); // 20 Bytes
         byte[] digest = calculateDigest(data);
@@ -3964,11 +3903,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20); // 20 Bytes
         byte[] digest = calculateDigest(data);
@@ -3990,11 +3927,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20); // 20 Bytes
         byte[] digest = calculateDigest(data);
@@ -4019,11 +3954,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20); // 20 Bytes
         byte[] digest = calculateDigest(data);
@@ -4068,11 +4001,9 @@ public class AppSearchImplTest {
                                 return 1L;
                             }
                         }),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
 
         // Write the blob and commit it.
@@ -4119,11 +4050,9 @@ public class AppSearchImplTest {
                                 return 1L;
                             }
                         }),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
 
         // Write the blob and commit it.
@@ -4205,11 +4134,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
         byte[] digest = calculateDigest(data);
@@ -4256,11 +4183,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
         byte[] digest = calculateDigest(data);
@@ -4289,11 +4214,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
 
         SchemaVisibilityConfig visibleToConfig = new SchemaVisibilityConfig.Builder()
@@ -4349,11 +4272,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         SchemaVisibilityConfig visibleToConfig = new SchemaVisibilityConfig.Builder()
@@ -4382,11 +4301,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
 
         SchemaVisibilityConfig visibleToConfig1 = new SchemaVisibilityConfig.Builder()
@@ -4535,11 +4452,8 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                mockVisibilityChecker,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(mockVisibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
@@ -4565,11 +4479,10 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                mockVisibilityChecker,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(mockVisibilityChecker)
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
 
         // Set mock visibility setting.
@@ -4635,11 +4548,10 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                mockVisibilityChecker,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(mockVisibilityChecker)
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
 
         // Set mock visibility setting.
@@ -5066,11 +4978,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         // Insert schema
         List<AppSearchSchema> schemas1 =
@@ -5496,11 +5406,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
 
         byte[] data1 = generateRandomBytes(5 * 1024); // 5 KiB
@@ -5561,11 +5469,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data1 = generateRandomBytes(5 * 1024); // 5 KiB
         byte[] digest1 = calculateDigest(data1);
@@ -5762,11 +5668,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/initStatsBuilder,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                 new AppSearchUserPlugins.Builder()
+                        .setInitStatsBuilder(initStatsBuilder).build(),
                 ALWAYS_OPTIMIZE);
 
         // Initialization should trigger a recovery
@@ -5861,11 +5764,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/initStatsBuilder,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                 new AppSearchUserPlugins.Builder()
+                        .setInitStatsBuilder(initStatsBuilder).build(),
                 ALWAYS_OPTIMIZE);
 
         // Initialization should trigger a recovery
@@ -5972,11 +5872,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/initStatsBuilder,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                 new AppSearchUserPlugins.Builder()
+                        .setInitStatsBuilder(initStatsBuilder).build(),
                 ALWAYS_OPTIMIZE);
 
         // Initialization should trigger a recovery
@@ -6045,11 +5942,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/initStatsBuilder,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                 new AppSearchUserPlugins.Builder()
+                        .setInitStatsBuilder(initStatsBuilder).build(),
                 ALWAYS_OPTIMIZE);
 
         // Initialization should NOT trigger a recovery
@@ -6145,11 +6039,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/initStatsBuilder,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                 new AppSearchUserPlugins.Builder()
+                        .setInitStatsBuilder(initStatsBuilder).build(),
                 ALWAYS_OPTIMIZE);
 
         // Initialization should NOT trigger a recovery.
@@ -6256,11 +6147,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/initStatsBuilder,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                 new AppSearchUserPlugins.Builder()
+                        .setInitStatsBuilder(initStatsBuilder).build(),
                 ALWAYS_OPTIMIZE);
 
         // Initialization should NOT trigger a recovery.
@@ -6343,11 +6231,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         List<AppSearchSchema> schemas =
                 Collections.singletonList(new AppSearchSchema.Builder("type").build());
@@ -6455,11 +6341,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         List<AppSearchSchema> schemas =
                 Collections.singletonList(new AppSearchSchema.Builder("type").build());
@@ -6520,11 +6404,9 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 mUnlimitedConfig,
-                initStatsBuilder,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                icingSearchEngine,
+                new AppSearchUserPlugins.Builder()
+                        .setInitStatsBuilder(initStatsBuilder)
+                        .setIcingSearchEngine(icingSearchEngine).build(),
                 ALWAYS_OPTIMIZE);
 
         // Initialization and check initStats
@@ -6619,11 +6501,8 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 mUnlimitedConfig,
-                initStatsBuilder,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                 new AppSearchUserPlugins.Builder()
+                        .setInitStatsBuilder(initStatsBuilder).build(),
                 ALWAYS_OPTIMIZE);
 
         // Initialization and check initStats
@@ -6715,11 +6594,9 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 mUnlimitedConfig,
-                /*initStatsBuilder=*/null,
-                /*callStatsBuilder=*/null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
 
         // Set a schema and check last write operation is Initialize
@@ -7028,12 +6905,12 @@ public class AppSearchImplTest {
                         return 2;
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/null,
-                callStatsBuilder,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setCallStatsBuilder(callStatsBuilder)
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
+
         // initialize + GetSchema + GetStorage + SetVisibilitySchema + SetBlobVisibilitySchema
         assertThat(callStatsBuilder.build().getNumIcingCalls()).isEqualTo(5);
 
@@ -7194,10 +7071,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -7296,10 +7170,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -7375,10 +7246,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Make sure the limit is maintained
@@ -7431,10 +7299,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -7573,10 +7438,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -7699,10 +7561,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // package1 should still be out of space
@@ -7777,10 +7636,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -7968,10 +7824,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -8075,10 +7928,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -8154,10 +8004,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Index id2. This should pass but only because we check for replacements.
@@ -8221,10 +8068,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         AppSearchException e = assertThrows(AppSearchException.class, () ->
@@ -8276,10 +8120,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -8353,10 +8194,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schemas for thress packages
@@ -8494,10 +8332,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -8584,10 +8419,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -8727,10 +8559,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -8888,10 +8717,8 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 tempFolder,
                 config,
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(config),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder().setRevocableFileDescriptorStore(
+                        new JetpackRevocableFileDescriptorStore(config)).build(),
                 ALWAYS_OPTIMIZE);
         // We could open only 2 fds per package.
         byte[] data1 = generateRandomBytes(20 * 1024); // 20 KiB
@@ -8961,10 +8788,8 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 tempFolder,
                 config,
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(config),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder().setRevocableFileDescriptorStore(
+                        new JetpackRevocableFileDescriptorStore(config)).build(),
                 ALWAYS_OPTIMIZE);
 
         // Write and commit one blob
@@ -9148,10 +8973,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(mockVisibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
@@ -9208,10 +9031,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(mockVisibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
@@ -9266,10 +9087,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(mockVisibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
@@ -9343,10 +9162,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(mockVisibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
@@ -9741,11 +9558,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         String prefix = PrefixUtil.createPrefix("packageName", "databaseName");
@@ -9792,11 +9605,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         assertThat(mAppSearchImpl.mDocumentVisibilityStoreLocked
@@ -9829,10 +9638,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(mockVisibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         // Add a schema type that is not displayed by the system
@@ -9955,10 +9762,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(mockVisibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         // Add two schema types that are not displayed by the system.
@@ -10040,10 +9845,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                publicAclMockChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(publicAclMockChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         List<InternalVisibilityConfig> visibilityConfigs = ImmutableList.of(
@@ -10147,10 +9950,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                publicAclMockChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(publicAclMockChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         List<InternalVisibilityConfig> visibilityConfigs = ImmutableList.of(
@@ -10325,11 +10126,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/null,
-                /*callStatsBuilder=*/ null,
-                rejectChecker,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(rejectChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         // Add a schema type
@@ -10453,10 +10251,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/null,
-                /*callStatsBuilder=*/ null,
-                visibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(visibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         // Add a schema type
@@ -10519,10 +10315,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/null,
-                /*callStatsBuilder=*/ null,
-                rejectChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(rejectChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         // Add a schema type
@@ -10889,10 +10683,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/null,
-                /*callStatsBuilder=*/ null,
-                visibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(visibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         // Register an observer
@@ -11069,10 +10861,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/null,
-                /*callStatsBuilder=*/ null,
-                visibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(visibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         // Add a schema.
@@ -11179,10 +10969,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/null,
-                /*callStatsBuilder=*/ null,
-                visibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(visibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         // Add a schema.
@@ -11293,10 +11081,8 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                /*initStatsBuilder=*/null,
-                /*callStatsBuilder=*/ null,
-                visibilityChecker, /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setVisibilityChecker(visibilityChecker).build(),
                 ALWAYS_OPTIMIZE);
 
         // Add a schema.
@@ -11503,11 +11289,8 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 mUnlimitedConfig,
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                modifiedIcingInstance,
+                 new AppSearchUserPlugins.Builder()
+                        .setIcingSearchEngine(modifiedIcingInstance).build(),
                 ALWAYS_OPTIMIZE);
         List<SchemaTypeConfigProto> existingSchemas =
                 mAppSearchImpl.getSchemaProtoLocked(/*callStatsBuilder=*/ null).getTypesList();
@@ -11591,11 +11374,7 @@ public class AppSearchImplTest {
                                 return 10;
                             }
                         }),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Set schema
@@ -11661,11 +11440,7 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 configLargeThreshold,
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Run optimize, and test that the document is decompressed based on the new threshold.
@@ -11753,11 +11528,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /*icingSearchEngine=*/ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
         byte[] digest = calculateDigest(data);
@@ -12336,11 +12109,7 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 mUnlimitedConfig,
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
         GenericDocument outDocument = mAppSearchImpl.getDocument(
                 "package",
@@ -12401,11 +12170,7 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 mUnlimitedConfig,
-                /*initStatsBuilder=*/ null,
-                /*callStatsBuilder=*/ null,
-                /*visibilityChecker=*/ null,
-                /*revocableFileDescriptorStore=*/ null,
-                /*icingSearchEngine=*/ null,
+                AppSearchUserPlugins.EMPTY,
                 ALWAYS_OPTIMIZE);
 
         // Create an account in System
@@ -12515,12 +12280,9 @@ public class AppSearchImplTest {
                 AppSearchImpl.create(
                         mAppSearchDir,
                         mUnlimitedConfig,
-                        initStatsBuilder,
-                        /* callStatsBuilder= */ null,
-                        /* visibilityChecker= */ null,
-                        /* revocableFileDescriptorStore= */ null,
-                        /* icingSearchEngine= */ null,
-                        ALWAYS_OPTIMIZE);
+                        new AppSearchUserPlugins.Builder()
+                                .setInitStatsBuilder(initStatsBuilder).build(),
+                ALWAYS_OPTIMIZE);
         // Sanity check for initStats.
         InitializeStats initStats = initStatsBuilder.build();
         assertThat(initStats.getNativeSchemaStoreRecoveryCause())
@@ -12615,12 +12377,9 @@ public class AppSearchImplTest {
                 AppSearchImpl.create(
                         mAppSearchDir,
                         mUnlimitedConfig,
-                        initStatsBuilder,
-                        /* callStatsBuilder= */ null,
-                        /* visibilityChecker= */ null,
-                        /* revocableFileDescriptorStore= */ null,
-                        /* icingSearchEngine= */ null,
-                        ALWAYS_OPTIMIZE);
+                        new AppSearchUserPlugins.Builder()
+                                .setInitStatsBuilder(initStatsBuilder).build(),
+                ALWAYS_OPTIMIZE);
         // Sanity check for initStats.
         InitializeStats initStats = initStatsBuilder.build();
         assertThat(initStats.getNativeSchemaStoreRecoveryCause())
@@ -13099,11 +12858,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /* initStatsBuilder= */ null,
-                /* callStatsBuilder= */ null,
-                /* visibilityChecker= */ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /* icingSearchEngine= */ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
         byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
         byte[] digest = calculateDigest(data);
@@ -13135,11 +12892,9 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                /* initStatsBuilder= */ null,
-                /* callStatsBuilder= */ null,
-                /* visibilityChecker= */ null,
-                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
-                /* icingSearchEngine= */ null,
+                new AppSearchUserPlugins.Builder()
+                        .setRevocableFileDescriptorStore(
+                                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig)).build(),
                 ALWAYS_OPTIMIZE);
 
         SchemaVisibilityConfig visibleToConfig = new SchemaVisibilityConfig.Builder()

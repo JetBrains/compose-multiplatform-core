@@ -20,6 +20,7 @@ import android.content.Context
 import android.graphics.Outline
 import android.graphics.Rect
 import android.os.Build
+import android.os.IBinder
 import android.util.DisplayMetrics
 import android.view.ContextThemeWrapper
 import android.view.Gravity
@@ -108,6 +109,9 @@ import kotlin.math.roundToInt
  *   type. Setting a custom window type is particularly useful when displaying a dialog from a
  *   [android.app.Service] or outside the scope of an Activity context (e.g.,
  *   [WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY]).
+ * @property windowToken An optional [android.os.IBinder] for [WindowManager.LayoutParams.token] for
+ *   the dialog window. If null, the dialog will automatically use the token from the parent Compose
+ *   view.
  */
 @Immutable
 actual class DialogProperties(
@@ -118,6 +122,7 @@ actual class DialogProperties(
     val decorFitsSystemWindows: Boolean = true,
     val windowTitle: String = "",
     val windowType: Int = WindowManager.LayoutParams.TYPE_APPLICATION,
+    val windowToken: IBinder? = null,
 ) {
     actual constructor(
         dismissOnBackPress: Boolean,
@@ -147,6 +152,7 @@ actual class DialogProperties(
         decorFitsSystemWindows = decorFitsSystemWindows,
         windowTitle = windowTitle,
         windowType = WindowManager.LayoutParams.TYPE_APPLICATION,
+        windowToken = null,
     )
 
     @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
@@ -188,6 +194,7 @@ actual class DialogProperties(
         if (usePlatformDefaultWidth != other.usePlatformDefaultWidth) return false
         if (decorFitsSystemWindows != other.decorFitsSystemWindows) return false
         if (windowType != other.windowType) return false
+        if (windowToken != other.windowToken) return false
         return true
     }
 
@@ -198,6 +205,7 @@ actual class DialogProperties(
         result = 31 * result + usePlatformDefaultWidth.hashCode()
         result = 31 * result + decorFitsSystemWindows.hashCode()
         result = 31 * result + windowType
+        result = 31 * result + (windowToken?.hashCode() ?: 0)
         return result
     }
 }
@@ -237,7 +245,7 @@ actual fun Dialog(
     // add properties.windowType as a remember key to force the DialogWrapper to be
     // completely recreated from scratch when the type changes.
     val dialog =
-        remember(view, density, properties.windowType) {
+        remember(view, density, properties.windowType, properties.windowToken) {
             DialogWrapper(onDismissRequest, properties, view, layoutDirection, density, dialogId)
                 .apply {
                     setContent(composition) {
@@ -525,7 +533,7 @@ private class DialogWrapper(
     init {
         val window = window ?: error("Dialog has no window")
 
-        applyWindowTypeAndToken(properties.windowType)
+        applyWindowTypeAndToken(properties)
 
         window.requestFeature(Window.FEATURE_NO_TITLE)
         window.setBackgroundDrawableResource(android.R.color.transparent)
@@ -626,16 +634,12 @@ private class DialogWrapper(
         return super.onKeyUp(keyCode, event)
     }
 
-    private fun applyWindowTypeAndToken(type: Int) {
+    private fun applyWindowTypeAndToken(properties: DialogProperties) {
         window?.let { window ->
             val attrs = window.attributes
-            attrs.type = type
-            // TYPE_APPLICATION is the default dialog window type.
-            // Framework automatically assigns the correct Activity WindowToken for this type.
-            // We only override the token for custom types (like sub-panels).
-            if (type != WindowManager.LayoutParams.TYPE_APPLICATION) {
-                composeView.windowToken?.let { token -> attrs.token = token }
-            }
+            attrs.type = properties.windowType
+            // Use windowToken if provided else let the framework handle it.
+            properties.windowToken?.let { token -> attrs.token = token }
             window.attributes = attrs
         }
     }

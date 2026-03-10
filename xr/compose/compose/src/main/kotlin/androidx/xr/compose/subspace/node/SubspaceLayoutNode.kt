@@ -274,6 +274,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
         requestMeasure()
         parent?.requestMeasure()
+        requestEntityUpdate()
     }
 
     /**
@@ -516,8 +517,6 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
             owner?.logger?.nodePlaced(this, pose)
 
-            // TODO(agustinbarreto): Figure out how we can remove this call to requestEntityUpdate.
-            this@SubspaceLayoutNode.requestEntityUpdate()
             coreEntity?.updatePoseFromLayout()
             coreEntity?.size = IntVolumeSize(measuredWidth, measuredHeight, measuredDepth)
 

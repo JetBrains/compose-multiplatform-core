@@ -39,6 +39,7 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.height
 import androidx.compose.remote.creation.compose.modifier.heightIn
 import androidx.compose.remote.creation.compose.modifier.padding
+import androidx.compose.remote.creation.compose.modifier.role
 import androidx.compose.remote.creation.compose.modifier.semantics
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.width
@@ -434,8 +435,7 @@ public fun RemoteCompactButton(
             ) {
                 RemoteBox(
                     modifier = RemoteModifier.fillMaxSize().wrapContentSize(),
-                    horizontalAlignment = RemoteAlignment.CenterHorizontally,
-                    verticalArrangement = RemoteArrangement.Center,
+                    contentAlignment = RemoteAlignment.Center,
                 ) {
                     if (icon != null) {
                         icon()
@@ -477,7 +477,7 @@ private fun RemoteButtonImpl(
 
     RemoteRow(
         verticalAlignment = RemoteAlignment.CenterVertically,
-        horizontalArrangement = RemoteArrangement.CenterHorizontally,
+        horizontalArrangement = RemoteArrangement.Center,
         modifier =
             modifier
                 .drawWithContent {
@@ -536,8 +536,7 @@ private fun RemoteButtonImpl(
         if (icon != null) {
             RemoteBox(
                 modifier = RemoteModifier.wrapContentSize(),
-                horizontalAlignment = RemoteAlignment.CenterHorizontally,
-                verticalArrangement = RemoteArrangement.Center,
+                contentAlignment = RemoteAlignment.Center,
                 content = icon,
             )
             RemoteBox(RemoteModifier.size(RemoteButtonDefaults.IconSpacing))

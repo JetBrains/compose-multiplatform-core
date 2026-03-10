@@ -78,7 +78,6 @@ public abstract class JavaScriptReplyProxy {
     @RequiresFeature(
             name = WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public abstract void executeJavaScript(
             @NonNull String script,
             @Nullable WebViewOutcomeReceiver<String, JavaScriptExecutionException> receiver);

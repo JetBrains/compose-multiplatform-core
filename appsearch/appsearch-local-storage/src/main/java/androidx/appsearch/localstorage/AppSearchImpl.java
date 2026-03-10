@@ -347,41 +347,32 @@ public final class AppSearchImpl implements Closeable {
      * <p>Instead, logger instance needs to be passed to each individual method, like create, query
      * and putDocument.
      *
-     * @param initStatsBuilder  collects stats for initialization if provided.
-     * @param visibilityChecker The {@link VisibilityChecker} that check whether the caller has
-     *                          access to aa specific schema. Pass null will lost that ability and
-     *                          global querier could only get their own data.
-     * @param icingSearchEngine the underlying icing instance to use. If not provided, a new {@link
-     *     IcingSearchEngine} instance will be created and used.
+     * @param icingDir The directory where AppSearch data should be stored.
+     * @param config The configuration for AppSearch.
+     * @param appSearchUserPlugins Optional plugins and instrumentation builders (such as stats
+     *                             collectors, visibility checkers, or a mock search engine) to
+     *                             enhance or monitor the engine's behavior. If no extensions are
+     *                             needed, pass {@link AppSearchUserPlugins#EMPTY}.
+     * @param optimizeStrategy The strategy to use for deciding when to trigger database
+     * optimization.
+     * @throws AppSearchException if error occurs during initialization.
      */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    // Functional interface parameters should be last to improve Kotlin interoperability;
     public static @NonNull AppSearchImpl create(
             @NonNull File icingDir,
             @NonNull AppSearchConfig config,
-            InitializeStats.@Nullable Builder initStatsBuilder,
-            CallStats.@Nullable Builder callStatsBuilder,
-            @Nullable VisibilityChecker visibilityChecker,
-            @Nullable RevocableFileDescriptorStore revocableFileDescriptorStore,
-            @Nullable IcingSearchEngineInterface icingSearchEngine,
+            @NonNull AppSearchUserPlugins appSearchUserPlugins,
             @NonNull OptimizeStrategy optimizeStrategy)
             throws AppSearchException {
-        return new AppSearchImpl(icingDir, config, initStatsBuilder, callStatsBuilder,
-                visibilityChecker, revocableFileDescriptorStore, icingSearchEngine,
-                optimizeStrategy);
+        return new AppSearchImpl(icingDir, config, appSearchUserPlugins, optimizeStrategy);
     }
 
-    /**
-     * @param initStatsBuilder collects stats for initialization if provided.
-     */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private AppSearchImpl(
             @NonNull File icingDir,
             @NonNull AppSearchConfig config,
-            InitializeStats.@Nullable Builder initStatsBuilder,
-            CallStats.@Nullable Builder callStatsBuilder,
-            @Nullable VisibilityChecker visibilityChecker,
-            @Nullable RevocableFileDescriptorStore revocableFileDescriptorStore,
-            @Nullable IcingSearchEngineInterface icingSearchEngine,
+            @NonNull AppSearchUserPlugins appSearchUserPlugins,
             @NonNull OptimizeStrategy optimizeStrategy)
             throws AppSearchException {
         Preconditions.checkNotNull(icingDir);
@@ -393,8 +384,11 @@ public final class AppSearchImpl implements Closeable {
         mBlobFilesDir = new File(icingDir, "blob_dir/blob_files");
         mConfig = Preconditions.checkNotNull(config);
         mOptimizeStrategy = Preconditions.checkNotNull(optimizeStrategy);
-        mVisibilityCheckerLocked = visibilityChecker;
-        mRevocableFileDescriptorStore = revocableFileDescriptorStore;
+        Preconditions.checkNotNull(appSearchUserPlugins);
+        mVisibilityCheckerLocked = appSearchUserPlugins.getVisibilityChecker();
+        mRevocableFileDescriptorStore = appSearchUserPlugins.getRevocableFileDescriptorStore();
+        CallStats.Builder callStatsBuilder = appSearchUserPlugins.getCallStatsBuilder();
+        InitializeStats.Builder initStatsBuilder = appSearchUserPlugins.getInitStatsBuilder();
         mNeedsPersistToDisk.set(false);
 
         // By default, we don't perform any retries.
@@ -407,7 +401,7 @@ public final class AppSearchImpl implements Closeable {
             javaLockAcquisitionEndTimeMillis = SystemClock.elapsedRealtime();
             // We synchronize here because we don't want to call IcingSearchEngine.initialize() more
             // than once. It's unnecessary and can be a costly operation.
-            if (icingSearchEngine == null) {
+            if (appSearchUserPlugins.getIcingSearchEngine() == null) {
                 mIsVMEnabled = false;
                 if (Flags.enableInitializationRetriesBeforeReset()) {
                     maxInitRetries = 2;
@@ -422,7 +416,7 @@ public final class AppSearchImpl implements Closeable {
                         "Constructing IcingSearchEngine, response",
                         ObjectsCompat.hashCode(mIcingSearchEngineLocked));
             } else {
-                mIcingSearchEngineLocked = icingSearchEngine;
+                mIcingSearchEngineLocked = appSearchUserPlugins.getIcingSearchEngine();
                 mIsVMEnabled = true;
                 mIsIcingSchemaDatabaseEnabled = true;
                 maxInitRetries = 2;

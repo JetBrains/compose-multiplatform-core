@@ -108,7 +108,6 @@ public class WebViewCompat {
      * Injection event for when Document is first created, before the rest of the page loads.
      * See {@link #addJavaScriptOnEvent} for usage.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final int INJECTION_EVENT_DOCUMENT_START =
             WebViewProviderBoundaryInterface.JavaScriptInjectionTime.DOCUMENT_START;
 
@@ -116,7 +115,6 @@ public class WebViewCompat {
      * Injection event for when all primary resources have been loaded. Corresponds to
      * DomContentLoaded. See {@link #addJavaScriptOnEvent} for usage.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final int INJECTION_EVENT_DOCUMENT_END =
             WebViewProviderBoundaryInterface.JavaScriptInjectionTime.DOCUMENT_END;
 
@@ -885,7 +883,6 @@ public class WebViewCompat {
     @RequiresFeature(
             name = WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static @NonNull JavaScriptExecutionWorld getExecutionWorld(
             @NonNull WebView webview, @NonNull String name) {
         final ApiFeature.NoFramework feature =
@@ -938,7 +935,6 @@ public class WebViewCompat {
     @RequiresFeature(
             name = WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static @NonNull ScriptHandler addJavaScriptOnEvent(
             @NonNull WebView webview,
             @NonNull String script,
@@ -982,7 +978,6 @@ public class WebViewCompat {
     @RequiresFeature(
             name = WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static void addWebMessageListener(
             @NonNull WebView webView,
             @NonNull String jsObjectName,
@@ -1020,7 +1015,6 @@ public class WebViewCompat {
     @RequiresFeature(
             name = WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static void removeWebMessageListener(
             @NonNull WebView webview,
             @NonNull JavaScriptExecutionWorld world,

@@ -1123,8 +1123,7 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 modifier =
                     RemoteModifier.fillMaxSize()
                         .background(RemoteBrush.radialGradient(colors = colors)),
-                horizontalAlignment = RemoteAlignment.CenterHorizontally,
-                verticalArrangement = RemoteArrangement.Center,
+                contentAlignment = RemoteAlignment.Center,
             ) {
                 val green = RemoteColor(Color.Green)
                 RemoteText("Green", color = green, fontSize = 30.rsp)
@@ -1172,8 +1171,7 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 modifier =
                     RemoteModifier.fillMaxSize()
                         .background(RemoteBrush.radialGradient(colors = colors)),
-                horizontalAlignment = RemoteAlignment.CenterHorizontally,
-                verticalArrangement = RemoteArrangement.Center,
+                contentAlignment = RemoteAlignment.Center,
             ) {
                 RemoteRow(modifier = RemoteModifier.background(Color.Blue)) {
                     RemoteIconVector(
@@ -1299,7 +1297,7 @@ list:
         testLayoutAndPaint(layoutResult, paintResult) {
             RemoteRow(
                 modifier = RemoteModifier.background(Color.Yellow),
-                horizontalArrangement = RemoteArrangement.CenterHorizontally,
+                horizontalArrangement = RemoteArrangement.Center,
                 verticalAlignment = RemoteAlignment.CenterVertically,
             ) {
                 RemoteBox(
@@ -1320,8 +1318,7 @@ list:
                             .background(Color.Blue)
                             .padding(8.dp)
                             .background(Color.Magenta),
-                    horizontalAlignment = RemoteAlignment.CenterHorizontally,
-                    verticalArrangement = RemoteArrangement.Center,
+                    contentAlignment = RemoteAlignment.Center,
                 ) {
                     RemoteText("XYZ")
                 }

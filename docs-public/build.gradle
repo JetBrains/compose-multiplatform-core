@@ -20,6 +20,7 @@ dependencies {
     docs("androidx.appcompat:appcompat-resources:1.7.1")
     docs("androidx.appfunctions:appfunctions:1.0.0-alpha07")
     docs("androidx.appfunctions:appfunctions-service:1.0.0-alpha07")
+    stubs(project(":appfunctions:appfunctions-stubs"))
     docs("androidx.appfunctions:appfunctions-testing:1.0.0-alpha07")
     docs("androidx.appsearch:appsearch:1.1.0")
     docs("androidx.appsearch:appsearch-builtin-types:1.1.0")
@@ -67,6 +68,7 @@ dependencies {
     kmpDocs("androidx.compose.animation:animation:1.11.0-alpha06")
     kmpDocs("androidx.compose.animation:animation-core:1.11.0-alpha06")
     kmpDocs("androidx.compose.animation:animation-graphics:1.11.0-alpha06")
+    stubs(project(":compose:animation:animation-tooling-internal"))
     kmpDocs("androidx.compose.foundation:foundation:1.11.0-alpha06")
     kmpDocs("androidx.compose.foundation:foundation-layout:1.11.0-alpha06")
     kmpDocs("androidx.compose.material3.adaptive:adaptive:1.3.0-alpha09")
@@ -457,6 +459,7 @@ dependencies {
     docs("androidx.wear.watchfacepush:watchfacepush:1.0.0-beta01")
     docs("androidx.wear:wear:1.4.0")
     stubs(fileTree(dir: "../wear/wear_stubs/", include: ["com.google.android.wearable-stubs.jar"]))
+    stubs(files("../wear/wear_sdk/wear-sdk.jar"))
     docs("androidx.wear:wear-core:1.0.0")
     docs("androidx.wear:wear-input:1.2.0")
     docs("androidx.wear:wear-input-testing:1.2.0")
@@ -467,6 +470,7 @@ dependencies {
     docs("androidx.webgpu:webgpu:1.0.0-alpha04")
     docs("androidx.webkit:webkit:1.16.0-alpha02")
     docs("androidx.window.extensions.core:core:1.0.0")
+    stubs("androidx.window.sidecar:sidecar:1.0.0-rc01")
     docs("androidx.window:window:1.6.0-alpha01")
     stubs(fileTree(dir: "../window/stubs/", include: ["window-sidecar-release-0.1.0-alpha01.aar"]))
     kmpDocs("androidx.window:window-core:1.6.0-alpha01")
@@ -508,6 +512,7 @@ dependencies {
     docs("androidx.xr.scenecore:scenecore-spatial-core:1.0.0-alpha12")
     docs("androidx.xr.scenecore:scenecore-spatial-rendering:1.0.0-alpha12")
     docs("androidx.xr.scenecore:scenecore-testing:1.0.0-alpha12")
+    stubs(libs.androidExtensionsXr)
 }
 
 afterEvaluate {

@@ -547,7 +547,7 @@ class ListItemTest {
         // The width should fill the max width, like with the spacer
         listItemBounds.width.assertIsEqualTo(spacerBounds.width, "width of list item.")
         listItemBounds.height.assertIsEqualTo(
-            /* vertical padding * 2 + icon height*/ (20 + 20 + 56).dp,
+            /* vertical padding * 2 + icon height*/ (20 + 20 + 48).dp,
             "height of list item.",
         )
     }
@@ -608,7 +608,7 @@ class ListItemTest {
         // Label should be top aligned when the height of the primary and supporting labels is
         // greater than minimum list item height
         (primaryLabelBounds.top - listItemBounds.top).assertIsEqualTo(
-            23.5.dp,
+            20.dp,
             "Padding between top of list item and top of primary label.",
         )
 
@@ -628,7 +628,7 @@ class ListItemTest {
         )
 
         (listItemBounds.bottom - supportingLabelBounds.bottom).assertIsEqualTo(
-            23.5.dp,
+            20.dp,
             "Padding between bottom of list item and bottom of supporting label.",
         )
 

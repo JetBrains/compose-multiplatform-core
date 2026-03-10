@@ -256,8 +256,7 @@ class RemoteBrushTest {
     ) {
         RemoteBox(
             modifier = modifier.size(ContainerSize).background(ContainerColor),
-            horizontalAlignment = RemoteAlignment.CenterHorizontally,
-            verticalArrangement = RemoteArrangement.Center,
+            contentAlignment = RemoteAlignment.Center,
             content = content,
         )
     }

@@ -542,7 +542,7 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
                 )
             },
         ) { a, b ->
-            if (a == b) 1 else 0
+            a == b
         }
 
     /**
@@ -566,7 +566,7 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
                 )
             },
         ) { a, b ->
-            if (a != b) 1 else 0
+            a != b
         }
 
     /**
@@ -589,7 +589,7 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
                 )
             },
         ) { a, b ->
-            if (a < b) 1 else 0
+            a < b
         }
 
     /**
@@ -612,7 +612,7 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
                 )
             },
         ) { a, b ->
-            if (a <= b) 1 else 0
+            a <= b
         }
 
     /**
@@ -635,7 +635,7 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
                 )
             },
         ) { a, b ->
-            if (a > b) 1 else 0
+            a > b
         }
 
     /**
@@ -658,7 +658,7 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
                 )
             },
         ) { a, b ->
-            if (a >= b) 1 else 0
+            a >= b
         }
 
     public companion object {
@@ -926,12 +926,12 @@ internal fun comparisonOp(
     b: RemoteFloat,
     op: OperationKey,
     expressionGenerator: (FloatArray, FloatArray) -> FloatArray,
-    directEval: (Float, Float) -> Long,
+    directEval: (Float, Float) -> Boolean,
 ): RemoteBoolean {
     val aConst = a.constantValueOrNull
     val bConst = b.constantValueOrNull
     if (aConst != null && bConst != null) {
-        return RemoteBoolean(RemoteInt.createForId(directEval(aConst, bConst)))
+        return RemoteBoolean(directEval(aConst, bConst))
     }
 
     return RemoteBoolean(

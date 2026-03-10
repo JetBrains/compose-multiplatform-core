@@ -29,7 +29,18 @@ package androidx.webkit {
     method public int update(android.net.Uri, android.content.ContentValues?, String?, String![]?);
   }
 
+  public class JavaScriptExecutionException extends java.lang.Exception {
+    method public int getErrorType();
+    field public static final int ERROR_FRAME_DESTROYED = 1; // 0x1
+    field public static final int ERROR_GENERIC = 0; // 0x0
+  }
+
+  public class JavaScriptExecutionWorld {
+    field public static final String PAGE_WORLD_NAME = "";
+  }
+
   @UiThread public abstract class JavaScriptReplyProxy {
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public abstract void executeJavaScript(String, androidx.webkit.WebViewOutcomeReceiver<java.lang.String!,androidx.webkit.JavaScriptExecutionException!>?);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEB_MESSAGE_ARRAY_BUFFER, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public abstract void postMessage(byte[]);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEB_MESSAGE_LISTENER, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public abstract void postMessage(String);
   }
@@ -567,11 +578,14 @@ package androidx.webkit {
 
   public class WebViewCompat {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.DOCUMENT_START_SCRIPT, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static androidx.webkit.ScriptHandler addDocumentStartJavaScript(android.webkit.WebView, String, java.util.Set<java.lang.String!>);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static androidx.webkit.ScriptHandler addJavaScriptOnEvent(android.webkit.WebView, String, int, java.util.Set<java.lang.String!>, androidx.webkit.JavaScriptExecutionWorld);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.NAVIGATION_LISTENER_V1, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.WebNavigationClient.ExperimentalNavigationCallback public static void addNavigationListener(android.webkit.WebView, androidx.webkit.NavigationListener);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.NAVIGATION_LISTENER_V1, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.WebNavigationClient.ExperimentalNavigationCallback public static void addNavigationListener(android.webkit.WebView, java.util.concurrent.Executor, androidx.webkit.NavigationListener);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void addWebMessageListener(android.webkit.WebView, String, java.util.Set<java.lang.String!>, androidx.webkit.JavaScriptExecutionWorld, androidx.webkit.WebViewCompat.WebMessageListener);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEB_MESSAGE_LISTENER, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void addWebMessageListener(android.webkit.WebView, String, java.util.Set<java.lang.String!>, androidx.webkit.WebViewCompat.WebMessageListener);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.CREATE_WEB_MESSAGE_CHANNEL, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static androidx.webkit.WebMessagePortCompat![] createWebMessageChannel(android.webkit.WebView);
     method @AnyThread public static android.content.pm.PackageInfo? getCurrentWebViewPackage(android.content.Context);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static androidx.webkit.JavaScriptExecutionWorld getExecutionWorld(android.webkit.WebView, String);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.MULTI_PROFILE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static androidx.webkit.Profile getProfile(android.webkit.WebView);
     method @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.SAFE_BROWSING_PRIVACY_POLICY_URL, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static android.net.Uri getSafeBrowsingPrivacyPolicyUrl();
     method @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.GET_VARIATIONS_HEADER, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static String getVariationsHeader();
@@ -587,6 +601,7 @@ package androidx.webkit {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.PRERENDER_WITH_URL, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void prerenderUrlAsync(android.webkit.WebView, String, android.os.CancellationSignal?, java.util.concurrent.Executor, androidx.webkit.PrerenderOperationCallback);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.PRERENDER_WITH_URL, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public static void prerenderUrlAsync(android.webkit.WebView, String, android.os.CancellationSignal?, java.util.concurrent.Executor, androidx.webkit.SpeculativeLoadingParameters, androidx.webkit.PrerenderOperationCallback);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.NAVIGATION_LISTENER_V1, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.WebNavigationClient.ExperimentalNavigationCallback public static void removeNavigationListener(android.webkit.WebView, androidx.webkit.NavigationListener);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void removeWebMessageListener(android.webkit.WebView, androidx.webkit.JavaScriptExecutionWorld, String);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEB_MESSAGE_LISTENER, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void removeWebMessageListener(android.webkit.WebView, String);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.SAVE_STATE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.WebViewCompat.ExperimentalSaveState public static void saveState(android.webkit.WebView, android.os.Bundle, @IntRange(from=1) int, boolean);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.MUTE_AUDIO, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void setAudioMuted(android.webkit.WebView, boolean);
@@ -599,6 +614,8 @@ package androidx.webkit {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEB_VIEW_RENDERER_CLIENT_BASIC_USAGE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void setWebViewRenderProcessClient(android.webkit.WebView, java.util.concurrent.Executor, androidx.webkit.WebViewRenderProcessClient);
     method @Deprecated @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.START_SAFE_BROWSING, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void startSafeBrowsing(android.content.Context, android.webkit.ValueCallback<java.lang.Boolean!>?);
     method @SuppressCompatibility @AnyThread @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public static void startUpWebView(android.content.Context, androidx.webkit.WebViewStartUpConfig, androidx.webkit.WebViewCompat.WebViewStartUpCallback);
+    field public static final int INJECTION_EVENT_DOCUMENT_END = 1; // 0x1
+    field public static final int INJECTION_EVENT_DOCUMENT_START = 0; // 0x0
   }
 
   @SuppressCompatibility @RequiresOptIn(level=androidx.annotation.RequiresOptIn.Level.ERROR) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.TYPE, java.lang.annotation.ElementType.FIELD}) public static @interface WebViewCompat.ExperimentalAsyncStartUp {
@@ -644,6 +661,7 @@ package androidx.webkit {
     field public static final String GET_WEB_VIEW_CLIENT = "GET_WEB_VIEW_CLIENT";
     field public static final String GET_WEB_VIEW_RENDERER = "GET_WEB_VIEW_RENDERER";
     field public static final String HYPERLINK_CONTEXT_MENU_ITEMS = "HYPERLINK_CONTEXT_MENU_ITEMS";
+    field public static final String JS_INJECTION_IN_FRAME_AND_WORLD = "JS_INJECTION_IN_FRAME_AND_WORLD";
     field public static final String MULTI_PROCESS = "MULTI_PROCESS";
     field public static final String MULTI_PROFILE = "MULTI_PROFILE";
     field public static final String MUTE_AUDIO = "MUTE_AUDIO";
