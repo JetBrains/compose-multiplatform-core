@@ -90,12 +90,10 @@ private class OnPointerEventModifierNode(
     private var pass: PointerEventPass,
     private var onEvent: AwaitPointerEventScope.(event: PointerEvent) -> Unit
 ) : DelegatingNode() {
-    private val pointerInputEventHandlerResetTick = mutableStateOf(0)
 
     private val pointerInputNode = delegate(
         SuspendingPointerInputModifierNode(
             pointerInputEventHandler = {
-                pointerInputEventHandlerResetTick.value
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent(pass)
@@ -114,31 +112,17 @@ private class OnPointerEventModifierNode(
         onEvent: AwaitPointerEventScope.(event: PointerEvent) -> Unit
     ) {
         var pointerInputNodeNeedsReset = false
-        var pointerInputEventHandlerNeedsResetTick = false
 
-        if (this.eventType != eventType) {
-            this.eventType = eventType
-            pointerInputEventHandlerNeedsResetTick = true
-        }
+        this.eventType = eventType
+        this.onEvent = onEvent
+
         if (this.pass != pass) {
             this.pass = pass
             pointerInputNodeNeedsReset = true
         }
-        if (this.onEvent !== onEvent) {
-            this.onEvent = onEvent
-            pointerInputEventHandlerNeedsResetTick = true
-        }
-
-        if (pointerInputEventHandlerNeedsResetTick) {
-            pointerInputEventHandlerResetTick.value++
-        }
 
         if (pointerInputNodeNeedsReset) {
             pointerInputNode.resetPointerInputHandler()
-        }
-
-        if (pointerInputEventHandlerNeedsResetTick) {
-            pointerInputEventHandlerResetTick.value++
         }
     }
 }
