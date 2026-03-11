@@ -191,12 +191,10 @@ private class OnClickModifierNode(
     private val hasDoubleClick: Boolean get() = onDoubleClick != null
     private val hasLongClick: Boolean get() =  onLongClick != null
     private val interactionData = InteractionData()
-    private val pointerInputEventHandlerResetTick = mutableStateOf(0)
 
     private val pointerInputNode = delegate(
         SuspendingPointerInputModifierNode(
             pointerInputEventHandler = {
-                pointerInputEventHandlerResetTick.value
                 detectTapGestures(
                     matcher = matcher,
                     keyboardModifiers = { keyboardModifiers(this) },
@@ -253,7 +251,6 @@ private class OnClickModifierNode(
         onClick: () -> Unit,
     ) {
         var pointerInputNodeNeedsReset = false
-        var pointerInputEventHandlerNeedsResetTick = false
 
         if (this.interactionSource != interactionSource) {
             pointerInputNodeNeedsReset = true
@@ -263,18 +260,12 @@ private class OnClickModifierNode(
             this.interactionSource = interactionSource
         }
 
-        if (this.onDoubleClick != onDoubleClick) {
-            pointerInputEventHandlerNeedsResetTick = true
-        }
         val hadDoubleClick = hasDoubleClick
         if (hasDoubleClick != hadDoubleClick) {
             pointerInputNodeNeedsReset = true
         }
         this.onDoubleClick = onDoubleClick
 
-        if (this.onLongClick != onLongClick) {
-            pointerInputEventHandlerNeedsResetTick = true
-        }
         val hadLongClick = hasLongClick
         if (hasLongClick != hadLongClick) {
             pointerInputNodeNeedsReset = true
@@ -282,27 +273,12 @@ private class OnClickModifierNode(
         }
         this.onLongClick = onLongClick
 
-        if (this.onClick != onClick) {
-            pointerInputEventHandlerNeedsResetTick = true
-        }
         this.onClick = onClick
-
-        if (this.matcher != matcher) {
-            pointerInputEventHandlerNeedsResetTick = true
-        }
         this.matcher = matcher
-
-        if (this.keyboardModifiers != keyboardModifiers) {
-            pointerInputEventHandlerNeedsResetTick = true
-        }
         this.keyboardModifiers = keyboardModifiers
 
         if (pointerInputNodeNeedsReset) {
             pointerInputNode.resetPointerInputHandler()
-        }
-
-        if (pointerInputEventHandlerNeedsResetTick) {
-            pointerInputEventHandlerResetTick.value++
         }
     }
 
