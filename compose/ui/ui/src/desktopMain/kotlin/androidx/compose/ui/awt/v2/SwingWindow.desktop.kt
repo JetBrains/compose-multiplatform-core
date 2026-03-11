@@ -31,7 +31,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.size
 import androidx.compose.ui.util.ComponentUpdater
 import androidx.compose.ui.util.componentListenerRef
 import androidx.compose.ui.util.setBoundsSafely
@@ -45,16 +45,24 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.roundToDimension
 import androidx.compose.ui.window.resizerThickness
+import androidx.compose.ui.window.toDpSize
+import androidx.compose.ui.window.v2.Screen
 import androidx.compose.ui.window.v2.WindowBoundsProvider
 import androidx.compose.ui.window.v2.WindowGeometryProviderScope
+import androidx.compose.ui.window.v2.WindowScreenProvider
+import androidx.compose.ui.window.v2.WindowScreenProviderScope
 import androidx.compose.ui.window.v2.WindowState
 import androidx.compose.ui.window.v2.rememberWindowState
+import java.awt.GraphicsEnvironment
+import java.awt.Window
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.JFrame
+
 
 /**
  * Similar to the corresponding [Window] function, but additionally allows configuring the
@@ -89,7 +97,8 @@ import javax.swing.JFrame
 fun SwingWindow(
     onCloseRequest: () -> Unit,
     state: WindowState = rememberWindowState(),
-    initialBounds: WindowBoundsProvider = WindowBoundsProvider.Default,
+    initialScreenProvider: WindowScreenProvider = WindowScreenProvider.Default,
+    initialBoundsProvider: WindowBoundsProvider = WindowBoundsProvider.Default,
     visible: Boolean = true,
     title: String = "Untitled",
     icon: Painter? = null,
@@ -149,9 +158,10 @@ fun SwingWindow(
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
         create = {
-            val graphicsConfiguration = WindowLocationTracker.lastActiveGraphicsConfiguration
+            val initialScreen = currentState.screen ?: initialScreenProvider.getInitialScreen()
+
             ComposeWindow(
-                graphicsConfiguration = graphicsConfiguration,
+                graphicsConfiguration = initialScreen.device.defaultConfiguration,
                 coroutineContext = coroutineContext
             ).apply {
                 // close state is controlled by WindowState.isOpen
@@ -173,16 +183,19 @@ fun SwingWindow(
                 listeners.componentListenerRef.registerWithAndSet(
                     this,
                     object : ComponentAdapter() {
-                        fun applyComponentBounds() {
+                        fun applyStateChanges() {
                             val bounds = IntRect(x, y, x + width, y + height)
                             val dpBounds = bounds.toDpRect()
                             currentState.setBoundsDirect(dpBounds)
                             appliedState.bounds = dpBounds
                             currentOnBoundsChanged(bounds)
+                            if (currentState.screen?.device != graphicsConfiguration.device) {
+                                currentState.screen = Screen(graphicsConfiguration.device)
+                            }
                         }
 
                         override fun componentShown(e: ComponentEvent?) {
-                            applyComponentBounds()
+                            applyStateChanges()
                         }
 
                         override fun componentResized(e: ComponentEvent) {
@@ -191,29 +204,15 @@ fun SwingWindow(
                             // fire windowStateChanged, only componentResized
                             currentState.placement = placement
                             appliedState.placement = currentState.placement
-                            applyComponentBounds()
+                            applyStateChanges()
                         }
 
                         override fun componentMoved(e: ComponentEvent) {
-                            applyComponentBounds()
+                            applyStateChanges()
                         }
                     }
                 )
                 WindowLocationTracker.onWindowCreated(this)
-
-                val scope = object: WindowGeometryProviderScope {
-                    override val window
-                        get() = this@apply
-                }
-                bounds = run {
-                    val boundsRect = currentState.bounds ?:
-                        with(initialBounds) {
-                            scope.getBounds().let {
-                                DpRect(it.left.dp, it.top.dp, it.right.dp, it.bottom.dp)
-                            }
-                        }
-                    boundsRect.toAwtRectangleRounded()
-                }
 
                 init(this)
             }
@@ -225,6 +224,10 @@ fun SwingWindow(
             it.dispose()
         },
         update = { window ->
+            if (!window.isDisplayable) {
+                window.initializeBounds(currentState.bounds, initialBoundsProvider)
+            }
+
             updater.update {
                 set(currentTitle, window::setTitle)
                 set(currentIcon, window::setIcon)
@@ -253,4 +256,42 @@ fun SwingWindow(
         },
         content = content
     )
+}
+
+private fun WindowScreenProvider.getInitialScreen(): Screen {
+    val lastActiveConfig = WindowLocationTracker.lastActiveGraphicsConfiguration
+    val env = GraphicsEnvironment.getLocalGraphicsEnvironment()
+    val allScreens = env.screenDevices.map(::Screen)
+    val defaultScreen =
+        allScreens.firstOrNull { it.device === lastActiveConfig?.device } ?:
+        allScreens.firstOrNull { it.device == env.defaultScreenDevice } ?:
+        Screen(env.defaultScreenDevice)
+    return with(WindowScreenProviderScope(defaultScreen, allScreens)) {
+        getScreen()
+    }
+}
+
+private fun Window.initializeBounds(
+    currentBounds: DpRect?,
+    initialBoundsProvider: WindowBoundsProvider
+) {
+    if (currentBounds != null) {
+        val boundsRect = currentBounds.toAwtRectangleRounded()
+        preferredSize = boundsRect.size
+        pack()
+    } else {
+        val screen = Screen(graphicsConfiguration.device)
+        preferredSize = screen.availableBounds.size.roundToDimension()
+        pack()
+        preferredSize = null
+        val intrinsicSize = preferredSize.toDpSize()
+
+        val scope = WindowGeometryProviderScope(
+            screen = screen,
+            intrinsicWindowSize = intrinsicSize
+        )
+        bounds = with(scope) {
+            initialBoundsProvider.getBounds().toAwtRectangleRounded()
+        }
+    }
 }

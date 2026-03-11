@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.window.WindowPlacement
+import java.awt.GraphicsEnvironment
 
 /**
  * Creates a [WindowState] that is remembered across compositions.
@@ -56,6 +57,7 @@ fun WindowState(
     placement: WindowPlacement = WindowPlacement.Floating,
     isMinimized: Boolean = false,
 ): WindowState = WindowState(
+    screen = null,
     placement = placement,
     isMinimized = isMinimized,
     bounds = null
@@ -71,6 +73,7 @@ fun WindowState(
  */
 @Stable
 class WindowState internal constructor(
+    screen: Screen?,
     placement: WindowPlacement,
     isMinimized: Boolean,
     bounds: DpRect? = null,
@@ -78,6 +81,12 @@ class WindowState internal constructor(
     init {
         if (bounds != null) requireReal(bounds)
     }
+
+    /**
+     * The screen with which the window is currently associated.
+     */
+    var screen: Screen? by mutableStateOf(screen)
+        internal set
 
     /**
      * Describes how the window is placed on the screen.
@@ -126,6 +135,7 @@ class WindowState internal constructor(
             save = {
                 val bounds = it.bounds
                 arrayListOf(
+                    it.screen?.device?.iDstring ?: "",
                     it.placement.ordinal,
                     it.isMinimized,
                     bounds != null,
@@ -137,14 +147,22 @@ class WindowState internal constructor(
             },
             restore = { state ->
                 WindowState(
-                    placement = WindowPlacement.entries[state[0] as Int],
-                    isMinimized = state[1] as Boolean,
-                    bounds = if (state[2] as Boolean) {
+                    screen = (state[0] as String).let { idString ->
+                        if (idString.isEmpty()) return@let null
+                        val device = GraphicsEnvironment
+                            .getLocalGraphicsEnvironment()
+                            .screenDevices
+                            .firstOrNull { it.iDstring == idString }
+                        if (device != null) Screen(device) else null
+                    },
+                    placement = WindowPlacement.entries[state[1] as Int],
+                    isMinimized = state[2] as Boolean,
+                    bounds = if (state[3] as Boolean) {
                         DpRect(
-                            top = Dp(state[3] as Float),
-                            left = Dp(state[4] as Float),
-                            right = Dp(state[5] as Float),
-                            bottom = Dp(state[6] as Float)
+                            top = Dp(state[4] as Float),
+                            left = Dp(state[5] as Float),
+                            right = Dp(state[6] as Float),
+                            bottom = Dp(state[7] as Float)
                         )
                     } else null,
                 )
