@@ -55,7 +55,7 @@ def supportRootFolder = buildscript.sourceFile.getParentFile()
 skikoSetup.defineSkikoInVersionCatalog(settings)
 
 // Abort immediately if we're running in Studio, but not a managed instance of Studio.
-if (startParameter.projectProperties.containsKey('android.injected.invoked.from.ide')) {
+if (providers.gradleProperty("android.injected.invoked.from.ide").isPresent()) {
     def expectedAgpVersion = System.getenv().get("EXPECTED_AGP_VERSION")
     if (expectedAgpVersion == null) {
         throw new Exception("Android Studio must be run from studiow or gradlew studio.")
@@ -486,7 +486,7 @@ includeProject(":biometric:integration-tests:testapp-compose", [BuildType.MAIN])
 includeProject(":browser:browser", [BuildType.MAIN])
 includeProject(":buildSrc-tests", [BuildType.MAIN, BuildType.TOOLS])
 // these projects intentionally fail to compile unless androidx.useMaxDepVersions is enabled
-if (startParameter.projectProperties.containsKey("androidx.useMaxDepVersions")) {
+if (providers.gradleProperty("androidx.useMaxDepVersions").isPresent()) {
     includeProject(":buildSrc-tests:max-dep-versions:buildSrc-tests-max-dep-versions-dep", [BuildType.MAIN])
     includeProject(":buildSrc-tests:max-dep-versions:buildSrc-tests-max-dep-versions-main", [BuildType.MAIN])
 }

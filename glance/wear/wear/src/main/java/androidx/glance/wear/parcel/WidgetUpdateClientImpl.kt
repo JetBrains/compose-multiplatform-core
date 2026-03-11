@@ -21,14 +21,19 @@ import android.content.Context
 import android.content.Intent
 import android.os.RemoteException
 import android.util.Log
+import androidx.glance.wear.core.WearWidgetRawContent
+import androidx.glance.wear.core.WearWidgetUpdateRequest
 import androidx.glance.wear.parcel.legacy.TileUpdateRequestData
 import androidx.glance.wear.parcel.legacy.TileUpdateRequesterService
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
@@ -41,6 +46,13 @@ internal class WidgetUpdateClientImpl(
     // Writes must be guarded by binderMutex.
     @Volatile
     private var legacyBinder: WidgetUpdateBinder<TileUpdateRequesterService, ComponentName>? = null
+
+    // Writes must be guarded by binderMutex.
+    @Volatile
+    private var widgetUpdateBinder:
+        WidgetUpdateBinder<IWearWidgetUpdateRequester, PushUpdateData>? =
+        null
+
     private val scope = CoroutineScope(dispatcher + SupervisorJob())
 
     override fun sendUpdateBroadcast(context: Context, provider: ComponentName) {
@@ -70,10 +82,36 @@ internal class WidgetUpdateClientImpl(
         }
     }
 
+    override suspend fun pushUpdate(
+        context: Context,
+        updateRequest: WearWidgetUpdateRequest,
+        rawContent: WearWidgetRawContent,
+    ) {
+        val pushData = PushUpdateData(updateRequest, rawContent)
+        withTimeout(UPDATE_TIMEOUT) {
+            val binder =
+                widgetUpdateBinder
+                    ?: binderMutex.withLock {
+                        widgetUpdateBinder
+                            ?: createBinder(context.applicationContext, dispatcher).also {
+                                widgetUpdateBinder = it
+                            }
+                    }
+            binder.requestUpdate(pushData)
+        }
+    }
+
     internal companion object {
         const val TAG = "WidgetUpdateClientImpl"
         const val ACTION_BIND_UPDATE_REQUESTER_LEGACY =
             "androidx.wear.tiles.action.BIND_UPDATE_REQUESTER"
+        const val ACTION_BIND_UPDATE_REQUESTER = "androidx.glance.wear.action.BIND_UPDATE_REQUESTER"
+
+        data class PushUpdateData(
+            val request: WearWidgetUpdateRequest,
+            val rawContent: WearWidgetRawContent,
+        )
+
         private val UPDATE_TIMEOUT = 10.seconds
 
         /** Intent action to broadcast debugging update requests. */
@@ -95,6 +133,64 @@ internal class WidgetUpdateClientImpl(
                         service.requestUpdate(componentName, TileUpdateRequestData())
                     } catch (ex: RemoteException) {
                         Log.e(TAG, "while requesting widget update", ex)
+                    }
+                },
+            )
+
+        /** Create a binder that can be used to push updates to the Tile Renderer. */
+        fun createBinder(
+            context: Context,
+            dispatcher: CoroutineDispatcher,
+        ): WidgetUpdateBinder<IWearWidgetUpdateRequester, PushUpdateData> =
+            WidgetUpdateBinder(
+                context = context,
+                action = ACTION_BIND_UPDATE_REQUESTER,
+                asInterface = { IWearWidgetUpdateRequester.Stub.asInterface(it) },
+                dispatcher = dispatcher,
+                sendRequest = { service, pushData ->
+                    suspendCancellableCoroutine { continuation ->
+                        val contCallback =
+                            object : IExecutionCallback.Stub() {
+                                override fun getInterfaceVersion(): Int = VERSION
+
+                                override fun onSuccess() {
+                                    if (continuation.isActive) {
+                                        continuation.resume(Unit)
+                                    }
+                                }
+
+                                override fun onError(errorCode: Int, errorMessage: String?) {
+                                    if (continuation.isActive) {
+                                        continuation.resumeWithException(
+                                            RuntimeException(
+                                                "Update failed (code=$errorCode): $errorMessage"
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        // The service doesn't have an API to cancel in-flight requests,
+                        // so we don't register a cancellation handler here. If the coroutine
+                        // is cancelled, suspendCancellableCoroutine automatically handles
+                        // throwing CancellationException to the caller.
+
+                        try {
+                            service.requestUpdate(
+                                pushData.request.toParcel(),
+                                pushData.rawContent.toParcel(),
+                                contCallback,
+                            )
+                        } catch (ex: RemoteException) {
+                            Log.w(
+                                TAG,
+                                "while pushing widget update for instanceId: ${pushData.request.instanceId.flattenToString()}",
+                                ex,
+                            )
+                            contCallback.onError(
+                                IWearWidgetUpdateRequester.UPDATE_ERROR_CODE_INTERNAL_ERROR,
+                                ex.message,
+                            )
+                        }
                     }
                 },
             )

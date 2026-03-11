@@ -18,7 +18,6 @@ package androidx.glance.wear.samples
 
 import android.content.Context
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteText
@@ -62,11 +61,7 @@ private class HelloWidget : GlanceWearWidget() {
 @RemoteComposable
 @Composable
 private fun HelloWidgetContent() {
-    RemoteBox(
-        modifier = RemoteModifier.fillMaxSize(),
-        horizontalAlignment = RemoteAlignment.CenterHorizontally,
-        verticalArrangement = RemoteArrangement.Center,
-    ) {
+    RemoteBox(modifier = RemoteModifier.fillMaxSize(), contentAlignment = RemoteAlignment.Center) {
         RemoteText(text = stringResource(R.string.hello), color = RemoteColor(Color.White))
     }
 }

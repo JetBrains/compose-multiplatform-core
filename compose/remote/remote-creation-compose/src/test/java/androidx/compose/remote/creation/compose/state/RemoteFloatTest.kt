@@ -286,7 +286,7 @@ class RemoteFloatTest {
         val min = RemoteFloat(10.5f)
         val max = RemoteFloat(20.5f)
         val value = RemoteFloat(1.5f)
-        val result = clamp(min, max, value)
+        val result = clamp(value = value, min = min, max = max)
         val resultId = result.getIdForCreationState(creationState)
 
         makeAndPaintCoreDocument()
@@ -299,7 +299,7 @@ class RemoteFloatTest {
         val min = RemoteFloat(10.5f)
         val max = RemoteFloat(20.5f)
         val value = RemoteFloat(11.5f)
-        val result = clamp(min, max, value)
+        val result = clamp(value = value, min = min, max = max)
         val resultId = result.getIdForCreationState(creationState)
 
         makeAndPaintCoreDocument()
@@ -312,7 +312,7 @@ class RemoteFloatTest {
         val min = RemoteFloat(10.5f)
         val max = RemoteFloat(20.5f)
         val value = RemoteFloat(21.5f)
-        val result = clamp(min, max, value)
+        val result = clamp(value = value, min = min, max = max)
         val resultId = result.getIdForCreationState(creationState)
 
         makeAndPaintCoreDocument()
@@ -323,7 +323,7 @@ class RemoteFloatTest {
     @Test
     fun clamp_low_floatMinMax() {
         val value = RemoteFloat(1.5f)
-        val result = clamp(10.5f, 20.5f, value)
+        val result = clamp(value = value, min = 10.5f, max = 20.5f)
         val resultId = result.getIdForCreationState(creationState)
 
         makeAndPaintCoreDocument()
@@ -334,7 +334,7 @@ class RemoteFloatTest {
     @Test
     fun clamp_mid_floatMinMax() {
         val value = RemoteFloat(11.5f)
-        val result = clamp(10.5f, 20.5f, value)
+        val result = clamp(value = value, min = 10.5f, max = 20.5f)
         val resultId = result.getIdForCreationState(creationState)
 
         makeAndPaintCoreDocument()
@@ -345,7 +345,7 @@ class RemoteFloatTest {
     @Test
     fun clamp_high_floatMinMax() {
         val value = RemoteFloat(21.5f)
-        val result = clamp(10.5f, 20.5f, value)
+        val result = clamp(value = value, min = 10.5f, max = 20.5f)
         val resultId = result.getIdForCreationState(creationState)
 
         makeAndPaintCoreDocument()
@@ -385,7 +385,8 @@ class RemoteFloatTest {
         assertThat(RemoteFloat(21.5f).times(RemoteFloat(21.5f)).hasConstantValue).isTrue()
         assertThat(RemoteFloat(21.5f).minus(RemoteFloat(21.5f)).hasConstantValue).isTrue()
         assertThat(RemoteFloat(21.5f).div(RemoteFloat(21.5f)).hasConstantValue).isTrue()
-        assertThat(clamp(10.5f, 20.5f, RemoteFloat(21.5f)).hasConstantValue).isTrue()
+        assertThat(clamp(value = RemoteFloat(21.5f), min = 10.5f, max = 20.5f).hasConstantValue)
+            .isTrue()
         assertThat(
                 selectIfGt(RemoteFloat(3f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
                     .hasConstantValue

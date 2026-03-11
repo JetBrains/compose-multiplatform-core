@@ -42,9 +42,12 @@ package androidx.room3 {
     ctor public EntityDeleteOrUpdateAdapter();
     method protected abstract void bind(androidx.sqlite.SQLiteStatement statement, T entity);
     method protected abstract String createQuery();
-    method public final suspend Object? handle(androidx.sqlite.SQLiteConnection connection, T? entity, kotlin.coroutines.Continuation<? super java.lang.Integer>);
-    method public final suspend Object? handleMultiple(androidx.sqlite.SQLiteConnection connection, Iterable<? extends T?>? entities, kotlin.coroutines.Continuation<? super java.lang.Integer>);
-    method public final suspend Object? handleMultiple(androidx.sqlite.SQLiteConnection connection, T?[]? entities, kotlin.coroutines.Continuation<? super java.lang.Integer>);
+    method public final suspend Object? handle(androidx.sqlite.SQLiteConnection connection, T? entity, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public final suspend Object? handleAndReturnChanges(androidx.sqlite.SQLiteConnection connection, T? entity, kotlin.coroutines.Continuation<? super java.lang.Integer>);
+    method public final suspend Object? handleMultiple(androidx.sqlite.SQLiteConnection connection, Iterable<? extends T?>? entities, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public final suspend Object? handleMultiple(androidx.sqlite.SQLiteConnection connection, T?[]? entities, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public final suspend Object? handleMultipleAndReturnChanges(androidx.sqlite.SQLiteConnection connection, Iterable<? extends T?>? entities, kotlin.coroutines.Continuation<? super java.lang.Integer>);
+    method public final suspend Object? handleMultipleAndReturnChanges(androidx.sqlite.SQLiteConnection connection, T?[]? entities, kotlin.coroutines.Continuation<? super java.lang.Integer>);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class EntityInsertAdapter<T> {

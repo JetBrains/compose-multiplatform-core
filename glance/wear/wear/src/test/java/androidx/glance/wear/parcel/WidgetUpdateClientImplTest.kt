@@ -22,15 +22,20 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
 import androidx.core.content.IntentCompat
+import androidx.glance.wear.core.WearWidgetRawContent
+import androidx.glance.wear.core.WearWidgetUpdateRequest
+import androidx.glance.wear.core.WidgetInstanceId
 import androidx.glance.wear.parcel.legacy.TileUpdateRequestData
 import androidx.glance.wear.parcel.legacy.TileUpdateRequesterService
 import androidx.glance.wear.proto.legacy.TileUpdateRequest
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -51,8 +56,9 @@ import org.robolectric.shadows.ShadowPackageManager
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class WidgetUpdateClientImplTest {
     private val appContext: Context = getApplicationContext<Context>()
-    private var standardSysUiFakeReceiver = UpdateService()
-    private var otherSysUiFakeReceiver = UpdateService()
+    private var standardSysUiFakeReceiver = LegacyUpdateService()
+    private var otherSysUiFakeReceiver = LegacyUpdateService()
+    private var pushSysUiFakeReceiver = standardPushUpdateService()
 
     @Before
     @Throws(Exception::class)
@@ -63,6 +69,7 @@ class WidgetUpdateClientImplTest {
         // SysUiTileUpdateRequester searches PM for the service accepting
         // ACTION_BIND_UPDATE_REQUESTER; register it as a package here...
         val intentFilter = IntentFilter(WidgetUpdateClientImpl.ACTION_BIND_UPDATE_REQUESTER_LEGACY)
+        val pushIntentFilter = IntentFilter(WidgetUpdateClientImpl.ACTION_BIND_UPDATE_REQUESTER)
 
         // Used on U when the app's target SDK is higher than U.
         val homeIntentFilter =
@@ -78,6 +85,7 @@ class WidgetUpdateClientImplTest {
         spm.addServiceIfNotPresent(STANDARD_SYSUI_RECEIVER_COMPONENT_NAME)
         spm.addServiceIfNotPresent(OTHER_SYSUI_RECEIVER_COMPONENT_NAME)
         spm.addIntentFilterForService(STANDARD_SYSUI_RECEIVER_COMPONENT_NAME, intentFilter)
+        spm.addIntentFilterForService(STANDARD_SYSUI_RECEIVER_COMPONENT_NAME, pushIntentFilter)
         spm.addIntentFilterForService(OTHER_SYSUI_RECEIVER_COMPONENT_NAME, intentFilter)
 
         spm.addActivityIfNotPresent(HOME_ACTIVITY_COMPONENT_NAME)
@@ -91,6 +99,10 @@ class WidgetUpdateClientImplTest {
         shadowApp.registerForBindService(
             OTHER_SYSUI_RECEIVER_COMPONENT_NAME,
             otherSysUiFakeReceiver,
+        )
+        shadowApp.registerForPushBindService(
+            STANDARD_SYSUI_RECEIVER_COMPONENT_NAME,
+            pushSysUiFakeReceiver,
         )
     }
 
@@ -251,7 +263,145 @@ class WidgetUpdateClientImplTest {
         assertThat(shadowApp.unboundServiceConnections).hasSize(1)
     }
 
-    internal class UpdateService : TileUpdateRequesterService.Stub() {
+    @Test
+    fun pushUpdate_sendsRequest() = runTest {
+        val instanceId = WidgetInstanceId("ns", 1)
+        val request = WearWidgetUpdateRequest(instanceId)
+        val content = WearWidgetRawContent(byteArrayOf(), Bundle.EMPTY)
+        val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+
+        launch { updateClient.pushUpdate(appContext, request, content) }
+        waitAllScopesIdle()
+
+        assertThat(pushSysUiFakeReceiver.requestCount).isEqualTo(1)
+    }
+
+    @Test
+    fun pushUpdate_queuesUpdatesWhileBinding() = runTest {
+        val instanceId = WidgetInstanceId("ns", 1)
+        val request = WearWidgetUpdateRequest(instanceId)
+        val content1 = WearWidgetRawContent(byteArrayOf(1), Bundle.EMPTY)
+        val content2 = WearWidgetRawContent(byteArrayOf(2), Bundle.EMPTY)
+        val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+
+        launch { updateClient.pushUpdate(appContext, request, content1) }
+        launch { updateClient.pushUpdate(appContext, request, content2) }
+        waitAllScopesIdle()
+
+        assertThat(pushSysUiFakeReceiver.requestCount).isEqualTo(2)
+
+        advanceTimeBy(WidgetUpdateBinder.IDLE_TIMEOUT_MS + 100L)
+        waitAllScopesIdle()
+
+        // Ensure that there was only one connection made.
+        val shadowApp = shadowOf(appContext as Application?)
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
+    }
+
+    @Test
+    fun pushUpdate_unbindsAfterCallback() = runTest {
+        val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+        val instanceId = WidgetInstanceId("tiles", 1)
+        val request = WearWidgetUpdateRequest(instanceId)
+        val content = WearWidgetRawContent(byteArrayOf(), Bundle.EMPTY)
+
+        launch { updateClient.pushUpdate(appContext, request, content) }
+        waitAllScopesIdle()
+
+        advanceTimeBy(WidgetUpdateBinder.IDLE_TIMEOUT_MS + 100L)
+        waitAllScopesIdle()
+
+        val shadowApp = shadowOf(appContext as Application?)
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
+    }
+
+    @Test
+    fun pushUpdate_throwsRuntimeException_onRemoteException() = runTest {
+        val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+        val shadowApp = shadowOf(appContext as Application?)
+        shadowApp.registerForPushBindService(
+            STANDARD_SYSUI_RECEIVER_COMPONENT_NAME,
+            exceptionPushUpdateService(),
+        )
+
+        val instanceId = WidgetInstanceId("ns", 1)
+        val request = WearWidgetUpdateRequest(instanceId)
+        val content = WearWidgetRawContent(byteArrayOf(), Bundle.EMPTY)
+
+        var thrownException: Throwable? = null
+        launch {
+            try {
+                updateClient.pushUpdate(appContext, request, content)
+            } catch (e: Exception) {
+                thrownException = e
+            }
+        }
+
+        waitAllScopesIdle()
+
+        assertThat(thrownException).isInstanceOf(RuntimeException::class.java)
+        assertThat(thrownException?.message).contains("Synchronous test error")
+    }
+
+    @Test
+    fun pushUpdate_throwsRuntimeException_onErrorCallback() = runTest {
+        val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+        val shadowApp = shadowOf(appContext as Application?)
+        shadowApp.registerForPushBindService(
+            STANDARD_SYSUI_RECEIVER_COMPONENT_NAME,
+            errorPushUpdateService(),
+        )
+
+        val instanceId = WidgetInstanceId("ns", 1)
+        val request = WearWidgetUpdateRequest(instanceId)
+        val content = WearWidgetRawContent(byteArrayOf(), Bundle.EMPTY)
+
+        var thrownException: Throwable? = null
+        launch {
+            try {
+                updateClient.pushUpdate(appContext, request, content)
+            } catch (e: Exception) {
+                thrownException = e
+            }
+        }
+        waitAllScopesIdle()
+
+        assertThat(thrownException).isInstanceOf(RuntimeException::class.java)
+    }
+
+    private fun standardPushUpdateService() = BaseTestUpdateRequester { callback ->
+        callback.onSuccess()
+    }
+
+    private fun errorPushUpdateService() = BaseTestUpdateRequester { callback ->
+        callback.onError(123, "Test error")
+    }
+
+    private fun exceptionPushUpdateService() = BaseTestUpdateRequester {
+        throw android.os.RemoteException("Synchronous test error")
+    }
+
+    private class BaseTestUpdateRequester(private val runnable: (IExecutionCallback) -> Unit) :
+        IWearWidgetUpdateRequester.Stub() {
+        var requestCount = 0
+
+        override fun getApiVersion() = API_VERSION
+
+        override fun getInterfaceVersion() = VERSION
+
+        override fun requestUpdate(
+            requestParcel: WearWidgetUpdateRequestParcel,
+            contentParcel: WearWidgetRawContentParcel,
+            callback: IExecutionCallback,
+        ) {
+            requestCount++
+            runnable.invoke(callback)
+        }
+    }
+
+    internal class LegacyUpdateService : TileUpdateRequesterService.Stub() {
         var requestedComponents = mutableListOf<ComponentName>()
         var requestedIds = mutableListOf<Int>()
 
@@ -262,7 +412,7 @@ class WidgetUpdateClientImplTest {
                 return
             }
             requestedComponents.add(component)
-            val request = TileUpdateRequest.Companion.ADAPTER.decode(updateData.contents)
+            val request = TileUpdateRequest.ADAPTER.decode(updateData.contents)
             request.tile_id?.let { requestedIds.add(it) }
         }
     }
@@ -287,6 +437,22 @@ class WidgetUpdateClientImplTest {
         ) {
             val bindIntent =
                 Intent(WidgetUpdateClientImpl.ACTION_BIND_UPDATE_REQUESTER_LEGACY).apply {
+                    `package` = componentName.packageName
+                    component = componentName
+                }
+            this.setComponentNameAndServiceForBindServiceForIntent(
+                bindIntent,
+                componentName,
+                service.asBinder(),
+            )
+        }
+
+        fun ShadowApplication.registerForPushBindService(
+            componentName: ComponentName,
+            service: IWearWidgetUpdateRequester.Stub,
+        ) {
+            val bindIntent =
+                Intent(WidgetUpdateClientImpl.ACTION_BIND_UPDATE_REQUESTER).apply {
                     `package` = componentName.packageName
                     component = componentName
                 }

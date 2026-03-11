@@ -473,7 +473,7 @@ dependencies {
     docs("androidx.webgpu:webgpu:1.0.0-alpha04")
     docs("androidx.webkit:webkit:1.16.0-alpha02")
     docs("androidx.window.extensions.core:core:1.0.0")
-    stubs(project(":window:sidecar:sidecar"))
+    stubs("androidx.window.sidecar:sidecar:1.0.0-rc01")
     docs("androidx.window:window:1.6.0-alpha01")
     stubs(fileTree(dir: "../window/stubs/", include: ["window-sidecar-release-0.1.0-alpha01.aar"]))
     kmpDocs("androidx.window:window-core:1.6.0-alpha01")

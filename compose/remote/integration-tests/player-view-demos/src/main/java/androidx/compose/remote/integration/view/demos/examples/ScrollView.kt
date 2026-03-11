@@ -202,11 +202,7 @@ fun ScrollViewDemo() {
     val numElements = 12
     val scrollState = rememberRemoteScrollState(evenNotches = numElements)
     val dimensionCard = 280.rdp
-    RemoteBox(
-        modifier = RemoteModifier,
-        verticalArrangement = RemoteArrangement.Bottom,
-        horizontalAlignment = RemoteAlignment.End,
-    ) {
+    RemoteBox(modifier = RemoteModifier, contentAlignment = RemoteAlignment.BottomEnd) {
         val height = dimensionCard.toPx()
         val h2 = 280.rdp
         RemoteColumn(

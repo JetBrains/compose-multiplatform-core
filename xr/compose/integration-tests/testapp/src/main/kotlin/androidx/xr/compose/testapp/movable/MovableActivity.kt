@@ -47,11 +47,9 @@ import androidx.xr.compose.subspace.layout.SpatialArrangement
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
-import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.rotate
-import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.common.AnotherActivity
@@ -93,7 +91,6 @@ class MovableActivity : ComponentActivity() {
                 label = "moving",
             )
         // TODO(b/367745125): Restore growing panel animation when we can fix glitches.
-        val panelWidth = 200.dp
         // Variables need to be remembered to persist callback changes within onPoseChange during
         // recomposition.
         var xValueMovable by remember { mutableStateOf(0.dp) }
@@ -108,8 +105,8 @@ class MovableActivity : ComponentActivity() {
             ) {
                 SpatialColumn(
                     modifier =
-                        SubspaceModifier.width(400.dp)
-                            .fillMaxHeight()
+                        SubspaceModifier.weight(1f)
+                            .fillMaxHeight(0.8f)
                             .padding(horizontal = 20.dp)
                             .testTag("LeftColumn"),
                     verticalArrangement = SpatialArrangement.spacedBy(20.dp),
@@ -117,26 +114,21 @@ class MovableActivity : ComponentActivity() {
                     if (
                         transition.value >= 150f
                     ) { // After approximately 5 seconds the delayed panel will appear
-                        SpatialPanel(
-                            modifier =
-                                SubspaceModifier.width(panelWidth).height(200.dp).fillMaxWidth()
-                        ) {
+                        SpatialPanel(modifier = SubspaceModifier.weight(1f)) {
                             PanelContent("[NOT MOVABLE] Delayed Panel")
                         }
                     }
-                    SpatialPanel(
-                        modifier = SubspaceModifier.width(panelWidth).height(200.dp).fillMaxWidth()
-                    ) {
+                    SpatialPanel(modifier = SubspaceModifier.weight(1f).fillMaxWidth()) {
                         PanelContent("[NOT MOVABLE]")
                     }
                     SpatialPanel(
-                        modifier = SubspaceModifier.width(200.dp).height(200.dp),
+                        modifier = SubspaceModifier.weight(1f).fillMaxWidth(),
                         dragPolicy = MovePolicy(),
                     ) {
                         PanelContent("[MOVABLE]")
                     }
                     SpatialPanel(
-                        modifier = SubspaceModifier.width(200.dp).height(200.dp),
+                        modifier = SubspaceModifier.weight(1f).fillMaxWidth(),
                         dragPolicy = MovePolicy(),
                     ) {
                         PanelContent("[MOVABLE]")
@@ -144,22 +136,20 @@ class MovableActivity : ComponentActivity() {
                 }
                 SpatialColumn(
                     modifier =
-                        SubspaceModifier.width(600.dp)
+                        SubspaceModifier.weight(1f)
                             .fillMaxHeight()
                             .padding(horizontal = 20.dp)
                             .testTag("MiddleColumn"),
                     verticalArrangement = SpatialArrangement.spacedBy(20.dp),
                 ) {
-                    SpatialPanel(
-                        modifier = SubspaceModifier.width(panelWidth).height(200.dp).fillMaxWidth()
-                    ) {
+                    SpatialPanel(modifier = SubspaceModifier.weight(1f).fillMaxWidth()) {
                         PanelContent("[NOT MOVABLE]")
                     }
                     SpatialPanel(
                         modifier =
-                            SubspaceModifier.offset(xValueMovable, yValueMovable, zValueMovable)
-                                .width(panelWidth)
-                                .height(200.dp)
+                            SubspaceModifier.weight(1f)
+                                .offset(xValueMovable, yValueMovable, zValueMovable)
+                                .fillMaxWidth()
                                 .rotate(rotateValueMovable),
                         dragPolicy =
                             MovePolicy(
@@ -191,23 +181,21 @@ class MovableActivity : ComponentActivity() {
                 }
                 SpatialColumn(
                     modifier =
-                        SubspaceModifier.width(400.dp)
-                            .fillMaxHeight()
+                        SubspaceModifier.weight(1f)
+                            .fillMaxHeight(0.8f)
                             .padding(horizontal = 20.dp)
                             .testTag("RightColumn"),
                     verticalArrangement = SpatialArrangement.spacedBy(20.dp),
                 ) {
-                    SpatialPanel(
-                        modifier = SubspaceModifier.width(panelWidth).height(200.dp).fillMaxWidth()
-                    ) {
+                    SpatialPanel(modifier = SubspaceModifier.weight(1f).fillMaxWidth()) {
                         PanelContent("[NOT MOVABLE]")
                     }
                     SpatialActivityPanel(
                         intent = Intent(this@MovableActivity, AnotherActivity::class.java),
                         modifier =
-                            SubspaceModifier.offset(x = 120.dp)
-                                .width(250.dp)
-                                .height(200.dp)
+                            SubspaceModifier.weight(1f)
+                                .offset(x = 120.dp)
+                                .fillMaxWidth()
                                 .testTag("ActivityPanel"),
                         dragPolicy = MovePolicy(true),
                     )

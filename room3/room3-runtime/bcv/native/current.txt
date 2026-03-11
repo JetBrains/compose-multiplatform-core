@@ -51,9 +51,12 @@ abstract class <#A: kotlin/Any?> androidx.room3/EntityDeleteOrUpdateAdapter { //
 
     abstract fun bind(androidx.sqlite/SQLiteStatement, #A) // androidx.room3/EntityDeleteOrUpdateAdapter.bind|bind(androidx.sqlite.SQLiteStatement;1:0){}[0]
     abstract fun createQuery(): kotlin/String // androidx.room3/EntityDeleteOrUpdateAdapter.createQuery|createQuery(){}[0]
-    final suspend fun handle(androidx.sqlite/SQLiteConnection, #A?): kotlin/Int // androidx.room3/EntityDeleteOrUpdateAdapter.handle|handle(androidx.sqlite.SQLiteConnection;1:0?){}[0]
-    final suspend fun handleMultiple(androidx.sqlite/SQLiteConnection, kotlin.collections/Iterable<#A?>?): kotlin/Int // androidx.room3/EntityDeleteOrUpdateAdapter.handleMultiple|handleMultiple(androidx.sqlite.SQLiteConnection;kotlin.collections.Iterable<1:0?>?){}[0]
-    final suspend fun handleMultiple(androidx.sqlite/SQLiteConnection, kotlin/Array<out #A?>?): kotlin/Int // androidx.room3/EntityDeleteOrUpdateAdapter.handleMultiple|handleMultiple(androidx.sqlite.SQLiteConnection;kotlin.Array<out|1:0?>?){}[0]
+    final suspend fun handle(androidx.sqlite/SQLiteConnection, #A?) // androidx.room3/EntityDeleteOrUpdateAdapter.handle|handle(androidx.sqlite.SQLiteConnection;1:0?){}[0]
+    final suspend fun handleAndReturnChanges(androidx.sqlite/SQLiteConnection, #A?): kotlin/Int // androidx.room3/EntityDeleteOrUpdateAdapter.handleAndReturnChanges|handleAndReturnChanges(androidx.sqlite.SQLiteConnection;1:0?){}[0]
+    final suspend fun handleMultiple(androidx.sqlite/SQLiteConnection, kotlin.collections/Iterable<#A?>?) // androidx.room3/EntityDeleteOrUpdateAdapter.handleMultiple|handleMultiple(androidx.sqlite.SQLiteConnection;kotlin.collections.Iterable<1:0?>?){}[0]
+    final suspend fun handleMultiple(androidx.sqlite/SQLiteConnection, kotlin/Array<out #A?>?) // androidx.room3/EntityDeleteOrUpdateAdapter.handleMultiple|handleMultiple(androidx.sqlite.SQLiteConnection;kotlin.Array<out|1:0?>?){}[0]
+    final suspend fun handleMultipleAndReturnChanges(androidx.sqlite/SQLiteConnection, kotlin.collections/Iterable<#A?>?): kotlin/Int // androidx.room3/EntityDeleteOrUpdateAdapter.handleMultipleAndReturnChanges|handleMultipleAndReturnChanges(androidx.sqlite.SQLiteConnection;kotlin.collections.Iterable<1:0?>?){}[0]
+    final suspend fun handleMultipleAndReturnChanges(androidx.sqlite/SQLiteConnection, kotlin/Array<out #A?>?): kotlin/Int // androidx.room3/EntityDeleteOrUpdateAdapter.handleMultipleAndReturnChanges|handleMultipleAndReturnChanges(androidx.sqlite.SQLiteConnection;kotlin.Array<out|1:0?>?){}[0]
 }
 
 abstract class <#A: kotlin/Any?> androidx.room3/EntityInsertAdapter { // androidx.room3/EntityInsertAdapter|null[0]

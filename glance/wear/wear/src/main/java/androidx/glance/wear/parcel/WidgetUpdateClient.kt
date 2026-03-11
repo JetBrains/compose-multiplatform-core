@@ -18,15 +18,35 @@ package androidx.glance.wear.parcel
 
 import android.content.ComponentName
 import android.content.Context
+import androidx.glance.wear.core.WearWidgetRawContent
+import androidx.glance.wear.core.WearWidgetUpdateRequest
 
 internal interface WidgetUpdateClient {
     /**
-     * Notify the host that it should fetch a new layout for a specific active widget.
+     * Notify the host that it should fetch a new layout for all widget instances for the referred
+     * provider.
+     *
+     * This will trigger a pull-update, the renderer will start the provider service and fetch an
+     * update.
      *
      * @param context The context for this operation
      * @param provider The component name of the widget provider service to request an update from
      */
     fun requestUpdate(context: Context, provider: ComponentName)
+
+    /**
+     * Pushes an update for a specific widget instance to the host.
+     *
+     * @param context The context for this operation
+     * @param updateRequest The request containing necessary data to identify the widget instance
+     *   being updated
+     * @param rawContent The widget contents to be used in the update
+     */
+    suspend fun pushUpdate(
+        context: Context,
+        updateRequest: WearWidgetUpdateRequest,
+        rawContent: WearWidgetRawContent,
+    )
 
     /**
      * Sends a broadcast for updates. This is usually used in development mode.

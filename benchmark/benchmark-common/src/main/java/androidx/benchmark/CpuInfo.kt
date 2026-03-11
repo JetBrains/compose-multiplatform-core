@@ -78,7 +78,9 @@ internal object CpuInfo {
                         maxFreqKhz =
                             readFileTextOrNull("$path/cpufreq/cpuinfo_max_freq")?.toLong() ?: -1L,
                     )
-                } ?: emptyList()
+                }
+                ?.sortedBy { it.path } // sort, since dirs may be discovered in arbitrary order
+            ?: emptyList()
 
         maxFreqHz =
             coreDirs
@@ -88,7 +90,8 @@ internal object CpuInfo {
                 ?.times(1000) ?: -1
 
         locked = isCpuLocked(coreDirs)
-        coreDirs.forEachIndexed { index, coreDir -> Log.d(TAG, "cpu$index $coreDir") }
+        Log.d(TAG, "Observed clock state of ${coreDirs.size} CPUs:")
+        coreDirs.forEach { coreDir -> Log.d(TAG, coreDir.toString()) }
     }
 
     fun isCpuLocked(coreDirs: List<CoreDir>): Boolean {

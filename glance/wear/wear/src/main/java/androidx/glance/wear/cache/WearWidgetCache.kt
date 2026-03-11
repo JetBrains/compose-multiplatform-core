@@ -42,7 +42,7 @@ private val Context.dataStore: DataStore<WearWidgetCacheProto> by
  *
  * @param dataStore The [DataStore] to use for the cache.
  */
-internal class WearWidgetCache
+internal open class WearWidgetCache
 @VisibleForTesting
 internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
 
@@ -55,7 +55,7 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
      * @param block The block of code to run within the update scope.
      * @return `true` if the update was successful, `false` otherwise.
      */
-    suspend fun update(block: WidgetCacheUpdateScope.() -> Unit): Boolean {
+    open suspend fun update(block: WidgetCacheUpdateScope.() -> Unit): Boolean {
         return try {
             dataStore.updateData { cacheProto ->
                 val scope = WidgetCacheUpdateScope(cacheProto)
@@ -76,7 +76,7 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
      * @param instanceId The instance id to use for the returned [WearWidgetParams].
      * @return The reconstructed [WearWidgetParams], or `null` if it doesn't exist in the cache.
      */
-    suspend fun getWidgetParams(
+    open suspend fun getWidgetParams(
         @ContainerInfo.ContainerType containerType: Int,
         instanceId: WidgetInstanceId,
     ): WearWidgetParams? {
@@ -100,7 +100,7 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
      * @param instanceId The instance id of the widget to read the container type for.
      * @return The container type, or `null` if it doesn't exist in the cache.
      */
-    suspend fun getInstanceType(instanceId: WidgetInstanceId): Int? {
+    open suspend fun getInstanceType(instanceId: WidgetInstanceId): Int? {
         val cacheProto = dataStore.data.first()
         return cacheProto.instance_id_to_type[instanceId.flattenToString()]
     }

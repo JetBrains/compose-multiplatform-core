@@ -42,7 +42,7 @@ public final class PrefetchCache {
 
     private final @NonNull ProfileBoundaryInterface mProfileImpl;
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public PrefetchCache(@NonNull ProfileBoundaryInterface profileImpl) {
         mProfileImpl = profileImpl;
     }

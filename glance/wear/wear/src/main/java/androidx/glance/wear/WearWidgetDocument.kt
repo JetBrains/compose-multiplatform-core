@@ -47,7 +47,7 @@ public class WearWidgetDocument(
     private val content: @RemoteComposable @Composable () -> Unit,
 ) : WearWidgetData {
 
-    // TODO: b/464273091 - Remove this after G3 drop.
+    // TODO: b/470080675 - Remove this after G3 drop.
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(
         backgroundColor: Color,
