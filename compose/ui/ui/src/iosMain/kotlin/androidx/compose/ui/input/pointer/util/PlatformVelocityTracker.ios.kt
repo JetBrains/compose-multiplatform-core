@@ -19,24 +19,53 @@ package androidx.compose.ui.input.pointer.util
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.util.fastForEach
 
 internal actual fun PlatformVelocityTracker(): PlatformVelocityTracker = UIKitVelocityTracker()
 
+private const val AssumePointerMoveStoppedMilliseconds: Int = 40
+private const val MinimumGestureDurationMilliseconds: Int = 50
+
 private class UIKitVelocityTracker: PlatformVelocityTracker {
     private val xVelocityTracker = PointerVelocityTracker1D(preventReversedPointerMovements = true)
     private val yVelocityTracker = PointerVelocityTracker1D(preventReversedPointerMovements = true)
+    private var lastMoveEventTimeStamp = 0L
+    private var lastPointerStartEventTimeStamp = 0L
+    private var lastPointerStopEventTimeStamp = 0L
 
     override fun addPointerInputChange(event: PointerInputChange, offset: Offset) {
         // If this is ACTION_DOWN: Reset the tracking.
         if (event.changedToDownIgnoreConsumed()) {
             resetTracking()
+            lastPointerStartEventTimeStamp = event.uptimeMillis
+            lastMoveEventTimeStamp = event.uptimeMillis
         }
-        event.historical.fastForEach {
-            addPosition(it.uptimeMillis, it.position + offset)
+
+        // If this is not ACTION_UP event: Add events to the tracker as per the platform implementation.
+        // In the platform implementation the historical events array is used, they store the current
+        // event data in the position HistoricalArray.Size. Our historical array doesn't have access
+        // to the final position, but we can get that information from the original event data X and Y
+        // coordinates.
+        if (!event.changedToUpIgnoreConsumed()) {
+            event.historical.fastForEach {
+                addPosition(it.uptimeMillis, it.position + offset)
+            }
+            addPosition(event.uptimeMillis, event.position + offset)
         }
-        addPosition(event.uptimeMillis, event.position + offset)
+
+        if (event.uptimeMillis - lastMoveEventTimeStamp > AssumePointerMoveStoppedMilliseconds) {
+            lastPointerStopEventTimeStamp = event.uptimeMillis
+        }
+
+        if (event.changedToUpIgnoreConsumed() &&
+            event.uptimeMillis - lastPointerStartEventTimeStamp > MinimumGestureDurationMilliseconds * 2 &&
+            event.uptimeMillis - lastPointerStopEventTimeStamp < MinimumGestureDurationMilliseconds
+        ) {
+            resetTracking()
+        }
+        lastMoveEventTimeStamp = event.uptimeMillis
     }
 
     override fun calculateVelocity(maximumVelocity: Velocity): Velocity {
@@ -48,6 +77,7 @@ private class UIKitVelocityTracker: PlatformVelocityTracker {
     override fun resetTracking() {
         xVelocityTracker.resetTracking()
         yVelocityTracker.resetTracking()
+        lastMoveEventTimeStamp = 0L
     }
 
     override fun addPosition(timeMillis: Long, position: Offset) {
