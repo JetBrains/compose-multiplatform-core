@@ -891,9 +891,12 @@ private class ScrollbarDragModifierNode(
     private var draggedInteraction: MutableState<DragInteraction.Start?>,
     private var sliderAdapter: SliderAdapter,
 ) : DelegatingNode() {
+    private val pointerInputEventHandlerResetTick = mutableStateOf(0)
+
     private val pointerInputNode = delegate(
         SuspendingPointerInputModifierNode(
             pointerInputEventHandler = {
+                pointerInputEventHandlerResetTick.value
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     val interaction = DragInteraction.Start()
@@ -921,23 +924,23 @@ private class ScrollbarDragModifierNode(
         draggedInteraction: MutableState<DragInteraction.Start?>,
         sliderAdapter: SliderAdapter,
     ) {
-        var needsReset = false
+        var pointerInputEventHandlerNeedsResetTick = false
 
         if (this.interactionSource != interactionSource) {
             this.interactionSource = interactionSource
-            needsReset = true
+            pointerInputEventHandlerNeedsResetTick = true
         }
         if (this.draggedInteraction != draggedInteraction) {
             this.draggedInteraction = draggedInteraction
-            needsReset = true
+            pointerInputEventHandlerNeedsResetTick = true
         }
         if (this.sliderAdapter != sliderAdapter) {
             this.sliderAdapter = sliderAdapter
-            needsReset = true
+            pointerInputEventHandlerNeedsResetTick = true
         }
 
-        if (needsReset) {
-            pointerInputNode.resetPointerInputHandler()
+        if (pointerInputEventHandlerNeedsResetTick) {
+            pointerInputEventHandlerResetTick.value++
         }
     }
 }
