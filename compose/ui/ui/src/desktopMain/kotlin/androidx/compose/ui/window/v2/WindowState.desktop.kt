@@ -23,12 +23,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.awt.toAwtRectangleRounded
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.window.WindowPlacement
 import java.awt.GraphicsEnvironment
+import java.awt.Rectangle
 
 /**
  * Creates a [WindowState] that is remembered across compositions.
@@ -181,3 +183,8 @@ private fun requireReal(rect: DpRect): DpRect {
     require(rect.bottom.isReal) { "bottom must be specified and finite" }
     return rect
 }
+
+/**
+ * Returns the bounds of the window, as an AWT [Rectangle].
+ */
+fun WindowState.awtBounds(): Rectangle? = bounds?.toAwtRectangleRounded()
