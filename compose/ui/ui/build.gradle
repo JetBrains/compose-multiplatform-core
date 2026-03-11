@@ -70,7 +70,7 @@ androidXMultiplatform {
     configureDarwinFlags()
 
     sourceSets {
-		def composeVersion = project.findProperty('artifactRedirection.version.androidx.compose')
+        def composeVersion = project.findProperty('artifactRedirection.version.androidx.compose')
         def savedstateVersion =
                 project.findProperty('artifactRedirection.version.androidx.savedstate')
         commonMain.dependencies {

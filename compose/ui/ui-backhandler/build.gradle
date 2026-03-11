@@ -58,11 +58,13 @@ androidXMultiplatform {
             }
         }
 
+        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+
         // TODO: Align naming: nonAndroidMain
         jbMain {
             dependsOn(commonMain)
             dependencies {
-                implementation(project(":navigationevent:navigationevent"))
+                implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
             }
         }
 
