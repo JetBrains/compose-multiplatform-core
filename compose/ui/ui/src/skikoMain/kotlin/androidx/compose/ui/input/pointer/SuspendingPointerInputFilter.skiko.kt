@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.input.pointer
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.DelegatingNode
@@ -89,6 +90,8 @@ private class OnPointerEventModifierNode(
     private var pass: PointerEventPass,
     private var onEvent: AwaitPointerEventScope.(event: PointerEvent) -> Unit
 ) : DelegatingNode() {
+    private val pointerInputEventHandlerResetTick = mutableStateOf(0)
+
     private val pointerInputNode = delegate(
         SuspendingPointerInputModifierNode(
             pointerInputEventHandler = {
@@ -109,23 +112,32 @@ private class OnPointerEventModifierNode(
         pass: PointerEventPass,
         onEvent: AwaitPointerEventScope.(event: PointerEvent) -> Unit
     ) {
-        var needsReset = false
+        var pointerInputNodeNeedsReset = false
+        var pointerInputEventHandlerNeedsResetTick = false
 
         if (this.eventType != eventType) {
             this.eventType = eventType
-            needsReset = true
+            pointerInputEventHandlerNeedsResetTick = true
         }
         if (this.pass != pass) {
             this.pass = pass
-            needsReset = true
+            pointerInputNodeNeedsReset = true
         }
         if (this.onEvent !== onEvent) {
             this.onEvent = onEvent
-            needsReset = true
+            pointerInputEventHandlerNeedsResetTick = true
         }
 
-        if (needsReset) {
+        if (pointerInputEventHandlerNeedsResetTick) {
+            pointerInputEventHandlerResetTick.value++
+        }
+
+        if (pointerInputNodeNeedsReset) {
             pointerInputNode.resetPointerInputHandler()
+        }
+
+        if (pointerInputEventHandlerNeedsResetTick) {
+            pointerInputEventHandlerResetTick.value++
         }
     }
 }
