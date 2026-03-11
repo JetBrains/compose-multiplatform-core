@@ -19,7 +19,6 @@ package androidx.compose.ui.input.pointer.util
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
-import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.util.fastForEach
 
@@ -34,18 +33,10 @@ private class UIKitVelocityTracker: PlatformVelocityTracker {
         if (event.changedToDownIgnoreConsumed()) {
             resetTracking()
         }
-
-        // If this is not ACTION_UP event: Add events to the tracker as per the platform implementation.
-        // In the platform implementation the historical events array is used, they store the current
-        // event data in the position HistoricalArray.Size. Our historical array doesn't have access
-        // to the final position, but we can get that information from the original event data X and Y
-        // coordinates.
-        if (!event.changedToUpIgnoreConsumed()) {
-            event.historical.fastForEach {
-                addPosition(it.uptimeMillis, it.position + offset)
-            }
-            addPosition(event.uptimeMillis, event.position + offset)
+        event.historical.fastForEach {
+            addPosition(it.uptimeMillis, it.position + offset)
         }
+        addPosition(event.uptimeMillis, event.position + offset)
     }
 
     override fun calculateVelocity(maximumVelocity: Velocity): Velocity {
