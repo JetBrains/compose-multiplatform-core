@@ -95,6 +95,7 @@ private class OnPointerEventModifierNode(
     private val pointerInputNode = delegate(
         SuspendingPointerInputModifierNode(
             pointerInputEventHandler = {
+                pointerInputEventHandlerResetTick.value
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent(pass)
