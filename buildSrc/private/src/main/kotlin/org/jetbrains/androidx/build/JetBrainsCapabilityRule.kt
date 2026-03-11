@@ -24,12 +24,6 @@ import org.gradle.api.artifacts.ComponentMetadataRule
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 
-private const val ANDROIDX_GROUP_PREFIX = "androidx."
-private val JETBRAINS_GROUP_PREFIXES = setOf(
-    "org.jetbrains.androidx.",
-    "org.jetbrains.compose.",
-)
-
 /**
  * Gradle component metadata rule that adds capabilities to resolve conflicts between
  * forked org.jetbrains.androidx.* artifacts and original androidx.* artifacts.
@@ -40,11 +34,11 @@ private val JETBRAINS_GROUP_PREFIXES = setOf(
  */
 private class JetBrainsCapabilityRule : ComponentMetadataRule {
     override fun execute(context: ComponentMetadataContext): Unit = context.details.run {
-        if (!id.group.startsWith(ANDROIDX_GROUP_PREFIX)) return
-        val group = id.group.substring(ANDROIDX_GROUP_PREFIX.length).replace(".",":")
+        if (!JetBrainsPublication.isAndroidXGroup(id.group)) return
+        val projectPath = JetBrainsPublication.projectPathForCoordinates(id.group, id.name) ?: return
 
         // Do not customize capabilities for not published artifacts
-        if (!JetBrainsPublication.shouldPublish(":$group:${id.name}")) return
+        if (!JetBrainsPublication.shouldPublish(projectPath)) return
 
         // Add capability with a common resolver group to enable conflict resolution
         allVariants { variant ->
@@ -65,7 +59,7 @@ private class JetBrainsCapabilityRule : ComponentMetadataRule {
  */
 private class AndroidXCapabilityRule : ComponentMetadataRule {
     override fun execute(context: ComponentMetadataContext): Unit = context.details.run {
-        if (JETBRAINS_GROUP_PREFIXES.none { id.group.startsWith(it) }) return
+        if (!JetBrainsPublication.isJetBrainsForkGroup(id.group)) return
 
         // Add capability with a common resolver group to enable conflict resolution
         allVariants { variant ->
@@ -102,7 +96,7 @@ fun Project.configureJetBrainsCapabilityResolution() {
         }
 
         configuration.resolutionStrategy.capabilitiesResolution.all { details ->
-            if (details.capability.group.startsWith(ANDROIDX_GROUP_PREFIX)) {
+            if (JetBrainsPublication.isAndroidXGroup(details.capability.group)) {
                 details.selectPreferredAndroidXCandidate()
             }
         }
@@ -112,8 +106,7 @@ fun Project.configureJetBrainsCapabilityResolution() {
 fun Project.configureRedirectionCapability() {
     // Compatibility stubs already wrap androidx artifacts directly; adding extra outgoing
     // redirection capability here can break IDE metadata resolution for stubbed KMP modules.
-    if (projectDir.name.endsWith("-compatibility-stub")) return
-
+    if (JetBrainsPublication.isCompatibilityStubProject(this)) return
     if (!JetBrainsPublication.shouldPublish(this)) return
     val redirection = artifactRedirection() ?: return
     if (redirection.targetNames.isEmpty()) return
@@ -126,7 +119,8 @@ fun Project.configureRedirectionCapability() {
             configuration.outgoing.capability("$group:$name:$version")
 
             // Add the androidx.* capability in addition to the implicit project capability
-            configuration.outgoing.capability("${redirection.groupId}:$name:${redirection.defaultVersion}")
+            val redirectedVersion = redirection.versionForConfigurationOrDefault(configuration.name)
+            configuration.outgoing.capability("${redirection.groupId}:$name:$redirectedVersion")
         }
     }
 }
@@ -148,16 +142,16 @@ private fun CapabilityResolutionDetails.selectPreferredAndroidXCandidate() {
     }
     
     // Prefer org.jetbrains.* over androidx.*
-    val jetbrainsCandidate = candidates.firstOrNull { candidate ->
+    val jetBrainsCandidate = candidates.firstOrNull { candidate ->
         val candidateId = candidate.id
         if (candidateId is ModuleComponentIdentifier) {
-            candidateId.group.startsWith("org.jetbrains.")
+            JetBrainsPublication.isJetBrainsForkGroup(candidateId.group)
         } else {
             false
         }
     }
-    if (jetbrainsCandidate != null) {
-        select(jetbrainsCandidate)
+    if (jetBrainsCandidate != null) {
+        select(jetBrainsCandidate)
         return
     }
 

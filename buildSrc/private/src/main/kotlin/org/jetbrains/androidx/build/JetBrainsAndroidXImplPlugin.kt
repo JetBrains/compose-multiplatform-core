@@ -207,11 +207,7 @@ private fun enableArtifactRedirectionPublishing(project: Project) {
             .getByName("kotlin")
 
         CustomRootComponent(rootComponent) { configuration ->
-            val targetName = redirection.targetVersions.keys.firstOrNull {
-                // we rely on the fact that configuration name starts with target name
-                configuration.name.startsWith(it, ignoreCase = true)
-            }
-            val targetVersion = redirection.versionForTargetOrDefault(targetName ?: "")
+            val targetVersion = redirection.versionForConfigurationOrDefault(configuration.name)
             project.dependencies.create("${redirection.groupId}:${project.name}:${targetVersion}") as org.gradle.api.artifacts.ModuleDependency
         }
     }
