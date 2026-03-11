@@ -665,6 +665,8 @@ public fun <T : Any> NavDisplay(
     val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
     val targetZIndex =
         when {
+            !inPredictiveBack && transition.targetState != scene && zIndices.contains(targetKey) ->
+                zIndices[targetKey]
             initialKey == targetKey -> initialZIndex
             isPop || inPredictiveBack -> initialZIndex - 1f
             else -> initialZIndex + 1f
