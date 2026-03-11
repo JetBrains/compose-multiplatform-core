@@ -379,19 +379,6 @@ private fun modifyGradleMetadata(
     return stringWriter.toString()
 }
 
-private fun Project.publishedRedirectionCapabilities(): Set<String> {
-    val redirection = artifactRedirection() ?: return emptySet()
-    if (redirection.targetNames.isEmpty()) return emptySet()
-
-    return buildSet {
-        add("$group:$name:$version")
-        add("${redirection.groupId}:$name:${redirection.defaultVersion}")
-        redirection.targetVersions.values.forEach { redirectedVersion ->
-            add("${redirection.groupId}:$name:$redirectedVersion")
-        }
-    }
-}
-
 private fun MavenPublication.suppressRedirectionPomMetadataWarnings() {
     listOf("ApiElements", "RuntimeElements", "SourcesElements", "MetadataElements").forEach { suffix ->
         suppressPomMetadataWarningsFor("${name}$suffix-published")

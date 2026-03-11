@@ -125,6 +125,19 @@ fun Project.configureRedirectionCapability() {
     }
 }
 
+internal fun Project.publishedRedirectionCapabilities(): Set<String> {
+    val redirection = artifactRedirection() ?: return emptySet()
+    if (redirection.targetNames.isEmpty()) return emptySet()
+
+    return buildSet {
+        add("$group:$name:$version")
+        add("${redirection.groupId}:$name:${redirection.defaultVersion}")
+        redirection.targetVersions.values.forEach { redirectedVersion ->
+            add("${redirection.groupId}:$name:$redirectedVersion")
+        }
+    }
+}
+
 private fun CapabilityResolutionDetails.selectPreferredAndroidXCandidate() {
     // Only intervene if there are multiple candidates
     if (candidates.size <= 1) {
