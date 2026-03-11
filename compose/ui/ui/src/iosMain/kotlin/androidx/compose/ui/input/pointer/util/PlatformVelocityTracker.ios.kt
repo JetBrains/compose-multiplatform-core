@@ -25,17 +25,9 @@ import androidx.compose.ui.util.fastForEach
 
 internal actual fun PlatformVelocityTracker(): PlatformVelocityTracker = UIKitVelocityTracker()
 
-private const val AssumePointerMoveStoppedMilliseconds: Int = 40
-private const val MinimumGestureDurationMilliseconds: Int = 50
-
 private class UIKitVelocityTracker: PlatformVelocityTracker {
-    @OptIn(ExperimentalVelocityTrackerApi::class)
-    private val strategy =
-        VelocityTracker1D.Strategy.Lsq2 // non-differential, Lsq2 1D velocity tracker
-    private val yVelocityTracker = VelocityTracker1D(strategy = strategy)
-    private val xVelocityTracker = VelocityTracker1D(strategy = strategy)
-    private var lastMoveEventTimeStamp = 0L
-    private var lastPointerStopEventTimeStamp = 0L
+    private val xVelocityTracker = PointerVelocityTracker1D(preventReversedPointerMovements = true)
+    private val yVelocityTracker = PointerVelocityTracker1D(preventReversedPointerMovements = true)
 
     override fun addPointerInputChange(event: PointerInputChange, offset: Offset) {
         // If this is ACTION_DOWN: Reset the tracking.
@@ -54,17 +46,6 @@ private class UIKitVelocityTracker: PlatformVelocityTracker {
             }
             addPosition(event.uptimeMillis, event.position + offset)
         }
-
-        if (event.uptimeMillis - lastMoveEventTimeStamp > AssumePointerMoveStoppedMilliseconds) {
-            lastPointerStopEventTimeStamp = event.uptimeMillis
-        }
-
-        if (event.changedToUpIgnoreConsumed() &&
-            event.uptimeMillis - lastPointerStopEventTimeStamp < MinimumGestureDurationMilliseconds
-        ) {
-            resetTracking()
-        }
-        lastMoveEventTimeStamp = event.uptimeMillis
     }
 
     override fun calculateVelocity(maximumVelocity: Velocity): Velocity {
@@ -76,7 +57,6 @@ private class UIKitVelocityTracker: PlatformVelocityTracker {
     override fun resetTracking() {
         xVelocityTracker.resetTracking()
         yVelocityTracker.resetTracking()
-        lastMoveEventTimeStamp = 0L
     }
 
     override fun addPosition(timeMillis: Long, position: Offset) {
