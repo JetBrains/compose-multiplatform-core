@@ -31,6 +31,7 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
     NSUInteger _totalDrawables;
     CMPDrawable *_lastPresentedDrawable;
     CGSize _drawableSize;
+    CFTimeInterval _lastDrawablePresentedTime;
 }
 
 - (instancetype)init {
@@ -43,6 +44,7 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
         _lastPresentedDrawable = nil;
         _drawableSize = CGSizeZero;
         _drawablesGeneration = 0;
+        _lastDrawablePresentedTime = 0;
     }
     return self;
 }
@@ -184,7 +186,7 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
 }
 
 - (void)presentDrawable:(CMPDrawable *)drawable
-             completion:(void (^)(void))completion {
+              onDisplay:(void (^)(void))displayHandler {
     [_drawablesLock lock];
 
     if (drawable.texture.width != (NSUInteger)_drawableSize.width ||
@@ -204,24 +206,36 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
     [_drawablesLock unlock];
 
     if ([NSThread isMainThread]) {
-        [self presentOnMainThread:drawable completion: completion];
+        [self presentOnMainThread:drawable onDisplay: displayHandler];
     } else {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self presentOnMainThread:drawable completion: completion];
+            [self presentOnMainThread:drawable onDisplay: displayHandler];
         });
     }
 }
 
-- (void)presentOnMainThread:(CMPDrawable *)drawable completion:(void (^)(void))completion {
+- (void)presentOnMainThread:(CMPDrawable *)drawable
+                  onDisplay:(void (^)(void))displayHandler {
     NSAssert([NSThread isMainThread], @"presentOnMainThread - must be called on main thread");
 
+    if (_lastDrawablePresentedTime > drawable.presentedTime) {
+        // Drop drawable that was scheduled before the already presented one
+        return;
+    }
+    if (drawable.texture.width != (NSUInteger)_drawableSize.width ||
+        drawable.texture.height != (NSUInteger)_drawableSize.height) {
+        // Invalid drawable size. Ignoring.
+        return;
+    }
+    
+    _lastDrawablePresentedTime = drawable.presentedTime;
     [self setNeedsDisplay]; // Prevents frame drops during touch events
 
     [CATransaction begin];
     [CATransaction setDisableActions:YES];
     self.contents = (__bridge id)drawable.surface;
-    if (completion != nil) {
-        completion();
+    if (displayHandler != nil) {
+        displayHandler();
     }
     [CATransaction commit];
 }

@@ -18,19 +18,17 @@ package androidx.compose.foundation.text
 
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.isAltPressed
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 
-internal object defaultSkikoKeyMapping : KeyMapping {
+internal object DefaultSkikoKeyMapping : KeyMapping {
     override fun map(event: KeyEvent): KeyCommand? {
-        return when {
-            event.isCtrlPressed && event.isShiftPressed -> {
+        return when (event.modifiers) {
+            KeyModifiers.CtrlShift -> {
                 when (event.key) {
-                    Key.MoveHome -> KeyCommand.SELECT_HOME
-                    Key.MoveEnd -> KeyCommand.SELECT_END
+                    Key.MoveHome,
+                    Key.NumPadMoveHome -> KeyCommand.SELECT_HOME
+                    Key.MoveEnd,
+                    Key.NumPadMoveEnd -> KeyCommand.SELECT_END
                     else -> null
                 }
             }
@@ -40,46 +38,101 @@ internal object defaultSkikoKeyMapping : KeyMapping {
 }
 
 internal fun createMacosDefaultKeyMapping(): KeyMapping {
-    val common = commonKeyMapping(KeyEvent::isMetaPressed)
+    val common = commonKeyMapping(KeyModifiers.Meta)
     return object : KeyMapping {
         override fun map(event: KeyEvent): KeyCommand? {
-            return when {
-                event.isMetaPressed && event.isCtrlPressed ->
+            val keyModifiers = event.modifiers
+            when (event.key) {
+                Key.Delete, Key.NumPadDelete -> {
+                    when (keyModifiers) {
+                        KeyModifiers.None,
+                        KeyModifiers.Shift,
+                        KeyModifiers.Ctrl,
+                        KeyModifiers.CtrlShift -> KeyCommand.DELETE_NEXT_CHAR
+                        KeyModifiers.Alt,
+                        KeyModifiers.AltShift -> KeyCommand.DELETE_NEXT_WORD
+                        else -> null
+                    }
+                }
+                Key.Backspace -> {
+                    when (keyModifiers) {
+                        KeyModifiers.None,
+                        KeyModifiers.Shift,
+                        KeyModifiers.Ctrl,
+                        KeyModifiers.CtrlShift -> KeyCommand.DELETE_PREV_CHAR
+                        KeyModifiers.Meta,
+                        KeyModifiers.ShiftMeta -> KeyCommand.DELETE_FROM_LINE_START
+                        KeyModifiers.Alt,
+                        KeyModifiers.AltShift -> KeyCommand.DELETE_PREV_WORD
+                        else -> null
+                    }
+                }
+                Key.Enter, Key.NumPadEnter -> {
+                    when (keyModifiers) {
+                        KeyModifiers.None,
+                        KeyModifiers.Alt,
+                        KeyModifiers.Shift,
+                        KeyModifiers.AltShift -> KeyCommand.NEW_LINE
+                        else -> null
+                    }
+                }
+                else -> null
+            }?.let {
+                return it
+            }
+
+            return when (keyModifiers) {
+                KeyModifiers.CtrlMeta -> {
                     when (event.key) {
                         Key.Spacebar -> KeyCommand.CHARACTER_PALETTE
                         else -> null
                     }
+                }
 
-                event.isShiftPressed && event.isAltPressed ->
+                KeyModifiers.AltShift -> {
                     when (event.key) {
-                        Key.DirectionLeft -> KeyCommand.SELECT_LEFT_WORD
-                        Key.DirectionRight -> KeyCommand.SELECT_RIGHT_WORD
-                        Key.DirectionUp -> KeyCommand.SELECT_PREV_PARAGRAPH
-                        Key.DirectionDown -> KeyCommand.SELECT_NEXT_PARAGRAPH
+                        Key.DirectionLeft,
+                        Key.NumPadDirectionLeft -> KeyCommand.SELECT_LEFT_WORD
+                        Key.DirectionRight,
+                        Key.NumPadDirectionRight -> KeyCommand.SELECT_RIGHT_WORD
+                        Key.DirectionUp,
+                        Key.NumPadDirectionUp -> KeyCommand.SELECT_PREV_PARAGRAPH
+                        Key.DirectionDown,
+                        Key.NumPadDirectionDown -> KeyCommand.SELECT_NEXT_PARAGRAPH
                         else -> null
                     }
+                }
 
-                event.isShiftPressed && event.isMetaPressed ->
+                KeyModifiers.ShiftMeta -> {
                     when (event.key) {
-                        Key.DirectionLeft -> KeyCommand.SELECT_LINE_LEFT
-                        Key.DirectionRight -> KeyCommand.SELECT_LINE_RIGHT
-                        Key.DirectionUp -> KeyCommand.SELECT_HOME
-                        Key.DirectionDown -> KeyCommand.SELECT_END
+                        Key.DirectionLeft,
+                        Key.NumPadDirectionLeft -> KeyCommand.SELECT_LINE_LEFT
+                        Key.DirectionRight,
+                        Key.NumPadDirectionRight -> KeyCommand.SELECT_LINE_RIGHT
+                        Key.DirectionUp,
+                        Key.NumPadDirectionUp -> KeyCommand.SELECT_HOME
+                        Key.DirectionDown,
+                        Key.NumPadDirectionDown -> KeyCommand.SELECT_END
                         else -> null
                     }
+                }
 
-                event.isMetaPressed ->
+                KeyModifiers.Meta -> {
                     when (event.key) {
-                        Key.DirectionLeft -> KeyCommand.LINE_LEFT
-                        Key.DirectionRight -> KeyCommand.LINE_RIGHT
-                        Key.DirectionUp -> KeyCommand.HOME
-                        Key.DirectionDown -> KeyCommand.END
-                        Key.Backspace -> KeyCommand.DELETE_FROM_LINE_START
+                        Key.DirectionLeft,
+                        Key.NumPadDirectionLeft -> KeyCommand.LINE_LEFT
+                        Key.DirectionRight,
+                        Key.NumPadDirectionRight -> KeyCommand.LINE_RIGHT
+                        Key.DirectionUp,
+                        Key.NumPadDirectionUp -> KeyCommand.HOME
+                        Key.DirectionDown,
+                        Key.NumPadDirectionDown -> KeyCommand.END
                         else -> null
                     }
+                }
 
                 // Emacs-like shortcuts
-                event.isCtrlPressed && event.isShiftPressed && event.isAltPressed -> {
+                KeyModifiers.CtrlShiftAlt -> {
                     when (event.key) {
                         Key.F -> KeyCommand.SELECT_RIGHT_WORD
                         Key.B -> KeyCommand.SELECT_LEFT_WORD
@@ -87,7 +140,7 @@ internal fun createMacosDefaultKeyMapping(): KeyMapping {
                     }
                 }
 
-                event.isCtrlPressed && event.isAltPressed -> {
+                KeyModifiers.CtrlAlt -> {
                     when (event.key) {
                         Key.F -> KeyCommand.RIGHT_WORD
                         Key.B -> KeyCommand.LEFT_WORD
@@ -95,7 +148,7 @@ internal fun createMacosDefaultKeyMapping(): KeyMapping {
                     }
                 }
 
-                event.isCtrlPressed && event.isShiftPressed -> {
+                KeyModifiers.CtrlShift -> {
                     when (event.key) {
                         Key.F -> KeyCommand.SELECT_RIGHT_CHAR
                         Key.B -> KeyCommand.SELECT_LEFT_CHAR
@@ -107,7 +160,7 @@ internal fun createMacosDefaultKeyMapping(): KeyMapping {
                     }
                 }
 
-                event.isCtrlPressed -> {
+                KeyModifiers.Ctrl -> {
                     when (event.key) {
                         Key.F -> KeyCommand.LEFT_CHAR
                         Key.B -> KeyCommand.RIGHT_CHAR
@@ -124,21 +177,25 @@ internal fun createMacosDefaultKeyMapping(): KeyMapping {
                 }
                 // end of emacs-like shortcuts
 
-                event.isShiftPressed ->
+                KeyModifiers.Shift ->
                     when (event.key) {
-                        Key.MoveHome -> KeyCommand.SELECT_HOME
-                        Key.MoveEnd -> KeyCommand.SELECT_END
+                        Key.MoveHome,
+                        Key.NumPadMoveHome -> KeyCommand.SELECT_HOME
+                        Key.MoveEnd,
+                        Key.NumPadMoveEnd -> KeyCommand.SELECT_END
                         else -> null
                     }
 
-                event.isAltPressed ->
+                KeyModifiers.Alt ->
                     when (event.key) {
-                        Key.DirectionLeft -> KeyCommand.LEFT_WORD
-                        Key.DirectionRight -> KeyCommand.RIGHT_WORD
-                        Key.DirectionUp -> KeyCommand.PREV_PARAGRAPH
-                        Key.DirectionDown -> KeyCommand.NEXT_PARAGRAPH
-                        Key.Delete -> KeyCommand.DELETE_NEXT_WORD
-                        Key.Backspace -> KeyCommand.DELETE_PREV_WORD
+                        Key.DirectionLeft,
+                        Key.NumPadDirectionLeft -> KeyCommand.LEFT_WORD
+                        Key.DirectionRight,
+                        Key.NumPadDirectionRight -> KeyCommand.RIGHT_WORD
+                        Key.DirectionUp,
+                        Key.NumPadDirectionUp -> KeyCommand.PREV_PARAGRAPH
+                        Key.DirectionDown,
+                        Key.NumPadDirectionDown -> KeyCommand.NEXT_PARAGRAPH
                         else -> null
                     }
 
@@ -147,3 +204,6 @@ internal fun createMacosDefaultKeyMapping(): KeyMapping {
         }
     }
 }
+
+private val KeyModifiers.Companion.CtrlShiftAlt
+    get() = KeyModifiers.Ctrl + KeyModifiers.Shift + KeyModifiers.Alt

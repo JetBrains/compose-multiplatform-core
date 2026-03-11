@@ -31,6 +31,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SessionMutex
+import androidx.compose.ui.areWindowInsetsRulersEnabled
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusOwner
@@ -97,7 +98,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.round
-import androidx.compose.ui.unit.toIntRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.useLegacyRenderNodeLayers
 import androidx.compose.ui.util.fastAll
@@ -501,9 +501,7 @@ internal class RootNodeOwner(
         override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
         override val fontFamilyResolver = createFontFamilyResolver()
         override val layoutDirection get() = _layoutDirection
-        override val localeList: LocaleList
-            // TODO: https://youtrack.jetbrains.com/issue/CMP-9514/Implement-Owner.localeList-for-CMP
-            get() = LocaleList(emptyList())
+        override val localeList get() = platformContext.localeList
         override var showLayoutBounds by mutableStateOf(false)
             @InternalCoreApi
             set
@@ -722,8 +720,7 @@ internal class RootNodeOwner(
         }
 
         override fun invalidateRootLayer() {
-            // TODO: https://youtrack.jetbrains.com/issue/CMP-9533/Implement-SkikoOwner.invalidateRootLayer
-            super.invalidateRootLayer()
+            ownedLayerManager.invalidate()
         }
     }
 
@@ -758,7 +755,9 @@ internal class RootNodeOwner(
             buttons: PointerButtons?,
             keyboardModifiers: PointerKeyboardModifiers?,
             nativeEvent: Any?,
-            button: PointerButton?
+            button: PointerButton?,
+            scaleGestureFactor: Float,
+            panGestureOffset: Offset,
         ) {
             inputHandler.onPointerEvent(
                 eventType = eventType,
@@ -769,7 +768,9 @@ internal class RootNodeOwner(
                 buttons = buttons,
                 keyboardModifiers = keyboardModifiers,
                 nativeEvent = nativeEvent,
-                button = button
+                button = button,
+                scaleGestureFactor = scaleGestureFactor,
+                panGestureOffset = panGestureOffset,
             )
         }
 
@@ -785,6 +786,8 @@ internal class RootNodeOwner(
             timeMillis: Long,
             nativeEvent: Any?,
             button: PointerButton?,
+            scaleGestureFactor: Float,
+            panGestureOffset: Offset,
         ) {
             inputHandler.onPointerEvent(
                 eventType = eventType,
@@ -794,7 +797,9 @@ internal class RootNodeOwner(
                 scrollDelta = scrollDelta,
                 timeMillis = timeMillis,
                 nativeEvent = nativeEvent,
-                button = button
+                button = button,
+                scaleGestureFactor = scaleGestureFactor,
+                panGestureOffset = panGestureOffset,
             )
         }
 

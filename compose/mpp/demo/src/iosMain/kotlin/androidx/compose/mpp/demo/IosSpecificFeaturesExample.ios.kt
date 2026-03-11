@@ -28,5 +28,6 @@ val IosSpecificFeatures = Screen.Selection(
     InteropExample,
     ReusableMapsExample,
     UpdatableInteropPropertiesExample,
-    IosImeOptionsExample
+    IosImeOptionsExample,
+    NativeTextInputTextFields,
 )
