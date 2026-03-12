@@ -182,19 +182,6 @@ internal class PointerVelocityTracker1D(
      *         needed, the original sample count is returned.
      */
     private fun adjustDataPointsIfNeeded(sampleCount: Int): Int {
-        if (sampleCount > 3) {
-
-            val generalScrollUpFront = reusableDataPointsArray[0] < reusableDataPointsArray[sampleCount - 1]
-            val lastScrollUpFront = reusableDataPointsArray[sampleCount - 2] < reusableDataPointsArray[sampleCount - 1]
-            val preLastScrollUpFront = (reusableDataPointsArray[sampleCount - 3] < reusableDataPointsArray[sampleCount - 2]).takeIf {
-                reusableDataPointsArray[sampleCount - 3] != reusableDataPointsArray[sampleCount - 2]
-            }
-
-            if (preLastScrollUpFront != lastScrollUpFront && generalScrollUpFront != lastScrollUpFront) {
-                reusableDataPointsArray[sampleCount - 1] = reusableDataPointsArray[sampleCount - 2]
-            }
-        }
-
         if (strategy != Strategy.Lsq2) return sampleCount
         if (sampleCount > 3) return sampleCount
         if (sampleCount < 2) return sampleCount
