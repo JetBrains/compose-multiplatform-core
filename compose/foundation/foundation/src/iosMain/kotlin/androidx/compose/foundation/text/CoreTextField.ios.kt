@@ -66,6 +66,8 @@ internal actual fun Modifier.textFieldCursor(
     if (usingNativeTextInput) this else cursor(state, value, offsetMapping, cursorBrush, showCursor)
 }
 
+
+
 @OptIn(InternalComposeUiApi::class)
 internal actual fun Modifier.textFieldDraw(
     state: LegacyTextFieldState,
@@ -119,7 +121,7 @@ private class TextFieldDrawNode(
     private var state: LegacyTextFieldState,
     private var value: TextFieldValue,
     private var offsetMapping: OffsetMapping,
-) : DelegatingNode(),
+) : Modifier.Node(),
     ObserverModifierNode,
     CompositionLocalConsumerModifierNode,
     DrawModifierNode {
