@@ -361,7 +361,6 @@ internal class SelectionMagnifierNode<M>(
     CompositionLocalConsumerModifierNode {
 
     private var magnifierSizeDp by mutableStateOf(DpSize.Zero)
-    private val color: Color get() = currentValueOf(LocalTextSelectionColors).handleColor
 
     private val magnifierNode = delegate(
         MagnifierNode(
@@ -369,7 +368,6 @@ internal class SelectionMagnifierNode<M>(
                 calculateCenter(magnifierSizeDp.toSize().roundToIntSize())
             },
             onSizeChanged = { magnifierSizeDp = it },
-            color = color,
             hapticFeedback = manager.hapticFeedback(),
             platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform()
         )
@@ -384,7 +382,7 @@ internal class SelectionMagnifierNode<M>(
     override fun onObservedReadsChanged() {
         observeReads {
             magnifierNode.update(
-                color = color,
+                color = currentValueOf(LocalTextSelectionColors).handleColor,
                 hapticFeedback = manager.hapticFeedback(),
             )
         }
