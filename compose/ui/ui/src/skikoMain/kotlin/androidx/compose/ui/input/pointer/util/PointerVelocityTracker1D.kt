@@ -191,7 +191,6 @@ internal class PointerVelocityTracker1D(
             }
 
             if (preLastScrollUpFront != lastScrollUpFront && generalScrollUpFront != lastScrollUpFront) {
-                println(">>>> DROP!!!")
                 reusableDataPointsArray[sampleCount - 1] = reusableDataPointsArray[sampleCount - 2]
             }
         }
