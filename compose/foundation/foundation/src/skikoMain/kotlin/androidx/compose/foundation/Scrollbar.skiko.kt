@@ -987,14 +987,13 @@ private class ScrollOnPressTrackNode(
     private var reverseLayout: Boolean,
     private var sliderAdapter: SliderAdapter,
 ): DelegatingNode() {
-    private var scroller: TrackPressScroller = TrackPressScroller(coroutineScope, sliderAdapter, reverseLayout)
 
     private val pointerInputNode = delegate(
         SuspendingPointerInputModifierNode(
             pointerInputEventHandler = {
                 detectScrollViaTrackGestures(
                     isVertical = isVertical,
-                    scroller = scroller,
+                    scroller = TrackPressScroller(coroutineScope, sliderAdapter, reverseLayout),
                 )
             }
         )
@@ -1005,33 +1004,15 @@ private class ScrollOnPressTrackNode(
         reverseLayout: Boolean,
         sliderAdapter: SliderAdapter,
     ) {
-        var needsReset = false
-        var needsResetScroller = false
-
-        if (this.isVertical != isVertical) {
-            this.isVertical = isVertical
-            needsReset = true
-        }
-
-        if (this.reverseLayout != reverseLayout) {
-            this.reverseLayout = reverseLayout
-            needsReset = true
-            needsResetScroller = true
-        }
-
-        if (this.sliderAdapter != sliderAdapter) {
-            this.sliderAdapter = sliderAdapter
-            needsReset = true
-            needsResetScroller = true
-        }
-
-        if (needsResetScroller) {
-            scroller = TrackPressScroller(coroutineScope, this.sliderAdapter, this.reverseLayout)
-        }
+        var needsReset = this.isVertical != isVertical || this.reverseLayout != reverseLayout || this.sliderAdapter != sliderAdapter
 
         if (needsReset) {
             pointerInputNode.resetPointerInputHandler()
         }
+
+        this.isVertical = isVertical
+        this.reverseLayout = reverseLayout
+        this.sliderAdapter = sliderAdapter
     }
 }
 
