@@ -74,7 +74,7 @@ internal actual fun Modifier.textFieldDraw(
     offsetMapping: OffsetMapping,
 ): Modifier = this then TextFieldDrawElement(state, value, offsetMapping)
 
-private class TextFieldDrawElement(
+private data class TextFieldDrawElement(
     private val state: LegacyTextFieldState,
     private val value: TextFieldValue,
     private val offsetMapping: OffsetMapping,
@@ -99,19 +99,6 @@ private class TextFieldDrawElement(
         properties["state"] = state
         properties["value"] = value
         properties["offsetMapping"] = offsetMapping
-    }
-
-    override fun equals(other: Any?): Boolean =
-        other is TextFieldDrawElement &&
-            other.state == state &&
-            other.value == value &&
-            other.offsetMapping == offsetMapping
-
-    override fun hashCode(): Int {
-        var result = state.hashCode()
-        result = 31 * result + value.hashCode()
-        result = 31 * result + offsetMapping.hashCode()
-        return result
     }
 }
 
