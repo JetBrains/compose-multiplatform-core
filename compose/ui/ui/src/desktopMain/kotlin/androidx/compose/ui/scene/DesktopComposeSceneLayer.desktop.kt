@@ -78,6 +78,7 @@ internal abstract class DesktopComposeSceneLayer(
         eventType: PointerEventType,
         button: PointerButton?
     ) -> Unit)? = null
+    private var drawBoundsRecorder: RecordDrawRectRenderDecorator? = null
     private var isClosed = false
 
     final override var density: Density = density
@@ -109,6 +110,8 @@ internal abstract class DesktopComposeSceneLayer(
 
     @CallSuper
     override fun close() {
+        drawBoundsRecorder?.close()
+        drawBoundsRecorder = null
         isClosed = true
     }
 
@@ -147,6 +150,9 @@ internal abstract class DesktopComposeSceneLayer(
                 bottom = boundsInWindow.bottom + maxDrawInflate.bottom
             )
             onDrawBoundsChanged()
+        }.also {
+            drawBoundsRecorder?.close()
+            drawBoundsRecorder = it
         }
 
     /**
