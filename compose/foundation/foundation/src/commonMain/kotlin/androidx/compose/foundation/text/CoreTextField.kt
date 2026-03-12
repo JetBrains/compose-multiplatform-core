@@ -31,8 +31,8 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.handwriting.stylusHandwriting
 import androidx.compose.foundation.text.input.internal.CoreTextFieldSemanticsModifier
-import androidx.compose.foundation.text.input.internal.legacyTextInputAdapter
 import androidx.compose.foundation.text.input.internal.createLegacyPlatformTextInputServiceAdapter
+import androidx.compose.foundation.text.input.internal.legacyTextInputAdapter
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.OffsetProvider
 import androidx.compose.foundation.text.selection.SelectedTextType
@@ -72,6 +72,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -1134,27 +1135,32 @@ internal expect fun Modifier.textFieldDraw(
     offsetMapping: OffsetMapping,
 ): Modifier
 
+internal fun DefaultTextFieldOnDrawBehind(
+    state: LegacyTextFieldState,
+    value: TextFieldValue,
+    offsetMapping: OffsetMapping,
+): DrawScope.() -> Unit = {
+    state.layoutResult?.let { layoutResult ->
+        drawIntoCanvas { canvas ->
+            TextFieldDelegate.draw(
+                canvas,
+                value,
+                state.selectionPreviewHighlightRange,
+                state.deletionPreviewHighlightRange,
+                offsetMapping,
+                layoutResult.value,
+                state.highlightPaint,
+                state.selectionBackgroundColor,
+            )
+        }
+    }
+}
+
 internal fun Modifier.defaultTextFieldDraw(
     state: LegacyTextFieldState,
     value: TextFieldValue,
     offsetMapping: OffsetMapping,
-): Modifier =
-    this.drawBehind {
-        state.layoutResult?.let { layoutResult ->
-            drawIntoCanvas { canvas ->
-                TextFieldDelegate.draw(
-                    canvas,
-                    value,
-                    state.selectionPreviewHighlightRange,
-                    state.deletionPreviewHighlightRange,
-                    offsetMapping,
-                    layoutResult.value,
-                    state.highlightPaint,
-                    state.selectionBackgroundColor,
-                )
-            }
-        }
-    }
+): Modifier = this.drawBehind(DefaultTextFieldOnDrawBehind(state, value, offsetMapping))
 
 @Composable
 internal expect fun CursorHandle(
