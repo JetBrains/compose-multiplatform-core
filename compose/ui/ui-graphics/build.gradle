@@ -165,7 +165,8 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             skikoTest {
                 dependsOn(commonTest)
                 dependencies {
-                    implementation(project(":compose:ui:ui-test-junit4"))
+                    implementation(project(":compose:ui:ui-test"))
+                    implementation(project(":kruth:kruth"))
                 }
             }
 
@@ -176,6 +177,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     implementation(libs.junit)
                     implementation(libs.truth)
                     implementation(libs.skikoCurrentOs)
+                    implementation(project(":compose:ui:ui-test-junit4"))
                 }
             }
             nativeTest {
