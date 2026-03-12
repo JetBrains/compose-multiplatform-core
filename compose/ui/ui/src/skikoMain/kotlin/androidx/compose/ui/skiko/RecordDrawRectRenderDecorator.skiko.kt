@@ -51,6 +51,7 @@ internal class RecordDrawRectRenderDecorator(
 
     override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
         if (isClosed) {
+            decorated.onRender(canvas, width, height, nanoTime)
             return
         }
         drawRect = canvas.recordCullRect {

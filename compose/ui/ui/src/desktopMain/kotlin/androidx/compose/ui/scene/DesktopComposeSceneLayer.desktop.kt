@@ -63,6 +63,7 @@ internal abstract class DesktopComposeSceneLayer(
     )
 
     protected abstract val mediator: ComposeSceneMediator?
+    private val closeables = mutableSetOf<AutoCloseable>()
 
     /**
      * Bounds of real drawings based on previous renders.
@@ -78,7 +79,6 @@ internal abstract class DesktopComposeSceneLayer(
         eventType: PointerEventType,
         button: PointerButton?
     ) -> Unit)? = null
-    private var drawBoundsRecorder: RecordDrawRectRenderDecorator? = null
     private var isClosed = false
 
     final override var density: Density = density
@@ -110,9 +110,9 @@ internal abstract class DesktopComposeSceneLayer(
 
     @CallSuper
     override fun close() {
-        drawBoundsRecorder?.close()
-        drawBoundsRecorder = null
         isClosed = true
+        closeables.forEach { it.close() }
+        closeables.clear()
     }
 
     final override fun setContent(content: @Composable () -> Unit) {
@@ -150,10 +150,7 @@ internal abstract class DesktopComposeSceneLayer(
                 bottom = boundsInWindow.bottom + maxDrawInflate.bottom
             )
             onDrawBoundsChanged()
-        }.also {
-            drawBoundsRecorder?.close()
-            drawBoundsRecorder = it
-        }
+        }.also { closeables.add(it) }
 
     /**
      * Called when the focus of the window containing main Compose view has changed.
