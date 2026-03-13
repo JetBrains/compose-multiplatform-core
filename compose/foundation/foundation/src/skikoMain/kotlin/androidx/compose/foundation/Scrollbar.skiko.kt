@@ -989,32 +989,43 @@ private class ScrollOnPressTrackNode(
     private var reverseLayout: Boolean,
     private var sliderAdapter: SliderAdapter,
 ): DelegatingNode() {
+    private lateinit var scroller: TrackPressScroller
+    private lateinit var pointerInputNode: SuspendingPointerInputModifierNode
 
-    private val pointerInputNode = delegate(
-        SuspendingPointerInputModifierNode(
-            pointerInputEventHandler = {
-                detectScrollViaTrackGestures(
-                    isVertical = isVertical,
-                    scroller = TrackPressScroller(coroutineScope, sliderAdapter, reverseLayout),
-                )
-            }
+    override fun onAttach() {
+        super.onAttach()
+
+        recreateScroller()
+
+        pointerInputNode = delegate(
+            SuspendingPointerInputModifierNode(
+                pointerInputEventHandler = {
+                    detectScrollViaTrackGestures(
+                        isVertical = isVertical,
+                        scroller = scroller,
+                    )
+                }
+            )
         )
-    )
+    }
 
     fun update(
         isVertical: Boolean,
         reverseLayout: Boolean,
         sliderAdapter: SliderAdapter,
     ) {
-        var needsReset = this.isVertical != isVertical || this.reverseLayout != reverseLayout || this.sliderAdapter != sliderAdapter
-
-        if (needsReset) {
-            pointerInputNode.resetPointerInputHandler()
-        }
-
         this.isVertical = isVertical
         this.reverseLayout = reverseLayout
         this.sliderAdapter = sliderAdapter
+
+        if (this.isVertical != isVertical || this.reverseLayout != reverseLayout || this.sliderAdapter != sliderAdapter) {
+            recreateScroller()
+            pointerInputNode.resetPointerInputHandler()
+        }
+    }
+
+    private fun recreateScroller() {
+        scroller = TrackPressScroller(coroutineScope, sliderAdapter, reverseLayout)
     }
 }
 
