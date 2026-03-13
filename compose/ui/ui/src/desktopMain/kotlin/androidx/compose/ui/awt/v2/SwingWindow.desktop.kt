@@ -26,11 +26,10 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
 import androidx.compose.ui.awt.toAwtRectangleRounded
-import androidx.compose.ui.awt.toDpRect
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.util.ComponentUpdater
 import androidx.compose.ui.util.componentListenerRef
@@ -110,7 +109,7 @@ fun SwingWindow(
     alwaysOnTop: Boolean = false,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
-    onBoundsChanged: (IntRect) -> Unit = { },
+    onBoundsChanged: (DpRect) -> Unit = { },
     init: (ComposeWindow) -> Unit,
     content: @Composable FrameWindowScope.() -> Unit
 ) {
@@ -184,10 +183,9 @@ fun SwingWindow(
                     this,
                     object : ComponentAdapter() {
                         fun applyStateChanges() {
-                            val bounds = IntRect(x, y, x + width, y + height)
-                            val dpBounds = bounds.toDpRect()
-                            currentState.setBoundsDirect(dpBounds)
-                            appliedState.bounds = dpBounds
+                            val bounds = DpRect(x.dp, y.dp, (x + width).dp, (y + height).dp)
+                            currentState.setBoundsDirect(bounds)
+                            appliedState.bounds = bounds
                             currentOnBoundsChanged(bounds)
                             if (currentState.screen?.device != graphicsConfiguration.device) {
                                 currentState.screen = Screen(graphicsConfiguration.device)

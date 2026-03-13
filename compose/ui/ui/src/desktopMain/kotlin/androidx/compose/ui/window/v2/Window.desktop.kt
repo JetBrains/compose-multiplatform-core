@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.size
@@ -63,7 +62,7 @@ fun Window(
     alwaysOnTop: Boolean = false,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
-    onBoundsChanged: (IntRect) -> Unit = { },
+    onBoundsChanged: (DpRect) -> Unit = { },
     content: @Composable FrameWindowScope.() -> Unit
 ) {
     SwingWindow(
@@ -103,7 +102,7 @@ fun singleWindowApplication(
     alwaysOnTop: Boolean = false,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
-    onBoundsChanged: (IntRect) -> Unit = { },
+    onBoundsChanged: (DpRect) -> Unit = { },
     exitProcessOnExit: Boolean = true,
     content: @Composable SingleWindowApplicationScope.() -> Unit
 ) = application(exitProcessOnExit = exitProcessOnExit) {
