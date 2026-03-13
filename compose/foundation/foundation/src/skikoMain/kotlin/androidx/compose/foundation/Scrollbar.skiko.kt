@@ -894,30 +894,32 @@ private class ScrollbarDragModifierNode(
     private var sliderAdapter: SliderAdapter,
 ) : DelegatingNode() {
 
-    private val pointerInputNode = delegate(
-        SuspendingPointerInputModifierNode(
-            pointerInputEventHandler = {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    val interaction = DragInteraction.Start()
-                    interactionSource.tryEmit(interaction)
-                    draggedInteraction.value = interaction
-                    sliderAdapter.onDragStarted()
-                    val isSuccess = drag(down.id) { change ->
-                        sliderAdapter.onDragDelta(change.positionChange())
-                        change.consume()
+    init {
+        delegate(
+            SuspendingPointerInputModifierNode(
+                pointerInputEventHandler = {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val interaction = DragInteraction.Start()
+                        interactionSource.tryEmit(interaction)
+                        draggedInteraction.value = interaction
+                        sliderAdapter.onDragStarted()
+                        val isSuccess = drag(down.id) { change ->
+                            sliderAdapter.onDragDelta(change.positionChange())
+                            change.consume()
+                        }
+                        val finishInteraction = if (isSuccess) {
+                            DragInteraction.Stop(interaction)
+                        } else {
+                            DragInteraction.Cancel(interaction)
+                        }
+                        interactionSource.tryEmit(finishInteraction)
+                        draggedInteraction.value = null
                     }
-                    val finishInteraction = if (isSuccess) {
-                        DragInteraction.Stop(interaction)
-                    } else {
-                        DragInteraction.Cancel(interaction)
-                    }
-                    interactionSource.tryEmit(finishInteraction)
-                    draggedInteraction.value = null
                 }
-            }
+            )
         )
-    )
+    }
 
     fun update(
         interactionSource: MutableInteractionSource,
