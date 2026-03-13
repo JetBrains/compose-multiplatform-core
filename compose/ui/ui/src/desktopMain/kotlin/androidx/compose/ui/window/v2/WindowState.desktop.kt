@@ -101,15 +101,10 @@ class WindowState internal constructor(
     var isMinimized: Boolean by mutableStateOf(isMinimized)
 
     /**
-     * The backing property for the window bounds.
-     */
-    private var _bounds: DpRect? by mutableStateOf(bounds)
-
-    /**
      * The current bounds of the window; `null` if unknown (e.g., the window is not yet visible).
      */
-    val bounds: DpRect?
-        get() = _bounds
+    var bounds: DpRect? by mutableStateOf(bounds)
+        internal set
 
     /**
      * Set the bounds of the window.
@@ -122,11 +117,7 @@ class WindowState internal constructor(
     fun setBounds(bounds: DpRect) {
         requireReal(bounds)
         this.placement = WindowPlacement.Floating
-        this._bounds = bounds
-    }
-
-    internal fun setBoundsDirect(bounds: DpRect) {
-        this._bounds = bounds
+        this.bounds = bounds
     }
 
     companion object {
