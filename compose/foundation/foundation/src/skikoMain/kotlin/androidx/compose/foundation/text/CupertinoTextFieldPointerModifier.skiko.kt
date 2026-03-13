@@ -109,10 +109,17 @@ internal fun Modifier.cupertinoTextFieldPointer(
             object : TextDragObserver {
                 var dragTotalDistance = Offset.Zero
                 var dragBeginOffset = Offset.Zero
+                var shouldUpdateMagnifierPosition = false
 
                 override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) {
-                    currentManager.draggingHandle = Handle.SelectionEnd
-                    currentManager.currentDragPosition = startPoint
+                    shouldUpdateMagnifierPosition = selectionAdjustment == SelectionAdjustment.None
+                    if (shouldUpdateMagnifierPosition) {
+                        currentManager.draggingHandle = Handle.SelectionEnd
+                        currentManager.currentDragPosition = startPoint
+                    } else {
+                        currentManager.draggingHandle = null
+                        currentManager.currentDragPosition = null
+                    }
 
                     currentManager.hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
 
@@ -136,7 +143,9 @@ internal fun Modifier.cupertinoTextFieldPointer(
                     dragTotalDistance += delta
                     currentState.layoutResult?.let { layoutResult ->
                         val currentDragPosition = dragBeginOffset + dragTotalDistance
-                        currentManager.currentDragPosition = currentDragPosition
+                        if (shouldUpdateMagnifierPosition) {
+                            currentManager.currentDragPosition = currentDragPosition
+                        }
                         TextFieldDelegate.setCursorOffset(
                             currentDragPosition,
                             layoutResult,
@@ -153,11 +162,13 @@ internal fun Modifier.cupertinoTextFieldPointer(
                 override fun onUp() {}
 
                 override fun onStop() {
+                    shouldUpdateMagnifierPosition = false
                     currentManager.draggingHandle = null
                     currentManager.currentDragPosition = null
                 }
 
                 override fun onCancel() {
+                    shouldUpdateMagnifierPosition = false
                     currentManager.draggingHandle = null
                     currentManager.currentDragPosition = null
                 }
