@@ -1014,11 +1014,13 @@ private class ScrollOnPressTrackNode(
         reverseLayout: Boolean,
         sliderAdapter: SliderAdapter,
     ) {
+        val needsReset = isVertical != this.isVertical || reverseLayout != this.reverseLayout || sliderAdapter != this.sliderAdapter
+
         this.isVertical = isVertical
         this.reverseLayout = reverseLayout
         this.sliderAdapter = sliderAdapter
 
-        if (this.isVertical != isVertical || this.reverseLayout != reverseLayout || this.sliderAdapter != sliderAdapter) {
+        if (needsReset) {
             recreateScroller()
             pointerInputNode.resetPointerInputHandler()
         }
