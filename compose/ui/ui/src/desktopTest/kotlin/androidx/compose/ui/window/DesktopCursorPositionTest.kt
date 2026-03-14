@@ -24,18 +24,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toOffset
 import com.google.common.truth.Truth.assertThat
+import java.awt.MouseInfo
 import java.awt.Robot
 import org.junit.Test
 
@@ -51,9 +49,9 @@ internal class DesktopCursorPositionTest {
     fun `pointer position with single component`(): Unit = runApplicationTest {
         var pointerPosition: IntOffset? = null
         var window: ComposeWindow? = null
-        val robot = Robot()
         val pxTargetOffset = IntOffset(84, 58)
         var pointerMoved by mutableStateOf(false)
+        val initialMouseLocation = MouseInfo.getPointerInfo().location
         launchTestWindowApplication(
             WindowState(WindowPlacement.Maximized),
         ) {
@@ -88,6 +86,10 @@ internal class DesktopCursorPositionTest {
         // so we need to convert it back to Dp and then to pixels again to compare with the original IntOffset
         val pxPointerPosition = pointerPosition?.toDpOffset(window?.density ?: Density(1f))
         assertThat(pxPointerPosition).isEqualTo(pxTargetOffset)
+
+        // Move mouse back to the initial position to avoid interference with other tests
+        moveMouse(initialMouseLocation.x, initialMouseLocation.y)
+        awaitIdle()
     }
 
     private fun IntOffset.toDpOffset(density: Density): IntOffset {

@@ -191,6 +191,9 @@ internal class WindowTestScope(
         exceptionHandler.throwIfCaught()
     }
 
+    /**
+     * Moves mouse pointer to given screen coordinates.
+     */
     internal fun moveMouse(x: Int, y: Int) = robot.mouseMove(x, y)
 }
 
