@@ -88,7 +88,6 @@ internal class DesktopCursorPositionTest {
         // so we need to convert it back to Dp and then to pixels again to compare with the original IntOffset
         val pxPointerPosition = pointerPosition?.toDpOffset(window?.density ?: Density(1f))
         assertThat(pxPointerPosition).isEqualTo(pxTargetOffset)
-        exitTestApplication()
     }
 
     private fun IntOffset.toDpOffset(density: Density): IntOffset {
