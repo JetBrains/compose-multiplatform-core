@@ -76,7 +76,7 @@ internal class DesktopCursorPositionTest {
         awaitIdle()
 
         val contentLocation = window?.contentPane?.locationOnScreen ?: java.awt.Point(0, 0)
-        robot.mouseMove(
+        moveMouse(
             contentLocation.x + pxTargetOffset.x,
             contentLocation.y + pxTargetOffset.y
         )

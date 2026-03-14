@@ -190,6 +190,8 @@ internal class WindowTestScope(
 
         exceptionHandler.throwIfCaught()
     }
+
+    internal fun moveMouse(x: Int, y: Int) = robot::mouseMove
 }
 
 suspend fun Window.waitForFocusGain() {
