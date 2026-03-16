@@ -778,6 +778,8 @@ internal class ComposeSceneMediator(
                     }
                 }
                 suspendCancellableCoroutine<Nothing> { continuation ->
+                    textInputService.updateTouchMode = request.updateTouchMode
+
                     textInputService.startInput(
                         value = request.value(),
                         imeOptions = request.imeOptions,

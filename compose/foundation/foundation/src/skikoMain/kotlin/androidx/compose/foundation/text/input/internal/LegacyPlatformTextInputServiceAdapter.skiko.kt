@@ -124,6 +124,13 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
                 }
             }
 
+            val updateTouchModeBlock: (Boolean) -> Unit = { isTouchBased ->
+                textInputModifierNode
+                    ?.textFieldSelectionManager
+                    ?.state
+                    ?.isInTouchMode = isTouchBased
+            }
+
             return SkikoPlatformTextInputMethodRequest(
                 value = { textFieldValue },
                 state = textEditorState,
@@ -135,7 +142,8 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
                 textFieldRectInRoot = { textFieldRectInRoot },
                 textClippingRectInRoot = { textClippingRectInRoot },
                 unclippedTextOffsetInRoot = { unclippedTextOffsetInRoot },
-                editText = editBlock
+                editText = editBlock,
+                updateTouchMode = updateTouchModeBlock,
             )
         }
     }

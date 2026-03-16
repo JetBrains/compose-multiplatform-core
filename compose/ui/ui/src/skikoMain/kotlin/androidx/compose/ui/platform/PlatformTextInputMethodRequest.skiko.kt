@@ -109,4 +109,16 @@ actual interface PlatformTextInputMethodRequest {
      */
     @ExperimentalComposeUiApi
     val editText: (block: TextEditingScope.() -> Unit) -> Unit
+
+    /**
+     * Updates text touch mode directly from the platform side.
+     * Some Compose features, like visibility of the selection handles during selection,
+     * rely on that flag.
+     * This keeps`isInTouchMode` flag aligned with Android behavior:
+     * - `true` for touch-based selection changes
+     * - `false` for non-touch (hardware keyboard) selection changes
+     */
+    @ExperimentalComposeUiApi
+    val updateTouchMode: ((Boolean) -> Unit)
+
 }

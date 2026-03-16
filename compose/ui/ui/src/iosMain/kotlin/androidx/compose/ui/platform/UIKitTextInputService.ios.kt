@@ -100,6 +100,11 @@ internal class UIKitTextInputService(
     var usingNativeTextInput by mutableStateOf(false)
         private set
 
+    /**
+     * Callback from the Compose-side to know if the input is touch-based or not.
+     */
+    var updateTouchMode: ((Boolean) -> Unit)? = null
+
     private var currentOnEditCommand: ((List<EditCommand>) -> Unit)? = null
     private var currentImeOptions: ImeOptions? = null
     private var currentImeActionHandler: ((ImeAction) -> Unit)? = null
@@ -190,6 +195,7 @@ internal class UIKitTextInputService(
         sessionEditProcessor = null
         currentImeOptions = null
         currentImeActionHandler = null
+        updateTouchMode = null
         textLayoutResult = null
 
         hideSoftwareKeyboard()
