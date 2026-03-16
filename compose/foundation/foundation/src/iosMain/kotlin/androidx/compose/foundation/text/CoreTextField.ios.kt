@@ -109,14 +109,12 @@ private class TextFieldDrawNode(
     ObserverModifierNode,
     CompositionLocalConsumerModifierNode,
     DrawModifierNode {
-
-    private var onDraw: DrawScope.() -> Unit = {}
     private var usingNativeTextInput: Boolean = false
 
     override fun onAttach() {
         super.onAttach()
         onObservedReadsChanged()
-        updateOnDraw()
+        invalidateDraw()
     }
 
     override fun onObservedReadsChanged() {
@@ -124,7 +122,7 @@ private class TextFieldDrawNode(
             val usingNativeTextInput = currentValueOf(LocalNativeTextInputContext).usingNativeTextInput()
             if (usingNativeTextInput != this.usingNativeTextInput) {
                 this.usingNativeTextInput = usingNativeTextInput
-                updateOnDraw()
+                invalidateDraw()
             }
         }
     }
@@ -137,40 +135,6 @@ private class TextFieldDrawNode(
         this.state = state
         this.value = value
         this.offsetMapping = offsetMapping
-        updateOnDraw()
-    }
-
-    private fun updateOnDraw() {
-        onDraw =
-            if (usingNativeTextInput) {
-                {
-                    // iOS handles selection drawing itself in native text input mode
-                    // still needs this for text rendering
-                    state.layoutResult?.let { layoutResult ->
-                        drawIntoCanvas { canvas ->
-                            TextPainter.paint(canvas, layoutResult.value)
-                        }
-                    }
-                }
-            } else {
-                {
-                    state.layoutResult?.let { layoutResult ->
-                        drawIntoCanvas { canvas ->
-                            TextFieldDelegate.draw(
-                                canvas,
-                                value,
-                                state.selectionPreviewHighlightRange,
-                                state.deletionPreviewHighlightRange,
-                                offsetMapping,
-                                layoutResult.value,
-                                state.highlightPaint,
-                                state.selectionBackgroundColor,
-                            )
-                        }
-                    }
-                }
-            }
-
         invalidateDraw()
     }
 
@@ -179,5 +143,28 @@ private class TextFieldDrawNode(
     private fun ContentDrawScope.drawBehind() {
         onDraw()
         drawContent()
+    }
+
+    private fun DrawScope.onDraw() {
+        state.layoutResult?.let { layoutResult ->
+            drawIntoCanvas { canvas ->
+                // iOS handles selection drawing itself in native text input mode
+                // still needs this for text rendering
+                if (usingNativeTextInput) {
+                    TextPainter.paint(canvas, layoutResult.value)
+                } else {
+                    TextFieldDelegate.draw(
+                        canvas,
+                        value,
+                        state.selectionPreviewHighlightRange,
+                        state.deletionPreviewHighlightRange,
+                        offsetMapping,
+                        layoutResult.value,
+                        state.highlightPaint,
+                        state.selectionBackgroundColor,
+                    )
+                }
+            }
+        }
     }
 }
