@@ -22,6 +22,7 @@ import androidx.compose.ui.events.compositionStart
 import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.input.key.InternalKeyEvent
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.BackspaceCommand
 import androidx.compose.ui.text.input.CommitTextCommand
@@ -65,9 +66,12 @@ class NativeInputEventsProcessorTest {
             commands.forEach { it.applyTo(editingBuffer) }
         }
 
-        override fun sendKeyboardEvent(keyboardEvent: KeyEvent) {
+        override fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean {
             keyboardEvents.add(keyboardEvent)
+            return true
         }
+
+        override fun currentTextLayoutResult(): TextLayoutResult? = null
 
         @Suppress("INVISIBLE_REFERENCE")
         fun currentTextFieldValue(): TextFieldValue {

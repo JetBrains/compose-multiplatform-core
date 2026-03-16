@@ -162,6 +162,18 @@ internal abstract class NativeInputEventsProcessor(
                 }
             }
 
+            "deleteWordBackward" -> buildList {
+                if (lastProcessedEventIsBackspace) return@buildList
+
+                // this means event was triggered by pressing Backspace in iOS browser
+                val layoutResult = composeSender.currentTextLayoutResult() ?: return@buildList
+                val text = layoutResult.layoutInput.text
+                val wordBoundary = layoutResult.getWordBoundary(inputExt.textRangeStart.coerceIn(0, text.length - 1))
+
+                add(SetSelectionCommand(wordBoundary.start, wordBoundary.end))
+                add(BackspaceCommand())
+            }
+
             "insertReplacementText" -> buildList {
                 if (data == null) return@buildList
                 if (textRangeSize > 0) {
