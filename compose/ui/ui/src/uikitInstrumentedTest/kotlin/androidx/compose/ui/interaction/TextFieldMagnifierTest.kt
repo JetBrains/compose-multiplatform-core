@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -41,27 +44,22 @@ import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 
 class TextFieldMagnifierTest {
+
+    private val params = listOf<TextFieldComposableFactory>(
+        { fr -> BFT(fr) },
+        { fr -> BFT2(fr) }
+    )
+
     @Test
-    fun testMagnifierShownOnTouchAndHold() = runUIKitInstrumentedTest {
+    fun testMagnifierShownOnTouchAndHold() = runUIKitInstrumentedTest(
+        params = params
+    ) { factory ->
         val focusRequester = FocusRequester()
 
         setContent {
             Column {
                 Box(Modifier.height(200.dp).fillMaxWidth())
-                BasicTextField(
-                    "TEXT VALUE",
-                    {},
-                    keyboardOptions = KeyboardOptions(
-                        platformImeOptions = PlatformImeOptions {
-                            usingNativeTextInput(false)
-                        }
-                    ),
-                    modifier = Modifier
-                        .testTag("textField")
-                        .height(40.dp)
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                )
+                factory(focusRequester)
             }
         }
 
@@ -77,26 +75,15 @@ class TextFieldMagnifierTest {
     }
 
     @Test
-    fun testMagnifierHidesOnLift() = runUIKitInstrumentedTest {
+    fun testMagnifierHidesOnLift() = runUIKitInstrumentedTest(
+        params = params
+    ) { factory ->
         val focusRequester = FocusRequester()
 
         setContent {
             Column {
                 Box(Modifier.height(200.dp).fillMaxWidth())
-                BasicTextField(
-                    "TEXT VALUE",
-                    {},
-                    keyboardOptions = KeyboardOptions(
-                        platformImeOptions = PlatformImeOptions {
-                            usingNativeTextInput(false)
-                        }
-                    ),
-                    modifier = Modifier
-                        .testTag("textField")
-                        .height(40.dp)
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                )
+                factory(focusRequester)
             }
         }
 
@@ -118,26 +105,15 @@ class TextFieldMagnifierTest {
     }
 
     @Test
-    fun testMagnifierHidesOnDragOutsideTextField() = runUIKitInstrumentedTest {
+    fun testMagnifierHidesOnDragOutsideTextField() = runUIKitInstrumentedTest(
+        params = params
+    ) { factory ->
         val focusRequester = FocusRequester()
 
         setContent {
             Column {
                 Box(Modifier.height(200.dp).fillMaxWidth())
-                BasicTextField(
-                    "TEXT VALUE",
-                    {},
-                    keyboardOptions = KeyboardOptions(
-                        platformImeOptions = PlatformImeOptions {
-                            usingNativeTextInput(false)
-                        }
-                    ),
-                    modifier = Modifier
-                        .testTag("textField")
-                        .height(40.dp)
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                )
+                factory(focusRequester)
             }
         }
 
@@ -156,6 +132,36 @@ class TextFieldMagnifierTest {
         waitUntil {
             findFirstDescendant { it.isLoupeView } == null
         }
+    }
+
+    private val textValue = "TEXT"
+    private val keyboardOptions = KeyboardOptions(
+        platformImeOptions = PlatformImeOptions {
+            usingNativeTextInput(false)
+        }
+    )
+    private fun modifier(focusRequester: FocusRequester): Modifier = Modifier
+        .testTag("textField")
+        .height(40.dp)
+        .fillMaxWidth()
+        .focusRequester(focusRequester)
+
+    @Composable
+    private fun BFT(
+        focusRequester: FocusRequester
+    ) = BasicTextField(
+        textValue,
+        onValueChange = {},
+        keyboardOptions = keyboardOptions,
+        modifier = modifier(focusRequester)
+    )
+
+    @Composable
+    private fun BFT2(
+        focusRequester: FocusRequester
+    ) {
+        val state = remember { TextFieldState(textValue) }
+        BasicTextField(state, keyboardOptions = keyboardOptions, modifier = modifier(focusRequester))
     }
 }
 
@@ -187,7 +193,9 @@ fun findFirstDescendant(predicate: (UIView) -> Boolean): UIView? {
     return null
 }
 
-private val loupeClassNames = listOf(
+private typealias TextFieldComposableFactory = @Composable (FocusRequester) -> Unit
+
+    private val loupeClassNames = listOf(
     "_UITextMagnifiedLoupeView",
     "_UITextLoupeView",
     "LoupeView"
@@ -195,6 +203,5 @@ private val loupeClassNames = listOf(
 
 private val UIView.isLoupeView: Boolean get() {
     val name = objcClassName(this) ?: return false
-    println("UIView.isLoupeView $name")
     return loupeClassNames.any { name.contains(it) }
 }
