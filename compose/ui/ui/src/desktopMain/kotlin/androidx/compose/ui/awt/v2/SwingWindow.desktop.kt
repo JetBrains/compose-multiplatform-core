@@ -18,10 +18,13 @@ package androidx.compose.ui.awt.v2
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
@@ -61,6 +64,8 @@ import java.awt.event.ComponentEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.JFrame
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 
 /**
@@ -109,7 +114,6 @@ fun SwingWindow(
     alwaysOnTop: Boolean = false,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
-    onBoundsChanged: (DpRect) -> Unit = { },
     init: (ComposeWindow) -> Unit,
     content: @Composable FrameWindowScope.() -> Unit
 ) {
@@ -123,18 +127,8 @@ fun SwingWindow(
     val currentFocusable by rememberUpdatedState(focusable)
     val currentAlwaysOnTop by rememberUpdatedState(alwaysOnTop)
     val currentOnCloseRequest by rememberUpdatedState(onCloseRequest)
-    val currentOnBoundsChanged by rememberUpdatedState(onBoundsChanged)
 
     val updater = remember(::ComponentUpdater)
-
-    // the state applied to the window. exist to avoid races between WindowState changes and the state stored inside the native window
-    val appliedState = remember {
-        object {
-            var bounds: DpRect? = null
-            var placement: WindowPlacement? = null
-            var isMinimized: Boolean? = null
-        }
-    }
 
     val listeners = remember {
         object {
@@ -152,6 +146,7 @@ fun SwingWindow(
 
     val coroutineContext = rememberCoroutineScope().coroutineContext
 
+    var window: ComposeWindow? by remember { mutableStateOf(null) }
     SwingWindow(
         visible = visible,
         onPreviewKeyEvent = onPreviewKeyEvent,
@@ -176,8 +171,6 @@ fun SwingWindow(
                 listeners.windowStateListenerRef.registerWithAndSet(this) {
                     currentState.placement = placement
                     currentState.isMinimized = isMinimized
-                    appliedState.placement = currentState.placement
-                    appliedState.isMinimized = currentState.isMinimized
                 }
                 listeners.componentListenerRef.registerWithAndSet(
                     this,
@@ -185,8 +178,6 @@ fun SwingWindow(
                         fun applyStateChanges() {
                             val bounds = DpRect(x.dp, y.dp, (x + width).dp, (y + height).dp)
                             currentState.bounds = bounds
-                            appliedState.bounds = bounds
-                            currentOnBoundsChanged(bounds)
                             if (currentState.screen?.device != graphicsConfiguration.device) {
                                 currentState.screen = Screen(graphicsConfiguration.device)
                             }
@@ -201,7 +192,6 @@ fun SwingWindow(
                             // because fullscreen changing doesn't
                             // fire windowStateChanged, only componentResized
                             currentState.placement = placement
-                            appliedState.placement = currentState.placement
                             applyStateChanges()
                         }
 
@@ -213,6 +203,8 @@ fun SwingWindow(
                 WindowLocationTracker.onWindowCreated(this)
 
                 init(this)
+
+                window = this
             }
         },
         dispose = {
@@ -223,7 +215,7 @@ fun SwingWindow(
         },
         update = { window ->
             if (!window.isDisplayable) {
-                window.initializeBounds(currentState.bounds, initialBoundsProvider)
+                window.initializeBounds(currentState, initialBoundsProvider)
             }
 
             updater.update {
@@ -237,23 +229,30 @@ fun SwingWindow(
                 set(currentAlwaysOnTop, window::setAlwaysOnTop)
                 set(currentDecoration.resizerThickness, window::undecoratedResizerThickness::set)
             }
-            if (currentState.placement != appliedState.placement) {
-                window.placement = currentState.placement
-                appliedState.placement = currentState.placement
-            }
-            if (currentState.isMinimized != appliedState.isMinimized) {
-                window.isMinimized = currentState.isMinimized
-                appliedState.isMinimized = currentState.isMinimized
-            }
-            currentState.bounds?.let { stateBounds ->
-                if (stateBounds != appliedState.bounds) {
-                    window.setBoundsSafely(stateBounds, currentState.placement)
-                    appliedState.bounds = stateBounds
-                }
-            }
         },
         content = content
     )
+
+    LaunchedEffect(window, state) {
+        val window = window ?: return@LaunchedEffect
+        launch {
+            while (isActive) {
+                window.placement = state.placementRequests.receive()
+            }
+        }
+        launch {
+            while (isActive) {
+                window.isMinimized = state.isMinimizedRequests.receive()
+            }
+        }
+        launch {
+            while (isActive) {
+                val bounds = state.boundsRequests.receive()
+                window.placement = WindowPlacement.Floating
+                window.setBoundsSafely(bounds, state.placement)
+            }
+        }
+    }
 }
 
 private fun WindowScreenProvider.getInitialScreen(): Screen {
@@ -270,9 +269,11 @@ private fun WindowScreenProvider.getInitialScreen(): Screen {
 }
 
 private fun Window.initializeBounds(
-    currentBounds: DpRect?,
+    state: WindowState,
     initialBoundsProvider: WindowBoundsProvider
 ) {
+    // Prioritize requests, then current state, then initialBoundsProvider
+    val currentBounds = state.boundsRequests.tryReceive().getOrNull() ?: state.bounds
     if (currentBounds != null) {
         val boundsRect = currentBounds.toAwtRectangleRounded()
         preferredSize = boundsRect.size

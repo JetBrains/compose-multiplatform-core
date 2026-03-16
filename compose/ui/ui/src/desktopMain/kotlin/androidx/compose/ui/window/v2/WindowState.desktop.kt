@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.window.WindowPlacement
 import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
+import kotlinx.coroutines.channels.Channel
 
 /**
  * Creates a [WindowState] that is remembered across compositions.
@@ -94,17 +95,33 @@ class WindowState internal constructor(
      * Describes how the window is placed on the screen.
      */
     var placement: WindowPlacement by mutableStateOf(placement)
+        internal set
+
+    internal val placementRequests = Channel<WindowPlacement>(Channel.CONFLATED)
+
+    fun setPlacement(placement: WindowPlacement) {
+        placementRequests.trySend(placement)
+    }
 
     /**
      * Whether the window is minimized.
      */
     var isMinimized: Boolean by mutableStateOf(isMinimized)
+        internal set
+
+    internal val isMinimizedRequests = Channel<Boolean>(Channel.CONFLATED)
+
+    fun setMinimized(value: Boolean) {
+        isMinimizedRequests.trySend(value)
+    }
 
     /**
      * The current bounds of the window; `null` if unknown (e.g., the window is not yet visible).
      */
     var bounds: DpRect? by mutableStateOf(bounds)
         internal set
+
+    internal val boundsRequests = Channel<DpRect>(Channel.CONFLATED)
 
     /**
      * Set the bounds of the window.
@@ -116,8 +133,7 @@ class WindowState internal constructor(
      */
     fun setBounds(bounds: DpRect) {
         requireReal(bounds)
-        this.placement = WindowPlacement.Floating
-        this.bounds = bounds
+        boundsRequests.trySend(bounds)
     }
 
     companion object {

@@ -62,7 +62,6 @@ fun Window(
     alwaysOnTop: Boolean = false,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
-    onBoundsChanged: (DpRect) -> Unit = { },
     content: @Composable FrameWindowScope.() -> Unit
 ) {
     SwingWindow(
@@ -81,7 +80,6 @@ fun Window(
         alwaysOnTop = alwaysOnTop,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
-        onBoundsChanged = onBoundsChanged,
         init = { },
         content = content,
     )
@@ -102,7 +100,6 @@ fun singleWindowApplication(
     alwaysOnTop: Boolean = false,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
-    onBoundsChanged: (DpRect) -> Unit = { },
     exitProcessOnExit: Boolean = true,
     content: @Composable SingleWindowApplicationScope.() -> Unit
 ) = application(exitProcessOnExit = exitProcessOnExit) {
@@ -121,7 +118,6 @@ fun singleWindowApplication(
         alwaysOnTop = alwaysOnTop,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
-        onBoundsChanged = onBoundsChanged,
         content = {
             with(SingleWindowApplicationScope(this@application, this@Window)) {
                 content()
@@ -176,15 +172,15 @@ class WindowGeometryProviderScope internal constructor(
 ) {
     val intrinsicWindowSize: DpSize by lazy(intrinsicWindowSize)
 
-    internal fun WindowSizeProvider.getSize(): DpSize = with(this) {
+    fun WindowSizeProvider.getSize(): DpSize = with(this) {
         this@WindowGeometryProviderScope.getSize()
     }
 
-    internal fun WindowPositionProvider.getPosition(): DpOffset = with(this) {
+    fun WindowPositionProvider.getPosition(): DpOffset = with(this) {
         this@WindowGeometryProviderScope.getPosition()
     }
 
-    internal fun WindowBoundsProvider.getBounds(): DpRect = with(this) {
+    fun WindowBoundsProvider.getBounds(): DpRect = with(this) {
         this@WindowGeometryProviderScope.getBounds()
     }
 }
