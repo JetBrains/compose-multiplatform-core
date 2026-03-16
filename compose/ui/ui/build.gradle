@@ -197,6 +197,7 @@ androidXMultiplatform {
             implementation(project(":compose:test-utils"))
         }
 
+        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
         // TODO: Align naming: nonAndroidMain
         skikoMain {
             dependsOn(commonMain)
@@ -206,15 +207,8 @@ androidXMultiplatform {
                 api(libs.skiko)
                 implementation(libs.atomicFu)
 
-                // Keep this dependency for compatibility due to https://youtrack.jetbrains.com/issue/KT-60874
                 implementation(project(":compose:ui:ui-backhandler"))
-
-                // Use direct dependency to AOSP's artifact instead of using project reference
-                // because this module supports all KMP platforms from the beginning.
-                // Project dependency (commented out version) is required for `integration` branch setup
-                // implementation(project(":navigationevent:navigationevent"))
-                def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
-                implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
+                implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
             }
         }
 
@@ -225,7 +219,6 @@ androidXMultiplatform {
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:foundation:foundation"))
                 implementation(project(":compose:ui:ui-test"))
-                implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.0.1")
             }
         }
 
