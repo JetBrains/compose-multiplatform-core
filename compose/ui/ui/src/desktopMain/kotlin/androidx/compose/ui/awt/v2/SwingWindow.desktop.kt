@@ -281,12 +281,13 @@ private fun Window.initializeBounds(
         val screen = Screen(graphicsConfiguration.device)
         preferredSize = screen.availableBounds.size.roundToDimension()
         pack()
-        preferredSize = null
-        val intrinsicSize = preferredSize.toDpSize()
 
         val scope = WindowGeometryProviderScope(
             screen = screen,
-            intrinsicWindowSize = intrinsicSize
+            intrinsicWindowSize = {
+                preferredSize = null
+                preferredSize.toDpSize()
+            }
         )
         bounds = with(scope) {
             initialBoundsProvider.getBounds().toAwtRectangleRounded()

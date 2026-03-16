@@ -172,8 +172,10 @@ class Screen internal constructor(
 
 class WindowGeometryProviderScope internal constructor(
     val screen: Screen,
-    val intrinsicWindowSize: DpSize,
+    intrinsicWindowSize: () -> DpSize,
 ) {
+    val intrinsicWindowSize: DpSize by lazy(intrinsicWindowSize)
+
     internal fun WindowSizeProvider.getSize(): DpSize = with(this) {
         this@WindowGeometryProviderScope.getSize()
     }
