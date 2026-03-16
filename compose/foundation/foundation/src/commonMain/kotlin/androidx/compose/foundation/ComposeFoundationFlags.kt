@@ -78,14 +78,6 @@ object ComposeFoundationFlags {
     @Suppress("MutableBareField") @JvmField var isSmartSelectionEnabled = true
 
     /**
-     * Selecting flag to enable the use of new PausableComposition in lazy layout prefetch. This
-     * change allows us to distribute work we need to do during the prefetch better, for example we
-     * can only perform the composition for parts of the LazyColumn's next item during one ui frame,
-     * and then continue composing the rest of it in the next frames.
-     */
-    @Suppress("MutableBareField") @JvmField var isPausableCompositionInPrefetchEnabled = true
-
-    /**
      * With this flag on we don't use suspend pointer input as part of Modifier.clickable
      * implementation as an optimization.
      */
@@ -126,6 +118,14 @@ object ComposeFoundationFlags {
      * scrollable components
      */
     @Suppress("MutableBareField") @JvmField var isMouseWheel1DAxisLockingEnabled: Boolean = true
+
+    /**
+     * Selecting flag to enable the use of new PausableComposition in lazy layout prefetch. This
+     * change allows us to distribute work we need to do during the prefetch better, for example we
+     * can only perform the composition for parts of the LazyColumn's next item during one ui frame,
+     * and then continue composing the rest of it in the next frames.
+     */
+    @Suppress("MutableBareField") @JvmField var isPausableCompositionInPrefetchEnabled = false
 
     /**
      * With this flag on, Pager will use Cache Window as the default prefetching strategy, instead
