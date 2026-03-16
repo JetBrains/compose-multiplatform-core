@@ -18,12 +18,12 @@ package androidx.compose.foundation.text.selection
 
 import androidx.compose.foundation.SelectionMagnifierElement
 import androidx.compose.foundation.isPlatformMagnifierSupported
-import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.text.KeyCommand
 import androidx.compose.foundation.text.addTextContextMenuComponents
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItemWithComposableLeadingIcon
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
+import androidx.compose.foundation.text.platformDefaultKeyMapping
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.debugInspectorInfo
