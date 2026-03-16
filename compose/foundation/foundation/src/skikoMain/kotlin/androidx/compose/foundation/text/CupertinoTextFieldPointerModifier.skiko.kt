@@ -170,16 +170,16 @@ private class CupertinoSelectionGesturesModifierNode(
         var shouldUpdateMagnifierPosition = false
 
         override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) {
-            shouldUpdateMagnifierPosition = selectionAdjustment == SelectionAdjustment.None
-            if (shouldUpdateMagnifierPosition) {
+            val isSingleLongPress = selectionAdjustment == SelectionAdjustment.None
+            shouldUpdateMagnifierPosition = isSingleLongPress
+            if (isSingleLongPress) {
                 manager.draggingHandle = Handle.SelectionEnd
                 manager.currentDragPosition = startPoint
+                manager.hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
             } else {
                 manager.draggingHandle = null
                 manager.currentDragPosition = null
             }
-
-            manager.hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
 
             state.layoutResult?.let { layoutResult ->
                 TextFieldDelegate.setCursorOffset(
