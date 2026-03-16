@@ -23,17 +23,16 @@ import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.foundation.text.selection.getTextFieldSelectionLayout
 import androidx.compose.foundation.text.selection.isSelectionHandleInVisibleBound
 import androidx.compose.foundation.text.selection.updateSelectionTouchMode
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.node.DelegatingNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.OffsetMapping
@@ -48,145 +47,191 @@ internal fun Modifier.cupertinoTextFieldPointer(
     readOnly: Boolean,
     offsetMapping: OffsetMapping
 ): Modifier = if (enabled) {
-    this.composed {
-        val currentState by rememberUpdatedState(state)
-        val currentOffsetMapping by rememberUpdatedState(offsetMapping)
-        val currentManager by rememberUpdatedState(manager)
-        val currentFocusRequester by rememberUpdatedState(focusRequester)
-        val currentReadOnly by rememberUpdatedState(readOnly)
-
-        val tapHandlerModifier = tapPressTextFieldModifier(interactionSource, enabled) { offset ->
-            if (currentState.hasFocus) {
-                // To show keyboard if it was hidden. Even in selection mode (like native)
-                requestFocusAndShowKeyboardIfNeeded(
-                    currentState,
-                    currentFocusRequester,
-                    !currentReadOnly
-                )
-                if (currentState.handleState != HandleState.Selection) {
-                    currentState.layoutResult?.let { layoutResult ->
-                        TextFieldDelegate.cupertinoSetCursorOffsetFocused(
-                            position = offset,
-                            textLayoutResult = layoutResult,
-                            editProcessor = currentState.processor,
-                            offsetMapping = currentOffsetMapping,
-                            showContextMenu = { show ->
-                                // it shouldn't be selection, but this is a way to call a context menu in BasicTextField
-                                if (show) {
-                                    currentManager.enterSelectionMode()
-                                } else {
-                                    currentManager.exitSelectionMode()
-                                }
-                            },
-                            onValueChange = currentState.onValueChange
-                        )
+    this
+        .updateSelectionTouchMode { state.isInTouchMode = it }
+        .then(
+            tapPressTextFieldModifier(interactionSource, enabled) { offset ->
+                if (state.hasFocus) {
+                    // To show keyboard if it was hidden. Even in selection mode (like native)
+                    requestFocusAndShowKeyboardIfNeeded(
+                        state,
+                        focusRequester,
+                        !readOnly
+                    )
+                    if (state.handleState != HandleState.Selection) {
+                        state.layoutResult?.let { layoutResult ->
+                            TextFieldDelegate.cupertinoSetCursorOffsetFocused(
+                                position = offset,
+                                textLayoutResult = layoutResult,
+                                editProcessor = state.processor,
+                                offsetMapping = offsetMapping,
+                                showContextMenu = { show ->
+                                    // it shouldn't be selection, but this is a way to call a context menu in BasicTextField
+                                    if (show) {
+                                        manager.enterSelectionMode()
+                                    } else {
+                                        manager.exitSelectionMode()
+                                    }
+                                },
+                                onValueChange = state.onValueChange
+                            )
+                        }
+                    } else {
+                        manager.deselect(offset)
                     }
                 } else {
-                    currentManager.deselect(offset)
-                }
-            } else {
-                requestFocusAndShowKeyboardIfNeeded(
-                    currentState,
-                    currentFocusRequester,
-                    !currentReadOnly
-                )
-                currentState.layoutResult?.let { layoutResult ->
-                    TextFieldDelegate.setCursorOffset(
-                        offset,
-                        layoutResult,
-                        currentState.processor,
-                        currentOffsetMapping,
-                        currentState.onValueChange
+                    requestFocusAndShowKeyboardIfNeeded(
+                        state,
+                        focusRequester,
+                        !readOnly
                     )
-                }
-            }
-            if (currentState.textDelegate.text.isNotEmpty()) {
-                currentState.handleState = HandleState.Cursor
-            }
-        }
-
-        val longPressDragObserver = remember {
-            object : TextDragObserver {
-                var dragTotalDistance = Offset.Zero
-                var dragBeginOffset = Offset.Zero
-                var shouldUpdateMagnifierPosition = false
-
-                override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) {
-                    shouldUpdateMagnifierPosition = selectionAdjustment == SelectionAdjustment.None
-                    if (shouldUpdateMagnifierPosition) {
-                        currentManager.draggingHandle = Handle.SelectionEnd
-                        currentManager.currentDragPosition = startPoint
-                    } else {
-                        currentManager.draggingHandle = null
-                        currentManager.currentDragPosition = null
-                    }
-
-                    currentManager.hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
-
-                    currentState.layoutResult?.let { layoutResult ->
+                    state.layoutResult?.let { layoutResult ->
                         TextFieldDelegate.setCursorOffset(
-                            startPoint,
+                            offset,
                             layoutResult,
-                            currentState.processor,
-                            currentOffsetMapping,
-                            currentState.onValueChange
-                        )
-                        if (selectionAdjustment != SelectionAdjustment.None) {
-                            currentManager.doRepeatingTapSelection(startPoint, selectionAdjustment)
-                        }
-                        dragBeginOffset = startPoint
-                    }
-                    dragTotalDistance = Offset.Zero
-                }
-
-                override fun onDrag(delta: Offset) {
-                    dragTotalDistance += delta
-                    currentState.layoutResult?.let { layoutResult ->
-                        val currentDragPosition = dragBeginOffset + dragTotalDistance
-                        if (shouldUpdateMagnifierPosition) {
-                            currentManager.currentDragPosition = currentDragPosition
-                        }
-                        TextFieldDelegate.setCursorOffset(
-                            currentDragPosition,
-                            layoutResult,
-                            currentState.processor,
-                            currentOffsetMapping,
-                            currentState.onValueChange
+                            state.processor,
+                            offsetMapping,
+                            state.onValueChange
                         )
                     }
                 }
-
-                // Unnecessary here
-                override fun onDown(point: Offset) {}
-
-                override fun onUp() {}
-
-                override fun onStop() {
-                    shouldUpdateMagnifierPosition = false
-                    currentManager.draggingHandle = null
-                    currentManager.currentDragPosition = null
-                }
-
-                override fun onCancel() {
-                    shouldUpdateMagnifierPosition = false
-                    currentManager.draggingHandle = null
-                    currentManager.currentDragPosition = null
+                if (state.textDelegate.text.isNotEmpty()) {
+                    state.handleState = HandleState.Cursor
                 }
             }
-        }
-
-        this.updateSelectionTouchMode { currentState.isInTouchMode = it }
-            .then(tapHandlerModifier)
-            .pointerInput(manager.mouseSelectionObserver, longPressDragObserver) {
-                awaitSelectionGestures(
-                    manager.mouseSelectionObserver,
-                    longPressDragObserver,
-                )
-            }
-            .pointerHoverIcon(PointerIcon.Text)
-    }
+        )
+        .then(CupertinoSelectionGesturesModifierElement(manager, state, offsetMapping))
+        .pointerHoverIcon(PointerIcon.Text)
 } else {
     this
+}
+
+private class CupertinoSelectionGesturesModifierElement(
+    private val manager: TextFieldSelectionManager,
+    private val state: LegacyTextFieldState,
+    private val offsetMapping: OffsetMapping,
+) : ModifierNodeElement<CupertinoSelectionGesturesModifierNode>() {
+    override fun create(): CupertinoSelectionGesturesModifierNode =
+        CupertinoSelectionGesturesModifierNode(manager, state, offsetMapping)
+
+    override fun update(node: CupertinoSelectionGesturesModifierNode) {
+        node.update(manager, state, offsetMapping)
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "cupertinoSelectionGestures"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CupertinoSelectionGesturesModifierElement) return false
+
+        return manager == other.manager && state == other.state && offsetMapping == other.offsetMapping
+    }
+
+    override fun hashCode(): Int {
+        var result = manager.hashCode()
+        result = 31 * result + state.hashCode()
+        result = 31 * result + offsetMapping.hashCode()
+        return result
+    }
+}
+
+private class CupertinoSelectionGesturesModifierNode(
+    private var manager: TextFieldSelectionManager,
+    private var state: LegacyTextFieldState,
+    private var offsetMapping: OffsetMapping,
+) : DelegatingNode() {
+    private val longPressDragObserver = createLongPressDragObserver()
+
+    private val pointerInputNode = delegate(
+        SuspendingPointerInputModifierNode {
+            awaitSelectionGestures(manager.mouseSelectionObserver, longPressDragObserver)
+        }
+    )
+
+    fun update(
+        manager: TextFieldSelectionManager,
+        state: LegacyTextFieldState,
+        offsetMapping: OffsetMapping,
+    ) {
+        if (this.manager !== manager) {
+            pointerInputNode.resetPointerInputHandler()
+        }
+        this.manager = manager
+        this.state = state
+        this.offsetMapping = offsetMapping
+    }
+
+    private fun createLongPressDragObserver(): TextDragObserver {
+        return object : TextDragObserver {
+        var dragTotalDistance = Offset.Zero
+        var dragBeginOffset = Offset.Zero
+        var shouldUpdateMagnifierPosition = false
+
+        override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) {
+            shouldUpdateMagnifierPosition = selectionAdjustment == SelectionAdjustment.None
+            if (shouldUpdateMagnifierPosition) {
+                manager.draggingHandle = Handle.SelectionEnd
+                manager.currentDragPosition = startPoint
+            } else {
+                manager.draggingHandle = null
+                manager.currentDragPosition = null
+            }
+
+            manager.hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
+
+            state.layoutResult?.let { layoutResult ->
+                TextFieldDelegate.setCursorOffset(
+                    startPoint,
+                    layoutResult,
+                    state.processor,
+                    offsetMapping,
+                    state.onValueChange
+                )
+                if (selectionAdjustment != SelectionAdjustment.None) {
+                    manager.doRepeatingTapSelection(startPoint, selectionAdjustment)
+                }
+                dragBeginOffset = startPoint
+            }
+            dragTotalDistance = Offset.Zero
+        }
+
+        override fun onDrag(delta: Offset) {
+            dragTotalDistance += delta
+            state.layoutResult?.let { layoutResult ->
+                val currentDragPosition = dragBeginOffset + dragTotalDistance
+                if (shouldUpdateMagnifierPosition) {
+                    manager.currentDragPosition = currentDragPosition
+                }
+                TextFieldDelegate.setCursorOffset(
+                    currentDragPosition,
+                    layoutResult,
+                    state.processor,
+                    offsetMapping,
+                    state.onValueChange
+                )
+            }
+        }
+
+        // Unnecessary here
+        override fun onDown(point: Offset) {}
+
+        override fun onUp() {}
+
+        override fun onStop() {
+            shouldUpdateMagnifierPosition = false
+            manager.draggingHandle = null
+            manager.currentDragPosition = null
+        }
+
+        override fun onCancel() {
+            shouldUpdateMagnifierPosition = false
+            manager.draggingHandle = null
+            manager.currentDragPosition = null
+        }
+    }
+    }
 }
 
 private fun TextFieldSelectionManager.doRepeatingTapSelection(
