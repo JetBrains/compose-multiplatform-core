@@ -195,7 +195,7 @@ fun findFirstDescendant(predicate: (UIView) -> Boolean): UIView? {
 
 private typealias TextFieldComposableFactory = @Composable (FocusRequester) -> Unit
 
-    private val loupeClassNames = listOf(
+private val loupeClassNames = listOf(
     "_UITextMagnifiedLoupeView",
     "_UITextLoupeView",
     "LoupeView"
