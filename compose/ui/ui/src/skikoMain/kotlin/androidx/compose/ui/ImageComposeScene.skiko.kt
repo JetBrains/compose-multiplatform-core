@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toConstraints
 import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.unit.toSize
 import kotlin.coroutines.CoroutineContext
@@ -392,5 +393,3 @@ private fun Constraints.toIntSize() =
     } else {
         null
     }
-
-private fun IntSize.toConstraints() = Constraints(maxWidth = width, maxHeight = height)

@@ -177,10 +177,26 @@ value class PointerEventResult internal constructor(internal val value: Int) {
 private inline fun Boolean.toInt() = if (this) 1 else 0
 
 // TODO: Rewrite to vararg after https://youtrack.jetbrains.com/issue/KT-33565/Allow-vararg-parameter-of-inline-class-type
-internal fun PointerEventResult.merging(
-    result1: PointerEventResult,
-    result2: PointerEventResult? = null,
-    result3: PointerEventResult? = null
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun PointerEventResult.merging(
+    result1: PointerEventResult
 ) = PointerEventResult(
-    value = this.value or result1.value or (result2?.value ?: 0) or (result3?.value ?: 0)
+    value = this.value or result1.value
+)
+
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun PointerEventResult.merging(
+    result1: PointerEventResult,
+    result2: PointerEventResult
+) = PointerEventResult(
+    value = this.value or result1.value or result2.value
+)
+
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun PointerEventResult.merging(
+    result1: PointerEventResult,
+    result2: PointerEventResult,
+    result3: PointerEventResult
+) = PointerEventResult(
+    value = this.value or result1.value or result2.value or result3.value
 )

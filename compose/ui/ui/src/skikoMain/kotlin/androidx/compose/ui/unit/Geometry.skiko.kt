@@ -87,3 +87,6 @@ internal inline fun DpSize.toSize(density: Density): Size = with(density) {
 internal inline fun IntSize.toRect(): Rect =
     Rect(0f, 0f, width.toFloat(), height.toFloat())
 
+@Stable
+internal inline fun IntSize.toConstraints() = Constraints(maxWidth = width, maxHeight = height)
+
