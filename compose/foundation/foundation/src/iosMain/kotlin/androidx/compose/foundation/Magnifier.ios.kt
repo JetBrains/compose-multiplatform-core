@@ -338,7 +338,7 @@ internal class SelectionMagnifierElement<M>(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is SelectionMagnifierElement<*>) return false
+        if (other !is SelectionMagnifierElement<M>) return false
         return manager == other.manager &&
             hapticFeedback === other.hapticFeedback &&
             calculateCenter === other.calculateCenter
