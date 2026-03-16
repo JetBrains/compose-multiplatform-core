@@ -72,7 +72,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -1135,11 +1134,11 @@ internal expect fun Modifier.textFieldDraw(
     offsetMapping: OffsetMapping,
 ): Modifier
 
-internal fun DefaultTextFieldOnDrawBehind(
+internal fun Modifier.defaultTextFieldDraw(
     state: LegacyTextFieldState,
     value: TextFieldValue,
     offsetMapping: OffsetMapping,
-): DrawScope.() -> Unit = {
+): Modifier = this.drawBehind {
     state.layoutResult?.let { layoutResult ->
         drawIntoCanvas { canvas ->
             TextFieldDelegate.draw(
@@ -1155,12 +1154,6 @@ internal fun DefaultTextFieldOnDrawBehind(
         }
     }
 }
-
-internal fun Modifier.defaultTextFieldDraw(
-    state: LegacyTextFieldState,
-    value: TextFieldValue,
-    offsetMapping: OffsetMapping,
-): Modifier = this.drawBehind(DefaultTextFieldOnDrawBehind(state, value, offsetMapping))
 
 @Composable
 internal expect fun CursorHandle(
