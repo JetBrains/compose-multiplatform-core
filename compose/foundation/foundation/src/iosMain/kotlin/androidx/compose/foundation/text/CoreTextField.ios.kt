@@ -153,22 +153,7 @@ private class TextFieldDrawNode(
                     }
                 }
             } else {
-                {
-                    state.layoutResult?.let { layoutResult ->
-                        drawIntoCanvas { canvas ->
-                            TextFieldDelegate.draw(
-                                canvas,
-                                value,
-                                state.selectionPreviewHighlightRange,
-                                state.deletionPreviewHighlightRange,
-                                offsetMapping,
-                                layoutResult.value,
-                                state.highlightPaint,
-                                state.selectionBackgroundColor,
-                            )
-                        }
-                    }
-                }
+                DefaultTextFieldOnDrawBehind(state, value, offsetMapping)
             }
 
         invalidateDraw()
