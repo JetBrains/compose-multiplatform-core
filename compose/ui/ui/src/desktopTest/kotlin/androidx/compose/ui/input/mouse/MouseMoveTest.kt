@@ -63,7 +63,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.Executors
 import kotlin.random.Random
-import kotlin.test.assertNull
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
@@ -717,23 +716,6 @@ class MouseMoveTest {
         collector.assertCounts(enter = 1, exit = 1, move = 1, press = 1)
     }
 
-    @Test
-    fun `window exit clears lastKnownPointerPosition`() = ImageComposeScene(
-        width = 100,
-        height = 100,
-    ).useInUiThread { scene ->
-        lateinit var composeScene: ComposeScene
-        scene.setContent {
-            composeScene = LocalComposeScene.current!!
-            Box(Modifier.size(100.dp))
-        }
-
-        scene.sendPointerEvent(PointerEventType.Enter, Offset(10f, 20f))
-        // Deliberately send an exit event with coordinates still inside the box
-        scene.sendPointerEvent(PointerEventType.Exit, Offset(0f, 50f))
-
-        assertNull(composeScene.lastKnownPointerPosition)
-    }
 }
 
 private fun Modifier.collectPointerEvents(

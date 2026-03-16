@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.scene
 
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -36,8 +35,6 @@ import androidx.compose.ui.input.pointer.SyntheticEventSender
 import androidx.compose.ui.input.pointer.areAnyPressed
 import androidx.compose.ui.input.pointer.copy
 import androidx.compose.ui.node.RootNodeOwner
-import androidx.compose.ui.util.fastFirstOrNull
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
 
 /**
@@ -55,15 +52,8 @@ internal class ComposeSceneInputHandler(
     private val processKeyEvent: (KeyEvent) -> Boolean,
 ) {
     private val defaultPointerStateTracker = DefaultPointerStateTracker()
-    private val pointerPositions = mutableStateMapOf<PointerId, Offset>()
     private val syntheticEventSender = SyntheticEventSender(processPointerInputEvent)
 
-    /**
-     * The mouse cursor (also works with touch pointer) position
-     * or `null` if cursor is not inside a scene.
-     */
-    val lastKnownPointerPosition: Offset?
-        get() = pointerPositions.values.firstOrNull()
 
     /**
      * Indicates whether [updatePointerPosition] needs to be called.
@@ -136,7 +126,6 @@ internal class ComposeSceneInputHandler(
         prepareForPointerInputEvent()
         val updatePointerPositionResult = updatePointerPosition()
         val eventResult = syntheticEventSender.send(event)
-        updatePointerPositions(event)
         return updatePointerPositionResult.merging(eventResult)
     }
 
@@ -155,30 +144,6 @@ internal class ComposeSceneInputHandler(
 
     fun onPointerUpdate() {
         syntheticEventSender.needUpdatePointerPosition = true
-    }
-
-    private fun updatePointerPositions(event: PointerInputEvent) {
-        // update positions for pointers that are down + mouse (if it is not Exit event)
-        event.pointers.fastForEach { pointer ->
-            if ((pointer.type == PointerType.Mouse && event.eventType != PointerEventType.Exit) ||
-                pointer.down
-            ) {
-                pointerPositions[pointer.id] = pointer.position
-            }
-        }
-
-        // touches/styluses positions should be removed from [pointerPositions] if they are not down
-        // anymore also, mouse exited ComposeScene should be removed
-        val iterator = pointerPositions.iterator()
-        while (iterator.hasNext()) {
-            val pointerId = iterator.next().key
-            val pointer = event.pointers.fastFirstOrNull { it.id == pointerId } ?: continue
-            if ((pointer.type != PointerType.Mouse && !pointer.down) ||
-                (pointer.type == PointerType.Mouse && event.eventType == PointerEventType.Exit)
-            ) {
-                iterator.remove()
-            }
-        }
     }
 
     /**
