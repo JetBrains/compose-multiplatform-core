@@ -2149,6 +2149,7 @@ internal class ComposerImpl(
                 changeListWriter.startResumingScope(scope)
                 if (!reusing && scope.reusing) {
                     reusing = true
+                    reusingGroup = reader.parent
                     scope.resetReusing = true
                 }
             }
@@ -2181,7 +2182,10 @@ internal class ComposerImpl(
                 scope.reusing = false
                 if (scope.resetReusing) {
                     scope.resetReusing = false
-                    reusing = false
+                    if (reusingGroup == reader.parent) {
+                        reusing = false
+                        reusingGroup = -1
+                    }
                 }
             }
         }
