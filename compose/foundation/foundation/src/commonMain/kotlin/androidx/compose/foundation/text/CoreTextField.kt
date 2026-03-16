@@ -31,8 +31,8 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.handwriting.stylusHandwriting
 import androidx.compose.foundation.text.input.internal.CoreTextFieldSemanticsModifier
-import androidx.compose.foundation.text.input.internal.createLegacyPlatformTextInputServiceAdapter
 import androidx.compose.foundation.text.input.internal.legacyTextInputAdapter
+import androidx.compose.foundation.text.input.internal.createLegacyPlatformTextInputServiceAdapter
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.OffsetProvider
 import androidx.compose.foundation.text.selection.SelectedTextType
@@ -1138,22 +1138,23 @@ internal fun Modifier.defaultTextFieldDraw(
     state: LegacyTextFieldState,
     value: TextFieldValue,
     offsetMapping: OffsetMapping,
-): Modifier = this.drawBehind {
-    state.layoutResult?.let { layoutResult ->
-        drawIntoCanvas { canvas ->
-            TextFieldDelegate.draw(
-                canvas,
-                value,
-                state.selectionPreviewHighlightRange,
-                state.deletionPreviewHighlightRange,
-                offsetMapping,
-                layoutResult.value,
-                state.highlightPaint,
-                state.selectionBackgroundColor,
-            )
+): Modifier =
+    this.drawBehind {
+        state.layoutResult?.let { layoutResult ->
+            drawIntoCanvas { canvas ->
+                TextFieldDelegate.draw(
+                    canvas,
+                    value,
+                    state.selectionPreviewHighlightRange,
+                    state.deletionPreviewHighlightRange,
+                    offsetMapping,
+                    layoutResult.value,
+                    state.highlightPaint,
+                    state.selectionBackgroundColor,
+                )
+            }
         }
     }
-}
 
 @Composable
 internal expect fun CursorHandle(
