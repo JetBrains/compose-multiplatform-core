@@ -29,8 +29,8 @@ private const val AssumePointerMoveStoppedMilliseconds: Int = 40
 private const val MinimumGestureDurationMilliseconds: Int = 50
 
 private class UIKitVelocityTracker: PlatformVelocityTracker {
-    private val xVelocityTracker = PointerVelocityTracker1D(preventReversedPointerMovements = true)
-    private val yVelocityTracker = PointerVelocityTracker1D(preventReversedPointerMovements = true)
+    private val xVelocityTracker = PointerVelocityTracker1D(preventOppositeVelocity = true)
+    private val yVelocityTracker = PointerVelocityTracker1D(preventOppositeVelocity = true)
     private var lastMoveEventTimeStamp = 0L
     private var lastPointerStartEventTimeStamp = 0L
     private var lastPointerStopEventTimeStamp = 0L

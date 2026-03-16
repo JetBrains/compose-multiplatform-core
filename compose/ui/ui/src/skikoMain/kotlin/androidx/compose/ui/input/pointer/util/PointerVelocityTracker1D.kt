@@ -35,7 +35,7 @@ internal class PointerVelocityTracker1D(
     private val strategy: Strategy = Strategy.Lsq2,
     // Prevents getting the velocity value opposite to the general scroll direction of the pointer
     // movement.
-    private val preventReversedPointerMovements: Boolean = false,
+    private val preventOppositeVelocity: Boolean = false,
 ) {
 
     init {
@@ -152,7 +152,7 @@ internal class PointerVelocityTracker1D(
                 }
             } * 1000 // Multiply by "1000" to convert from units/ms to units/s
 
-            if (preventReversedPointerMovements) {
+            if (preventOppositeVelocity) {
                 if (dataPoints[sampleCount - 1] < dataPoints[0] && velocity < 0) {
                     return 0f
                 }
