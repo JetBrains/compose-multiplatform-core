@@ -66,9 +66,8 @@ class NativeInputEventsProcessorTest {
             commands.forEach { it.applyTo(editingBuffer) }
         }
 
-        override fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean {
+        override fun sendKeyboardEvent(keyboardEvent: KeyEvent) {
             keyboardEvents.add(keyboardEvent)
-            return true
         }
 
         override fun currentTextLayoutResult(): TextLayoutResult? = null

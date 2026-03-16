@@ -30,7 +30,7 @@ internal interface ComposeCommandCommunicator {
     fun sendEditCommand(commands: List<EditCommand>)
     fun sendEditCommand(command: EditCommand) = sendEditCommand(listOf(command))
 
-    fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean
+    fun sendKeyboardEvent(keyboardEvent: KeyEvent)
 
     fun currentTextLayoutResult(): TextLayoutResult?
 }

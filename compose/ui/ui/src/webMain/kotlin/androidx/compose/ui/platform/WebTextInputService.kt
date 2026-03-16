@@ -65,39 +65,6 @@ internal abstract class WebTextInputService :
      */
     abstract val backingDomInputContainer: HTMLElement
 
-//    override fun startInput(
-//        value: TextFieldValue,
-//        imeOptions: ImeOptions,
-//        onEditCommand: (List<EditCommand>) -> Unit,
-//        onImeActionPerformed: (ImeAction) -> Unit
-//    ) {
-//        backingDomInput = BackingDomInput(
-//            imeOptions = imeOptions,
-//            composeCommunicator = object : ComposeCommandCommunicator {
-//                override fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean {
-//                    return this@WebTextInputService.processKeyboardEvent(keyboardEvent)
-//                }
-//
-//                override fun sendEditCommand(commands: List<EditCommand>) {
-//                    onEditCommand(commands)
-//                }
-//
-//                override fun currentTextLayoutResult(): TextLayoutResult? = null
-//            },
-//            inputContainer = backingDomInputContainer,
-//        )
-//        backingDomInput?.register()
-//
-//        if (currentTouchOffset != null) {
-//            // We don't know the real position yet, but it's reasonable to assume that
-//            // if startInput is caused by a touch event,
-//            // then the TextField is positioned around the touch coordinates.
-//            // See the currentTouchOffset KDoc for the details.
-//            notifyFocusedRect(Rect(currentTouchOffset!!, Size(1f, 1f)))
-//        }
-//        showSoftwareKeyboard()
-//    }
-
     fun startInput(
         request: PlatformTextInputMethodRequest,
         onEditCommand: (List<EditCommand>) -> Unit,
@@ -105,8 +72,8 @@ internal abstract class WebTextInputService :
         backingDomInput = BackingDomInput(
             imeOptions = request.imeOptions,
             composeCommunicator = object : ComposeCommandCommunicator {
-                override fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean {
-                    return this@WebTextInputService.processKeyboardEvent(keyboardEvent)
+                override fun sendKeyboardEvent(keyboardEvent: KeyEvent) {
+                    this@WebTextInputService.processKeyboardEvent(keyboardEvent)
                 }
 
                 override fun sendEditCommand(commands: List<EditCommand>) {
