@@ -89,8 +89,8 @@ androidXMultiplatform {
             api("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.6")
             api("androidx.savedstate:savedstate-compose:1.4.0")
 
-            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel:2.9.6")
-            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.6")
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0-alpha01")
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-savedstate:2.11.0-alpha01")
         }
 
         commonTest.dependencies {
@@ -213,7 +213,8 @@ androidXMultiplatform {
                 // because this module supports all KMP platforms from the beginning.
                 // Project dependency (commented out version) is required for `integration` branch setup
                 // implementation(project(":navigationevent:navigationevent"))
-                implementation("androidx.navigationevent:navigationevent:1.0.1")
+                def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+                implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
             }
         }
 
