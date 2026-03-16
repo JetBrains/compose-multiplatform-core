@@ -1135,6 +1135,13 @@ internal expect fun Modifier.textFieldDraw(
     offsetMapping: OffsetMapping,
 ): Modifier
 
+internal fun Modifier.defaultTextFieldDraw(
+    state: LegacyTextFieldState,
+    value: TextFieldValue,
+    offsetMapping: OffsetMapping,
+): Modifier =
+    this.drawBehind(DefaultTextFieldOnDrawBehind(state, value, offsetMapping))
+
 internal fun DefaultTextFieldOnDrawBehind(
     state: LegacyTextFieldState,
     value: TextFieldValue,
@@ -1155,13 +1162,6 @@ internal fun DefaultTextFieldOnDrawBehind(
         }
     }
 }
-
-internal fun Modifier.defaultTextFieldDraw(
-    state: LegacyTextFieldState,
-    value: TextFieldValue,
-    offsetMapping: OffsetMapping,
-): Modifier =
-    this.drawBehind(DefaultTextFieldOnDrawBehind(state, value, offsetMapping))
 
 @Composable
 internal expect fun CursorHandle(
