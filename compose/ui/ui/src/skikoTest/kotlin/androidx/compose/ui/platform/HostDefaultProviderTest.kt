@@ -42,33 +42,30 @@ class HostDefaultProviderTest {
             owner = LocalViewModelStoreOwner.current
         }
 
-        awaitIdle()
         assertNotNull(owner)
         assertIs<ViewModelStoreOwner>(owner)
     }
 
-    interface TestRegistry
+    interface TestRegistry { fun foo() }
     val TestRegistryKey = object : HostDefaultKey<TestRegistry?> {}
 
-    //Desktop: https://youtrack.jetbrains.com/issue/KT-85051
     //iOS: Child process terminated with signal 11: Segmentation fault
+    //web: unhandled Promise rejection RuntimeError: array element access out of bounds
     @Ignore
     @Test
     fun testHostDefaultProviderError() = runSkikoComposeUiTest {
         val LocalTestRegistry = compositionLocalWithHostDefaultOf(TestRegistryKey)
 
-        var registry: TestRegistry? = null
         var exception: Exception? = null
         try {
             setContent {
-                registry = LocalTestRegistry.current
+                val registry = LocalTestRegistry.current
+                registry?.foo()
             }
-            awaitIdle()
         } catch (e: Exception) {
             exception = e
         }
 
-        assertNull(registry)
         assertIs<ClassCastException>(exception)
         assertTrue(
             exception.message!!.contains(
