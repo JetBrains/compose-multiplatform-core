@@ -20,18 +20,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.awt.toAwtRectangleRounded
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.isFinite
-import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.requireReal
 import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
 import kotlinx.coroutines.channels.Channel
+
 
 /**
  * Creates a [WindowState] that is remembered across compositions.
@@ -39,32 +42,71 @@ import kotlinx.coroutines.channels.Channel
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
  *
- * @param placement the initial value for [WindowState.placement]
- * @param isMinimized the initial value for [WindowState.isMinimized]
+ * @param initialPosition The initial position of the window; default if `null`.
+ * @param initialSize The initial size of the window; default if `null`.
+ * @param initiallyMinimized Whether the window is initially minimized.
+ */
+@Composable
+fun rememberWindowStateWithBounds(
+    initialPosition: DpOffset? = null,
+    initialSize: DpSize? = null,
+    initiallyMinimized: Boolean = false,
+): WindowState {
+    val sizeProvider =
+        initialSize?.let { WindowSizeProvider.Exact(it) } ?: WindowSizeProvider.Default
+    val positionProvider =
+        initialPosition?.let { WindowPositionProvider.Absolute(it) } ?: WindowPositionProvider.Default
+    return rememberWindowState(
+        initialBoundsProvider = WindowBoundsProvider(sizeProvider, positionProvider),
+        initiallyMinimized = initiallyMinimized
+    )
+}
+
+/**
+ * Creates a [WindowState] that is remembered across compositions.
+ *
+ * Changes to the provided initial values will **not** result in the state being recreated or
+ * changed in any way if it has already been created.
+ *
+ * @param initialScreenProvider Provides the initial screen on which the window will be placed.
+ * @param initialPlacement The initial placement of the window.
+ * @param initialBoundsProvider Provides the initial bounds of the window.
+ * @param initiallyMinimized Whether the window is initially minimized.
  */
 @Composable
 fun rememberWindowState(
-    placement: WindowPlacement = WindowPlacement.Floating,
-    isMinimized: Boolean = false,
+    initialScreenProvider: WindowScreenProvider = WindowScreenProvider.Default,
+    initialPlacement: WindowPlacement = WindowPlacement.Floating,
+    initialBoundsProvider: WindowBoundsProvider = WindowBoundsProvider.Default,
+    initiallyMinimized: Boolean = false,
 ): WindowState = rememberSaveable(saver = WindowState.Saver) {
-    WindowState(placement, isMinimized)
+    WindowState(
+        initialScreenProvider = initialScreenProvider,
+        initialPlacement = initialPlacement,
+        initialBoundsProvider = initialBoundsProvider,
+        initiallyMinimized = initiallyMinimized
+    )
 }
 
 /**
  * Creates a [WindowState] with the specified initial values.
  *
- * @param placement the initial value for [WindowState.placement]
- * @param isMinimized the initial value for [WindowState.isMinimized]
+ * @param initialScreenProvider Provides the initial screen on which the window will be placed.
+ * @param initialPlacement The initial placement of the window.
+ * @param initialBoundsProvider Provides the initial bounds of the window.
+ * @param initiallyMinimized Whether the window is initially minimized.
  */
 fun WindowState(
-    placement: WindowPlacement = WindowPlacement.Floating,
-    isMinimized: Boolean = false,
-): WindowState = WindowState(
-    screen = null,
-    placement = placement,
-    isMinimized = isMinimized,
-    bounds = null
-)
+    initialScreenProvider: WindowScreenProvider = WindowScreenProvider.Default,
+    initialPlacement: WindowPlacement = WindowPlacement.Floating,
+    initialBoundsProvider: WindowBoundsProvider = WindowBoundsProvider.Default,
+    initiallyMinimized: Boolean = false,
+): WindowState = WindowState().apply {
+    setScreen(initialScreenProvider)
+    setPlacement(initialPlacement)
+    setBounds(initialBoundsProvider)
+    setMinimized(initiallyMinimized)
+}
 
 /**
  * A state object that can be hoisted to control and observe window attributes
@@ -77,12 +119,19 @@ fun WindowState(
 @Stable
 class WindowState internal constructor(
     screen: Screen?,
-    placement: WindowPlacement,
-    isMinimized: Boolean,
-    bounds: DpRect? = null,
+    placement: WindowPlacement?,
+    isMinimized: Boolean?,
+    bounds: DpRect?,
 ) {
+    constructor() : this(
+        screen = null,
+        placement = null,
+        isMinimized = null,
+        bounds = null
+    )
+
     init {
-        if (bounds != null) requireReal(bounds)
+        bounds?.requireReal()
     }
 
     /**
@@ -91,10 +140,16 @@ class WindowState internal constructor(
     var screen: Screen? by mutableStateOf(screen)
         internal set
 
+    internal val screenRequests = Channel<WindowScreenProvider>(Channel.CONFLATED)
+
+    fun setScreen(screenProvider: WindowScreenProvider) {
+        screenRequests.trySend(screenProvider)
+    }
+
     /**
      * Describes how the window is placed on the screen.
      */
-    var placement: WindowPlacement by mutableStateOf(placement)
+    var placement: WindowPlacement? by mutableStateOf(placement)
         internal set
 
     internal val placementRequests = Channel<WindowPlacement>(Channel.CONFLATED)
@@ -106,7 +161,7 @@ class WindowState internal constructor(
     /**
      * Whether the window is minimized.
      */
-    var isMinimized: Boolean by mutableStateOf(isMinimized)
+    var isMinimized: Boolean? by mutableStateOf(isMinimized)
         internal set
 
     internal val isMinimizedRequests = Channel<Boolean>(Channel.CONFLATED)
@@ -121,7 +176,14 @@ class WindowState internal constructor(
     var bounds: DpRect? by mutableStateOf(bounds)
         internal set
 
-    internal val boundsRequests = Channel<DpRect>(Channel.CONFLATED)
+    internal val boundsRequests = Channel<WindowBoundsProvider>(Channel.CONFLATED)
+
+    /**
+     * Set the bounds of the window.
+     */
+    fun setBounds(boundsProvider: WindowBoundsProvider) {
+        boundsRequests.trySend(boundsProvider)
+    }
 
     /**
      * Set the bounds of the window.
@@ -132,20 +194,21 @@ class WindowState internal constructor(
      * All the parameters of [bounds] must be specified and finite.
      */
     fun setBounds(bounds: DpRect) {
-        requireReal(bounds)
-        boundsRequests.trySend(bounds)
+        boundsRequests.trySend(
+            WindowBoundsProvider.Absolute(bounds)
+        )
     }
 
     companion object {
         /**
          * A [Saver] implementation for [WindowState].
          */
-        val Saver = listSaver(
+        val Saver: Saver<WindowState, Any> = listSaver(
             save = {
                 val bounds = it.bounds
                 arrayListOf(
                     it.screen?.device?.iDstring ?: "",
-                    it.placement.ordinal,
+                    it.placement?.ordinal ?: -1,
                     it.isMinimized,
                     bounds != null,
                     bounds?.top?.value ?: 0f,
@@ -164,8 +227,10 @@ class WindowState internal constructor(
                             .firstOrNull { it.iDstring == idString }
                         if (device != null) Screen(device) else null
                     },
-                    placement = WindowPlacement.entries[state[1] as Int],
-                    isMinimized = state[2] as Boolean,
+                    placement = (state[1] as Int).let { ordinal ->
+                        if (ordinal >= 0) WindowPlacement.entries[ordinal] else null
+                    },
+                    isMinimized = state[2] as Boolean?,
                     bounds = if (state[3] as Boolean) {
                         DpRect(
                             top = Dp(state[4] as Float),
@@ -178,17 +243,6 @@ class WindowState internal constructor(
             }
         )
     }
-}
-
-private val Dp.isReal
-    get() = isSpecified && isFinite
-
-private fun requireReal(rect: DpRect): DpRect {
-    require(rect.left.isReal) { "left must be specified and finite" }
-    require(rect.top.isReal) { "top must be specified and finite" }
-    require(rect.right.isReal) { "right must be specified and finite" }
-    require(rect.bottom.isReal) { "bottom must be specified and finite" }
-    return rect
 }
 
 /**

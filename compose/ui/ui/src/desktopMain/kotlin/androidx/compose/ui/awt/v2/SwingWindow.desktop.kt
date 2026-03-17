@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.util.ComponentUpdater
 import androidx.compose.ui.util.componentListenerRef
-import androidx.compose.ui.util.setBoundsSafely
 import androidx.compose.ui.util.setIcon
 import androidx.compose.ui.util.setUndecoratedSafely
 import androidx.compose.ui.util.windowListenerRef
@@ -101,8 +100,6 @@ import kotlinx.coroutines.launch
 fun SwingWindow(
     onCloseRequest: () -> Unit,
     state: WindowState = rememberWindowState(),
-    initialScreenProvider: WindowScreenProvider = WindowScreenProvider.Default,
-    initialBoundsProvider: WindowBoundsProvider = WindowBoundsProvider.Default,
     visible: Boolean = true,
     title: String = "Untitled",
     icon: Painter? = null,
@@ -152,7 +149,9 @@ fun SwingWindow(
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
         create = {
-            val initialScreen = currentState.screen ?: initialScreenProvider.getInitialScreen()
+            val initialScreen = currentState.screen
+                ?: state.screenRequests.tryReceive().getOrNull()?.getInitialScreen()
+                ?: WindowScreenProvider.Default.getInitialScreen()
 
             ComposeWindow(
                 graphicsConfiguration = initialScreen.device.defaultConfiguration,
@@ -215,7 +214,7 @@ fun SwingWindow(
         },
         update = { window ->
             if (!window.isDisplayable) {
-                window.initializeBounds(currentState, initialBoundsProvider)
+                window.initializeBounds(currentState)
             }
 
             updater.update {
@@ -247,9 +246,7 @@ fun SwingWindow(
         }
         launch {
             while (isActive) {
-                val bounds = state.boundsRequests.receive()
-                window.placement = WindowPlacement.Floating
-                window.setBoundsSafely(bounds, state.placement)
+                window.setBoundsFrom(state.boundsRequests.receive())
             }
         }
     }
@@ -268,30 +265,33 @@ private fun WindowScreenProvider.getInitialScreen(): Screen {
     }
 }
 
-private fun Window.initializeBounds(
-    state: WindowState,
-    initialBoundsProvider: WindowBoundsProvider
-) {
-    // Prioritize requests, then current state, then initialBoundsProvider
-    val currentBounds = state.boundsRequests.tryReceive().getOrNull() ?: state.bounds
-    if (currentBounds != null) {
-        val boundsRect = currentBounds.toAwtRectangleRounded()
-        preferredSize = boundsRect.size
-        pack()
+private fun ComposeWindow.initializeBounds(state: WindowState) {
+    val boundsRequest = state.boundsRequests.tryReceive().getOrNull()
+    val currentBounds = state.bounds
+
+    // Prioritize requests, then currentBounds
+    if ((boundsRequest == null) && (currentBounds != null)) {
+        placement = state.placement ?: WindowPlacement.Floating
+        bounds = currentBounds.toAwtRectangleRounded()
     } else {
-        val screen = Screen(graphicsConfiguration.device)
-        preferredSize = screen.availableBounds.size.roundToDimension()
+        preferredSize = screen().availableBounds.size.roundToDimension()
         pack()
 
-        val scope = WindowGeometryProviderScope(
-            screen = screen,
-            intrinsicWindowSize = {
-                preferredSize = null
-                preferredSize.toDpSize()
-            }
-        )
-        bounds = with(scope) {
-            initialBoundsProvider.getBounds().toAwtRectangleRounded()
-        }
+        setBoundsFrom(boundsRequest ?: WindowBoundsProvider.Default)
     }
 }
+
+private fun ComposeWindow.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
+    val scope = WindowGeometryProviderScope(
+        screen = screen(),
+        intrinsicWindowSize = {
+            preferredSize = null
+            preferredSize.toDpSize()
+        }
+    )
+    with(scope) {
+        bounds = boundsProvider.getBounds().toAwtRectangleRounded()
+    }
+}
+
+private fun Window.screen() = Screen(graphicsConfiguration.device)

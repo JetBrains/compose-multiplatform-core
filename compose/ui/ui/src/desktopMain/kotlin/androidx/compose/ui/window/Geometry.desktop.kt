@@ -16,11 +16,14 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isFinite
+import androidx.compose.ui.unit.isSpecified
 import java.awt.Dimension
 import java.awt.Point
 import java.awt.Rectangle
@@ -55,3 +58,32 @@ internal fun DpSize.roundToIntSize() = IntSize(
     width = width.value.roundToInt(),
     height = height.value.roundToInt()
 )
+
+internal val Dp.isReal
+    get() = isSpecified && isFinite
+
+internal fun Dp.requireReal(propertyName: String) =
+    require(isReal) { "$propertyName must be specified and finite"}
+
+internal fun DpRect.requireReal(): DpRect {
+    left.requireReal("left")
+    top.requireReal("top")
+    right.requireReal("right")
+    bottom.requireReal("bottom")
+    return this
+}
+
+internal fun DpSize.requireReal(): DpSize {
+    require(isSpecified) { "size must be specified" }
+    width.requireReal("width")
+    height.requireReal("width")
+    return this
+}
+
+internal fun DpOffset.requireReal(): DpOffset {
+    require(isSpecified) { "offset must be specified" }
+    x.requireReal("x")
+    y.requireReal("y")
+    return this
+}
+

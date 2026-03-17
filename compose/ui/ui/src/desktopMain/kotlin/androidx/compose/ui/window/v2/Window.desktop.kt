@@ -35,6 +35,7 @@ import androidx.compose.ui.window.SingleWindowApplicationScope
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.requireReal
 import androidx.compose.ui.window.roundToDimension
 import androidx.compose.ui.window.roundToIntSize
 import androidx.compose.ui.window.toDpOffset
@@ -49,8 +50,6 @@ import java.awt.Toolkit
 fun Window(
     onCloseRequest: () -> Unit,
     state: WindowState = rememberWindowState(),
-    initialScreenProvider: WindowScreenProvider = WindowScreenProvider.Default,
-    initialBoundsProvider: WindowBoundsProvider = WindowBoundsProvider.Default,
     visible: Boolean = true,
     title: String = "Untitled",
     icon: Painter? = null,
@@ -67,8 +66,6 @@ fun Window(
     SwingWindow(
         onCloseRequest = onCloseRequest,
         state = state,
-        initialScreenProvider = initialScreenProvider,
-        initialBoundsProvider = initialBoundsProvider,
         visible = visible,
         title = title,
         icon = icon,
@@ -88,7 +85,6 @@ fun Window(
 @ExperimentalComposeUiApi
 fun singleWindowApplication(
     state: WindowState = WindowState(),
-    initialBounds: WindowBoundsProvider = WindowBoundsProvider.Default,
     visible: Boolean = true,
     title: String = "Untitled",
     icon: Painter? = null,
@@ -106,7 +102,6 @@ fun singleWindowApplication(
     Window(
         onCloseRequest = ::exitApplication,
         state = state,
-        initialBoundsProvider = initialBounds,
         visible = visible,
         title = title,
         icon = icon,
@@ -176,8 +171,8 @@ class WindowGeometryProviderScope internal constructor(
         this@WindowGeometryProviderScope.getSize()
     }
 
-    fun WindowPositionProvider.getPosition(): DpOffset = with(this) {
-        this@WindowGeometryProviderScope.getPosition()
+    fun WindowPositionProvider.getPosition(size: DpSize): DpOffset = with(this) {
+        this@WindowGeometryProviderScope.getPosition(size)
     }
 
     fun WindowBoundsProvider.getBounds(): DpRect = with(this) {
@@ -185,13 +180,13 @@ class WindowGeometryProviderScope internal constructor(
     }
 }
 
-fun interface WindowBoundsProvider {
+interface WindowBoundsProvider {
     fun WindowGeometryProviderScope.getBounds(): DpRect
 
     companion object {
         val Default = WindowBoundsProvider(
             sizeProvider = WindowSizeProvider.Default,
-            positionProvider = WindowPositionProvider.Default(WindowSizeProvider.Default)
+            positionProvider = WindowPositionProvider.Default
         )
 
         fun AlignedToScreen(
@@ -213,7 +208,18 @@ fun interface WindowBoundsProvider {
                 bottom = availableBounds.top + offsetInAvailable.y.dp + size.height
             )
         }
+
+        fun Absolute(bounds: DpRect): WindowBoundsProvider {
+            bounds.requireReal()
+            return WindowBoundsProvider { bounds }
+        }
     }
+}
+
+fun WindowBoundsProvider(
+    bounds: WindowGeometryProviderScope.() -> DpRect,
+) = object : WindowBoundsProvider {
+    override fun WindowGeometryProviderScope.getBounds() = bounds()
 }
 
 /**
@@ -221,49 +227,56 @@ fun interface WindowBoundsProvider {
  */
 fun WindowBoundsProvider(
     sizeProvider: WindowSizeProvider = WindowSizeProvider.Default,
-    positionProvider: WindowPositionProvider = WindowPositionProvider.Default(sizeProvider),
-    // Disables trailing lambda syntax; without it, `WindowBoundsProvider { ... }` is ambiguous.
-    @Suppress("unused") unused: Unit = Unit
+    positionProvider: WindowPositionProvider = WindowPositionProvider.Default,
 ): WindowBoundsProvider = WindowBoundsProvider {
     val size = sizeProvider.getSize()
-    val position = positionProvider.getPosition()
+    val position = positionProvider.getPosition(size)
     DpRect(position, size)
 }
 
 fun interface WindowPositionProvider {
-    fun WindowGeometryProviderScope.getPosition(): DpOffset
+    fun WindowGeometryProviderScope.getPosition(size: DpSize): DpOffset
     companion object {
-        fun Default(
-            sizeProvider: WindowSizeProvider = WindowSizeProvider.Default,
-        ) = WindowPositionProvider {
-            val size = sizeProvider.getSize()
+        val Default = WindowPositionProvider { size ->
             WindowLocationTracker.getCascadeLocationFor(
                 graphicsDevice = screen.device,
                 windowSize = size.roundToDimension()
             ).toDpOffset()
         }
 
-        fun Absolute(position: DpOffset) = WindowPositionProvider { position }
+        fun Absolute(position: DpOffset): WindowPositionProvider {
+            position.requireReal()
+            return WindowPositionProvider { position }
+        }
     }
 }
 
 fun interface WindowSizeProvider {
     fun WindowGeometryProviderScope.getSize(): DpSize
     companion object {
-        val Default = WindowSizeProvider { DpSize(800.dp, 600.dp) }
+        val Default = Exact(DpSize(800.dp, 600.dp))
 
-        fun Exact(size: DpSize) = WindowSizeProvider { size }
+        fun Exact(size: DpSize): WindowSizeProvider {
+            size.requireReal()
+            return WindowSizeProvider { size }
+        }
 
         fun Exact(width: Dp, height: Dp) = Exact(DpSize(width, height))
 
         val Intrinsic = WindowSizeProvider { intrinsicWindowSize }
 
-        fun IntrinsicWidth(height: Dp) = WindowSizeProvider {
-            DpSize(intrinsicWindowSize.width, height)
+        fun IntrinsicWidth(height: Dp): WindowSizeProvider {
+            height.requireReal("height")
+            return WindowSizeProvider {
+                DpSize(intrinsicWindowSize.width, height)
+            }
         }
 
-        fun IntrinsicHeight(width: Dp) = WindowSizeProvider {
-            DpSize(width, intrinsicWindowSize.height)
+        fun IntrinsicHeight(width: Dp): WindowSizeProvider {
+            width.requireReal("width")
+            return WindowSizeProvider {
+                DpSize(width, intrinsicWindowSize.height)
+            }
         }
     }
 }
