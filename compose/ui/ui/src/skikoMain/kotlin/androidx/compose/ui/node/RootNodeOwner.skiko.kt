@@ -98,9 +98,11 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.toConstraints
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.useLegacyRenderNodeLayers
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
@@ -161,7 +163,11 @@ internal class RootNodeOwner(
             owner.root.layoutDirection = value
         }
 
-    private val rootForTest = PlatformRootForTestImpl()
+    private var _rootForTest: PlatformRootForTest? = null
+    private val rootForTest
+        get() = _rootForTest ?: PlatformRootForTestImpl().also {
+            _rootForTest = it
+        }
     private val ownedLayerManager = OwnedLayerManagerImpl()
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
@@ -925,8 +931,7 @@ internal class RootNodeOwner(
             // So, we applying it before drawing to reflect the changes from previous phases.
             // Changes that requires another round of invalidation will be scheduled to next frame.
             if (dirtyLayers.isNotEmpty()) {
-                for (i in 0 until dirtyLayers.size) {
-                    val layer = dirtyLayers[i]
+                dirtyLayers.fastForEach { layer ->
                     layer.updateDisplayList()
                 }
             }
@@ -1005,8 +1010,6 @@ private fun MeasureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(
         )
     )
 }
-
-private fun IntSize.toConstraints() = Constraints(maxWidth = width, maxHeight = height)
 
 private object IdentityPositionCalculator: PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen

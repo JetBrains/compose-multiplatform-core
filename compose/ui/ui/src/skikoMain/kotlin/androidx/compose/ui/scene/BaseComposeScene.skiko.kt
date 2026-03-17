@@ -109,12 +109,6 @@ internal abstract class BaseComposeScene(
 
     override var compositionLocalContext: CompositionLocalContext? by mutableStateOf(null)
 
-    /**
-     * The last known position of pointer cursor position or `null` if cursor is not inside a scene.
-     *
-     * TODO: Move it to PlatformContext
-     */
-    val lastKnownPointerPosition by inputHandler::lastKnownPointerPosition
 
     init {
         GlobalSnapshotManager.ensureStarted()
@@ -328,10 +322,3 @@ internal abstract class BaseComposeScene(
 
 internal val BaseComposeScene.semanticsOwnerListener
     get() = composeSceneContext.platformContext.semanticsOwnerListener
-
-// TODO: Remove the cast once there is a way to obtain it from [PlatformContext]
-internal val ComposeScene.lastKnownPointerPosition: Offset?
-    get() {
-        this as BaseComposeScene
-        return lastKnownPointerPosition
-    }

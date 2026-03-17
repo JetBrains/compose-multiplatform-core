@@ -144,7 +144,12 @@ internal class ComposeSceneMediator(
 
     private val platformComponent = DesktopPlatformComponent()
     private val textInputService = DesktopTextInputService(platformComponent)
-    private val textInputService2 = DesktopTextInputService2(platformComponent)
+
+    private var _textInputService2: DesktopTextInputService2? = null
+    private val textInputService2
+        get() = _textInputService2 ?: DesktopTextInputService2(platformComponent).also {
+            _textInputService2 = it
+        }
     private val _platformContext = DesktopPlatformContext()
     val platformContext: PlatformContext get() = _platformContext
 

@@ -139,19 +139,9 @@ class PointerEventResultTest {
             assertEquals(7, result.value)
         }
 
-        // Test with null parameters
-        PointerEventResult(value = 1).merging(
-            result1 = PointerEventResult(value = 2),
-            result2 = null,
-            result3 = null
-        ).let { result ->
-            assertEquals(3, result.value)
-        }
-
         PointerEventResult(value = 1).merging(
             result1 = PointerEventResult(value = 2),
             result2 = PointerEventResult(value = 4),
-            result3 = null
         ).let { result ->
             assertEquals(7, result.value)
         }

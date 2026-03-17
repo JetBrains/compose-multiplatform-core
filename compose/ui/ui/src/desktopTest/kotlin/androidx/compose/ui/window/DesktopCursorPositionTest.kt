@@ -20,55 +20,48 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toOffset
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import org.junit.Rule
+import java.awt.MouseInfo
+import java.awt.Robot
 import org.junit.Test
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
 internal class DesktopCursorPositionTest {
-    @get:Rule
-    val rule = createComposeRule()
 
     private val windowSize = IntSize(200, 200)
     private val anchorPosition = IntOffset(0, 0)
     private val anchorSize = IntSize(100, 100)
     private val popupSize = IntSize(20, 20)
 
-    // https://github.com/JetBrains/compose-jb/issues/2821
     @Test
-    fun `pointer position with single component`(): Unit = runBlocking(Dispatchers.Main) {
+    fun `pointer position with single component`(): Unit = runApplicationTest {
         var pointerPosition: IntOffset? = null
+        var window: ComposeWindow? = null
+        val pxTargetOffset = IntOffset(84, 58)
+        var pointerMoved by mutableStateOf(false)
+        val initialMouseLocation = MouseInfo.getPointerInfo().location
+        launchTestWindowApplication(
+            WindowState(WindowPlacement.Maximized),
+        ) {
+            window = this.window
 
-        rule.setContent {
-            var savePointerPosition by remember { mutableStateOf(false) }
             Box(
                 modifier = Modifier
                     .size(200.dp, 200.dp)
-                    .testTag("testBox")
-                    .onPointerEvent(PointerEventType.Enter, onEvent = {
-                        savePointerPosition = true
-                    })
-            ) {
-                if (savePointerPosition) {
+            ){
+                if (pointerMoved) {
                     pointerPosition = rememberCursorPositionProvider().calculatePosition(
                         IntRect(anchorPosition, anchorSize),
                         windowSize,
@@ -78,11 +71,28 @@ internal class DesktopCursorPositionTest {
                 }
             }
         }
+        awaitIdle()
 
-        rule.onNodeWithTag("testBox").performMouseInput {
-            moveTo(Offset(30f, 40f))
-        }
-        rule.waitForIdle()
-        assertThat(pointerPosition).isEqualTo(IntOffset(30, 40))
+        val contentLocation = window?.contentPane?.locationOnScreen ?: java.awt.Point(0, 0)
+        moveMouse(
+            contentLocation.x + pxTargetOffset.x,
+            contentLocation.y + pxTargetOffset.y
+        )
+        awaitIdle()
+        pointerMoved = true
+        awaitIdle()
+
+        //calculatePosition returns an IntOffset but that includes the density factor,
+        // so we need to convert it back to Dp and then to pixels again to compare with the original IntOffset
+        val pxPointerPosition = pointerPosition?.toDpOffset(window?.density ?: Density(1f))
+        assertThat(pxPointerPosition).isEqualTo(pxTargetOffset)
+
+        // Move mouse back to the initial position to avoid interference with other tests
+        moveMouse(initialMouseLocation.x, initialMouseLocation.y)
+        awaitIdle()
+    }
+
+    private fun IntOffset.toDpOffset(density: Density): IntOffset {
+        return with(density) { IntOffset(x.toDp().value.toInt(), y.toDp().value.toInt()) }
     }
 }

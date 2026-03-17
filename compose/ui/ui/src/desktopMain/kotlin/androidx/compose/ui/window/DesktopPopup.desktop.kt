@@ -21,9 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.scene.BaseComposeScene
-import androidx.compose.ui.scene.LocalComposeScene
-import androidx.compose.ui.scene.lastKnownPointerPosition
+import androidx.compose.ui.scene.LocalComposeSceneContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
@@ -32,6 +30,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.toOffset
+import java.awt.MouseInfo
 import kotlin.math.roundToInt
 
 /**
@@ -39,10 +39,14 @@ import kotlin.math.roundToInt
  */
 @Composable
 private fun rememberCursorPosition(): Offset? {
-    // TODO: Migrate to [LocalComposeSceneContext]
-    @Suppress("DEPRECATION")
-    val scene = LocalComposeScene.current
-    return remember { scene?.lastKnownPointerPosition }
+    val density = LocalDensity.current
+    val composeSceneContext = LocalComposeSceneContext.current
+    return remember {
+        val mouseLocation = MouseInfo.getPointerInfo().location
+        composeSceneContext?.platformContext?.convertScreenToLocalPosition(
+            mouseLocation.asDpOffset().toOffset(density)
+        )
+    }
 }
 
 /**
