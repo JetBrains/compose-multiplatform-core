@@ -62,10 +62,6 @@ actual open class TestNavigator actual constructor(private val hasTransitions: B
         }
     }
 
-    public actual fun onTransitionComplete(entry: NavBackStackEntry) {
-        state.markTransitionComplete(entry)
-    }
-
     actual open class Destination actual constructor(navigator: Navigator<out NavDestination>) :
         NavDestination(navigator)
 }
