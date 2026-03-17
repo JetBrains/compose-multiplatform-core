@@ -26,7 +26,7 @@ import androidx.compose.ui.util.fastForEach
 internal actual fun PlatformVelocityTracker(): PlatformVelocityTracker = UIKitVelocityTracker()
 
 private const val AssumePointerMoveStoppedMilliseconds: Int = 40
-private const val MinimumGestureDurationSincePointerStrop: Int = 50
+private const val MinimumGestureDurationSincePointerStop: Int = 50
 private const val MinimumGestureDurationMilliseconds: Int = 100
 
 private class UIKitVelocityTracker: PlatformVelocityTracker {
