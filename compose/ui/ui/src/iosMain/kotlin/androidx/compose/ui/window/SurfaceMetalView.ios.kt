@@ -106,6 +106,7 @@ internal class SurfaceMetalView(
     private fun scheduleDrawableDrain() {
         drainJob?.cancel()
         drainJob = MainScope().launch {
+            // Await a safe time to ensure the metal view won't be displayed again soon
             delay(500)
             if (window == null) {
                 redrawer.drainSkiaSurfaces()
