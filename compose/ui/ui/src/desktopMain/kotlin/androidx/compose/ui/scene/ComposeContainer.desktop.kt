@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.scene
 
+import androidx.collection.mutableObjectListOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.ComposeFeatureFlags
@@ -25,6 +26,7 @@ import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.internal.all
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -103,7 +105,7 @@ internal class ComposeContainer(
     /**
      * A list of additional layers. Layers are used to render [Popup]s and [Dialog]s.
      */
-    private val layers = mutableListOf<DesktopComposeSceneLayer>()
+    private val layers = mutableObjectListOf<DesktopComposeSceneLayer>()
 
     private var _windowContainer: JLayeredPane? = null
     var windowContainer: JLayeredPane
@@ -214,7 +216,7 @@ internal class ComposeContainer(
 
         _windowContainer?.removeComponentListener(windowContainerComponentListener)
         mediator.dispose()
-        layers.fastForEach(DesktopComposeSceneLayer::close)
+        layers.forEach(DesktopComposeSceneLayer::close)
     }
 
     override fun windowGainedFocus(event: WindowEvent) = onWindowFocusChanged()
@@ -243,7 +245,7 @@ internal class ComposeContainer(
         isFocused = isNowFocused
         windowContext.setWindowFocused(isNowFocused)
         mediator.onWindowFocusChanged()
-        layers.fastForEach(DesktopComposeSceneLayer::onWindowFocusChanged)
+        layers.forEach(DesktopComposeSceneLayer::onWindowFocusChanged)
         updateLifecycleState()
     }
 
@@ -251,7 +253,7 @@ internal class ComposeContainer(
         if (!container.isDisplayable) return
 
         mediator.onComponentPositionChanged()
-        layers.fastForEach(DesktopComposeSceneLayer::onWindowContainerPositionChanged)
+        layers.forEach(DesktopComposeSceneLayer::onWindowContainerPositionChanged)
     }
 
     private fun onWindowContainerSizeChanged() {
@@ -259,7 +261,7 @@ internal class ComposeContainer(
 
         windowContext.setContainerSizeFromComponent(windowContainer)
         mediator.onContainerSizeChanged()
-        layers.fastForEach(DesktopComposeSceneLayer::onWindowContainerSizeChanged)
+        layers.forEach(DesktopComposeSceneLayer::onWindowContainerSizeChanged)
 
         // Sometimes Swing displays interop views in incorrect order after resizing,
         // so we need to force re-validate it.
@@ -277,7 +279,7 @@ internal class ComposeContainer(
      * Callback to let layers draw overlay on main [mediator].
      */
     private fun onRenderOverlay(canvas: Canvas, width: Int, height: Int) {
-        layers.fastForEach {
+        layers.forEach {
             it.onRenderOverlay(canvas, width, height, windowContext.isWindowTransparent)
         }
     }
@@ -438,7 +440,7 @@ internal class ComposeContainer(
      */
     fun layersAbove(layer: DesktopComposeSceneLayer) = sequence {
         var isAbove = false
-        layers.fastForEach { i ->
+        layers.forEach { i ->
             if (i == layer) {
                 isAbove = true
             } else if (isAbove) {
@@ -454,7 +456,7 @@ internal class ComposeContainer(
      * @param layer the layer that triggered the change
      */
     private fun onLayersChange(layer: DesktopComposeSceneLayer) {
-        layers.fastForEach {
+        layers.forEach {
             if (it != layer) {
                 it.onLayersChange()
             }
@@ -524,7 +526,7 @@ internal class ComposeContainer(
      */
     private inner class DetectEventOutsideLayer : AwtEventListener {
         override fun onMouseEvent(event: AwtMouseEvent): Boolean {
-            layers.fastForEachReversed {
+            layers.forEachReversed {
                 it.onMouseEventOutside(event)
                 if (it.focusable) {
                     return false
@@ -535,7 +537,7 @@ internal class ComposeContainer(
     }
 
     private inner class FocusableLayerEventFilter : AwtEventFilter() {
-        private val noFocusableLayers get() = layers.fastAll { !it.focusable }
+        private val noFocusableLayers get() = layers.all { !it.focusable }
 
         override fun shouldSendMouseEvent(event: AwtMouseEvent): Boolean = noFocusableLayers
         override fun shouldSendKeyEvent(event: AwtKeyEvent): Boolean = noFocusableLayers

@@ -71,9 +71,7 @@ internal class UIKitInteropContainer(
         requestRedraw = {}
         val lastTransaction = retrieveTransaction()
 
-        for (action in lastTransaction.actions) {
-            action.invoke()
-        }
+        lastTransaction.actions.forEach { action -> action.invoke() }
 
         // snapshotObserver.stop() is not needed, because unplaceInteropView will be called
         // for all interop views and it will stop observing when the last one is removed.

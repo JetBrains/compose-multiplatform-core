@@ -20,6 +20,8 @@
 
 package androidx.compose.ui.text.platform
 
+import androidx.collection.ObjectList
+import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -374,7 +376,7 @@ internal class ParagraphBuilder(
 ) {
     private var defaultStyle = ComputedStyle.Immutable()
     private lateinit var initialStyle: SpanStyle
-    private lateinit var ops: List<Op>
+    private lateinit var ops: ObjectList<Op>
 
     private fun prepareDefaultStyle() {
         initialStyle = textStyle.toSpanStyle().copyWithDefaultFontSize(
@@ -433,7 +435,7 @@ internal class ParagraphBuilder(
 
         var addText = true
 
-        ops.fastForEach { op ->
+        ops.forEach { op ->
             if (addText && pos < op.position) {
                 pb.addText(text.subSequence(pos, op.position).toString())
             }
@@ -531,8 +533,8 @@ internal class ParagraphBuilder(
     private fun makeOps(
         annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
         placeholders: List<AnnotatedString.Range<Placeholder>>
-    ): List<Op> {
-        val cuts = mutableListOf<Cut>()
+    ): ObjectList<Op> {
+        val cuts = mutableObjectListOf<Cut>()
         annotations.fastForEach { annotation ->
             // TODO https://youtrack.jetbrains.com/issue/CMP-7151
             if (annotation.item !is SpanStyle) return@fastForEach
@@ -546,10 +548,10 @@ internal class ParagraphBuilder(
             cuts.add(Cut.EndPlaceholder(placeholder.end))
         }
 
-        val ops = mutableListOf<Op>(Op.StyleAdd(0, defaultStyle.toMutable()))
-        cuts.sortBy { it.position }
-        val activeStyles = mutableListOf(initialStyle)
-        cuts.fastForEach { cut ->
+        val ops = mutableObjectListOf<Op>(Op.StyleAdd(0, defaultStyle.toMutable()))
+        cuts.asMutableList().sortBy { it.position }
+        val activeStyles = mutableObjectListOf(initialStyle)
+        cuts.forEach { cut ->
             when (cut) {
                 is Cut.StyleAdd -> {
                     activeStyles.add(cut.style)
@@ -592,7 +594,7 @@ internal class ParagraphBuilder(
         return ops
     }
 
-    private fun mergeStyles(activeStyles: List<SpanStyle>): ComputedStyle.Mutable {
+    private fun mergeStyles(activeStyles: ObjectList<SpanStyle>): ComputedStyle.Mutable {
         check(activeStyles.isNotEmpty()) { "There should be at least one active style" }
         val style = ComputedStyle(
             density = density,
@@ -603,14 +605,15 @@ internal class ParagraphBuilder(
             lineHeight = textStyle.lineHeight,
             lineHeightStyle = textStyle.lineHeightStyle
         )
-        for (i in 1 until activeStyles.size) {
-            style.merge(density, activeStyles[i])
+        activeStyles.forEachIndexed { index, spanStyle ->
+            if (index == 0) return@forEachIndexed
+            style.merge(density, spanStyle)
         }
         return style
     }
 
-    private fun previousStyleAddAtTheSamePosition(position: Int, ops: List<Op>): Op.StyleAdd? {
-        ops.fastForEachReversed { prevOp ->
+    private fun previousStyleAddAtTheSamePosition(position: Int, ops: ObjectList<Op>): Op.StyleAdd? {
+        ops.forEachReversed { prevOp ->
             if (prevOp.position < position) return null
             if (prevOp is Op.StyleAdd) return prevOp
         }

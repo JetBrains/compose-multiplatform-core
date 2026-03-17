@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.window
 
+import androidx.collection.ObjectList
+import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.viewinterop.UIKitInteropAction
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import kotlin.test.Test
@@ -29,13 +31,13 @@ class InteropTransactionQueueTest {
 
     // Non-empty transaction: recorded via its action, takes the normal scheduling path.
     private fun transaction(name: String) = object : UIKitInteropTransaction {
-        override val actions: List<UIKitInteropAction> = listOf { performed.add(name) }
+        override val actions: ObjectList<UIKitInteropAction> = mutableObjectListOf { performed.add(name) }
         override val isInteropActive: Boolean = false
     }
 
     // Empty transaction: no actions, triggers the actions.isEmpty() fast-path in scheduleTransaction.
     private fun emptyTransaction() = object : UIKitInteropTransaction {
-        override val actions: List<UIKitInteropAction> = emptyList()
+        override val actions: ObjectList<UIKitInteropAction> = mutableObjectListOf()
         override val isInteropActive: Boolean = false
     }
 

@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.integrations
 
+import androidx.collection.ObjectList
+import androidx.collection.objectListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
@@ -99,7 +101,7 @@ class ComposeSceneMediatorTest {
                 metalLayer = CMPMetalLayer(),
                 retrieveInteropTransaction = {
                     object : UIKitInteropTransaction {
-                        override val actions: List<UIKitInteropAction> = emptyList()
+                        override val actions: ObjectList<UIKitInteropAction> = objectListOf()
                         override val isInteropActive: Boolean = false
                     }
                 },

@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.uikit.utils.CMPDrawable
@@ -261,7 +262,7 @@ internal class SurfaceMetalRedrawer(
         retrieveInteropTransaction = {
             object : UIKitInteropTransaction {
                 override val isInteropActive: Boolean = false
-                override val actions = emptyList<UIKitInteropAction>()
+                override val actions = mutableObjectListOf<UIKitInteropAction>()
             }
         }
 

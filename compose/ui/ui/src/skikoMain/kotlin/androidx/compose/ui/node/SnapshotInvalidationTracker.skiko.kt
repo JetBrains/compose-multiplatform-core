@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.collection.mutableObjectListOf
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.makeSynchronizedObject
 import androidx.compose.ui.internal.getCurrentThreadId
@@ -107,8 +108,8 @@ private class CommandList(
     private var onNewCommand: () -> Unit
 ) {
     private val lock = makeSynchronizedObject()
-    private val list = mutableListOf<() -> Unit>()
-    private val listCopy = mutableListOf<() -> Unit>()
+    private val list = mutableObjectListOf<() -> Unit>()
+    private val listCopy = mutableObjectListOf<() -> Unit>()
 
     /**
      * true if there are any commands added.
@@ -142,7 +143,7 @@ private class CommandList(
             listCopy.addAll(list)
             list.clear()
         }
-        listCopy.fastForEach { it.invoke() }
+        listCopy.forEach { it.invoke() }
         listCopy.clear()
     }
 }

@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.trace
@@ -190,7 +191,7 @@ internal class LegacyMetalRedrawer(
         retrieveInteropTransaction = {
             object : UIKitInteropTransaction {
                 override val isInteropActive: Boolean = false
-                override val actions = emptyList<UIKitInteropAction>()
+                override val actions = mutableObjectListOf<UIKitInteropAction>()
             }
         }
 

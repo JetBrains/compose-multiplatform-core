@@ -17,7 +17,9 @@
 package androidx.compose.ui.node
 
 import androidx.collection.MutableIntObjectMap
+import androidx.collection.MutableObjectList
 import androidx.collection.mutableIntObjectMapOf
+import androidx.collection.mutableObjectListOf
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -835,11 +837,11 @@ internal class RootNodeOwner(
 
     private inner class OwnedLayerManagerImpl : OwnedLayerManager {
         // OwnedLayers that are dirty and should be redrawn.
-        private val dirtyLayers = mutableListOf<OwnedLayer>()
+        private val dirtyLayers = mutableObjectListOf<OwnedLayer>()
 
         // OwnerLayers that invalidated themselves during their last draw. They will be redrawn
         // during the next AndroidComposeView dispatchDraw pass.
-        private var postponedDirtyLayers: MutableList<OwnedLayer>? = null
+        private var postponedDirtyLayers: MutableObjectList<OwnedLayer>? = null
 
         private var isDrawingContent = false
 
@@ -890,7 +892,7 @@ internal class RootNodeOwner(
             } else {
                 val postponed =
                     postponedDirtyLayers
-                        ?: mutableListOf<OwnedLayer>().also { postponedDirtyLayers = it }
+                        ?: mutableObjectListOf<OwnedLayer>().also { postponedDirtyLayers = it }
                 postponed += layer
             }
         }
@@ -925,8 +927,7 @@ internal class RootNodeOwner(
             // So, we applying it before drawing to reflect the changes from previous phases.
             // Changes that requires another round of invalidation will be scheduled to next frame.
             if (dirtyLayers.isNotEmpty()) {
-                for (i in 0 until dirtyLayers.size) {
-                    val layer = dirtyLayers[i]
+               dirtyLayers.forEach { layer ->
                     layer.updateDisplayList()
                 }
             }
