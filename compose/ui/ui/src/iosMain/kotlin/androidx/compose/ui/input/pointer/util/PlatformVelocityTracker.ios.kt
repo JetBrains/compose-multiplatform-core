@@ -26,7 +26,8 @@ import androidx.compose.ui.util.fastForEach
 internal actual fun PlatformVelocityTracker(): PlatformVelocityTracker = UIKitVelocityTracker()
 
 private const val AssumePointerMoveStoppedMilliseconds: Int = 40
-private const val MinimumGestureDurationMilliseconds: Int = 50
+private const val MinimumGestureDurationSincePointerStrop: Int = 50
+private const val MinimumGestureDurationMilliseconds: Int = 100
 
 private class UIKitVelocityTracker: PlatformVelocityTracker {
     private val xVelocityTracker = PointerVelocityTracker1D(preventOppositeVelocity = true)
@@ -60,8 +61,8 @@ private class UIKitVelocityTracker: PlatformVelocityTracker {
         }
 
         if (event.changedToUpIgnoreConsumed() &&
-            event.uptimeMillis - lastPointerStartEventTimeStamp > MinimumGestureDurationMilliseconds * 2 &&
-            event.uptimeMillis - lastPointerStopEventTimeStamp < MinimumGestureDurationMilliseconds
+            event.uptimeMillis - lastPointerStartEventTimeStamp > MinimumGestureDurationMilliseconds &&
+            event.uptimeMillis - lastPointerStopEventTimeStamp < MinimumGestureDurationSincePointerStrop
         ) {
             resetTracking()
         }
