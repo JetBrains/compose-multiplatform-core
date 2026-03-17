@@ -21,6 +21,7 @@ import androidx.compose.runtime.compositionLocalWithHostDefaultOf
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.lifecycle.ViewModelStoreOwner
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -49,20 +50,25 @@ class HostDefaultProviderTest {
     interface TestRegistry
     val TestRegistryKey = object : HostDefaultKey<TestRegistry?> {}
 
+    //Desktop: https://youtrack.jetbrains.com/issue/KT-85051
+    //iOS: Child process terminated with signal 11: Segmentation fault
+    @Ignore
     @Test
     fun testHostDefaultProviderError() = runSkikoComposeUiTest {
         val LocalTestRegistry = compositionLocalWithHostDefaultOf(TestRegistryKey)
 
+        var registry: TestRegistry? = null
         var exception: Exception? = null
         try {
             setContent {
-                val registry = LocalTestRegistry.current
+                registry = LocalTestRegistry.current
             }
             awaitIdle()
         } catch (e: Exception) {
             exception = e
         }
 
+        assertNull(registry)
         assertIs<ClassCastException>(exception)
         assertTrue(
             exception.message!!.contains(
