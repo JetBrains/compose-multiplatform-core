@@ -138,7 +138,7 @@ internal abstract class NativeInputEventsProcessor(
         val editCommands = when (inputExt.inputType) {
             "deleteContentBackward" -> buildList {
                 // this means "deleteContentBackward" happened because of an earlier "keydown" event, so skipping it here
-                if (lastProcessedKeydown.isBackspace()) return@buildList
+                if (lastProcessedKeydown?.isBackspace() == true) return@buildList
 
                 if (!currentTextFieldValue.selection.collapsed) {
                     // Likely it's on mobile, where the Backspace has Unidentified key value.
@@ -164,7 +164,7 @@ internal abstract class NativeInputEventsProcessor(
             }
 
             "deleteWordBackward" -> buildList {
-                if (!lastProcessedKeydown.isBackspace()) return@buildList
+                if (lastProcessedKeydown?.isBackspace() != true) return@buildList
 
                 // This would mean event was triggered by long press on mobile device (iOS)
                 if (lastProcessedKeydown?.altKey == false) {
@@ -223,4 +223,4 @@ internal abstract class NativeInputEventsProcessor(
     internal fun getCollectedEvents() = collectedEvents
 }
 
-private fun KeyboardEvent?.isBackspace(): Boolean = this?.key == "Backspace"
+private fun KeyboardEvent.isBackspace(): Boolean = key == "Backspace"
