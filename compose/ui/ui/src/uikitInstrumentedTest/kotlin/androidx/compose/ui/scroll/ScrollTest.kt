@@ -1070,8 +1070,8 @@ internal class ScrollTest {
         val scrollAmount = 200.dp
         repeat(3) {
             touchDown(screenSize.center)
-                .dragBy(dy = -scrollAmount, duration = 300.milliseconds)
-                .wait(200.milliseconds)
+                .dragBy(dy = -scrollAmount)
+                .wait(300.milliseconds)
                 .up()
             modalVC.waitForIdle()
         }
