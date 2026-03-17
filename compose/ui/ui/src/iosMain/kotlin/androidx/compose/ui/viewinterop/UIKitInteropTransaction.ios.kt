@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.viewinterop
 
+import androidx.collection.ObjectList
+import androidx.collection.mutableObjectListOf
+import androidx.compose.ui.internal.flatMap
 import androidx.compose.ui.util.fastForEach
 import platform.QuartzCore.CATransaction
 
@@ -31,11 +34,11 @@ internal typealias UIKitInteropAction = () -> Unit
  * [isInteropActive] defines if rendering strategy should be changed along with this transaction.
  */
 internal interface UIKitInteropTransaction {
-    val actions: List<UIKitInteropAction>
+    val actions: ObjectList<UIKitInteropAction>
     val isInteropActive: Boolean
 
     fun performTransaction() {
-        actions.fastForEach {
+        actions.forEach {
             it.invoke()
         }
     }
@@ -47,7 +50,7 @@ internal interface UIKitInteropTransaction {
          * @param transactions a list of transactions to be merged
          */
         fun merge(
-            transactions: List<UIKitInteropTransaction>
+            transactions: ObjectList<UIKitInteropTransaction>
         ): UIKitInteropTransaction =
             object : UIKitInteropTransaction {
                 override val actions = transactions.flatMap { it.actions }
@@ -65,7 +68,7 @@ internal interface UIKitInteropTransaction {
 internal class UIKitInteropMutableTransaction(
     override var isInteropActive: Boolean
 ) : UIKitInteropTransaction {
-    private val _actions = mutableListOf<UIKitInteropAction>()
+    private val _actions = mutableObjectListOf<UIKitInteropAction>()
 
     override val actions
         get() = _actions

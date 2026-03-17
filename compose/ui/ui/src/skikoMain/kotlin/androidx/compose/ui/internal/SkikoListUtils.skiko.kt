@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.internal
 
+import androidx.collection.MutableObjectList
+import androidx.collection.ObjectList
+import androidx.collection.objectListOf
 import androidx.compose.ui.util.fastForEachIndexed
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
@@ -53,4 +56,28 @@ internal inline fun <T> List<T>.fastIndexOfFirst(operation: (acc: T) -> Boolean)
     contract { callsInPlace(operation) }
     fastForEachIndexed { index, t -> if (operation(t)) return index }
     return -1
+}
+
+/** Returns `true` if all of the elements give a `true` return value for [predicate]. */
+internal inline fun <T> ObjectList<T>.all(predicate: (element: T) -> Boolean): Boolean {
+    forEach {
+        if (!predicate(it)) {
+            return false
+        }
+    }
+    return true
+}
+
+/** Returns a list containing the results of applying the given [transform] function to each element in the original list. */
+internal inline fun <T, R> ObjectList<T>.map(transform: (element: T) -> R): ObjectList<R> {
+    val result = MutableObjectList<R>(size)
+    forEach { result.add(transform(it)) }
+    return result
+}
+
+/** Returns a list containing the results of applying the given [transform] function to each element in the original list. */
+internal inline fun <T, R> ObjectList<T>.flatMap(transform: (element: T) -> ObjectList<R>): ObjectList<R> {
+    val result = MutableObjectList<R>()
+    forEach { result.addAll(transform(it)) }
+    return result
 }

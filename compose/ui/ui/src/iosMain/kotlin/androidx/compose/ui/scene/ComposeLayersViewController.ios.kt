@@ -16,8 +16,13 @@
 
 package androidx.compose.ui.scene
 
+import androidx.collection.MutableObjectList
+import androidx.collection.ObjectList
+import androidx.collection.mutableObjectListOf
+import androidx.collection.objectListOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.internal.map
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
@@ -136,23 +141,37 @@ internal class ComposeLayersViewController(
             }
         }
 
-        val animations = listOf(
+        val animations = MutableObjectList<suspend () -> Unit>(layers.size + 1)
+        animations.add(
             windowContext.prepareAndGetSizeTransitionAnimation(
                 initialDpSize = initialSize,
                 withProgress = animationProgress
             )
-        ) + layers.map {
-            it.prepareAndGetSizeTransitionAnimation(animationProgress)
+        )
+        layers.forEach { layer ->
+            animations.add(layer.prepareAndGetSizeTransitionAnimation(animationProgress))
         }
 
         composeContainerView.animateSizeTransition(sizeTransitionScope) {
             animations.map { animation ->
                 sizeTransitionScope.launch { animation.invoke() }
-            }.joinAll()
+            }.also { mappedAnimations ->
+                mappedAnimations.forEach { job ->
+                    job.join()
+                }
+            }
         }
     }
 
-    fun withLayers(block: (List<UIKitComposeSceneLayer>) -> Unit) = layersCache.withCopy(block)
+    fun withLayers(block: (ObjectList<UIKitComposeSceneLayer>) -> Unit)  {
+        val list = if (layersCache.isEmpty()) layersCache else mutableObjectListOf()
+        list.addAll(layers)
+        try {
+            block(list)
+        } finally {
+            list.clear()
+        }
+    }
 
     override fun loadView() {
         this.view = ComposeLayersView()
@@ -161,16 +180,14 @@ internal class ComposeLayersViewController(
 
     val hasInvalidations: Boolean get() = this.layers.any { it.hasInvalidations }
 
-    private val layers = mutableListOf<UIKitComposeSceneLayer>()
+    private val layers = mutableObjectListOf<UIKitComposeSceneLayer>()
 
-    private val layersCache = CopiedList {
-        it.addAll(this.layers)
-    }
+    private val layersCache = mutableObjectListOf<UIKitComposeSceneLayer>()
 
     /**
      * Transactions of the layers that were imperatively removed before their changes were applied.
      */
-    private var removedLayersTransactions = mutableListOf<UIKitInteropTransaction>()
+    private var removedLayersTransactions = mutableObjectListOf<UIKitInteropTransaction>()
 
     var containerWindow: UIWindow? by windowContext::window
 
@@ -205,7 +222,7 @@ internal class ComposeLayersViewController(
         // `dispose` is called instead of `close`, because `close` is also used imperatively
         // to remove the layer from the array based on user interaction.
         while (this.layers.isNotEmpty()) {
-            val layer = this.layers.removeLast()
+            val layer = this.layers.removeAt(layers.lastIndex)
 
             if (hasViewAppeared) {
                 layer.sceneWillDisappear()
@@ -250,7 +267,7 @@ internal class ComposeLayersViewController(
             // It was the last layer, remove the view and execute the actions immediately
             hide()
 
-            transaction.actions.fastForEach { it.invoke() }
+            transaction.actions.forEach { it.invoke() }
         } else {
             // It wasn't the last layer, pending transactions should be added to the list
             removedLayersTransactions.add(transaction)
@@ -264,7 +281,7 @@ internal class ComposeLayersViewController(
         super.viewDidAppear(animated)
 
         hasViewAppeared = true
-        this.layers.fastForEach {
+        this.layers.forEach {
             it.sceneDidAppear()
         }
     }
@@ -273,21 +290,18 @@ internal class ComposeLayersViewController(
         super.viewWillDisappear(animated)
 
         hasViewAppeared = false
-        this.layers.fastForEach {
+        this.layers.forEach {
             it.sceneWillDisappear()
         }
     }
 
     private val hasInteropViews: Boolean
         get() {
-            layersCache.withCopy { layers ->
-                layers.fastForEach {
-                    if (it.hasInteropViews) {
-                        return true
-                    }
-                }
+            var hasInteropViews = false
+            withLayers { layers ->
+                hasInteropViews = layers.any { it.hasInteropViews }
             }
-            return false
+            return hasInteropViews
         }
 
     /**
@@ -296,12 +310,15 @@ internal class ComposeLayersViewController(
      * present in [layers] anymore.
      */
     private fun retrieveAndMergeInteropTransactions(): UIKitInteropTransaction {
-        val removedLayersTransactionsCopy = removedLayersTransactions.toList()
+        val removedLayersTransactionsCopy = removedLayersTransactions
         removedLayersTransactions.clear()
 
-        val transactions = this.layers.map {
-            it.retrieveInteropTransaction()
-        } + removedLayersTransactionsCopy
+        val transactions = MutableObjectList<UIKitInteropTransaction>(this.layers.size + removedLayersTransactionsCopy.size)
+        layers.forEach {
+            transactions.add(it.retrieveInteropTransaction())
+        }
+        transactions.addAll(removedLayersTransactionsCopy)
+
         return UIKitInteropTransaction.merge(
             transactions = transactions
         )
@@ -312,10 +329,10 @@ internal class ComposeLayersViewController(
 
         // Some layers may be removed during rendering, because recomposition will happen in the
         // process, so we need to make a temporary copy of the list
-        layersCache.withCopy { layers ->
-            layers.fastForEach {
+        withLayers { layers ->
+            layers.forEach {
                 it.render(composeCanvas, nanoTime)
-            }
+             }
         }
     }
 }

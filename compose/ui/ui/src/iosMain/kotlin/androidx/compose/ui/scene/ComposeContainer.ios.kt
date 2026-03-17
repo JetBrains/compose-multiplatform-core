@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.scene
 
+import androidx.collection.mutableObjectListOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
@@ -202,7 +203,7 @@ internal class ComposeContainer(
         val metalView = MetalView(
             retrieveInteropTransaction = {
                 mediator?.retrieveInteropTransaction() ?: object : UIKitInteropTransaction {
-                    override val actions = emptyList<UIKitInteropAction>()
+                    override val actions = mutableObjectListOf<UIKitInteropAction>()
                     override val isInteropActive = false
                 }
             },
@@ -350,7 +351,7 @@ internal class ComposeContainer(
     private fun onAccessibilityChanged() {
         var isAccessibilityEnabled = true
         layersHolder?.layersViewController?.withLayers {
-            it.fastForEachReversed { layer ->
+            it.forEachReversed { layer ->
                 layer.isAccessibilityEnabled = isAccessibilityEnabled
                 isAccessibilityEnabled = isAccessibilityEnabled && !layer.focusable
             }

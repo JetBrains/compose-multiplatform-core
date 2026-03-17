@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.scene
 
+import androidx.collection.MutableObjectList
+import androidx.collection.mutableObjectListOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
@@ -155,31 +157,40 @@ private class CanvasLayersComposeSceneImpl(
 
     override val rootDragAndDropNode = ComposeSceneDragAndDropNode { focusedOwner.dragAndDropOwner }
 
-    private val layers = mutableListOf<AttachedComposeSceneLayer>()
-    private val _layersCopyCache = CopiedList {
-        it.addAll(layers)
+    private val layers = mutableObjectListOf<AttachedComposeSceneLayer>()
+    private val layersTmp = mutableObjectListOf<AttachedComposeSceneLayer>()
+    private val ownersTmp = mutableObjectListOf<RootNodeOwner>()
+
+    private inline fun forEachLayer(action: (AttachedComposeSceneLayer) -> Unit) {
+        val list = if (layersTmp.isEmpty()) layersTmp else mutableObjectListOf()
+        list.addAll(layers)
+        try {
+            list.forEach(action)
+        } finally {
+            list.clear()
+        }
     }
-    private val _ownersCopyCache = CopiedList {
-        it.add(mainOwner)
-        layers.fastForEach { layer ->
-            it.add(layer.owner)
+
+    private inline fun forEachLayerReversed(action: (AttachedComposeSceneLayer) -> Unit) {
+        val list = if (layersTmp.isEmpty()) layersTmp else mutableObjectListOf()
+        list.addAll(layers)
+        try {
+            list.forEachReversed(action)
+        } finally {
+            list.clear()
         }
     }
 
-    private inline fun forEachLayer(action: (AttachedComposeSceneLayer) -> Unit) =
-        _layersCopyCache.withCopy {
-            it.fastForEach(action)
+    private inline fun forEachOwner(action: (RootNodeOwner) -> Unit) {
+        val list = if (ownersTmp.isEmpty()) ownersTmp else mutableObjectListOf()
+        list.add(mainOwner)
+        layers.forEach { list.add(it.owner) }
+        try {
+            list.forEach(action)
+        } finally {
+            list.clear()
         }
-
-    private inline fun forEachLayerReversed(action: (AttachedComposeSceneLayer) -> Unit) =
-        _layersCopyCache.withCopy {
-            it.fastForEachReversed(action)
-        }
-
-    private inline fun forEachOwner(action: (RootNodeOwner) -> Unit) =
-        _ownersCopyCache.withCopy {
-            it.fastForEach(action)
-        }
+    }
 
     private var focusedLayer: AttachedComposeSceneLayer? = null
     private val focusedOwner
@@ -292,7 +303,7 @@ private class CanvasLayersComposeSceneImpl(
      */
     private fun hoveredOwner(event: PointerInputEvent): RootNodeOwner {
         val position = event.pointers.first().position
-        return layers.fastLastOrNull { it.contains(position) }?.owner ?: mainOwner
+        return layers.lastOrNull { it.contains(position) }?.owner ?: mainOwner
     }
 
     /**
@@ -305,7 +316,7 @@ private class CanvasLayersComposeSceneImpl(
         if (owner == mainOwner) {
             return false
         }
-        layers.fastForEach { layer ->
+        layers.forEach { layer ->
             if (layer == focusedLayer) {
                 return true
             }
@@ -491,7 +502,7 @@ private class CanvasLayersComposeSceneImpl(
 
     private fun releaseFocus(layer: AttachedComposeSceneLayer) {
         if (layer == focusedLayer) {
-            focusedLayer = layers.fastLastOrNull { it.focusable }
+            focusedLayer = layers.lastOrNull { it.focusable }
 
             // Enter event to new focusedOwner will be sent via synthetic event on next frame
         }
@@ -647,20 +658,3 @@ private val PointerInputEvent.isGestureInProgress get() = pointers.fastAny { it.
 
 private fun PointerInputEvent.isMouseOrSingleTouch() =
     button != null || pointers.size == 1
-
-internal class CopiedList<T>(
-    private val populate: (MutableList<T>) -> Unit
-) : MutableList<T> by mutableListOf() {
-    inline fun withCopy(
-        block: (List<T>) -> Unit
-    ) {
-        // In case of recursive calls, allocate new list
-        val copy = if (isEmpty()) this else mutableListOf()
-        populate(copy)
-        try {
-            block(copy)
-        } finally {
-            copy.clear()
-        }
-    }
-}
