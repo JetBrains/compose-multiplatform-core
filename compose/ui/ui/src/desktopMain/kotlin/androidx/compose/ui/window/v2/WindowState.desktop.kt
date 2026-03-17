@@ -112,6 +112,7 @@ fun WindowState(
  * A state object that can be hoisted to control and observe window attributes
  * (size/position/state).
  *
+ * @param screen the initial value for [WindowState.screen]
  * @param placement the initial value for [WindowState.placement]
  * @param isMinimized the initial value for [WindowState.isMinimized]
  * @param bounds the initial value for [WindowState.bounds]
@@ -135,7 +136,8 @@ class WindowState internal constructor(
     }
 
     /**
-     * The screen with which the window is currently associated.
+     * The screen with which the window is currently associated; `null` if the window is not yet
+     * visible.
      */
     var screen: Screen? by mutableStateOf(screen)
         internal set
@@ -147,7 +149,7 @@ class WindowState internal constructor(
     }
 
     /**
-     * Describes how the window is placed on the screen.
+     * The placement of the window on the screen; `null` if the window is not yet visible.
      */
     var placement: WindowPlacement? by mutableStateOf(placement)
         internal set
@@ -159,7 +161,7 @@ class WindowState internal constructor(
     }
 
     /**
-     * Whether the window is minimized.
+     * Whether the window is minimized; `null` if the window is not yet visible.
      */
     var isMinimized: Boolean? by mutableStateOf(isMinimized)
         internal set
@@ -171,7 +173,7 @@ class WindowState internal constructor(
     }
 
     /**
-     * The current bounds of the window; `null` if unknown (e.g., the window is not yet visible).
+     * The current bounds of the window; `null` if the window is not yet visible.
      */
     var bounds: DpRect? by mutableStateOf(bounds)
         internal set
