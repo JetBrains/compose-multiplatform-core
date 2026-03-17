@@ -62,7 +62,7 @@ private class UIKitVelocityTracker: PlatformVelocityTracker {
 
         if (event.changedToUpIgnoreConsumed() &&
             event.uptimeMillis - lastPointerStartEventTimeStamp > MinimumGestureDurationMilliseconds &&
-            event.uptimeMillis - lastPointerStopEventTimeStamp < MinimumGestureDurationSincePointerStrop
+            event.uptimeMillis - lastPointerStopEventTimeStamp < MinimumGestureDurationSincePointerStop
         ) {
             resetTracking()
         }
