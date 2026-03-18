@@ -1063,6 +1063,7 @@ internal class ScrollTest {
             presented = true
         }
 
+        delay(100)
         waitUntil("Modal view controller should be presented") { presented }
         modalVC.waitForIdle()
 
@@ -1070,8 +1071,8 @@ internal class ScrollTest {
         val scrollAmount = 200.dp
         repeat(3) {
             touchDown(screenSize.center)
-                .dragBy(dy = -scrollAmount)
-                .wait(300.milliseconds)
+                .dragBy(dy = -scrollAmount, duration = 300.milliseconds)
+                .wait(200.milliseconds)
                 .up()
             modalVC.waitForIdle()
         }
