@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation
+package androidx.compose.ui.awt
 
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.ImageComposeScene
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.util.concurrent.DelayQueue
 import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
+import javax.swing.Timer
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.swing.Swing
+import org.jetbrains.annotations.NonNls
 
 class SwingTimersAreDisposed {
 
@@ -42,13 +38,10 @@ class SwingTimersAreDisposed {
         runBlocking(Dispatchers.Swing) {
             val composeScene = ImageComposeScene(600, 600)
             try {
-                var offset by mutableStateOf(0)
                 composeScene.setContent {
-                    BasicText("X", Modifier.offset(x = offset.dp))
+                    BasicText("")
                 }
                 composeScene.render(0L)
-                offset = 100
-                composeScene.render(8L)
             } finally {
                 composeScene.close()
             }
@@ -67,7 +60,7 @@ class SwingTimersAreDisposed {
             val delay = timer.getDelay(TimeUnit.MILLISECONDS)
             var text = "(delayed for ${delay}ms)"
             val getTimer = getDeclaredMethod(timer.javaClass, "getTimer")!!
-            val swingTimer = getTimer.invoke(timer) as javax.swing.Timer
+            val swingTimer = getTimer.invoke(timer) as Timer
             text = "Timer (listeners: ${listOf(*swingTimer.actionListeners)}) $text"
             try {
                 throw AssertionError("Not disposed javax.swing.Timer: $text; queue: $timerQueue")
@@ -136,7 +129,7 @@ private fun findFieldInHierarchy(
 }
 
 
-private fun findAssignableField(clazz: Class<*>, fieldType: Class<*>?, fieldName: @org.jetbrains.annotations.NonNls String): Field {
+private fun findAssignableField(clazz: Class<*>, fieldType: Class<*>?, fieldName: @NonNls String): Field {
     val result = findFieldInHierarchy(clazz, Predicate { field: Field? -> fieldName == field!!.name && (fieldType == null || fieldType.isAssignableFrom(field.type)) })
     if (result != null) {
         return result
