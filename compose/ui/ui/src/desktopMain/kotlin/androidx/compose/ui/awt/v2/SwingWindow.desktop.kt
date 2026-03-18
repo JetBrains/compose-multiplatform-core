@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.size
 import androidx.compose.ui.util.ComponentUpdater
 import androidx.compose.ui.util.componentListenerRef
 import androidx.compose.ui.util.setIcon
@@ -46,7 +45,6 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.roundToDimension
 import androidx.compose.ui.window.resizerThickness
 import androidx.compose.ui.window.toDpSize
 import androidx.compose.ui.window.v2.Screen
@@ -213,7 +211,13 @@ fun SwingWindow(
         },
         update = { window ->
             if (!window.isDisplayable) {
+                window.initializePlacement(currentState)
                 window.initializeBounds(currentState)
+
+                // Need to make the window displayable, to make awt.SwingWindow render the first
+                // frame before the window is visible
+                window.preferredSize = window.size
+                window.pack()
             }
 
             updater.update {
@@ -264,18 +268,22 @@ private fun WindowScreenProvider.getInitialScreen(): Screen {
     }
 }
 
+
+private fun ComposeWindow.initializePlacement(state: WindowState) {
+    val placementRequest = state.placementRequests.tryReceive().getOrNull()
+    val currentPlacement = state.placement
+
+    placement = placementRequest ?: currentPlacement ?: WindowPlacement.Floating
+}
+
 private fun ComposeWindow.initializeBounds(state: WindowState) {
     val boundsRequest = state.boundsRequests.tryReceive().getOrNull()
     val currentBounds = state.bounds
 
     // Prioritize requests, then currentBounds
     if ((boundsRequest == null) && (currentBounds != null)) {
-        placement = state.placement ?: WindowPlacement.Floating
         bounds = currentBounds.toAwtRectangleRounded()
     } else {
-        preferredSize = screen().availableBounds.size.roundToDimension()
-        pack()
-
         setBoundsFrom(boundsRequest ?: WindowBoundsProvider.Default)
     }
 }
