@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform.a11y
 
 import androidx.collection.mutableScatterMapOf
+import androidx.collection.mutableScatterSetOf
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -506,7 +507,7 @@ internal class SemanticsOwnerAccessibility(
         /**
          * The set of "live" [SemanticsOwnerAccessibility]s.
          */
-        private val activeInstances = mutableSetOf<SemanticsOwnerAccessibility>()
+        private val activeInstances = mutableScatterSetOf<SemanticsOwnerAccessibility>()
 
         /**
          * The time of the latest accessibility call from the system.
@@ -530,8 +531,9 @@ internal class SemanticsOwnerAccessibility(
          */
         fun notifyInUse() {
             lastUseTimeNanos = System.nanoTime()
-            for (instance in activeInstances) {
+            activeInstances.forEach {instance ->
                 instance.scheduleNodeSyncIfNeeded()
+
             }
         }
 
