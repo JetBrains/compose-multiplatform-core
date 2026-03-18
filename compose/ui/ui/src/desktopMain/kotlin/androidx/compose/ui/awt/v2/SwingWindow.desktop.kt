@@ -175,8 +175,7 @@ fun SwingWindow(
                     this,
                     object : ComponentAdapter() {
                         fun applyStateChanges() {
-                            val bounds = DpRect(x.dp, y.dp, (x + width).dp, (y + height).dp)
-                            currentState.bounds = bounds
+                            currentState.bounds = DpRect(x.dp, y.dp, (x + width).dp, (y + height).dp)
                             if (currentState.screen?.device != graphicsConfiguration.device) {
                                 currentState.screen = Screen(graphicsConfiguration.device)
                             }

@@ -142,6 +142,13 @@ class WindowState internal constructor(
     var screen: Screen? by mutableStateOf(screen)
         internal set
 
+    /**
+     * The screen with which the window is currently associated; throws [IllegalStateException] if
+     * the window is not yet visible.
+     */
+    val requireScreen: Screen
+        get() = screen ?: windowNotVisibleError("requireScreen")
+
     internal val screenRequests = Channel<WindowScreenProvider>(Channel.CONFLATED)
 
     fun setScreen(screenProvider: WindowScreenProvider) {
@@ -153,6 +160,13 @@ class WindowState internal constructor(
      */
     var placement: WindowPlacement? by mutableStateOf(placement)
         internal set
+
+    /**
+     * The placement of the window on the screen; throws [IllegalStateException] if the window is
+     * not yet visible.
+     */
+    val requirePlacement: WindowPlacement
+        get() = placement ?: windowNotVisibleError("placement")
 
     internal val placementRequests = Channel<WindowPlacement>(Channel.CONFLATED)
 
@@ -166,6 +180,13 @@ class WindowState internal constructor(
     var isMinimized: Boolean? by mutableStateOf(isMinimized)
         internal set
 
+    /**
+     * Whether the window is minimized; throws [IllegalStateException] if the window is not yet
+     * visible.
+     */
+    val requireMinimized: Boolean
+        get() = isMinimized ?: windowNotVisibleError("isMinimized")
+
     internal val isMinimizedRequests = Channel<Boolean>(Channel.CONFLATED)
 
     fun setMinimized(value: Boolean) {
@@ -177,6 +198,13 @@ class WindowState internal constructor(
      */
     var bounds: DpRect? by mutableStateOf(bounds)
         internal set
+
+    /**
+     * The current bounds of the window; throws [IllegalStateException] if the window is not yet
+     * visible.
+     */
+    val requireBounds: DpRect
+        get() = bounds ?: windowNotVisibleError("bounds")
 
     internal val boundsRequests = Channel<WindowBoundsProvider>(Channel.CONFLATED)
 
@@ -251,3 +279,6 @@ class WindowState internal constructor(
  * Returns the bounds of the window, as an AWT [Rectangle].
  */
 fun WindowState.awtBounds(): Rectangle? = bounds?.toAwtRectangleRounded()
+
+private fun windowNotVisibleError(propertyName: String): Nothing =
+    throw IllegalStateException("Can't read $propertyName when window is not visible")
