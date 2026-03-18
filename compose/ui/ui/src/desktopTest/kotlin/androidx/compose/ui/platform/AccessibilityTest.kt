@@ -656,7 +656,7 @@ internal class ComposeA11yTestScope(
 
     @Suppress("MemberVisibilityCanBePrivate")
     fun SemanticsNode.fetchAccessible(): ComposeAccessible {
-        for (controller in sceneAccessibility.ownerAccessibilityList) {
+        sceneAccessibility.ownerAccessibilityList.forEach { controller ->
             controller.accessibleByNodeId(id)?.let {
                 return it
             }
