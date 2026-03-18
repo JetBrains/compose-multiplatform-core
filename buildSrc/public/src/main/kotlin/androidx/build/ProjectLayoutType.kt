@@ -39,10 +39,16 @@ enum class ProjectLayoutType {
         }
 
         /** @return `true` if running in a Playground (Github) setup, `false` otherwise. */
-        @Suppress("unused")
         @JvmStatic
         fun isPlayground(project: Project): Boolean {
-            return true
+            return when(ProjectLayoutType.from(project)) {
+                ANDROIDX -> false
+                PLAYGROUND -> true
+
+                // This check is used to determine if prebuilt dependencies are available,
+                // so despite of applying playground gradle plugin, we need to return true here
+                JETBRAINS_FORK -> true
+            }
         }
 
         @JvmStatic

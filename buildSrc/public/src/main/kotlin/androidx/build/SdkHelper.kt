@@ -30,7 +30,10 @@ fun Project.getSdkDependency(): FileTree =
 
 /** Returns the root project's platform-specific SDK path as a file. */
 fun Project.getSdkPath(): File {
-    if (ProjectLayoutType.isPlayground(project)) {
+    if (
+        ProjectLayoutType.from(project) == ProjectLayoutType.PLAYGROUND ||
+            System.getenv("COMPOSE_DESKTOP_GITHUB_BUILD") != null
+    ) {
         // This is not full checkout, use local settings instead.
         // https://developer.android.com/studio/command-line/variables
         // check for local.properties first
@@ -99,9 +102,6 @@ fun Project.getSupportRootFolder(): File {
  * This method assumes that the canonical root project directory is {@code frameworks/support}.
  */
 fun Project.getCheckoutRoot(): File {
-    if (!ProjectLayoutType.isPlayground(project)) {
-        throw IllegalStateException("repo checkout root is not available in playground project layout")
-    }
     return project.getSupportRootFolder().parentFile.parentFile
 }
 

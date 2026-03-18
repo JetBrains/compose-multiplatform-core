@@ -26,6 +26,7 @@ import androidx.build.getDistributionDirectory
 import androidx.build.getKeystore
 import androidx.build.getLibraryClasspath
 import androidx.build.getSupportRootFolder
+import androidx.build.isIsolatedProjectsEnabled
 import androidx.build.metalava.versionMetadataUsage
 import androidx.build.sources.PROJECT_STRUCTURE_METADATA_FILENAME
 import androidx.build.sources.multiplatformUsage
@@ -54,6 +55,7 @@ import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.DocsType
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
+import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.file.ArchiveOperations
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -95,6 +97,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
     lateinit var dependencyClasspath: FileCollection
 
     @get:Inject abstract val archiveOperations: ArchiveOperations
+    @get:Inject abstract val buildFeatures: BuildFeatures
 
     override fun apply(project: Project) {
         val docsType = project.name.removePrefix("docs-")
@@ -102,8 +105,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             when (plugin) {
                 is LibraryPlugin -> {
                     val libraryExtension = project.extensions.getByType<LibraryExtension>()
-                    libraryExtension.compileSdk =
-                        project.defaultAndroidConfig.latestStableCompileSdk
+                    libraryExtension.compileSdk {
+                        version = release(project.defaultAndroidConfig.latestStableCompileSdk)
+                    }
                     libraryExtension.buildToolsVersion =
                         project.defaultAndroidConfig.buildToolsVersion
 

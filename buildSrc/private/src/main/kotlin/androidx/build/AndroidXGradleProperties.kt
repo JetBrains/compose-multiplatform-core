@@ -166,20 +166,18 @@ fun Project.isValidateProjectStructureEnabled(): Boolean =
  * Validates that all properties passed by the user of the form "-Pandroidx.*" are not misspelled
  */
 fun Project.validateAllAndroidxArgumentsAreRecognized() {
-    for (propertyName in project.properties.keys) {
-        if (propertyName.startsWith("androidx")) {
-            if (!ALL_ANDROIDX_PROPERTIES.contains(propertyName)) {
-                val message =
-                    "Unrecognized Androidx property '$propertyName'.\n" +
-                        "\n" +
-                        "Is this a misspelling? All recognized Androidx properties:\n" +
-                        ALL_ANDROIDX_PROPERTIES.joinToString("\n") +
-                        "\n" +
-                        "\n" +
-                        "See AndroidXGradleProperties.kt if you need to add this property to " +
-                        "the list of known properties."
-                throw GradleException(message)
-            }
+    for (propertyName in providers.gradlePropertiesPrefixedBy("androidx.").get().keys) {
+        if (!ALL_ANDROIDX_PROPERTIES.contains(propertyName)) {
+            val message =
+                "Unrecognized Androidx property '$propertyName'.\n" +
+                    "\n" +
+                    "Is this a misspelling? All recognized Androidx properties:\n" +
+                    ALL_ANDROIDX_PROPERTIES.joinToString("\n") +
+                    "\n" +
+                    "\n" +
+                    "See AndroidXGradleProperties.kt if you need to add this property to " +
+                    "the list of known properties."
+            throw GradleException(message)
         }
     }
 }

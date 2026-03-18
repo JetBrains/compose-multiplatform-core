@@ -26,12 +26,14 @@ import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.attributes.plugin.GradlePluginApiVersion
 import org.gradle.api.configuration.BuildFeatures
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.property
 import org.jetbrains.androidx.build.JetBrainsPublication
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -347,9 +349,6 @@ abstract class AndroidXExtension(
 
     var bypassCoordinateValidation = false
 
-    /** Whether Metalava should use K2 Kotlin front-end for source analysis */
-    val metalavaK2UastEnabled = project.objects.property(Boolean::class.java).convention(true)
-
     /** Whether the project has not yet been migrated to use JSpecify annotations. */
     var optOutJSpecify = false
 
@@ -496,7 +495,7 @@ class License {
     var url: String? = null
 }
 
-abstract class DeviceTests {
+abstract class DeviceTests @Inject constructor(objects: ObjectFactory) {
     companion object {
         private const val EXTENSION_NAME = "deviceTests"
 
@@ -523,6 +522,13 @@ abstract class DeviceTests {
      * 16KB page size when run in CI.
      */
     var enableAlsoRunOn16KbPageSizeDevices = false
+
+    /**
+     * Whether this project's Android on device tests should use test orchestrator to isolate tests
+     * to improve stability. Note, this comes at a very high performance cost, so please consult
+     * androidx core team before using this.
+     */
+    val useOrchestrator: Property<Boolean> = objects.property<Boolean>().convention(false)
 
     var minSdkForFtlOverride: Int? = null
 }
