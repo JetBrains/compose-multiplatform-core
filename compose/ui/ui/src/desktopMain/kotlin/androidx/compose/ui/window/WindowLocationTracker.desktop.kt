@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.collection.mutableOrderedScatterSetOf
 import java.awt.GraphicsConfiguration
 import java.awt.GraphicsEnvironment
 import java.awt.Point
@@ -35,7 +36,7 @@ import java.awt.event.WindowFocusListener
 internal object WindowLocationTracker {
     private val cascadeOffset = Point(48, 48)
 
-    private var lastFocusedWindows = mutableSetOf<Window>()
+    private var lastFocusedWindows = mutableOrderedScatterSetOf<Window>()
 
     private val focusListener = object : WindowFocusListener {
         override fun windowGainedFocus(e: WindowEvent) {
@@ -57,10 +58,10 @@ internal object WindowLocationTracker {
     }
 
     val lastActiveGraphicsConfiguration: GraphicsConfiguration? get() =
-        lastFocusedWindows.lastOrNull()?.graphicsConfiguration
+        lastFocusedWindows.lastOrNull {true}?.graphicsConfiguration
 
     fun getCascadeLocationFor(window: Window): Point {
-        val lastWindow = lastFocusedWindows.lastOrNull()
+        val lastWindow = lastFocusedWindows.lastOrNull {true}
         val graphicsConfiguration = lastWindow?.graphicsConfiguration ?:
             GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice?.defaultConfiguration
 
