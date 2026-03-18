@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.awt
 
+import androidx.collection.mutableScatterSetOf
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ComposeUiFlags
@@ -122,7 +123,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         isFocusable = true
     }
 
-    private val _focusListeners = mutableSetOf<FocusListener?>()
+    private val _focusListeners = mutableScatterSetOf<FocusListener?>()
 
     private var _composeContainer: ComposeContainer? = null
     private var _composeContent: (@Composable () -> Unit)? = null
