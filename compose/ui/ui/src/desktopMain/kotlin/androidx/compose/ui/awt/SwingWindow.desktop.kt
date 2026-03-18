@@ -140,7 +140,6 @@ fun SwingWindow(
             // - Size the window and the ComposeLayer correctly, so that we can draw it here
             if (!wasDisplayable && it.isDisplayable) {
                 Snapshot.withoutReadObservation {
-                    println("rendering immediately at size ${it.size}")
                     it.renderImmediately()
                 }
             }

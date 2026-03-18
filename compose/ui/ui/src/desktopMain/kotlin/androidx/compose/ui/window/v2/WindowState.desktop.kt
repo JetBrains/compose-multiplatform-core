@@ -51,13 +51,10 @@ fun rememberWindowStateWithBounds(
     initialPosition: DpOffset? = null,
     initialSize: DpSize? = null,
     initiallyMinimized: Boolean = false,
-): WindowState {
-    val sizeProvider =
-        initialSize?.let { WindowSizeProvider.Exact(it) } ?: WindowSizeProvider.Default
-    val positionProvider =
-        initialPosition?.let { WindowPositionProvider.Absolute(it) } ?: WindowPositionProvider.Default
-    return rememberWindowState(
-        initialBoundsProvider = WindowBoundsProvider(sizeProvider, positionProvider),
+): WindowState = rememberSaveable(saver = WindowState.Saver) {
+    WindowStateWithBounds(
+        initialPosition = initialPosition,
+        initialSize = initialSize,
         initiallyMinimized = initiallyMinimized
     )
 }
@@ -84,6 +81,32 @@ fun rememberWindowState(
         initialScreenProvider = initialScreenProvider,
         initialPlacement = initialPlacement,
         initialBoundsProvider = initialBoundsProvider,
+        initiallyMinimized = initiallyMinimized
+    )
+}
+
+
+/**
+ * Creates a [WindowState] with the specified initial values.
+ *
+ * Changes to the provided initial values will **not** result in the state being recreated or
+ * changed in any way if it has already been created.
+ *
+ * @param initialPosition The initial position of the window; default if `null`.
+ * @param initialSize The initial size of the window; default if `null`.
+ * @param initiallyMinimized Whether the window is initially minimized.
+ */
+fun WindowStateWithBounds(
+    initialPosition: DpOffset? = null,
+    initialSize: DpSize? = null,
+    initiallyMinimized: Boolean = false,
+): WindowState {
+    val sizeProvider =
+        initialSize?.let { WindowSizeProvider.Exact(it) } ?: WindowSizeProvider.Default
+    val positionProvider =
+        initialPosition?.let { WindowPositionProvider.Absolute(it) } ?: WindowPositionProvider.Default
+    return WindowState(
+        initialBoundsProvider = WindowBoundsProvider(sizeProvider, positionProvider),
         initiallyMinimized = initiallyMinimized
     )
 }
