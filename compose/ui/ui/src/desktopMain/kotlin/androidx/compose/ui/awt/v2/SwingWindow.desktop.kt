@@ -215,9 +215,13 @@ fun SwingWindow(
                 window.initializeBounds(currentState)
 
                 // Need to make the window displayable, to make awt.SwingWindow render the first
-                // frame before the window is visible
-                window.preferredSize = window.size
-                window.pack()
+                // frame before the window is visible.
+                // Check window.isDisplayable again because initializeBounds could have already
+                // called pack(), and we don't need to do it twice
+                if (!window.isDisplayable) {
+                    window.preferredSize = window.size
+                    window.pack()  // Sizes to preferred size
+                }
             }
 
             updater.update {
@@ -289,11 +293,17 @@ private fun ComposeWindow.initializeBounds(state: WindowState) {
 }
 
 private fun ComposeWindow.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
+    @Suppress("UsePropertyAccessSyntax")
     val scope = WindowGeometryProviderScope(
         screen = screen(),
         intrinsicWindowSize = {
-            preferredSize = null
-            preferredSize.toDpSize()
+            if (!isDisplayable) {  // Just in case
+                pack()
+            }
+            // Setting it to null and then calling getPreferredSize() causes it to compute the
+            // actual preferred size, as determined by the content.
+            setPreferredSize(null)
+            getPreferredSize().toDpSize()
         }
     )
     with(scope) {
