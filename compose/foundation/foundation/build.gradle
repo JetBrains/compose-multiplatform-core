@@ -25,6 +25,7 @@ import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.androidx.build.UpdateTranslationsTask
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
 import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
@@ -260,4 +261,8 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
             "si", "sk", "sl", "sq", "sr", "sv", "sw", "ta", "te", "th", "tl", "tr", "uk", "ur",
             "uz", "vi", "zh_CN", "zh_HK", "zh_TW", "zu"
     ]
+}
+
+tasks.withType(KotlinJvmTest).configureEach {
+    it.jvmArgs("--add-opens=java.desktop/javax.swing=ALL-UNNAMED")
 }
