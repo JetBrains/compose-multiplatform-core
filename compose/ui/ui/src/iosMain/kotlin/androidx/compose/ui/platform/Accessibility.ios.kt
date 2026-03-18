@@ -16,7 +16,10 @@
 
 package androidx.compose.ui.platform
 
+import androidx.collection.IntSet
 import androidx.collection.MutableIntSet
+import androidx.collection.intSetOf
+import androidx.collection.mutableIntSetOf
 import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -1046,7 +1049,7 @@ internal class AccessibilityMediator(
 ) {
     private var focusMode: AccessibilityElementFocusMode = AccessibilityElementFocusMode.None
 
-    var focusedNodesScrollableParentsIds: Set<Int> = setOf()
+    var focusedNodesScrollableParentsIds: IntSet = intSetOf()
         private set(value) {
             if (field != value) {
                 field = value
@@ -1375,7 +1378,7 @@ internal class AccessibilityMediator(
             // Throttle the recalculation of scrollable parent node IDs to avoid unnecessary
             // reloading of the accessibility tree when the focusMode changes quickly.
             delay(10)
-            val scrollableElementsIds = mutableSetOf<Int>()
+            val scrollableElementsIds = mutableIntSetOf()
             val isInHierarchy = iterateAccessibilityElementHierarchy(focusedElement) {
                 if (it.node.semanticsNode.canScroll) {
                     scrollableElementsIds.add(it.node.semanticsNode.id)
