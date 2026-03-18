@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.node
 
+import androidx.collection.mutableObjectListOf
+
 
 /**
  * Implements [SortedSet] via a min-heap (implemented via an array) and a hash-map mapping the
@@ -38,7 +40,7 @@ internal actual class SortedSet<E> actual constructor(
     /**
      * The heap array.
      */
-    private val itemTree = arrayListOf<E>()
+    private val itemTree = mutableObjectListOf<E>()
 
     /**
      * Returns whether the index is the root of the tree.
@@ -96,7 +98,7 @@ internal actual class SortedSet<E> actual constructor(
         val index = indexByElement.remove(element) ?: return false
 
         // Remove the rightmost leaf (to move it in place of the remove element)
-        val rightMostLeafElement = itemTree.removeLast()
+        val rightMostLeafElement = itemTree.removeAt(itemTree.lastIndex)
 
         // If the removed element is the rightmost leaf, then there's no need to move it, or to fix
         // the heap. This also takes care of the case when the set is empty after removal.

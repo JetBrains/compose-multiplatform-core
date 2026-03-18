@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform.a11y
 
+import androidx.collection.mutableObjectListOf
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.scene.ComposeScene
@@ -73,7 +74,7 @@ internal class ComposeSceneAccessibility(
 
     private val ownerAccessibilityByOwner = mutableMapOf<SemanticsOwner, SemanticsOwnerAccessibility>()
     // Internal for testing
-    internal val ownerAccessibilityList = mutableListOf<SemanticsOwnerAccessibility>()
+    internal val ownerAccessibilityList = mutableObjectListOf<SemanticsOwnerAccessibility>()
 
     private var requestingFocus = false
     private fun onAccessibleReceivedFocus(accessible: ComposeAccessible?) {
@@ -185,10 +186,10 @@ internal class ComposeSceneAccessibility(
          * [ComposeScene] and finds the best [Accessible] under the pointer.
          */
         override fun getAccessibleAt(p: Point): Accessible {
-            ownerAccessibilityList.fastForEachReversed { controller ->
+            ownerAccessibilityList.forEachReversed { controller ->
                 val rootAccessible = controller.rootAccessible
                 val context = rootAccessible.composeAccessibleContext
-                val accessibleOnPoint = context.getAccessibleAt(p) ?: return@fastForEachReversed
+                val accessibleOnPoint = context.getAccessibleAt(p) ?: return@forEachReversed
                 if (accessibleOnPoint != rootAccessible) {
                     // TODO: ^ this check produce weird behavior
                     //  when there is a component under the popup,
