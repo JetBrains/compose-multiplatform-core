@@ -1063,7 +1063,6 @@ internal class ScrollTest {
             presented = true
         }
 
-        delay(100)
         waitUntil("Modal view controller should be presented") { presented }
         modalVC.waitForIdle()
 
@@ -1071,14 +1070,14 @@ internal class ScrollTest {
         val scrollAmount = 150.dp
         repeat(3) { attempt ->
             touchDown(screenSize.center)
-                .wait(100.milliseconds)
+                .wait(200.milliseconds)
                 .dragBy(dy = -scrollAmount, duration = 300.milliseconds)
                 .wait(200.milliseconds)
                 .up()
             modalVC.waitForIdle()
 
             val expectedScrollPx =
-                attempt * (scrollAmount.value - CUPERTINO_TOUCH_SLOP) * density.density
+                (attempt + 1) * (scrollAmount.value - CUPERTINO_TOUCH_SLOP) * density.density
             assertEquals(
                 expected = expectedScrollPx,
                 actual = scrollState.value.toFloat(),
