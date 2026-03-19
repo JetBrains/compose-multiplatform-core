@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -47,25 +46,20 @@ configurations {
             )
         }
     }
-    compileOnly.extendsFrom(friends)
-
+    create("compileOnly").extendsFrom(friends)
 }
 
 androidXMultiplatform {
     jvm()
     sourceSets {
-        jvmMain {
-            dependencies {
-                implementation(libs.binaryCompatibilityValidator)
-            }
+        jvmMain.dependencies {
+            implementation(libs.kotlinAbiTools)
         }
-        jvmTest {
-            dependencies {
-                implementation(libs.truth)
-                implementation(libs.junit)
-                implementation(libs.kotlinTest)
-                implementation(libs.kotlinCompiler)
-            }
+        jvmTest.dependencies {
+            implementation(libs.truth)
+            implementation(libs.junit)
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCompiler)
         }
     }
     provideKlibStdLibForTests()
@@ -75,7 +69,7 @@ dependencies {
     friends(libs.kotlinCompiler)
 }
 
-configurations.getByName("jvmMainImplementation").extendsFrom(configurations.getByName("friends"))
+configurations.getByName("jvmMainCompileOnly").extendsFrom(configurations.getByName("friends"))
 
 androidx {
     name = "AndroidX Binary Compatibility Validator"

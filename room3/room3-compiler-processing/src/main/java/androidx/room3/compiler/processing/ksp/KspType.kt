@@ -33,7 +33,6 @@ import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.Nullability
 import com.google.devtools.ksp.symbol.Variance
 import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.WildcardTypeName
 import com.squareup.kotlinpoet.javapoet.JTypeName
 import com.squareup.kotlinpoet.javapoet.KTypeName
 import kotlin.reflect.KClass
@@ -228,7 +227,7 @@ internal abstract class KspType(
     }
 
     private fun isJavaWildcardType(): Boolean {
-        return asTypeName().java is WildcardTypeName
+        return extendsBound() != null || isStar()
     }
 
     override fun defaultValue(): String {
@@ -277,6 +276,11 @@ internal abstract class KspType(
         // NOTE: this is inconsistent with java where nullability is ignored.
         // it is intentional but might be reversed if it happens to break use cases.
         return ksType == other.ksType
+    }
+
+    override fun isStar(): Boolean {
+        // This is overridden by KspTypeArgumentType.
+        return false
     }
 
     override fun extendsBound(): XType? {

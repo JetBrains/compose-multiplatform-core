@@ -17,6 +17,7 @@
 package androidx.xr.compose.subspace
 
 import android.content.Intent
+import android.view.View
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
@@ -32,20 +33,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.findViewTreeNavigationEventDispatcherOwner
+import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.xr.compose.platform.DefaultDialogManager
 import androidx.xr.compose.platform.LocalDialogManager
+import androidx.xr.compose.spatial.PlanarEmbeddedSubspace
 import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
@@ -53,8 +61,8 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.sizeIn
-import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsEqualTo
@@ -67,16 +75,24 @@ import androidx.xr.scenecore.scene
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.space.ShadowActivityPanel
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
 
 /** Tests for [SpatialPanel]. */
 @RunWith(AndroidJUnit4::class)
 class SpatialPanelTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun spatialPanel_internalElementsAreLaidOutProperly() {
@@ -186,6 +202,37 @@ class SpatialPanelTest {
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(100.dp)
         composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(100.dp)
+    }
+
+    @Test
+    fun spatialPanel_propagatesNavigationEventDispatcherOwner() {
+        var hostParentView: View? = null
+        var internalComposeView: View? = null
+
+        val mockDispatcherOwner = mock<NavigationEventDispatcherOwner>()
+
+        composeTestRule.setContent {
+            hostParentView = LocalView.current
+
+            hostParentView.setViewTreeNavigationEventDispatcherOwner(mockDispatcherOwner)
+
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    internalComposeView = LocalView.current
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        assertNotNull(hostParentView)
+        assertNotNull(internalComposeView)
+        assertThat(hostParentView).isNotEqualTo(internalComposeView)
+
+        val actualOwner = internalComposeView?.findViewTreeNavigationEventDispatcherOwner()
+
+        assertNotNull(actualOwner)
+        assertThat(actualOwner).isEqualTo(mockDispatcherOwner)
     }
 
     @Test
@@ -345,6 +392,52 @@ class SpatialPanelTest {
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelEntity = panelNode.semanticsEntity as? PanelEntity
         assertThat(checkNotNull(panelEntity).cornerRadius.meters.toDp()).isEqualTo(32.dp)
+    }
+
+    @Test
+    fun spatialPanel_countCompositions_inContext() {
+        var compositions = 0
+
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel {
+                    // Use SideEffect to count successful compositions
+                    SideEffect { compositions++ }
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        assertThat(compositions).isEqualTo(1)
+    }
+
+    @Test
+    fun spatialPanel_recomposes_whenStateChanges() {
+        var compositions = 0
+        val countState = mutableIntStateOf(0)
+
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel {
+                    val currentCount = countState.intValue
+
+                    compositions++
+
+                    Text("Count is $currentCount")
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        assertThat(compositions).isEqualTo(1)
+
+        // Trigger the state change externally
+        countState.intValue = 1
+
+        composeTestRule.waitForIdle()
+
+        // Assert that exactly one extra composition happened
+        assertThat(compositions).isEqualTo(2)
     }
 
     @Test
@@ -525,6 +618,190 @@ class SpatialPanelTest {
         composeTestRule.waitForIdle()
         composeTestRule.onSubspaceNodeWithTag("panel-A").assertDoesNotExist()
         composeTestRule.onSubspaceNodeWithTag("panel-B").assertDoesNotExist()
+    }
+
+    @Test
+    fun mainPanel_singleSubspace_onlyFirstMainPanelIsShown() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialMainPanel(SubspaceModifier.testTag("firstMainPanel"))
+                SpatialMainPanel(SubspaceModifier.testTag("secondMainPanel"))
+                SpatialMainPanel(SubspaceModifier.testTag("thirdMainPanel"))
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("thirdMainPanel").assertDoesNotExist()
+    }
+
+    @Test
+    fun mainPanel_singleSubspace_secondMainPanelIsShownWhenFirstIsRemoved() {
+        var isFirstMainPanelShown by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            Subspace {
+                if (isFirstMainPanelShown) {
+                    SpatialMainPanel(SubspaceModifier.testTag("firstMainPanel"))
+                }
+                SpatialMainPanel(SubspaceModifier.testTag("secondMainPanel"))
+                SpatialMainPanel(SubspaceModifier.testTag("thirdMainPanel"))
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("thirdMainPanel").assertDoesNotExist()
+
+        isFirstMainPanelShown = false
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("thirdMainPanel").assertDoesNotExist()
+    }
+
+    @Test
+    fun mainPanel_multipleSubspaces_onlyFirstMainPanelIsShown() {
+        composeTestRule.setContent {
+            Subspace { SpatialMainPanel(SubspaceModifier.testTag("firstMainPanel")) }
+            Subspace { SpatialMainPanel(SubspaceModifier.testTag("secondMainPanel")) }
+            Subspace { SpatialMainPanel(SubspaceModifier.testTag("thirdMainPanel")) }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("thirdMainPanel").assertDoesNotExist()
+    }
+
+    @Test
+    fun mainPanel_multipleSubspaces_subsequentMainPanelIsShownWhenPreviousIsRemoved() {
+        var isFirstMainPanelShown by mutableStateOf(true)
+        var isSecondMainPanelShown by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            Subspace {
+                if (isFirstMainPanelShown) {
+                    SpatialMainPanel(SubspaceModifier.testTag("firstMainPanel"))
+                }
+            }
+            Subspace {
+                if (isSecondMainPanelShown) {
+                    SpatialMainPanel(SubspaceModifier.testTag("secondMainPanel"))
+                }
+            }
+            Subspace { SpatialMainPanel(SubspaceModifier.testTag("thirdMainPanel")) }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("thirdMainPanel").assertDoesNotExist()
+
+        isFirstMainPanelShown = false
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("thirdMainPanel").assertDoesNotExist()
+
+        isSecondMainPanelShown = false
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("thirdMainPanel").assertExists()
+    }
+
+    @Test
+    fun mainPanel_multipleSubspaces_originalOwnerIsAddedBackToTheQueue() {
+        var isFirstMainPanelShown by mutableStateOf(true)
+        var isSecondMainPanelShown by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            Subspace {
+                if (isFirstMainPanelShown) {
+                    SpatialMainPanel(SubspaceModifier.testTag("firstMainPanel"))
+                }
+            }
+            Subspace {
+                if (isSecondMainPanelShown) {
+                    SpatialMainPanel(SubspaceModifier.testTag("secondMainPanel"))
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertDoesNotExist()
+
+        isFirstMainPanelShown = false
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertExists()
+
+        isFirstMainPanelShown = true
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertExists()
+
+        isSecondMainPanelShown = false
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertDoesNotExist()
+    }
+
+    @Test
+    fun mainPanel_inEmbeddedSubspace_isNotGrantedOwnershipWhileAnotherHasOwnership() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialMainPanel(SubspaceModifier.testTag("firstMainPanel"))
+
+                SpatialPanel {
+                    PlanarEmbeddedSubspace {
+                        SpatialMainPanel(SubspaceModifier.testTag("secondMainPanel"))
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertDoesNotExist()
+    }
+
+    @Test
+    fun mainPanel_whenSubspaceOwnerIsRemoved_isStillEnabled() {
+        var isFirstSubspaceShown by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            if (isFirstSubspaceShown) {
+                Subspace {
+                    SpatialMainPanel(SubspaceModifier.size(500.dp).testTag("firstMainPanel"))
+                }
+            }
+            Subspace { SpatialMainPanel(SubspaceModifier.size(1000.dp).testTag("secondMainPanel")) }
+        }
+
+        assertThat(
+                composeTestRule
+                    .onSubspaceNodeWithTag("firstMainPanel")
+                    .assertExists()
+                    .assertWidthIsEqualTo(500.dp)
+                    .fetchSemanticsNode()
+                    .semanticsEntity
+                    ?.isEnabled()
+            )
+            .isTrue()
+        composeTestRule.onSubspaceNodeWithTag("secondMainPanel").assertDoesNotExist()
+
+        isFirstSubspaceShown = false
+
+        composeTestRule.onSubspaceNodeWithTag("firstMainPanel").assertDoesNotExist()
+        assertThat(
+                composeTestRule
+                    .onSubspaceNodeWithTag("secondMainPanel")
+                    .assertExists()
+                    .assertWidthIsEqualTo(1000.dp)
+                    .fetchSemanticsNode()
+                    .semanticsEntity
+                    ?.isEnabled()
+            )
+            .isTrue()
     }
 
     private class SpatialPanelActivity : ComponentActivity() {}

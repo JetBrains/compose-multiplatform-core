@@ -7,6 +7,8 @@ import androidx.room3.util.performBlocking
 import androidx.room3.util.recursiveFetchMap
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteStatement
+import androidx.sqlite.prepare
+import androidx.sqlite.step
 import javax.`annotation`.processing.Generated
 import kotlin.ByteArray
 import kotlin.Int
@@ -21,7 +23,7 @@ import kotlin.reflect.KClass
 import kotlin.text.StringBuilder
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
 internal class MyDao_Impl(
   __db: RoomDatabase,
 ) : MyDao {
@@ -71,7 +73,7 @@ internal class MyDao_Impl(
     }
   }
 
-  private fun __fetchRelationshipArtistAsArtist(_connection: SQLiteConnection, _map: MutableMap<ByteArrayWrapper, Artist?>) {
+  private suspend fun __fetchRelationshipArtistAsArtist(_connection: SQLiteConnection, _map: MutableMap<ByteArrayWrapper, Artist?>) {
     val __mapKeySet: Set<ByteArrayWrapper> = _map.keys
     if (__mapKeySet.isEmpty()) {
       return

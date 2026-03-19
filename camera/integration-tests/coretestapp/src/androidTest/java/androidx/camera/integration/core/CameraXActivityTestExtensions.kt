@@ -118,6 +118,7 @@ internal fun ActivityScenario<CameraXActivity>.recordVideoAndWaitForVideoSavedId
     val idlingResource = withActivity {
         // Make sure that the test target use case is not null
         assertThat(videoCapture).isNotNull()
+        cleanVideoRecordingErrorMessage()
         setVideoCaptureAutoStopLength(VIDEO_CAPTURE_AUTO_STOP_LENGTH_MS)
         videoSavedIdlingResource
     }
@@ -127,6 +128,11 @@ internal fun ActivityScenario<CameraXActivity>.recordVideoAndWaitForVideoSavedId
         Espresso.onView(ViewMatchers.withId(R.id.Video)).perform(click())
     } finally { // Always release the idling resource, in case of timeout exceptions.
         IdlingRegistry.getInstance().unregister(idlingResource)
-        withActivity { deleteSessionVideos() }
+        withActivity {
+            deleteSessionVideos()
+            if (lastVideoRecordingErrorMessage != null) {
+                throw Exception("Failed to record video due to $lastVideoRecordingErrorMessage.")
+            }
+        }
     }
 }

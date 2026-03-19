@@ -65,11 +65,7 @@ class ModeChange : ComponentActivity() {
 
         setContent {
             val renderingSession = remember {
-                (Session.create(
-                        activity = this@ModeChange,
-                        unscaledGravityAlignedActivitySpace = true,
-                    ) as SessionCreateSuccess)
-                    .session
+                (Session.create(activity = this@ModeChange) as SessionCreateSuccess).session
             }
             IntegrationTestsAppTheme {
                 if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
@@ -143,6 +139,7 @@ class ModeChange : ComponentActivity() {
             contentAlignment = Alignment.Center,
         ) {
             Column {
+                @Suppress("DEPRECATION")
                 Orbiter(position = ContentEdge.Top, offset = 5.dp) {
                     Text(
                         text = orbiterText,

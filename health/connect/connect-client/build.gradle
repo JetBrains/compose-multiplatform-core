@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -28,7 +27,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -37,9 +35,8 @@ dependencies {
     api("androidx.activity:activity:1.2.0")
     api("androidx.annotation:annotation:1.8.1")
     implementation(project(":health:connect:connect-client-proto"))
-    implementation(libs.guavaListenableFuture)
-    implementation(libs.guavaAndroid)
     implementation(libs.kotlinCoroutinesAndroid)
+    implementation(libs.guavaAndroid) // upgrading to newer version of guava due to CVE-2023-2976
     implementation(libs.kotlinCoroutinesGuava)
     implementation("androidx.core:core-ktx:1.12.0")
 
@@ -67,15 +64,14 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdk = 26
+        minSdk { version = release(26) }
         consumerProguardFiles("proguard-rules.pro")
     }
     buildFeatures {
         aidl = true
     }
     namespace = "androidx.health.connect.client"
-    compileSdk = 36
-    compileSdkExtension = 19
+    compileSdk { version = release(36) { sdkExtension = 19 }}
 }
 
 androidx {
@@ -89,10 +85,8 @@ androidx {
 }
 
 //TODO(b/407717306): Remove this block when RecordConvertersTest passes on API Level 21 and 34 devices
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        freeCompilerArgs += [
-                "-Xlambdas=class"
-        ]
+tasks.withType(KotlinCompile).configureEach { task ->
+    task.compilerOptions {
+        it.freeCompilerArgs.add("-Xlambdas=class")
     }
 }

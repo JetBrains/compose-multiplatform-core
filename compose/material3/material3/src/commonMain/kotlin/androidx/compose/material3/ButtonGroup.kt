@@ -83,9 +83,9 @@ import kotlinx.coroutines.launch
 // TODO link to an image when available
 /**
  * A layout composable that places its children in a horizontal sequence. When a child uses
- * [Modifier.animateWidth] with a relevant [MutableInteractionSource], this button group can listen
- * to the interactions and expand the width of the pressed child element as well as compress the
- * neighboring child elements.
+ * [ButtonGroupScope.animateWidth] with a relevant [MutableInteractionSource], this button group can
+ * listen to the interactions and expand the width of the pressed child element as well as compress
+ * the neighboring child elements.
  *
  * @sample androidx.compose.material3.samples.ButtonGroupSample
  *
@@ -146,10 +146,10 @@ fun ButtonGroup(
 // TODO link to an image when available
 /**
  * A layout composable that places its children in a horizontal sequence. When a child uses
- * [Modifier.animateWidth] with a relevant [MutableInteractionSource], this button group can listen
- * to the interactions and expand the width of the pressed child element as well as compress the
- * neighboring child elements. Additionally, items will overflow into a dropdown menu if there are
- * too many items or the items are too wide to all fit onto the screen.
+ * [ButtonGroupScope.animateWidth] with a relevant [MutableInteractionSource], this button group can
+ * listen to the interactions and expand the width of the pressed child element as well as compress
+ * the neighboring child elements. Additionally, items will overflow into a dropdown menu if there
+ * are too many items or the items are too wide to all fit onto the screen.
  *
  * @sample androidx.compose.material3.samples.ButtonGroupSample
  *
@@ -173,7 +173,7 @@ fun ButtonGroup(
  *   interacted child element will expand to 200% of its default width when pressed.
  * @param horizontalArrangement The horizontal arrangement of the button group's children.
  * @param content the content displayed in the button group, expected to use a composable that i s
- *   tagged with [Modifier.animateWidth].
+ *   tagged with [ButtonGroupScope.animateWidth].
  */
 @Deprecated(
     message = "Use overload with `verticalAlignment` parameter",
@@ -206,10 +206,10 @@ fun ButtonGroup(
 // TODO link to an image when available
 /**
  * A layout composable that places its children in a horizontal sequence. When a child uses
- * [Modifier.animateWidth] with a relevant [MutableInteractionSource], this button group can listen
- * to the interactions and expand the width of the pressed child element as well as compress the
- * neighboring child elements. Additionally, items will overflow into a dropdown menu if there are
- * too many items or the items are too wide to all fit onto the screen.
+ * [ButtonGroupScope.animateWidth] with a relevant [MutableInteractionSource], this button group can
+ * listen to the interactions and expand the width of the pressed child element as well as compress
+ * the neighboring child elements. Additionally, items will overflow into a dropdown menu if there
+ * are too many items or the items are too wide to all fit onto the screen.
  *
  * @sample androidx.compose.material3.samples.ButtonGroupSample
  *
@@ -234,7 +234,7 @@ fun ButtonGroup(
  * @param horizontalArrangement The horizontal arrangement of the button group's children.
  * @param verticalAlignment The vertical alignment of the button group's children.
  * @param content the content displayed in the button group, expected to use a composable that i s
- *   tagged with [Modifier.animateWidth].
+ *   tagged with [ButtonGroupScope.animateWidth].
  */
 @Composable
 @ExperimentalMaterial3ExpressiveApi
@@ -400,10 +400,11 @@ object ButtonGroupDefaults {
      * @param colors [IconButtonColors] that will be used to resolve the colors used for this icon
      *   button in different states. See [IconButtonDefaults.filledIconButtonColors].
      * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
-     *   emitting [Interaction]s for this icon button. You can use this to change the icon button's
-     *   appearance or preview the icon button in different states. Note that if `null` is provided,
-     *   interactions will still happen internally.
+     *   emitting [androidx.compose.foundation.interaction.Interaction]s for this icon button. You
+     *   can use this to change the icon button's appearance or preview the icon button in different
+     *   states. Note that if `null` is provided, interactions will still happen internally.
      */
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun OverflowIndicator(
         menuState: ButtonGroupMenuState,
@@ -415,23 +416,33 @@ object ButtonGroupDefaults {
     ) {
         val contentDescription = getString(Strings.ButtonGroupMoreOptions)
 
-        FilledIconButton(
-            onClick = {
-                if (menuState.isShowing) {
-                    menuState.dismiss()
-                } else {
-                    menuState.show()
-                }
-            },
-            modifier = modifier,
-            enabled = enabled,
-            shape = shape,
-            colors = colors,
-            interactionSource = interactionSource,
-            content = {
-                Icon(imageVector = Icons.Filled.MoreVert, contentDescription = contentDescription)
-            },
-        )
+        TooltipBox(
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text(contentDescription) } },
+            state = rememberTooltipState(),
+        ) {
+            FilledIconButton(
+                onClick = {
+                    if (menuState.isShowing) {
+                        menuState.dismiss()
+                    } else {
+                        menuState.show()
+                    }
+                },
+                modifier = modifier,
+                enabled = enabled,
+                shape = shape,
+                colors = colors,
+                interactionSource = interactionSource,
+                content = {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = contentDescription,
+                    )
+                },
+            )
+        }
     }
 }
 
@@ -886,7 +897,10 @@ private class ButtonGroupMeasurePolicy(
                                 0
                             }
                     }
-                val yPosition = verticalAlignment.align(placeables[index].height, height)
+                val parentData = contentMeasurables[index].parentData as? ButtonGroupParentData
+                val yPosition =
+                    parentData?.alignment?.align(placeables[index].height, height)
+                        ?: verticalAlignment.align(placeables[index].height, height)
                 placeables[index].place(x = mainAxisPositions[index] + growth, y = yPosition)
             }
             overflowPlaceables?.fastForEach {
@@ -938,6 +952,14 @@ interface ButtonGroupScope {
      * @param interactionSource the [InteractionSource] that button group will observe.
      */
     fun Modifier.animateWidth(interactionSource: InteractionSource): Modifier
+
+    /**
+     * Align the element vertically within the [ButtonGroup]. This alignment will have priority over
+     * the [ButtonGroup]'s `verticalAlignment` parameter.
+     *
+     * @param alignment the vertical alignment of the element
+     */
+    @Stable fun Modifier.align(alignment: Alignment.Vertical): Modifier
 
     /**
      * Adds a clickable item to the [ButtonGroup].
@@ -998,6 +1020,7 @@ internal val ButtonGroupParentData?.weight: Float
 internal data class ButtonGroupParentData(
     var weight: Float = 0f,
     var pressedAnimatable: Animatable<Float, AnimationVector1D> = Animatable(0f),
+    var alignment: Alignment.Vertical? = null,
 )
 
 internal class ButtonGroupElement(val weight: Float = 0f) : ModifierNodeElement<ButtonGroupNode>() {
@@ -1117,7 +1140,7 @@ internal class EnlargeOnPressNode(
 
     override fun Density.modifyParentData(parentData: Any?) =
         (parentData as? ButtonGroupParentData).let { prev ->
-            ButtonGroupParentData(prev.weight, pressedAnimatable)
+            ButtonGroupParentData(prev.weight, pressedAnimatable, prev?.alignment)
         }
 }
 
@@ -1263,6 +1286,39 @@ internal class CustomButtonGroupItem(
     override fun MenuContent(state: ButtonGroupMenuState) {
         menuContent(state)
     }
+}
+
+internal class VerticalAlignElement(val alignment: Alignment.Vertical) :
+    ModifierNodeElement<VerticalAlignNode>() {
+    override fun create(): VerticalAlignNode {
+        return VerticalAlignNode(alignment)
+    }
+
+    override fun update(node: VerticalAlignNode) {
+        node.alignment = alignment
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "align"
+        value = alignment
+    }
+
+    override fun hashCode(): Int {
+        return alignment.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        val otherModifier = other as? VerticalAlignElement ?: return false
+        return alignment == otherModifier.alignment
+    }
+}
+
+internal class VerticalAlignNode(var alignment: Alignment.Vertical) :
+    ParentDataModifierNode, Modifier.Node() {
+    override fun Density.modifyParentData(parentData: Any?) =
+        ((parentData as? ButtonGroupParentData) ?: ButtonGroupParentData()).also {
+            it.alignment = alignment
+        }
 }
 
 /** State containing information about the overflow in an [ButtonGroup]. */
@@ -1419,6 +1475,10 @@ private class ButtonGroupScopeImpl(val animationSpec: AnimationSpec<Float>) :
                 animationSpec = animationSpec,
             )
         )
+
+    override fun Modifier.align(alignment: Alignment.Vertical): Modifier {
+        return this.then(VerticalAlignElement(alignment))
+    }
 }
 
 private const val MAX_WAIT_TIME_MILLIS = 1_000L

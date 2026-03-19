@@ -18,8 +18,11 @@ package androidx.aab.cli
 
 import androidx.aab.ApkInfo
 import androidx.aab.BundleInfo
+import androidx.aab.CsvColumn
 import androidx.aab.analysis.AnalyzedApkInfo
 import androidx.aab.analysis.AnalyzedBundleInfo
+import androidx.aab.fullHeader
+import androidx.aab.rowStringForItem
 import java.io.File
 import kotlin.system.exitProcess
 import kotlinx.coroutines.Dispatchers
@@ -34,9 +37,7 @@ const val SO_PATTERN_PREFIX = "--soPatterns="
 // this is a simple way to abstract the difference between the two, but should probably define
 // interfaces
 internal abstract class PackageProcessor<T>(val typeLabel: String) {
-    abstract fun getCsvHeader(): String
-
-    abstract fun getCsvLine(item: T): String
+    abstract fun getCsvColumns(): List<CsvColumn<T>>
 
     abstract fun transform(file: File): T
 
@@ -64,9 +65,12 @@ internal abstract class PackageProcessor<T>(val typeLabel: String) {
                 .toList()
                 .sortedBy { sortKey(it) }
         if (outputContext.csvFile != null) {
+            val columns = getCsvColumns()
             println("$typeLabel parsing complete, constructing CSV...")
-            outputContext.csvFile.writeText(getCsvHeader() + "\n")
-            items.forEach { outputContext.csvFile.appendText(getCsvLine(it) + "\n") }
+            outputContext.csvFile.bufferedWriter().use {
+                it.write(columns.fullHeader() + "\n")
+                items.forEach { item -> it.write(columns.rowStringForItem(item) + "\n") }
+            }
             println("Analysis complete, CSV saved to ${outputContext.csvFile.absolutePath}")
         } else {
             println("$typeLabel parsing complete, reporting problems...")
@@ -84,7 +88,7 @@ fun usageAndDie() {
             CSV Usage:
                  java -jar <path-to-jar> [--verbose] --out=<output_dir_path> --csv <path-to-aab> [<path-to-aab2>...]
 
-            When --out is passed, can also specify --mappingInfo to analyze obfuscation stats.
+            --out must be passed to see obfuscation and package keep statistics.
             """
             .trimIndent()
     )
@@ -102,7 +106,6 @@ fun main(args: Array<String>) = runBlocking {
                     ?.substringAfter(OUTPUT_PATH_PREFIX)
                     ?.replaceFirst("~", System.getProperty("user.home")),
             csv = args.contains("--csv"),
-            dumpMappingDebug = args.contains("--mappingInfo"),
             soMatchPatterns =
                 args
                     .singleOrNull { it.startsWith(SO_PATTERN_PREFIX) }
@@ -136,9 +139,7 @@ fun main(args: Array<String>) = runBlocking {
     val processor =
         if (files.any { it.name.endsWith(".apk") }) {
             object : PackageProcessor<AnalyzedApkInfo>("APK") {
-                override fun getCsvHeader(): String = AnalyzedApkInfo.CSV_HEADER
-
-                override fun getCsvLine(item: AnalyzedApkInfo): String = item.toCsvLine()
+                override fun getCsvColumns() = AnalyzedApkInfo.CSV_COLUMNS
 
                 override fun transform(file: File): AnalyzedApkInfo =
                     AnalyzedApkInfo(ApkInfo.from(file))
@@ -149,9 +150,7 @@ fun main(args: Array<String>) = runBlocking {
             }
         } else {
             object : PackageProcessor<AnalyzedBundleInfo>("Bundle") {
-                override fun getCsvHeader(): String = AnalyzedBundleInfo.CSV_HEADER
-
-                override fun getCsvLine(item: AnalyzedBundleInfo): String = item.toCsvLine()
+                override fun getCsvColumns() = AnalyzedBundleInfo.CSV_COLUMNS
 
                 override fun transform(file: File): AnalyzedBundleInfo =
                     AnalyzedBundleInfo(BundleInfo.from(file))

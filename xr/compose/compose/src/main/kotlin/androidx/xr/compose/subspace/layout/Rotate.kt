@@ -18,15 +18,16 @@ package androidx.xr.compose.subspace.layout
 
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
+import androidx.xr.compose.subspace.node.invalidatePlacement
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 
 /**
- * Rotate a subspace element (i.e. Panel) in space with regards to the center of the element.
- * Parameter rotation angles are specified in degrees. The rotations are applied with the order
- * pitch, then yaw, then roll. If no values are provided, no rotation is applied.
+ * Rotate a subspace element (i.e. Panel) in space in regard to the center of the element. Parameter
+ * rotation angles are specified in degrees. The rotations are applied with the order pitch, then
+ * yaw, then roll. If no values are provided, no rotation is applied.
  *
  * @param pitch Rotation around the x-axis. Defaults to `0.0f`. The x-axis is the axis width is
  *   measured on.
@@ -41,8 +42,16 @@ public fun SubspaceModifier.rotate(
     roll: Float = 0.0f,
 ): SubspaceModifier = this.then(RotationElement(pitch, yaw, roll))
 
+/** This overload is provided to prevent [rotate] from being called with no arguments. */
+@Deprecated(
+    "SubspaceModifier.rotate() with no arguments does nothing. " +
+        "Please provide at least one rotation angle (pitch, yaw, or roll).",
+    level = DeprecationLevel.ERROR,
+)
+public fun SubspaceModifier.rotate(): SubspaceModifier = this
+
 /**
- * Rotate a subspace element (i.e. Panel) in space with regards to the center of the element. The
+ * Rotate a subspace element (i.e. Panel) in space in regard to the center of the element. The
  * rotation is defined by a [Vector3] and a rotation angle in degrees. The axis angle will be
  * normalized during construction. The [rotation] will be applied to the unit vector representing
  * the [axisAngle].
@@ -54,7 +63,7 @@ public fun SubspaceModifier.rotate(axisAngle: Vector3, rotation: Float): Subspac
     this.then(RotationElement(axisAngle, rotation))
 
 /**
- * Rotate a subspace element (i.e. Panel) in space with regards to the center of the element. The
+ * Rotate a subspace element (i.e. Panel) in space in regard to the center of the element. The
  * rotation is directly specified by the provided [Quaternion]. The [Quaternion] values are
  * specified as x,y,z,w. Where w is the rotation of the unit vector, in radians.
  *
@@ -93,12 +102,20 @@ private class RotationElement(private val quaternion: Quaternion) :
     }
 
     override fun update(node: RotationNode) {
-        node.quaternion = quaternion
+        node.update(quaternion)
     }
 }
 
 internal class RotationNode(public var quaternion: Quaternion) :
     SubspaceLayoutModifierNode, SubspaceModifier.Node() {
+
+    override val shouldAutoInvalidate: Boolean = false
+
+    fun update(quaternion: Quaternion) {
+        if (this.quaternion != quaternion) invalidatePlacement()
+        this.quaternion = quaternion
+    }
+
     override fun SubspaceMeasureScope.measure(
         measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,

@@ -27,6 +27,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -38,7 +40,6 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
@@ -48,12 +49,13 @@ import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.performTrackpadInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -68,13 +70,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterial3Api::class)
 class TooltipTest {
 
     @get:Rule val rule = createComposeRule(StandardTestDispatcher())
@@ -562,7 +564,6 @@ class TooltipTest {
         assertThat(state.isVisible).isFalse()
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun plainTooltip_escapeKey_dismissesTooltip() {
         lateinit var state: TooltipState
@@ -979,6 +980,54 @@ class TooltipTest {
         assertThat(state.isVisible).isFalse()
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun tooltipTrackpadHover_notPersistentState_dismiss() {
+        assumeTrue(ComposeUiFlags.isTrackpadGestureHandlingEnabled)
+
+        lateinit var state: TooltipState
+        rule.setContent {
+            state = rememberTooltipState()
+            TooltipBox(
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                tooltip = {},
+                state = state,
+            ) {
+                Icon(
+                    Icons.Filled.Favorite,
+                    modifier = Modifier.testTag(AnchorTestTag),
+                    contentDescription = null,
+                )
+            }
+        }
+
+        // Test will manually advance the time to check the timeout
+        rule.mainClock.autoAdvance = false
+
+        assertThat(state.isVisible).isFalse()
+
+        val anchorNode = rule.onNodeWithTag(AnchorTestTag, useUnmergedTree = true)
+        anchorNode.performTrackpadInput { moveTo(center) }
+
+        // Advance by the fade in time
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
+
+        assertThat(state.isVisible).isTrue()
+
+        // Even if the tooltip is not persistent, the tooltip should
+        // still be showing if hover is detected after the timeout duration.
+        rule.mainClock.advanceTimeBy(milliseconds = BasicTooltipDefaults.TooltipDuration)
+        assertThat(state.isVisible).isTrue()
+
+        // Move the house out of the bounds of the anchor, essentially triggering exit()
+        anchorNode.performTrackpadInput { moveTo(Offset(-1f, -1f)) }
+
+        // Tooltip should dismiss after hover stops
+        rule.mainClock.advanceTimeBy(milliseconds = TooltipFadeOutDuration)
+        assertThat(state.isVisible).isFalse()
+    }
+
     @Test
     fun tooltipMouseHover_persistentState_persistent() {
         lateinit var state: TooltipState
@@ -1018,6 +1067,54 @@ class TooltipTest {
 
         // Move the house out of the bounds of the anchor, essentially triggering exit()
         anchorNode.performMouseInput { moveTo(Offset(-1f, -1f)) }
+
+        // Tooltip should be persistent after no longer hover since the tooltip is persistent
+        rule.mainClock.advanceTimeBy(milliseconds = TooltipFadeOutDuration)
+        assertThat(state.isVisible).isTrue()
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun tooltipTrackpadHover_persistentState_persistent() {
+        assumeTrue(ComposeUiFlags.isTrackpadGestureHandlingEnabled)
+
+        lateinit var state: TooltipState
+        rule.setContent {
+            state = rememberTooltipState(isPersistent = true)
+            TooltipBox(
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                tooltip = {},
+                state = state,
+            ) {
+                Icon(
+                    Icons.Filled.Favorite,
+                    modifier = Modifier.testTag(AnchorTestTag),
+                    contentDescription = null,
+                )
+            }
+        }
+
+        // Test will manually advance the time to check the timeout
+        rule.mainClock.autoAdvance = false
+
+        assertThat(state.isVisible).isFalse()
+
+        val anchorNode = rule.onNodeWithTag(AnchorTestTag, useUnmergedTree = true)
+        anchorNode.performTrackpadInput { moveTo(center) }
+
+        // Advance by the fade in time
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
+
+        assertThat(state.isVisible).isTrue()
+
+        // Even if the tooltip is not persistent, the tooltip should
+        // still be showing if hover is detected after the timeout duration.
+        rule.mainClock.advanceTimeBy(milliseconds = BasicTooltipDefaults.TooltipDuration)
+        assertThat(state.isVisible).isTrue()
+
+        // Move the house out of the bounds of the anchor, essentially triggering exit()
+        anchorNode.performTrackpadInput { moveTo(Offset(-1f, -1f)) }
 
         // Tooltip should be persistent after no longer hover since the tooltip is persistent
         rule.mainClock.advanceTimeBy(milliseconds = TooltipFadeOutDuration)

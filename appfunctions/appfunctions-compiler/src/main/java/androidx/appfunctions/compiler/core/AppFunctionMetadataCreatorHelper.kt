@@ -17,6 +17,8 @@
 package androidx.appfunctions.compiler.core
 
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PARCELABLE_LIST
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PARCELABLE_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PRIMITIVE_ARRAY
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PRIMITIVE_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PRIMITIVE_SINGULAR
@@ -42,7 +44,7 @@ import androidx.appfunctions.compiler.core.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionOneOfTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionPendingIntentTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionParcelableTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionStringTypeMetadata
@@ -79,7 +81,7 @@ class AppFunctionMetadataCreatorHelper(
                 AppFunctionAnnotation.PROPERTY_IS_ENABLED,
                 Boolean::class,
             )
-        val isDescribedByKdoc =
+        val isDescribedByKDoc =
             appFunctionAnnotation?.requirePropertyValueOfType(
                 AppFunctionAnnotation.PROPERTY_IS_DESCRIBED_BY_KDOC,
                 Boolean::class,
@@ -104,7 +106,7 @@ class AppFunctionMetadataCreatorHelper(
 
         return AppFunctionAnnotationProperties(
             enabled,
-            isDescribedByKdoc,
+            isDescribedByKDoc,
             schemaName,
             schemaVersion,
             schemaCategory,
@@ -375,6 +377,33 @@ class AppFunctionMetadataCreatorHelper(
                     description = description,
                 )
             }
+            PARCELABLE_SINGULAR ->
+                AppFunctionParcelableTypeMetadata(
+                    qualifiedName =
+                        appFunctionTypeReference.selfTypeReference
+                            .toTypeName()
+                            .ignoreNullable()
+                            .toString(),
+                    isNullable = appFunctionTypeReference.isNullable,
+                    description = description,
+                )
+            PARCELABLE_LIST ->
+                AppFunctionArrayTypeMetadata(
+                    itemType =
+                        AppFunctionParcelableTypeMetadata(
+                            qualifiedName =
+                                appFunctionTypeReference.itemTypeReference
+                                    .toTypeName()
+                                    .ignoreNullable()
+                                    .toString(),
+                            isNullable =
+                                AppFunctionTypeReference(appFunctionTypeReference.itemTypeReference)
+                                    .isNullable,
+                            description = "",
+                        ),
+                    isNullable = appFunctionTypeReference.isNullable,
+                    description = description,
+                )
         }
     }
 
@@ -557,7 +586,7 @@ class AppFunctionMetadataCreatorHelper(
                                 .map {
                                     AppFunctionPropertyDeclaration(
                                         property = it,
-                                        isDescribedByKdoc = false,
+                                        isDescribedByKDoc = false,
                                         // Property from interface is always required as there is
                                         // no existing API to tell if the interface property has
                                         // default value or not.
@@ -724,20 +753,24 @@ class AppFunctionMetadataCreatorHelper(
             SERIALIZABLE_INTERFACE_LIST,
             SERIALIZABLE_PROXY_LIST,
             SERIALIZABLE_LIST -> AppFunctionArrayTypeMetadata.TYPE
+            PARCELABLE_SINGULAR,
+            PARCELABLE_LIST -> AppFunctionParcelableTypeMetadata.TYPE
         }
     }
 
     private fun AppFunctionTypeReference.determineArrayItemType(): Int {
         return when (this.typeCategory) {
             SERIALIZABLE_INTERFACE_LIST,
+            SERIALIZABLE_PROXY_LIST,
             SERIALIZABLE_LIST -> AppFunctionObjectTypeMetadata.TYPE
             PRIMITIVE_ARRAY -> selfTypeReference.toAppFunctionDatatype()
             PRIMITIVE_LIST -> itemTypeReference.toAppFunctionDatatype()
-            SERIALIZABLE_PROXY_LIST -> itemTypeReference.toAppFunctionDatatype()
+            PARCELABLE_LIST -> AppFunctionParcelableTypeMetadata.TYPE
             PRIMITIVE_SINGULAR,
             SERIALIZABLE_INTERFACE_SINGULAR,
             SERIALIZABLE_PROXY_SINGULAR,
-            SERIALIZABLE_SINGULAR ->
+            SERIALIZABLE_SINGULAR,
+            PARCELABLE_SINGULAR ->
                 throw ProcessingException(
                     "Not a supported array type " +
                         selfTypeReference.ensureQualifiedTypeName().asString(),
@@ -806,13 +839,6 @@ class AppFunctionMetadataCreatorHelper(
                     description = description,
                     annotations,
                 )
-
-            AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT ->
-                AppFunctionPendingIntentTypeMetadata(
-                    isNullable = isNullable,
-                    description = description,
-                )
-
             else -> throw IllegalStateException("Unsupported primitive type: $primitiveType")
         }
     }
@@ -823,7 +849,7 @@ class AppFunctionMetadataCreatorHelper(
      */
     data class AppFunctionAnnotationProperties(
         val isEnabledByDefault: Boolean?,
-        val isDescribedByKdoc: Boolean?,
+        val isDescribedByKDoc: Boolean?,
         val schemaName: String?,
         val schemaVersion: Long?,
         val schemaCategory: String?,

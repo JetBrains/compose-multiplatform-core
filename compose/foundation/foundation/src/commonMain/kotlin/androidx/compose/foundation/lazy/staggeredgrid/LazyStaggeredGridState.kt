@@ -19,6 +19,9 @@
 package androidx.compose.foundation.lazy.staggeredgrid
 
 import androidx.annotation.IntRange as AndroidXIntRange
+import androidx.collection.IntSet
+import androidx.collection.mutableIntObjectMapOf
+import androidx.collection.mutableIntSetOf
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.ScrollIndicatorState
@@ -52,6 +55,7 @@ import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
 import androidx.compose.ui.unit.Constraints
@@ -237,7 +241,7 @@ internal constructor(
 
     /** prefetch state */
     private var prefetchBaseIndex: Int = -1
-    private val currentItemPrefetchHandles = mutableMapOf<Int, PrefetchHandle>()
+    private val currentItemPrefetchHandles = mutableIntObjectMapOf<PrefetchHandle>()
 
     internal val laneCount
         get() = layoutInfoState.value.slots.sizes.size
@@ -488,7 +492,7 @@ internal constructor(
             }
             prefetchBaseIndex = prefetchIndex
 
-            val prefetchHandlesUsed = mutableSetOf<Int>()
+            val prefetchHandlesUsed = mutableIntSetOf()
             var targetIndex = prefetchIndex
             val slots = info.slots
             val laneCount = slots.sizes.size
@@ -547,14 +551,11 @@ internal constructor(
         }
     }
 
-    private fun clearLeftoverPrefetchHandles(prefetchHandlesUsed: Set<Int>) {
-        val iterator = currentItemPrefetchHandles.iterator()
-        while (iterator.hasNext()) {
-            val entry = iterator.next()
-            if (entry.key !in prefetchHandlesUsed) {
-                entry.value.cancel()
-                iterator.remove()
-            }
+    private fun clearLeftoverPrefetchHandles(prefetchHandlesUsed: IntSet) {
+        currentItemPrefetchHandles.removeIf { key, value ->
+            val used = key in prefetchHandlesUsed
+            if (!used) value.cancel()
+            !used
         }
     }
 
@@ -563,7 +564,7 @@ internal constructor(
         if (prefetchBaseIndex != -1 && items.isNotEmpty()) {
             if (prefetchBaseIndex !in items.first().index..items.last().index) {
                 prefetchBaseIndex = -1
-                currentItemPrefetchHandles.values.forEach { it.cancel() }
+                currentItemPrefetchHandles.forEachValue { it.cancel() }
                 currentItemPrefetchHandles.clear()
             }
         }
@@ -578,6 +579,22 @@ internal constructor(
         if (!isLookingAhead && hasLookaheadOccurred) {
             // If there was already a lookahead pass, record this result as Approach result
             approachLayoutInfo = result
+            Snapshot.withoutReadObservation {
+                // Check whether backscroll animation (from _lazyLayoutScrollDeltaBetweenPasses) is
+                // necessary. This animation handles cases where lookahead and approach passes
+                // have different maximum scroll bounds due to measurement differences (e.g.,
+                // when scrolling past the last item). If both passes already have the same
+                // scroll position, the animation is unnecessary and can be stopped.
+                if (
+                    _lazyLayoutScrollDeltaBetweenPasses.isActive &&
+                        result.firstVisibleItemIndices.contentEquals(scrollPosition.indices) &&
+                        result.firstVisibleItemScrollOffsets.contentEquals(
+                            scrollPosition.scrollOffsets
+                        )
+                ) {
+                    _lazyLayoutScrollDeltaBetweenPasses.stop()
+                }
+            }
         } else {
             if (isLookingAhead) {
                 hasLookaheadOccurred = true

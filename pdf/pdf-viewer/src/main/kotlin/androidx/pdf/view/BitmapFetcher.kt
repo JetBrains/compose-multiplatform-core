@@ -70,7 +70,7 @@ internal class BitmapFetcher(
      * threshold, we will start to use tiled rendering.
      */
     private val maxBitmapSizePx: Point,
-    private val onPageUpdate: () -> Unit,
+    private val onBitmapReady: (Int) -> Unit,
     /** Error flow for propagating error occurred while processing to [PdfView]. */
     private val errorFlow: MutableSharedFlow<Throwable>,
 ) : AutoCloseable {
@@ -269,7 +269,7 @@ internal class BitmapFetcher(
         val job =
             fetchFullPageBitmap(limitBitmapSize(scale, maxBitmapSizePx)) {
                 pageBitmaps = FullPageBitmap(it, scale)
-                onPageUpdate()
+                onBitmapReady(pageNum)
             }
         return SingleBitmapRequestHandle(job)
     }
@@ -330,6 +330,14 @@ internal class BitmapFetcher(
                         throwable = e,
                     )
                 errorFlow.emit(exception)
+            } catch (e: IllegalStateException) {
+                /*
+                  This exception is thrown when attempting to render a page that has already
+                  been closed. This can happen in a race condition where the document is
+                  closed while a background render task is in progress. We can safely ignore
+                  this exception because if the document is being closed, the rendered bitmap
+                  is no longer needed.
+                */
             }
         }
     }
@@ -358,7 +366,7 @@ internal class BitmapFetcher(
                         )
                     ensureActive()
                     tile.bitmap = bitmap
-                    onPageUpdate()
+                    onBitmapReady(pageNum)
                 } catch (e: DeadObjectException) {
                     // Service was disconnected.
                     val exception =
@@ -372,6 +380,14 @@ internal class BitmapFetcher(
                         )
                     errorFlow.emit(exception)
                     return@launch
+                } catch (e: IllegalStateException) {
+                    /*
+                      This exception is thrown when attempting to render a page that has already
+                      been closed. This can happen in a race condition where the document is
+                      closed while a background render task is in progress. We can safely ignore
+                      this exception because if the document is being closed, the rendered bitmap
+                      is no longer needed.
+                    */
                 }
             }
         return job

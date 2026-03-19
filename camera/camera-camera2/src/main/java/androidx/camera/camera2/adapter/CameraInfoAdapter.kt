@@ -158,10 +158,10 @@ constructor(
             CameraCharacteristics.LENS_FACING_FRONT -> CameraSelector.LENS_FACING_FRONT
             CameraCharacteristics.LENS_FACING_BACK -> CameraSelector.LENS_FACING_BACK
             CameraCharacteristics.LENS_FACING_EXTERNAL -> CameraSelector.LENS_FACING_EXTERNAL
-            else ->
-                throw IllegalArgumentException(
-                    "The specified lens facing integer $lensFacingInt can not be recognized."
-                )
+            else -> {
+                warn { "Unrecognized lens facing: $lensFacingInt!" }
+                CameraSelector.LENS_FACING_UNKNOWN
+            }
         }
     }
 

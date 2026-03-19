@@ -27,7 +27,6 @@ import androidx.room3.compiler.processing.isLong
 import androidx.room3.compiler.processing.isVoid
 import androidx.room3.compiler.processing.isVoidObject
 import androidx.room3.ext.CommonTypeNames
-import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.isList
 import androidx.room3.ext.isNotKotlinUnit
 import androidx.room3.ext.isNotVoid
@@ -204,8 +203,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                         )
                         .let {
                             if (
-                                scope.language == CodeLanguage.KOTLIN &&
-                                    functionInfo.returnInfo == ReturnInfo.ID_ARRAY_BOX &&
+                                functionInfo.returnInfo == ReturnInfo.ID_ARRAY_BOX &&
                                     functionInfo.returnType.asTypeName() ==
                                         functionInfo.returnInfo.typeName
                             ) {
@@ -214,8 +212,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                                     expressionBlock = it,
                                 )
                             } else if (
-                                scope.language == CodeLanguage.KOTLIN &&
-                                    functionInfo.returnInfo == ReturnInfo.ID_LIST &&
+                                functionInfo.returnInfo == ReturnInfo.ID_LIST &&
                                     functionInfo.returnType.asTypeName().rawTypeName ==
                                         CommonTypeNames.MUTABLE_LIST
                             ) {
@@ -224,45 +221,20 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                                 it
                             }
                         }
-                when (scope.language) {
-                    CodeLanguage.JAVA -> {
-                        when (functionInfo.returnInfo) {
-                            ReturnInfo.VOID,
-                            ReturnInfo.VOID_OBJECT -> {
-                                if (param == parameters.last()) {
-                                    addStatement("%L", resultFormat)
-                                    addStatement("return null")
-                                } else {
-                                    addStatement("%L", resultFormat)
-                                }
-                            }
-                            ReturnInfo.UNIT -> {
-                                if (param == parameters.last()) {
-                                    addStatement("%L", resultFormat)
-                                    addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
-                                } else {
-                                    addStatement("%L", resultFormat)
-                                }
-                            }
-                            else -> addStatement("return %L", resultFormat)
-                        }
-                    }
-                    CodeLanguage.KOTLIN -> {
-                        if (resultVar != null) {
-                            // if it has more than 1 parameter, we would've already printed the
-                            // error so we don't care about re-declaring the variable here
-                            addLocalVariable(
-                                name = resultVar,
-                                typeName = returnType.asTypeName(),
-                                assignExpr = resultFormat,
-                            )
-                        } else {
-                            addStatement("%L", resultFormat)
-                        }
-                        if (functionInfo.returnInfo == ReturnInfo.VOID_OBJECT) {
-                            addStatement("null")
-                        }
-                    }
+
+                if (resultVar != null) {
+                    // if it has more than 1 parameter, we would've already printed the
+                    // error so we don't care about re-declaring the variable here
+                    addLocalVariable(
+                        name = resultVar,
+                        typeName = returnType.asTypeName(),
+                        assignExpr = resultFormat,
+                    )
+                } else {
+                    addStatement("%L", resultFormat)
+                }
+                if (functionInfo.returnInfo == ReturnInfo.VOID_OBJECT) {
+                    addStatement("null")
                 }
             }
             if (scope.language == CodeLanguage.KOTLIN && resultVar != null) {

@@ -69,8 +69,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     fun updatePaletteItems(paletteItems: List<PaletteItem>, currentSelectedIndex: Int? = null) {
         colorPaletteAdapter.submitList(paletteItems) {
             if (currentSelectedIndex != null) colorPaletteAdapter.setSelection(currentSelectedIndex)
-            // Updating palette items may change the dimensions of the view
-            requestLayout()
         }
     }
 
@@ -98,10 +96,19 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                 // by adding back one spacing unit because a grid of 'n' items has 'n-1' gaps
                 val availableWidth = w - paddingLeft - paddingRight + itemSpacing
                 val newSpanCount = max(1, availableWidth / totalItemSpace)
+                val lm = layoutManager as? GridLayoutManager ?: return
+                if (newSpanCount != lm.spanCount) lm.spanCount = newSpanCount
+            }
+        }
+    }
 
-                // Post the span count update to the message queue. This ensures it runs after the
-                // current layout pass is complete, avoiding race conditions.
-                post { (layoutManager as? GridLayoutManager)?.spanCount = newSpanCount }
+    fun requestFocusOnSelectedItem() {
+        post {
+            val selectedIndex = colorPaletteAdapter.selectedPosition
+            val viewHolder = findViewHolderForAdapterPosition(selectedIndex)
+            viewHolder?.itemView?.let {
+                it.isFocusableInTouchMode = true
+                it.requestFocus()
             }
         }
     }

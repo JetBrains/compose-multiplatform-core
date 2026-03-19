@@ -19,7 +19,7 @@ package androidx.xr.glimmer.demos
 import androidx.xr.glimmer.samples.ButtonSampleUsage
 import androidx.xr.glimmer.samples.CardSampleUsage
 import androidx.xr.glimmer.samples.ColorsSample
-import androidx.xr.glimmer.samples.DepthLevelsSample
+import androidx.xr.glimmer.samples.DepthEffectLevelsSample
 import androidx.xr.glimmer.samples.IconSampleUsage
 import androidx.xr.glimmer.samples.ListItemSampleUsage
 import androidx.xr.glimmer.samples.OnIndirectPointerGestureSampleUsage
@@ -30,12 +30,12 @@ import androidx.xr.glimmer.samples.TypographySample
 
 val Demos =
     DemoCategory(
-        "Glimmer Demos",
+        "Jetpack Compose Glimmer Demos",
         listOf(
             ComposableDemo("Colors") { ColorsSample() },
             ComposableDemo("Typography") { TypographySample() },
             ComposableDemo("Shapes") { ShapesSample() },
-            ComposableDemo("Depth Levels") { DepthLevelsSample() },
+            ComposableDemo("DepthEffect Levels") { DepthEffectLevelsSample() },
             ComposableDemo("Surface") { SurfaceSampleUsage() },
             ComposableDemo("Icons") { IconSampleUsage() },
             ComposableDemo("Cards") { CardSampleUsage() },
@@ -43,7 +43,7 @@ val Demos =
             ComposableDemo("ListItems") { ListItemSampleUsage() },
             ComposableDemo("TitleChips") { TitleChipSampleUsage() },
             DemoCategory("Focus", FocusDemos),
-            DemoCategory("List", ListDemos),
+            DemoCategory("Lists", ListDemos),
             DemoCategory("Stack", StackDemos),
             ComposableDemo("Gesture") { OnIndirectPointerGestureSampleUsage() },
             ComposableDemo("Settings") { DemoSettings() },

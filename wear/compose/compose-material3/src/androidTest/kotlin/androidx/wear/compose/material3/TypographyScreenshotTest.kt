@@ -22,7 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.DeviceFontFamilyName
@@ -323,7 +323,7 @@ class TypographyScreenshotTest {
         style: TextStyle,
         variationSettings: FontVariation.Settings,
     ) {
-        ScreenConfiguration(screenSizeDp = SCREEN_SIZE_LARGE) {
+        ScreenConfiguration(desiredScreenSizeDp = SCREEN_SIZE_LARGE) {
             Box(
                 modifier = Modifier.size(SCREEN_SIZE_LARGE.dp).testTag(TEST_TAG),
                 contentAlignment = Alignment.Center,
@@ -340,7 +340,7 @@ class TypographyScreenshotTest {
         style: CurvedTextStyle,
         variationSettings: FontVariation.Settings,
     ) {
-        ScreenConfiguration(screenSizeDp = SCREEN_SIZE_LARGE) {
+        ScreenConfiguration(desiredScreenSizeDp = SCREEN_SIZE_LARGE) {
             CurvedLayout(Modifier.size(SCREEN_SIZE_LARGE.dp).testTag(TEST_TAG)) {
                 curvedRow {
                     curvedText(

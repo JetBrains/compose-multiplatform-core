@@ -20,7 +20,6 @@ import android.opengl.EGL14
 import android.opengl.GLES11Ext
 import android.opengl.GLES30
 import android.opengl.Matrix
-import android.util.Log
 import android.view.Surface
 import androidx.opengl.EGLExt
 import androidx.opengl.EGLImageKHR
@@ -38,12 +37,13 @@ import androidx.xr.arcore.playservices.ArCoreRuntime
 import androidx.xr.arcore.playservices.cameraState
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import java.io.IOException
 
 /** Renders the Geospatial Activity scene. */
-class GeospatialRenderer(private val session: Session, private val anchors: MutableList<Anchor>) :
+class GeospatialRenderer(private val session: Session, private val anchors: List<Anchor>) :
     SampleRender.Companion.Renderer {
 
     private lateinit var backgroundRenderer: BackgroundRenderer
@@ -88,7 +88,7 @@ class GeospatialRenderer(private val session: Session, private val anchors: Muta
                     )
                     .setTexture("u_Texture", virtualObjectTexture)
         } catch (e: IOException) {
-            Log.e(GeospatialActivity.ACTIVITY_NAME, "Failed to create background renderer", e)
+            XrLog.error(e) { "Failed to create background renderer" }
             return
         }
     }
@@ -104,7 +104,7 @@ class GeospatialRenderer(private val session: Session, private val anchors: Muta
             backgroundRenderer.setUseDepthVisualization(render, false)
             backgroundRenderer.setUseOcclusion(render, false)
         } catch (e: IOException) {
-            Log.e(GeospatialActivity.ACTIVITY_NAME, "Failed to read a required asset file", e)
+            XrLog.error(e) { "Failed to read a required asset file" }
             return
         }
 

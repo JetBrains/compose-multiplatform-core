@@ -63,6 +63,7 @@ import androidx.xr.arcore.testapp.common.TestCaseButton
 import androidx.xr.arcore.testapp.depthmaps.DepthMapActivity
 import androidx.xr.arcore.testapp.eyetracking.EyeTrackingActivity
 import androidx.xr.arcore.testapp.facetracking.FaceTrackingActivity
+import androidx.xr.arcore.testapp.geospatial.GeospatialActivity
 import androidx.xr.arcore.testapp.handtracking.HandTrackingActivity
 import androidx.xr.arcore.testapp.helloar.HelloArObjectActivity
 import androidx.xr.arcore.testapp.helloar.HelloArPlaneActivity
@@ -70,6 +71,7 @@ import androidx.xr.arcore.testapp.persistentanchors.PersistentAnchorsActivity
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.arcore.testapp.ui.theme.JXRARCoreTestsTheme
 import androidx.xr.arcore.testapp.ui.theme.Purple80
+import androidx.xr.runtime.XrLog
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -90,6 +92,9 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        XrLog.isEnabled = true
+        XrLog.level = XrLog.Level.VERBOSE
 
         requestUserPermissions(
             arrayOf(
@@ -191,6 +196,7 @@ class MainActivity : ComponentActivity() {
                 }
                 TestCaseColumnRowItem(R.string.eye_tracking) { startTest<EyeTrackingActivity>(it) }
                 TestCaseColumnRowItem(R.string.blend_mode) { startTest<HelloArPlaneActivity>(it) }
+                TestCaseColumnRowItem(R.string.geospatial) { startTest<GeospatialActivity>(it) }
             }
         }
     }

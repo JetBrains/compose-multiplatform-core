@@ -46,19 +46,18 @@ class QuickSuccessiveImageCaptureFailsRepeatingRequestQuirkTest(
     private val isEnabledExpected: Boolean,
 ) {
     companion object {
-        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(
             name = "Model: {0}, lens facing: {1}, external ae mode: {2}, enabled: {3}"
         )
         fun data() =
             listOf(
-                arrayOf("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, true),
-                arrayOf("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, false),
-                arrayOf("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_FULL, false),
-                arrayOf("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_3, false),
-                arrayOf("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL, false),
-                arrayOf("Google", INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, false),
+                arrayOf<Any>("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, true),
+                arrayOf<Any>("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, false),
+                arrayOf<Any>("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_FULL, false),
+                arrayOf<Any>("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_3, false),
+                arrayOf<Any>("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL, false),
+                arrayOf<Any>("Google", INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, false),
             )
     }
 

@@ -211,15 +211,15 @@ internal class KspProcessingEnv(
 
     enum class JvmDefaultMode(val option: String) {
         DISABLE("disable"),
-        ALL_COMPATIBILITY("all-compatibility"),
-        ALL_INCOMPATIBLE("all");
+        ENABLE("enable"),
+        NO_COMPATIBILITY("no-compatibility");
 
         companion object {
             fun fromStringOrNull(string: String?): JvmDefaultMode? =
                 when (string) {
                     DISABLE.option -> DISABLE
-                    ALL_COMPATIBILITY.option -> ALL_COMPATIBILITY
-                    ALL_INCOMPATIBLE.option -> ALL_INCOMPATIBLE
+                    ENABLE.option -> ENABLE
+                    NO_COMPATIBILITY.option -> NO_COMPATIBILITY
                     else -> null
                 }
         }
@@ -400,11 +400,7 @@ private class KspResolver(val env: KspProcessingEnv, val resolver: Resolver) {
                 allowPrimitives = false,
             )
         }
-        return if (ksTypeArgument.variance == Variance.STAR) {
-            KspStarTypeArgumentType(env = env, typeArg = ksTypeArgument)
-        } else {
-            KspTypeArgumentType(env = env, typeArg = ksTypeArgument)
-        }
+        return KspTypeArgumentType.create(env, ksTypeArgument)
     }
 
     /**

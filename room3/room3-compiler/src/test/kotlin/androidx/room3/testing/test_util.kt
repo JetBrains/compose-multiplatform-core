@@ -70,11 +70,6 @@ object COMMON {
         loadJavaCode("common/input/NotAnEntity.java", "foo.bar.NotAnEntity")
     }
 
-    val PARENT by lazy { loadJavaCode("common/input/Parent.java", "foo.bar.Parent") }
-    val CHILD1 by lazy { loadJavaCode("common/input/Child1.java", "foo.bar.Child1") }
-    val CHILD2 by lazy { loadJavaCode("common/input/Child2.java", "foo.bar.Child2") }
-    val INFO by lazy { loadJavaCode("common/input/Info.java", "foo.bar.Info") }
-
     val NOT_AN_ENTITY_TYPE_NAME by lazy { XClassName.get("foo.bar", "NotAnEntity") }
 
     val MULTI_PKEY_ENTITY by lazy {
@@ -86,6 +81,7 @@ object COMMON {
     val LIVE_DATA by lazy {
         loadJavaCode("common/input/LiveData.java", LifecyclesTypeNames.LIVE_DATA.canonicalName)
     }
+    val FLOW_LIVE_DATA by lazy { loadKotlinCode("common/input/FlowLiveData.kt") }
     val COMPUTABLE_LIVE_DATA by lazy {
         loadJavaCode(
             "common/input/ComputableLiveData.java",
@@ -143,6 +139,8 @@ object COMMON {
 
     val GUAVA_ROOM by lazy { loadKotlinCode("common/input/GuavaRoom.kt") }
 
+    val EITHER by lazy { loadKotlinCode("common/input/Either.kt") }
+
     val LISTENABLE_FUTURE_PAGING_SOURCE by lazy {
         loadKotlinCode("common/input/ListenableFuturePagingSource.kt")
     }
@@ -177,8 +175,6 @@ object COMMON {
 
     val RECEIVE_CHANNEL by lazy { loadKotlinCode("common/input/coroutines/ReceiveChannel.kt") }
 
-    val ROOM_DATABASE_KTX by lazy { loadKotlinCode("common/input/RoomDatabaseExt.kt") }
-
     val LONG_SPARSE_ARRAY by lazy {
         loadJavaCode(
             "common/input/collection/LongSparseArray.java",
@@ -196,7 +192,7 @@ object COMMON {
 
 fun testCodeGenScope(): CodeGenScope {
     return CodeGenScope(
-        object : TypeWriter(WriterContext(CodeLanguage.JAVA, setOf(Platform.JVM), true)) {
+        object : TypeWriter(WriterContext(CodeLanguage.KOTLIN, setOf(Platform.JVM), true)) {
             override val packageName = "test"
 
             override fun createTypeSpecBuilder(): XTypeSpec.Builder {

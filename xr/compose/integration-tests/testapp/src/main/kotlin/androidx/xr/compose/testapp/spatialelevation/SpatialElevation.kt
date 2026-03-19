@@ -103,6 +103,7 @@ class SpatialElevation : ComponentActivity() {
         setContent { IntegrationTestsAppTheme { SpatialElevationApp() } }
     }
 
+    @Suppress("DEPRECATION")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun SpatialElevationApp() {

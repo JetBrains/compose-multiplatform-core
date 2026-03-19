@@ -28,8 +28,10 @@ import android.media.Image
 import android.os.Build
 import android.os.Looper
 import android.view.Surface
+import androidx.camera.camera2.adapter.CameraStateAdapter
 import androidx.camera.camera2.adapter.CaptureConfigAdapter
 import androidx.camera.camera2.adapter.CaptureResultAdapter
+import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.adapter.ZslControl
 import androidx.camera.camera2.adapter.asListenableFuture
@@ -39,7 +41,7 @@ import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.compat.workaround.NotUseFlashModeTorchFor3aUpdate
 import androidx.camera.camera2.compat.workaround.NotUseTorchAsFlash
 import androidx.camera.camera2.compat.workaround.UseTorchAsFlash
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.camera2.pipe.AeMode
@@ -241,10 +243,16 @@ class CapturePipelineTest {
         FakeCameraProperties(
             FakeCameraMetadata(mapOf(CameraCharacteristics.FLASH_INFO_AVAILABLE to true))
         )
-    private val fakeUseCaseGraphConfig =
-        UseCaseGraphConfig(
-            graph = FakeCameraGraph(fakeCameraGraphSession = fakeCameraGraphSession),
-            surfaceToStreamMap = mapOf(fakeDeferrableSurface to fakeStreamId),
+    private val cameraStateAdapter = CameraStateAdapter()
+    private val fakeUseCaseCameraContext =
+        UseCaseCameraContext(
+            cameraGraphProvider = {
+                FakeCameraGraph(fakeCameraGraphSession = fakeCameraGraphSession)
+            },
+            cameraStateAdapter = cameraStateAdapter,
+            graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+            streamConfigMapProvider = { emptyMap() },
+            defaultSurfaceToStreamMap = mapOf(fakeDeferrableSurface to fakeStreamId),
         )
     private val fakeZslControl =
         object : ZslControl {
@@ -290,7 +298,7 @@ class CapturePipelineTest {
     private val fakeCaptureConfigAdapter =
         CaptureConfigAdapter(
             fakeCameraProperties,
-            fakeUseCaseGraphConfig,
+            fakeUseCaseCameraContext,
             fakeZslControl,
             fakeUseCaseThreads,
             NoOpTemplateParamsOverride,
@@ -313,16 +321,12 @@ class CapturePipelineTest {
     @Before
     fun setUp() {
         state3AControl =
-            State3AControl(fakeCameraProperties, NoOpAutoFlashAEModeDisabler).apply {
-                requestControl = fakeRequestControl
-            }
+            State3AControl(fakeCameraProperties, NoOpAutoFlashAEModeDisabler, fakeUseCaseThreads)
+                .apply { requestControl = fakeRequestControl }
 
         torchControl =
             TorchControl(fakeCameraProperties, state3AControl, fakeUseCaseThreads).also {
                 it.requestControl = fakeRequestControl
-
-                // Ensure the control is updated after the UseCaseCamera been set.
-                assertThat(fakeRequestControl.setTorchSemaphore.tryAcquire(testScope)).isTrue()
                 fakeRequestControl.torchUpdateEventList.clear()
             }
 
@@ -338,7 +342,7 @@ class CapturePipelineTest {
 
         fakeUseCaseCameraState =
             UseCaseCameraState(
-                fakeUseCaseGraphConfig,
+                fakeUseCaseCameraContext,
                 templateParamsOverride = NoOpTemplateParamsOverride,
             )
 
@@ -605,7 +609,7 @@ class CapturePipelineTest {
         runTest {
             capturePipeline =
                 createCapturePipeline(useTorchAsFlash = createUseTorchAsFlash(forceEnable = true))
-            val initialListenerSize = comboRequestListener.listeners.size
+            val initialListenerSize = comboRequestListener.listenerHolders.size
 
             withFlashTypeTorch_shouldLock3AAsNeeded(
                 capturePipeline,
@@ -615,7 +619,7 @@ class CapturePipelineTest {
                 simulate3aConvergence = false,
             )
 
-            assertThat(comboRequestListener.listeners.size).isEqualTo(initialListenerSize)
+            assertThat(comboRequestListener.listenerHolders.size).isEqualTo(initialListenerSize)
         }
 
     @Test
@@ -788,7 +792,6 @@ class CapturePipelineTest {
         assertThat(fakeCameraGraphSession.lock3AForCaptureSemaphore.tryAcquire(this)).isFalse()
     }
 
-    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslTemplate_templateZeroShutterLagSent(): Unit = runTest {
         // Arrange.
@@ -825,7 +828,6 @@ class CapturePipelineTest {
             .isEqualTo(RequestTemplate(CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG))
     }
 
-    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withNoTemplate_templateStillPictureSent(): Unit = runTest {
         // Arrange.
@@ -859,7 +861,6 @@ class CapturePipelineTest {
         assertThat(request.template).isEqualTo(RequestTemplate(CameraDevice.TEMPLATE_STILL_CAPTURE))
     }
 
-    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslDisabledByUseCaseConfig_templateStillPictureSent(): Unit =
         runTest {
@@ -897,7 +898,6 @@ class CapturePipelineTest {
                 .isEqualTo(RequestTemplate(CameraDevice.TEMPLATE_STILL_CAPTURE))
         }
 
-    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslDisabledByFlashMode_templateStillPictureSent(): Unit =
         runTest {
@@ -1135,7 +1135,7 @@ class CapturePipelineTest {
         val capturePipelineTorchCorrection =
             CapturePipelineTorchCorrection(
                 cameraProperties = FakeCameraProperties(),
-                capturePipelineImpl = capturePipeline,
+                capturePipelineImplProvider = { capturePipeline },
                 threads = fakeUseCaseThreads,
                 torchControl = torchControl,
             )
@@ -1311,8 +1311,8 @@ class CapturePipelineTest {
             requestListener = comboRequestListener,
             threads = fakeUseCaseThreads,
             torchControl = torchControl,
-            useCaseGraphConfig = fakeUseCaseGraphConfig,
-            useCaseCameraState = fakeUseCaseCameraState,
+            useCaseCameraContext = fakeUseCaseCameraContext,
+            useCaseCameraStateProvider = { fakeUseCaseCameraState },
             useTorchAsFlash = useTorchAsFlash,
             flashControl = flashControl,
             videoUsageControl = VideoUsageControl(),

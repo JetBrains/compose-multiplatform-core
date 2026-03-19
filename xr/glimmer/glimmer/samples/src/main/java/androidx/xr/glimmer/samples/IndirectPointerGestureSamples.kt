@@ -20,6 +20,7 @@ import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,9 +45,9 @@ fun OnIndirectPointerGestureSampleUsage() {
         modifier =
             Modifier.onIndirectPointerGesture(
                     enabled = true,
-                    onClick = { log = "${Instant.now()} - onClick\n" + log },
                     onSwipeForward = { log = "${Instant.now()} - onSwipeForward\n" + log },
                     onSwipeBackward = { log = "${Instant.now()} - onSwipeBackward\n" + log },
+                    onClick = { log = "${Instant.now()} - onClick\n" + log },
                 )
                 .focusTarget()
                 .padding(16.dp),
@@ -62,11 +63,12 @@ fun OnIndirectPointerGestureSampleUsage() {
 fun OnIndirectPointerGestureSample() {
     Box(
         modifier =
-            Modifier.onIndirectPointerGesture(
+            Modifier.fillMaxSize()
+                .onIndirectPointerGesture(
                     enabled = true,
-                    onClick = { /* onClick */ },
                     onSwipeForward = { /* onSwipeForward */ },
                     onSwipeBackward = { /* onSwipeBackward */ },
+                    onClick = { /* onClick */ },
                 )
                 .focusTarget()
     ) {

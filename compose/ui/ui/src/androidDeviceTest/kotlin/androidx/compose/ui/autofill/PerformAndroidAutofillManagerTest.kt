@@ -41,7 +41,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -71,7 +70,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.text.AnnotatedString
@@ -87,7 +86,6 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.test.Ignore
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -103,15 +101,6 @@ class PerformAndroidAutofillManagerTest {
 
     private val contentTag = "content_tag"
 
-    @OptIn(ExperimentalComposeUiApi::class)
-    private val previousFlagValue = ComposeUiFlags.isSemanticAutofillEnabled
-
-    @Before
-    fun enableAutofill() {
-        @OptIn(ExperimentalComposeUiApi::class)
-        ComposeUiFlags.isSemanticAutofillEnabled = true
-    }
-
     @After
     fun teardown() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -123,8 +112,6 @@ class PerformAndroidAutofillManagerTest {
                 }
             }
         }
-        @OptIn(ExperimentalComposeUiApi::class)
-        ComposeUiFlags.isSemanticAutofillEnabled = previousFlagValue
     }
 
     @Test

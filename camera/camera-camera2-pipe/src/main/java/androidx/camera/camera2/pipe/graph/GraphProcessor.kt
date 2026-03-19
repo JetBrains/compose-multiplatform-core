@@ -84,6 +84,11 @@ internal interface GraphProcessor {
     fun update3AParameters(parameters: Map<*, Any?>)
 
     /**
+     * Update [androidx.camera.camera2.pipe.RequestListeners] changes to current repeating request.
+     */
+    fun updateRequestListeners(listeners: List<Request.Listener>)
+
+    /**
      * Indicates that internal state may have changed, and that the repeating request may need to be
      * re-issued.
      */
@@ -146,7 +151,7 @@ constructor(
                 cameraGraphId = cameraGraphId,
                 defaultParameters = defaultParameters,
                 requiredParameters = requiredParameters,
-                graphListeners = graphListeners + listOfNotNull(captureLimiter),
+                requiredListeners = graphListeners + listOfNotNull(captureLimiter),
                 listeners = listOfNotNull(graphListener3A, captureLimiter),
                 shutdownScope = threads.cameraPipeScope,
                 dispatcher = threads.lightweightDispatcher,
@@ -247,6 +252,10 @@ constructor(
 
     override fun update3AParameters(parameters: Map<*, Any?>) {
         graphLoop.graph3AParameters = parameters
+    }
+
+    override fun updateRequestListeners(listeners: List<Request.Listener>) {
+        graphLoop.requestListeners = listeners
     }
 
     override fun invalidate() {

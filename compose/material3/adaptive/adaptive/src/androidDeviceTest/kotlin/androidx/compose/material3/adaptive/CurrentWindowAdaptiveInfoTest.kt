@@ -22,7 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
@@ -51,6 +51,7 @@ class CurrentWindowAdaptiveInfoTest {
     @get:Rule val testRule: TestRule = RuleChain.outerRule(layoutInfoRule).around(composeRule)
 
     @Test
+    @Suppress("DEPRECATION")
     fun test_currentWindowAdaptiveInfo() {
         lateinit var actualAdaptiveInfo: WindowAdaptiveInfo
         val mockWindowSize = mutableStateOf(MockWindowSize1)
@@ -96,7 +97,7 @@ class CurrentWindowAdaptiveInfoTest {
                 LocalDensity provides MockDensity,
                 LocalWindowInfo provides MockWindowInfo(mockWindowSize, MockDensity),
             ) {
-                actualAdaptiveInfo = currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true)
+                actualAdaptiveInfo = currentWindowAdaptiveInfoV2()
             }
         }
 

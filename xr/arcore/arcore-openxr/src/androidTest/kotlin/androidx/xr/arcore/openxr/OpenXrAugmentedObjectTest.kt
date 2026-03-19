@@ -20,7 +20,6 @@ import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
-import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.TrackingState
@@ -30,7 +29,6 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
-import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -42,7 +40,7 @@ class OpenXrAugmentedObjectTest {
 
     companion object {
         init {
-            System.loadLibrary("androidx.xr.runtime.openxr.test")
+            System.loadLibrary("androidx.xr.arcore.openxr.test")
         }
     }
 
@@ -53,11 +51,13 @@ class OpenXrAugmentedObjectTest {
     private lateinit var openXrManager: OpenXrManager
     private lateinit var xrResources: XrResources
     private lateinit var underTest: OpenXrAugmentedObject
+    private lateinit var timeSource: OpenXrTimeSource
 
     @Before
     fun setUp() {
-        xrResources = XrResources()
-        underTest = OpenXrAugmentedObject(objectId, OpenXrTimeSource(), xrResources)
+        timeSource = OpenXrTimeSource()
+        xrResources = XrResources(timeSource)
+        underTest = OpenXrAugmentedObject(objectId, timeSource, xrResources)
         xrResources.addTrackable(objectId, underTest)
         xrResources.addUpdatable(underTest as Updatable)
     }
@@ -65,42 +65,6 @@ class OpenXrAugmentedObjectTest {
     @After
     fun tearDown() {
         xrResources.clear()
-    }
-
-    @Test
-    fun createAnchor_addsAnchor() = initOpenXrManagerAndRunTest {
-        check(xrResources.updatables.size == 1)
-        check(xrResources.updatables.contains(underTest))
-
-        val anchor = underTest.createAnchor(Pose())
-
-        assertThat(xrResources.updatables).contains(anchor as Updatable)
-    }
-
-    @Test
-    fun createAnchor_anchorResourcesExhausted_throwsException() = initOpenXrManagerAndRunTest {
-        check(xrResources.updatables.size == 1)
-        check(xrResources.updatables.contains(underTest))
-
-        // Number of calls comes from 'kAnchorResourcesLimit' defined in
-        // //third_party/jetpack_xr_natives/openxr/openxr_stub.cc.
-        repeat(5) { underTest.createAnchor(Pose()) }
-
-        assertThrows(AnchorResourcesExhaustedException::class.java) {
-            underTest.createAnchor(Pose())
-        }
-    }
-
-    @Test
-    fun detachAnchor_removesAnchorWhenItDetaches() = initOpenXrManagerAndRunTest {
-        val anchor = underTest.createAnchor(Pose())
-        check(xrResources.updatables.size == 2)
-        check(xrResources.updatables.contains(underTest))
-        check(xrResources.updatables.contains(anchor as Updatable))
-
-        anchor.detach()
-
-        assertThat(xrResources.updatables).doesNotContain(anchor)
     }
 
     @Test
@@ -142,7 +106,6 @@ class OpenXrAugmentedObjectTest {
 
     private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            val timeSource = OpenXrTimeSource()
             val perceptionManager = OpenXrPerceptionManager(timeSource)
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()
@@ -150,7 +113,7 @@ class OpenXrAugmentedObjectTest {
             openXrManager.configure(
                 Config(
                     augmentedObjectCategories =
-                        listOf(
+                        setOf(
                             AugmentedObjectCategory.KEYBOARD,
                             AugmentedObjectCategory.MOUSE,
                             AugmentedObjectCategory.LAPTOP,

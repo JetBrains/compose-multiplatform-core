@@ -30,7 +30,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.isDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.kruth.assertThat
 import androidx.navigation3.runtime.NavEntry
@@ -145,7 +145,7 @@ class ListDetailSceneTest {
             NavDisplay(
                 backStack = backStack,
                 onBack = { backStack.removeAt(backStack.lastIndex) },
-                sceneStrategy = rememberListDetailSceneStrategy(),
+                sceneStrategies = listOf(rememberListDetailSceneStrategy()),
             ) {
                 when {
                     it == first ->
@@ -171,7 +171,7 @@ class ListDetailSceneTest {
             NavDisplay(
                 backStack = backStack,
                 onBack = { backStack.removeAt(backStack.lastIndex) },
-                sceneStrategy = rememberListDetailSceneStrategy(),
+                sceneStrategies = listOf(rememberListDetailSceneStrategy()),
             ) {
                 when {
                     it == first ->
@@ -204,7 +204,7 @@ class ListDetailSceneTest {
             NavDisplay(
                 backStack = backStack,
                 onBack = { backStack.removeAt(backStack.lastIndex) },
-                sceneStrategy = rememberListDetailSceneStrategy(),
+                sceneStrategies = listOf(rememberListDetailSceneStrategy()),
             ) {
                 when {
                     it == first ->
@@ -240,7 +240,7 @@ class ListDetailSceneTest {
             NavDisplay(
                 backStack = backStack,
                 onBack = { backStack.removeAt(backStack.lastIndex) },
-                sceneStrategy = rememberListDetailSceneStrategy(),
+                sceneStrategies = listOf(rememberListDetailSceneStrategy()),
             ) {
                 when {
                     it == first ->
@@ -272,7 +272,7 @@ class ListDetailSceneTest {
             NavDisplay(
                 backStack = backStack,
                 onBack = { backStack.removeAt(backStack.lastIndex) },
-                sceneStrategy = rememberListDetailSceneStrategy(),
+                sceneStrategies = listOf(rememberListDetailSceneStrategy()),
             ) {
                 when {
                     it == first ->

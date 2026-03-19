@@ -15,13 +15,13 @@
  */
 package androidx.xr.glimmer
 
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.xr.glimmer.samples.ColorsSample
-import androidx.xr.glimmer.samples.DepthLevelsSample
+import androidx.xr.glimmer.samples.DepthEffectLevelsSample
 import androidx.xr.glimmer.samples.IconSizesSample
 import androidx.xr.glimmer.samples.ShapesSample
 import androidx.xr.glimmer.samples.TypographySample
@@ -58,9 +58,9 @@ class GlimmerThemeScreenshotTest() {
     }
 
     @Test
-    fun depthLevels() {
-        rule.setGlimmerThemeContent { DepthLevelsSample() }
-        rule.assertRootAgainstGolden("glimmerTheme_depthLevels", screenshotRule)
+    fun depthEffectLevels() {
+        rule.setGlimmerThemeContent { DepthEffectLevelsSample() }
+        rule.assertRootAgainstGolden("glimmerTheme_depthEffectLevels", screenshotRule)
     }
 
     @Test

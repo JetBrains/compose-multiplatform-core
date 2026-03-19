@@ -213,7 +213,7 @@ package androidx.glance.action {
 
 package androidx.glance.color {
 
-  public abstract sealed class ColorProviders {
+  public abstract sealed nonexhaustive class ColorProviders {
     method @InaccessibleFromKotlin public final androidx.glance.unit.ColorProvider getBackground();
     method @InaccessibleFromKotlin public final androidx.glance.unit.ColorProvider getError();
     method @InaccessibleFromKotlin public final androidx.glance.unit.ColorProvider getErrorContainer();

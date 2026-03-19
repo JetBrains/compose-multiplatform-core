@@ -17,12 +17,16 @@
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
-/** Describes the AR device tracking data */
+/**
+ * Describes the AR device tracking data.
+ *
+ * @property devicePose the current [Pose] of the device
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface ArDevice {
-
-    /** The current pose of the device. */
     public val devicePose: Pose
+    public val trackingState: TrackingState
 }

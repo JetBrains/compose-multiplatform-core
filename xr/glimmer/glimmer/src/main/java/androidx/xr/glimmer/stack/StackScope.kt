@@ -75,7 +75,8 @@ public inline fun <T> StackScope.items(
     )
 
 /** Stack item holder that implements the item DSL allowing adding items to the stack. */
-internal class StackItemHolder(content: StackScope.() -> Unit) : StackScope {
+internal class StackItemHolder(private val state: StackState, content: StackScope.() -> Unit) :
+    StackScope {
 
     val intervals: MutableIntervalList<StackItemInterval> = MutableIntervalList()
 
@@ -89,7 +90,11 @@ internal class StackItemHolder(content: StackScope.() -> Unit) : StackScope {
     override fun item(key: Any?, content: @Composable (StackItemScope.() -> Unit)) {
         intervals.addInterval(
             size = 1,
-            StackItemInterval(key = key?.let { { it } }, item = { content() }),
+            StackItemInterval(
+                state = state,
+                key = key?.let { keyValue -> { keyValue } },
+                item = { content() },
+            ),
         )
     }
 
@@ -98,7 +103,10 @@ internal class StackItemHolder(content: StackScope.() -> Unit) : StackScope {
         key: ((Int) -> Any)?,
         itemContent: @Composable (StackItemScope.(index: Int) -> Unit),
     ) {
-        intervals.addInterval(size = count, StackItemInterval(key = key, item = itemContent))
+        intervals.addInterval(
+            size = count,
+            StackItemInterval(state = state, key = key, item = itemContent),
+        )
     }
 
     /**
@@ -125,31 +133,19 @@ internal class StackItemHolder(content: StackScope.() -> Unit) : StackScope {
                 localIntervalIndex = localIntervalIndex,
             )
         }
-
-    internal fun getItemScope(globalIndex: Int): StackItemScopeImpl? =
-        withInterval(globalIndex) { localIntervalIndex, itemInterval ->
-            val key =
-                itemInterval.getKeyOrDefault(
-                    globalIndex = globalIndex,
-                    localIntervalIndex = localIntervalIndex,
-                )
-            itemInterval.getItemScope(key)
-        }
 }
 
 /** Represents an interval of stack items. */
 internal class StackItemInterval(
+    private val state: StackState,
     val key: ((index: Int) -> Any)?,
     val item: @Composable StackItemScope.(index: Int) -> Unit,
 ) {
     private val itemScopes = MutableScatterMap<Any, StackItemScopeImpl>()
 
-    internal fun getItemScope(key: Any): StackItemScopeImpl? = itemScopes.get(key)
-
     internal fun getOrCreateItemScope(key: Any): StackItemScopeImpl =
-        itemScopes.getOrPut(key, defaultValue = { StackItemScopeImpl() })
+        itemScopes.getOrPut(key, defaultValue = { StackItemScopeImpl(state) })
 
     internal fun getKeyOrDefault(globalIndex: Int, localIntervalIndex: Int) =
-        // Fallback to the global index if no key is provided, which is the default behavior.
-        key?.invoke(localIntervalIndex) ?: globalIndex
+        key?.invoke(localIntervalIndex) ?: DefaultStackItemKey(globalIndex)
 }

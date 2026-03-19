@@ -16,11 +16,14 @@
 
 package androidx.compose.foundation.gestures
 
+import androidx.collection.LongList
+import androidx.collection.ObjectList
+import androidx.collection.mutableLongListOf
+import androidx.collection.mutableObjectListOf
 import androidx.compose.foundation.gestures.DragEvent.DragCancelled
 import androidx.compose.foundation.gestures.DragEvent.DragDelta
 import androidx.compose.foundation.gestures.DragEvent.DragStarted
 import androidx.compose.foundation.gestures.DragEvent.DragStopped
-import androidx.compose.ui.ExperimentalIndirectPointerApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
@@ -39,10 +42,8 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
-import androidx.compose.ui.util.fastMap
 import kotlin.math.absoluteValue
 
-@OptIn(ExperimentalIndirectPointerApi::class)
 internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) {
     /** Store non-initialized states for re-use */
     private var _awaitDownState: DragDetectionState.AwaitDown? = null
@@ -278,12 +279,8 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
                     // add data to the slop detector
                     val postSlopOffset =
                         requireTouchSlopDetector()
-                            .addPositions(
-                                dragEvent.primaryAxisPosition(
-                                    node.orientationLock,
-                                    indirectPointerInputEvent.primaryDirectionalMotionAxis,
-                                ),
-                                dragEvent.primaryAxisPreviousPosition(
+                            .getPostSlopOffset(
+                                dragEvent.positionChangeIgnoreConsumed(
                                     node.orientationLock,
                                     indirectPointerInputEvent.primaryDirectionalMotionAxis,
                                 ),
@@ -534,7 +531,6 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
         node.onDragEvent(DragCancelled)
     }
 
-    @OptIn(ExperimentalIndirectPointerApi::class)
     sealed class DragDetectionState {
         /**
          * Starter state for any drag gesture cycle. At this state we're waiting for a Down event to
@@ -583,28 +579,22 @@ internal class IndirectPointerInputDragCycleDetector(val node: DragGestureNode) 
 }
 
 // these should probably go into IndirectPointerInputChange in UI
-@ExperimentalIndirectPointerApi
 private fun IndirectPointerInputChange.positionChange(
     orientation: Orientation?,
     primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis?,
 ) = this.positionChangeInternal(orientation, primaryDirectionalMotionAxis, false)
 
-@ExperimentalIndirectPointerApi
 private fun IndirectPointerInputChange.positionChangeIgnoreConsumed(
     orientation: Orientation?,
     primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis?,
 ) = this.positionChangeInternal(orientation, primaryDirectionalMotionAxis, true)
 
-@ExperimentalIndirectPointerApi
 private fun IndirectPointerInputChange.changedToUpIgnoreConsumed() = previousPressed && !pressed
 
-@ExperimentalIndirectPointerApi
 private fun IndirectPointerInputChange.changedToDown() = !isConsumed && !previousPressed && pressed
 
-@ExperimentalIndirectPointerApi
-private fun IndirectPointerInputChange.changedToDownIgnoreConsumed() = !previousPressed && pressed
+internal fun IndirectPointerInputChange.changedToDownIgnoreConsumed() = !previousPressed && pressed
 
-@ExperimentalIndirectPointerApi
 private fun IndirectPointerInputChange.positionChangeInternal(
     orientation: Orientation?,
     primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis?,
@@ -630,7 +620,6 @@ private fun IndirectPointerInputChange.positionChangeInternal(
  * smoothing logic, it's complicated to manage primary axis as well as smoothed positions, so we
  * just make the change here for simplicity.
  */
-@OptIn(ExperimentalIndirectPointerApi::class)
 private fun IndirectPointerInputChange.primaryAxisPosition(
     orientation: Orientation?,
     primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis?,
@@ -650,7 +639,6 @@ private fun IndirectPointerInputChange.primaryAxisPosition(
     }
 }
 
-@OptIn(ExperimentalIndirectPointerApi::class)
 private fun Offset.primaryAxisPosition(
     orientation: Orientation?,
     primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis?,
@@ -670,7 +658,6 @@ private fun Offset.primaryAxisPosition(
     }
 }
 
-@OptIn(ExperimentalIndirectPointerApi::class)
 private fun IndirectPointerInputChange.primaryAxisPreviousPosition(
     orientation: Orientation?,
     primaryDirectionalMotionAxis: IndirectPointerEventPrimaryDirectionalMotionAxis?,
@@ -690,7 +677,6 @@ private fun IndirectPointerInputChange.primaryAxisPreviousPosition(
     }
 }
 
-@OptIn(ExperimentalIndirectPointerApi::class)
 private fun VelocityTracker.addIndirectPointerInputChange(
     event: IndirectPointerInputChange,
     orientation: Orientation?,
@@ -711,10 +697,9 @@ private fun VelocityTracker.addIndirectPointerInputChange(
  *
  * TODO(levima): Remove this once b/413645371 lands and events are dispatched less frequently.
  */
-@OptIn(ExperimentalIndirectPointerApi::class)
 internal class IndirectPointerInputEventSmoother() {
     private var eventRotatingIndex = 0
-    private var eventRotatingArray = mutableListOf<IndirectPointerInputChange>()
+    private var eventRotatingArray = mutableObjectListOf<IndirectPointerInputChange>()
 
     fun smoothEventPosition(change: IndirectPointerInputChange): Offset {
 
@@ -736,8 +721,13 @@ internal class IndirectPointerInputEventSmoother() {
             if (eventRotatingIndex == SmoothingFactor) {
                 eventRotatingIndex = 0
             }
-            xPosition = eventRotatingArray.fastMap { it.position.x }.average().toFloat()
-            yPosition = eventRotatingArray.fastMap { it.position.y }.average().toFloat()
+            fun <T> ObjectList<T>.averageBy(selector: (T) -> Float): Float {
+                var total = 0f
+                forEach { total += selector(it) }
+                return total / size
+            }
+            xPosition = eventRotatingArray.averageBy { it.position.x }
+            yPosition = eventRotatingArray.averageBy { it.position.y }
         }
 
         return Offset(xPosition, yPosition)
@@ -754,20 +744,25 @@ internal class IndirectPointerInputEventSmoother() {
 @Suppress("PrimitiveInCollection")
 internal class OffsetSmoother() {
     private var eventRotatingIndex = 0
-    private var eventRotatingArray = mutableListOf<Offset>()
+    private var eventRotatingArray = mutableLongListOf()
 
     fun smoothEventPosition(offset: Offset): Offset {
         if (eventRotatingArray.size == SmoothingFactor) {
-            eventRotatingArray[eventRotatingIndex++] = offset
+            eventRotatingArray[eventRotatingIndex++] = offset.packedValue
         } else {
-            eventRotatingArray.add(offset)
+            eventRotatingArray.add(offset.packedValue)
         }
 
         if (eventRotatingIndex == SmoothingFactor) {
             eventRotatingIndex = 0
         }
-        val xPosition: Float = eventRotatingArray.fastMap { it.x }.average().toFloat()
-        val yPosition: Float = eventRotatingArray.fastMap { it.y }.average().toFloat()
+        fun LongList.averageBy(selector: (Long) -> Float): Float {
+            var total = 0f
+            forEach { total += selector(it) }
+            return total / size
+        }
+        val xPosition: Float = eventRotatingArray.averageBy { Offset(it).x }
+        val yPosition: Float = eventRotatingArray.averageBy { Offset(it).y }
 
         return Offset(xPosition, yPosition)
     }

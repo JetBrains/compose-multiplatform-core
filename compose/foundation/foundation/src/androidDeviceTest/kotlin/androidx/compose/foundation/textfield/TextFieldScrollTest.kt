@@ -66,7 +66,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -370,7 +370,7 @@ class TextFieldScrollTest : FocusedWindowTest {
             Second Line
             Third Line
             Fourth Line
-        """
+            """
                 .trimIndent()
 
         val textFieldScrollPosition = TextFieldScrollerPosition()
@@ -702,7 +702,11 @@ class TextFieldScrollTest : FocusedWindowTest {
             modifier =
                 modifier
                     .testTag(TextfieldTag)
-                    .heightInLines(textStyle = TextStyle.Default, maxLines = resolvedMaxLines)
+                    .heightInLines(
+                        textStyle = TextStyle.Default,
+                        maxLines = resolvedMaxLines,
+                        softWrap = isVertical,
+                    )
                     .textFieldScrollable(
                         scrollerPosition = scrollerPosition,
                         overscrollEffect = overscrollEffect,
