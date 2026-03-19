@@ -49,7 +49,6 @@ import androidx.compose.runtime.tooling.buildTrace
 import androidx.compose.runtime.tooling.findLocation
 import androidx.compose.runtime.tooling.findSubcompositionContextGroup
 import androidx.compose.runtime.tooling.traceForGroup
-import kotlin.collections.plus
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.jvm.JvmInline
@@ -741,12 +740,14 @@ internal class ComposerImpl(
     }
 
     fun startReuseFromRoot() {
-        reusingGroup = rootKey
+        // 0 is the root group index
+        reusingGroup = 0
         reusing = true
     }
 
     fun endReuseFromRoot() {
-        requirePrecondition(!isComposing && reusingGroup == rootKey) {
+        // 0 is the root group index
+        requirePrecondition(!isComposing && reusingGroup == 0) {
             "Cannot disable reuse from root if it was caused by other groups"
         }
         reusingGroup = -1
@@ -2148,6 +2149,7 @@ internal class ComposerImpl(
                 changeListWriter.startResumingScope(scope)
                 if (!reusing && scope.reusing) {
                     reusing = true
+                    reusingGroup = reader.parent
                     scope.resetReusing = true
                 }
             }
@@ -2180,7 +2182,10 @@ internal class ComposerImpl(
                 scope.reusing = false
                 if (scope.resetReusing) {
                     scope.resetReusing = false
-                    reusing = false
+                    if (reusingGroup == reader.parent) {
+                        reusing = false
+                        reusingGroup = -1
+                    }
                 }
             }
         }
