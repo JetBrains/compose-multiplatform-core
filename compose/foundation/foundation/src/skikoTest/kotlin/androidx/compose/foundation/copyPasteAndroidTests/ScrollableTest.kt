@@ -746,6 +746,8 @@ class ScrollableTest {
         // mostly horizontal event triggered horizontal scrollable
         onRoot().performMouseInput { this.scroll(Offset(-100f, -50f)) }
 
+        // Here and below we call awaitIdle() before runOnIdle to avoid event loop blocking in the web.
+        // awaitIdle waits for idleness co-operatively, unlike waitForIdle (called inside runOnIdle)
         awaitIdle()
         runOnIdle {
             assertThat(totalHorizontalScroll).isGreaterThan(0)
