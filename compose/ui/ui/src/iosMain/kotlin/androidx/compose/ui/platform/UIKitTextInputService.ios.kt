@@ -480,6 +480,9 @@ internal class UIKitTextInputService(
                 attachIntermediateTextInputView()
                 updateView()
             }
+
+            textUIView?.isFirstResponder()?.let { if (!(it)) { return } }
+
             showMenuOrUpdatePosition = {
                 textUIView?.let { textUIView ->
                     val density = view.density
@@ -620,6 +623,7 @@ internal class UIKitTextInputService(
         } else {
             showMenuOrUpdatePosition = {}
             textUIView?.let { view ->
+                view.hideTextMenu()
                 view.setFrame(outOfBoundsFrame)
 
                 view.resetOnKeyboardPressesCallback()
