@@ -1068,7 +1068,7 @@ internal class ScrollTest {
         modalVC.waitForIdle()
 
         // Perform 3 separate scroll gestures — each touchDown consumes slop independently
-        val scrollAmount = 200.dp
+        val scrollAmount = 150.dp
         repeat(3) {
             touchDown(screenSize.center)
                 .dragBy(dy = -scrollAmount, duration = 300.milliseconds)
