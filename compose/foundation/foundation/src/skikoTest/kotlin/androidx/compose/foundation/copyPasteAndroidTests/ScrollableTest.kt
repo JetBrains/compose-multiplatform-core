@@ -707,9 +707,6 @@ class ScrollableTest {
     }
 
     @Test
-    // FIXME: Chrome was not killed in 2000 ms, sending SIGKILL.
-    @IgnoreJsTarget
-    @IgnoreWasmTarget
     fun scrollable_nestedDiagonalScroll_mouseWheel_triggersOnAngle() = runComposeUiTest {
         var totalVerticalScroll = 0f
         var totalHorizontalScroll = 0f
@@ -749,6 +746,7 @@ class ScrollableTest {
         // mostly horizontal event triggered horizontal scrollable
         onRoot().performMouseInput { this.scroll(Offset(-100f, -50f)) }
 
+        awaitIdle()
         runOnIdle {
             assertThat(totalHorizontalScroll).isGreaterThan(0)
             assertThat(totalVerticalScroll).isZero()
@@ -760,6 +758,7 @@ class ScrollableTest {
         // mostly vertical event triggered vertical scrollable
         onRoot().performMouseInput { this.scroll(Offset(-10f, -50f)) }
 
+        awaitIdle()
         runOnIdle {
             assertThat(totalVerticalScroll).isGreaterThan(0)
             assertThat(totalHorizontalScroll).isZero()
@@ -775,6 +774,7 @@ class ScrollableTest {
             this.scroll(Offset(-50f, -10f))
         }
 
+        awaitIdle()
         runOnIdle {
             assertThat(totalVerticalScroll).isGreaterThan(0)
             assertThat(totalHorizontalScroll).isZero()
@@ -786,10 +786,11 @@ class ScrollableTest {
         // started vertical, waited, changed to horizontal means we have a new scrolling direction.
         onRoot().performMouseInput { this.scroll(Offset(-10f, -50f)) }
 
-        waitForIdle()
+        awaitIdle()
 
         onRoot().performMouseInput { this.scroll(Offset(-50f, -10f)) }
 
+        awaitIdle()
         runOnIdle {
             assertThat(totalVerticalScroll).isGreaterThan(0)
             assertThat(totalHorizontalScroll).isGreaterThan(0)
