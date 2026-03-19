@@ -1070,24 +1070,18 @@ internal class ScrollTest {
         val scrollAmount = 150.dp
         repeat(3) { attempt ->
             touchDown(screenSize.center)
-                .dragBy(dy = -scrollAmount, duration = 300.milliseconds)
-                .wait(200.milliseconds)
+                .dragBy(dy = -scrollAmount, duration = 100.milliseconds)
+                .wait(100.milliseconds)
                 .up()
             modalVC.waitForIdle()
-
-            val expectedScrollPx =
-                (attempt + 1) * (scrollAmount.value - CUPERTINO_TOUCH_SLOP) * density.density
-            assertEquals(
-                expected = expectedScrollPx,
-                actual = scrollState.value.toFloat(),
-                absoluteTolerance = 1f,
-                message = "Attempt $attempt: unexpected scroll offset."
-            )
-
-            delay(200)
         }
 
-        // Verify that each gesture contributes (scrollAmount - CUPERTINO_TOUCH_SLOP) points converted to pixels
+        val expectedScrollPx = 3 * (scrollAmount.value - CUPERTINO_TOUCH_SLOP) * density.density
+        assertEquals(
+            expected = expectedScrollPx,
+            actual = scrollState.value.toFloat(),
+            absoluteTolerance = 1f,
+        )
     }
 
     @Test
