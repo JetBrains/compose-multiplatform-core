@@ -1070,7 +1070,6 @@ internal class ScrollTest {
         val scrollAmount = 150.dp
         repeat(3) { attempt ->
             touchDown(screenSize.center)
-                .wait(200.milliseconds)
                 .dragBy(dy = -scrollAmount, duration = 300.milliseconds)
                 .wait(200.milliseconds)
                 .up()
