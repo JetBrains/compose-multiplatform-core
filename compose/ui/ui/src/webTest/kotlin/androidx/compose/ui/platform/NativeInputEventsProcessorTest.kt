@@ -16,13 +16,13 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.ui.events.beforeInput
-import androidx.compose.ui.events.compositionEnd
-import androidx.compose.ui.events.compositionStart
-import androidx.compose.ui.events.keyEvent
-import androidx.compose.ui.input.key.InternalKeyEvent
-import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.MultiParagraph
+import androidx.compose.ui.text.TextLayoutInput
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.input.BackspaceCommand
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.EditCommand
@@ -30,6 +30,17 @@ import androidx.compose.ui.text.input.EditingBuffer
 import androidx.compose.ui.text.input.SetComposingTextCommand
 import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.input.key.InternalKeyEvent
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.events.beforeInput
+import androidx.compose.ui.events.compositionEnd
+import androidx.compose.ui.events.compositionStart
+import androidx.compose.ui.events.keyEvent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -48,7 +59,7 @@ class NativeInputEventsProcessorTest {
     /**
      * A mock implementation of ComposeCommandCommunicator for testing
      */
-    private class MockComposeCommandCommunicator(
+    private open class MockComposeCommandCommunicator(
         startingTextFieldValue: TextFieldValue = TextFieldValue("")
     ) : ComposeCommandCommunicator {
 
@@ -60,13 +71,47 @@ class NativeInputEventsProcessorTest {
         val editCommands = mutableListOf<EditCommand>()
         val keyboardEvents = mutableListOf<KeyEvent>()
 
+        private val fontFamilyResolver = createFontFamilyResolver()
+
         override fun sendEditCommand(commands: List<EditCommand>) {
             editCommands.addAll(commands)
             commands.forEach { it.applyTo(editingBuffer) }
         }
 
-        override fun sendKeyboardEvent(keyboardEvent: KeyEvent) {
+        override fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean {
             keyboardEvents.add(keyboardEvent)
+            return true
+        }
+
+        override fun currentTextLayoutResult(): TextLayoutResult? {
+            val text = editingBuffer.toString()
+            val annotatedString = AnnotatedString(text)
+            val density = Density(1f)
+            val constraints = Constraints()
+            val style = TextStyle.Default
+
+            return TextLayoutResult(
+                layoutInput = TextLayoutInput(
+                    text = annotatedString,
+                    style = style,
+                    placeholders = emptyList(),
+                    maxLines = Int.MAX_VALUE,
+                    softWrap = true,
+                    overflow = TextOverflow.Clip,
+                    density = density,
+                    layoutDirection = LayoutDirection.Ltr,
+                    fontFamilyResolver = fontFamilyResolver,
+                    constraints = constraints
+                ),
+                multiParagraph = MultiParagraph(
+                    annotatedString = annotatedString,
+                    style = style,
+                    constraints = constraints,
+                    density = density,
+                    fontFamilyResolver = fontFamilyResolver
+                ),
+                size = IntSize(0, 0)
+            )
         }
 
         @Suppress("INVISIBLE_REFERENCE")
@@ -172,11 +217,9 @@ class NativeInputEventsProcessorTest {
         val processor = TestNativeInputEventsProcessor(communicator)
 
         processor.registerEvent(
-            (beforeInput("insertText", "a") as InputEvent).apply {
-                this.asInputEventExt().apply {
+            beforeInput("insertText", "a").asInputEventExt().apply {
                     textRangeStart = 3
                     textRangeEnd = 4
-                }
             }
         )
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
@@ -202,11 +245,9 @@ class NativeInputEventsProcessorTest {
         val processor = TestNativeInputEventsProcessor(communicator)
 
         processor.registerEvent(
-            (beforeInput("deleteContentBackward", "") as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 3
-                    textRangeEnd = 4
-                }
+            beforeInput("deleteContentBackward", "").asInputEventExt().apply {
+                textRangeStart = 3
+                textRangeEnd = 4
             }
         )
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
@@ -249,14 +290,11 @@ class NativeInputEventsProcessorTest {
         )
         processor.registerEvent(backspaceEvent)
 
-        // Add deleteContentBackward event
         processor.registerEvent(
-            (beforeInput("deleteContentBackward", null) as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 3
-                    textRangeEnd = 4
-                }
-             }
+            beforeInput("deleteContentBackward", null).asInputEventExt().apply {
+                textRangeStart = 3
+                textRangeEnd = 4
+            }
         )
         processor.manuallyRunCheckpoint(TextFieldValue("test"))
 
@@ -271,6 +309,97 @@ class NativeInputEventsProcessorTest {
     }
 
     @Test
+    fun `when Backspace was pressed without modifiers deleteWordBackward is processed`() {
+        val communicator = MockComposeCommandCommunicator(TextFieldValue("here we go again!!!"))
+        val processor = TestNativeInputEventsProcessor(communicator)
+
+        val backspaceEvent = keyEvent(
+            key = "Backspace",
+            code = "Backspace",
+            type = "keydown"
+        )
+        processor.registerEvent(backspaceEvent)
+
+        processor.registerEvent(
+            beforeInput("deleteWordBackward", null).asInputEventExt().apply {
+                textRangeStart = 5
+                textRangeEnd = 5
+            }
+        )
+        processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
+
+        assertEquals("here  go again!!!", communicator.currentTextFieldValue().text)
+    }
+
+    @Test
+    fun `deleteWordBackward is if TextLayoutResult is not resolved`() {
+        val communicator = object : MockComposeCommandCommunicator() {
+            override fun currentTextLayoutResult(): TextLayoutResult? = null
+        }
+
+        val processor = TestNativeInputEventsProcessor(communicator)
+
+        val backspaceEvent = keyEvent(
+            key = "Backspace",
+            code = "Backspace",
+            type = "keydown",
+            altKey = true
+        )
+        processor.registerEvent(backspaceEvent)
+
+        processor.registerEvent(
+            beforeInput("deleteWordBackward", null).asInputEventExt().apply {
+                textRangeStart = 3
+                textRangeEnd = 4
+            }
+        )
+        processor.manuallyRunCheckpoint(TextFieldValue("test"))
+
+        assertEquals(1, communicator.keyboardEvents.size)
+        assertEquals(0, communicator.editCommands.size)
+
+        val sentKeyEvent = communicator.keyboardEvents[0]
+        assertEquals(
+            "Backspace",
+            ((sentKeyEvent.nativeKeyEvent as InternalKeyEvent).nativeEvent as KeyboardEvent).key
+        )
+    }
+
+
+    @Test
+    fun `when Backspace was pressed with alt modifier deleteWordBackward is ignored`() {
+        val communicator = MockComposeCommandCommunicator()
+        val processor = TestNativeInputEventsProcessor(communicator)
+
+        val backspaceEvent = keyEvent(
+            key = "Backspace",
+            code = "Backspace",
+            type = "keydown",
+            altKey = true
+        )
+        processor.registerEvent(backspaceEvent)
+
+        processor.registerEvent(
+            beforeInput("deleteWordBackward", null).asInputEventExt().apply {
+                textRangeStart = 3
+                textRangeEnd = 4
+            }
+        )
+        processor.manuallyRunCheckpoint(TextFieldValue("test"))
+
+        assertEquals(1, communicator.keyboardEvents.size)
+        assertEquals(0, communicator.editCommands.size)
+
+        val sentKeyEvent = communicator.keyboardEvents[0]
+        assertEquals(
+            "Backspace",
+            ((sentKeyEvent.nativeKeyEvent as InternalKeyEvent).nativeEvent as KeyboardEvent).key
+        )
+    }
+
+
+
+    @Test
     fun testInsertReplacementText() {
         val communicator = MockComposeCommandCommunicator(
             TextFieldValue("test text", selection = TextRange( 9))
@@ -278,12 +407,10 @@ class NativeInputEventsProcessorTest {
         val processor = TestNativeInputEventsProcessor(communicator)
 
         processor.registerEvent(
-            (beforeInput("insertReplacementText", "replacement") as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 5
-                    textRangeEnd = 9
-                }
-             },
+            beforeInput("insertReplacementText", "replacement").asInputEventExt().apply {
+                textRangeStart = 5
+                textRangeEnd = 9
+            },
         )
 
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
@@ -340,11 +467,9 @@ class NativeInputEventsProcessorTest {
 
         // 3. Simulate the input event for the accented character
         processor.registerEvent(
-            (beforeInput("insertText", "é") as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 0
-                    textRangeEnd = 1
-                }
+            beforeInput("insertText", "é").asInputEventExt().apply {
+                textRangeStart = 0
+                textRangeEnd = 1
             }
         )
 
@@ -409,13 +534,11 @@ class NativeInputEventsProcessorTest {
 
         // 2. Simulate choosing 'é' from the accent dialogues using a mouse, so no keydown events here
         processor.registerEvent(
-            (beforeInput("insertText", "è") as InputEvent).apply {
+            beforeInput("insertText", "è").asInputEventExt().apply {
                 // to replace `e`
-                this.asInputEventExt().apply {
-                    textRangeStart = 0
-                    textRangeEnd = 1
-                }
-             },
+                textRangeStart = 0
+                textRangeEnd = 1
+            },
         )
 
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
@@ -478,11 +601,9 @@ class NativeInputEventsProcessorTest {
         processor.registerEvent(keyEvent(key = "ArrowRight", code = "ArrowRight"))
         processor.registerEvent(compositionStart())
         processor.registerEvent(
-            (beforeInput("insertText", "è") as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 0
-                    textRangeEnd = 1
-                }
+            beforeInput("insertText", "è").asInputEventExt().apply {
+                textRangeStart = 0
+                textRangeEnd = 1
             }
         )
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
@@ -491,11 +612,9 @@ class NativeInputEventsProcessorTest {
 
         processor.registerEvent(keyEvent(key = "ArrowRight", code = "ArrowRight", isComposing = true))
         processor.registerEvent(
-            (beforeInput("insertCompositionText", "é") as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 0
-                    textRangeEnd = 1
-                }
+            beforeInput("insertCompositionText", "é").asInputEventExt().apply {
+                textRangeStart = 0
+                textRangeEnd = 1
             }
         )
 
@@ -505,11 +624,9 @@ class NativeInputEventsProcessorTest {
 
         processor.registerEvent(keyEvent(key = "ArrowRight", code = "ArrowRight", isComposing = true))
         processor.registerEvent(
-            (beforeInput("insertCompositionText", "ê") as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 0
-                    textRangeEnd = 1
-                }
+            beforeInput("insertCompositionText", "ê").asInputEventExt().apply {
+                textRangeStart = 0
+                textRangeEnd = 1
             }
         )
 
@@ -526,11 +643,9 @@ class NativeInputEventsProcessorTest {
         assertEquals(0, communicator.keyboardEvents.size)
 
         processor.registerEvent(
-            (beforeInput("insertCompositionText", "é") as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 0
-                    textRangeEnd = 1
-                }
+            beforeInput("insertCompositionText", "é").asInputEventExt().apply {
+                textRangeStart = 0
+                textRangeEnd = 1
             }
         )
 
@@ -543,12 +658,10 @@ class NativeInputEventsProcessorTest {
 
         // 4. Simulate the input event for the selected accented character
         processor.registerEvent(
-            (beforeInput("insertCompositionText", "é") as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 0
-                    textRangeEnd = 1
-                }
-             }
+            beforeInput("insertCompositionText", "é").asInputEventExt().apply {
+                textRangeStart = 0
+                textRangeEnd = 1
+            }
         )
 
         processor.registerEvent(compositionEnd("é"))
@@ -601,12 +714,10 @@ class NativeInputEventsProcessorTest {
 
         // Add deleteContentBackward event
         processor.registerEvent(
-            (beforeInput("deleteContentBackward", "") as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 3
-                    textRangeEnd = 5
-                }
-             },
+            beforeInput("deleteContentBackward", "").asInputEventExt().apply {
+                textRangeStart = 3
+                textRangeEnd = 5
+            },
         )
 
         // Process the event with a collapsed selection
@@ -636,12 +747,10 @@ class NativeInputEventsProcessorTest {
 
         // Then add a deleteContentBackward event
         processor.registerEvent(
-            (beforeInput("deleteContentBackward", "") as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 0
-                    textRangeEnd = 1
-                }
-             },
+            beforeInput("deleteContentBackward", "").asInputEventExt().apply {
+                textRangeStart = 0
+                textRangeEnd = 1
+            },
         )
 
         // With a non-collapsed selection
@@ -680,11 +789,9 @@ class NativeInputEventsProcessorTest {
 
         // Then add a deleteContentBackward event
         processor.registerEvent(
-            (beforeInput("deleteContentBackward", "") as InputEvent).apply {
-                this.asInputEventExt().apply {
-                    textRangeStart = 0
-                    textRangeEnd = 1
-                }
+            beforeInput("deleteContentBackward", "").asInputEventExt().apply {
+                textRangeStart = 0
+                textRangeEnd = 1
             },
         )
 

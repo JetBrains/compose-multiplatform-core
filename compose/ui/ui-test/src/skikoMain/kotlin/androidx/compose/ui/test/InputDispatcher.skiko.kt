@@ -225,6 +225,86 @@ internal class SkikoInputDispatcher(
         }
     }
 
+    override fun CursorInputState.enqueueTrackpadPanStart() {
+        val position = lastPosition
+        val timeMillis = currentTime
+        enqueue(timeMillis) {
+            root.sendPointerEvent(
+                PointerEventType.PanStart,
+                position = position,
+                type = PointerType.Mouse,
+                timeMillis = timeMillis,
+            )
+        }
+    }
+
+    override fun CursorInputState.enqueueTrackpadPanMove(delta: Offset) {
+        val position = lastPosition
+        val timeMillis = currentTime
+        enqueue(timeMillis) {
+            root.sendPointerEvent(
+                PointerEventType.PanMove,
+                position = position,
+                type = PointerType.Mouse,
+                timeMillis = timeMillis,
+                panGestureOffset = delta
+            )
+        }
+    }
+
+    override fun CursorInputState.enqueueTrackpadPanEnd() {
+        val position = lastPosition
+        val timeMillis = currentTime
+        enqueue(timeMillis) {
+            root.sendPointerEvent(
+                PointerEventType.PanEnd,
+                position = position,
+                type = PointerType.Mouse,
+                timeMillis = timeMillis,
+            )
+        }
+    }
+
+    override fun CursorInputState.enqueueTrackpadScaleStart() {
+        val position = lastPosition
+        val timeMillis = currentTime
+        enqueue(timeMillis) {
+            root.sendPointerEvent(
+                PointerEventType.ScaleStart,
+                position = position,
+                type = PointerType.Mouse,
+                timeMillis = timeMillis,
+            )
+        }
+    }
+
+    override fun CursorInputState.enqueueTrackpadScaleChange(delta: Float) {
+        val position = lastPosition
+        val timeMillis = currentTime
+        enqueue(timeMillis) {
+            root.sendPointerEvent(
+                PointerEventType.ScaleChange,
+                position = position,
+                type = PointerType.Mouse,
+                timeMillis = timeMillis,
+                scaleGestureFactor = delta,
+            )
+        }
+    }
+
+    override fun CursorInputState.enqueueTrackpadScaleEnd() {
+        val position = lastPosition
+        val timeMillis = currentTime
+        enqueue(timeMillis) {
+            root.sendPointerEvent(
+                PointerEventType.ScaleEnd,
+                position = position,
+                type = PointerType.Mouse,
+                timeMillis = timeMillis,
+            )
+        }
+    }
+
     override fun CursorInputState.enqueueTrackpadPress(buttonId: Int) {
         // Except for special gestures, trackpad input works exactly the same as mouse input.
         this.enqueueMousePress(buttonId)
@@ -253,34 +333,6 @@ internal class SkikoInputDispatcher(
     override fun CursorInputState.enqueueTrackpadCancel() {
         // Except for special gestures, trackpad input works exactly the same as mouse input.
         this.enqueueMouseCancel()
-    }
-
-    override fun CursorInputState.enqueueTrackpadScroll(offset: Offset) {
-        val position = lastPosition
-        val timeMillis = currentTime
-        enqueue(timeMillis) {
-            root.sendPointerEvent(
-                PointerEventType.Pan,
-                position = position,
-                type = PointerType.Mouse,
-                timeMillis = timeMillis,
-                panGestureOffset = offset
-            )
-        }
-    }
-
-    override fun CursorInputState.enqueueTrackpadPinch(scaleFactor: Float) {
-        val position = lastPosition
-        val timeMillis = currentTime
-        enqueue(timeMillis) {
-            root.sendPointerEvent(
-                PointerEventType.Scale,
-                position = position,
-                type = PointerType.Mouse,
-                timeMillis = timeMillis,
-                scaleGestureFactor = scaleFactor
-            )
-        }
     }
 
     override fun KeyInputState.enqueueDown(key: Key) {
