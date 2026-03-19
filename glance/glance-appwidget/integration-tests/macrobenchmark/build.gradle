@@ -17,12 +17,11 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
     defaultConfig {
-        compileSdk = 35
+        compileSdk { version = release(35) }
     }
     namespace = "androidx.glance.appwidget.macrobenchmark"
     targetProjectPath = ":glance:glance-appwidget:integration-tests:macrobenchmark-target"

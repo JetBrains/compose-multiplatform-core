@@ -125,7 +125,6 @@ val ALLOW_RERUNNING_TASKS =
         ":datastore:datastore-preferences-proto:extractIncludeTestProto",
         ":glance:glance-appwidget-proto:extractIncludeTestProto",
         ":health:connect:connect-client-proto:extractIncludeTestProto",
-        ":privacysandbox:tools:tools-core:extractIncludeTestProto",
         ":test:screenshot:screenshot-proto:extractIncludeTestProto",
         ":wear:protolayout:protolayout-proto:extractIncludeTestProto",
         ":wear:tiles:tiles-proto:extractIncludeTestProto",
@@ -165,6 +164,9 @@ val DONT_TRY_RERUNNING_TASKS =
         // no outputs, not cachable. Internal type so can't access via withType and
         // .cacheEvenIfNoOutputs
         "kmpPartiallyResolvedDependenciesChecker",
+
+        // Input is all of frameworks/support with a filter sometimes causing invalidations.
+        "zipOwnersFiles",
     )
 
 val DONT_TRY_RERUNNING_TASK_TYPES =

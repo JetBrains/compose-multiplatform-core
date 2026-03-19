@@ -234,6 +234,82 @@ class WindowInfoTrackerImplTest {
             .isEqualTo(currentWindowLayoutInfo)
     }
 
+    @Test
+    fun testRegisterWindowLayoutInfoListener_activity() =
+        testScope.runTest {
+            activityScenario.scenario.onActivity { testActivity ->
+                Dispatchers.setMain(testDispatcher)
+                val receivedValues = mutableListOf<WindowLayoutInfo>()
+                val listener = Consumer<WindowLayoutInfo> { receivedValues.add(it) }
+                // Use a direct executor to run the listener callback immediately.
+                val executor = Executor { command -> command.run() }
+
+                tracker.registerWindowLayoutInfoListener(testActivity, executor, listener)
+                val layoutInfo = WindowLayoutInfo(emptyList())
+                fakeBackend.triggerSignal(layoutInfo)
+
+                assertThat(receivedValues).containsExactly(layoutInfo)
+            }
+        }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
+    fun testRegisterWindowLayoutInfoListener_context() =
+        testScope.runTest {
+            assume().that(Build.VERSION.SDK_INT).isAtLeast(Build.VERSION_CODES.R)
+            assumeAtLeastWindowExtensionVersion(2)
+            Dispatchers.setMain(testDispatcher)
+            val receivedValues = mutableListOf<WindowLayoutInfo>()
+            val listener = Consumer<WindowLayoutInfo> { receivedValues.add(it) }
+            val executor = Executor { command -> command.run() }
+            val windowContext = WindowTestUtils.createOverlayWindowContext()
+
+            tracker.registerWindowLayoutInfoListener(windowContext, executor, listener)
+            val layoutInfo = WindowLayoutInfo(emptyList())
+            fakeBackend.triggerSignal(layoutInfo)
+
+            assertThat(receivedValues).containsExactly(layoutInfo)
+        }
+
+    @Test
+    fun testUnregisterWindowLayoutInfoListener() =
+        testScope.runTest {
+            activityScenario.scenario.onActivity { testActivity ->
+                Dispatchers.setMain(testDispatcher)
+                val receivedValues = mutableListOf<WindowLayoutInfo>()
+                val listener = Consumer<WindowLayoutInfo> { receivedValues.add(it) }
+                val executor = Executor { command -> command.run() }
+
+                tracker.registerWindowLayoutInfoListener(testActivity, executor, listener)
+                // Verify listener is active
+                val displayFeature: DisplayFeature =
+                    HardwareFoldingFeature(Bounds(0, 0, 100, 200), HINGE, FLAT)
+                val firstLayoutInfo = WindowLayoutInfo(listOf(displayFeature))
+                fakeBackend.triggerSignal(firstLayoutInfo)
+                assertThat(receivedValues).containsExactly(firstLayoutInfo)
+
+                tracker.unregisterWindowLayoutInfoListener(listener)
+                // Verify listener is removed and does not receive new values
+                val secondLayoutInfo = WindowLayoutInfo(emptyList())
+                fakeBackend.triggerSignal(secondLayoutInfo)
+                assertThat(receivedValues).containsExactly(firstLayoutInfo)
+            }
+        }
+
+    @Test
+    fun testRegisterWindowLayoutInfoListener_doesNotAddSameListenerTwice() {
+        activityScenario.scenario.onActivity { testActivity ->
+            val receivedValues = mutableListOf<WindowLayoutInfo>()
+            val listener = Consumer<WindowLayoutInfo> { receivedValues.add(it) }
+            val executor = Executor { command -> command.run() }
+
+            tracker.registerWindowLayoutInfoListener(testActivity, executor, listener)
+            tracker.registerWindowLayoutInfoListener(testActivity, executor, listener)
+
+            assertThat(fakeBackend.consumers.size).isEqualTo(1)
+        }
+    }
+
     private class FakeWindowBackend(
         override val supportedPostures: List<SupportedPosture> = emptyList(),
         val currentWindowLayoutInfo: WindowLayoutInfo = WindowLayoutInfo(emptyList()),

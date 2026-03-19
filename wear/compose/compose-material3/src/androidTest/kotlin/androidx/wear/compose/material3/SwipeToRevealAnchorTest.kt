@@ -27,7 +27,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.TouchInjectionScope
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
@@ -83,7 +83,7 @@ class SwipeToRevealAnchorTest(val testParams: TestParams) {
         val layoutDirection = if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
 
         rule.setContent {
-            ScreenConfiguration(screenSizeDp = SCREEN_SIZE_LARGE) {
+            ScreenConfiguration(desiredScreenSizeDp = SCREEN_SIZE_LARGE) {
                 CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                     revealState = rememberRevealState(initialValue = testParams.initialRevealValue)
                     with(LocalDensity.current) { density = this.density }

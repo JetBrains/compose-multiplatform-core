@@ -17,12 +17,13 @@
     <string name="compose_fragment">Compose PDF</string>
     <string name="thumbnail_content_description">Page thumbnail</string>
     <string name="thumbnail_content_description_page_n">Page thumbnail %1$d</string>
+    <string name="two_page_layout">Two Page Layout</string>
     <string name="toggle_thumbnails_view">Toggle thumbnails view</string>
     <string name="preference_string">Feature flags</string>
-    <string name="external_input">External Hardware Interaction</string>
     <string name="custom_link">Custom Link Handling</string>
     <string name="thumbnail_preview">Thumbnail Preview</string>"
-    <string name="layout_strategy">Layout Strategy</string>"
     <string name="enable_form_filling">Enable Form Filling</string>"
     <string name="comment_menu_item">Comment</string>
+    <string name="write_error_message">Error while writing to file: %s</string>
+    <string name="apply_error_message">Error while applying changes to document: %s</string>
 </resources>

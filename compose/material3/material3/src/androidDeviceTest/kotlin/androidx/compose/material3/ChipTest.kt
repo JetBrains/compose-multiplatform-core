@@ -21,6 +21,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -76,7 +77,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -261,6 +262,49 @@ class ChipTest {
             .onNodeWithTag("Trailing", useUnmergedTree = true)
             .assertLeftPositionInRootIsEqualTo(
                 chipWidth - horizontalPadding - AssistChipDefaults.IconSize
+            )
+    }
+
+    @Test
+    fun horizontalPadding_assistChip_withContentPaddingAndSpacing() {
+        var chipCoordinates: LayoutCoordinates? = null
+        rule.setMaterialContent(lightColorScheme()) {
+            AssistChip(
+                onClick = {},
+                modifier = Modifier.onGloballyPositioned { chipCoordinates = it },
+                label = { Text("Assist chip", Modifier.testTag(TestChipTag)) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Person,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.size(AssistChipDefaults.IconSize),
+                    )
+                },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Done,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.size(AssistChipDefaults.IconSize),
+                    )
+                },
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                horizontalArrangement = AssistChipDefaults.horizontalArrangement(6.dp),
+            )
+        }
+
+        var chipWidth = 0.dp
+        rule.runOnIdle {
+            chipWidth = with(rule.density) { chipCoordinates!!.boundsInWindow().width.toDp() }
+        }
+        rule
+            .onNodeWithTag(TestChipTag, useUnmergedTree = true)
+            .assertLeftPositionInRootIsEqualTo(4.dp + AssistChipDefaults.IconSize + 6.dp)
+            .assertWidthIsEqualTo(
+                chipWidth -
+                    10.dp -
+                    AssistChipDefaults.IconSize -
+                    AssistChipDefaults.IconSize -
+                    10.dp
             )
     }
 
@@ -484,6 +528,50 @@ class ChipTest {
                     FilterChipDefaults.IconSize -
                     FilterChipDefaults.IconSize -
                     16.dp
+            )
+    }
+
+    @Test
+    fun horizontalPadding_filterChip_withContentPaddingAndSpacing() {
+        var chipCoordinates: LayoutCoordinates? = null
+        rule.setMaterialContent(lightColorScheme()) {
+            FilterChip(
+                selected = false,
+                onClick = {},
+                modifier = Modifier.onGloballyPositioned { chipCoordinates = it },
+                label = { Text("Filter chip", Modifier.testTag(TestChipTag)) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Person,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    )
+                },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Done,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    )
+                },
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                horizontalArrangement = FilterChipDefaults.horizontalArrangement(6.dp),
+            )
+        }
+
+        var chipWidth = 0.dp
+        rule.runOnIdle {
+            chipWidth = with(rule.density) { chipCoordinates!!.boundsInWindow().width.toDp() }
+        }
+        rule
+            .onNodeWithTag(TestChipTag, useUnmergedTree = true)
+            .assertLeftPositionInRootIsEqualTo(4.dp + FilterChipDefaults.IconSize + 6.dp)
+            .assertWidthIsEqualTo(
+                chipWidth -
+                    10.dp -
+                    FilterChipDefaults.IconSize -
+                    FilterChipDefaults.IconSize -
+                    10.dp
             )
     }
 
@@ -881,6 +969,37 @@ class ChipTest {
     }
 
     @Test
+    fun horizontalPadding_inputChip_withContentPaddingAndSpacing() {
+        var chipCoordinates: LayoutCoordinates? = null
+        rule.setMaterialContent(lightColorScheme()) {
+            InputChip(
+                selected = false,
+                onClick = {},
+                modifier = Modifier.onGloballyPositioned { chipCoordinates = it },
+                label = { Text("Input Chip", Modifier.testTag(TestChipTag)) },
+                avatar = {
+                    Icon(
+                        imageVector = Icons.Filled.Done,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.size(InputChipDefaults.AvatarSize),
+                    )
+                },
+                contentPadding = PaddingValues(horizontal = 6.dp),
+                horizontalArrangement = InputChipDefaults.horizontalArrangement(6.dp),
+            )
+        }
+
+        var chipWidth = 0.dp
+        rule.runOnIdle {
+            chipWidth = with(rule.density) { chipCoordinates!!.boundsInWindow().width.toDp() }
+        }
+        rule
+            .onNodeWithTag(TestChipTag, useUnmergedTree = true)
+            .assertLeftPositionInRootIsEqualTo(6.dp + InputChipDefaults.AvatarSize + 6.dp)
+            .assertWidthIsEqualTo(chipWidth - 12.dp - InputChipDefaults.AvatarSize - 12.dp)
+    }
+
+    @Test
     fun labelContentColor_inputChip() {
         var selectedLabelColor = Color.Unspecified
         var unselectedLabelColor = Color.Unspecified
@@ -1024,6 +1143,36 @@ class ChipTest {
             .onNodeWithTag(TestChipTag, useUnmergedTree = true)
             .assertLeftPositionInRootIsEqualTo(8.dp + SuggestionChipDefaults.IconSize + 8.dp)
             .assertWidthIsEqualTo(chipWidth - 16.dp - SuggestionChipDefaults.IconSize - 16.dp)
+    }
+
+    @Test
+    fun horizontalPadding_suggestionChip_withContentPaddingAndSpacing() {
+        var chipCoordinates: LayoutCoordinates? = null
+        rule.setMaterialContent(lightColorScheme()) {
+            SuggestionChip(
+                onClick = {},
+                modifier = Modifier.onGloballyPositioned { chipCoordinates = it },
+                label = { Text("Assist chip", Modifier.testTag(TestChipTag)) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.Person,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.size(SuggestionChipDefaults.IconSize),
+                    )
+                },
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                horizontalArrangement = SuggestionChipDefaults.horizontalArrangement(6.dp),
+            )
+        }
+
+        var chipWidth = 0.dp
+        rule.runOnIdle {
+            chipWidth = with(rule.density) { chipCoordinates!!.boundsInWindow().width.toDp() }
+        }
+        rule
+            .onNodeWithTag(TestChipTag, useUnmergedTree = true)
+            .assertLeftPositionInRootIsEqualTo(4.dp + AssistChipDefaults.IconSize + 6.dp)
+            .assertWidthIsEqualTo(chipWidth - 10.dp - AssistChipDefaults.IconSize - 10.dp)
     }
 
     @Test

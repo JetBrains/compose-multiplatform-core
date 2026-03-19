@@ -4,7 +4,7 @@ go/androidx/reference_documentation
 
 <!--*
 # Document freshness: For more information, see go/fresh-source.
-freshness: { owner: 'asfalcone' reviewed: '2025-09-15' }
+freshness: { owner: 'asfalcone' reviewed: '2026-03-17' }
 *-->
 
 [TOC]
@@ -27,6 +27,22 @@ Location of generated refdocs:
 *   docs-public (what is published to DAC):
     `{androidx-main}/out/androidx/docs-public/build/docs`
 *   docs-tip-of-tree: `{androidx-main}/out/androidx/docs-tip-of-tree/build/docs`
+
+### Faster docs iteration
+
+The `./gradlew docs` command may take a long time to run. To just preview
+changes to the docs based on the current source code, run
+`./gradlew :docs-tip-of-tree:docs --no-version-metadata`.
+
+This command skips generating the public docs (which are based on published
+source jars), and `--no-version-metadata` will skip running metalava tasks that
+generate metadata about what versions APIs were added in.
+
+To further speed up the docs run when working on a single library, in
+[`docs-tip-of-tree/build.gradle`](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:docs-tip-of-tree/build.gradle)
+comment out all but the relevant projects.
+
+## Preview docs
 
 The generated docs are plain HTML pages with links that do not work locally.
 These issues are fixed when the docs are published to DAC, but to preview a

@@ -19,10 +19,7 @@ package androidx.camera.camera2.testing
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
-import android.hardware.camera2.params.SessionConfiguration.SESSION_HIGH_SPEED
-import android.hardware.camera2.params.SessionConfiguration.SESSION_REGULAR
 import androidx.camera.camera2.adapter.CameraStateAdapter
-import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
@@ -32,7 +29,8 @@ import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.config.CameraConfig
 import androidx.camera.camera2.config.UseCaseCameraConfig
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.config.UseCaseCameraContext
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.CameraCallbackMap
 import androidx.camera.camera2.impl.CameraGraphConfigProvider
 import androidx.camera.camera2.impl.CameraInteropStateCallbackRepository
@@ -45,12 +43,9 @@ import androidx.camera.camera2.impl.UseCaseCameraState
 import androidx.camera.camera2.impl.UseCaseSurfaceManager
 import androidx.camera.camera2.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraGraph.OperatingMode
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.RequestTemplate
-import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.UseCase
 import androidx.camera.core.imagecapture.CameraCapturePipeline
@@ -60,7 +55,6 @@ import androidx.camera.testing.impl.FakeCameraCapturePipeline
 import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
 /** Open a [CameraGraph] for the desired [cameraId] and [useCases] */
 class TestUseCaseCamera(
@@ -91,7 +85,7 @@ class TestUseCaseCamera(
             ),
         )
     val sessionConfigAdapter = SessionConfigAdapter(useCases)
-    val useCaseCameraGraphConfig: UseCaseGraphConfig
+    val useCaseCameraContext: UseCaseCameraContext
 
     init {
         val callbackMap = CameraCallbackMap()
@@ -107,40 +101,25 @@ class TestUseCaseCamera(
                 cameraMetadata = cameraMetadata,
             )
 
-        val creationResult =
-            configProvider.create(
-                operatingMode =
-                    sessionConfigAdapter.getValidSessionConfigOrNull()?.let { sessionConfig ->
-                        when (sessionConfig.sessionType) {
-                            SESSION_REGULAR -> OperatingMode.NORMAL
-                            SESSION_HIGH_SPEED -> OperatingMode.HIGH_SPEED
-                            else -> OperatingMode.custom(sessionConfig.sessionType)
-                        }
-                    } ?: OperatingMode.NORMAL,
-                sessionConfig = sessionConfigAdapter.getValidSessionConfigOrNull(),
-                surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
-                surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
+        val cameraStateAdapter = CameraStateAdapter()
+        val useCaseCameraConfig =
+            UseCaseCameraConfig.create(
+                cameraGraphConfigProvider = configProvider,
+                cameraGraphFactory = { config -> cameraPipe.createCameraGraph(config) },
+                cameraStateAdapter = cameraStateAdapter,
+                sessionConfigAdapter = sessionConfigAdapter,
+                extensionMode = null,
+                sessionProcessor = null,
             )
-        val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(CameraStateAdapter())
-
-        useCaseCameraGraphConfig =
-            UseCaseCameraConfig(
-                    useCases = useCases,
-                    sessionConfigAdapter = sessionConfigAdapter,
-                    cameraGraphConfig = creationResult.config,
-                    streamConfigMap = creationResult.streamConfigMap,
-                    graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
-                    cameraGraphFactory = { config -> cameraPipe.createCameraGraph(config) },
-                )
-                .provideUseCaseGraphConfig(
-                    useCaseSurfaceManager = useCaseSurfaceManager,
-                    cameraInteropStateCallbackRepository = CameraInteropStateCallbackRepository(),
-                )
+        useCaseCameraContext = useCaseCameraConfig.provideUseCaseCameraContext(cameraStateAdapter)
+        sessionConfigAdapter.getValidSessionConfigOrNull()?.let { sessionConfig ->
+            CameraInteropStateCallbackRepository().updateCallbacks(sessionConfig)
+        }
     }
 
     override val requestControl: UseCaseCameraRequestControl =
         UseCaseCameraRequestControlImpl(
-                capturePipeline =
+                capturePipelineProvider = {
                     object : CapturePipeline {
                         override var template: Int = CameraDevice.TEMPLATE_PREVIEW
 
@@ -160,14 +139,16 @@ class TestUseCaseCamera(
                             flashMode: Int,
                             flashType: Int,
                         ): CameraCapturePipeline = FakeCameraCapturePipeline()
-                    },
-                state =
+                    }
+                },
+                useCaseCameraStateProvider = {
                     UseCaseCameraState(
-                        useCaseCameraGraphConfig,
+                        useCaseCameraContext,
                         templateParamsOverride = NoOpTemplateParamsOverride,
-                    ),
-                useCaseGraphConfig = useCaseCameraGraphConfig,
-                useCaseSurfaceManager = useCaseSurfaceManager,
+                    )
+                },
+                useCaseCameraContext = useCaseCameraContext,
+                useCaseSurfaceManagerProvider = { useCaseSurfaceManager },
                 threads = threads,
             )
             .apply {
@@ -176,28 +157,34 @@ class TestUseCaseCamera(
                 }
             }
 
-    override fun start(): Unit =
-        with(useCaseCameraGraphConfig) {
-            // Start the CameraGraph first before setting up Surfaces. Surfaces can be closed, and
-            // we will close the CameraGraph when that happens, and we cannot start a closed
-            // CameraGraph.
+    override fun start() {
+        threads.confineLaunch {
+            val graph = useCaseCameraContext.graph
+
+            useCaseCameraContext.configureCameraStateListener()
+
             graph.start()
 
-            debug { "Setting up Surfaces with UseCaseSurfaceManager" }
+            val surfaceToStreamMapResolved = useCaseCameraContext.surfaceToStreamMap
+
+            Camera2Logger.debug { "Setting up Surfaces with UseCaseSurfaceManager" }
             if (sessionConfigAdapter.isSessionConfigValid()) {
                 useCaseSurfaceManager
-                    .setupAsync(graph, sessionConfigAdapter, surfaceToStreamMap)
+                    .setupAsync(graph, sessionConfigAdapter, surfaceToStreamMapResolved)
                     .invokeOnCompletion { throwable ->
-                        // Only show logs for error cases, ignore CancellationException since the
-                        // task could be cancelled by UseCaseSurfaceManager#stopAsync().
+                        // Only show logs for error cases, ignore CancellationException since
+                        // the task could be cancelled by UseCaseSurfaceManager#stopAsync().
                         if (throwable != null && throwable !is CancellationException) {
-                            Log.error(throwable) { "Surface setup error!" }
+                            Camera2Logger.error(throwable) { "Surface setup error!" }
                         }
                     }
             } else {
-                Log.error { "Unable to create capture session due to conflicting configurations" }
+                Camera2Logger.error {
+                    "Unable to create capture session due to conflicting configurations"
+                }
             }
         }
+    }
 
     override suspend fun getCameraCapturePipeline(
         captureMode: Int,
@@ -213,8 +200,8 @@ class TestUseCaseCamera(
     }
 
     override fun close(): Job {
-        return threads.scope.launch {
-            useCaseCameraGraphConfig.graph.close()
+        return threads.confineLaunch {
+            useCaseCameraContext.closeGraph()
             useCaseSurfaceManager.stopAsync().await()
         }
     }

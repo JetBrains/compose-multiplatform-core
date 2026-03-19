@@ -76,16 +76,12 @@ public class ImpressionAction extends TakenAction {
     @Document.LongProperty
     private final int mResultRankGlobal;
 
-    ImpressionAction(@NonNull String namespace, @NonNull String id, long documentTtlMillis,
-            long actionTimestampMillis, @TakenAction.ActionType int actionType,
-            @Nullable String query, @Nullable String referencedQualifiedId, int resultRankInBlock,
-            int resultRankGlobal) {
-        super(namespace, id, documentTtlMillis, actionTimestampMillis, actionType);
-
-        mQuery = query;
-        mReferencedQualifiedId = referencedQualifiedId;
-        mResultRankInBlock = resultRankInBlock;
-        mResultRankGlobal = resultRankGlobal;
+    ImpressionAction(@NonNull BuilderImpl<? extends BuilderImpl<?>> builder) {
+        super(builder);
+        mQuery = builder.mQuery;
+        mReferencedQualifiedId = builder.mReferencedQualifiedId;
+        mResultRankInBlock = builder.mResultRankInBlock;
+        mResultRankGlobal = builder.mResultRankGlobal;
     }
 
     /**
@@ -190,12 +186,11 @@ public class ImpressionAction extends TakenAction {
     }
 
     @SuppressWarnings("unchecked")
-    static class BuilderImpl<T extends BuilderImpl<T>> extends
-            TakenAction.BuilderImpl<T> {
-        protected String mQuery;
-        protected String mReferencedQualifiedId;
-        protected int mResultRankInBlock;
-        protected int mResultRankGlobal;
+    static class BuilderImpl<T extends BuilderImpl<T>> extends TakenAction.BuilderImpl<T> {
+        private String mQuery;
+        private String mReferencedQualifiedId;
+        private int mResultRankInBlock;
+        private int mResultRankGlobal;
 
         /**
          * Constructs {@link BuilderImpl} with given {@code namespace}, {@code id},
@@ -283,9 +278,7 @@ public class ImpressionAction extends TakenAction {
         /** Builds an {@link ImpressionAction}. */
         @Override
         public @NonNull ImpressionAction build() {
-            return new ImpressionAction(mNamespace, mId, mDocumentTtlMillis, mActionTimestampMillis,
-                    mActionType, mQuery, mReferencedQualifiedId, mResultRankInBlock,
-                    mResultRankGlobal);
+            return new ImpressionAction(this);
         }
     }
 }

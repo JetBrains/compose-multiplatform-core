@@ -29,6 +29,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RemoteLongTest {
     val context =
         AndroidRemoteContext().apply {
@@ -51,9 +52,17 @@ class RemoteLongTest {
         val namedRemoteLong = RemoteLong.createNamedRemoteLong("testLong", 100)
         val longId = namedRemoteLong.getIdForCreationState(creationState)
 
-        makeAndUpdateCoreDocument { context.setNamedLong("testLong", 20) }
+        makeAndUpdateCoreDocument { context.setNamedLong("USER:testLong", 20) }
 
         assertThat(context.getLong(longId)).isEqualTo(20L)
+    }
+
+    @Test
+    fun remoteLong_cacheKey() {
+        val long1 = RemoteLong(10L)
+        val long2 = RemoteLong(10L)
+        assertThat(long1.cacheKey).isNotNull()
+        assertThat(long1.cacheKey).isEqualTo(long2.cacheKey)
     }
 
     private fun makeAndPaintCoreDocument() =

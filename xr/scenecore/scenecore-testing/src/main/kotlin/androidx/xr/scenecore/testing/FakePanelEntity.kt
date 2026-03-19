@@ -20,15 +20,20 @@ import android.content.Context
 import android.view.View
 import android.view.WindowManager
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.FieldOfView
+import androidx.xr.runtime.math.Vector2
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult
 import androidx.xr.scenecore.runtime.PixelDimensions
+import androidx.xr.scenecore.runtime.ScenePose
 import kotlin.math.roundToInt
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.PanelEntity] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public open class FakePanelEntity(private val view: View? = null) : FakeEntity(), PanelEntity {
+public open class FakePanelEntity(public val view: View? = null, name: String = "") :
+    FakeEntity(name), PanelEntity {
 
     private val context = view?.context
     private val windowManager = context?.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
@@ -99,7 +104,7 @@ public open class FakePanelEntity(private val view: View? = null) : FakeEntity()
         }
 
     private var perceivedResolutionResult: PerceivedResolutionResult =
-        PerceivedResolutionResult.InvalidCameraView()
+        PerceivedResolutionResult.InvalidRenderViewpoint()
 
     /**
      * For test purposes only.
@@ -115,24 +120,29 @@ public open class FakePanelEntity(private val view: View? = null) : FakeEntity()
      * Gets the perceived resolution of the entity in the camera view.
      *
      * This API is only intended for use in Full Space Mode and will return
-     * [androidx.xr.scenecore.runtime.PerceivedResolutionResult.InvalidCameraView] in Home Space
-     * Mode.
+     * [androidx.xr.scenecore.runtime.PerceivedResolutionResult.InvalidRenderViewpoint] in Home
+     * Space Mode.
      *
      * The entity's own rotation and the camera's viewing direction are disregarded; this value
      * represents the dimensions of the entity on the camera view if its largest surface was facing
      * the camera without changing the distance of the entity to the camera.
      *
+     * @param renderViewScenePose The [ScenePose] that represents the camera pose.
+     * @param renderViewFov The [FieldOfView] of the camera.
      * @return A [androidx.xr.scenecore.runtime.PerceivedResolutionResult] which encapsulates the
      *   outcome:
      *     - [PerceivedResolutionResult.Success] containing the [PixelDimensions] if the calculation
      *       is successful.
      *     - [PerceivedResolutionResult.EntityTooClose] if the entity is too close to the camera.
-     *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
-     *       the calculation is invalid or unavailable.
+     *     - [PerceivedResolutionResult.InvalidRenderViewpoint] if the camera information required
+     *       for the calculation is invalid or unavailable.
      *
      * @see androidx.xr.scenecore.runtime.PerceivedResolutionResult
      */
-    override fun getPerceivedResolution(): PerceivedResolutionResult {
+    override fun getPerceivedResolution(
+        renderViewScenePose: ScenePose,
+        renderViewFov: FieldOfView,
+    ): PerceivedResolutionResult {
         return perceivedResolutionResult
     }
 
@@ -147,5 +157,17 @@ public open class FakePanelEntity(private val view: View? = null) : FakeEntity()
     private fun PixelDimensions.toMeterDimensions(): Dimensions {
         val pixelsPerMeter = dpPerMeter * density
         return Dimensions(this.width / pixelsPerMeter, this.height / pixelsPerMeter, 0f)
+    }
+
+    override fun transformPixelCoordinatesToLocalPosition(coordinates: Vector2): Vector3 {
+        val u = coordinates.x / sizeInPixels.width
+        val v = coordinates.y / sizeInPixels.height
+        return transformNormalizedCoordinatesToLocalPosition(Vector2(u * 2 - 1, (1 - v) * 2 - 1))
+    }
+
+    override fun transformNormalizedCoordinatesToLocalPosition(coordinates: Vector2): Vector3 {
+        val xInLocal3DSpace = coordinates.x * size.width / 2f
+        val yInLocal3DSpace = coordinates.y * size.height / 2f
+        return Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f)
     }
 }

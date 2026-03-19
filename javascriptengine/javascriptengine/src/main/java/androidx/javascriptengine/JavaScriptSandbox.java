@@ -253,12 +253,10 @@ public final class JavaScriptSandbox implements AutoCloseable {
     /**
      * Feature for {@link #isFeatureSupported(String)}
      * <p>
-     * When this feature is present,
-     * {@link MessagePort#postMessage(androidx.javascriptengine.common.Message)}
-     * can be used to send messages between the embedder and the sandboxed
-     * JavaScript isolate, through Binder or AssetFileDescriptors.
+     * When this feature is present, message ports can be sent to JavaScript isolates using
+     * {@link JavaScriptIsolate#provideMessagPort(String)} and be used to send and receive messages
+     * between the embedder and the JavaScript isolate.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String JS_FEATURE_MESSAGE_PORTS = "JS_FEATURE_MESSAGE_PORTS";
 
     // This set must not be modified after JavaScriptSandbox construction.
@@ -613,11 +611,12 @@ public final class JavaScriptSandbox implements AutoCloseable {
             mState = State.CLOSED;
         }
         notifyIsolatesAboutClosure();
-        // This is the closest thing to a .close() method for ExecutorServices. This doesn't
-        // force the threads or their Runnables to immediately terminate, but will ensure
-        // that once the worker threads finish their current runnable (if any) that the thread
-        // pool terminates them, preventing a leak of threads.
-        mThreadPoolTaskExecutor.shutdownNow();
+        // This doesn't force the threads or their tasks to immediately terminate. Any previously
+        // scheduled tasks will be fulfilled, but new tasks will be rejected.
+        //
+        // We do not want to use shutdownNow, which would cancel any tasks that have not yet
+        // started, as this could skip cleanup operations and leak resources such as file handles.
+        mThreadPoolTaskExecutor.shutdown();
     }
 
     /**
@@ -711,7 +710,7 @@ public final class JavaScriptSandbox implements AutoCloseable {
     }
 
     @Override
-    @SuppressWarnings("GenericException") // super.finalize() throws Throwable
+    @SuppressWarnings({"GenericException", "removal"}) // super.finalize() throws Throwable
     protected void finalize() throws Throwable {
         try {
             mGuard.warnIfOpen();

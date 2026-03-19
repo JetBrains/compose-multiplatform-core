@@ -33,6 +33,7 @@ import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class TooltipPositionerTest {
 
     @Mock private lateinit var mockViewToPosition: View

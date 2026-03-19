@@ -87,7 +87,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasPerformImeAction
 import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -1726,6 +1726,42 @@ internal class BasicTextFieldTest {
         // Session count should still be 2.
         inputMethodInterceptor.assertThatSessionCount().isEqualTo(2)
         rule.onNodeWithTag(Tag).assertTextEquals("Hello Compose")
+    }
+
+    @Test
+    fun textField_multiLine_minLinesOneAndMaxLinesOne_doesSoftWrap() {
+        var getTLR: (() -> TextLayoutResult?)? = null
+        rule.setContent {
+            BasicTextField(
+                rememberTextFieldState(),
+                onTextLayout = { getTLR = it },
+                lineLimits = TextFieldLineLimits.MultiLine(1, 1),
+            )
+        }
+
+        rule.runOnIdle {
+            val tlr = getTLR?.invoke()
+            assertThat(tlr).isNotNull()
+            assertThat(tlr!!.layoutInput.softWrap).isTrue()
+        }
+    }
+
+    @Test
+    fun textField_singleLine_doesNotSoftWrap() {
+        var getTLR: (() -> TextLayoutResult?)? = null
+        rule.setContent {
+            BasicTextField(
+                rememberTextFieldState(),
+                onTextLayout = { getTLR = it },
+                lineLimits = TextFieldLineLimits.SingleLine,
+            )
+        }
+
+        rule.runOnIdle {
+            val tlr = getTLR?.invoke()
+            assertThat(tlr).isNotNull()
+            assertThat(tlr!!.layoutInput.softWrap).isFalse()
+        }
     }
 
     private fun requestFocus(tag: String) = rule.onNodeWithTag(tag).requestFocus()

@@ -26,16 +26,16 @@ import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Path
 
 /**
- * Public factory for a Texture, asynchronously loading a preprocessed texture from a [Path]
+ * Public factory for a [Texture], asynchronously loading a preprocessed texture from a [Path]
  * relative to the application's `assets/` folder.
  *
  * Currently, only URLs and relative paths from the `assets/` directory are supported.
  *
  * @param session The [Session] to use for loading the [Texture].
- * @param path The Path of the `.png` texture file to be loaded, relative to the application's
+ * @param path The [Path] of the `.png` texture file to be loaded, relative to the application's
  *   `assets/` folder.
- * @return a ListenableFuture<Texture>. Listeners will be called on the main thread if Runnable::run
- *   is supplied when adding a listener to the [ListenableFuture].
+ * @return a [ListenableFuture<Texture>]. Listeners will be called on the main thread if
+ *   Runnable::run is supplied when adding a listener to the [ListenableFuture].
  * @throws IllegalArgumentException if [Path.isAbsolute] is true, as this method requires a relative
  *   path.
  */

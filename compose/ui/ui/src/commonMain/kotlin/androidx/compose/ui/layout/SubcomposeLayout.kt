@@ -140,7 +140,7 @@ fun SubcomposeLayout(
             set(localMap, SetResolvedCompositionLocals)
             reconcile(ApplyOnDeactivatedNodeAssertion)
             set(materialized, SetModifier)
-            init(compositeKeyHash, SetCompositeKeyHash)
+            set(compositeKeyHash, SetCompositeKeyHash)
         },
     )
     if (!currentComposer.skipping) {
@@ -1157,7 +1157,10 @@ internal class LayoutNodeSubcompositionsState(
                 key: Any?,
                 block: (TraversableNode) -> TraverseDescendantsAction,
             ) {
-                precomposeMap[slotId]?.nodes?.head?.traverseDescendants(key, block)
+                val headNode = precomposeMap[slotId]?.nodes?.head
+                if (headNode != null && headNode.isAttached) {
+                    headNode.traverseDescendants(key, block)
+                }
             }
 
             override fun getSize(index: Int): IntSize {
@@ -1215,20 +1218,18 @@ internal class LayoutNodeSubcompositionsState(
                     }
                     val isComplete =
                         Snapshot.withoutReadObservation {
-                            ignoreRemeasureRequests {
-                                try {
-                                    pausedComposition.resume(shouldPause)
-                                } catch (e: Throwable) {
-                                    val operations = nodeState.operations
-                                    if (operations != null) {
-                                        throw SubcomposeLayoutPausableCompositionException(
-                                            nodeState.operations,
-                                            slotId,
-                                            e,
-                                        )
-                                    } else {
-                                        throw e
-                                    }
+                            try {
+                                pausedComposition.resume(shouldPause)
+                            } catch (e: Throwable) {
+                                val operations = nodeState.operations
+                                if (operations != null) {
+                                    throw SubcomposeLayoutPausableCompositionException(
+                                        nodeState.operations,
+                                        slotId,
+                                        e,
+                                    )
+                                } else {
+                                    throw e
                                 }
                             }
                         }
@@ -1455,6 +1456,11 @@ internal class LayoutNodeSubcompositionsState(
             val nodeState = node?.let { nodeToNodeState[it] }
             if (nodeState?.forceRecompose == true) {
                 subcompose(node, slotId, pausable = false, content)
+            }
+
+            // Finish pausable composition if it has not been completed yet
+            if (nodeState?.pausedComposition != null) {
+                nodeState.applyPausedPrecomposition(shouldComplete = true)
             }
         }
 

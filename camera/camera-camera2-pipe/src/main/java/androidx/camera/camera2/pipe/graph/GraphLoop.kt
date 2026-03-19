@@ -42,7 +42,7 @@ internal class GraphLoop(
     private val cameraGraphId: CameraGraphId,
     private val defaultParameters: Map<*, Any?>,
     private val requiredParameters: Map<*, Any?>,
-    private val graphListeners: List<Request.Listener>,
+    private val requiredListeners: List<Request.Listener>,
     private val listeners: List<Listener>,
     private val shutdownScope: CoroutineScope,
     dispatcher: CoroutineDispatcher,
@@ -68,6 +68,7 @@ internal class GraphLoop(
     @GuardedBy("lock") private var _repeatingRequest: Request? = null
     @GuardedBy("lock") private var _graphParameters: Map<*, Any?> = emptyMap<Any, Any?>()
     @GuardedBy("lock") private var _graph3AParameters: Map<*, Any?> = emptyMap<Any, Any?>()
+    @GuardedBy("lock") private var _requestListeners: List<Request.Listener> = emptyList()
 
     var requestProcessor: GraphRequestProcessor?
         get() = synchronized(lock) { _requestProcessor }
@@ -141,6 +142,14 @@ internal class GraphLoop(
                 processingQueue.tryEmit(GraphCommand.Parameters(_graphParameters, value))
             }
 
+    var requestListeners: List<Request.Listener>
+        get() = synchronized(lock) { _requestListeners }
+        set(value) =
+            synchronized(lock) {
+                _requestListeners = value
+                processingQueue.tryEmit(GraphCommand.Listeners(_requestListeners))
+            }
+
     private val _captureProcessingEnabled = atomic(true)
     var captureProcessingEnabled: Boolean
         get() = _captureProcessingEnabled.value
@@ -203,6 +212,7 @@ internal class GraphLoop(
     private var currentGraphParameters: Map<*, Any?> = emptyMap<Any, Any?>()
     private var currentGraph3AParameters: Map<*, Any?> = emptyMap<Any, Any?>()
     private var currentRequiredParameters: Map<*, Any?> = requiredParameters
+    private var currentRequestListeners: List<Request.Listener> = requiredListeners
     private var currentRequestProcessor: GraphRequestProcessor? = null
 
     private suspend fun process(commands: MutableList<GraphCommand>) {
@@ -234,6 +244,7 @@ internal class GraphLoop(
             is GraphCommand.Capture -> processCapture(commands, idx, command)
             is GraphCommand.Trigger -> processTrigger(commands, idx, command)
             is GraphCommand.Parameters -> processParameters(commands, idx, command)
+            is GraphCommand.Listeners -> processListeners(commands, idx, command)
             is GraphCommand.Repeat -> processRepeat(commands, idx)
         }
     }
@@ -279,15 +290,20 @@ internal class GraphLoop(
         // To do this, we iterate through the commands in order until we hit a non-Parameter or a
         // non-Repeat command. We then return the most-recent parameter command to execute.
         var latestParameterCommand = -1
+        var latestListenerCommand = -1
         for (i in commands.indices) {
             when (commands[i]) {
                 is GraphCommand.Parameters -> latestParameterCommand = i
+                is GraphCommand.Listeners -> latestListenerCommand = i
                 is GraphCommand.Repeat -> continue
                 else -> break
             }
         }
         if (latestParameterCommand >= 0) {
             return latestParameterCommand
+        }
+        if (latestListenerCommand >= 0) {
+            return latestListenerCommand
         }
 
         // If the current repeating request is valid, and captureProcessing is enabled, prioritize
@@ -438,6 +454,18 @@ internal class GraphLoop(
         reissueRepeatingRequest()
     }
 
+    private fun processListeners(
+        commands: MutableList<GraphCommand>,
+        idx: Int,
+        command: GraphCommand.Listeners,
+    ) {
+        currentRequestListeners = (command.listeners + requiredListeners).distinct()
+
+        commands.removeAt(idx)
+        commands.removeUpTo(idx) { it is GraphCommand.Listeners }
+        reissueRepeatingRequest()
+    }
+
     private suspend fun processRequestProcessor(
         commands: MutableList<GraphCommand>,
         idx: Int,
@@ -562,7 +590,7 @@ internal class GraphLoop(
                     defaultParameters = defaultParameters,
                     graphParameters = currentGraphParameters,
                     requiredParameters = currentRequiredParameters,
-                    listeners = graphListeners,
+                    listeners = currentRequestListeners,
                 )
             }
         } == true
@@ -575,8 +603,8 @@ internal class GraphLoop(
         // Internal listeners
         for (rIdx in requests.indices) {
             val request = requests[rIdx]
-            for (listenerIdx in graphListeners.indices) {
-                graphListeners[listenerIdx].onAborted(request)
+            for (listenerIdx in currentRequestListeners.indices) {
+                currentRequestListeners[listenerIdx].onAborted(request)
             }
         }
 
@@ -632,7 +660,7 @@ internal class GraphLoop(
                             this.putAllMetadata(requiredParameters)
                         }
                     },
-                listeners = graphListeners,
+                listeners = currentRequestListeners,
             )
 
         if (!success) {
@@ -691,6 +719,8 @@ internal sealed interface GraphCommand {
 
     class Parameters(val graphParameters: Map<*, Any?>, val graph3AParameters: Map<*, Any?>) :
         GraphCommand
+
+    class Listeners(val listeners: List<Request.Listener>) : GraphCommand
 
     class Repeat(val request: Request) : GraphCommand
 

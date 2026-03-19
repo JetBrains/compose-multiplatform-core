@@ -20,7 +20,6 @@ import androidx.kruth.assertThat
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
-import androidx.room3.InvalidationTracker
 import androidx.room3.Room
 import androidx.room3.RoomRawQuery
 import androidx.room3.integration.kotlintestapp.testutil.ItemStore
@@ -39,7 +38,6 @@ import androidx.testutils.FilteringExecutor
 import java.util.concurrent.Executors
 import kotlin.test.Ignore
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -293,70 +291,6 @@ class MultiTypedPagingSourceTest(
 
             assertThat(itemStore.currentGenerationId).isEqualTo(2)
             assertThat(pagingSources.size).isEqualTo(2)
-        }
-    }
-
-    // This test is no longer valid since LimitOffsetPagingSource now uses invalidation via Flow
-    // and slow observers don't block others.
-    @Test
-    @Ignore("b/329315924")
-    fun prependWithBlockingObserver() {
-        val items = createItems(startId = 0, count = 90)
-        db.getDao().insert(items)
-
-        val pager =
-            Pager(
-                config = CONFIG,
-                initialKey = 20,
-                pagingSourceFactory = { db.getDao().loadItems().also { pagingSources.add(it) } },
-            )
-
-        // to block the PagingSource's observer, this observer needs to be registered first
-        val blockingObserver =
-            object : InvalidationTracker.Observer("PagingEntity") {
-                // make sure observer blocks the time longer than the timeout of waiting for
-                // paging source invalidation, so that we can assert new generation failure later
-                override fun onInvalidated(tables: Set<String>) {
-                    Thread.sleep(3_500)
-                }
-            }
-        db.invalidationTracker.addObserver(blockingObserver)
-
-        runTest(pager) {
-            val initialLoad = itemStore.awaitInitialLoad()
-            val initialItems =
-                items.createExpected(fromIndex = 20, toIndex = 20 + CONFIG.initialLoadSize)
-            assertThat(initialLoad)
-                .containsExactlyElementsIn(
-                    // should load starting from initial Key = 20
-                    initialItems
-                )
-
-            db.getDao().deleteItems(items.subList(0, 60).map { it.id })
-
-            // Now get more items. The pagingSource's load() will check for invalidation.
-            // Normally the check would return "invalidation = true" but in this test case,
-            // room's invalidation flag has already been reset but observer notification is delayed.
-            // This means the paging source is not being invalidated.
-            itemStore.get(10)
-
-            val expectError = assertFailsWith<AssertionError> { itemStore.awaitGeneration(2) }
-            assertThat(expectError.message).isEqualTo("didn't complete in expected time")
-
-            // and stale PagingSource would return item 70 instead of item 10
-            withContext(Dispatchers.Main) {
-                assertThat(itemStore.awaitItem(10)).isEqualTo(items[70])
-            }
-            assertFalse(pagingSources[0].invalid)
-
-            // prepend again
-            itemStore.get(0)
-
-            // the blocking observer's callback should complete now and the PagingSource should be
-            // invalidated successfully
-            itemStore.awaitGeneration(2)
-            assertTrue(pagingSources[0].invalid)
-            assertFalse(pagingSources[1].invalid)
         }
     }
 

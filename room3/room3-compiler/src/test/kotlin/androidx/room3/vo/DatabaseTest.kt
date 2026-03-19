@@ -72,7 +72,6 @@ class DatabaseTest {
                 version = 1,
                 exportSchema = false,
                 enableForeignKeys = false,
-                overrideClearAllTables = true,
                 constructorObject = null,
             )
 

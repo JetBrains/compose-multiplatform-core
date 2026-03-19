@@ -51,6 +51,8 @@ public class CryptoObjectUtilsTest {
     private Mac mMac;
     @Mock
     private Signature mSignature;
+    @Mock
+    private javax.crypto.KeyAgreement mKeyAgreement;
 
     @Test
     @Config(minSdk = Build.VERSION_CODES.P)
@@ -142,6 +144,22 @@ public class CryptoObjectUtilsTest {
     }
 
     @Test
+    @Config(minSdk = Build.VERSION_CODES_FULL.BAKLAVA_1)
+    public void testUnwrapFromBiometricPrompt_WithKeyAgreementCryptoObject() {
+        final android.hardware.biometrics.BiometricPrompt.CryptoObject wrappedCrypto =
+                new android.hardware.biometrics.BiometricPrompt.CryptoObject(mKeyAgreement);
+
+        final BiometricPrompt.CryptoObject unwrappedCrypto =
+                CryptoObjectUtils.unwrapFromBiometricPrompt(wrappedCrypto);
+
+        assertThat(unwrappedCrypto).isNotNull();
+        assertThat(unwrappedCrypto.getCipher()).isNull();
+        assertThat(unwrappedCrypto.getSignature()).isNull();
+        assertThat(unwrappedCrypto.getMac()).isNull();
+        assertThat(unwrappedCrypto.getKeyAgreement()).isEqualTo(mKeyAgreement);
+    }
+
+    @Test
     @Config(minSdk = Build.VERSION_CODES.P)
     public void testWrapForBiometricPrompt_WithNullCryptoObject() {
         assertThat(CryptoObjectUtils.wrapForBiometricPrompt(null)).isNull();
@@ -230,6 +248,22 @@ public class CryptoObjectUtilsTest {
     }
 
     @Test
+    @Config(minSdk = Build.VERSION_CODES_FULL.BAKLAVA_1)
+    public void testWrapForBiometricPrompt_WithKeyAgreementCryptoObject() {
+        final BiometricPrompt.CryptoObject unwrappedCrypto =
+                new BiometricPrompt.CryptoObject(mKeyAgreement);
+
+        final android.hardware.biometrics.BiometricPrompt.CryptoObject wrappedCrypto =
+                CryptoObjectUtils.wrapForBiometricPrompt(unwrappedCrypto);
+
+        assertThat(wrappedCrypto).isNotNull();
+        assertThat(wrappedCrypto.getCipher()).isNull();
+        assertThat(wrappedCrypto.getSignature()).isNull();
+        assertThat(wrappedCrypto.getMac()).isNull();
+        assertThat(wrappedCrypto.getKeyAgreement()).isEqualTo(mKeyAgreement);
+    }
+
+    @Test
     public void testUnwrapFromFingerprintManager_WithNullCryptoObject() {
         assertThat(CryptoObjectUtils.unwrapFromFingerprintManager(null)).isNull();
     }
@@ -237,9 +271,8 @@ public class CryptoObjectUtilsTest {
     @SuppressWarnings("deprecation")
     @Test
     public void testUnwrapFromFingerprintManager_WithCipherCryptoObject() {
-        final androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject
-                wrappedCrypto = new androidx.core.hardware.fingerprint.FingerprintManagerCompat
-                .CryptoObject(mCipher);
+        final androidx.biometric.internal.FingerprintManagerCompat.CryptoObject wrappedCrypto =
+                new androidx.biometric.internal.FingerprintManagerCompat.CryptoObject(mCipher);
 
         final BiometricPrompt.CryptoObject unwrappedCrypto =
                 CryptoObjectUtils.unwrapFromFingerprintManager(wrappedCrypto);
@@ -253,9 +286,8 @@ public class CryptoObjectUtilsTest {
     @SuppressWarnings("deprecation")
     @Test
     public void testUnwrapFromFingerprintManager_WithSignatureCryptoObject() {
-        final androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject
-                wrappedCrypto = new androidx.core.hardware.fingerprint.FingerprintManagerCompat
-                .CryptoObject(mSignature);
+        final androidx.biometric.internal.FingerprintManagerCompat.CryptoObject wrappedCrypto =
+                new androidx.biometric.internal.FingerprintManagerCompat.CryptoObject(mSignature);
 
         final BiometricPrompt.CryptoObject unwrappedCrypto =
                 CryptoObjectUtils.unwrapFromFingerprintManager(wrappedCrypto);
@@ -269,9 +301,8 @@ public class CryptoObjectUtilsTest {
     @SuppressWarnings("deprecation")
     @Test
     public void testUnwrapFromFingerprintManager_WithMacCryptoObject() {
-        final androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject
-                wrappedCrypto = new androidx.core.hardware.fingerprint.FingerprintManagerCompat
-                .CryptoObject(mMac);
+        final androidx.biometric.internal.FingerprintManagerCompat.CryptoObject wrappedCrypto =
+                new androidx.biometric.internal.FingerprintManagerCompat.CryptoObject(mMac);
 
         final BiometricPrompt.CryptoObject unwrappedCrypto =
                 CryptoObjectUtils.unwrapFromFingerprintManager(wrappedCrypto);
@@ -293,8 +324,8 @@ public class CryptoObjectUtilsTest {
         final BiometricPrompt.CryptoObject unwrappedCrypto =
                 new BiometricPrompt.CryptoObject(mCipher);
 
-        final androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject
-                wrappedCrypto = CryptoObjectUtils.wrapForFingerprintManager(unwrappedCrypto);
+        final androidx.biometric.internal.FingerprintManagerCompat.CryptoObject wrappedCrypto =
+                CryptoObjectUtils.wrapForFingerprintManager(unwrappedCrypto);
 
         assertThat(wrappedCrypto).isNotNull();
         assertThat(wrappedCrypto.getCipher()).isEqualTo(mCipher);
@@ -308,8 +339,8 @@ public class CryptoObjectUtilsTest {
         final BiometricPrompt.CryptoObject unwrappedCrypto =
                 new BiometricPrompt.CryptoObject(mSignature);
 
-        final androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject
-                wrappedCrypto = CryptoObjectUtils.wrapForFingerprintManager(unwrappedCrypto);
+        final androidx.biometric.internal.FingerprintManagerCompat.CryptoObject wrappedCrypto =
+                CryptoObjectUtils.wrapForFingerprintManager(unwrappedCrypto);
 
         assertThat(wrappedCrypto).isNotNull();
         assertThat(wrappedCrypto.getCipher()).isNull();
@@ -322,8 +353,8 @@ public class CryptoObjectUtilsTest {
     public void testWrapForFingerprintManager_WithMacCryptoObject() {
         final BiometricPrompt.CryptoObject unwrappedCrypto = new BiometricPrompt.CryptoObject(mMac);
 
-        final androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject
-                wrappedCrypto = CryptoObjectUtils.wrapForFingerprintManager(unwrappedCrypto);
+        final androidx.biometric.internal.FingerprintManagerCompat.CryptoObject wrappedCrypto =
+                CryptoObjectUtils.wrapForFingerprintManager(unwrappedCrypto);
 
         assertThat(wrappedCrypto).isNotNull();
         assertThat(wrappedCrypto.getCipher()).isNull();

@@ -53,6 +53,7 @@ import java.util.Objects;
  */
 @CarProtocol
 @KeepFields
+@OptIn(markerClass = ExperimentalCarApi.class)
 public final class Row implements Item {
     /** A boat that belongs to you. */
     private static final String YOUR_BOAT = "\uD83D\uDEA3"; // 🚣
@@ -64,9 +65,9 @@ public final class Row implements Item {
      * The type of images supported within rows.
      */
     @RestrictTo(LIBRARY)
-    @IntDef(value = {IMAGE_TYPE_SMALL, IMAGE_TYPE_ICON, IMAGE_TYPE_LARGE, IMAGE_TYPE_EXTRA_SMALL})
+    @IntDef(value = {IMAGE_TYPE_SMALL, IMAGE_TYPE_MEDIUM, IMAGE_TYPE_ICON, IMAGE_TYPE_LARGE,
+            IMAGE_TYPE_EXTRA_SMALL})
     @Retention(RetentionPolicy.SOURCE)
-    @OptIn(markerClass = ExperimentalCarApi.class)
     public @interface RowImageType {
     }
 
@@ -107,8 +108,18 @@ public final class Row implements Item {
      * images targeting a 48 x 48 dp bounding box. If necessary, the image will be scaled down while
      * preserving its aspect ratio.
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public static final int IMAGE_TYPE_EXTRA_SMALL = (1 << 3);
+
+    /**
+     * Represents a medium image to be displayed in the row.
+     *
+     * <p>To minimize scaling artifacts across a wide range of car screens, apps should provide
+     * images targeting a 128 x 128 dp bounding box. If necessary, the image will be scaled down
+     * while preserving its aspect ratio.
+     */
+    @RequiresCarApi(8)
+    public static final int IMAGE_TYPE_MEDIUM = (1 << 4);
 
     private final boolean mIsEnabled;
     private final @Nullable CarText mTitle;
@@ -126,6 +137,7 @@ public final class Row implements Item {
     @RowImageType
     private final int mRowEndImageType;
     private final boolean mIndexable;
+    private final @Nullable CarProgressBar mProgressBar;
 
     /**
      * Returns the title of the row or {@code null} if not set.
@@ -263,9 +275,20 @@ public final class Row implements Item {
      *
      * @see Builder#setIndexable(boolean)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public boolean isIndexable() {
         return mIndexable;
+    }
+
+    /**
+     * Returns the progress bar to display in the row, or {@code null} if not set.
+     *
+     * @see Builder#setProgressBar(CarProgressBar)
+     */
+    @RequiresCarApi(9)
+    @ExperimentalCarApi
+    public @Nullable CarProgressBar getProgressBar() {
+        return mProgressBar;
     }
 
     /** Returns a {@link Row} for rowing {@link #yourBoat()} */
@@ -295,6 +318,8 @@ public final class Row implements Item {
                 + mIsBrowsable
                 + ", isEnabled: "
                 + mIsEnabled
+                + ", progressBar: "
+                + mProgressBar
                 + "]";
     }
 
@@ -312,7 +337,8 @@ public final class Row implements Item {
                 mRowImageType,
                 mRowEndImageType,
                 mIsEnabled,
-                mIndexable);
+                mIndexable,
+                mProgressBar);
     }
 
     @Override
@@ -337,7 +363,8 @@ public final class Row implements Item {
                 && mRowImageType == otherRow.mRowImageType
                 && mRowEndImageType == otherRow.mRowEndImageType
                 && mIsEnabled == otherRow.isEnabled()
-                && mIndexable == otherRow.mIndexable;
+                && mIndexable == otherRow.mIndexable
+                && Objects.equals(mProgressBar, otherRow.mProgressBar);
     }
 
     Row(Builder builder) {
@@ -355,6 +382,7 @@ public final class Row implements Item {
         mRowEndImageType = builder.mRowEndImageType;
         mIsEnabled = builder.mIsEnabled;
         mIndexable = builder.mIndexable;
+        mProgressBar = builder.mProgressBar;
     }
 
     /** Constructs an empty instance, used by serialization code. */
@@ -373,6 +401,7 @@ public final class Row implements Item {
         mRowEndImageType = IMAGE_TYPE_SMALL;
         mIsEnabled = true;
         mIndexable = true;
+        mProgressBar = null;
     }
 
     /** A builder of {@link Row}. */
@@ -393,6 +422,7 @@ public final class Row implements Item {
         @RowImageType
         int mRowEndImageType = IMAGE_TYPE_SMALL;
         boolean mIndexable = true;
+        @Nullable CarProgressBar mProgressBar;
 
         /**
          * Sets the title of the row.
@@ -549,8 +579,9 @@ public final class Row implements Item {
          * that work with different car screen pixel densities.
          *
          * @param image     the {@link CarIcon} to display or {@code null} to not display one
-         * @param imageType one of {@link #IMAGE_TYPE_ICON}, {@link #IMAGE_TYPE_SMALL} or {@link
-         *                  #IMAGE_TYPE_LARGE}
+         * @param imageType one of {@link #IMAGE_TYPE_ICON}, {@link #IMAGE_TYPE_SMALL},
+         *                  {@link #IMAGE_TYPE_EXTRA_SMALL}, {@link #IMAGE_TYPE_MEDIUM} or
+         *                  {@link #IMAGE_TYPE_LARGE}
          * @throws NullPointerException if {@code image} is {@code null}
          */
         public @NonNull Builder setImage(@NonNull CarIcon image, @RowImageType int imageType) {
@@ -587,8 +618,9 @@ public final class Row implements Item {
          *
          * @param endImage The {@link CarIcon} to display at the end of the row, or {@code null} to
          * not display one.
-         * @param rowEndImageType one of {IMAGE_TYPE_SMALL, IMAGE_TYPE_ICON, IMAGE_TYPE_LARGE,
-         *                        IMAGE_TYPE_EXTRA_SMALL}
+         * @param rowEndImageType one of {@link #IMAGE_TYPE_SMALL}, {@link #IMAGE_TYPE_ICON},
+         *                        {@link #IMAGE_TYPE_LARGE}, {@link #IMAGE_TYPE_EXTRA_SMALL},
+         *                        {@link #IMAGE_TYPE_MEDIUM}
          * @throws NullPointerException if {@code endImage} is {@code null}
          */
         @RequiresCarApi(8)
@@ -752,9 +784,21 @@ public final class Row implements Item {
          * template's API (eg. {@code SectionedItemTemplate
          * .Builder#setAlphabeticalIndexingStrategy(int)}).
          */
-        @ExperimentalCarApi
+        @RequiresCarApi(8)
         public @NonNull Builder setIndexable(boolean indexable) {
             mIndexable = indexable;
+            return this;
+        }
+
+        /**
+         * Sets the progress bar to display in the row.
+         *
+         * @throws NullPointerException if {@code progressBar} is {@code null}
+         */
+        @RequiresCarApi(9)
+        @ExperimentalCarApi
+        public @NonNull Builder setProgressBar(@NonNull CarProgressBar progressBar) {
+            mProgressBar = requireNonNull(progressBar);
             return this;
         }
 

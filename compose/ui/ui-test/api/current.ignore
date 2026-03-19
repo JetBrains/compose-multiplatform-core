@@ -1,9 +1,17 @@
 // Baseline format: 1.0
-BecameUnchecked: androidx.compose.ui.test.ComposeUiTestKt:
-    Removed class androidx.compose.ui.test.ComposeUiTestKt from compatibility checked API surface
-BecameUnchecked: androidx.compose.ui.test.GlobalAssertions:
-    Removed class androidx.compose.ui.test.GlobalAssertions from compatibility checked API surface
-BecameUnchecked: androidx.compose.ui.test.PlatformTextInputMethodOverrideKt:
-    Removed class androidx.compose.ui.test.PlatformTextInputMethodOverrideKt from compatibility checked API surface
-BecameUnchecked: androidx.compose.ui.test.TestMonotonicFrameClock_jvmKt:
-    Removed class androidx.compose.ui.test.TestMonotonicFrameClock_jvmKt from compatibility checked API surface
+AddedAbstractMethod: androidx.compose.ui.test.TrackpadInjectionScope#panEnd(long):
+    Binary breaking change: Added method androidx.compose.ui.test.TrackpadInjectionScope.panEnd(long)
+AddedAbstractMethod: androidx.compose.ui.test.TrackpadInjectionScope#scaleEnd(long):
+    Binary breaking change: Added method androidx.compose.ui.test.TrackpadInjectionScope.scaleEnd(long)
+
+
+AddedMethod: androidx.compose.ui.test.TrackpadInjectionScope#panEnd$default(androidx.compose.ui.test.TrackpadInjectionScope, long, int, Object):
+    Added method androidx.compose.ui.test.TrackpadInjectionScope.panEnd$default(androidx.compose.ui.test.TrackpadInjectionScope,long,int,Object)
+AddedMethod: androidx.compose.ui.test.TrackpadInjectionScope#scaleEnd$default(androidx.compose.ui.test.TrackpadInjectionScope, long, int, Object):
+    Added method androidx.compose.ui.test.TrackpadInjectionScope.scaleEnd$default(androidx.compose.ui.test.TrackpadInjectionScope,long,int,Object)
+
+
+RemovedMethod: androidx.compose.ui.test.TrackpadInjectionScope#panEnd():
+    Binary breaking change: Removed method androidx.compose.ui.test.TrackpadInjectionScope.panEnd()
+RemovedMethod: androidx.compose.ui.test.TrackpadInjectionScope#scaleEnd():
+    Binary breaking change: Removed method androidx.compose.ui.test.TrackpadInjectionScope.scaleEnd()

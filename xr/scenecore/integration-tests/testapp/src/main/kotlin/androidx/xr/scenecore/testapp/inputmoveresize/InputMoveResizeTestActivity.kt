@@ -17,9 +17,11 @@
 package androidx.xr.scenecore.testapp.inputmoveresize
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.RadioButton
@@ -28,6 +30,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
@@ -37,6 +40,8 @@ import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.EntityMoveListener
+import androidx.xr.scenecore.GltfModel
+import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.InputEvent
 import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.MovableComponent
@@ -45,11 +50,14 @@ import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.format
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.materialswitch.MaterialSwitch
+import java.nio.file.Paths
 import java.util.concurrent.Executors
 import java.util.function.Consumer
+import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
 class InputMoveResizeTestActivity : AppCompatActivity() {
@@ -60,6 +68,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
     private var resizablePanelActive = false
     private var mainPanelMovableActive = false
     private var mainPanelResizableActive = false
+    private lateinit var defaultPanelSize: FloatSize2d
 
     private val moveListener =
         object : EntityMoveListener {
@@ -133,6 +142,60 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         return panelEntity
     }
 
+    private fun createMovableGltfEntity() {
+        var moveEventCount = 0
+        var inputEventCount = 0
+        val text = " glTF Events:\n MoveEvents = %d\n InputEvents = %d"
+        val gltfPanelView = layoutInflater.inflate(R.layout.standalone_panel, null)
+        val textView = gltfPanelView.findViewById<TextView>(R.id.textView)
+        textView.textSize = 40f
+
+        val updateText = { textView.text = text.format(moveEventCount, inputEventCount) }
+
+        PanelEntity.create(
+            session!!,
+            gltfPanelView,
+            IntSize2d(1000, 480),
+            "panel",
+            Pose(Vector3(0.0f, -1f, -0.1f)),
+        )
+        updateText()
+
+        lifecycleScope.launch {
+            val gltfModel = GltfModel.create(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
+            val gltfModelEntity =
+                GltfModelEntity.create(session!!, gltfModel, Pose(Vector3(0f, 1.5f, -2f))).also {
+                    it.setScale(0.75f)
+                }
+            val movableComponent = MovableComponent.createSystemMovable(session!!, false)
+            val moveEventListener =
+                object : EntityMoveListener {
+                    override fun onMoveUpdate(
+                        entity: Entity,
+                        currentInputRay: Ray,
+                        currentPose: Pose,
+                        currentScale: Float,
+                    ) {
+                        Log.i(TAG, "$entity $currentInputRay $currentPose $currentScale")
+                        moveEventCount++
+                        updateText()
+                    }
+                }
+            movableComponent.addMoveListener(moveEventListener)
+
+            val interactableComponent =
+                InteractableComponent.create(session!!) {
+                    if (it.action == InputEvent.Action.UP) {
+                        inputEventCount++
+                        updateText()
+                    }
+                }
+
+            gltfModelEntity.addComponent(movableComponent)
+            gltfModelEntity.addComponent(interactableComponent)
+        }
+    }
+
     private fun changeTextAndBGColor(textView: TextView) {
         val backgroundColor = (Math.random() * 0xffffff).toInt()
         textView.setBackgroundColor((backgroundColor + 0xff000000).toInt())
@@ -146,6 +209,10 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         val mainPanelScaleInZ = findViewById<CheckBox>(R.id.scaleInZ)
         mainPanelScaleInZ.isChecked = true
         var mainPanelMovableComponent = MovableComponent.createSystemMovable(session!!)
+        val contentViewRoot = findViewById<ViewGroup>(android.R.id.content).getChildAt(0)
+        contentViewRoot.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            mainPanelMovableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
+        }
 
         fun updateMainPanelMovableComponent() {
             if (mainPanelMovableActive) {
@@ -185,6 +252,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
                     mainPanelSystemMovable.visibility = View.VISIBLE
                     mainPanelScaleInZ.visibility = View.VISIBLE
                 }
+
                 false -> {
                     if (mainPanelMovableActive) {
                         session!!.scene.mainPanelEntity.removeComponent(mainPanelMovableComponent)
@@ -249,6 +317,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
                 true ->
                     mainPanelResizableActive =
                         session!!.scene.mainPanelEntity.addComponent(mainPanelResizableComponent)
+
                 false ->
                     if (mainPanelResizableActive) {
                         session!!.scene.mainPanelEntity.removeComponent(mainPanelResizableComponent)
@@ -259,7 +328,14 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         // Toolbar action
         val toolbar: Toolbar = findViewById(R.id.toolbar_input_move_resize)
         setSupportActionBar(toolbar)
-        toolbar.setNavigationOnClickListener { this.finish() }
+        toolbar.setNavigationOnClickListener {
+            val resultIntent = Intent()
+            resultIntent.putExtra("defaultPanelSizeWidth", defaultPanelSize.width)
+            resultIntent.putExtra("defaultPanelSizeHeight", defaultPanelSize.height)
+            setResult(RESULT_OK, resultIntent)
+
+            this.finish()
+        }
     }
 
     @SuppressLint("InflateParams")
@@ -268,8 +344,24 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         setContentView(R.layout.activity_input_move_resize)
 
         // Create session
-        session = createSession(this)
-        if (session == null) this.finish()
+        session = SessionManager(this).createSession()
+        if (session == null) {
+            this.finish()
+        } else {
+            if (savedInstanceState != null) {
+                val width = savedInstanceState.getFloat("defaultPanelSizeWidth")
+                val height = savedInstanceState.getFloat("defaultPanelSizeHeight")
+                defaultPanelSize = FloatSize2d(width, height)
+            } else {
+                defaultPanelSize = session!!.scene.mainPanelEntity.size
+            }
+            Log.d(
+                TAG,
+                "defaultPanelSize: " +
+                    "w ${defaultPanelSize.width.format(2)} x " +
+                    "h ${defaultPanelSize.height.format(2)}",
+            )
+        }
 
         if (intent.extras != null) {
             findViewById<Toolbar>(R.id.toolbar_input_move_resize).also {
@@ -279,6 +371,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         }
 
         setupMainPanel()
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // Recreate button
         findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
@@ -317,6 +410,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
                     )
                 }
         }
+
         val checkBoxListener =
             CompoundButton.OnCheckedChangeListener { _, _ ->
                 updateMovablePanelComponent()
@@ -337,6 +431,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
                     systemMovableCheckbox.visibility = View.VISIBLE
                     scaleInZCheckBox.visibility = View.VISIBLE
                 }
+
                 false -> {
                     if (movablePanelActive) {
                         movablePanelEntity.removeComponent(movablePanelComponent)
@@ -350,6 +445,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         // Create a spatial panel with all components.
         val everythingPanelView = layoutInflater.inflate(R.layout.input_move_resize_panel, null)
         val everythingPanelEntity = createPanelEntityWithText("Everything", everythingPanelView)
+        createMovableGltfEntity()
         everythingPanelEntity.parent = movablePanelEntity
         everythingPanelEntity.setPose(Pose(Vector3(0.0f, -0.5f, 0.0f)))
         // Set the everything panel corner radius to 0.
@@ -393,6 +489,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
                         "Component is null"
                     }
                 }
+
                 false -> {
                     everythingPanelEntity.removeAllComponents()
                 }
@@ -463,6 +560,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
                 true ->
                     resizablePanelActive =
                         resizablePanelEntity.addComponent(resizablePanelComponent)
+
                 false ->
                     if (resizablePanelActive) {
                         resizablePanelEntity.removeComponent(resizablePanelComponent)
@@ -495,11 +593,18 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
                 true ->
                     interactablePanelActive =
                         interactablePanelEntity.addComponent(interactableComponent)
+
                 false ->
                     if (interactablePanelActive) {
                         interactablePanelEntity.removeComponent(interactableComponent)
                     }
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putFloat("defaultPanelSizeWidth", defaultPanelSize.width)
+        outState.putFloat("defaultPanelSizeHeight", defaultPanelSize.height)
     }
 }

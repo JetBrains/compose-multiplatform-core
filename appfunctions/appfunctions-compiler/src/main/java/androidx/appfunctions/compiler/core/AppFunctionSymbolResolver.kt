@@ -41,12 +41,15 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
             .map { declaration ->
                 if (declaration !is KSClassDeclaration) {
                     throw ProcessingException(
-                        "Only class can be annotated with @AppFunctionSchemaDefinition",
+                        "Only classes can be annotated with @AppFunctionSerializableProxy",
                         declaration,
                     )
                 }
-                AnnotatedAppFunctionSchemaDefinition(declaration)
+
+                declaration
             }
+            .sortedBy { checkNotNull(it.qualifiedName).asString() }
+            .map { declaration -> AnnotatedAppFunctionSchemaDefinition(declaration) }
             .toList()
     }
 
@@ -70,6 +73,7 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                 }
                 declaration
             }
+            .sortedBy { checkNotNull(it.qualifiedName).asString() }
             .groupBy { declaration ->
                 declaration.parentDeclaration as? KSClassDeclaration
                     ?: throw ProcessingException(
@@ -77,6 +81,8 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                         declaration,
                     )
             }
+            .entries
+            .sortedBy { it.key.qualifiedName?.asString() }
             .map { (classDeclaration, appFunctionsDeclarations) ->
                 AnnotatedAppFunctions(classDeclaration, appFunctionsDeclarations)
             }
@@ -104,6 +110,10 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                         declaration,
                     )
                 }
+                declaration
+            }
+            .sortedBy { checkNotNull(it.qualifiedName).asString() }
+            .map { declaration ->
                 if (declaration.modifiers.contains(Modifier.SEALED)) {
                     AnnotatedOneOfAppFunctionSerializable(declaration).validate()
                 } else {
@@ -132,8 +142,11 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                         declaration,
                     )
                 }
-                AnnotatedAppFunctionSerializableProxy(declaration).validate()
+
+                declaration
             }
+            .sortedBy { checkNotNull(it.qualifiedName).asString() }
+            .map { declaration -> AnnotatedAppFunctionSerializableProxy(declaration).validate() }
             .toList()
     }
 
@@ -148,6 +161,7 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
         List<AnnotatedAppFunctionSerializableProxy> {
         return resolver
             .getDeclarationsFromPackage(SERIALIZABLE_PROXY_PACKAGE_NAME)
+            .sortedBy { it.qualifiedName?.asString() }
             .filter {
                 it.annotations.findAnnotation(AppFunctionSerializableProxyAnnotation.CLASS_NAME) !=
                     null
@@ -200,6 +214,8 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                         declaration,
                     )
             }
+            .entries
+            .sortedBy { it.key.qualifiedName?.asString() }
             .map { (classDeclaration, appFunctionsDeclarations) ->
                 AnnotatedAppFunctions(
                         classDeclaration,
@@ -327,6 +343,7 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                     )
                 }
             }
+            .sortedBy { it.qualifiedName }
             .toList()
     }
 }

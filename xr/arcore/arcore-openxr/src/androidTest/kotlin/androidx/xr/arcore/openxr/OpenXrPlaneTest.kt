@@ -24,6 +24,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.Plane
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
@@ -39,7 +40,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.runtime.openxr.test"
+// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.arcore.openxr.test"
 // supports a
 // lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
@@ -49,7 +50,7 @@ class OpenXrPlaneTest {
 
     companion object {
         init {
-            System.loadLibrary("androidx.xr.runtime.openxr.test")
+            System.loadLibrary("androidx.xr.arcore.openxr.test")
         }
     }
 
@@ -60,17 +61,14 @@ class OpenXrPlaneTest {
     private lateinit var openXrManager: OpenXrManager
     private lateinit var xrResources: XrResources
     private lateinit var underTest: OpenXrPlane
+    private lateinit var timeSource: OpenXrTimeSource
 
     @Before
     fun setUp() {
-        xrResources = XrResources()
+        timeSource = OpenXrTimeSource()
+        xrResources = XrResources(timeSource)
         underTest =
-            OpenXrPlane(
-                planeId,
-                Plane.Type.HORIZONTAL_UPWARD_FACING,
-                OpenXrTimeSource(),
-                xrResources,
-            )
+            OpenXrPlane(planeId, Plane.Type.HORIZONTAL_UPWARD_FACING, timeSource, xrResources)
         xrResources.addTrackable(planeId, underTest)
         xrResources.addUpdatable(underTest as Updatable)
     }
@@ -227,13 +225,12 @@ class OpenXrPlaneTest {
 
     private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            val timeSource = OpenXrTimeSource()
             val perceptionManager = OpenXrPerceptionManager(timeSource)
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()
             openXrManager.resume()
             openXrManager.configure(
-                Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
             )
 
             testBody()

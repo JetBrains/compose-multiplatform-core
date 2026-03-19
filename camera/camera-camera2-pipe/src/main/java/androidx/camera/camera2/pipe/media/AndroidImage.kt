@@ -20,9 +20,9 @@ import android.graphics.Rect
 import android.hardware.HardwareBuffer
 import android.media.Image
 import android.os.Build
-import android.os.Build.VERSION_CODES
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.compat.Api28Compat
+import androidx.camera.camera2.pipe.compat.Api33Compat
 import java.nio.ByteBuffer
 import kotlin.reflect.KClass
 
@@ -77,6 +77,17 @@ public class AndroidImage(private val image: Image) : ImageWrapper {
                 null
             }
 
+    override var dataSpace: Int?
+        get() =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                Api33Compat.getDataSpace(image)
+            else null
+        set(value) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                Api33Compat.setDataSpace(image, checkNotNull(value))
+            }
+        }
+
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> unwrapAs(type: KClass<T>): T? =
         if (type == Image::class) {
@@ -93,9 +104,9 @@ public class AndroidImage(private val image: Image) : ImageWrapper {
         get() = readPlanes()
 
     override fun toString(): String {
-        // Image will be written as "Image-YUV_444_888w640h480-1234567890" with format, width,
+        // Image will be written as "Image-YUV_444_888w640h480-t1234567890" with format, width,
         // height, and timestamp
-        return "Image-${StreamFormat(format).name}-w${width}h$height-$timestamp"
+        return "Image-${StreamFormat(format).name}-w${width}h$height-t$timestamp"
     }
 
     override fun close() {

@@ -16,7 +16,6 @@
 
 package androidx.room3.solver.prepared.binder
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.codegen.XTypeName
@@ -24,13 +23,14 @@ import androidx.room3.compiler.codegen.box
 import androidx.room3.ext.InvokeWithLambdaParameter
 import androidx.room3.ext.LambdaSpec
 import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_BLOCKING
+import androidx.room3.ext.SQLiteDriverMemberNames
 import androidx.room3.ext.SQLiteDriverTypeNames
 import androidx.room3.solver.CodeGenScope
 import androidx.room3.solver.prepared.result.PreparedQueryResultAdapter
 
 /** Default binder for prepared queries. */
-class InstantPreparedQueryResultBinder(adapter: PreparedQueryResultAdapter?) :
-    PreparedQueryResultBinder(adapter) {
+class InstantPreparedQueryResultBinder(override val adapter: PreparedQueryResultAdapter?) :
+    PreparedQueryResultBinder {
 
     override fun executeAndReturn(
         sqlQueryVar: String,
@@ -59,8 +59,9 @@ class InstantPreparedQueryResultBinder(adapter: PreparedQueryResultAdapter?) :
                             addLocalVal(
                                 statementVar,
                                 SQLiteDriverTypeNames.STATEMENT,
-                                "%L.prepare(%L)",
+                                "%L.%M(%L)",
                                 connectionVar,
+                                SQLiteDriverMemberNames.CONNECTION_PREPARE,
                                 sqlQueryVar,
                             )
                             beginControlFlow("try")
@@ -72,11 +73,6 @@ class InstantPreparedQueryResultBinder(adapter: PreparedQueryResultAdapter?) :
                         }
                     },
             )
-        val returnPrefix =
-            when (scope.language) {
-                CodeLanguage.JAVA -> if (returnTypeName == XTypeName.UNIT_VOID) "" else "return "
-                CodeLanguage.KOTLIN -> "return "
-            }
-        scope.builder.add("$returnPrefix%L", performBlock)
+        scope.builder.add("return %L", performBlock)
     }
 }

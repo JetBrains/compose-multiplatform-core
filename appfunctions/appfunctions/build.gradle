@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -29,7 +28,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("com.android.legacy-kapt")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -38,13 +36,9 @@ dependencies {
     implementation(libs.kotlinCoroutinesAndroid)
     implementation("androidx.appsearch:appsearch:1.1.0")
     implementation("androidx.appsearch:appsearch-platform-storage:1.1.0")
-    implementation(libs.kotlinCoroutinesGuava) {
-        exclude group: "com.google.guava", module: "guava"
-    }
+    implementation(libs.guavaAndroid) // upgrading to newer version of guava due to CVE-2023-2976
+    implementation(libs.kotlinCoroutinesGuava)
     implementation("com.google.errorprone:error_prone_annotations:2.30.0")
-    // Manually specify the dependency on kotlinMetadataJvm due to missing prebuilt for appsearch
-    // compiler.
-    kapt(libs.kotlinMetadataJvm)
     kapt("androidx.appsearch:appsearch-compiler:1.1.0")
 
     // Compiler dependencies
@@ -83,7 +77,7 @@ kapt {
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(36) }
     defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.appfunctions"
 }

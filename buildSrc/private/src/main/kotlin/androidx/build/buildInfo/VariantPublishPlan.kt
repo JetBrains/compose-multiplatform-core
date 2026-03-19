@@ -33,4 +33,5 @@ data class VariantPublishPlan(
     val taskSuffix: String = "",
     val dependencies: Provider<List<Dependency>>,
     val dependencyConstraints: Provider<List<DependencyConstraint>>,
+    val runtimeConfigurationNames: Provider<List<String>>,
 )

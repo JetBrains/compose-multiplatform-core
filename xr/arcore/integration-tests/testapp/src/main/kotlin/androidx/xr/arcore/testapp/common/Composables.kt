@@ -40,10 +40,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.xr.arcore.AugmentedObject
 import androidx.xr.arcore.Plane
 import androidx.xr.arcore.Trackable
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.arcore.testapp.ui.theme.PurpleGrey80
+import androidx.xr.runtime.AugmentedObjectCategory
+import androidx.xr.runtime.TrackingState
 
 @Composable
 fun BackToMainActivityButton() {
@@ -80,11 +83,16 @@ fun TrackableCard(trackable: Trackable<Trackable.State>) {
         modifier = Modifier.padding(8.dp).fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Trackable ID: ${trackable}")
+            Text(text = "Trackable ID: $trackable")
             Text(text = "Tracking State: ${state.value.trackingState}")
-            if (trackable is Plane) {
-                Text("Plane Type: ${trackable.type}")
-                PlaneStateInfo(state.value as Plane.State)
+            when (trackable) {
+                is AugmentedObject -> {
+                    AugmentedObjectStateInfo(state.value as AugmentedObject.State)
+                }
+                is Plane -> {
+                    Text("Plane Type: ${trackable.type}")
+                    PlaneStateInfo(state.value as Plane.State)
+                }
             }
         }
     }
@@ -99,6 +107,26 @@ fun PlaneStateInfo(state: Plane.State) {
     Text(text = "Plane Vertices: ${state.vertices}")
 }
 
+@Composable
+fun AugmentedObjectStateInfo(state: AugmentedObject.State) {
+    Text(
+        text = "Object Category: ${state.category.getDescription()}",
+        color = convertAugmentedObjectCategoryToColor(state.category),
+    )
+    if (state.trackingState == TrackingState.TRACKING) {
+        Text(text = "Object Center Pose: ${state.centerPose}")
+        Text(text = "Object Extents: ${state.extents}")
+    }
+}
+
+private fun AugmentedObjectCategory.getDescription(): String =
+    when (this) {
+        AugmentedObjectCategory.KEYBOARD -> "Keyboard"
+        AugmentedObjectCategory.MOUSE -> "Mouse"
+        AugmentedObjectCategory.LAPTOP -> "Laptop"
+        else -> "Unknown"
+    }
+
 private fun convertPlaneLabelToColor(label: Plane.Label): Color =
     when (label) {
         Plane.Label.WALL -> Color.Green
@@ -106,6 +134,14 @@ private fun convertPlaneLabelToColor(label: Plane.Label): Color =
         Plane.Label.CEILING -> Color.Yellow
         Plane.Label.TABLE -> Color.Magenta
         else -> Color.Red
+    }
+
+private fun convertAugmentedObjectCategoryToColor(category: AugmentedObjectCategory): Color =
+    when (category) {
+        AugmentedObjectCategory.KEYBOARD -> Color.Green
+        AugmentedObjectCategory.LAPTOP -> Color.Yellow
+        AugmentedObjectCategory.MOUSE -> Color.Blue
+        else -> Color.Magenta
     }
 
 @Composable

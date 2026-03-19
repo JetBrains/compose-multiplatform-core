@@ -33,7 +33,7 @@ import androidx.camera.camera2.pipe.CameraError.Companion.ERROR_UNKNOWN_EXCEPTIO
 import androidx.camera.camera2.pipe.CameraExtensionMetadata
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.CameraPipe
+import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.core.DurationNs
 import androidx.camera.camera2.pipe.core.Timestamps
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
@@ -123,7 +123,7 @@ class RetryingCameraStateOpenerTest {
             }
         }
 
-    private val fakeCamera2Quirks = Camera2Quirks(camera2MetadataProvider, CameraPipe.Flags())
+    private val fakeCamera2Quirks = Camera2Quirks(camera2MetadataProvider, StrictMode(false))
     private val fakeTimeSource = FakeTimeSource()
     private val cameraDeviceCloser = FakeCamera2DeviceCloser()
 
@@ -154,13 +154,18 @@ class RetryingCameraStateOpenerTest {
 
     private val cameraAvailabilityMonitor =
         object : CameraAvailabilityMonitor {
-            override suspend fun awaitAvailableCamera(
-                cameraId: CameraId,
-                timeoutMillis: Long,
-            ): Boolean {
-                delay(timeoutMillis)
-                fakeTimeSource.currentTimestamp += DurationNs.fromMs(timeoutMillis)
-                return true
+            override suspend fun startMonitoring(
+                cameraId: CameraId
+            ): CameraAvailabilityMonitor.Session {
+                return object : CameraAvailabilityMonitor.Session {
+                    override suspend fun awaitAvailableCamera(timeoutMillis: Long): Boolean {
+                        delay(timeoutMillis)
+                        fakeTimeSource.currentTimestamp += DurationNs.fromMs(timeoutMillis)
+                        return true
+                    }
+
+                    override fun close() {}
+                }
             }
         }
 

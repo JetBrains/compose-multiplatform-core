@@ -37,20 +37,22 @@ import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
- * Currently unimplemented implementation of [androidx.xr.arcore.runtime.Geospatial] on Projected.
+ * Currently unimplemented implementation of [Geospatial] on Projected.
+ *
+ * @property state the [Geospatial.State] of the geospatial instance
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedGeospatial internal constructor(private val xrResources: XrResources) :
     Geospatial {
     public override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
-        private set
+        internal set
 
     private val service: IProjectedPerceptionService
         get() = xrResources.service
 
     private fun checkTrackingState() {
         if (
-            xrResources.deviceTrackingState == TrackingState.STOPPED ||
+            xrResources.trackingState == TrackingState.STOPPED ||
                 xrResources.geospatialTrackingState == TrackingState.STOPPED
         ) {
             throw GeospatialPoseNotTrackingException()
@@ -104,7 +106,15 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
                 vector = projectedVector
                 q = projectedQuaternion
             }
-        val projectedEarthPose = service.createGeospatialPoseFromPose(projectedPose)
+        val projectedEarthPose =
+            try {
+                // TODO: b/491554279 - remove android.os.RemoteException once the bug is fixed.
+                service.createGeospatialPoseFromPose(projectedPose)
+            } catch (e: android.os.RemoteException) {
+                throw GeospatialPoseNotTrackingException()
+            } catch (e: RuntimeException) {
+                throw GeospatialPoseNotTrackingException()
+            }
         // TODO: b/446185235 - maybe we need better error handling or in service?
         if (projectedEarthPose == null) {
             return Geospatial.GeospatialPoseResult(
@@ -182,6 +192,8 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
                         }
                     continuation.resume(vpsResult)
                 }
+
+                override fun getInterfaceVersion(): Int = VERSION
             }
         try {
             xrResources.service.checkVpsAvailability(latitude, longitude, callback)

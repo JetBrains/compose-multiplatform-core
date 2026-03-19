@@ -419,7 +419,8 @@ class DefaultFeatureGroupResolverTest {
         // and Ultra HDR as the requiring feature.
         assertThat(result).isInstanceOf(UseCaseMissing::class.java)
         val useCaseMissingResult = result as UseCaseMissing
-        assertThat(useCaseMissingResult.requiredUseCases).isEqualTo("Preview or VideoCapture")
+        assertThat(useCaseMissingResult.requiredUseCases)
+            .isEqualTo("Preview or VideoCapture or ImageAnalysis")
         assertThat(useCaseMissingResult.featureRequiring).isEqualTo(PREVIEW_STABILIZATION)
     }
 
@@ -527,7 +528,8 @@ class DefaultFeatureGroupResolverTest {
         // and Ultra HDR as the requiring feature.
         assertThat(result).isInstanceOf(UseCaseMissing::class.java)
         val useCaseMissingResult = result as UseCaseMissing
-        assertThat(useCaseMissingResult.requiredUseCases).isEqualTo("Preview or VideoCapture")
+        assertThat(useCaseMissingResult.requiredUseCases)
+            .isEqualTo("Preview or VideoCapture or ImageAnalysis")
         assertThat(useCaseMissingResult.featureRequiring).isEqualTo(FPS_60)
     }
 

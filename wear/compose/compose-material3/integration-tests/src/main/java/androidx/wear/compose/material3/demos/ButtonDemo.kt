@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.textEntryKey
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -58,6 +59,7 @@ import androidx.wear.compose.material3.ButtonColors
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ChildButton
 import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.CompactButtonDefaults
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListSubHeader
@@ -67,6 +69,7 @@ import androidx.wear.compose.material3.RadioButton
 import androidx.wear.compose.material3.Slider
 import androidx.wear.compose.material3.SwitchButton
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TextButton
 import androidx.wear.compose.material3.samples.ButtonExtraLargeIconSample
 import androidx.wear.compose.material3.samples.ButtonLargeIconSample
 import androidx.wear.compose.material3.samples.ButtonSample
@@ -885,6 +888,20 @@ fun ButtonUpdateAnimationDemo() {
 }
 
 @Composable
+fun TextEntryButtonDemo() {
+    var text by remember { mutableStateOf("Button") }
+
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        TextButton(
+            onClick = { text = "Button Clicked" },
+            modifier = Modifier.fillMaxWidth().semantics { textEntryKey() },
+        ) {
+            Text(text = text, modifier = Modifier.align(Alignment.Center))
+        }
+    }
+}
+
+@Composable
 private fun MultilineButton(
     enabled: Boolean,
     colors: ButtonColors = ButtonDefaults.buttonColors(),
@@ -1037,7 +1054,7 @@ private fun ScalingLazyListScope.buttonMerge() {
         Column {
             Button(
                 onClick = {},
-                modifier = Modifier.fillMaxWidth().height(ButtonDefaults.CompactButtonHeight),
+                modifier = Modifier.fillMaxWidth().height(CompactButtonDefaults.Height),
                 shape = ButtonDefaults.shape.bottom(noCorner),
                 label = { Text("Top", Modifier.fillMaxWidth()) },
                 colors = ButtonDefaults.filledTonalButtonColors(),

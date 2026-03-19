@@ -19,7 +19,6 @@ package androidx.build.sbom
 import androidx.build.AndroidXPlaygroundRootImplPlugin
 import androidx.build.BundleInsideHelper
 import androidx.build.ProjectLayoutType
-import androidx.build.addSbomToAttestation
 import androidx.build.addToBuildOnServer
 import androidx.build.getDistributionDirectory
 import androidx.build.getPrebuiltsRoot
@@ -34,6 +33,7 @@ import java.util.UUID
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ModuleVersionIdentifier
+import org.gradle.api.attributes.Category
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
@@ -190,7 +190,7 @@ fun Project.validateAllArchiveInputsRecognized() {
 }
 
 /** Enables the publishing of an sbom that lists our embedded dependencies */
-fun Project.configureSbomPublishing(isolatedProjectsEnabled: Boolean) {
+fun Project.configureSbomPublishing() {
     val uuid = coordinatesToUUID().toString()
     val projectName = name
     val projectVersion = version.toString()
@@ -200,7 +200,7 @@ fun Project.configureSbomPublishing(isolatedProjectsEnabled: Boolean) {
     }
     apply(plugin = "org.spdx.sbom")
     val repos = getRepoPublicUrls()
-    val headShaProvider = getHeadShaProvider(this)
+    val headShaProvider = getHeadShaProvider()
     val supportRootDir = getSupportRootFolder()
 
     val sbomBuiltFile = layout.buildDirectory.file("spdx/release.spdx.json")
@@ -212,17 +212,20 @@ fun Project.configureSbomPublishing(isolatedProjectsEnabled: Boolean) {
             publishTask.outputFileName.set("$projectName-$projectVersion.spdx.json")
         }
 
-    if (!isolatedProjectsEnabled) {
-        addSbomToAttestation(
-            publishTask.map { task ->
-                task.destinationDir
-                    .file(task.outputFileName.get())
-                    .get()
-                    .asFile
-                    .toRelativeString(getDistributionDirectory().get().asFile)
-            }
-        )
+    configurations.register("sbomArtifacts") {
+        it.isCanBeResolved = false
+        it.isCanBeConsumed = true
+        it.attributes { attributes ->
+            attributes.attribute(
+                Category.CATEGORY_ATTRIBUTE,
+                objects.named(Category::class.java, "androidx-sbom-artifacts"),
+            )
+        }
     }
+    artifacts.add(
+        "sbomArtifacts",
+        publishTask.map { task -> task.destinationDir.file(task.outputFileName.get()) },
+    )
 
     tasks.withType(SpdxSbomTask::class.java).configureEach { task ->
         val sbomProjectDir = projectDir
@@ -331,13 +334,14 @@ private fun Project.getSbomPublishDir(): Provider<Directory> {
 }
 
 private const val MAVEN_CENTRAL_REPO_URL = "https://repo.maven.apache.org/maven2"
-private const val GMAVEN_REPO_URL = "https://dl.google.com/android/maven2"
+private const val GMAVEN_REPO_URL = "https://dl.google.com/dl/android/maven2"
 
 /** Returns a mapping from local repo url to public repo url */
 private fun Project.getRepoPublicUrls(): Map<String, String> {
     return if (ProjectLayoutType.isPlayground(this)) {
         mapOf(
             MAVEN_CENTRAL_REPO_URL to MAVEN_CENTRAL_REPO_URL,
+            GMAVEN_REPO_URL to GMAVEN_REPO_URL,
             AndroidXPlaygroundRootImplPlugin.INTERNAL_PREBUILTS_REPO_URL to GMAVEN_REPO_URL,
         )
     } else {

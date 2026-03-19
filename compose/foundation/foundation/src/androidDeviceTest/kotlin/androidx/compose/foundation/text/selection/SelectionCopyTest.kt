@@ -35,7 +35,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
@@ -80,7 +80,7 @@ class SelectionCopyTest {
 
         rule.waitForIdle()
         val onNode = rule.onNodeWithTag(textTag)
-        clipboardManager.setText(AnnotatedString(startClipboardText))
+        rule.runOnUiThread { clipboardManager.setText(AnnotatedString(startClipboardText)) }
         onNode.startSelection()
 
         rule.waitForIdle()
@@ -112,7 +112,7 @@ class SelectionCopyTest {
 
         rule.waitForIdle()
         val onNode = rule.onNodeWithTag(textTag)
-        clipboardManager.setText(AnnotatedString(startClipboardText))
+        rule.runOnUiThread { clipboardManager.setText(AnnotatedString(startClipboardText)) }
         onNode.startSelection()
 
         rule.waitForIdle()

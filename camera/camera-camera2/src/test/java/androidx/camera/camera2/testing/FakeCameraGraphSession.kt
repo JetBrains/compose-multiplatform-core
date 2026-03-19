@@ -21,6 +21,8 @@ import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AwbMode
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.ControlMode
+import androidx.camera.camera2.pipe.FlashMode
 import androidx.camera.camera2.pipe.Frame
 import androidx.camera.camera2.pipe.FrameCapture
 import androidx.camera.camera2.pipe.FrameMetadata
@@ -47,6 +49,7 @@ open class FakeCameraGraphSession : CameraGraph.Session {
     val repeatingRequests = mutableListOf<Request>()
     var repeatingRequestSemaphore = Semaphore(0)
     var stopRepeatingSemaphore = Semaphore(0)
+    override var repeatingRequest = repeatingRequests.lastOrNull()
 
     enum class RequestStatus {
         TOTAL_CAPTURE_DONE,
@@ -178,6 +181,8 @@ open class FakeCameraGraphSession : CameraGraph.Session {
         aeMode: AeMode?,
         afMode: AfMode?,
         awbMode: AwbMode?,
+        controlMode: ControlMode?,
+        flashMode: FlashMode?,
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
         awbRegions: List<MeteringRectangle>?,

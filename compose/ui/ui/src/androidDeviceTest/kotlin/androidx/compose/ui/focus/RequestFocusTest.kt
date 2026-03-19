@@ -38,7 +38,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsFocused
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -859,8 +859,7 @@ class RequestFocusTest {
                 assertThat(success).isTrue()
                 rule.onNodeWithTag(tag1).assertIsFocused()
             }
-            ComposeUiFlags.isBypassUnfocusableComposeViewEnabled &&
-                ComposeUiFlags.isIgnoreInvalidPrevFocusRectEnabled -> {
+            ComposeUiFlags.isBypassUnfocusableComposeViewEnabled -> {
                 assertThat(success).isTrue()
                 rule.onNodeWithTag(tag2).assertIsFocused()
             }

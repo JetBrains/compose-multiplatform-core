@@ -16,16 +16,12 @@
 
 package androidx.room3.solver.transaction.binder
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.codegen.box
 import androidx.room3.compiler.processing.XType
-import androidx.room3.compiler.processing.isKotlinUnit
-import androidx.room3.compiler.processing.isVoid
 import androidx.room3.ext.InvokeWithLambdaParameter
-import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LambdaSpec
 import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_IN_TRANSACTION_BLOCKING
 import androidx.room3.solver.CodeGenScope
@@ -43,12 +39,6 @@ class InstantTransactionFunctionBinder(
         dbProperty: XPropertySpec,
         scope: CodeGenScope,
     ) {
-        val returnPrefix =
-            when (scope.language) {
-                CodeLanguage.JAVA ->
-                    if (returnType.isVoid() || returnType.isKotlinUnit()) "" else "return "
-                CodeLanguage.KOTLIN -> "return "
-            }
         val performBlock =
             InvokeWithLambdaParameter(
                 scope = scope,
@@ -71,20 +61,10 @@ class InstantTransactionFunctionBinder(
                                 daoImplName = daoImplName,
                                 scope = adapterScope,
                             )
-                            when (scope.language) {
-                                CodeLanguage.JAVA -> {
-                                    addStatement("$returnPrefix%L", adapterScope.generate())
-                                    if (returnPrefix.isEmpty()) {
-                                        addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
-                                    }
-                                }
-                                CodeLanguage.KOTLIN -> {
-                                    addStatement("%L", adapterScope.generate())
-                                }
-                            }
+                            addStatement("%L", adapterScope.generate())
                         }
                     },
             )
-        scope.builder.add("$returnPrefix%L", performBlock)
+        scope.builder.add("return %L", performBlock)
     }
 }

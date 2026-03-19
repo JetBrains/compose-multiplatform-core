@@ -28,14 +28,17 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.FocusedWindowTest
+import androidx.compose.foundation.text.ForceTouchInputMode
 import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine
 import androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine
@@ -45,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertPixels
@@ -62,9 +66,10 @@ import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTextInput
@@ -495,7 +500,7 @@ class TextFieldScrollTest : FocusedWindowTest {
             Second Line
             Third Line
             Fourth Line
-        """
+            """
                 .trimIndent()
 
         val state = TextFieldState(text)
@@ -549,14 +554,18 @@ class TextFieldScrollTest : FocusedWindowTest {
         val columnScrollState = ScrollState(0)
 
         rule.setContent {
-            Column(Modifier.size(containerSize).padding(8.dp).verticalScroll(columnScrollState)) {
-                Box(Modifier.size(topItemSize))
-                ScrollableContent(
-                    modifier = Modifier.fillMaxWidth(),
-                    state = state,
-                    scrollState = textFieldScrollState,
-                    lineLimits = MultiLine(),
-                )
+            ForceTouchInputMode {
+                Column(
+                    Modifier.size(containerSize).padding(8.dp).verticalScroll(columnScrollState)
+                ) {
+                    Box(Modifier.size(topItemSize))
+                    ScrollableContent(
+                        modifier = Modifier.fillMaxWidth(),
+                        state = state,
+                        scrollState = textFieldScrollState,
+                        lineLimits = MultiLine(),
+                    )
+                }
             }
         }
 
@@ -1027,6 +1036,26 @@ class TextFieldScrollTest : FocusedWindowTest {
 
         rule.waitForIdle()
         assertThat(state.text.toString()).isEmpty()
+    }
+
+    @Test // regression test for b/440964236
+    fun textFieldDoesNotCrash_whenParentScrollableCollapses() {
+        var size by mutableStateOf(150.dp)
+        rule.setContent {
+            Box(
+                Modifier.verticalScroll(remember { ScrollState(0) })
+                    .widthIn(max = size)
+                    .heightIn(max = size)
+            ) {
+                BasicTextField(rememberTextFieldState())
+            }
+        }
+        rule.onNode(hasSetTextAction()).requestFocus()
+
+        size = 0.dp
+
+        // not crashing is enough.
+        rule.onNode(hasSetTextAction()).assertExists()
     }
 
     private fun ComposeContentTestRule.setupHorizontallyScrollableContent(

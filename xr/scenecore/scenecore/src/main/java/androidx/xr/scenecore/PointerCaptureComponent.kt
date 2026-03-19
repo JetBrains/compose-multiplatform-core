@@ -35,7 +35,7 @@ import java.util.function.Consumer
 public class PointerCaptureComponent
 private constructor(
     private val sceneRuntime: SceneRuntime,
-    private val entityManager: EntityManager,
+    private val entityRegistry: EntityRegistry,
     private val executor: Executor,
     private val stateListener: Consumer<PointerCaptureState>,
     private val inputEventListener: Consumer<InputEvent>,
@@ -68,7 +68,7 @@ private constructor(
     private var attachedEntity: Entity? = null
 
     private val rtInputEventListener = RtInputEventListener { rtEvent ->
-        inputEventListener.accept(rtEvent.toInputEvent(entityManager))
+        inputEventListener.accept(rtEvent.toInputEvent(entityRegistry))
     }
 
     private val rtStateListener =
@@ -128,7 +128,7 @@ private constructor(
         ): PointerCaptureComponent =
             PointerCaptureComponent(
                 session.sceneRuntime,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 executor,
                 stateListener,
                 inputListener,

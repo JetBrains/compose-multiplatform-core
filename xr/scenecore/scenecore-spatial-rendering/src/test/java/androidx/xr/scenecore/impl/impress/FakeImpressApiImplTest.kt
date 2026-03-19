@@ -16,22 +16,29 @@
 
 package androidx.xr.scenecore.impl.impress
 
+import androidx.xr.runtime.math.Matrix4
+import androidx.xr.runtime.math.Quaternion
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.StereoSurfaceEntityData
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.StereoSurfaceEntityData.CanvasShape
+import androidx.xr.scenecore.impl.impress.ImpressApi.ContentSecurityLevel
+import androidx.xr.scenecore.impl.impress.ImpressApi.MediaBlendingMode
 import androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.TextureSampler
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 class FakeImpressApiImplTest {
     private lateinit var fakeImpressApi: FakeImpressApiImpl
     private lateinit var resourceManager: BindingsResourceManager
@@ -44,48 +51,37 @@ class FakeImpressApiImplTest {
     }
 
     @Test
-    fun loadImageBasedLightingAssetTemp_returnsImageFuture() {
-        runBlocking {
-            val model = fakeImpressApi.loadImageBasedLightingAssetTemp("fakeEnvironment.zip")
-
-            assertThat(model).isNotNull()
-        }
-    }
-
-    @Test
     fun loadImageBasedLightingAsset_returnsImageFuture() {
-        val modelFuture = fakeImpressApi.loadImageBasedLightingAsset("fakeEnvironment.zip")
-        assertThat(modelFuture).isNotNull()
-    }
-
-    @Test
-    fun loadImageBasedLightingAssetTemp_withByteArrayAndKey_returnsFuture() {
-        val byteArray = byteArrayOf()
-
         runBlocking {
-            val model =
-                fakeImpressApi.loadImageBasedLightingAssetTemp(byteArray, "fakeEnvironment.zip")
+            val model = fakeImpressApi.loadImageBasedLightingAsset("fakeEnvironment.zip")
 
             assertThat(model).isNotNull()
+
+            model.releaseBindingsResource(model.nativeHandle)
         }
     }
 
     @Test
     fun loadImageBasedLightingAsset_withByteArrayAndKey_returnsFuture() {
         val byteArray = byteArrayOf()
-        val modelFuture =
-            fakeImpressApi.loadImageBasedLightingAsset(byteArray, "fakeEnvironment.zip")
-        assertThat(modelFuture).isNotNull()
+
+        runBlocking {
+            val model = fakeImpressApi.loadImageBasedLightingAsset(byteArray, "fakeEnvironment.zip")
+
+            assertThat(model).isNotNull()
+
+            model.releaseBindingsResource(model.nativeHandle)
+        }
     }
 
     @Test
-    fun releaseImageBasedLightingAsset_releasesImage() {
-        val imageFuture = fakeImpressApi.loadImageBasedLightingAsset("fakeEnvironment.zip")
+    fun releaseImageBasedLightingAsset_releasesImage() = runBlocking {
+        val image = fakeImpressApi.loadImageBasedLightingAsset("fakeEnvironment.zip")
         var images = fakeImpressApi.getImageBasedLightingAssets()
         assertThat(images).isNotNull()
         assertThat(images).hasSize(1)
 
-        val imageToken: Long = imageFuture.get().nativeHandle
+        val imageToken: Long = image.nativeHandle
         fakeImpressApi.releaseImageBasedLightingAsset(imageToken)
 
         images = fakeImpressApi.getImageBasedLightingAssets()
@@ -93,50 +89,37 @@ class FakeImpressApiImplTest {
     }
 
     @Test
-    fun loadGltfAssetTemp_returnsModelFuture() {
+    fun loadGltfAsset_returnsModelFuture() {
         runBlocking {
-            val modelFuture = fakeImpressApi.loadGltfAssetTemp("FakeAsset.glb")
+            val modelFuture = fakeImpressApi.loadGltfAsset("FakeAsset.glb")
 
             assertThat(modelFuture).isNotNull()
         }
     }
 
     @Test
-    fun loadGltfAsset_returnsModelFuture() {
-        val modelFuture = fakeImpressApi.loadGltfAsset("FakeAsset.glb")
-        assertThat(modelFuture).isNotNull()
-    }
-
-    @Test
-    fun loadGltfAssetTemp_withByteArrayAndKey_returnsModelFuture() {
+    fun loadGltfAsset_withByteArrayAndKey_returnsModelFuture() {
         val byteArray = byteArrayOf()
 
         runBlocking {
-            val model = fakeImpressApi.loadGltfAssetTemp(byteArray, "FakeAsset.glb")
+            val model = fakeImpressApi.loadGltfAsset(byteArray, "FakeAsset.glb")
 
             assertThat(model).isNotNull()
         }
     }
 
     @Test
-    fun loadGltfAsset_withByteArrayAndKey_returnsModelFuture() {
-        val byteArray = byteArrayOf()
-        val modelFuture = fakeImpressApi.loadGltfAsset(byteArray, "FakeAsset.glb")
-        assertThat(modelFuture).isNotNull()
-    }
-
-    @Test
-    fun getImpressNodesForToken_returnsNodes() {
-        val modelFuture = fakeImpressApi.loadGltfAsset("FakeAsset.glb")
-        val modelToken = modelFuture.get().nativeHandle
+    fun getImpressNodesForToken_returnsNodes() = runBlocking {
+        val model = fakeImpressApi.loadGltfAsset("FakeAsset.glb")
+        val modelToken = model.nativeHandle
         val nodes = fakeImpressApi.getImpressNodesForToken(modelToken)
         assertThat(nodes).isNotNull()
     }
 
     @Test
-    fun releaseGltfAsset_releasesModel() {
-        val modelFuture = fakeImpressApi.loadGltfAsset("FakeAsset.glb")
-        val modelToken = modelFuture.get().nativeHandle
+    fun releaseGltfAsset_releasesModel() = runBlocking {
+        val model = fakeImpressApi.loadGltfAsset("FakeAsset.glb")
+        val modelToken = model.nativeHandle
         var nodes = fakeImpressApi.getImpressNodesForToken(modelToken)
         assertThat(nodes).isNotNull()
         fakeImpressApi.releaseGltfAsset(modelToken)
@@ -145,18 +128,10 @@ class FakeImpressApiImplTest {
     }
 
     @Test
-    fun instanceGltfModel_withCollider_returnsEntityId() {
-        val modelFuture = fakeImpressApi.loadGltfAsset("FakeAsset.glb")
-        val modelToken = modelFuture.get().nativeHandle
+    fun instanceGltfModel_withCollider_returnsEntityId() = runBlocking {
+        val model = fakeImpressApi.loadGltfAsset("FakeAsset.glb")
+        val modelToken = model.nativeHandle
         val entityNode = fakeImpressApi.instanceGltfModel(modelToken, enableCollider = true)
-        assertThat(entityNode.handle).isNotEqualTo(0)
-    }
-
-    @Test
-    fun instanceGltfModel_withoutCollider_returnsEntityId() {
-        val modelFuture = fakeImpressApi.loadGltfAsset("FakeAsset.glb")
-        val modelToken = modelFuture.get().nativeHandle
-        val entityNode = fakeImpressApi.instanceGltfModel(modelToken, enableCollider = false)
         assertThat(entityNode.handle).isNotEqualTo(0)
     }
 
@@ -209,77 +184,125 @@ class FakeImpressApiImplTest {
     }
 
     @Test
-    fun animateGltfModelTemp_animatesModelWithoutLooping() {
+    fun animateGltfModel_withChannel_animatesModel() {
         val entityNode = fakeImpressApi.createImpressNode()
-        val animatingSize = fakeImpressApi.impressNodeAnimatingSize()
-
+        val channel = 1
         runBlocking {
-            val coroutine =
-                fakeImpressApi.animateGltfModel(entityNode, "animation_name", looping = false)
-
-            assertThat(coroutine).isNotNull()
+            fakeImpressApi.animateGltfModel(
+                entityNode,
+                "animation_name",
+                looping = true,
+                speed = 1.0f,
+                startTime = 0.0f,
+                channel = channel,
+            )
         }
-
-        val animatingSize2 = fakeImpressApi.impressNodeAnimatingSize()
-        assertThat(animatingSize2).isEqualTo(animatingSize + 1)
+        val channelAnimations = fakeImpressApi.getChannelAnimations(entityNode)
+        assertThat(channelAnimations).isNotNull()
+        assertThat(channelAnimations).containsKey(channel)
+        val animation = channelAnimations!![channel]
+        assertThat(animation).isNotNull()
+        assertThat(animation!!.name).isEqualTo("animation_name")
+        assertThat(animation.looping).isTrue()
+        assertThat(animation.speed).isEqualTo(1.0f)
+        assertThat(animation.startTime).isEqualTo(0.0f)
+        assertThat(animation.channel).isEqualTo(channel)
     }
 
     @Test
-    fun animateGltfModel_animatesModelWithoutLooping() {
+    fun stopGltfModelAnimation_withChannel_stopsModel() = runBlocking {
         val entityNode = fakeImpressApi.createImpressNode()
-        val animatingSize = fakeImpressApi.impressNodeAnimatingSize()
-        val future = fakeImpressApi.animateGltfModel(entityNode, "animation_name", looping = false)
-        assertThat(future).isNotNull()
-        val animatingSize2 = fakeImpressApi.impressNodeAnimatingSize()
-        assertThat(animatingSize2).isEqualTo(animatingSize + 1)
+        val channel = 1
+        fakeImpressApi.animateGltfModel(
+            entityNode,
+            "animation_name",
+            looping = true,
+            speed = 1.0f,
+            startTime = 0.0f,
+            channel = channel,
+        )
+        fakeImpressApi.stopGltfModelAnimation(entityNode, channel)
+        val channelAnimations = fakeImpressApi.getChannelAnimations(entityNode)
+        assertThat(channelAnimations).isNull()
     }
 
     @Test
-    fun animateGltfModelTemp_animatesModelWithLooping() {
+    fun toggleGltfModelAnimation_withChannel_togglesModel() = runBlocking {
         val entityNode = fakeImpressApi.createImpressNode()
-        val animatingSize = fakeImpressApi.impressNodeLoopAnimatingSize()
-
-        runBlocking {
-            val coroutine =
-                fakeImpressApi.animateGltfModel(entityNode, "animation_name", looping = true)
-
-            assertThat(coroutine).isNotNull()
-        }
-
-        val animatingSize2 = fakeImpressApi.impressNodeLoopAnimatingSize()
-        assertThat(animatingSize2).isEqualTo(animatingSize + 1)
+        val channel = 1
+        fakeImpressApi.animateGltfModel(
+            entityNode,
+            "animation_name",
+            looping = true,
+            speed = 1.0f,
+            startTime = 0.0f,
+            channel = channel,
+        )
+        fakeImpressApi.toggleGltfModelAnimation(entityNode, false, channel)
+        val channelAnimations = fakeImpressApi.getChannelAnimations(entityNode)
+        val animation = channelAnimations!![channel]
+        assertThat(animation!!.paused).isTrue()
+        fakeImpressApi.toggleGltfModelAnimation(entityNode, true, channel)
+        assertThat(animation.paused).isFalse()
     }
 
     @Test
-    fun animateGltfModel_animatesModelWithLooping() {
+    fun setGltfModelAnimationPlaybackTime_setsPlaybackTime() = runBlocking {
         val entityNode = fakeImpressApi.createImpressNode()
-        val animatingSize = fakeImpressApi.impressNodeLoopAnimatingSize()
-        val future = fakeImpressApi.animateGltfModel(entityNode, "animation_name", looping = true)
-        assertThat(future).isNotNull()
-        val animatingSize2 = fakeImpressApi.impressNodeLoopAnimatingSize()
-        assertThat(animatingSize2).isEqualTo(animatingSize + 1)
+        val channel = 1
+        fakeImpressApi.animateGltfModel(
+            entityNode,
+            "animation_name",
+            looping = true,
+            speed = 1.0f,
+            startTime = 0.0f,
+            channel = channel,
+        )
+        val playbackTime = 10.0f
+        fakeImpressApi.setGltfModelAnimationPlaybackTime(entityNode, playbackTime, channel)
+        val channelAnimations = fakeImpressApi.getChannelAnimations(entityNode)
+        val animation = channelAnimations!![channel]
+        assertThat(animation!!.playbackTime).isEqualTo(playbackTime)
     }
 
     @Test
-    fun stopGltfModelAnimation_stopsModelWithoutLooping() {
+    fun setGltfModelAnimationSpeed_setsSpeed() = runBlocking {
         val entityNode = fakeImpressApi.createImpressNode()
-        val future = fakeImpressApi.animateGltfModel(entityNode, "animation_name", looping = false)
-        assertThat(future).isNotNull()
-        val animatingSize = fakeImpressApi.impressNodeAnimatingSize()
-        fakeImpressApi.stopGltfModelAnimation(entityNode)
-        val animatingSize2 = fakeImpressApi.impressNodeAnimatingSize()
-        assertThat(animatingSize2).isEqualTo(animatingSize - 1)
+        val channel = 1
+        fakeImpressApi.animateGltfModel(
+            entityNode,
+            "animation_name",
+            looping = true,
+            speed = 1.0f,
+            startTime = 0.0f,
+            channel = channel,
+        )
+        val speed = 2.0f
+        fakeImpressApi.setGltfModelAnimationSpeed(entityNode, speed, channel)
+        val channelAnimations = fakeImpressApi.getChannelAnimations(entityNode)
+        val animation = channelAnimations!![channel]
+        assertThat(animation!!.speed).isEqualTo(speed)
     }
 
     @Test
-    fun stopGltfModelAnimation_stopsModelWithLooping() {
+    fun getGltfModelAnimationCount_returnsZero() {
         val entityNode = fakeImpressApi.createImpressNode()
-        val future = fakeImpressApi.animateGltfModel(entityNode, "animation_name", looping = true)
-        assertThat(future).isNotNull()
-        val animatingSize = fakeImpressApi.impressNodeLoopAnimatingSize()
-        fakeImpressApi.stopGltfModelAnimation(entityNode)
-        val animatingSize2 = fakeImpressApi.impressNodeLoopAnimatingSize()
-        assertThat(animatingSize2).isEqualTo(animatingSize - 1)
+        val count = fakeImpressApi.getGltfModelAnimationCount(entityNode)
+        assertThat(count).isEqualTo(0)
+    }
+
+    @Test
+    fun getGltfModelAnimationName_returnsEmptyString() {
+        val entityNode = fakeImpressApi.createImpressNode()
+        val name = fakeImpressApi.getGltfModelAnimationName(entityNode, 0)
+        assertThat(name).isEmpty()
+    }
+
+    @Test
+    fun getGltfModelAnimationDurationSeconds_returnsZero() {
+        val entityNode = fakeImpressApi.createImpressNode()
+        val duration = fakeImpressApi.getGltfModelAnimationDurationSeconds(entityNode, 0)
+        assertThat(duration).isEqualTo(0f)
     }
 
     @Test
@@ -303,15 +326,17 @@ class FakeImpressApiImplTest {
         val childEntityNode = fakeImpressApi.createImpressNode()
         val parentEntityNode = fakeImpressApi.createImpressNode()
         fakeImpressApi.setImpressNodeParent(childEntityNode, parentEntityNode)
-        val entityId = fakeImpressApi.getImpressNodeParent(childEntityNode)
-        assertThat(entityId).isEqualTo(parentEntityNode.handle)
+
+        val parentNode = fakeImpressApi.getImpressNodeParent(childEntityNode)
+        assertThat(parentNode.handle).isEqualTo(parentEntityNode.handle)
     }
 
     @Test
     fun getImpressNodeParent_whenParentIsNotSet_returnsNegativeOne() {
         val childEntityNode = fakeImpressApi.createImpressNode()
-        val entityId = fakeImpressApi.getImpressNodeParent(childEntityNode)
-        assertThat(entityId).isEqualTo(-1)
+
+        val parentNode = fakeImpressApi.getImpressNodeParent(childEntityNode)
+        assertThat(parentNode.handle).isEqualTo(-1)
     }
 
     @Test
@@ -321,26 +346,46 @@ class FakeImpressApiImplTest {
         val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
         val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
         assertNotNull(stereoSurfaceData)
-        val stereoMode2 = stereoSurfaceData!!.stereoMode
+        val stereoMode2 = stereoSurfaceData.stereoMode
         assertThat(stereoMode).isEqualTo(stereoMode2)
         val surface = stereoSurfaceData.surface
         assertThat(surface).isNotNull()
     }
 
     @Test
-    fun setStereoSurfaceEntityCanvasShapeQuad_setsCanvasShapeQuad() {
+    fun createStereoSurface_withBlendingMode_createsStereoSurface() {
         val stereoMode = StereoMode.MONO
-        val stereoSurfaceNode = fakeImpressApi.createStereoSurface(stereoMode)
-        fakeImpressApi.setStereoSurfaceEntityCanvasShapeQuad(stereoSurfaceNode, 11.0f, 11.0f)
+        val blendingMode = MediaBlendingMode.OPAQUE
+        val contentSecurityLevel = ContentSecurityLevel.NONE
+        val stereoSurfaceNode =
+            fakeImpressApi.createStereoSurface(
+                stereoMode,
+                blendingMode,
+                contentSecurityLevel,
+                useSuperSampling = false,
+            )
         val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
         val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
         assertNotNull(stereoSurfaceData)
-        val canvasShape = stereoSurfaceData!!.canvasShape
+        assertThat(stereoSurfaceData.mediaBlendingMode).isEqualTo(blendingMode)
+    }
+
+    @Test
+    fun setStereoSurfaceEntityCanvasShapeQuad_setsCanvasShapeQuad() {
+        val stereoMode = StereoMode.MONO
+        val stereoSurfaceNode = fakeImpressApi.createStereoSurface(stereoMode)
+        fakeImpressApi.setStereoSurfaceEntityCanvasShapeQuad(stereoSurfaceNode, 11.0f, 11.0f, 1.0f)
+        val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
+        val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
+        assertNotNull(stereoSurfaceData)
+        val canvasShape = stereoSurfaceData.canvasShape
         assertThat(canvasShape).isEqualTo(CanvasShape.QUAD)
         val width = stereoSurfaceData.width
         assertThat(width).isEqualTo(11.0f)
         val height = stereoSurfaceData.height
         assertThat(height).isEqualTo(11.0f)
+        val cornerRadius = stereoSurfaceData.cornerRadius
+        assertThat(cornerRadius).isEqualTo(1.0f)
     }
 
     @Test
@@ -351,7 +396,7 @@ class FakeImpressApiImplTest {
         val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
         val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
         assertNotNull(stereoSurfaceData)
-        val canvasShape = stereoSurfaceData!!.canvasShape
+        val canvasShape = stereoSurfaceData.canvasShape
         assertThat(canvasShape).isEqualTo(CanvasShape.VR_360_SPHERE)
         val radius = stereoSurfaceData.radius
         assertThat(radius).isEqualTo(11.0f)
@@ -365,7 +410,7 @@ class FakeImpressApiImplTest {
         val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
         val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
         assertNotNull(stereoSurfaceData)
-        val canvasShape = stereoSurfaceData!!.canvasShape
+        val canvasShape = stereoSurfaceData.canvasShape
         assertThat(canvasShape).isEqualTo(CanvasShape.VR_180_HEMISPHERE)
         val radius = stereoSurfaceData.radius
         assertThat(radius).isEqualTo(11.0f)
@@ -421,7 +466,7 @@ class FakeImpressApiImplTest {
         fakeImpressApi.setStereoSurfaceEntitySurfaceSize(stereoSurfaceNode, kWidth, kHeight)
         val stereoSurface: MutableMap<ImpressNode, StereoSurfaceEntityData> =
             fakeImpressApi.getStereoSurfaceEntities()
-        val stereoSurfaceData: StereoSurfaceEntityData = stereoSurface.get(stereoSurfaceNode)!!
+        val stereoSurfaceData: StereoSurfaceEntityData = stereoSurface[stereoSurfaceNode]!!
         assertNotNull(stereoSurfaceData)
         val width = stereoSurfaceData.surfaceWidth
         val height = stereoSurfaceData.surfaceHeight
@@ -439,7 +484,7 @@ class FakeImpressApiImplTest {
         val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
         val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
         assertNotNull(stereoSurfaceData)
-        val featherRadiusX = stereoSurfaceData!!.featherRadiusX
+        val featherRadiusX = stereoSurfaceData.featherRadiusX
         val featherRadiusY = stereoSurfaceData.featherRadiusY
         assertThat(featherRadiusX).isEqualTo(radiusX)
         assertThat(featherRadiusY).isEqualTo(radiusY)
@@ -454,14 +499,14 @@ class FakeImpressApiImplTest {
         var stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
         var stereoSurfaceData = stereoSurface[stereoSurfaceNode]
         assertNotNull(stereoSurfaceData)
-        var stereoMode2 = stereoSurfaceData!!.stereoMode
+        var stereoMode2 = stereoSurfaceData.stereoMode
         assertThat(stereoMode).isEqualTo(stereoMode2)
         stereoMode = StereoMode.TOP_BOTTOM
         fakeImpressApi.setStereoModeForStereoSurface(stereoSurfaceNode, stereoMode)
         stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
         stereoSurfaceData = stereoSurface[stereoSurfaceNode]
         assertNotNull(stereoSurfaceData)
-        stereoMode2 = stereoSurfaceData!!.stereoMode
+        stereoMode2 = stereoSurfaceData.stereoMode
         assertThat(stereoMode).isEqualTo(stereoMode2)
     }
 
@@ -475,7 +520,7 @@ class FakeImpressApiImplTest {
         val stereoSurfaces = fakeImpressApi.getStereoSurfaceEntities()
         val stereoSurfaceData = stereoSurfaces[stereoSurfaceNode]
         assertNotNull(stereoSurfaceData)
-        assertThat(stereoSurfaceData!!.colliderEnabled).isTrue()
+        assertThat(stereoSurfaceData.colliderEnabled).isTrue()
 
         // Disable collider
         fakeImpressApi.setStereoSurfaceEntityColliderEnabled(stereoSurfaceNode, false)
@@ -483,20 +528,12 @@ class FakeImpressApiImplTest {
     }
 
     @Test
-    fun loadTextureTemp_loadsTexture() {
+    fun loadTexture_loadsTexture() {
         runBlocking {
             val texture = fakeImpressApi.loadTexture("FakeAsset.png")
 
             assertThat(texture).isNotNull()
         }
-    }
-
-    @Test
-    fun loadTexture_loadsTexture() {
-        val textureFuture = fakeImpressApi.loadTexture("FakeAsset.png")
-        assertThat(textureFuture).isNotNull()
-        val texture = textureFuture.get()
-        assertThat(texture).isNotNull()
     }
 
     @Test
@@ -524,20 +561,12 @@ class FakeImpressApiImplTest {
     }
 
     @Test
-    fun createWaterMaterialTemp_returnsWaterMaterialFuture() {
+    fun createWaterMaterial_returnsWaterMaterialFuture() {
         runBlocking {
             val waterMaterial = fakeImpressApi.createWaterMaterial(true)
 
             assertThat(waterMaterial).isNotNull()
         }
-    }
-
-    @Test
-    fun createWaterMaterial_returnsWaterMaterialFuture() {
-        val waterMaterialFuture = fakeImpressApi.createWaterMaterial(true)
-        assertThat(waterMaterialFuture).isNotNull()
-        val waterMaterial = waterMaterialFuture.get()
-        assertThat(waterMaterial).isNotNull()
     }
 
     @Test
@@ -631,11 +660,11 @@ class FakeImpressApiImplTest {
     }
 
     @Test
-    fun createKhronosPbrMaterialTemp_createsKhronosPbrMaterial() {
+    fun createKhronosPbrMaterial_createsKhronosPbrMaterial() {
         val spec = KhronosPbrMaterialSpec(0, 0, 0)
 
         runBlocking {
-            val material = fakeImpressApi.createKhronosPbrMaterialTemp(spec)
+            val material = fakeImpressApi.createKhronosPbrMaterial(spec)
 
             assertThat(material).isNotNull()
 
@@ -643,17 +672,6 @@ class FakeImpressApiImplTest {
 
             assertThat(materials).containsKey(material.nativeHandle)
         }
-    }
-
-    @Test
-    fun createKhronosPbrMaterial_createsKhronosPbrMaterial() {
-        val spec = KhronosPbrMaterialSpec(0, 0, 0)
-        val materialFuture = fakeImpressApi.createKhronosPbrMaterial(spec)
-        assertThat(materialFuture).isNotNull()
-        val material = materialFuture.get()
-        assertThat(material).isNotNull()
-        val materials = fakeImpressApi.getMaterials()
-        assertThat(materials).containsKey(material.nativeHandle)
     }
 
     @Test
@@ -988,8 +1006,8 @@ class FakeImpressApiImplTest {
     }
 
     @Test
-    fun destroyNativeObject_destroysNativeWaterMaterialObject() {
-        val waterMaterial = fakeImpressApi.createWaterMaterial(true).get()!!
+    fun destroyNativeObject_destroysNativeWaterMaterialObject() = runBlocking {
+        val waterMaterial = fakeImpressApi.createWaterMaterial(true)
         val nativeHandle = waterMaterial.nativeHandle
         val initialMaterialCount = fakeImpressApi.getMaterials().size
         fakeImpressApi.destroyNativeObject(nativeHandle)
@@ -998,58 +1016,13 @@ class FakeImpressApiImplTest {
     }
 
     @Test
-    fun destroyNativeObject_destroysNativeTextureObject() {
-        val texture = fakeImpressApi.loadTexture("FakeAsset.exr").get()!!
+    fun destroyNativeObject_destroysNativeTextureObject() = runBlocking {
+        val texture = fakeImpressApi.loadTexture("FakeAsset.exr")
         val nativeHandle = texture.nativeHandle
         val initialTextureCount = fakeImpressApi.getTextureImages().size
         fakeImpressApi.destroyNativeObject(nativeHandle)
         val finalTextureCount = fakeImpressApi.getTextureImages().size
         assertThat(finalTextureCount).isEqualTo(initialTextureCount - 1)
-    }
-
-    @Test
-    fun setMaterialOverride_setsMaterialOverride() {
-        val entityNode = fakeImpressApi.createImpressNode()
-        val material = fakeImpressApi.createWaterMaterial(true).get()!!
-        val nodeName = "fake_node_name"
-        val primitiveIndex = 0
-
-        fakeImpressApi.setMaterialOverride(
-            entityNode,
-            material.nativeHandle,
-            nodeName,
-            primitiveIndex,
-        )
-        val nodes = fakeImpressApi.getImpressNodes()
-        val foundMaterial =
-            nodes.keys.any { node ->
-                node.entityId == entityNode.handle &&
-                    node.materialOverride?.materialHandle == material.nativeHandle
-            }
-        assertThat(foundMaterial).isTrue()
-    }
-
-    @Test
-    fun clearMaterialOverride_clearsMaterialOverride() {
-        val entityNode = fakeImpressApi.createImpressNode()
-        val material = fakeImpressApi.createWaterMaterial(true).get()!!
-        val nodeName = "fake_node_name"
-        val primitiveIndex = 0
-
-        fakeImpressApi.setMaterialOverride(
-            entityNode,
-            material.nativeHandle,
-            nodeName,
-            primitiveIndex,
-        )
-        fakeImpressApi.clearMaterialOverride(entityNode, nodeName, primitiveIndex)
-
-        val nodes = fakeImpressApi.getImpressNodes()
-        val overrideWasCleared =
-            nodes.keys.any { node ->
-                node.entityId == entityNode.handle && node.materialOverride == null
-            }
-        assertThat(overrideWasCleared).isTrue()
     }
 
     @Test
@@ -1089,7 +1062,7 @@ class FakeImpressApiImplTest {
     }
 
     @Test
-    fun disposeAllResources_disposesAllResources() {
+    fun disposeAllResources_disposesAllResources() = runBlocking {
         fakeImpressApi.loadImageBasedLightingAsset("fakeEnvironment.zip")
         fakeImpressApi.createImpressNode()
         fakeImpressApi.loadGltfAsset("fakeAsset.glb")
@@ -1101,5 +1074,143 @@ class FakeImpressApiImplTest {
         assertThat(fakeImpressApi.getGltfModels()).isEmpty()
         assertThat(fakeImpressApi.getTextureImages()).isEmpty()
         assertThat(fakeImpressApi.getMaterials()).isEmpty()
+    }
+
+    @Test
+    fun getImpressNodeChildCount_returnsCorrectCount() {
+        val parent = fakeImpressApi.createImpressNode()
+        val child1 = fakeImpressApi.createImpressNode()
+        val child2 = fakeImpressApi.createImpressNode()
+
+        assertThat(fakeImpressApi.getImpressNodeChildCount(parent)).isEqualTo(0)
+
+        fakeImpressApi.setImpressNodeParent(child1, parent)
+        fakeImpressApi.setImpressNodeParent(child2, parent)
+
+        assertThat(fakeImpressApi.getImpressNodeChildCount(parent)).isEqualTo(2)
+    }
+
+    @Test
+    fun getImpressNodeChildAt_returnsCorrectChild() {
+        val parent = fakeImpressApi.createImpressNode()
+        val child1 = fakeImpressApi.createImpressNode()
+        val child2 = fakeImpressApi.createImpressNode()
+
+        fakeImpressApi.setImpressNodeParent(child1, parent)
+        fakeImpressApi.setImpressNodeParent(child2, parent)
+
+        // In the fake implementation, children are usually added in order
+        val fetchedChild0 = fakeImpressApi.getImpressNodeChildAt(parent, 0)
+        val fetchedChild1 = fakeImpressApi.getImpressNodeChildAt(parent, 1)
+
+        assertThat(fetchedChild0.handle).isEqualTo(child1.handle)
+        assertThat(fetchedChild1.handle).isEqualTo(child2.handle)
+    }
+
+    @Test
+    fun getImpressNodeChildAt_throwsOnInvalidIndex() {
+        val parent = fakeImpressApi.createImpressNode()
+
+        val thrown =
+            assertThrows(IllegalArgumentException::class.java) {
+                fakeImpressApi.getImpressNodeChildAt(parent, 0)
+            }
+        assertThat(thrown).hasMessageThat().contains("Invalid child index")
+    }
+
+    @Test
+    fun getImpressNodeName_returnsDefaultName() {
+        val node = fakeImpressApi.createImpressNode()
+        // Default name in fake is empty string
+        assertThat(fakeImpressApi.getImpressNodeName(node)).isEmpty()
+    }
+
+    @Test
+    fun setAndGetImpressNodeLocalTransform_worksCorrectly() {
+        val node = fakeImpressApi.createImpressNode()
+        val translation = Vector3(1f, 2f, 3f)
+        val rotation = Quaternion(0f, 0f, 0f, 1f)
+        val scale = Vector3(2f, 2f, 2f)
+        val transform = Matrix4.fromTrs(translation, rotation, scale)
+
+        fakeImpressApi.setImpressNodeLocalTransform(node, transform)
+
+        val outTransform = fakeImpressApi.getImpressNodeLocalTransform(node)
+        val outPose = outTransform.toPose()
+
+        assertThat(outPose.translation).isEqualTo(translation)
+        assertThat(outPose.rotation).isEqualTo(rotation)
+        assertThat(outTransform.scale).isEqualTo(scale)
+    }
+
+    @Test
+    fun setAndGetImpressNodeRelativeTransform_worksCorrectly() {
+        val node = fakeImpressApi.createImpressNode()
+        val relative = fakeImpressApi.createImpressNode()
+        val translation = Vector3(1f, 2f, 3f)
+        val rotation = Quaternion(0f, 0f, 0f, 1f)
+        val scale = Vector3(2f, 2f, 2f)
+        val transform = Matrix4.fromTrs(translation, rotation, scale)
+
+        fakeImpressApi.setImpressNodeRelativeTransform(node, relative, transform)
+
+        val outTransform = fakeImpressApi.getImpressNodeRelativeTransform(node, relative)
+        val outPose = outTransform.toPose()
+
+        assertThat(outPose.translation).isEqualTo(translation)
+        assertThat(outPose.rotation).isEqualTo(rotation)
+        assertThat(outTransform.scale).isEqualTo(scale)
+    }
+
+    @Test
+    fun getImpressNodeRelativeTransform_identityWhenSameNode() {
+        val node = fakeImpressApi.createImpressNode()
+
+        val outTransform = fakeImpressApi.getImpressNodeRelativeTransform(node, node)
+
+        assertThat(outTransform).isEqualTo(Matrix4.Identity)
+    }
+
+    @Test
+    fun scheduleGltfReskinning_setsFlagInInternalState() {
+        val node = fakeImpressApi.createImpressNode()
+        fakeImpressApi.scheduleGltfReskinning(node)
+
+        val nodes = fakeImpressApi.getImpressNodes()
+        val nodeData = nodes.keys.firstOrNull { it.entityId == node.handle }
+        assertNotNull(nodeData)
+        assertThat(nodeData.isReskinningScheduled).isTrue()
+    }
+
+    @Test
+    fun setGltfModelNodeMaterialOverride_setsOverride() = runBlocking {
+        val node = fakeImpressApi.createImpressNode()
+        val material = fakeImpressApi.createWaterMaterial(true)
+        val primIndex = 0
+
+        fakeImpressApi.setGltfModelNodeMaterialOverride(node, material.nativeHandle, primIndex)
+
+        val nodes = fakeImpressApi.getImpressNodes()
+        val nodeData = nodes.keys.firstOrNull { it.entityId == node.handle }
+        assertNotNull(nodeData)
+
+        val storedMat = nodeData.nodeMaterialOverrides[primIndex]
+        assertNotNull(storedMat)
+        assertThat(storedMat.materialHandle).isEqualTo(material.nativeHandle)
+    }
+
+    @Test
+    fun clearGltfModelNodeMaterialOverride_clearsOverride() = runBlocking {
+        val node = fakeImpressApi.createImpressNode()
+        val material = fakeImpressApi.createWaterMaterial(true)
+        val primIndex = 0
+
+        fakeImpressApi.setGltfModelNodeMaterialOverride(node, material.nativeHandle, primIndex)
+        fakeImpressApi.clearGltfModelNodeMaterialOverride(node, primIndex)
+
+        val nodes = fakeImpressApi.getImpressNodes()
+        val nodeData = nodes.keys.firstOrNull { it.entityId == node.handle }
+        assertNotNull(nodeData)
+        assertThat(nodeData.nodeMaterialOverrides).doesNotContainKey(primIndex)
     }
 }

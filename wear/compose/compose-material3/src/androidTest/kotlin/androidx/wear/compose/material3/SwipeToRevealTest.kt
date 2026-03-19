@@ -17,6 +17,7 @@
 package androidx.wear.compose.material3
 
 import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,7 +50,7 @@ import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -861,7 +862,7 @@ class SwipeToRevealTest {
         var density = 0f
         rule.setContent {
             with(LocalDensity.current) { density = this.density }
-            ScreenConfiguration(screenSizeDp = LARGE_SCREEN_WIDTH_DP) {
+            ScreenConfiguration(desiredScreenSizeDp = LARGE_SCREEN_WIDTH_DP) {
                 revealState = rememberRevealState(Covered)
                 SwipeToRevealWithDefaults(
                     modifier = Modifier.testTag(TEST_TAG),
@@ -978,7 +979,7 @@ class SwipeToRevealTest {
         val swipeItemText = "SWIPE"
 
         val androidTestRule =
-            rule as AndroidComposeTestRule<ActivityScenarioRule<Activity>, Activity>
+            rule as AndroidComposeTestRule<ActivityScenarioRule<Activity>, ComponentActivity>
         lateinit var revealState: RevealState
         var density = 0f
         androidTestRule.activityRule.scenario.onActivity { activity ->
@@ -1214,7 +1215,7 @@ class SwipeToRevealTest {
                 @Composable {
                     with(LocalDensity.current) { density = this.density }
 
-                    ScreenConfiguration(screenSizeDp = LARGE_SCREEN_WIDTH_DP) {
+                    ScreenConfiguration(desiredScreenSizeDp = LARGE_SCREEN_WIDTH_DP) {
                         SwipeToRevealWithDefaults(
                             modifier = Modifier.testTag(TEST_TAG),
                             onSwipePrimaryAction = { onFullSwipeTriggerCounter++ },
@@ -1274,7 +1275,7 @@ class SwipeToRevealTest {
             with(LocalDensity.current) { density = this.density }
             revealStateOne = rememberRevealState()
             revealStateTwo = rememberRevealState()
-            ScreenConfiguration(screenSizeDp = LARGE_SCREEN_WIDTH_DP) {
+            ScreenConfiguration(desiredScreenSizeDp = LARGE_SCREEN_WIDTH_DP) {
                 CustomTouchSlopProvider(newTouchSlop = 0f) {
                     Column {
                         SwipeToRevealWithDefaults(

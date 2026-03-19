@@ -28,7 +28,6 @@ import android.os.HandlerThread
 import android.os.Looper
 import android.util.Size
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
 import androidx.camera.core.CameraXConfig
@@ -44,7 +43,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
@@ -95,7 +93,7 @@ class CameraStateRobolectricTest(private val config: TestConfig) {
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
         fun data(): Collection<TestConfig> {
-            val impls = listOf("Camera2", "CameraPipe")
+            val impls = listOf("Camera2")
             val errorScenarios =
                 listOf(
                     // Recoverable errors should transition to OPENING or PENDING_OPEN
@@ -141,14 +139,13 @@ class CameraStateRobolectricTest(private val config: TestConfig) {
         val configBuilder =
             when (config.implName) {
                 "Camera2" -> CameraXConfig.Builder.fromConfig(Camera2Config.defaultConfig())
-                "CameraPipe" -> CameraXConfig.Builder.fromConfig(CameraPipeConfig.defaultConfig())
                 else -> throw IllegalArgumentException("Unknown impl name: ${config.implName}")
             }
 
         testSchedulerThread = HandlerThread("CameraStateTestScheduler")
         testSchedulerThread.start()
         testSchedulerHandler = Handler(testSchedulerThread.looper)
-        testCameraExecutor = Executors.newFixedThreadPool(2)
+        testCameraExecutor = Executors.newFixedThreadPool(1)
 
         val cameraXConfig =
             configBuilder
@@ -178,7 +175,6 @@ class CameraStateRobolectricTest(private val config: TestConfig) {
         ShadowCameraBridge.agent = null
     }
 
-    @Ignore // b/446723558
     @Test
     @LooperMode(LooperMode.Mode.INSTRUMENTATION_TEST)
     fun cameraStateTransitionsToCorrectError_whenOpenFails() {

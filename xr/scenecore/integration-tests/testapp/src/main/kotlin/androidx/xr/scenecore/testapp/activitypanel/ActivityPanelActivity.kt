@@ -39,7 +39,7 @@ import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.SpatialCapability
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.function.Consumer
 
@@ -58,8 +58,9 @@ class ActivityPanelActivity : AppCompatActivity() {
             insets
         }
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // Set toolbar
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {
@@ -86,7 +87,7 @@ class ActivityPanelActivity : AppCompatActivity() {
 
                 if (!secondaryPanelLaunched) {
                     // Set the pose for the activity panel
-                    activityPanelEntity.setPose(Pose(Vector3(0f, 0.6f, 0f)))
+                    activityPanelEntity.setPose(Pose(Vector3(0f, 0.6f, .05f)))
                     // Create intent to launch a new activity in the panel
                     val intent = Intent(this, ActivityPanel::class.java)
                     intent.putExtra("NAV_ICON", false)
@@ -104,6 +105,7 @@ class ActivityPanelActivity : AppCompatActivity() {
                     val resizeableComponent =
                         ResizableComponent.create(session!!, resizeEventListener = resizeListener)
                     activityPanelEntity.addComponent(resizeableComponent)
+                    activityPanelEntity.parent = session!!.scene.keyEntity
 
                     secondaryPanelLaunched = true
                 }

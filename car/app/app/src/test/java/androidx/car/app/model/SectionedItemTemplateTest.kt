@@ -24,6 +24,7 @@ import org.robolectric.RobolectricTestRunner
 
 @Suppress("DEPRECATION") // Tests must still test deprecated fields/methods.
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SectionedItemTemplateTest {
     class MyCustomSection : Section<Row>()
 
@@ -141,7 +142,7 @@ class SectionedItemTemplateTest {
         val template = SectionedItemTemplate.Builder().build()
 
         assertThat(template.scrollStatePersistenceStrategy)
-            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_RESET_TO_TOP)
+            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_PRESERVE_INDEX)
     }
 
     @Test
@@ -165,6 +166,40 @@ class SectionedItemTemplateTest {
         } catch (e: IllegalArgumentException) {
             assertThat(e.message).contains("are allowed in SectionedItemTemplate")
         }
+    }
+
+    @Test
+    fun build_throwsException_whenFilterChipSectionIsNotFirst() {
+        try {
+            SectionedItemTemplate.Builder()
+                .addSection(RowSection.Builder().build())
+                .addSection(buildFilterChipSection())
+                .build()
+            assertWithMessage("Expected builder to throw exception, but it didn't").fail()
+        } catch (e: IllegalArgumentException) {
+            assertThat(e.message).contains("must be the first section")
+        }
+    }
+
+    @Test
+    fun build_throwsException_whenMultipleFilterChipSections() {
+        try {
+            SectionedItemTemplate.Builder()
+                .addSection(buildFilterChipSection())
+                .addSection(buildFilterChipSection())
+                .build()
+            assertWithMessage("Expected builder to throw exception, but it didn't").fail()
+        } catch (e: IllegalArgumentException) {
+            assertThat(e.message).contains("Only one FilterChipSection is allowed")
+        }
+    }
+
+    @Test
+    fun build_allowsFilterChipSectionAsFirstSection() {
+        val section = buildFilterChipSection()
+        val template = SectionedItemTemplate.Builder().addSection(section).build()
+
+        assertThat(template.sections).containsExactly(section)
     }
 
     @Test
@@ -265,4 +300,10 @@ class SectionedItemTemplateTest {
 
     private fun createRowWithMediaAction(): Row =
         Row.Builder().setTitle("Bananas").addAction(Action.MEDIA_PLAYBACK).build()
+
+    private fun buildFilterChipSection(): FilterChipSection {
+        return FilterChipSection.Builder()
+            .addItem(FilterChip.Builder().setTitle("Chip").setOnClickListener {}.build())
+            .build()
+    }
 }

@@ -30,6 +30,7 @@ import androidx.appsearch.safeparcel.PackageIdentifierParcel;
 import androidx.appsearch.safeparcel.SafeParcelable;
 import androidx.appsearch.safeparcel.stub.StubCreators.VisibilityConfigCreator;
 import androidx.collection.ArraySet;
+import androidx.core.util.Preconditions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,8 @@ import java.util.Set;
  */
 @FlaggedApi(Flags.FLAG_ENABLE_SET_SCHEMA_VISIBLE_TO_CONFIGS)
 @SafeParcelable.Class(creator = "VisibilityConfigCreator")
-// TODO(b/384721898): Switch to JSpecify annotations
+// TODO(b/384721898): Switching to JSpecify annotations changes APIs once synced to platform.
+//  Do not switch unless you've checked that no APIs are affected.
 @SuppressWarnings({"HiddenSuperclass", "JSpecifyNullness"})
 public final class SchemaVisibilityConfig extends AbstractSafeParcelable {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -216,6 +218,11 @@ public final class SchemaVisibilityConfig extends AbstractSafeParcelable {
         @CanIgnoreReturnValue
         public @NonNull Builder addRequiredPermissions(@NonNull Set<Integer> visibleToPermissions) {
             Objects.requireNonNull(visibleToPermissions);
+            if (AppSearchEnvironmentFactory.getEnvironmentInstance().getEnvironment()
+                    != AppSearchEnvironment.FRAMEWORK_ENVIRONMENT) {
+                Preconditions.checkArgument(!visibleToPermissions.isEmpty(),
+                        "The set of required permissions cannot be empty");
+            }
             resetIfBuilt();
             mRequiredPermissions.add(new VisibilityPermissionConfig(visibleToPermissions));
             return this;

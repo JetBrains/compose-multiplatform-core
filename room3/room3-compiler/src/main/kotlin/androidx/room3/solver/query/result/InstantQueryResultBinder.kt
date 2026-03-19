@@ -15,15 +15,14 @@
  */
 package androidx.room3.solver.query.result
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
-import androidx.room3.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.codegen.box
 import androidx.room3.ext.InvokeWithLambdaParameter
 import androidx.room3.ext.LambdaSpec
 import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_BLOCKING
+import androidx.room3.ext.SQLiteDriverMemberNames
 import androidx.room3.ext.SQLiteDriverTypeNames
 import androidx.room3.solver.CodeGenScope
 
@@ -58,20 +57,16 @@ class InstantQueryResultBinder(adapter: QueryResultAdapter?) : QueryResultBinder
                             addLocalVal(
                                 statementVar,
                                 SQLiteDriverTypeNames.STATEMENT,
-                                "%L.prepare(%L)",
+                                "%L.%M(%L)",
                                 connectionVar,
+                                SQLiteDriverMemberNames.CONNECTION_PREPARE,
                                 sqlQueryVar,
                             )
                             beginControlFlow("try")
                             bindStatement?.invoke(scope, statementVar)
                             val outVar = scope.getTmpVar("_result")
                             adapter?.convert(outVar, statementVar, scope)
-                            applyTo { language ->
-                                when (language) {
-                                    CodeLanguage.JAVA -> addStatement("return %L", outVar)
-                                    CodeLanguage.KOTLIN -> addStatement("%L", outVar)
-                                }
-                            }
+                            addStatement("%L", outVar)
                             nextControlFlow("finally")
                             addStatement("%L.close()", statementVar)
                             endControlFlow()

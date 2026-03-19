@@ -85,7 +85,7 @@ class AccessibilityActivity : ComponentActivity() {
 
     enum class PanelType {
         None,
-        SpatialPaenl,
+        SpatialPanel,
         ActivityPanel,
     }
 
@@ -132,7 +132,7 @@ class AccessibilityActivity : ComponentActivity() {
                     }
                 }
                 when (panelType) {
-                    PanelType.SpatialPaenl -> {
+                    PanelType.SpatialPanel -> {
                         SpatialColumn {
                             SimpleSpatialPanel("Spatial Panel 1", "Regular Spatial Panel 1")
                             SimpleSpatialPanel("Spatial Panel 2", "Regular Spatial Panel 2")
@@ -187,7 +187,12 @@ class AccessibilityActivity : ComponentActivity() {
     }
 
     private fun setSkyboxAndGeometry(skybox: ExrImage?, geometry: GltfModel?) {
-        spatialEnvironmentPreference = SpatialEnvironmentPreference(skybox, geometry)
+        spatialEnvironmentPreference =
+            if (skybox == null && geometry == null) {
+                null
+            } else {
+                SpatialEnvironmentPreference(skybox, geometry)
+            }
         session.scene.spatialEnvironment.preferredSpatialEnvironment = spatialEnvironmentPreference
     }
 
@@ -299,24 +304,27 @@ class AccessibilityActivity : ComponentActivity() {
     fun GltfEntityUI() {
         val dragonEntities = remember { List(3) { mutableStateOf<GltfModelEntity?>(null) } }
         var entitiesCreated by remember { mutableStateOf(false) }
+        var dragonModel by remember { mutableStateOf<GltfModel?>(null) }
         val scope = rememberCoroutineScope()
 
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Button({
                 scope.launch {
                     if (!entitiesCreated) {
-                        var offset = -1.5f
-                        entitiesCreated = true
-                        dragonEntities.forEachIndexed { index, entity ->
-                            val translation = Vector3(offset, 0f, -1f)
-                            val model =
+                        if (dragonModel == null) {
+                            dragonModel =
                                 GltfModel.create(
                                     session,
                                     Paths.get("models", "Dragon_Evolved.gltf"),
                                 )
+                        }
+                        var offset = -1.5f
+                        entitiesCreated = true
+                        dragonEntities.forEachIndexed { index, entity ->
+                            val translation = Vector3(offset, 0f, -1f)
                             entity.value =
                                 createModelEntity(
-                                    model,
+                                    dragonModel!!,
                                     "Dragon Entity ${index+1} at $translation",
                                     translation,
                                 )
@@ -343,13 +351,13 @@ class AccessibilityActivity : ComponentActivity() {
 
     @Composable
     fun PanelEntityUI(createPanelType: (PanelType) -> Unit) {
-        var type by remember { mutableStateOf(PanelType.SpatialPaenl) }
+        var type by remember { mutableStateOf(PanelType.SpatialPanel) }
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Row {
                 LabeledRadioButton(
                     "Spatial Panel",
-                    type == PanelType.SpatialPaenl,
-                    { type = PanelType.SpatialPaenl },
+                    type == PanelType.SpatialPanel,
+                    { type = PanelType.SpatialPanel },
                 )
                 LabeledRadioButton(
                     "Activity Spatial Panel",

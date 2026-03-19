@@ -34,29 +34,13 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 
-/** Performs a database operation. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public actual suspend fun <R> performSuspending(
-    db: RoomDatabase,
-    isReadOnly: Boolean,
-    inTransaction: Boolean,
-    block: (SQLiteConnection) -> R,
-): R =
-    withContext(db.getCoroutineContext(inTransaction)) {
-        db.internalPerform(isReadOnly, inTransaction) { connection ->
-            (connection as RawConnectionAccessor).useRawConnection { rawConnection ->
-                block.invoke(rawConnection)
-            }
-        }
-    }
-
 /** Blocking version of [performSuspending] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 public fun <R> performBlocking(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    block: (SQLiteConnection) -> R,
+    block: suspend (SQLiteConnection) -> R,
 ): R {
     db.assertNotMainThread()
     val context = db.suspendingTransactionContext.get() ?: EmptyCoroutineContext
@@ -70,21 +54,6 @@ public fun <R> performBlocking(
         }
     }
 }
-
-/**
- * Utility function to wrap a suspend block in Room's transaction coroutine.
- *
- * This function should only be invoked from generated code and is needed to support `@Transaction`
- * delegates in Java and Kotlin. It is preferred to use the other 'perform' functions.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public actual suspend fun <R> performInTransactionSuspending(
-    db: RoomDatabase,
-    block: suspend () -> R,
-): R =
-    withContext(db.getCoroutineContext(true)) {
-        db.internalPerform(isReadOnly = false, inTransaction = true) { block.invoke() }
-    }
 
 /** Blocking version of [performInTransactionSuspending] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
