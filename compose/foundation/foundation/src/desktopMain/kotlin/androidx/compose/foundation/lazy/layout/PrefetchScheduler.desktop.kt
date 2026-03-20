@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION") // b/420551535
-
 package androidx.compose.foundation.lazy.layout
 
-// TODO: https://youtrack.jetbrains.com/issue/CMP-1265
-object NoOpPrefetchScheduler: PrefetchScheduler {
-    override fun schedulePrefetch(prefetchRequest: PrefetchRequest) {
-    }
-}
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.runtime.Composable
+
+@Suppress(names = ["KmpVisibilityMismatch"])
+@ExperimentalFoundationApi
+@Composable
+internal actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler = NoOpPrefetchScheduler
