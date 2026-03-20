@@ -332,7 +332,7 @@ internal class ComposeLayersViewController(
         withLayers { layers ->
             layers.forEach {
                 it.render(composeCanvas, nanoTime)
-             }
+            }
         }
     }
 }
