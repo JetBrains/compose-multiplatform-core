@@ -102,7 +102,7 @@ internal class ComposeAccessible(
     /**
      * The (cached) [SemanticsNode.config] of [semanticsNode].
      */
-    private val semanticsConfig: SemanticsConfiguration
+    val semanticsConfig: SemanticsConfiguration
         get() =
             cachedSemanticsConfig ?: semanticsNode.config.also {
                 cachedSemanticsConfig = it
