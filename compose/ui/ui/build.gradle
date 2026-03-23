@@ -207,6 +207,7 @@ androidXMultiplatform {
                 api(libs.skiko)
                 implementation(libs.atomicFu)
 
+                // Keep this dependency for compatibility due to https://youtrack.jetbrains.com/issue/KT-60874
                 implementation(project(":compose:ui:ui-backhandler"))
                 implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
             }
