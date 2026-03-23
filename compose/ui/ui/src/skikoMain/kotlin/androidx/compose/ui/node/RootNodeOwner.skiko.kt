@@ -724,6 +724,10 @@ internal class RootNodeOwner(
         }
 
         fun dispose() {
+            // Unlike AndroidComposeView.onDetachedFromWindow, we only remove callbacks, without
+            // dispatching them because here we are already in the middle of disposing the
+            // `RootNodeOwner`, so dispatching callbacks can end up calling already-disposed
+            // objects.
             rectManager.removeScheduledCallback()
         }
     }
