@@ -24,6 +24,9 @@ import androidx.navigationevent.compose.NavigationEventDispatcherOwnerHostDefaul
 internal class HostDefaultProviderImpl(
     private val platformContext: PlatformContext
 ) : HostDefaultProvider {
+    // Note: https://youtrack.jetbrains.com/issue/KT-85051
+    // Potentially unsafe casts are intentional here.
+    @Suppress("UNCHECKED_CAST")
     override fun <T> getHostDefault(key: HostDefaultKey<T>): T = when (key) {
         NavigationEventDispatcherOwnerHostDefaultKey ->
             platformContext.architectureComponentsOwner.navigationEventDispatcherOwner
