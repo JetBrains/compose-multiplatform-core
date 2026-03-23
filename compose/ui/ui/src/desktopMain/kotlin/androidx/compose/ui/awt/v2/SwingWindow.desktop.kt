@@ -172,7 +172,7 @@ fun SwingWindow(
                 listeners.componentListenerRef.registerWithAndSet(
                     this,
                     object : ComponentAdapter() {
-                        fun applyStateChanges() {
+                        fun applyBoundsChanges() {
                             currentState.bounds = DpRect(x.dp, y.dp, (x + width).dp, (y + height).dp)
                             if (currentState.screen?.device != graphicsConfiguration.device) {
                                 currentState.screen = Screen(graphicsConfiguration.device)
@@ -180,7 +180,18 @@ fun SwingWindow(
                         }
 
                         override fun componentShown(e: ComponentEvent?) {
-                            applyStateChanges()
+                            // Initialize all state properties
+                            currentState.placement = placement
+                            currentState.isMinimized = isMinimized
+                            applyBoundsChanges()
+                        }
+
+                        override fun componentHidden(e: ComponentEvent?) {
+                            // Nullify all state properties
+                            currentState.placement = null
+                            currentState.isMinimized = null
+                            currentState.screen = null
+                            currentState.bounds = null
                         }
 
                         override fun componentResized(e: ComponentEvent) {
@@ -188,11 +199,11 @@ fun SwingWindow(
                             // because fullscreen changing doesn't
                             // fire windowStateChanged, only componentResized
                             currentState.placement = placement
-                            applyStateChanges()
+                            applyBoundsChanges()
                         }
 
                         override fun componentMoved(e: ComponentEvent) {
-                            applyStateChanges()
+                            applyBoundsChanges()
                         }
                     }
                 )

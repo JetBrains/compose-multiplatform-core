@@ -159,6 +159,12 @@ class WindowState internal constructor(
     }
 
     /**
+     * Whether the window is visible.
+     */
+    val isVisible: Boolean
+        get() = bounds != null
+
+    /**
      * The screen with which the window is currently associated; `null` if the window is not yet
      * visible.
      */
