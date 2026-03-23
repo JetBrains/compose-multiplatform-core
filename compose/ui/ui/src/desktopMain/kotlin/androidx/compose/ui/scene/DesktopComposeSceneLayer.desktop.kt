@@ -139,6 +139,9 @@ internal abstract class DesktopComposeSceneLayer(
         positionInWindow // [ComposeScene] is equal to [windowContainer] for the layer.
 
     protected fun recordDrawBounds(renderDelegate: SkikoRenderDelegate): RecordDrawRectRenderDecorator {
+        check(!isClosed) {
+            "recordDrawBounds called after layer is closed"
+        }
         check(drawBoundsRecorder == null) {
             "recordDrawBounds cannot be called multiple times."
         }

@@ -28,7 +28,7 @@ import org.jetbrains.skiko.SkikoRenderDelegate
 internal class RecordDrawRectRenderDecorator(
     private val decorated: SkikoRenderDelegate,
     private val onDrawRectChange: (Rect) -> Unit
-) : SkikoRenderDelegate by decorated, AutoCloseable {
+) : SkikoRenderDelegate, AutoCloseable {
     private val pictureRecorder = PictureRecorder()
     private val bbhFactory = RTreeFactory()
     private var isClosed = false
