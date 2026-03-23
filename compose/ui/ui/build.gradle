@@ -71,8 +71,6 @@ androidXMultiplatform {
 
     sourceSets {
         def composeVersion = project.findProperty('artifactRedirection.version.androidx.compose')
-        def savedstateVersion =
-                project.findProperty('artifactRedirection.version.androidx.savedstate')
         commonMain.dependencies {
             implementation(libs.kotlinCoroutinesCore)
             api("androidx.annotation:annotation:1.9.1")
@@ -89,7 +87,7 @@ androidXMultiplatform {
             api(project(":compose:ui:ui-util"))
 
             api("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.6")
-            api("androidx.savedstate:savedstate-compose:$savedstateVersion")
+            api("androidx.savedstate:savedstate-compose:1.4.0")
 
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel:2.9.6")
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.6")
@@ -215,8 +213,7 @@ androidXMultiplatform {
                 // because this module supports all KMP platforms from the beginning.
                 // Project dependency (commented out version) is required for `integration` branch setup
                 // implementation(project(":navigationevent:navigationevent"))
-                def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
-                implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
+                implementation("androidx.navigationevent:navigationevent:1.0.1")
             }
         }
 
