@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.platform.a11y
 
-import androidx.collection.mutableScatterMapOf
+import androidx.collection.mutableIntObjectMapOf
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -68,7 +68,7 @@ internal class SemanticsOwnerAccessibility(
      * Maps the [ComposeAccessible]s we have created by the [SemanticsNode.id] for which they were
      * created.
      */
-    private var accessibleByNodeId = mutableScatterMapOf<Int, ComposeAccessible>()
+    private var accessibleByNodeId = mutableIntObjectMapOf<ComposeAccessible>()
 
     /**
      * Whether [accessibleByNodeId] is up to date.
@@ -312,7 +312,7 @@ internal class SemanticsOwnerAccessibility(
      * An auxiliary mapping of semantics node ids to [ComposeAccessible]s that is swapped with
      * [accessibleByNodeId] on each sync, to avoid allocating memory on each sync.
      */
-    private var auxAccessibleByNodeId = mutableScatterMapOf<Int, ComposeAccessible>()
+    private var auxAccessibleByNodeId = mutableIntObjectMapOf<ComposeAccessible>()
 
     /**
      * A list of callbacks ([onNodeAdded], [onNodeRemoved], [onNodeChanged]) to be made after
@@ -508,12 +508,13 @@ internal class SemanticsOwnerAccessibility(
         /**
          * The set of "live" [SemanticsOwnerAccessibility]s.
          */
-        private val activeInstances = mutableSetOf<SemanticsOwnerAccessibility>()
+        // Using a list instead of a set because set iterator is expensive (memory wise)
+        private val activeInstances = mutableListOf<SemanticsOwnerAccessibility>()
 
         /**
          * The time of the latest accessibility call from the system.
          */
-        // Set initial value such that accessibilityRecentlyUsed is initially `false`
+        // Set the initial value such that `recentlyUsed` is initially `false`
         private var lastUseTimeNanos: Long = System.nanoTime() - (MaxIdleTimeNanos + 1)
 
         /**

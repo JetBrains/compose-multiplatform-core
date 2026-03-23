@@ -345,7 +345,7 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleChildrenCount(): Int {
-            return semanticsNode.replacedChildren.size + auxiliaryChildren.size
+            return traversalOrderedChildren.size + auxiliaryChildren.size
         }
 
         override fun getAccessibleChild(index: Int): Accessible? {
