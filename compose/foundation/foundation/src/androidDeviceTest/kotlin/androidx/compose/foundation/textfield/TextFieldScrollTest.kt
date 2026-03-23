@@ -702,11 +702,7 @@ class TextFieldScrollTest : FocusedWindowTest {
             modifier =
                 modifier
                     .testTag(TextfieldTag)
-                    .heightInLines(
-                        textStyle = TextStyle.Default,
-                        maxLines = resolvedMaxLines,
-                        softWrap = isVertical,
-                    )
+                    .heightInLines(textStyle = TextStyle.Default, maxLines = resolvedMaxLines)
                     .textFieldScrollable(
                         scrollerPosition = scrollerPosition,
                         overscrollEffect = overscrollEffect,
