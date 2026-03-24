@@ -10,3 +10,15 @@ dependencies {
 }
 
 
+/* JB FORK ONLY SECTION */
+// We disable these files since the code there is not used in the fork,
+// but it complicates merges (until we update to the same AGP and dackka versions as in the androidx-main)
+sourceSets {
+    main {
+        kotlin {
+            exclude '**/DackkaTask.kt'
+            exclude '**/AndroidXDocsImplPlugin.kt'
+        }
+    }
+}
+/* END SECTION */
