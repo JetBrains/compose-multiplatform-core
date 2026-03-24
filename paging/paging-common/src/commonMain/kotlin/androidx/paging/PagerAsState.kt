@@ -46,6 +46,9 @@ import kotlinx.coroutines.flow.filterNotNull
  * @param [onLoadError] the callback invoked when any loads return
  *   [androidx.paging.LoadState.Error]. Provides the [CombinedLoadStates] containing the error.
  *   No-op by default. See [Pager.retry] for a recovery option.
+ * @sample androidx.paging.samples.PagerAsStateSample
+ * @sample androidx.paging.samples.PagerAsStateWithSeparatorsSample
+ * @sample androidx.paging.samples.PagerAsStateLoadErrorSample
  */
 public fun <T : Any> Flow<PagingData<T>>.asState(
     onLoadError: (CombinedLoadStates) -> Unit = {}

@@ -30,7 +30,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * A container for optional plugins and instrumentation builders used by {@link AppSearchImpl}.
  *
- * <p> All params in this class MUST be nullable.
+ * <p> All params in this class MUST be optional or has default value.
  *
  * <p>This class encapsulates optional dependencies and stateful builders (like stats collectors)
  * to keep the {@link AppSearchImpl#create} signature clean and extensible.
@@ -44,6 +44,7 @@ public final class AppSearchUserPlugins {
     private final @Nullable IcingSearchEngineInterface mIcingSearchEngine;
     private final InitializeStats.@Nullable Builder mInitStatsBuilder;
     private final CallStats.@Nullable Builder mCallStatsBuilder;
+    private final @NonNull LaunchVMFeatures mLaunchVMFeatures;
 
     /** An empty {@link AppSearchUserPlugins} instance with no plugins or stats builders. */
     public static final AppSearchUserPlugins EMPTY = new Builder().build();
@@ -54,6 +55,7 @@ public final class AppSearchUserPlugins {
         mIcingSearchEngine = builder.mIcingSearchEngine;
         mInitStatsBuilder = builder.mInitStatsBuilder;
         mCallStatsBuilder = builder.mCallStatsBuilder;
+        mLaunchVMFeatures = builder.mLaunchVMFeatures;
     }
 
     /**
@@ -94,6 +96,12 @@ public final class AppSearchUserPlugins {
         return mCallStatsBuilder;
     }
 
+    /** Returns whether the AI seal feature is enabled.  */
+    @NonNull
+    public LaunchVMFeatures getLaunchVMFeatures() {
+        return mLaunchVMFeatures;
+    }
+
     /** Builder for {@link AppSearchUserPlugins}. */
     public static final class Builder {
         private @Nullable VisibilityChecker mVisibilityChecker;
@@ -101,6 +109,7 @@ public final class AppSearchUserPlugins {
         private @Nullable IcingSearchEngineInterface mIcingSearchEngine;
         private InitializeStats.@Nullable Builder mInitStatsBuilder;
         private CallStats.@Nullable Builder mCallStatsBuilder;
+        private @NonNull LaunchVMFeatures mLaunchVMFeatures = new LaunchVMFeatures();
 
         public Builder() {}
 
@@ -137,15 +146,22 @@ public final class AppSearchUserPlugins {
 
         /** Sets the {@link InitializeStats.Builder} for collecting initialization telemetry. */
         @NonNull
-        public Builder setInitStatsBuilder(InitializeStats.@Nullable  Builder initStatsBuilder) {
+        public Builder setInitStatsBuilder(InitializeStats.@Nullable Builder initStatsBuilder) {
             mInitStatsBuilder = initStatsBuilder;
             return this;
         }
 
         /** Sets the {@link CallStats.Builder} for collecting general call telemetry. */
         @NonNull
-        public Builder setCallStatsBuilder(CallStats.@Nullable  Builder callStatsBuilder) {
+        public Builder setCallStatsBuilder(CallStats.@Nullable Builder callStatsBuilder) {
             mCallStatsBuilder = callStatsBuilder;
+            return this;
+        }
+
+        /** Sets whether the AI seal feature is enabled. */
+        @NonNull
+        public Builder setLaunchVMFeatures(@NonNull LaunchVMFeatures launchVMFeatures) {
+            mLaunchVMFeatures = launchVMFeatures;
             return this;
         }
 

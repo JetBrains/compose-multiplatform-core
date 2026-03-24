@@ -111,6 +111,8 @@ const val YARN_OFFLINE_MODE = "androidx.yarnOfflineMode"
 /** Defined by AndroidX Benchmark Plugin, may be used for local experiments with compilation */
 const val FORCE_BENCHMARK_AOT_COMPILATION = "androidx.benchmark.forceaotcompilation"
 
+const val ALLOW_LOCKFILE_MISMATCH = "androidx.allowLockfileMismatch"
+
 val ALL_ANDROIDX_PROPERTIES =
     setOf(
         ADD_GROUP_CONSTRAINTS,
@@ -140,6 +142,7 @@ val ALL_ANDROIDX_PROPERTIES =
         FilteredAnchorTask.PROP_PATH_PREFIX,
         YARN_OFFLINE_MODE,
         FORCE_BENCHMARK_AOT_COMPILATION,
+        ALLOW_LOCKFILE_MISMATCH,
     ) + AndroidConfigImpl.GRADLE_PROPERTIES
 
 /**
@@ -215,6 +218,8 @@ fun Project.useYarnOffline() = findBooleanProperty(YARN_OFFLINE_MODE) ?: false
  */
 fun Project.allowMissingLintProject() =
     findBooleanProperty(ALLOW_MISSING_LINT_CHECKS_PROJECT) ?: false
+
+fun Project.allowLockfileMismatch() = findBooleanProperty(ALLOW_LOCKFILE_MISMATCH) ?: true
 
 fun Project.findBooleanProperty(propName: String): Boolean? =
     project.providers.gradleProperty(propName).map { it.toBoolean() }.getOrNull()

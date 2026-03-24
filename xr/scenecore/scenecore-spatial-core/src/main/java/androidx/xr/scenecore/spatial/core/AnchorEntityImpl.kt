@@ -44,9 +44,9 @@ internal class AnchorEntityImpl(
     node: Node,
     private val activitySpace: ActivitySpaceImpl,
     extensions: XrExtensions,
-    entityManager: EntityManager,
+    sceneNodeRegistry: SceneNodeRegistry,
     executor: ScheduledExecutorService,
-) : SystemSpaceEntityImpl(context, node, extensions, entityManager, executor), AnchorEntity {
+) : SystemSpaceEntityImpl(context, node, extensions, sceneNodeRegistry, executor), AnchorEntity {
     private val openXrScenePoseHelper = OpenXrScenePoseHelper(activitySpace)
     private var onStateChangedListener: AnchorEntity.OnStateChangedListener? = null
     private var _state: @AnchorEntity.State Int = AnchorEntity.State.UNANCHORED
@@ -69,12 +69,12 @@ internal class AnchorEntityImpl(
                 return false
             }
             val exportableAnchor = anchor.runtimeAnchor as ExportableAnchor
-            mExtensions.createNodeTransaction().use { transaction ->
+            extensions.createNodeTransaction().use { transaction ->
                 // Attach to the root CPM node. This will enable the anchored content to be visible.
                 // Note that the parent of the Entity is null, but the CPM Node is still attached.
                 transaction
-                    .setParent(mNode, activitySpace.mNode)
-                    .setAnchorId(mNode, exportableAnchor.anchorToken)
+                    .setParent(node, activitySpace.node)
+                    .setAnchorId(node, exportableAnchor.anchorToken)
                     .apply()
             }
             updateState(AnchorEntity.State.ANCHORED)
@@ -95,7 +95,7 @@ internal class AnchorEntityImpl(
         onStateChangedListener: AnchorEntity.OnStateChangedListener
     ) {
         this.onStateChangedListener = onStateChangedListener
-        mExecutor.execute { onStateChangedListener.onStateChanged(_state) }
+        scheduledExecutor.execute { onStateChangedListener.onStateChanged(_state) }
     }
 
     override fun getPose(@SpaceValue relativeTo: Int): Pose {
@@ -144,7 +144,7 @@ internal class AnchorEntityImpl(
 
     fun getPoseInPerceptionSpace(): Pose {
         val perceptionSpaceScenePose =
-            mEntityManager.getSystemSpaceActivityPoseOfType(PerceptionSpaceScenePose::class.java)[0]
+            sceneNodeRegistry.getSystemSpaceScenePoseOfType(PerceptionSpaceScenePose::class.java)[0]
         return transformPoseTo(Pose(), perceptionSpaceScenePose)
     }
 
@@ -168,8 +168,8 @@ internal class AnchorEntityImpl(
             updateState(AnchorEntity.State.ERROR)
         }
 
-        mExtensions.createNodeTransaction().use { transaction ->
-            transaction.setAnchorId(mNode, null).setParent(mNode, null).apply()
+        extensions.createNodeTransaction().use { transaction ->
+            transaction.setAnchorId(node, null).setParent(node, null).apply()
         }
         super.dispose()
     }
@@ -183,7 +183,7 @@ internal class AnchorEntityImpl(
             node: Node,
             activitySpace: ActivitySpaceImpl,
             extensions: XrExtensions,
-            entityManager: EntityManager,
+            sceneNodeRegistry: SceneNodeRegistry,
             executor: ScheduledExecutorService,
         ): AnchorEntityImpl {
             return AnchorEntityImpl(
@@ -191,7 +191,7 @@ internal class AnchorEntityImpl(
                 node,
                 activitySpace,
                 extensions,
-                entityManager,
+                sceneNodeRegistry,
                 executor,
             )
         }

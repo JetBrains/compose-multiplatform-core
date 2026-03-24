@@ -28,6 +28,8 @@ import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.navigationevent.findViewTreeNavigationEventDispatcherOwner
+import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 
@@ -60,6 +62,11 @@ internal fun spatialComposeView(
         setViewTreeLifecycleOwner(parentView.findViewTreeLifecycleOwner())
         setViewTreeViewModelStoreOwner(parentView.findViewTreeViewModelStoreOwner())
         setViewTreeSavedStateRegistryOwner(parentView.findViewTreeSavedStateRegistryOwner())
+
+        setViewTreeNavigationEventDispatcherOwner(
+            parentView.findViewTreeNavigationEventDispatcherOwner()
+        )
+
         setViewTreeDisjointParent(parentView as? ViewParent ?: parentView.parent)
 
         // Set the strategy to automatically dispose the composition

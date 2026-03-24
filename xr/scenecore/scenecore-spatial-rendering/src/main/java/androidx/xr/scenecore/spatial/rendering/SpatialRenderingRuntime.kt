@@ -23,19 +23,25 @@ import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
+import androidx.xr.scenecore.impl.impress.CustomMesh
 import androidx.xr.scenecore.impl.impress.ExrImage
 import androidx.xr.scenecore.impl.impress.GltfModel
 import androidx.xr.scenecore.impl.impress.ImpressApi
 import androidx.xr.scenecore.impl.impress.ImpressApiImpl
+import androidx.xr.scenecore.impl.impress.ImpressNode
 import androidx.xr.scenecore.impl.impress.KhronosPbrMaterial
 import androidx.xr.scenecore.impl.impress.Material
+import androidx.xr.scenecore.impl.impress.MeshBuffer
 import androidx.xr.scenecore.impl.impress.Texture
+import androidx.xr.scenecore.runtime.CustomMeshResource
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.ExrImageResource
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfModelResource
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.MaterialResource
+import androidx.xr.scenecore.runtime.MeshBufferResource
+import androidx.xr.scenecore.runtime.MeshEntity
 import androidx.xr.scenecore.runtime.RenderingEntityFactory
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -688,6 +694,94 @@ private constructor(
                 superSampling,
             )
         return renderingEntityFactory.createSurfaceEntity(feature, pose, parentEntity)
+    }
+
+    override fun createMeshBuffer(
+        attributeIds: IntArray,
+        attributeTypes: IntArray,
+        bufferIndices: ByteArray,
+        maxVertices: Int,
+        maxIndices: Int,
+        vertexData: Array<java.nio.ByteBuffer>?,
+        vertexDataSizes: IntArray?,
+        indexData: java.nio.ByteBuffer?,
+        indexDataSize: Int,
+    ): MeshBufferResource {
+        return impressApi.createMeshBuffer(
+            attributeIds,
+            attributeTypes,
+            bufferIndices,
+            maxVertices,
+            maxIndices,
+            vertexData,
+            vertexDataSizes,
+            indexData,
+            indexDataSize,
+        )
+    }
+
+    override fun destroyMeshBuffer(meshBuffer: MeshBufferResource) {
+        (meshBuffer as MeshBuffer).destroy()
+    }
+
+    override fun createCustomMesh(
+        meshBuffer: MeshBufferResource,
+        subsetOffsets: IntArray,
+        subsetCounts: IntArray,
+    ): CustomMeshResource {
+        return impressApi.createCustomMesh(
+            (meshBuffer as MeshBuffer).nativeHandle,
+            subsetOffsets,
+            subsetCounts,
+        )
+    }
+
+    override fun destroyCustomMesh(customMesh: CustomMeshResource) {
+        (customMesh as CustomMesh).destroy()
+    }
+
+    override fun setCustomMeshBoundingBox(
+        customMesh: CustomMeshResource,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
+    ) {
+        impressApi.setCustomMeshBoundingBox(
+            (customMesh as CustomMesh).nativeHandle,
+            centerX,
+            centerY,
+            centerZ,
+            halfExtentX,
+            halfExtentY,
+            halfExtentZ,
+        )
+    }
+
+    override fun createMeshEntity(
+        customMesh: CustomMeshResource,
+        materials: List<MaterialResource>,
+        pose: Pose,
+        parent: Entity?,
+    ): MeshEntity {
+        val materialHandles = LongArray(materials.size)
+        for (i in materials.indices) {
+            val material = materials[i]
+            require(material is Material) { "MaterialResource is not a Material" }
+            materialHandles[i] = material.nativeHandle
+        }
+
+        val impressNodeId =
+            impressApi.createCustomMeshNode(
+                (customMesh as CustomMesh).nativeHandle,
+                materialHandles,
+            )
+        val impressNode = ImpressNode(impressNodeId)
+
+        val feature = MeshFeatureImpl(impressApi, subspaceManager, extensions, impressNode)
+        return renderingEntityFactory.createMeshEntity(feature, pose, parent)
     }
 
     // JxrRuntime lifecycle

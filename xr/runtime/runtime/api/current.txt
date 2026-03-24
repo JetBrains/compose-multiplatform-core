@@ -33,13 +33,6 @@ package androidx.xr.runtime {
 
   public final class Config {
     ctor public Config();
-    ctor @Deprecated public Config(androidx.xr.runtime.Config.PlaneTrackingMode planeTracking);
-    ctor @Deprecated public Config(androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, androidx.xr.runtime.Config.HandTrackingMode handTracking);
-    ctor @Deprecated public Config(androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, androidx.xr.runtime.Config.HandTrackingMode handTracking, androidx.xr.runtime.Config.DeviceTrackingMode deviceTracking);
-    ctor @Deprecated public Config(androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, androidx.xr.runtime.Config.HandTrackingMode handTracking, androidx.xr.runtime.Config.DeviceTrackingMode deviceTracking, androidx.xr.runtime.Config.DepthEstimationMode depthEstimation);
-    ctor @Deprecated public Config(androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, androidx.xr.runtime.Config.HandTrackingMode handTracking, androidx.xr.runtime.Config.DeviceTrackingMode deviceTracking, androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence);
-    ctor @Deprecated public Config(androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, androidx.xr.runtime.Config.HandTrackingMode handTracking, androidx.xr.runtime.Config.DeviceTrackingMode deviceTracking, androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence, androidx.xr.runtime.Config.FaceTrackingMode faceTracking);
-    ctor @Deprecated public Config(androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, androidx.xr.runtime.Config.HandTrackingMode handTracking, androidx.xr.runtime.Config.DeviceTrackingMode deviceTracking, androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence, androidx.xr.runtime.Config.FaceTrackingMode faceTracking, androidx.xr.runtime.Config.GeospatialMode geospatial);
     ctor public Config(optional androidx.xr.runtime.PlaneTrackingMode planeTracking);
     ctor public Config(optional androidx.xr.runtime.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.HandTrackingMode handTracking);
     ctor public Config(optional androidx.xr.runtime.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.HandTrackingMode handTracking, optional androidx.xr.runtime.DeviceTrackingMode deviceTracking);
@@ -74,89 +67,8 @@ package androidx.xr.runtime {
     property public androidx.xr.runtime.PlaneTrackingMode planeTracking;
   }
 
-  @Deprecated public static final class Config.AnchorPersistenceMode extends androidx.xr.runtime.Config.ConfigMode {
-    field @Deprecated public static final androidx.xr.runtime.Config.AnchorPersistenceMode.Companion Companion;
-    field @Deprecated public static final androidx.xr.runtime.Config.AnchorPersistenceMode DISABLED;
-    field @Deprecated public static final androidx.xr.runtime.Config.AnchorPersistenceMode LOCAL;
-  }
-
-  @Deprecated public static final class Config.AnchorPersistenceMode.Companion {
-    property @Deprecated public androidx.xr.runtime.Config.AnchorPersistenceMode DISABLED;
-    property @Deprecated public androidx.xr.runtime.Config.AnchorPersistenceMode LOCAL;
-  }
-
   public abstract static class Config.ConfigMode {
     ctor public Config.ConfigMode();
-  }
-
-  @Deprecated public static final class Config.DepthEstimationMode extends androidx.xr.runtime.Config.ConfigMode {
-    field @Deprecated public static final androidx.xr.runtime.Config.DepthEstimationMode.Companion Companion;
-    field @Deprecated public static final androidx.xr.runtime.Config.DepthEstimationMode DISABLED;
-    field @Deprecated public static final androidx.xr.runtime.Config.DepthEstimationMode RAW_ONLY;
-    field @Deprecated public static final androidx.xr.runtime.Config.DepthEstimationMode SMOOTH_AND_RAW;
-    field @Deprecated public static final androidx.xr.runtime.Config.DepthEstimationMode SMOOTH_ONLY;
-  }
-
-  @Deprecated public static final class Config.DepthEstimationMode.Companion {
-    property @Deprecated public androidx.xr.runtime.Config.DepthEstimationMode DISABLED;
-    property @Deprecated public androidx.xr.runtime.Config.DepthEstimationMode RAW_ONLY;
-    property @Deprecated public androidx.xr.runtime.Config.DepthEstimationMode SMOOTH_AND_RAW;
-    property @Deprecated public androidx.xr.runtime.Config.DepthEstimationMode SMOOTH_ONLY;
-  }
-
-  @Deprecated public static final class Config.DeviceTrackingMode extends androidx.xr.runtime.Config.ConfigMode {
-    field @Deprecated public static final androidx.xr.runtime.Config.DeviceTrackingMode.Companion Companion;
-    field @Deprecated public static final androidx.xr.runtime.Config.DeviceTrackingMode DISABLED;
-    field @Deprecated public static final androidx.xr.runtime.Config.DeviceTrackingMode LAST_KNOWN;
-  }
-
-  @Deprecated public static final class Config.DeviceTrackingMode.Companion {
-    property @Deprecated public androidx.xr.runtime.Config.DeviceTrackingMode DISABLED;
-    property @Deprecated public androidx.xr.runtime.Config.DeviceTrackingMode LAST_KNOWN;
-  }
-
-  @Deprecated public static final class Config.FaceTrackingMode extends androidx.xr.runtime.Config.ConfigMode {
-    field @Deprecated public static final androidx.xr.runtime.Config.FaceTrackingMode BLEND_SHAPES;
-    field @Deprecated public static final androidx.xr.runtime.Config.FaceTrackingMode.Companion Companion;
-    field @Deprecated public static final androidx.xr.runtime.Config.FaceTrackingMode DISABLED;
-  }
-
-  @Deprecated public static final class Config.FaceTrackingMode.Companion {
-    property @Deprecated public androidx.xr.runtime.Config.FaceTrackingMode BLEND_SHAPES;
-    property @Deprecated public androidx.xr.runtime.Config.FaceTrackingMode DISABLED;
-  }
-
-  @Deprecated public static final class Config.GeospatialMode extends androidx.xr.runtime.Config.ConfigMode {
-    field @Deprecated public static final androidx.xr.runtime.Config.GeospatialMode.Companion Companion;
-    field @Deprecated public static final androidx.xr.runtime.Config.GeospatialMode DISABLED;
-    field @Deprecated public static final androidx.xr.runtime.Config.GeospatialMode VPS_AND_GPS;
-  }
-
-  @Deprecated public static final class Config.GeospatialMode.Companion {
-    property @Deprecated public androidx.xr.runtime.Config.GeospatialMode DISABLED;
-    property @Deprecated public androidx.xr.runtime.Config.GeospatialMode VPS_AND_GPS;
-  }
-
-  @Deprecated public static final class Config.HandTrackingMode extends androidx.xr.runtime.Config.ConfigMode {
-    field @Deprecated public static final androidx.xr.runtime.Config.HandTrackingMode BOTH;
-    field @Deprecated public static final androidx.xr.runtime.Config.HandTrackingMode.Companion Companion;
-    field @Deprecated public static final androidx.xr.runtime.Config.HandTrackingMode DISABLED;
-  }
-
-  @Deprecated public static final class Config.HandTrackingMode.Companion {
-    property @Deprecated public androidx.xr.runtime.Config.HandTrackingMode BOTH;
-    property @Deprecated public androidx.xr.runtime.Config.HandTrackingMode DISABLED;
-  }
-
-  @Deprecated public static final class Config.PlaneTrackingMode extends androidx.xr.runtime.Config.ConfigMode {
-    field @Deprecated public static final androidx.xr.runtime.Config.PlaneTrackingMode.Companion Companion;
-    field @Deprecated public static final androidx.xr.runtime.Config.PlaneTrackingMode DISABLED;
-    field @Deprecated public static final androidx.xr.runtime.Config.PlaneTrackingMode HORIZONTAL_AND_VERTICAL;
-  }
-
-  @Deprecated public static final class Config.PlaneTrackingMode.Companion {
-    property @Deprecated public androidx.xr.runtime.Config.PlaneTrackingMode DISABLED;
-    property @Deprecated public androidx.xr.runtime.Config.PlaneTrackingMode HORIZONTAL_AND_VERTICAL;
   }
 
   public final class CoreState {
@@ -210,6 +122,10 @@ package androidx.xr.runtime {
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalXrDeviceLifecycleApi {
     ctor @KotlinOnly public ExperimentalXrDeviceLifecycleApi();
+  }
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalXrServiceAvailabilityApi {
+    ctor @KotlinOnly public ExperimentalXrServiceAvailabilityApi();
   }
 
   public final class FaceTrackingMode extends androidx.xr.runtime.Config.ConfigMode {
@@ -274,7 +190,7 @@ package androidx.xr.runtime {
     property public androidx.xr.runtime.PlaneTrackingMode HORIZONTAL_AND_VERTICAL;
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is in an unstable preview state and requires a developer preview system image work properly. Do not use this API in release builds as it will likely to lead to crashes.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface PreviewSpatialApi3 {
+  @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is in an unstable preview state and requires a developer preview system image work properly. Do not use this API in release builds as it will likely to lead to crashes.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface PreviewSpatialApi {
   }
 
   public final class RequiredCalibrationType {
@@ -464,30 +380,10 @@ package androidx.xr.runtime {
   }
 
   public final class XrLog {
-    method public void debug(String message);
-    method public void debug(optional Throwable? throwable, kotlin.jvm.functions.Function0<java.lang.String> message);
-    method public void debug(kotlin.jvm.functions.Function0<java.lang.String> message);
-    method @BytecodeOnly public static void debug$default(androidx.xr.runtime.XrLog!, Throwable!, kotlin.jvm.functions.Function0!, int, Object!);
-    method public void error(String message);
-    method public void error(optional Throwable? throwable, kotlin.jvm.functions.Function0<java.lang.String> message);
-    method public void error(kotlin.jvm.functions.Function0<java.lang.String> message);
-    method @BytecodeOnly public static void error$default(androidx.xr.runtime.XrLog!, Throwable!, kotlin.jvm.functions.Function0!, int, Object!);
     method @InaccessibleFromKotlin public androidx.xr.runtime.XrLog.Level getLevel();
-    method public void info(String message);
-    method public void info(optional Throwable? throwable, kotlin.jvm.functions.Function0<java.lang.String> message);
-    method public void info(kotlin.jvm.functions.Function0<java.lang.String> message);
-    method @BytecodeOnly public static void info$default(androidx.xr.runtime.XrLog!, Throwable!, kotlin.jvm.functions.Function0!, int, Object!);
     method @InaccessibleFromKotlin public boolean isEnabled();
     method @InaccessibleFromKotlin public void setEnabled(boolean);
     method @InaccessibleFromKotlin public void setLevel(androidx.xr.runtime.XrLog.Level);
-    method public void verbose(String message);
-    method public void verbose(optional Throwable? throwable, kotlin.jvm.functions.Function0<java.lang.String> message);
-    method public void verbose(kotlin.jvm.functions.Function0<java.lang.String> message);
-    method @BytecodeOnly public static void verbose$default(androidx.xr.runtime.XrLog!, Throwable!, kotlin.jvm.functions.Function0!, int, Object!);
-    method public void warn(String message);
-    method public void warn(optional Throwable? throwable, kotlin.jvm.functions.Function0<java.lang.String> message);
-    method public void warn(kotlin.jvm.functions.Function0<java.lang.String> message);
-    method @BytecodeOnly public static void warn$default(androidx.xr.runtime.XrLog!, Throwable!, kotlin.jvm.functions.Function0!, int, Object!);
     property public boolean isEnabled;
     property public androidx.xr.runtime.XrLog.Level level;
     field public static final androidx.xr.runtime.XrLog INSTANCE;
@@ -509,6 +405,26 @@ package androidx.xr.runtime {
     property public androidx.xr.runtime.XrLog.Level INFO;
     property public androidx.xr.runtime.XrLog.Level VERBOSE;
     property public androidx.xr.runtime.XrLog.Level WARN;
+  }
+
+  @SuppressCompatibility @androidx.xr.runtime.ExperimentalXrServiceAvailabilityApi public final class XrServiceAvailability {
+    method @SuppressCompatibility @androidx.xr.runtime.ExperimentalXrServiceAvailabilityApi public static androidx.xr.runtime.XrServiceAvailability.XrServiceAvailabilityStatus checkProjectedServiceAvailability(android.content.Context context);
+    field public static final androidx.xr.runtime.XrServiceAvailability INSTANCE;
+  }
+
+  @SuppressCompatibility @androidx.xr.runtime.ExperimentalXrServiceAvailabilityApi public static final class XrServiceAvailability.XrServiceAvailabilityStatus {
+    field public static final androidx.xr.runtime.XrServiceAvailability.XrServiceAvailabilityStatus AVAILABLE;
+    field public static final androidx.xr.runtime.XrServiceAvailability.XrServiceAvailabilityStatus.Companion Companion;
+    field public static final androidx.xr.runtime.XrServiceAvailability.XrServiceAvailabilityStatus OUTDATED;
+    field public static final androidx.xr.runtime.XrServiceAvailability.XrServiceAvailabilityStatus UNKNOWN;
+    field public static final androidx.xr.runtime.XrServiceAvailability.XrServiceAvailabilityStatus UNSUPPORTED;
+  }
+
+  @SuppressCompatibility @androidx.xr.runtime.ExperimentalXrServiceAvailabilityApi public static final class XrServiceAvailability.XrServiceAvailabilityStatus.Companion {
+    property public androidx.xr.runtime.XrServiceAvailability.XrServiceAvailabilityStatus AVAILABLE;
+    property public androidx.xr.runtime.XrServiceAvailability.XrServiceAvailabilityStatus OUTDATED;
+    property public androidx.xr.runtime.XrServiceAvailability.XrServiceAvailabilityStatus UNKNOWN;
+    property public androidx.xr.runtime.XrServiceAvailability.XrServiceAvailabilityStatus UNSUPPORTED;
   }
 
 }
@@ -654,18 +570,19 @@ package androidx.xr.runtime.math {
     method public static androidx.xr.runtime.math.Matrix4 fromTrs(androidx.xr.runtime.math.Vector3 translation, androidx.xr.runtime.math.Quaternion rotation, androidx.xr.runtime.math.Vector3 scale);
     method @InaccessibleFromKotlin public float[] getData();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix4 getInverse();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
+    method @InaccessibleFromKotlin @Deprecated public androidx.xr.runtime.math.Pose getPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Quaternion getRotation();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getScale();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getTranslation();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix4 getTranspose();
     method @InaccessibleFromKotlin public boolean isTrs();
     method public operator androidx.xr.runtime.math.Matrix4 times(androidx.xr.runtime.math.Matrix4 other);
+    method public androidx.xr.runtime.math.Pose toPose();
     method public androidx.xr.runtime.math.Matrix4 unscaled();
     property public float[] data;
     property public androidx.xr.runtime.math.Matrix4 inverse;
     property public boolean isTrs;
-    property public androidx.xr.runtime.math.Pose pose;
+    property @Deprecated public androidx.xr.runtime.math.Pose pose;
     property public androidx.xr.runtime.math.Quaternion rotation;
     property public androidx.xr.runtime.math.Vector3 scale;
     property public androidx.xr.runtime.math.Vector3 translation;

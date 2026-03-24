@@ -41,6 +41,7 @@ fun ColorsSample() {
         item { ColorItem(colors.secondary, colorName = "secondary") }
         item { ColorItem(colors.negative, colorName = "negative") }
         item { ColorItem(colors.positive, colorName = "positive") }
+        item { ColorItem(colors.background, colorName = "background") }
         item { ColorItem(colors.surface, colorName = "surface") }
         item { ColorItem(colors.outline, colorName = "outline") }
         item { ColorItem(colors.outlineVariant, colorName = "outlineVariant") }

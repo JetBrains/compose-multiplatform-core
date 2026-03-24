@@ -21,6 +21,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import dagger.assisted.Assisted
@@ -75,6 +76,24 @@ class HiltViewModelComposeTest {
         assertThat(vm.handle).isNotNull()
         assertThat(vm.fooDep).isNotNull()
         assertThat(vm.arg).isEqualTo(42)
+    }
+
+    @Test
+    fun rememberHiltViewModelFactory_compose() {
+        lateinit var vmOne: MyViewModel
+        lateinit var vmTwo: MyViewModel
+        composeTestRule.setContent {
+            val factory = rememberHiltViewModelFactory()
+            vmOne = viewModel<MyViewModel>(factory = factory)
+            vmTwo = viewModel<MyViewModel>(factory = factory)
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(vmOne).isSameInstanceAs(vmTwo)
+        assertThat(vmOne.handle).isNotNull()
+        assertThat(vmOne.fooDep).isNotNull()
+        assertThat(vmOne.handle).isSameInstanceAs(vmTwo.handle)
+        assertThat(vmOne.fooDep).isSameInstanceAs(vmTwo.fooDep)
     }
 
     @AndroidEntryPoint class TestActivity : ComponentActivity()

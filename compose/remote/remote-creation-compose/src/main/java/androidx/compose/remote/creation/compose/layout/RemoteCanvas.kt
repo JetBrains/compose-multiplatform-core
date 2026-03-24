@@ -92,7 +92,8 @@ public class RemoteCanvas(
     }
 
     /**
-     * Scales the canvas by [sx] and [sy] around the pivot point ([px], [py]).
+     * Scales the canvas by [sx] and [sy] around the pivot point ([RemoteOffset.x],
+     * [RemoteOffset.y]) from [pivot].
      *
      * @param sx The scale factor along the X axis.
      * @param sy The scale factor along the Y axis.

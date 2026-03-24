@@ -31,6 +31,15 @@
     <issue
         id="EagerGradleConfiguration"
         message="Use register instead of create"
+        errorLine1="            project.configurations.create(&quot;kmpDocsWithoutApiSince&quot;) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
         errorLine1="            project.configurations.create(&quot;stubs&quot;) {"
         errorLine2="                                   ~~~~~~">
         <location

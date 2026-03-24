@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.dp
  * @sample androidx.xr.glimmer.samples.TitleChipWithLeadingIconSample
  *
  * To use a title chip with another component, place the title chip
- * [TitleChipDefaults.AssociatedContentSpacing] above the other component. For example, to use a
+ * [TitleChipDefaults.associatedContentSpacing] above the other component. For example, to use a
  * title chip with a card:
  *
  * @sample androidx.xr.glimmer.samples.TitleChipWithCardSample
@@ -72,11 +72,12 @@ public fun TitleChip(
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
-    contentPadding: PaddingValues = TitleChipDefaults.ContentPadding,
+    contentPadding: PaddingValues = TitleChipDefaults.contentPadding,
     content: @Composable RowScope.() -> Unit,
 ) {
     val colors = GlimmerTheme.colors
     val iconSize = GlimmerTheme.iconSizes.medium
+    val horizontalInnerContentPadding = GlimmerTheme.componentSpacingValues.small
 
     CompositionLocalProvider(LocalTextStyle provides GlimmerTheme.typography.titleSmall) {
         Row(
@@ -86,7 +87,7 @@ public fun TitleChip(
                     shape = shape,
                     color = color,
                     contentColor = contentColor,
-                    depth = null,
+                    depthEffect = null,
                     border = border,
                 )
                 .defaultMinSize(minHeight = MinimumHeight)
@@ -100,9 +101,9 @@ public fun TitleChip(
                     CompositionLocalProvider(LocalIconSize provides iconSize, content = leadingIcon)
                 }
             }
-            Spacer(Modifier.width(HorizontalInnerContentPadding))
+            Spacer(Modifier.width(horizontalInnerContentPadding))
             content()
-            Spacer(Modifier.width(HorizontalInnerContentPadding))
+            Spacer(Modifier.width(horizontalInnerContentPadding))
         }
     }
 }
@@ -110,7 +111,8 @@ public fun TitleChip(
 /** Default values used for [TitleChip]. */
 public object TitleChipDefaults {
     /** Default content padding for a [TitleChip]. */
-    public val ContentPadding: PaddingValues = PaddingValues(Spacing.Small)
+    public val contentPadding: PaddingValues
+        @Composable get() = PaddingValues(GlimmerTheme.componentSpacingValues.small)
 
     /**
      * Default spacing between the bottom of a [TitleChip] and content associated with this title
@@ -119,11 +121,9 @@ public object TitleChipDefaults {
      *
      * @sample androidx.xr.glimmer.samples.TitleChipWithCardSample
      */
-    public val AssociatedContentSpacing: Dp = 12.dp
+    public val associatedContentSpacing: Dp
+        @Composable get() = GlimmerTheme.componentSpacingValues.medium
 }
-
-/** Inner content padding for a [TitleChip] content body (excluding the icon) */
-private val HorizontalInnerContentPadding = Spacing.Small
 
 /** Default minimum height for a [TitleChip] */
 private val MinimumHeight = 56.dp

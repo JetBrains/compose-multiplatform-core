@@ -139,12 +139,66 @@ open class BaseLayoutTest : LayoutTestPlayer() {
         }
     }
 
+    class ValidateBounds(
+        val id: Int,
+        val expectedX: Float,
+        val expectedY: Float,
+        val expectedW: Float,
+        val expectedH: Float,
+    ) : TestOperation() {
+        override fun apply(
+            context: RemoteContext,
+            document: CoreDocument,
+            testParameters: TestParameters,
+            commands: MutableList<Map<String, Any>>?,
+        ): Boolean {
+            val component =
+                document.getComponent(id) ?: throw AssertionError("Component with id $id not found")
+            if (
+                component.getX() != expectedX ||
+                    component.getY() != expectedY ||
+                    component.getWidth() != expectedW ||
+                    component.getHeight() != expectedH
+            ) {
+                throw AssertionError(
+                    "Component $id: Expected bounds ($expectedX, $expectedY, $expectedW, $expectedH), " +
+                        "actual (${component.getX()}, ${component.getY()}, ${component.getWidth()}, ${component.getHeight()})"
+                )
+            }
+            return false
+        }
+    }
+
+    class ValidateSize(val id: Int, val expectedW: Float, val expectedH: Float) : TestOperation() {
+        override fun apply(
+            context: RemoteContext,
+            document: CoreDocument,
+            testParameters: TestParameters,
+            commands: MutableList<Map<String, Any>>?,
+        ): Boolean {
+            val component =
+                document.getComponent(id) ?: throw AssertionError("Component with id $id not found")
+            if (component.getWidth() != expectedW || component.getHeight() != expectedH) {
+                throw AssertionError(
+                    "Component $id: Expected size ($expectedW, $expectedH), " +
+                        "actual (${component.getWidth()}, ${component.getHeight()})"
+                )
+            }
+            return false
+        }
+    }
+
     fun validateX(expectedX: Float): TestOperation = ValidateX(expectedX)
 
     fun validateY(expectedY: Float): TestOperation = ValidateY(expectedY)
 
     fun validatePosition(expectedX: Float, expectedY: Float): TestOperation =
         ValidatePosition(expectedX, expectedY)
+
+    fun validateBounds(id: Int, x: Float, y: Float, w: Float, h: Float): TestOperation =
+        ValidateBounds(id, x, y, w, h)
+
+    fun validateSize(id: Int, w: Float, h: Float): TestOperation = ValidateSize(id, w, h)
 
     class ValidateNoAnimation() : TestOperation() {
         override fun apply(

@@ -454,4 +454,13 @@ abstract class BaseQueryTest {
         val result = db.libraryDao().getAll()
         assertThat(result).containsExactlyElementsIn(items)
     }
+
+    @Test
+    fun clearTables() = runTest {
+        val dao = db.dao()
+        repeat(10) { dao.insertItem(it.toLong()) }
+        assertThat(dao.getItemList().size).isEqualTo(10)
+        db.clearAllTables()
+        assertThat(dao.getItemList()).isEmpty()
+    }
 }

@@ -183,6 +183,8 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
                 TextFromFloat.SEPARATOR_COMMA_PERIOD
             }
 
+        val before = format.maximumIntegerDigits.coerceAtMost(255)
+        val after = format.maximumFractionDigits.coerceAtMost(255)
         var options = 0
         if (format.negativePrefix == "(") {
             options = options or TextFromFloat.OPTIONS_NEGATIVE_PARENTHESES
@@ -201,16 +203,25 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
         }
 
         if (format.minimumIntegerDigits > 1) {
+            // Support DecimalFormat("000") and similar cases.
+            if (format.minimumFractionDigits == 0 && before == 255) {
+                val unpadded = toRemoteString(before, after, flags or TextFromFloat.PAD_PRE_NONE)
+                return (unpadded.length le format.minimumIntegerDigits.ri).select(
+                    toRemoteString(
+                        format.minimumIntegerDigits,
+                        after,
+                        flags or TextFromFloat.PAD_PRE_ZERO,
+                    ),
+                    unpadded,
+                )
+            }
+
             flags = flags or TextFromFloat.PAD_PRE_ZERO
         } else {
             flags = flags or TextFromFloat.PAD_PRE_NONE
         }
 
-        return toRemoteString(
-            before = format.maximumIntegerDigits.coerceAtMost(255),
-            after = format.maximumFractionDigits.coerceAtMost(255),
-            flags = flags,
-        )
+        return toRemoteString(before, after, flags)
     }
 
     /**
@@ -496,12 +507,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
         return binaryOp(this, v, OperationKey.Div) { aVal: Float, bVal: Float -> aVal / bVal }
     }
 
-    /** Converts this [RemoteFloat] to a [RemoteDp] */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun asRemoteDp(): RemoteDp {
-        return RemoteDp(this)
-    }
-
     /**
      * Returns a [RemoteFloat] that is a reference of this RemoteFloat.
      *
@@ -674,12 +679,20 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
          * @return A [RemoteFloat] representing the given constant or encoded id.
          */
         public operator fun invoke(float: Float): RemoteFloat {
-            val constValue = if (isConstant(float)) float else null
-            return RemoteFloatExpression(
-                constantValueOrNull = constValue,
-                cacheKey = RemoteConstantCacheKey(float),
-            ) { _ ->
-                floatArrayOf(float)
+            return if (isConstant(float)) {
+                RemoteFloatExpression(
+                    constantValueOrNull = float,
+                    cacheKey = RemoteConstantCacheKey(float),
+                ) { _ ->
+                    floatArrayOf(float)
+                }
+            } else {
+                RemoteFloatExpression(
+                    constantValueOrNull = null,
+                    cacheKey = RemoteStateIdKey(Utils.idFromNan(float)),
+                ) { _ ->
+                    floatArrayOf(float)
+                }
             }
         }
 
@@ -733,9 +746,18 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
                 val context = RemoteFloatContext(creationState)
                 val result = expression(context)
                 val initialValueId = result.getFloatIdForCreationState(creationState)
-                val floatId =
-                    creationState.document.addNamedFloat(domain.prefixed(name), initialValueId)
-                floatArrayOf(floatId)
+                if (Utils.isVariable(initialValueId)) {
+                    val floatId = creationState.document.floatExpression(initialValueId)
+                    creationState.document.setFloatName(
+                        Utils.idFromNan(floatId),
+                        domain.prefixed(name),
+                    )
+                    floatArrayOf(floatId)
+                } else {
+                    val floatId =
+                        creationState.document.addNamedFloat(domain.prefixed(name), initialValueId)
+                    floatArrayOf(floatId)
+                }
             }
         }
     }
@@ -1391,7 +1413,7 @@ internal constructor(
          */
         public fun createMutable(initialValue: Float): MutableRemoteFloat {
             return MutableRemoteFloat(cacheKey = RemoteStateInstanceKey()) { creationState ->
-                creationState.document.addFloatConstant(initialValue)
+                creationState.document.floatExpression(initialValue)
             }
         }
 
@@ -1625,7 +1647,7 @@ public fun rememberMutableRemoteFloat(
         // Currently evaluated eagerly to grab the right component
         val value = content(context)
         MutableRemoteFloat(cacheKey = RemoteStateInstanceKey()) { state ->
-            value.getFloatIdForCreationState(state)
+            state.document.floatExpression(*value.arrayForCreationState(state))
         }
     }
 }
@@ -1666,20 +1688,8 @@ public fun rememberNamedRemoteFloat(
     domain: RemoteState.Domain = RemoteState.Domain.User,
     content: RemoteFloatContext.() -> RemoteFloat,
 ): RemoteFloat {
-    val state = LocalRemoteComposeCreationState.current
     return rememberNamedState(name, domain) {
-        val context = RemoteFloatContext(state)
-        // Currently evaluated eagerly to grab the right component
-        val remoteFloat = content(context)
-        val key = RemoteNamedCacheKey(domain, name)
-        RemoteFloatExpression(constantValueOrNull = null, cacheKey = key) { creationState ->
-            // Create an additional expression to name, in case the input value is meaningful
-            // and just a default. So override is of this named value, not the expression.
-            val floatId =
-                state.document.floatExpression(*remoteFloat.arrayForCreationState(creationState))
-            state.document.setFloatName(Utils.idFromNan(floatId), domain.prefixed(name))
-            floatArrayOf(floatId)
-        }
+        RemoteFloat.createNamedRemoteFloatExpression(name, domain, expression = content)
     }
 }
 

@@ -167,15 +167,6 @@
     </issue>
 
     <issue
-        id="PrivateResource"
-        message="The resource `@color/cardview_light_background` is marked as private in com.google.android.material:material:1.2.1"
-        errorLine1="                        android:background=&quot;@color/cardview_light_background&quot;"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/activity_card_view.xml"/>
-    </issue>
-
-    <issue
         id="ObsoleteSdkInt"
         message="This folder configuration (`v11`) is unnecessary; `minSdkVersion` is 23. Merge all the resources in this folder into `layout`.">
         <location

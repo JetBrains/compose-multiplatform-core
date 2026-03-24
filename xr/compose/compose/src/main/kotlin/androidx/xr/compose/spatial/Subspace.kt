@@ -361,12 +361,13 @@ public annotation class ExperimentalFollowingSubspaceApi
  *
  * Each call to `FollowingSubspace` creates a new, independent spatial UI hierarchy. It does **not**
  * inherit the spatial position, orientation, or scale of any parent `Subspace` it is nested within.
- * Its position in the world is determined solely by its `target` parameter. By default, this
- * Subspace is automatically bounded by the system's recommended content box, similar to [Subspace].
+ * Its scale is decided by the system's recommended scale. Its position in the world is determined
+ * solely by its `target` parameter. By default, this Subspace is automatically bounded by the
+ * system's recommended content box, similar to [Subspace].
  *
  * When the target parameter is specified to be [FollowTarget.ArDevice], the content will be
  * positioned relative the view of the AR device. This is sometimes referred to as head-locked
- * content. For this API, it is required for headtracking to not be disabled in the session
+ * content. For this API, it is required for device tracking to not be disabled in the session
  * configuration. If it is disabled, this API will not return anything. The session configuration
  * should resemble `session.configure( config = session.config.copy(deviceTracking =
  * Config.DeviceTrackingMode.SPATIAL_LAST_KNOWN) )` The [FollowTarget.ArDevice] is not compatible
@@ -451,6 +452,7 @@ public fun FollowingSubspace(
         val subspaceRoot by remember {
             disposableValueOf(Entity.create(session, "subspaceRoot")) { it.dispose() }
         }
+        // TODO(b/491504073): Use observers to update the scale instead of SideEffect.
         SideEffect {
             session.scene.keyEntity?.getScale(relativeTo = Space.REAL_WORLD)?.let { scale ->
                 subspaceRoot.setScale(scale)
@@ -503,7 +505,7 @@ private fun validateFollowingSubspaceConfiguration(
     behavior: FollowBehavior,
     config: Config,
 ): Boolean {
-    // Following an AR device requires head tracking to be enabled.
+    // Following an AR device requires device tracking to be enabled.
     if (target is ArDeviceTarget && config.deviceTracking == DeviceTrackingMode.DISABLED) {
         return false
     }

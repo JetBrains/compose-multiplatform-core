@@ -84,11 +84,21 @@ public class FakeGltfAnimationFeature(
     }
 
     override fun seekAnimation(startTime: Float) {
-        this.seekStartTimeSeconds = startTime
+        if (
+            _animationState == GltfEntity.AnimationState.PLAYING ||
+                _animationState == GltfEntity.AnimationState.PAUSED
+        ) {
+            this.seekStartTimeSeconds = startTime
+        }
     }
 
     override fun setAnimationSpeed(speed: Float) {
-        this.speed = speed
+        if (
+            _animationState == GltfEntity.AnimationState.PLAYING ||
+                _animationState == GltfEntity.AnimationState.PAUSED
+        ) {
+            this.speed = speed
+        }
     }
 
     override fun addAnimationStateListener(executor: Executor, listener: Consumer<Int>) {

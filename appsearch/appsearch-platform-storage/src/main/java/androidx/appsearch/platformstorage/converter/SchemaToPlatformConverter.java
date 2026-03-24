@@ -21,6 +21,7 @@ import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZ
 import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_RFC822;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Build;
 
 import androidx.annotation.DoNotInline;
@@ -31,6 +32,7 @@ import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
+import androidx.appsearch.platformstorage.PlatformStorage;
 import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
@@ -58,8 +60,11 @@ public final class SchemaToPlatformConverter {
      */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static android.app.appsearch.@NonNull AppSearchSchema toPlatformSchema(
+            @NonNull Context context,
             @NonNull AppSearchSchema jetpackSchema) {
+        Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(jetpackSchema);
+
         android.app.appsearch.AppSearchSchema.Builder platformBuilder =
                 new android.app.appsearch.AppSearchSchema.Builder(jetpackSchema.getSchemaType());
         if (!jetpackSchema.getDescription().isEmpty()) {
@@ -80,7 +85,7 @@ public final class SchemaToPlatformConverter {
         List<AppSearchSchema.PropertyConfig> properties = jetpackSchema.getProperties();
         for (int i = 0; i < properties.size(); i++) {
             android.app.appsearch.AppSearchSchema.PropertyConfig platformProperty =
-                    toPlatformProperty(properties.get(i));
+                    toPlatformProperty(context, properties.get(i));
             platformBuilder.addProperty(platformProperty);
         }
         return platformBuilder.build();
@@ -117,8 +122,13 @@ public final class SchemaToPlatformConverter {
     @SuppressLint("WrongConstant")
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private static android.app.appsearch.AppSearchSchema.@NonNull PropertyConfig toPlatformProperty(
+            @NonNull Context context,
             AppSearchSchema.@NonNull PropertyConfig jetpackProperty) {
+        Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(jetpackProperty);
+
+        Features features = PlatformStorage.getFeatures(context);
+
         if (!jetpackProperty.getDescription().isEmpty()) {
             // TODO(b/326987971): Remove this once description becomes available.
             throw new UnsupportedOperationException(Features.SCHEMA_SET_DESCRIPTION
@@ -147,6 +157,24 @@ public final class SchemaToPlatformConverter {
                     throw new UnsupportedOperationException(
                             "StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID is not supported"
                                     + " on this AppSearch implementation.");
+                }
+                if (!features.isFeatureSupported(Features.SCHEMA_JOINABLE_REPEATED_PROPERTIES)) {
+                    // - In old platform SDKs, AppSearchSchema.StringPropertyConfig.Builder#build
+                    //   throws IllegalStateException if setting repeated joinable property.
+                    // - In new platform SDKs, AppSearchSchema.StringPropertyConfig.Builder#build
+                    //   does not throw IllegalStateException anymore. Instead:
+                    //   - If the flag is OFF, then Icing SetSchema API will return an error, and
+                    //     AppSearch throws ExecutionException.
+                    //   - If the flag is ON, then AppSearch and Icing WON't throw exception
+                    //     anymore because the feature (repeated joinable property) is supported.
+                    // - In order to unify the behavior of feature not supported case regardless of
+                    //   the platform SDK versions, let's enforce the same check and throw
+                    //   IllegalStateException if the feature is not supported.
+                    Preconditions.checkState(
+                            jetpackProperty.getCardinality()
+                                    != AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED,
+                            "Cannot set JOINABLE_VALUE_TYPE_QUALIFIED_ID with"
+                                    + " CARDINALITY_REPEATED.");
                 }
                 ApiHelperForSdkExtensionUBase.setJoinableValueType(platformBuilder,
                         stringProperty.getJoinableValueType());

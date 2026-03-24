@@ -35,7 +35,6 @@ import androidx.compose.ui.semantics.Role
 /** Single-slot base button for [RemoteTextButton] and [RemoteIconButton]. */
 @Composable
 @RemoteComposable
-@Suppress("RestrictedApiAndroidX")
 internal fun RemoteRoundButton(
     onClick: Action,
     modifier: RemoteModifier = RemoteModifier,

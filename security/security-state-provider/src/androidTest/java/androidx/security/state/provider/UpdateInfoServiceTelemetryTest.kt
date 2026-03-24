@@ -19,6 +19,7 @@ package androidx.security.state.provider
 import android.content.Context
 import android.content.Intent
 import android.os.Binder
+import android.os.IBinder
 import android.os.Process
 import androidx.security.state.IUpdateInfoService
 import androidx.security.state.UpdateCheckResult
@@ -252,44 +253,77 @@ class UpdateInfoServiceTelemetryTest {
 
     @Test
     fun testLifecycle_reportsClientConnection() {
-        // GIVEN a binding intent with a package data URI
-        val clientPackage = "com.example.settings"
-        val intent =
-            Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE").apply {
-                data = android.net.Uri.fromParts("package", clientPackage, null)
-            }
+        // GIVEN a client binds to the service and retrieves the factory interface
+        val intent = Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE")
+        val factory = service.onBind(intent) as IUpdateInfoService
 
-        // WHEN a client binds
-        service.onBind(intent)
+        // WHEN the client establishes a new session with its package name
+        // (Note: TelemetrySpyService mocks enforceValidPackageForUid to allow this to pass)
+        factory.openSession("com.example.client", Binder())
 
-        // THEN onClientConnected receives the intent with the data intact
-        val connectedIntent = service.lastConnectedIntent
-        assertNotNull(connectedIntent)
-        // Verify the object is the same
-        assertEquals(intent, connectedIntent)
-        // Explicitly verify the package name is accessible
-        assertEquals(clientPackage, connectedIntent?.data?.schemeSpecificPart)
+        // THEN the service invokes the onClientConnected hook with the verified package name
+        assertEquals(
+            "Service should report the client's package name on connection",
+            "com.example.client",
+            service.lastConnectedPackage,
+        )
     }
 
     @Test
     fun testLifecycle_reportsClientDisconnection() {
-        // GIVEN a binding intent with a package data URI
-        val clientPackage = "com.example.settings"
-        val intent =
-            Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE").apply {
-                data = android.net.Uri.fromParts("package", clientPackage, null)
-            }
+        // GIVEN a client has established an active session
+        val intent = Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE")
+        val factory = service.onBind(intent) as IUpdateInfoService
+        val session = factory.openSession("com.example.client", Binder())
 
-        // WHEN a client unbinds
-        service.onUnbind(intent)
+        // WHEN the client explicitly closes the session
+        session.close()
 
-        // THEN onClientDisconnected receives the intent with the package name intact
-        val disconnectedIntent = service.lastDisconnectedIntent
-        assertNotNull(disconnectedIntent)
-        // Verify the object is the same
-        assertEquals(intent, disconnectedIntent)
-        // Explicitly verify the package name is accessible
-        assertEquals(clientPackage, disconnectedIntent?.data?.schemeSpecificPart)
+        // THEN the service invokes the onClientDisconnected hook with the correct package name
+        assertEquals(
+            "Service should report the client's package name on disconnection",
+            "com.example.client",
+            service.lastDisconnectedPackage,
+        )
+    }
+
+    @Test
+    fun testLifecycle_reportsClientDisconnection_onBinderDied() {
+        // GIVEN a fake client token and an active session
+        val fakeToken = FakeToken()
+        val factory =
+            service.onBind(Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE"))
+                as IUpdateInfoService
+
+        factory.openSession("com.example.client", fakeToken)
+
+        // Extract the DeathRecipient instance the service registered
+        val deathRecipient = fakeToken.deathRecipient
+        assertNotNull("Service should register a DeathRecipient", deathRecipient)
+
+        // WHEN the client process crashes unexpectedly
+        // (We simulate the Android OS triggering the callback)
+        deathRecipient!!.binderDied()
+
+        // THEN the service automatically cleans up and triggers the disconnection telemetry hook
+        assertEquals("com.example.client", service.lastDisconnectedPackage)
+    }
+
+    @Test
+    fun testLifecycle_reportsClientDisconnection_onlyOnceWhenClosedMultipleTimes() {
+        val intent = Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE")
+        val factory = service.onBind(intent) as IUpdateInfoService
+        val session = factory.openSession("com.example.client", Binder())
+
+        // Clear previous state for strict counting
+        service.disconnectCount = 0
+
+        // WHEN the session is closed multiple times (e.g., client closes it, then process dies)
+        session.close()
+        session.close()
+
+        // THEN the disconnection hook is only triggered exactly once
+        assertEquals("onClientDisconnected should only be called once", 1, service.disconnectCount)
     }
 
     @Test
@@ -305,7 +339,7 @@ class UpdateInfoServiceTelemetryTest {
 
         // AND onClientConnected is NEVER called
         // (Metrics should not be polluted by invalid attempts)
-        assertNull(service.lastConnectedIntent)
+        assertNull(service.lastConnectedPackage)
     }
 
     // --- 3. Debugging Support (Dump & State) ---
@@ -620,6 +654,28 @@ class UpdateInfoServiceTelemetryTest {
         return outStream.toString()
     }
 
+    /**
+     * A Fake implementation of an Android Binder token.
+     *
+     * This avoids Mockito limitations on Android VMs and allows us to securely capture and trigger
+     * the DeathRecipient registered by the service.
+     */
+    class FakeToken : Binder() {
+        var deathRecipient: IBinder.DeathRecipient? = null
+
+        override fun linkToDeath(recipient: IBinder.DeathRecipient, flags: Int) {
+            this.deathRecipient = recipient
+        }
+
+        override fun unlinkToDeath(recipient: IBinder.DeathRecipient, flags: Int): Boolean {
+            if (this.deathRecipient === recipient) {
+                this.deathRecipient = null
+                return true
+            }
+            return false
+        }
+    }
+
     // --- Telemetry Spy Implementation ---
 
     /**
@@ -640,14 +696,16 @@ class UpdateInfoServiceTelemetryTest {
         @Volatile // Ensure visibility across threads
         var lastTelemetry: UpdateCheckTelemetry? = null
 
-        var lastConnectedIntent: Intent? = null
-        var lastDisconnectedIntent: Intent? = null
+        var lastConnectedPackage: String? = null
+        var lastDisconnectedPackage: String? = null
+        var disconnectCount = 0
         var lastException: Exception? = null
 
         // --- Logic Controls ---
 
         var testShouldFetch = false
         var testIsThrottled = false
+        var testIsValidPackage = true
         var shouldThrowError = false
         var fetchDelayMillis = 0L
 
@@ -680,10 +738,15 @@ class UpdateInfoServiceTelemetryTest {
 
         /** Helper to call the binder method directly, simulating an incoming IPC call. */
         fun callListAvailableUpdates(): UpdateCheckResult {
-            val binder =
+            val factory =
                 onBind(Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE"))
                     as IUpdateInfoService
-            return binder.listAvailableUpdates()
+
+            // Open session, call, and close to simulate full client lifecycle
+            val session = factory.openSession("com.test.client", Binder())
+            val result = session.listAvailableUpdates()
+            session.close()
+            return result
         }
 
         // --- Overrides for Logic ---
@@ -714,6 +777,14 @@ class UpdateInfoServiceTelemetryTest {
             return emptyList()
         }
 
+        override fun enforceValidPackageForUid(packageName: String, uid: Int) {
+            if (!testIsValidPackage) {
+                throw SecurityException(
+                    "Simulated validation failure. Package '$packageName' does not belong to UID $uid."
+                )
+            }
+        }
+
         override fun getCallerUid(): Int {
             return if (useDynamicUids) {
                 // Simulate distinct apps calling in (for concurrency attribution tests)
@@ -739,12 +810,13 @@ class UpdateInfoServiceTelemetryTest {
             super.onRequestCompleted(telemetry)
         }
 
-        override fun onClientConnected(intent: Intent) {
-            lastConnectedIntent = intent
+        override fun onClientConnected(packageName: String, callerUid: Int) {
+            lastConnectedPackage = packageName
         }
 
-        override fun onClientDisconnected(intent: Intent?) {
-            lastDisconnectedIntent = intent
+        override fun onClientDisconnected(packageName: String, callerUid: Int) {
+            lastDisconnectedPackage = packageName
+            disconnectCount++
         }
 
         override fun onFetchFailed(e: Exception) {

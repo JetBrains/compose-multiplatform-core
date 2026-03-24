@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.wear.compose.remote.material3
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.state.RemoteColor
@@ -60,6 +58,7 @@ import androidx.wear.compose.material3.LocalTextConfiguration
  * @param overflow How visual overflow should be handled.
  * @param maxLines An optional maximum number of lines for the text to span.
  * @param style Style configuration for the text such as color, font, line height etc.
+ * @param fontVariationSettings The font variation settings to be applied to the text.
  */
 @Composable
 @RemoteComposable

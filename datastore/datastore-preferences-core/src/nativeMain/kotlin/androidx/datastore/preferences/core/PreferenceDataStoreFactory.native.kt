@@ -22,6 +22,7 @@ import androidx.datastore.core.Storage
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.core.okio.OkioStorage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import okio.FileSystem
 import okio.Path
 
@@ -89,8 +90,14 @@ actual object PreferenceDataStoreFactory {
         migrations: List<DataMigration<Preferences>>,
         scope: CoroutineScope,
     ): DataStore<Preferences> {
+        val context =
+            if (scope.coroutineContext[Job] == null) {
+                scope.coroutineContext + Job()
+            } else {
+                scope.coroutineContext
+            }
         return PreferenceDataStore(
-            DataStore.Builder(storage = storage, context = scope.coroutineContext)
+            DataStore.Builder(storage = storage, context = context)
                 .apply { corruptionHandler?.let { setCorruptionHandler(it) } }
                 .addMigrations(migrations)
                 .build()

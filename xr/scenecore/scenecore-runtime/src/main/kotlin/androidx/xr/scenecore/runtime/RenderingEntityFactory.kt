@@ -51,4 +51,14 @@ public interface RenderingEntityFactory {
         pose: Pose,
         parentEntity: Entity?,
     ): SurfaceEntity
+
+    /**
+     * Factory method for MeshEntity.
+     *
+     * @param feature The rendering implementation of MeshEntity.
+     * @param pose Pose of this entity relative to its parent, default value is Identity.
+     * @param parentEntity The parent entity of this entity.
+     * @return A [MeshEntity] which is a child of the parent entity.
+     */
+    public fun createMeshEntity(feature: MeshFeature, pose: Pose, parentEntity: Entity?): MeshEntity
 }

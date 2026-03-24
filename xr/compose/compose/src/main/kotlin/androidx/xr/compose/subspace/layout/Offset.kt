@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,6 +34,9 @@ import androidx.xr.runtime.math.Vector3
  * when the layout direction is RTL, positive [x] offsets will move the content to the left. For a
  * modifier that offsets without considering layout direction, see [absoluteOffset].
  *
+ * @param x horizontal offset in [Dp].
+ * @param y vertical offset in [Dp].
+ * @param z depth offset in [Dp].
  * @see absoluteOffset
  */
 public fun SubspaceModifier.offset(x: Dp = 0.dp, y: Dp = 0.dp, z: Dp = 0.dp): SubspaceModifier =
@@ -47,6 +50,9 @@ public fun SubspaceModifier.offset(x: Dp = 0.dp, y: Dp = 0.dp, z: Dp = 0.dp): Su
  * positive [x] offset will always move the content to the right. For a modifier that considers the
  * layout direction when applying the offset, see [offset].
  *
+ * @param x horizontal offset in [Dp].
+ * @param y vertical offset in [Dp].
+ * @param z depth offset in [Dp].
  * @see offset
  */
 public fun SubspaceModifier.absoluteOffset(
@@ -76,7 +82,7 @@ private class SubspaceOffsetElement(val x: Dp, val y: Dp, val z: Dp, val rtlAwar
 
     /*
      * TODO(b/475896820): Add unit tests for hashCode and equals for all *Element classes in
-     *  SubspaceModifier APIs
+     * SubspaceModifier APIs
      */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

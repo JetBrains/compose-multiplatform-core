@@ -18,7 +18,6 @@ package androidx.glance.wear
 
 import android.content.ComponentName
 import android.content.Context
-import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.glance.wear.cache.WearWidgetCache
 import androidx.glance.wear.core.ContainerInfo
 import androidx.glance.wear.core.WearWidgetParams
@@ -46,7 +45,18 @@ class GlanceWearWidgetTest {
 
         widget.triggerUpdate(getApplicationContext(), TEST_COMPONENT)
 
-        verify(mockUpdateClient).requestUpdate(any(), eq(TEST_COMPONENT))
+        verify(mockUpdateClient).requestUpdate(any(), eq(TEST_COMPONENT), eq(null))
+    }
+
+    @Test
+    fun triggerPullUpdate_withInstanceId_clientRequestsUpdateForInstance() {
+        val mockUpdateClient = mock<WidgetUpdateClient>()
+        val widget = TestWidget(mockUpdateClient)
+        val instanceId = WidgetInstanceId(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE, 1)
+
+        widget.triggerPullUpdate(getApplicationContext(), TEST_COMPONENT, instanceId)
+
+        verify(mockUpdateClient).requestUpdate(any(), eq(TEST_COMPONENT), eq(instanceId))
     }
 
     @Test
@@ -86,7 +96,7 @@ class GlanceWearWidgetTest {
             val context = getApplicationContext<Context>()
             val instanceId = WidgetInstanceId("ns", 1)
 
-            whenever(mockWidgetCache.getInstanceType(eq(instanceId)))
+            whenever(mockWidgetCache.getContainerTypeForInstance(eq(instanceId)))
                 .thenReturn(ContainerInfo.CONTAINER_TYPE_SMALL)
             whenever(
                     mockWidgetCache.getWidgetParams(
@@ -120,7 +130,7 @@ class GlanceWearWidgetTest {
     ) : GlanceWearWidget(updateClient, widgetCache) {
 
         override suspend fun provideWidgetData(context: Context, params: WearWidgetParams) =
-            WearWidgetDocument(background = WearWidgetBrush) { RemoteText("Testing...") }
+            WearWidgetDocument(background = WearWidgetBrush) {}
     }
 
     private companion object {

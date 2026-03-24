@@ -216,7 +216,7 @@ class RemoteBrushTest {
             val topLeftX = 50f
             val topLeftY = 50f
             val matrix33 =
-                RemoteMatrix3x3.createTranslateXY(RemoteFloat(topLeftX), RemoteFloat(topLeftY))
+                RemoteMatrix3x3.createTranslateXy(RemoteFloat(topLeftX), RemoteFloat(topLeftY))
             RemoteBox(modifier = RemoteModifier.fillMaxSize().background(Color.Yellow)) {
                 RemoteBox(
                     modifier =
@@ -225,13 +225,11 @@ class RemoteBrushTest {
                                 object : RemotePainter() {
                                     override fun RemoteDrawScope.onDraw() {
                                         val paint = RemotePaint {
-                                            applyRemoteBrush(
-                                                RemoteBrush.bitmap(image),
-                                                remoteSize,
-                                                matrix33,
-                                            )
+                                            with(RemoteBrush.bitmap(image)) {
+                                                applyTo(this@RemotePaint, size, matrix33)
+                                            }
                                         }
-                                        this.drawRoundRect(
+                                        drawRoundRect(
                                             paint,
                                             RemoteOffset(topLeftX.rf, topLeftY.rf),
                                             imageSize,

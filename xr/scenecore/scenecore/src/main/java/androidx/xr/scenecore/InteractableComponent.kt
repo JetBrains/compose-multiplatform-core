@@ -32,12 +32,12 @@ import java.util.function.Consumer
 public class InteractableComponent
 private constructor(
     private val sceneRuntime: SceneRuntime,
-    private val entityManager: EntityManager,
+    private val entityRegistry: EntityRegistry,
     private val executor: Executor,
     private val inputEventListener: Consumer<InputEvent>,
 ) : Component {
     private val rtInputEventListener = RtInputEventListener { rtEvent ->
-        inputEventListener.accept(rtEvent.toInputEvent(entityManager))
+        inputEventListener.accept(rtEvent.toInputEvent(entityRegistry))
     }
     private val rtInteractableComponent by lazy {
         sceneRuntime.createInteractableComponent(executor, rtInputEventListener)
@@ -73,11 +73,11 @@ private constructor(
         /** Factory for Interactable component. */
         internal fun create(
             sceneRuntime: SceneRuntime,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             executor: Executor,
             inputEventListener: Consumer<InputEvent>,
         ): InteractableComponent {
-            return InteractableComponent(sceneRuntime, entityManager, executor, inputEventListener)
+            return InteractableComponent(sceneRuntime, entityRegistry, executor, inputEventListener)
         }
 
         /**
@@ -94,7 +94,7 @@ private constructor(
             executor: Executor,
             inputEventListener: Consumer<InputEvent>,
         ): InteractableComponent =
-            create(session.sceneRuntime, session.scene.entityManager, executor, inputEventListener)
+            create(session.sceneRuntime, session.scene.entityRegistry, executor, inputEventListener)
 
         /**
          * Public factory for creating an InteractableComponent. It enables access to raw input

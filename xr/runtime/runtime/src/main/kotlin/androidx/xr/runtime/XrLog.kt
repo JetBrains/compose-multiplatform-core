@@ -139,7 +139,7 @@ public object XrLog {
      * @param throwable An optional exception for Android to log in addition to your message.
      * @param message The message you want logged.
      */
-    @JvmOverloads
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun error(throwable: Throwable? = null, message: () -> String) {
         if (isEnabled && isLoggable(Level.ERROR)) {
             Log.e(TAG, message(), throwable)
@@ -151,6 +151,7 @@ public object XrLog {
      *
      * @param message The message you want logged.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun error(message: String): Unit = error { message }
 
     /**
@@ -160,7 +161,7 @@ public object XrLog {
      * @param throwable An optional exception for Android to log in addition to your message.
      * @param message The message you want logged.
      */
-    @JvmOverloads
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun warn(throwable: Throwable? = null, message: () -> String) {
         if (isEnabled && isLoggable(Level.WARN)) {
             Log.w(TAG, message(), throwable)
@@ -173,6 +174,7 @@ public object XrLog {
      *
      * @param message The message you want logged.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun warn(message: String): Unit = warn { message }
 
     /**
@@ -181,7 +183,7 @@ public object XrLog {
      * @param throwable An optional exception for Android to log in addition to your message.
      * @param message The message you want logged.
      */
-    @JvmOverloads
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun info(throwable: Throwable? = null, message: () -> String) {
         if (isEnabled && isLoggable(Level.INFO)) {
             Log.i(TAG, message(), throwable)
@@ -193,6 +195,7 @@ public object XrLog {
      *
      * @param message The message you want logged.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun info(message: String): Unit = info { message }
 
     /**
@@ -201,7 +204,7 @@ public object XrLog {
      * @param throwable An optional exception for Android to log in addition to your message.
      * @param message The message you want logged.
      */
-    @JvmOverloads
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun debug(throwable: Throwable? = null, message: () -> String) {
         if (isEnabled && isLoggable(Level.DEBUG)) {
             Log.d(TAG, message(), throwable)
@@ -213,6 +216,7 @@ public object XrLog {
      *
      * @param message The message you want logged.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun debug(message: String): Unit = debug { message }
 
     /**
@@ -221,7 +225,7 @@ public object XrLog {
      * @param throwable An optional exception for Android to log in addition to your message.
      * @param message The message you want logged.
      */
-    @JvmOverloads
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun verbose(throwable: Throwable? = null, message: () -> String) {
         if (isEnabled && isLoggable(Level.VERBOSE)) {
             Log.v(TAG, message(), throwable)
@@ -233,6 +237,7 @@ public object XrLog {
      *
      * @param message The message you want logged.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun verbose(message: String): Unit = verbose { message }
 
     private fun isLoggable(level: Level): Boolean = level >= XrLog.level

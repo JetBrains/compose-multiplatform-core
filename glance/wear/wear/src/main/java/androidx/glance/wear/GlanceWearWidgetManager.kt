@@ -85,7 +85,7 @@ public class GlanceWearWidgetManager {
      * * **Tiles** provided via `androidx.wear.tiles.TileService`.
      * * **Widgets** provided via [GlanceWearWidgetService].
      *
-     * **Note:** A [ContainerInfo.CONTAINER_TYPE_FULLSCREEN] result represents either a standard
+     * **Note:** A [ContainerInfo.CONTAINER_TYPE_TILE_COMPAT] result represents either a standard
      * `TileService` or a [GlanceWearWidgetService] running in compatibility mode.
      *
      * **Legacy Behavior (Pre-API 34):** On SDKs prior to Android 14 (U), this method uses a
@@ -126,7 +126,7 @@ public class GlanceWearWidgetManager {
                                 ),
                             // TODO: b/485487815 - Set container type correctly when Wear 7 SDK will
                             // be available
-                            containerType = ContainerInfo.CONTAINER_TYPE_FULLSCREEN,
+                            containerType = ContainerInfo.CONTAINER_TYPE_TILE_COMPAT,
                         )
                     }
                 continuation.resume(widgets)

@@ -43,7 +43,11 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 @RemoteComposable
 fun RemoteIconButtonEnabled() {
     RemoteIconButton(testAction, enabled = true.rb) {
-        RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
+        RemoteIcon(
+            imageVector = TestImageVectors.VolumeUp,
+            contentDescription = null,
+            modifier = RemoteModifier.size(24.rdp),
+        )
     }
 }
 

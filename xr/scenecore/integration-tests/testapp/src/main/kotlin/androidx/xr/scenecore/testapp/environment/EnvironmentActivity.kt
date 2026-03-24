@@ -17,7 +17,6 @@
 package androidx.xr.scenecore.testapp.environment
 
 import android.annotation.SuppressLint
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -55,7 +54,6 @@ import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import androidx.xr.scenecore.testapp.ui.EventLogRecyclerViewAdapter
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.slider.Slider
-import java.io.File
 import java.nio.file.Paths
 import java.text.DecimalFormat
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -162,10 +160,7 @@ class EnvironmentActivity : AppCompatActivity() {
         loadPathButton.setOnClickListener {
             lifecycleScope.launch {
                 greySkybox =
-                    ExrImage.createFromZip(
-                        session!!,
-                        Uri.fromFile(File("skyboxes", "GreySkybox.zip")),
-                    )
+                    ExrImage.createFromZip(session!!, Paths.get("skyboxes", "GreySkybox.zip"))
                 addEvent(EventType.SKYBOX_CHANGED, "Grey Skybox loaded from Path")
                 findViewById<Button>(R.id.environment_button2_1).isEnabled = true
             }

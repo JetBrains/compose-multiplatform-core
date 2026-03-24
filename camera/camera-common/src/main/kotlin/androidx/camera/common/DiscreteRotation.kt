@@ -56,12 +56,22 @@ public value class DiscreteRotation @PublishedApi internal constructor(public va
             return DiscreteRotation(degrees)
         }
 
-        /** Round integer [degrees] to a [DiscreteRotation]. */
+        /**
+         * Round [degrees] to the nearest [DiscreteRotation] (0, 90, 180, 270). Negative values are
+         * rounded to the nearest positive [DiscreteRotation].
+         *
+         * @see DiscreteRotationMath.round
+         */
         @Suppress("ValueClassUsageWithoutJvmName", "MissingJvmstatic")
         public fun round(degrees: Int): DiscreteRotation =
             DiscreteRotation(DiscreteRotationMath.round(degrees))
 
-        /** Round floating point [degrees] to a [DiscreteRotation]. */
+        /**
+         * Round [degrees] to the nearest [DiscreteRotation] (0, 90, 180, 270). Negative values are
+         * rounded to the nearest positive [DiscreteRotation].
+         *
+         * @see DiscreteRotationMath.round
+         */
         @Suppress("ValueClassUsageWithoutJvmName", "MissingJvmstatic")
         public fun round(degrees: Float): DiscreteRotation =
             DiscreteRotation(DiscreteRotationMath.round(degrees))

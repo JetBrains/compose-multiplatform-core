@@ -1146,6 +1146,43 @@ public class GridWidgetTest {
     }
 
     @Test
+    public void testChangeAdapter_clearSpanCache() throws Throwable {
+        Intent intent = new Intent();
+        intent.putExtra(GridActivity.EXTRA_LAYOUT_RESOURCE_ID, R.layout.vertical_grid);
+        intent.putExtra(GridActivity.EXTRA_NUM_ITEMS, 150);
+        intent.putExtra(GridActivity.EXTRA_STAGGERED, false);
+        intent.putExtra(GridActivity.EXTRA_SPAN_SIZES, new int[]{
+                0, 3, // 0th item span size is 3
+                99, 3, // 99th item span size is 3
+        });
+        initActivity(intent);
+        mOrientation = BaseGridView.VERTICAL;
+        mNumRows = 3;
+
+        // Remove item should trigger spanLookupSize cache being cleared.
+        scrollToEnd(mVerifyLayout);
+        startWaitLayout();
+        mActivityTestRule.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mGridView.setItemAnimator(null);
+                mActivity.mGridView.setItemViewCacheSize(0);
+                // Remove item 3 and update span sizes.
+                mActivity.setSpanSizes(new int[]{
+                        0, 3, // 0th item span size is 3
+                        98, 3, // 98th item span size is 3
+                });
+                mActivity.removeItems(3, 1);
+            }
+        });
+        waitForLayout();
+        scrollToBegin(mVerifyLayout);
+
+        StandardGrid standardGrid = (StandardGrid) mLayoutManager.mGrid;
+        assertEquals(0, standardGrid.mSpanSizeLookup.getCachedSpanIndex(98, 3));
+    }
+
+    @Test
     public void testFillAllSpansAndPaddings() throws Throwable {
         Intent intent = new Intent();
         intent.putExtra(GridActivity.EXTRA_LAYOUT_RESOURCE_ID, R.layout.vertical_grid);
@@ -1343,7 +1380,7 @@ public class GridWidgetTest {
         scrollToBegin(mVerifyLayout);
 
         verifyBeginAligned();
-        assertTrue(((StandardGrid) mLayoutManager.mGrid).mSpanSupport == null);
+        assertTrue(((StandardGrid) mLayoutManager.mGrid).mSpanSizeLookup == null);
     }
 
     @Ignore // b/266757643

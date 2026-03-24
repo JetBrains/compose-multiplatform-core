@@ -162,7 +162,7 @@ public constructor(
          *     - No `<container>` tags are defined.
          *     - Multiple `<container>` tags have the same `type`.
          *     - Invalid resource IDs.
-         *     - Using `CONTAINER_TYPE_FULLSCREEN` which is not supported for widgets.
+         *     - Using `CONTAINER_TYPE_TILE_COMPAT` which is not supported for widgets.
          */
         @Throws(PackageManager.NameNotFoundException::class, XmlPullParserException::class)
         @JvmStatic
@@ -242,14 +242,20 @@ public constructor(
     }
 
     /** The container type of a widget. It defines the size and shape of the container. */
-    @IntDef(CONTAINER_TYPE_FULLSCREEN, CONTAINER_TYPE_LARGE, CONTAINER_TYPE_SMALL)
+    @IntDef(CONTAINER_TYPE_TILE_COMPAT, CONTAINER_TYPE_LARGE, CONTAINER_TYPE_SMALL)
     @RestrictTo(LIBRARY_GROUP)
     @Retention(AnnotationRetention.SOURCE)
     public annotation class ContainerType
 
     public companion object {
-        /** Represents a fullscreen widget container, equivalent to a Wear Tile. */
-        public const val CONTAINER_TYPE_FULLSCREEN: Int = 0
+        /**
+         * Represents a container equivalent to a Wear Tile. This widget is embedded inside a Tile
+         * container, and its contents are restricted to specs similar to [CONTAINER_TYPE_LARGE]
+         *
+         * For this container type, the host shows the widget label above the contents (and may also
+         * show icon).
+         */
+        public const val CONTAINER_TYPE_TILE_COMPAT: Int = 0
 
         /**
          * Represents a large widget container. Support for this container type is device dependent.
@@ -268,18 +274,22 @@ public constructor(
         @JvmStatic
         public fun containerTypeToString(@ContainerType containerType: Int): String =
             when (containerType) {
-                CONTAINER_TYPE_FULLSCREEN -> STRING_CONTAINER_TYPE_FULLSCREEN
+                CONTAINER_TYPE_TILE_COMPAT -> STRING_CONTAINER_TYPE_FULLSCREEN
                 CONTAINER_TYPE_SMALL -> STRING_CONTAINER_TYPE_SMALL
                 CONTAINER_TYPE_LARGE -> STRING_CONTAINER_TYPE_LARGE
                 else -> containerType.toString()
             }
 
+        /**
+         * Returns a [ContainerType] for a given string representation or null if it's not a valid
+         * value.
+         */
         @RestrictTo(LIBRARY_GROUP)
         @JvmStatic
         @ContainerType
         public fun containerTypeFromString(input: String): Int? =
             when (input.uppercase()) {
-                STRING_CONTAINER_TYPE_FULLSCREEN -> CONTAINER_TYPE_FULLSCREEN
+                STRING_CONTAINER_TYPE_FULLSCREEN -> CONTAINER_TYPE_TILE_COMPAT
                 STRING_CONTAINER_TYPE_SMALL -> CONTAINER_TYPE_SMALL
                 STRING_CONTAINER_TYPE_LARGE -> CONTAINER_TYPE_LARGE
                 else -> null

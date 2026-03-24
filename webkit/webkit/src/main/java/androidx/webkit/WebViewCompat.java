@@ -1394,7 +1394,11 @@ public class WebViewCompat {
     /**
      * Callback interface for
      * {@link WebViewCompat#startUpWebView(Context, WebViewStartUpConfig, WebViewStartUpCallback)}.
+     *
+     * @deprecated This is set for removal in the next release,
+     * use {@link #startUpWebView(Context, WebViewStartUpConfig, WebViewOutcomeReceiver)}
      */
+    @Deprecated(forRemoval = true)
     @ExperimentalAsyncStartUp
     public interface WebViewStartUpCallback {
         /**
@@ -1435,7 +1439,13 @@ public class WebViewCompat {
      * @param config   configuration for startup.
      * @param callback the callback triggered when WebView startup is complete. This will be called
      *                 on the main looper (Looper.getMainLooper()).
+     *
+     * @deprecated This is an experimental version and is planned to be removed in the next
+     * release.
+     * Use
+     * {@link #startUpWebView(Context, WebViewStartUpConfig, WebViewOutcomeReceiver)} instead.
      */
+    @Deprecated(forRemoval = true)
     @ExperimentalAsyncStartUp
     @AnyThread
     public static void startUpWebView(
@@ -1446,18 +1456,94 @@ public class WebViewCompat {
             // Invoke provider init.
             WebViewGlueCommunicator.getWebViewClassLoader();
             if (WebViewFeatureInternal.ASYNC_WEBVIEW_STARTUP.isSupportedByWebView()) {
-                // We want to ensure that the callback is run on the Android main looper. The callee
-                // doesn't guarantee this. It's also desirable to post it to make sure that we don't
+                // We want to ensure that the callback is run on the Android main looper. The
+                // callee
+                // doesn't guarantee this. It's also desirable to post it to make sure that
+                // we don't
                 // run the app's callback synchronously from inside startChromiumLocked:
                 // - This helps avoid making the blocking task longer.
                 // - If the app's callback has a problem the stack trace will hopefully make it
                 // clearer that it's not WebView's fault since WebView code will not be in the
                 // stack trace.
-                getFactory().startUpWebView(config, (result) -> {
+                getFactory().startUpWebView(config, (WebViewStartUpCallback) (result) -> {
                     new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess(result));
                 });
                 return;
             }
+            if (config.shouldRunUiThreadStartUpTasks()) {
+                // This method implicitly does WebView startup.
+                WebSettings.getDefaultUserAgent(context.getApplicationContext());
+            } else {
+                // On versions of WebView without the underlying support for the API the only
+                // part
+                // of startup we can do without blocking the UI thread already happened during
+                // `getWebViewClassLoader` above and so there's nothing more to do.
+            }
+            // Trigger the callback from the main looper.
+            // The framework doesn't support providing any diagnostic information, therefore,
+            // returning `null` for every method.
+            new Handler(Looper.getMainLooper()).post(
+                    () -> callback.onSuccess(new NullReturningWebViewStartUpResult()));
+        });
+    }
+
+    /**
+     * Asynchronously trigger WebView startup.
+     * <p>
+     * WebView startup is a time-consuming process that is normally triggered during the first
+     * usage of WebView related APIs. WebView startup happens once per process.
+     * For example, the first call to {@code new WebView()} can take longer to
+     * complete than future calls due to WebView startup being triggered. The Android
+     * UI thread remains blocked till the startup completes.
+     * <p>
+     * This method allows callers to trigger WebView startup at a time of their choosing.
+     * <p>
+     * There are performance improvements this API provides.
+     * This method ensures that the portions of WebView startup which are able to run in the
+     * background will do so. Other portions of startup will still run on the UI thread.
+     * <p>
+     * Any APIs in {@code android.webkit} and {@code androidx.webkit} (including
+     * {@link WebViewFeature}) MUST only be called after the callback is invoked in order to
+     * ensure the maximum benefit.
+     * There is no feature check or call to {@link WebViewFeature} required for using this method.
+     * <p>
+     * This API can be called multiple times. The callback will be called promptly if startup
+     * has already completed.
+     * <p>
+     * Startup is not expected to fail under normal circumstances, but can in rare cases. If a
+     * failure has been reported to the callback, calling any other WebView APIs is likely to throw
+     * an exception or immediately crash, and should be avoided if possible.
+     *
+     * @param context  Application Context.
+     * @param config   configuration for startup.
+     * @param callback the callback triggered when WebView startup is complete or fails. This will
+     *                 be called on the main looper (Looper.getMainLooper()).
+     */
+    @SuppressLint("UnsafeOptInUsageError")
+    @SuppressWarnings("deprecation")
+    @AnyThread
+    public static void startUpWebView(
+            @NonNull Context context,
+            @NonNull WebViewStartUpConfig config,
+            @NonNull WebViewOutcomeReceiver<WebViewStartUpResult, WebViewStartupException>
+                    callback) {
+        config.getBackgroundExecutor().execute(() -> {
+            // Invoke provider init.
+            WebViewGlueCommunicator.getWebViewClassLoader();
+            // V2: If the ASYNC_WEBVIEW_STARTUP_V2 feature is supported, we call
+            // the new version of the API which supports WebViewOutcomeReceiver.
+            if (WebViewFeatureInternal.ASYNC_WEBVIEW_STARTUP_V2.isSupportedByWebView()) {
+                getFactory().startUpWebView(config, callback);
+                return;
+            }
+            // V1: If the ASYNC_WEBVIEW_STARTUP feature is supported, we call
+            // the old version of the API and adapt the callback.
+            if (WebViewFeatureInternal.ASYNC_WEBVIEW_STARTUP.isSupportedByWebView()) {
+                getFactory().startUpWebView(config, (WebViewStartUpCallback) callback::onResult);
+                return;
+            }
+            // Default: If none of the async startup features are supported, we
+            // fallback to calling getDefaultUserAgent if requested.
             if (config.shouldRunUiThreadStartUpTasks()) {
                 // This method implicitly does WebView startup.
                 WebSettings.getDefaultUserAgent(context.getApplicationContext());
@@ -1470,7 +1556,7 @@ public class WebViewCompat {
             // The framework doesn't support providing any diagnostic information, therefore,
             // returning `null` for every method.
             new Handler(Looper.getMainLooper()).post(
-                    () -> callback.onSuccess(new NullReturningWebViewStartUpResult()));
+                    () -> callback.onResult(new NullReturningWebViewStartUpResult()));
         });
     }
 
@@ -1506,7 +1592,6 @@ public class WebViewCompat {
         }
     }
 
-    @ExperimentalAsyncStartUp
     private static class NullReturningWebViewStartUpResult implements WebViewStartUpResult {
         @Override
         public Long getTotalTimeInUiThreadMillis() {
@@ -1626,17 +1711,6 @@ public class WebViewCompat {
     }
 
     /**
-     * Denotes that the WebViewCompat#saveState API surface is experimental.
-     * <p>
-     * It may change without warning and should not be relied upon for non-experimental purposes.
-     */
-    @Retention(RetentionPolicy.CLASS)
-    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
-    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
-    public @interface ExperimentalSaveState {
-    }
-
-    /**
      * Saves the state of the provided WebView, such as for use with
      * {@link Activity#onSaveInstanceState}. This is an extension of
      * {@link WebView#saveState(Bundle)} and the returned state can be restored through
@@ -1656,7 +1730,6 @@ public class WebViewCompat {
     @RequiresFeature(name = WebViewFeature.SAVE_STATE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
-    @ExperimentalSaveState
     public static void saveState(@NonNull WebView webView,
             @NonNull Bundle outState,
             @IntRange(from = 1) int maxSizeBytes,
@@ -1664,55 +1737,6 @@ public class WebViewCompat {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.SAVE_STATE;
         if (feature.isSupportedByWebView()) {
             getProvider(webView).saveState(outState, maxSizeBytes, includeForwardState);
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
-    }
-
-    /**
-     * Sets the {@link WebNavigationClient} for the given {@link WebView}.
-     *
-     * @param webView The {@link WebView} to set the client for.
-     * @param client  The {@link WebNavigationClient} to set.
-     * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#NAVIGATION_CALLBACK_BASIC}
-     *                                       feature is not supported.
-     * @deprecated Use {@link #addNavigationListener(WebView, NavigationListener)} instead.
-     */
-    @RequiresFeature(name = WebViewFeature.NAVIGATION_CALLBACK_BASIC,
-            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @UiThread
-    @WebNavigationClient.ExperimentalNavigationCallback
-    @Deprecated
-    public static void setWebNavigationClient(@NonNull WebView webView,
-            @NonNull WebNavigationClient client) {
-        ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_CALLBACK_BASIC;
-        if (feature.isSupportedByWebView()) {
-            getProvider(webView).setWebNavigationClient(client);
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
-    }
-
-    /**
-     * Gets the {@link WebNavigationClient} currently set for the given {@link WebView}.
-     *
-     * @param webView The {@link WebView} to get the client from.
-     * @return The {@link WebNavigationClient} currently set, or {@code null} if none is set.
-     * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#NAVIGATION_CALLBACK_BASIC}
-     *                                       feature is not supported.
-     * @deprecated This will not be part of the final API.
-     */
-    @RequiresFeature(name = WebViewFeature.NAVIGATION_CALLBACK_BASIC,
-            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @UiThread
-    @WebNavigationClient.ExperimentalNavigationCallback
-    @Deprecated
-    public static @NonNull WebNavigationClient getWebNavigationClient(@NonNull WebView webView) {
-        ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_CALLBACK_BASIC;
-        if (feature.isSupportedByWebView()) {
-            return getProvider(webView).getWebNavigationClient();
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
@@ -1730,16 +1754,15 @@ public class WebViewCompat {
      * @throws IllegalStateException         if the {@code listener} has already been added to the
      *                                       {@code webView}.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#NAVIGATION_CALLBACK_BASIC}
+     *                                       {@link WebViewFeature#NAVIGATION_LISTENER}
      *                                       feature is not supported.
      */
-    @RequiresFeature(name = WebViewFeature.NAVIGATION_LISTENER_V1,
+    @RequiresFeature(name = WebViewFeature.NAVIGATION_LISTENER,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
-    @WebNavigationClient.ExperimentalNavigationCallback
     public static void addNavigationListener(@NonNull WebView webView, @NonNull Executor executor,
             @NonNull NavigationListener listener) {
-        ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_LISTENER_V1;
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_LISTENER;
         if (feature.isSupportedByWebView()) {
             getProvider(webView).addNavigationListener(executor, listener);
         } else {
@@ -1760,14 +1783,13 @@ public class WebViewCompat {
      * @param webView  The {@link WebView} to set the client for.
      * @param listener The {@link NavigationListener} to add.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#NAVIGATION_CALLBACK_BASIC}
+     *                                       {@link WebViewFeature#NAVIGATION_LISTENER}
      *                                       feature is not supported.
      * @see #addNavigationListener(WebView, Executor, NavigationListener)
      */
-    @RequiresFeature(name = WebViewFeature.NAVIGATION_LISTENER_V1,
+    @RequiresFeature(name = WebViewFeature.NAVIGATION_LISTENER,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
-    @WebNavigationClient.ExperimentalNavigationCallback
     public static void addNavigationListener(@NonNull WebView webView,
             @NonNull NavigationListener listener) {
         addNavigationListener(webView, new Handler(Looper.getMainLooper())::post,
@@ -1784,17 +1806,16 @@ public class WebViewCompat {
      * @param webView  The {@link WebView} to set the client for.
      * @param listener The {@link NavigationListener} to remove.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#NAVIGATION_CALLBACK_BASIC}
+     *                                       {@link WebViewFeature#NAVIGATION_LISTENER}
      *                                       feature is not supported.
      * @see #addNavigationListener(WebView, Executor, NavigationListener)
      */
-    @RequiresFeature(name = WebViewFeature.NAVIGATION_LISTENER_V1,
+    @RequiresFeature(name = WebViewFeature.NAVIGATION_LISTENER,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
-    @WebNavigationClient.ExperimentalNavigationCallback
     public static void removeNavigationListener(@NonNull WebView webView,
             @NonNull NavigationListener listener) {
-        ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_LISTENER_V1;
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_LISTENER;
         if (feature.isSupportedByWebView()) {
             getProvider(webView).removeNavigationListener(listener);
         } else {

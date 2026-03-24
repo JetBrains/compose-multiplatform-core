@@ -100,6 +100,7 @@ fun RemoteButtonWithIcon() {
                 imageVector = TestImageVectors.VolumeUp,
                 contentDescription = null,
                 tint = RemoteButtonDefaults.buttonColors().iconColor,
+                modifier = RemoteModifier.size(24.rdp),
             )
         },
         label = { RemoteText("label".rs) },
@@ -123,6 +124,7 @@ fun RemoteButtonWithIconAndSecondaryLabel() {
                 imageVector = TestImageVectors.VolumeUp,
                 contentDescription = null,
                 tint = RemoteButtonDefaults.buttonColors().iconColor,
+                modifier = RemoteModifier.size(24.rdp),
             )
         },
         secondaryLabel = { RemoteText("secondaryLabel".rs) },

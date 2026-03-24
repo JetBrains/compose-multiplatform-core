@@ -53,7 +53,7 @@ import java.util.function.Consumer
 public class SpatialEnvironment
 internal constructor(
     private val sceneRuntime: SceneRuntime,
-    private val entityManager: EntityManager,
+    private val entityRegistry: EntityRegistry,
 ) {
     private val rtEnvironment: RtSpatialEnvironment = sceneRuntime.spatialEnvironment
 
@@ -236,7 +236,7 @@ internal constructor(
             val geometry = rtPreference.geometry?.let { GltfModel(null, it) }
             val apiEntity =
                 rtPreference.geometryEntity?.let { rtEntity ->
-                    entityManager.getEntityForRtEntity(rtEntity) as? GltfModelEntity
+                    entityRegistry.getEntityForRtEntity(rtEntity) as? GltfModelEntity
                 }
             return SpatialEnvironmentPreference(skybox, geometry, apiEntity)
         }

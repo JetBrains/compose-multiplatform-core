@@ -70,7 +70,7 @@ class EntityTest {
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private lateinit var sceneRuntime: SceneRuntime
     private lateinit var renderingRuntime: RenderingRuntime
-    private lateinit var entityManager: EntityManager
+    private lateinit var entityRegistry: EntityRegistry
     private lateinit var session: Session
     private lateinit var renderViewpoint: RenderViewpoint
 
@@ -140,11 +140,11 @@ class EntityTest {
             )
         )
         renderViewpoint = RenderViewpoint.left(session)!!
-        entityManager = session.scene.entityManager
-        activitySpace = ActivitySpace.create(sceneRuntime, entityManager)
+        entityRegistry = session.scene.entityRegistry
+        activitySpace = ActivitySpace.create(sceneRuntime, entityRegistry)
         gltfModel = GltfModel.create(session, Paths.get("test.glb"))
         gltfModelEntity =
-            GltfModelEntity.create(sceneRuntime, renderingRuntime, entityManager, gltfModel)
+            GltfModelEntity.create(sceneRuntime, renderingRuntime, entityRegistry, gltfModel)
         panelEntity =
             PanelEntity.create(
                 session,
@@ -185,7 +185,7 @@ class EntityTest {
             GltfModelEntity.create(
                 sceneRuntime,
                 renderingRuntime,
-                entityManager,
+                entityRegistry,
                 gltfModel,
                 parent = null,
             )
@@ -239,7 +239,7 @@ class EntityTest {
             GltfModelEntity.create(
                 sceneRuntime,
                 renderingRuntime,
-                entityManager,
+                entityRegistry,
                 gltfModel,
                 parent = null,
             )
@@ -282,7 +282,7 @@ class EntityTest {
             GltfModelEntity.create(
                 sceneRuntime,
                 renderingRuntime,
-                entityManager,
+                entityRegistry,
                 gltfModel,
                 parent = null,
             )

@@ -37,7 +37,7 @@ internal class GltfModelNodeFeatureImpl(
     private val activeMaterialOverrides = mutableSetOf<Int>()
 
     override var localPose: Pose
-        get() = impressApi.getImpressNodeLocalTransform(impressNode).pose
+        get() = impressApi.getImpressNodeLocalTransform(impressNode).toPose()
         set(value) {
             val currentScale = impressApi.getImpressNodeLocalTransform(impressNode).scale
             val newMatrix = Matrix4.fromTrs(value.translation, value.rotation, currentScale)
@@ -48,14 +48,14 @@ internal class GltfModelNodeFeatureImpl(
     override var localScale: Vector3
         get() = impressApi.getImpressNodeLocalTransform(impressNode).scale
         set(value) {
-            val currentPose = impressApi.getImpressNodeLocalTransform(impressNode).pose
+            val currentPose = impressApi.getImpressNodeLocalTransform(impressNode).toPose()
             val newMatrix = Matrix4.fromTrs(currentPose.translation, currentPose.rotation, value)
             impressApi.setImpressNodeLocalTransform(impressNode, newMatrix)
             impressApi.scheduleGltfReskinning(modelRootNode)
         }
 
     override var modelPose: Pose
-        get() = impressApi.getImpressNodeRelativeTransform(impressNode, modelRootNode).pose
+        get() = impressApi.getImpressNodeRelativeTransform(impressNode, modelRootNode).toPose()
         set(value) {
             val currentScale =
                 impressApi.getImpressNodeRelativeTransform(impressNode, modelRootNode).scale
@@ -68,7 +68,7 @@ internal class GltfModelNodeFeatureImpl(
         get() = impressApi.getImpressNodeRelativeTransform(impressNode, modelRootNode).scale
         set(value) {
             val currentPose =
-                impressApi.getImpressNodeRelativeTransform(impressNode, modelRootNode).pose
+                impressApi.getImpressNodeRelativeTransform(impressNode, modelRootNode).toPose()
             val newMatrix = Matrix4.fromTrs(currentPose.translation, currentPose.rotation, value)
             impressApi.setImpressNodeRelativeTransform(impressNode, modelRootNode, newMatrix)
             impressApi.scheduleGltfReskinning(modelRootNode)

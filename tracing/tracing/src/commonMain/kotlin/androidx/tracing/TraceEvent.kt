@@ -49,8 +49,6 @@ import androidx.annotation.RestrictTo
  * Code outside of tracing-driver implementation should only ever consume these objects, not produce
  * them.
  */
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 @DelicateTracingApi
 public class TraceEvent
 internal constructor(
@@ -194,12 +192,14 @@ internal constructor(
             lastFrameIndex = LAST_INDEX_WHEN_EMPTY,
         )
 
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setPreamble(trackDescriptor: TrackDescriptor) {
         this.trackDescriptor = trackDescriptor
         this.timestamp = nanoTime()
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setBeginSection(trackUuid: Long, name: String) {
         type = TRACE_EVENT_TYPE_BEGIN
         this.trackUuid = trackUuid
@@ -208,6 +208,7 @@ internal constructor(
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setBeginSectionWithFlows(
         trackUuid: Long,
         name: String,
@@ -221,6 +222,7 @@ internal constructor(
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setEndSection(trackUuid: Long) {
         type = TRACE_EVENT_TYPE_END
         this.trackUuid = trackUuid
@@ -228,6 +230,7 @@ internal constructor(
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setInstant(trackUuid: Long, name: String) {
         type = TRACE_EVENT_TYPE_INSTANT
         this.trackUuid = trackUuid
@@ -236,6 +239,7 @@ internal constructor(
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setCounterLong(trackUuid: Long, value: Long) {
         type = TRACE_EVENT_TYPE_COUNTER
         this.trackUuid = trackUuid
@@ -244,6 +248,7 @@ internal constructor(
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setCounterDouble(trackUuid: Long, value: Double) {
         type = TRACE_EVENT_TYPE_COUNTER
         this.trackUuid = trackUuid

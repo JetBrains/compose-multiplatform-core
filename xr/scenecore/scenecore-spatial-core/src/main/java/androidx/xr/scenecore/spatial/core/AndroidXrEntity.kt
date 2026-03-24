@@ -50,7 +50,7 @@ import java.util.concurrent.ScheduledExecutorService
 /**
  * Implementation of a JXR SceneCore Entity that wraps an android XR extension Node.
  *
- * <p>This should not be created on its own but should be inherited by objects that need to wrap an
+ * This should not be created on its own but should be inherited by objects that need to wrap an
  * Android extension node.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -58,10 +58,10 @@ import java.util.concurrent.ScheduledExecutorService
 public abstract class AndroidXrEntity(
     context: Context?,
     // Returns the underlying extension Node for the Entity.
-    @JvmField internal val mNode: Node,
-    @JvmField protected val mExtensions: XrExtensions,
-    @JvmField protected val mEntityManager: EntityManager,
-    @JvmField protected val mExecutor: ScheduledExecutorService,
+    @JvmField internal val node: Node,
+    @JvmField protected val extensions: XrExtensions,
+    @JvmField protected val sceneNodeRegistry: SceneNodeRegistry,
+    @JvmField protected val scheduledExecutor: ScheduledExecutorService,
 ) : BaseEntity(context), Entity {
 
     // Visible for testing
@@ -75,7 +75,7 @@ public abstract class AndroidXrEntity(
     private var reformOptions: ReformOptions? = null
 
     init {
-        mEntityManager.setEntityForNode(mNode, this)
+        sceneNodeRegistry.setEntityForNode(node, this)
     }
 
     override var parent: Entity?
@@ -86,13 +86,13 @@ public abstract class AndroidXrEntity(
             }
             super.parent = newParent
 
-            mExtensions.createNodeTransaction().use { transaction ->
+            extensions.createNodeTransaction().use { transaction ->
                 if (newParent == null) {
                     @Suppress("UNUSED_VARIABLE")
-                    val unused = transaction.setVisibility(mNode, false).setParent(mNode, null)
+                    val unused = transaction.setVisibility(node, false).setParent(node, null)
                 } else {
                     @Suppress("UNUSED_VARIABLE")
-                    val unused = transaction.setParent(mNode, newParent.mNode)
+                    val unused = transaction.setParent(node, newParent.node)
                 }
                 transaction.apply()
             }
@@ -117,16 +117,16 @@ public abstract class AndroidXrEntity(
             }
         super<BaseEntity>.setPose(localPose, Space.PARENT)
 
-        mExtensions.createNodeTransaction().use { transaction ->
+        extensions.createNodeTransaction().use { transaction ->
             transaction
                 .setPosition(
-                    mNode,
+                    node,
                     localPose.translation.x,
                     localPose.translation.y,
                     localPose.translation.z,
                 )
                 .setOrientation(
-                    mNode,
+                    node,
                     localPose.rotation.x,
                     localPose.rotation.y,
                     localPose.rotation.z,
@@ -139,8 +139,8 @@ public abstract class AndroidXrEntity(
     override fun setScale(scale: Vector3, @SpaceValue relativeTo: Int) {
         super<BaseEntity>.setScale(scale, relativeTo)
         val localScale = super<BaseEntity>.getScale(Space.PARENT)
-        mExtensions.createNodeTransaction().use { transaction ->
-            transaction.setScale(mNode, localScale.x, localScale.y, localScale.z).apply()
+        extensions.createNodeTransaction().use { transaction ->
+            transaction.setScale(node, localScale.x, localScale.y, localScale.z).apply()
         }
     }
 
@@ -151,8 +151,7 @@ public abstract class AndroidXrEntity(
             // is involved in the parent-child entity hierarchy.
 
             // Any parentless "space" entities (such as the root and anchor entities) are expected
-            // to
-            // override this method non-recursively so that this error is never thrown.
+            // to override this method non-recursively so that this error is never thrown.
             if (parent !is AndroidXrEntity) {
                 throw IllegalStateException(
                     "Cannot get pose in Activity Space with a non-AndroidXrEntity parent"
@@ -170,8 +169,8 @@ public abstract class AndroidXrEntity(
     private val poseInPerceptionSpace: Pose
         get() {
             val perceptionSpaceScenePose =
-                mEntityManager
-                    .getSystemSpaceActivityPoseOfType(PerceptionSpaceScenePose::class.java)[0]
+                sceneNodeRegistry
+                    .getSystemSpaceScenePoseOfType(PerceptionSpaceScenePose::class.java)[0]
             return transformPoseTo(Pose(), perceptionSpaceScenePose)
         }
 
@@ -183,7 +182,7 @@ public abstract class AndroidXrEntity(
         }
         val xrParent = parent as AndroidXrEntity
         val activitySpace =
-            mEntityManager.getSystemSpaceActivityPoseOfType(ActivitySpace::class.java)[0]
+            sceneNodeRegistry.getSystemSpaceScenePoseOfType(ActivitySpace::class.java)[0]
         return activitySpace.transformPoseTo(pose, xrParent)
     }
 
@@ -195,40 +194,40 @@ public abstract class AndroidXrEntity(
         }
         val xrParent = parent as AndroidXrEntity
         val perceptionSpaceScenePose =
-            mEntityManager.getSystemSpaceActivityPoseOfType(PerceptionSpaceScenePose::class.java)[0]
+            sceneNodeRegistry.getSystemSpaceScenePoseOfType(PerceptionSpaceScenePose::class.java)[0]
         return perceptionSpaceScenePose.transformPoseTo(pose, xrParent)
     }
 
     override fun setAlpha(alpha: Float) {
         super<BaseEntity>.setAlpha(alpha)
 
-        mExtensions.createNodeTransaction().use { transaction ->
-            transaction.setAlpha(mNode, super<BaseEntity>.getAlpha()).apply()
+        extensions.createNodeTransaction().use { transaction ->
+            transaction.setAlpha(node, super<BaseEntity>.getAlpha()).apply()
         }
     }
 
     override fun setHidden(hidden: Boolean) {
         super.setHidden(hidden)
 
-        mExtensions.createNodeTransaction().use { transaction ->
+        extensions.createNodeTransaction().use { transaction ->
             if (reformOptions != null) {
                 if (hidden) {
                     // Since this entity is being hidden, disable reform and the highlights around
                     // the node.
-                    @Suppress("UNUSED_VARIABLE") val unused = transaction.disableReform(mNode)
+                    @Suppress("UNUSED_VARIABLE") val unused = transaction.disableReform(node)
                 } else {
                     // Enables reform and the highlights around the node.
                     @Suppress("UNUSED_VARIABLE")
-                    val unused = transaction.enableReform(mNode, reformOptions)
+                    val unused = transaction.enableReform(node, reformOptions)
                 }
             }
-            transaction.setVisibility(mNode, !hidden).apply()
+            transaction.setVisibility(node, !hidden).apply()
         }
     }
 
     override fun addInputEventListener(executor: Executor?, listener: InputEventListener) {
         maybeSetupInputListeners()
-        inputEventListenerMap[listener] = executor ?: mExecutor
+        inputEventListenerMap[listener] = executor ?: scheduledExecutor
     }
 
     /**
@@ -247,7 +246,7 @@ public abstract class AndroidXrEntity(
         if (pointerCaptureInputEventListener.isPresent) {
             return false
         }
-        mNode.requestPointerCapture(executor) { pcState ->
+        node.requestPointerCapture(executor) { pcState ->
             when (pcState) {
                 Node.POINTER_CAPTURE_STATE_PAUSED ->
                     stateListener.onStateChanged(
@@ -281,7 +280,7 @@ public abstract class AndroidXrEntity(
     private fun maybeSetupInputListeners() {
         // Only set up the listener if it doesn't already exist.
         if (inputEventListenerMap.isEmpty() && pointerCaptureInputEventListener.isEmpty) {
-            mNode.listenForInput(mExecutor, this::handleInputEvent)
+            node.listenForInput(scheduledExecutor, this::handleInputEvent)
         }
     }
 
@@ -297,9 +296,9 @@ public abstract class AndroidXrEntity(
     /** Dispatches an event to the active pointer capture listener. */
     private fun dispatchCapturedPointerEvent(xrInputEvent: InputEvent) {
         pointerCaptureInputEventListener.ifPresent { listener ->
-            val executor = pointerCaptureExecutor.orElse(mExecutor)
+            val executor = pointerCaptureExecutor.orElse(scheduledExecutor)
             executor.execute {
-                listener.onInputEvent(RuntimeUtils.getInputEvent(xrInputEvent, mEntityManager))
+                listener.onInputEvent(RuntimeUtils.getInputEvent(xrInputEvent, sceneNodeRegistry))
             }
         }
     }
@@ -308,7 +307,7 @@ public abstract class AndroidXrEntity(
     private fun dispatchStandardEvent(xrInputEvent: InputEvent) {
         inputEventListenerMap.forEach { (listener, executor) ->
             executor.execute {
-                listener.onInputEvent(RuntimeUtils.getInputEvent(xrInputEvent, mEntityManager))
+                listener.onInputEvent(RuntimeUtils.getInputEvent(xrInputEvent, sceneNodeRegistry))
             }
         }
     }
@@ -320,7 +319,7 @@ public abstract class AndroidXrEntity(
 
     /** Stop any pointer capture requests on this Entity. */
     public fun stopPointerCapture() {
-        mNode.stopPointerCapture()
+        node.stopPointerCapture()
         pointerCaptureInputEventListener = Optional.empty()
         pointerCaptureExecutor = Optional.empty()
         maybeStopListeningForInput()
@@ -328,16 +327,16 @@ public abstract class AndroidXrEntity(
 
     private fun maybeStopListeningForInput() {
         if (inputEventListenerMap.isEmpty() && pointerCaptureInputEventListener.isEmpty) {
-            mNode.stopListeningForInput()
+            node.stopListeningForInput()
         }
     }
 
     override fun dispose() {
         inputEventListenerMap.clear()
-        mNode.stopListeningForInput()
+        node.stopListeningForInput()
         reformEventConsumerMap.clear()
-        mExtensions.createNodeTransaction().use { transaction ->
-            @Suppress("UNUSED_VARIABLE") val unused = transaction.disableReform(mNode)
+        extensions.createNodeTransaction().use { transaction ->
+            @Suppress("UNUSED_VARIABLE") val unused = transaction.disableReform(node)
             transaction.apply()
         }
 
@@ -345,7 +344,7 @@ public abstract class AndroidXrEntity(
         if (parent != null) {
             parent = null
         }
-        mEntityManager.removeEntityForNode(mNode)
+        sceneNodeRegistry.removeEntityForNode(node)
         super.dispose()
     }
 
@@ -403,7 +402,7 @@ public abstract class AndroidXrEntity(
                 val entity = weakThis.get()
                 entity?.handleReformEvent(reformEvent)
             }
-            reformOptions = mExtensions.createReformOptions(mExecutor, reformEventConsumer)
+            reformOptions = extensions.createReformOptions(scheduledExecutor, reformEventConsumer)
         }
         return reformOptions!!
     }
@@ -415,14 +414,14 @@ public abstract class AndroidXrEntity(
     @SuppressLint("BanSynchronizedMethods")
     @Synchronized
     public fun updateReformOptions() {
-        mExtensions.createNodeTransaction().use { transaction ->
+        extensions.createNodeTransaction().use { transaction ->
             if (reformOptions!!.enabledReform == 0) {
                 // Disables reform and the highlights around the node.
-                @Suppress("UNUSED_VARIABLE") val unused = transaction.disableReform(mNode)
+                @Suppress("UNUSED_VARIABLE") val unused = transaction.disableReform(node)
             } else {
                 // Enables reform and the highlights around the node.
                 @Suppress("UNUSED_VARIABLE")
-                val unused = transaction.enableReform(mNode, reformOptions)
+                val unused = transaction.enableReform(node, reformOptions)
             }
             transaction.apply()
         }
@@ -432,7 +431,7 @@ public abstract class AndroidXrEntity(
         reformEventConsumer: Consumer<ReformEvent>,
         executor: Executor?,
     ) {
-        val finalExecutor = executor ?: this.mExecutor
+        val finalExecutor = executor ?: this.scheduledExecutor
         reformEventConsumerMap[reformEventConsumer] = finalExecutor
     }
 
@@ -447,10 +446,10 @@ public abstract class AndroidXrEntity(
     ): HitTestResult {
         // Hit tests need to be issued in the activity space then converted to the entity's space.
         val activitySpace =
-            mEntityManager.getSystemSpaceActivityPoseOfType(ActivitySpace::class.java)[0]
+            sceneNodeRegistry.getSystemSpaceScenePoseOfType(ActivitySpace::class.java)[0]
                 ?: throw IllegalStateException("ActivitySpace is null")
         return activitySpace.hitTestRelativeToActivityPose(origin, direction, hitTestFilter, this)
     }
 
-    public open fun getNode(): Node = mNode
+    public open fun getNode(): Node = node
 }

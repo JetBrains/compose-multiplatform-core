@@ -88,7 +88,8 @@ class PaymentRequestActivity : AppCompatActivity() {
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     if (!webView.canGoBack()) {
-                        handleOnBackPressed()
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
                     } else {
                         webView.goBack()
                     }

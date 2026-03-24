@@ -22,10 +22,11 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.completeWith
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
@@ -40,7 +41,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 
 /** Multi process implementation of DataStore. It is multi-process safe. */
 internal class DataStoreImpl<T>(
@@ -58,10 +58,9 @@ internal class DataStoreImpl<T>(
      * simply throws the exception and does not produce new data.
      */
     private val corruptionHandler: CorruptionHandler<T> = ReThrowCorruptionHandler(),
-    context: CoroutineContext = ioDispatcher() + Job(),
+    context: CoroutineContext = ioDispatcher(),
     private val tracer: DataStoreTracer? = null,
 ) : CurrentDataProviderStore<T> {
-    private val writerMutex = Mutex()
     // The coroutine scope for launching coroutines asynchronous to callers.
     // It is built using the given coroutine context which is required to have a
     // Job to control this scope since there is no close API.
@@ -70,20 +69,8 @@ internal class DataStoreImpl<T>(
     init {
         val job = context[Job]
         check(job != null) { "Missing Job on Coroutine context: $context" }
-        job.invokeOnCompletion {
-            // We expect it to always be non-null but we will leave the alternative as a no-op
-            // just in case.
-            it?.let { inMemoryCache.tryUpdate(Final(it)) }
-            // don't try to close storage connection if it was not created in the first place.
-            if (storageConnectionDelegate.isInitialized()) {
-                storageConnection.close()
-            }
-        }
         scope = CoroutineScope(context + job)
     }
-
-    // Gets the coroutine context for store operations that requires a dispatcher change.
-    private fun getCoroutineContext(): CoroutineContext = scope.coroutineContext.minusKey(Job)
 
     /**
      * The actual values of DataStore. This is exposed in the API via [data] to be able to combine
@@ -202,12 +189,12 @@ internal class DataStoreImpl<T>(
         return trace(tracer = tracer, name = "DataStore.updateData") {
             // Get new token as we will have a new span under `JDS.updateData` after `withContext`
             val token = captureTraceToken(tracer)
-            val parentContextElement =
-                currentCoroutineContext()[UpdatingDataContextElement.Companion.Key]
+            val parentContextElement = coroutineContext[UpdatingDataContextElement.Companion.Key]
             parentContextElement?.checkNotUpdating(this)
             val childContextElement =
                 UpdatingDataContextElement(parent = parentContextElement, instance = this)
             withContext(childContextElement) {
+                val ack = CompletableDeferred<T>()
                 val currentDownStreamFlowState = inMemoryCache.currentState
                 // Skip passing the actual cached value if it's Data since Message.Update doesn't
                 // rely on the cached value. This enables potentially earlier GC.
@@ -218,17 +205,10 @@ internal class DataStoreImpl<T>(
                         currentDownStreamFlowState
                     }
 
-                writerMutex.withLock {
-                    val updateMsg = Message.Update(transform, enqueueState, token)
-                    val result = handleUpdate(updateMsg)
-                    // TODO(b/489870964): Remove this call to `yield()`.
-                    // Yield to the data Flow emission.
-                    // This is not necessary, but due to old (unintentional) behavior of the data
-                    // flow emitting for every update, we need to yield to not break this
-                    // existing behavior.
-                    yield()
-                    result
-                }
+                val updateMsg =
+                    Message.Update(transform, ack, enqueueState, coroutineContext, token)
+                writeActor.offer(updateMsg)
+                ack.await()
             }
         }
     }
@@ -236,7 +216,7 @@ internal class DataStoreImpl<T>(
     // cache is only set by the reads who have file lock, so cache always has stable data
     private val inMemoryCache = DataStoreInMemoryCache<T>()
 
-    private val readAndInit = InitDataStore(initTasksList)
+    private val readAndInit = InitDataStore(initTasksList, scope.coroutineContext)
 
     // TODO(b/269772127): make this private after we allow multiple instances of DataStore on the
     //  same file
@@ -244,6 +224,30 @@ internal class DataStoreImpl<T>(
     internal val storageConnection by storageConnectionDelegate
     private val coordinatorDelegate = lazy { storageConnection.coordinator }
     private val coordinator: InterProcessCoordinator by coordinatorDelegate
+
+    private val writeActor =
+        SimpleActor<Message.Update<T>>(
+            scope = scope,
+            onComplete = {
+                // We expect it to always be non-null but we will leave the alternative as a no-op
+                // just in case.
+                it?.let { inMemoryCache.tryUpdate(Final(it)) }
+                // don't try to close storage connection if it was not created in the first place.
+                if (storageConnectionDelegate.isInitialized()) {
+                    storageConnection.close()
+                }
+            },
+            onUndeliveredElement = { msg, ex ->
+                msg.ack.completeExceptionally(
+                    ex
+                        ?: CancellationException(
+                            "DataStore scope was cancelled before updateData could complete"
+                        )
+                )
+            },
+        ) { msg ->
+            handleUpdate(msg)
+        }
 
     // Run on caller's coroutine until there is disk I/O needed.
     private suspend fun readState(requireLock: Boolean, token: DataStoreTraceToken?): State<T> {
@@ -265,39 +269,58 @@ internal class DataStoreImpl<T>(
         }
     }
 
-    private suspend fun handleUpdate(update: Message.Update<T>): T {
-        return trace(tracer = tracer, name = "DataStore.handleUpdate", token = update.token) {
+    private suspend fun handleUpdate(update: Message.Update<T>) {
+        trace(tracer = tracer, name = "DataStore.handleUpdate", token = update.token) {
             // Get new token as we are under a new span ("DataStore.handleUpdate")
             val handleUpdateToken = captureTraceToken(tracer)
-            withContext(getCoroutineContext()) {
-                val result: T
-                when (val currentState = inMemoryCache.currentState) {
-                    is Data -> {
-                        // We are already initialized, we just need to perform the update
-                        result = transformAndWrite(update.transform, handleUpdateToken)
-                    }
-                    is ReadException,
-                    is UnInitialized -> {
-                        if (currentState === update.lastState) {
-                            // we need to try to read again
-                            readAndInitOrPropagateAndThrowFailure(handleUpdateToken)
+            update.ack.completeWith(
+                runCatching {
+                    // Combine caller and datastore context keys. Since we add contexts in the order
+                    // "caller + datastore context", we'll have all the keys from the datastore
+                    // context,
+                    // and all keys in the caller context that were not present in the datastore
+                    // context.
+                    withContext(update.callerContext + coroutineContext) {
+                        val result: T
+                        when (val currentState = inMemoryCache.currentState) {
+                            is Data -> {
+                                // We are already initialized, we just need to perform the update
+                                result =
+                                    transformAndWrite(
+                                        update.transform,
+                                        update.callerContext,
+                                        handleUpdateToken,
+                                    )
+                            }
+                            is ReadException,
+                            is UnInitialized -> {
+                                if (currentState === update.lastState) {
+                                    // we need to try to read again
+                                    readAndInitOrPropagateAndThrowFailure(handleUpdateToken)
 
-                            // We've successfully read, now we need to perform the update
-                            result = transformAndWrite(update.transform, handleUpdateToken)
-                        } else {
-                            // Someone else beat us to read but also failed. We just need to
-                            // signal the writer that is waiting on ack.
-                            // This cast is safe because we can't be in the UnInitialized
-                            // state if the state has changed.
-                            throw (currentState as ReadException).readException
+                                    // We've successfully read, now we need to perform the update
+                                    result =
+                                        transformAndWrite(
+                                            update.transform,
+                                            update.callerContext,
+                                            handleUpdateToken,
+                                        )
+                                } else {
+                                    // Someone else beat us to read but also failed. We just need to
+                                    // signal the writer that is waiting on ack.
+                                    // This cast is safe because we can't be in the UnInitialized
+                                    // state if the state has changed.
+                                    throw (currentState as ReadException).readException
+                                }
+                            }
+
+                            is Final -> throw currentState.finalException // won't happen
+                            is NoValueDataState -> error(BUG_MESSAGE) // won't happen
                         }
+                        result
                     }
-
-                    is Final -> throw currentState.finalException // won't happen
-                    is NoValueDataState -> error(BUG_MESSAGE) // won't happen
                 }
-                result
-            }
+            )
         }
     }
 
@@ -316,7 +339,7 @@ internal class DataStoreImpl<T>(
                     // Get new token as we are under a new span
                     // ("DataStore.readAndInitOrPropagateAndThrowFailure")
                     val readAndInitOrPropagateAndThrowFailureToken = captureTraceToken(tracer)
-                    withContext(getCoroutineContext()) {
+                    withContext(scope.coroutineContext) {
                         trace(
                             tracer = tracer,
                             name = "DataStore.getCoordinatorVersion",
@@ -398,6 +421,7 @@ internal class DataStoreImpl<T>(
 
     private suspend fun transformAndWrite(
         transform: suspend (t: T) -> T,
+        callerContext: CoroutineContext,
         token: DataStoreTraceToken?,
     ): T =
         coordinator.lock {
@@ -410,12 +434,14 @@ internal class DataStoreImpl<T>(
                 // Get new token as we are under a new span ("DataStore.transformAndWrite")
                 val transformAndWriteToken = captureTraceToken(tracer)
                 val newData =
-                    trace(
-                        tracer = tracer,
-                        name = "DataStore.transform",
-                        token = transformAndWriteToken,
-                    ) {
-                        transform(curData.value)
+                    withContext(callerContext) {
+                        trace(
+                            tracer = tracer,
+                            name = "DataStore.transform",
+                            token = transformAndWriteToken,
+                        ) {
+                            transform(curData.value)
+                        }
                     }
 
                 // Check that curData has not changed...
@@ -458,7 +484,7 @@ internal class DataStoreImpl<T>(
     ): Data<T> {
         // Get new token as we are under a new span after `withContext`.
         val readOrHandleCorruptionToken = captureTraceToken(tracer)
-        return withContext(getCoroutineContext()) {
+        return withContext(scope.coroutineContext) {
             trace(
                 tracer = tracer,
                 name = "DataStore.readDataOrHandleCorruption",
@@ -526,7 +552,8 @@ internal class DataStoreImpl<T>(
 
     // Run on DataStore's CoroutineScope for I/O
     private inner class InitDataStore(
-        initTasksList: List<suspend (api: InitializerApi<T>) -> Unit>
+        initTasksList: List<suspend (api: InitializerApi<T>) -> Unit>,
+        val context: CoroutineContext,
     ) : RunOnce() {
         // cleaned after initialization is complete
         private var initTasks: List<suspend (api: InitializerApi<T>) -> Unit>? =
@@ -535,7 +562,7 @@ internal class DataStoreImpl<T>(
         override suspend fun doRun() {
             // Capture new token due to call to `withContext`.
             val readAndInitToken = captureTraceToken(tracer)
-            withContext(getCoroutineContext()) {
+            withContext(context) {
                 trace(
                     tracer = tracer,
                     name = "DataStore.InitDataStore.doRun",

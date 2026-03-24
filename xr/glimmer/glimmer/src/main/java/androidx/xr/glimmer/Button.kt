@@ -99,6 +99,7 @@ public fun Button(
 ) {
     val colors = GlimmerTheme.colors
     val iconSize = GlimmerTheme.iconSizes.small
+    val iconSpacing = GlimmerTheme.componentSpacingValues.extraSmall
 
     val minHeight =
         if (buttonSize == ButtonSize.Medium) {
@@ -107,7 +108,11 @@ public fun Button(
             LargeMinimumHeight
         }
 
-    val depth = SurfaceDepth(depth = null, focusedDepth = GlimmerTheme.depthLevels.level1)
+    val depth =
+        SurfaceDepthEffect(
+            depthEffect = null,
+            focusedDepthEffect = GlimmerTheme.depthEffectLevels.level1,
+        )
 
     CompositionLocalProvider(LocalTextStyle provides GlimmerTheme.typography.bodySmall) {
         Row(
@@ -118,7 +123,7 @@ public fun Button(
                     shape = shape,
                     color = color,
                     contentColor = contentColor,
-                    depth = depth,
+                    depthEffect = depth,
                     border = border,
                     interactionSource = interactionSource,
                     onClick = onClick,
@@ -129,13 +134,13 @@ public fun Button(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (leadingIcon != null) {
-                Box(Modifier.padding(end = IconSpacing).contentColorProvider(colors.primary)) {
+                Box(Modifier.padding(end = iconSpacing).contentColorProvider(colors.primary)) {
                     CompositionLocalProvider(LocalIconSize provides iconSize, content = leadingIcon)
                 }
             }
             content()
             if (trailingIcon != null) {
-                Box(Modifier.padding(start = IconSpacing).contentColorProvider(colors.primary)) {
+                Box(Modifier.padding(start = iconSpacing).contentColorProvider(colors.primary)) {
                     CompositionLocalProvider(
                         LocalIconSize provides iconSize,
                         content = trailingIcon,
@@ -164,27 +169,22 @@ public value class ButtonSize internal constructor(private val value: Int) {
 /** Default values used for [Button]. */
 public object ButtonDefaults {
     /** Default content padding used for a [Button] with the specified [buttonSize]. */
+    @Composable
     public fun contentPadding(buttonSize: ButtonSize): PaddingValues {
+        val componentSpacingValues = GlimmerTheme.componentSpacingValues
         return if (buttonSize == ButtonSize.Medium) {
-            MediumContentPadding
+            PaddingValues(
+                horizontal = componentSpacingValues.large,
+                vertical = componentSpacingValues.small,
+            )
         } else {
-            LargeContentPadding
+            PaddingValues(componentSpacingValues.large)
         }
     }
 }
-
-/** Default content padding for a medium [Button] */
-private val MediumContentPadding =
-    PaddingValues(horizontal = Spacing.Large, vertical = Spacing.Small)
-
-/** Default content padding for a large [Button] */
-private val LargeContentPadding = PaddingValues(Spacing.Large)
 
 /** Default minimum height for a medium [Button] */
 private val MediumMinimumHeight = 48.dp
 
 /** Default minimum height for a large [Button] */
 private val LargeMinimumHeight = 72.dp
-
-/** Spacing between icons and the text in a [Button] */
-private val IconSpacing = Spacing.ExtraSmall

@@ -269,7 +269,7 @@ public class FlowLayout extends RowLayout {
         float rowWidth = selfWidth;
         float rowsHeight = 0f;
         for (ArrayList<Component> row : rows) {
-            rowsHeight += minIntrinsicHeight(context.getContext(), row, false);
+            rowsHeight += minIntrinsicHeight(context.getContext(), row, true);
         }
         switch (mVerticalPositioning) {
             case RowLayout.CENTER:
@@ -280,13 +280,12 @@ public class FlowLayout extends RowLayout {
         }
 
         for (ArrayList<Component> row : rows) {
-            float rowHeight = minIntrinsicHeight(context.getContext(), row, false);
+            float rowHeight = minIntrinsicHeight(context.getContext(), row, true);
             internalLayoutMeasure(context, measure, row, rowWidth, rowHeight, positionX, positionY,
                     rowSize);
             positionY += rowSize.getHeight();
         }
     }
-
 
     /**
      * Populate the documentation with a description of this operation

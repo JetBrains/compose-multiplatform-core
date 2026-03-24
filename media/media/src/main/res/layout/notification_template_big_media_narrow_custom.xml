@@ -16,7 +16,7 @@
   -->
 
 <!-- Layout to be used with only max 3 actions. It has a much larger picture at the left side-->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/status_bar_latest_event_content"
     android:layout_width="match_parent"
     android:layout_height="128dp"
@@ -45,7 +45,8 @@
         android:paddingTop="@dimen/notification_main_column_padding_top"
         android:orientation="horizontal"
         android:layout_toLeftOf="@id/cancel_action"
-        android:layout_toStartOf="@id/cancel_action">
+        android:layout_toStartOf="@id/cancel_action"
+        tools:ignore="PrivateResource">
         <FrameLayout
             android:id="@+id/notification_main_column"
             android:layout_width="match_parent"

@@ -44,9 +44,9 @@ public open class PanelEntity
 internal constructor(
     private val perceptionSpace: PerceptionSpace,
     rtEntity: RtPanelEntity,
-    entityManager: EntityManager,
+    entityRegistry: EntityRegistry,
     @get:JvmName("isMainPanelEntity") public val isMainPanelEntity: Boolean = false,
-) : BaseEntity<RtPanelEntity>(rtEntity, entityManager) {
+) : BaseEntity<RtPanelEntity>(rtEntity, entityRegistry) {
 
     /** The corner radius of the PanelEntity, in meters. */
     public var cornerRadius: Float
@@ -180,12 +180,12 @@ internal constructor(
             context: Context,
             sceneRuntime: SceneRuntime,
             perceptionSpace: PerceptionSpace,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             view: View,
             dimensions: FloatSize2d,
             name: String,
             pose: Pose = Pose.Identity,
-            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): PanelEntity =
             PanelEntity(
                 perceptionSpace,
@@ -205,19 +205,19 @@ internal constructor(
                         parent?.rtEntity
                     },
                 ),
-                entityManager,
+                entityRegistry,
             )
 
         internal fun create(
             context: Context,
             sceneRuntime: SceneRuntime,
             perceptionSpace: PerceptionSpace,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             view: View,
             pixelDimensions: IntSize2d,
             name: String,
             pose: Pose = Pose.Identity,
-            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): PanelEntity =
             PanelEntity(
                 perceptionSpace,
@@ -237,7 +237,7 @@ internal constructor(
                         parent?.rtEntity
                     },
                 ),
-                entityManager,
+                entityRegistry,
             )
 
         /**
@@ -264,7 +264,7 @@ internal constructor(
                 session.context as Activity,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 view,
                 dimensions,
                 name,
@@ -295,7 +295,7 @@ internal constructor(
                 session.context as Activity,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 view,
                 pixelDimensions,
                 name,
@@ -332,7 +332,7 @@ internal constructor(
                 session.context as Activity,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 view,
                 dimensions,
                 name,
@@ -370,7 +370,7 @@ internal constructor(
                 session.context as Activity,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 view,
                 pixelDimensions,
                 name,

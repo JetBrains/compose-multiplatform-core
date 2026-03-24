@@ -25,7 +25,6 @@ import java.util.Set;
 /** The base communication buffer capable of encoding and decoding various types */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WireBuffer {
-    private static final int BUFFER_SIZE = 1024 * 1024;
     int mMaxSize;
     byte @NonNull [] mBuffer;
     int mIndex = 0;
@@ -47,7 +46,7 @@ public class WireBuffer {
 
     /** Create a wire buffer of default size */
     public WireBuffer() {
-        this(BUFFER_SIZE);
+        this(Limits.BUFFER_SIZE);
     }
 
     private void resize(int need) {

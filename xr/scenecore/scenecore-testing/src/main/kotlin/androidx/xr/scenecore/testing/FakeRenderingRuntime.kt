@@ -22,12 +22,15 @@ import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
+import androidx.xr.scenecore.runtime.CustomMeshResource
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.ExrImageResource
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfModelResource
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.MaterialResource
+import androidx.xr.scenecore.runtime.MeshBufferResource
+import androidx.xr.scenecore.runtime.MeshEntity
 import androidx.xr.scenecore.runtime.RenderingEntityFactory
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -35,6 +38,7 @@ import androidx.xr.scenecore.runtime.SpatialEnvironmentExt
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.TextureResource
 import androidx.xr.scenecore.runtime.TextureSampler
+import java.nio.ByteBuffer
 
 /**
  * Test-only implementation of [androidx.xr.scenecore.runtime.RenderingRuntime].
@@ -539,6 +543,47 @@ public class FakeRenderingRuntime(
         surfaceEntity.stereoMode = stereoMode
         surfaceEntity.shape = shape
         return surfaceEntity
+    }
+
+    override fun createMeshBuffer(
+        attributeIds: IntArray,
+        attributeTypes: IntArray,
+        bufferIndices: ByteArray,
+        maxVertices: Int,
+        maxIndices: Int,
+        vertexData: Array<ByteBuffer>?,
+        vertexDataSizes: IntArray?,
+        indexData: ByteBuffer?,
+        indexDataSize: Int,
+    ): MeshBufferResource = object : MeshBufferResource {}
+
+    override fun destroyMeshBuffer(meshBuffer: MeshBufferResource) {}
+
+    override fun createCustomMesh(
+        meshBuffer: MeshBufferResource,
+        subsetOffsets: IntArray,
+        subsetCounts: IntArray,
+    ): CustomMeshResource = object : CustomMeshResource {}
+
+    override fun destroyCustomMesh(customMesh: CustomMeshResource) {}
+
+    override fun setCustomMeshBoundingBox(
+        customMesh: CustomMeshResource,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
+    ) {}
+
+    override fun createMeshEntity(
+        customMesh: CustomMeshResource,
+        materials: List<MaterialResource>,
+        pose: Pose,
+        parent: Entity?,
+    ): MeshEntity {
+        return entityFactory.createMeshEntity(FakeMeshFeature(createNode()), pose, parent)
     }
 
     /* Tracks the current state of the adapter according to where it is in its lifecycle. */

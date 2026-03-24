@@ -37,8 +37,7 @@ public final class Flags {
     // The prefix of all the flags defined for AppSearch. The prefix has
     // "com.android.appsearch.flags", aka the package name for generated AppSearch flag classes in
     // the framework, plus an additional trailing '.'.
-    private static final String FLAG_PREFIX =
-            "com.android.appsearch.flags.";
+    public static final String FLAG_PREFIX = "com.android.appsearch.flags.";
 
     // The full string values for flags defined in the framework.
     //
@@ -738,7 +737,8 @@ public final class Flags {
      * also be true.
      */
     public static boolean enableDeletePropagationRw() {
-        return true;
+        // TODO(b/384947619): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
     }
 
     /**

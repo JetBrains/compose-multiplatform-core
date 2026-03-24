@@ -55,7 +55,11 @@ class RemoteIconTest {
                 ),
             backgroundColor = Color.Black,
         ) {
-            RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
+            RemoteIcon(
+                imageVector = TestImageVectors.VolumeUp,
+                contentDescription = null,
+                modifier = RemoteModifier.size(24.rdp),
+            )
         }
     }
 
@@ -74,6 +78,7 @@ class RemoteIconTest {
                 imageVector = TestImageVectors.VolumeUp,
                 contentDescription = null,
                 tint = RemoteColor(Color.Red),
+                modifier = RemoteModifier.size(24.rdp),
             )
         }
     }
@@ -90,7 +95,11 @@ class RemoteIconTest {
             backgroundColor = Color.Black,
             layoutDirection = LayoutDirection.Rtl,
         ) {
-            RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
+            RemoteIcon(
+                imageVector = TestImageVectors.VolumeUp,
+                contentDescription = null,
+                modifier = RemoteModifier.size(24.rdp),
+            )
         }
     }
 

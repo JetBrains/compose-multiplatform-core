@@ -61,7 +61,7 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
     private val anchorStateListener = mock<AnchorEntity.OnStateChangedListener>()
     private val sharedAnchorToken: IBinder = mock<IBinder>()
     private val executor = FakeScheduledExecutorService()
-    private val entityManager = EntityManager()
+    private val sceneNodeRegistry = SceneNodeRegistry()
 
     @get:Rule
     val grantPermissionRule: GrantPermissionRule =
@@ -79,13 +79,13 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
                 taskNode,
                 activity,
                 xrExtensions,
-                entityManager,
+                sceneNodeRegistry,
                 { xrExtensions.getSpatialState(activity) },
                 executor,
             )
         val currentTimeMillis = 1000000000L
         SystemClock.setCurrentTimeMillis(currentTimeMillis)
-        entityManager.addSystemSpaceActivityPose(PerceptionSpaceScenePoseImpl(activitySpace))
+        sceneNodeRegistry.addSystemSpaceScenePose(PerceptionSpaceScenePoseImpl(activitySpace))
     }
 
     /**
@@ -114,7 +114,7 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
             node,
             activitySpace,
             xrExtensions,
-            entityManager,
+            sceneNodeRegistry,
             executor,
         )
     }
@@ -129,7 +129,7 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
                 node,
                 activitySpace,
                 xrExtensions,
-                entityManager,
+                sceneNodeRegistry,
                 executor,
             )
         val runtimeAnchor =
@@ -154,7 +154,7 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
             node,
             activitySpace,
             xrExtensions,
-            entityManager,
+            sceneNodeRegistry,
             executor,
         )
     }
@@ -170,7 +170,7 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
             FakeGltfFeature(nodeHolder),
             activitySpace,
             xrExtensions,
-            entityManager,
+            sceneNodeRegistry,
             executor,
         )
     }

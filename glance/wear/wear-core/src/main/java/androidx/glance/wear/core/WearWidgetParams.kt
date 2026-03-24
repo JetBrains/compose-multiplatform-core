@@ -27,8 +27,7 @@ import java.util.Objects
  *
  * @property instanceId The instance id of the widget for this request. The id is created by the
  *   system and is provided when [GlanceWearWidget.onActivated] is called.
- * @property containerType The container type being requested. See
- *   [androidx.glance.wear.ContainerInfo].
+ * @property containerType The container type being requested. See [ContainerInfo].
  * @property widthDp The width in dp of the content for this widget.
  * @property heightDp The height in dp of the content for this widget.
  */
@@ -58,19 +57,6 @@ public constructor(
     @get:Dimension(unit = Dimension.DP)
     public val cornerRadiusDp: Float,
 ) {
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun withContainerType(containerType: Int = this.containerType): WearWidgetParams {
-        return WearWidgetParams(
-            instanceId = instanceId,
-            containerType = containerType,
-            widthDp = widthDp,
-            heightDp = heightDp,
-            horizontalPaddingDp = horizontalPaddingDp,
-            verticalPaddingDp = verticalPaddingDp,
-            cornerRadiusDp = cornerRadiusDp,
-        )
-    }
 
     /** Converts this object to [androidx.glance.wear.parcel.WearWidgetRequestParcel]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

@@ -193,7 +193,6 @@ class RotateToLookAtUserActivity : ComponentActivity() {
         }
 
         val innerContent: @Composable () -> Unit = {
-            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
             Box(
                 modifier =
                     Modifier.fillMaxSize()

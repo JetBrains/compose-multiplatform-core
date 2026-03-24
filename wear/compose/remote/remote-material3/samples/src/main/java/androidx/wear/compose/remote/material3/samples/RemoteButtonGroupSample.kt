@@ -28,7 +28,6 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
-import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.widthIn
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rf
@@ -50,9 +49,7 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 fun RemoteButtonGroupThreeButtonSample(modifier: RemoteModifier = RemoteModifier) {
     RemoteButtonGroup(modifier = modifier.fillMaxWidth()) {
         Button(Icons.Filled.MailOutline, RemoteModifier.weight(1f))
-        Spacer()
         Button(Icons.Filled.Favorite, RemoteModifier.weight(1f))
-        Spacer()
         Button(Icons.Filled.Call, RemoteModifier.weight(1f))
     }
 }
@@ -61,12 +58,6 @@ fun RemoteButtonGroupThreeButtonSample(modifier: RemoteModifier = RemoteModifier
 @Composable
 fun RemoteButtonGroupThreeButtonSamplePreview() = RemotePreview {
     Container { RemoteButtonGroupThreeButtonSample() }
-}
-
-@Composable
-@RemoteComposable
-private fun Spacer() {
-    RemoteBox(RemoteModifier.size(RemoteButtonGroupDefaults.Spacing))
 }
 
 @Composable

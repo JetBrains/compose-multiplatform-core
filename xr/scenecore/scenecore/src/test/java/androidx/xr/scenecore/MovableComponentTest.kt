@@ -413,7 +413,7 @@ class MovableComponentTest {
         // Simulates a move start event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        var expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+        var expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
 
         assertThat(moveListener.onMoveStartedCount).isEqualTo(1)
         assertThat(moveListener.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -435,7 +435,7 @@ class MovableComponentTest {
         // Simulates a move ongoing event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+        expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
 
         assertThat(moveListener.onMoveUpdatedCount).isEqualTo(1)
         assertThat(moveListener.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -458,7 +458,7 @@ class MovableComponentTest {
         // Simulates a move end event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+        expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
 
         assertThat(moveListener.onMoveEndedCount).isEqualTo(1)
         assertThat(moveListener.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -498,7 +498,7 @@ class MovableComponentTest {
         // Simulates a move start event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        val expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+        val expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
 
         assertThat(moveListener1.onMoveStartedCount).isEqualTo(1)
         assertThat(moveListener1.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -540,7 +540,7 @@ class MovableComponentTest {
         // Simulates a move start event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        val expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+        val expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
 
         assertThat(moveListener1.onMoveStartedCount).isEqualTo(1)
         assertThat(moveListener1.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -625,7 +625,7 @@ class MovableComponentTest {
             // Simulates a move start event from runtime.
             rtMovableComponent.onMoveEvent(rtMoveEvent)
             // Expects to receive a scenecore event.
-            val moveEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+            val moveEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
             advanceUntilIdle()
 
             assertThat(moveListener.onMoveStartedCount).isEqualTo(1)
@@ -1781,7 +1781,9 @@ class MovableComponentTest {
 
             // Verify that the anchor entity was disposed by checking that it is no longer in the
             // entity manager.
-            assertThat(session.scene.entityManager.getEntitiesOfType(AnchorEntity::class.java).size)
+            assertThat(
+                    session.scene.entityRegistry.getEntitiesOfType(AnchorEntity::class.java).size
+                )
                 .isEqualTo(0)
         }
     }
@@ -1892,10 +1894,12 @@ class MovableComponentTest {
 
             // Verify that the anchor entity has not been disposed by checking that it is still in
             // the entity manager.
-            assertThat(session.scene.entityManager.getEntitiesOfType(AnchorEntity::class.java).size)
+            assertThat(
+                    session.scene.entityRegistry.getEntitiesOfType(AnchorEntity::class.java).size
+                )
                 .isEqualTo(1)
             anchorEntityToDispose =
-                session.scene.entityManager.getEntitiesOfType(AnchorEntity::class.java).first()
+                session.scene.entityRegistry.getEntitiesOfType(AnchorEntity::class.java).first()
         }
     }
 

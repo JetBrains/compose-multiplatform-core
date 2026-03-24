@@ -45,13 +45,14 @@ import kotlinx.coroutines.flow.asFlow
 internal const val GOLDEN_DIRECTORY = "xr/glimmer/glimmer"
 
 internal fun ComposeContentTestRule.setGlimmerThemeContent(
+    colors: Colors = Colors(),
     addInitialFocusInterceptor: Boolean = false,
     density: Density = this.density,
     content: @Composable () -> Unit,
 ) {
     setContentWithDensity(density) {
-        GlimmerTheme {
-            Column(Modifier.background(GlimmerTheme.colors.surface)) {
+        GlimmerTheme(colors = colors) {
+            Column(Modifier.background(GlimmerTheme.colors.background)) {
                 if (addInitialFocusInterceptor) {
                     Box(Modifier.size(1.dp).focusable())
                 }

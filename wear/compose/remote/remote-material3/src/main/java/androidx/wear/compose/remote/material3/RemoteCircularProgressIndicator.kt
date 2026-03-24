@@ -23,13 +23,13 @@ import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.shaders.RemoteBrush
-import androidx.compose.remote.creation.compose.shaders.RemoteSolidColor
 import androidx.compose.remote.creation.compose.shaders.solidColor
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.asRemoteDp
 import androidx.compose.remote.creation.compose.state.asin
 import androidx.compose.remote.creation.compose.state.max
 import androidx.compose.remote.creation.compose.state.min
@@ -67,7 +67,6 @@ import androidx.compose.ui.graphics.StrokeCap
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
-@Suppress("RestrictedApiAndroidX")
 public fun RemoteCircularProgressIndicator(
     progress: RemoteFloat,
     modifier: RemoteModifier = RemoteModifier,
@@ -79,15 +78,15 @@ public fun RemoteCircularProgressIndicator(
     gapSize: RemoteDp = RemoteProgressIndicatorDefaults.calculateRecommendedGapSize(strokeWidth),
 ) {
     RemoteCanvas(modifier = modifier.fillMaxSize()) {
-        val fullSweep = 360f.rf - ((startAngle - endAngle) % 360f + 360f) % 360f
+        val fullSweep = 360f.rf - ((startAngle - endAngle) % 360f.rf + 360f.rf) % 360f.rf
         val sweepAngle = progress * fullSweep
-        val strokePx = strokeWidth.toPx(remoteDensity)
-        val diameter = min(remoteWidth, remoteHeight)
-        val diameterOffset = strokePx / 2f
-        val arcDimen = diameter - (diameterOffset * 2f)
+        val strokePx = strokeWidth.toPx()
+        val diameter = min(width, height)
+        val diameterOffset = strokePx / 2f.rf
+        val arcDimen = diameter - (diameterOffset * 2f.rf)
 
-        val left = diameterOffset + (remoteWidth - diameter) / 2f
-        val top = diameterOffset + (remoteHeight - diameter) / 2f
+        val left = diameterOffset + (width - diameter) / 2f.rf
+        val top = diameterOffset + (height - diameter) / 2f.rf
         val right = left + arcDimen
         val bottom = top + arcDimen
 
@@ -96,13 +95,13 @@ public fun RemoteCircularProgressIndicator(
             style = PaintingStyle.Stroke
             this.strokeWidth = strokePx
             strokeCap = StrokeCap.Round
-            applyRemoteBrush(colors.trackBrush(enabled), remoteSize)
+            with(colors.trackBrush(enabled)) { applyTo(this@RemotePaint, size) }
         }
 
-        val gapSizePx = gapSize.toPx(remoteDensity)
+        val gapSizePx = gapSize.toPx()
 
         // Sweep angle between two segments.
-        val gapSweep = toDeg(asin((strokePx + gapSizePx) / (diameter - strokePx))) * 2f
+        val gapSweep = toDeg(asin((strokePx + gapSizePx) / (diameter - strokePx))) * 2f.rf
 
         drawArc(
             paint = trackPaint,
@@ -118,7 +117,7 @@ public fun RemoteCircularProgressIndicator(
             style = PaintingStyle.Stroke
             this.strokeWidth = trackPaint.strokeWidth
             strokeCap = StrokeCap.Round
-            applyRemoteBrush(colors.indicatorBrush(enabled), remoteSize)
+            with(colors.indicatorBrush(enabled)) { applyTo(this@RemotePaint, size) }
         }
 
         drawArc(
@@ -138,18 +137,15 @@ public object RemoteProgressIndicatorDefaults {
     /** Creates a [RemoteProgressIndicatorColors] with the default colors. */
     @Composable
     @RemoteComposable
-    @Suppress("RestrictedApiAndroidX")
     public fun colors(): RemoteProgressIndicatorColors = defaultProgressIndicatorColors()
 
     /** Returns recommended size of the gap based on `strokeWidth`. */
-    @Suppress("RestrictedApiAndroidX")
     public fun calculateRecommendedGapSize(strokeWidth: RemoteDp): RemoteDp =
-        (strokeWidth.value * (1f / 3f)).asRemoteDp()
+        (strokeWidth.value * (1f.rf / 3f.rf)).asRemoteDp()
 
     /** Creates a [RemoteProgressIndicatorColors] with modified colors. */
     @Composable
     @RemoteComposable
-    @Suppress("RestrictedApiAndroidX")
     public fun colors(
         indicatorColor: RemoteColor? = null,
         trackColor: RemoteColor? = null,
@@ -181,7 +177,6 @@ public object RemoteProgressIndicatorDefaults {
     /** Creates a [RemoteProgressIndicatorColors] with modified brushes. */
     @Composable
     @RemoteComposable
-    @Suppress("RestrictedApiAndroidX")
     public fun colors(
         indicatorBrush: RemoteBrush? = null,
         trackBrush: RemoteBrush? = null,
@@ -204,7 +199,6 @@ public object RemoteProgressIndicatorDefaults {
 
     @Composable
     @RemoteComposable
-    @Suppress("RestrictedApiAndroidX")
     private fun defaultProgressIndicatorColors(): RemoteProgressIndicatorColors {
         val colorScheme = RemoteMaterialTheme.colorScheme
         return RemoteProgressIndicatorColors(
@@ -225,7 +219,6 @@ public object RemoteProgressIndicatorDefaults {
 
 /** Represents the indicator and track colors used in progress indicator in a remote context. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("RestrictedApiAndroidX")
 public class RemoteProgressIndicatorColors(
     public val indicatorBrush: RemoteBrush,
     public val trackBrush: RemoteBrush,
@@ -239,7 +232,6 @@ public class RemoteProgressIndicatorColors(
      *
      * @param enabled whether the component is enabled.
      */
-    @Suppress("RestrictedApiAndroidX")
     internal fun indicatorBrush(enabled: RemoteBoolean): RemoteBrush =
         resolveRemoteBrush(enabled, indicatorBrush, disabledIndicatorBrush)
 
@@ -248,7 +240,6 @@ public class RemoteProgressIndicatorColors(
      *
      * @param enabled whether the component is enabled.
      */
-    @Suppress("RestrictedApiAndroidX")
     internal fun trackBrush(enabled: RemoteBoolean): RemoteBrush =
         resolveRemoteBrush(enabled, trackBrush, disabledTrackBrush)
 
@@ -257,7 +248,6 @@ public class RemoteProgressIndicatorColors(
      *
      * @param enabled whether the component is enabled.
      */
-    @Suppress("RestrictedApiAndroidX")
     internal fun overflowTrackBrush(enabled: RemoteBoolean): RemoteBrush =
         resolveRemoteBrush(enabled, overflowTrackBrush, disabledOverflowTrackBrush)
 
@@ -291,12 +281,9 @@ public class RemoteProgressIndicatorColors(
         enabledBrush: RemoteBrush,
         disableBrush: RemoteBrush,
     ): RemoteBrush {
-        if (enabledBrush is RemoteSolidColor && disableBrush is RemoteSolidColor) {
-            val color = enabled.select(ifTrue = enabledBrush.color, ifFalse = disableBrush.color)
-            return RemoteBrush.solidColor(color)
-        }
-
-        // TODO conditionals for RemoteBrush that are not solid colors, return constant now.
-        return if (enabled.constantValueOrNull == true) enabledBrush else disableBrush
+        // Always returns the enabled brush if enabled is not constant
+        return enabled.constantValueOrNull?.let { isEnabled ->
+            if (isEnabled) enabledBrush else disableBrush
+        } ?: enabledBrush
     }
 }

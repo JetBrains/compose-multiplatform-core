@@ -37,7 +37,7 @@ import org.jspecify.annotations.Nullable;
  * Use {@link Profile#getPrefetchCache()} to obtain the PrefetchCache instance for a specific
  * profile.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@Profile.ExperimentalUrlPrefetch
 public final class PrefetchCache {
 
     private final @NonNull ProfileBoundaryInterface mProfileImpl;

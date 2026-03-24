@@ -86,7 +86,7 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Search FAB -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.FloatingActionButton xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/host_Search"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -97,6 +97,7 @@
         app:backgroundTint="?attr/colorSecondaryContainer"
         app:tint="?attr/colorOnSecondaryContainer"
         app:layout_constraintBottom_toTopOf="@id/guideline_above_editFab"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="PrivateResource" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

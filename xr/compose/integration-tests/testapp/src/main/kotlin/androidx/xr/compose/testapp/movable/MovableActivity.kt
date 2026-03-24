@@ -36,7 +36,6 @@ import androidx.compose.ui.UiComposable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
@@ -47,6 +46,7 @@ import androidx.xr.compose.subspace.layout.SpatialArrangement
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.rotate
@@ -121,16 +121,10 @@ class MovableActivity : ComponentActivity() {
                     SpatialPanel(modifier = SubspaceModifier.weight(1f).fillMaxWidth()) {
                         PanelContent("[NOT MOVABLE]")
                     }
-                    SpatialPanel(
-                        modifier = SubspaceModifier.weight(1f).fillMaxWidth(),
-                        dragPolicy = MovePolicy(),
-                    ) {
+                    SpatialPanel(modifier = SubspaceModifier.weight(1f).fillMaxWidth().movable()) {
                         PanelContent("[MOVABLE]")
                     }
-                    SpatialPanel(
-                        modifier = SubspaceModifier.weight(1f).fillMaxWidth(),
-                        dragPolicy = MovePolicy(),
-                    ) {
+                    SpatialPanel(modifier = SubspaceModifier.weight(1f).fillMaxWidth().movable()) {
                         PanelContent("[MOVABLE]")
                     }
                 }
@@ -150,10 +144,8 @@ class MovableActivity : ComponentActivity() {
                             SubspaceModifier.weight(1f)
                                 .offset(xValueMovable, yValueMovable, zValueMovable)
                                 .fillMaxWidth()
-                                .rotate(rotateValueMovable),
-                        dragPolicy =
-                            MovePolicy(
-                                onMove = { poseChangeEvent ->
+                                .rotate(rotateValueMovable)
+                                .movable { poseChangeEvent ->
                                     with(density) {
                                         xValueMovable = poseChangeEvent.pose.translation.x.toDp()
                                         yValueMovable = poseChangeEvent.pose.translation.y.toDp()
@@ -164,7 +156,6 @@ class MovableActivity : ComponentActivity() {
                                         true
                                     }
                                 }
-                            ),
                     ) {
                         PanelContent("[MOVABLE WITH CUSTOM LISTENER]")
                     }
@@ -196,8 +187,8 @@ class MovableActivity : ComponentActivity() {
                             SubspaceModifier.weight(1f)
                                 .offset(x = 120.dp)
                                 .fillMaxWidth()
-                                .testTag("ActivityPanel"),
-                        dragPolicy = MovePolicy(true),
+                                .testTag("ActivityPanel")
+                                .movable(),
                     )
                 }
             }

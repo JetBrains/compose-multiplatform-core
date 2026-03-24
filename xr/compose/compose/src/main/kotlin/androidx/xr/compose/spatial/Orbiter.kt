@@ -33,18 +33,20 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.currentCompositeKeyHash
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -68,9 +70,16 @@ import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SpatialShape
 import androidx.xr.compose.subspace.node.SubspaceNodeApplier
 import androidx.xr.compose.subspace.spatialComposeView
+import androidx.xr.compose.unit.DpVolumeOffset
 import androidx.xr.compose.unit.IntVolumeSize
+import androidx.xr.compose.unit.Meter
+import androidx.xr.compose.unit.toMeter
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Quaternion
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.PanelEntity
 
 /** Set the scrim alpha to 32% opacity across orbiters. */
@@ -121,6 +130,7 @@ private val EmptyContent: @Composable () -> Unit = {}
  */
 @Composable
 @ComposableOpenTarget(index = -1)
+@Deprecated(message = "Use an orbiter that takes an anchorPoint or a poseProvider.")
 public fun Orbiter(
     position: ContentEdge.Horizontal,
     offset: Dp = 0.dp,
@@ -131,17 +141,63 @@ public fun Orbiter(
     shouldRenderInNonSpatial: Boolean = true,
     content: @Composable @UiComposable () -> Unit,
 ) {
+    if (
+        !LocalSpatialCapabilities.current.isSpatialUiEnabled &&
+            currentComposer.applier !is SubspaceNodeApplier
+    ) {
+        if (shouldRenderInNonSpatial) {
+            content()
+        }
+        return
+    }
+
+    val density = LocalDensity.current
+
     Orbiter(
-        OrbiterData(
-            position = position,
-            horizontalAlignment = alignment,
-            offset = offset,
-            offsetType = offsetType,
-            shape = shape,
-            elevation = elevation,
-            shouldRenderInNonSpatial = shouldRenderInNonSpatial,
-            content = content,
-        )
+        poseProvider = { targetSize, layoutDirection, orbiterContentSize ->
+            val anchorPoint =
+                when (position) {
+                    ContentEdge.Top ->
+                        when (alignment) {
+                            Alignment.Start -> OrbiterAnchorPoint.TopStart
+                            Alignment.CenterHorizontally -> OrbiterAnchorPoint.Top
+                            Alignment.End -> OrbiterAnchorPoint.TopEnd
+                            AbsoluteAlignment.Left -> OrbiterAnchorPoint.Absolute.TopLeft
+                            AbsoluteAlignment.Right -> OrbiterAnchorPoint.Absolute.TopRight
+                            else -> throw IllegalArgumentException("Invalid alignment: $alignment")
+                        }
+                    ContentEdge.Bottom ->
+                        when (alignment) {
+                            Alignment.Start -> OrbiterAnchorPoint.BottomStart
+                            Alignment.CenterHorizontally -> OrbiterAnchorPoint.Bottom
+                            Alignment.End -> OrbiterAnchorPoint.BottomEnd
+                            AbsoluteAlignment.Left -> OrbiterAnchorPoint.Absolute.BottomLeft
+                            AbsoluteAlignment.Right -> OrbiterAnchorPoint.Absolute.BottomRight
+                            else -> throw IllegalArgumentException("Invalid alignment: $alignment")
+                        }
+                    else -> throw IllegalArgumentException("Invalid position: $position")
+                }
+            val anchorVector =
+                anchorPoint.calculateAnchorVector(
+                    anchorHalfSize = targetSize.toMeterSize(density) / 2f,
+                    layoutDirection = layoutDirection,
+                    orbiterHalfSize = orbiterContentSize.toMeterSize(density) / 2f,
+                )
+            val verticalMultiplier = if (position == ContentEdge.Horizontal.Top) 1f else -1f
+            val yOffset =
+                when (offsetType) {
+                    OrbiterOffsetType.Overlap -> -offset.toMeter().toM()
+                    OrbiterOffsetType.InnerEdge -> offset.toMeter().toM()
+                    OrbiterOffsetType.OuterEdge ->
+                        offset.toMeter().toM() - orbiterContentSize.toMeterSize(density).height
+                    else -> throw IllegalArgumentException("Invalid offsetType: $offsetType")
+                } * verticalMultiplier
+            val offsetVector = Vector3(x = 0f, y = yOffset, z = elevation.toMeter().toM())
+
+            Pose(translation = anchorVector + offsetVector, rotation = Quaternion.Identity)
+        },
+        shape = shape,
+        content = content,
     )
 }
 
@@ -178,6 +234,7 @@ public fun Orbiter(
  */
 @Composable
 @ComposableOpenTarget(index = -1)
+@Deprecated(message = "Use an orbiter that takes an anchorPoint or a poseProvider.")
 public fun Orbiter(
     position: ContentEdge.Vertical,
     offset: Dp = 0.dp,
@@ -188,40 +245,155 @@ public fun Orbiter(
     shouldRenderInNonSpatial: Boolean = true,
     content: @Composable @UiComposable () -> Unit,
 ) {
+    if (
+        !LocalSpatialCapabilities.current.isSpatialUiEnabled &&
+            currentComposer.applier !is SubspaceNodeApplier
+    ) {
+        if (shouldRenderInNonSpatial) {
+            content()
+        }
+        return
+    }
+
+    val density = LocalDensity.current
+
     Orbiter(
-        OrbiterData(
-            position = position,
-            verticalAlignment = alignment,
-            offset = offset,
-            offsetType = offsetType,
-            shape = shape,
-            elevation = elevation,
-            shouldRenderInNonSpatial = shouldRenderInNonSpatial,
-            content = content,
-        )
+        poseProvider = { targetSize, layoutDirection, orbiterContentSize ->
+            val anchorPoint =
+                when (position) {
+                    ContentEdge.Start ->
+                        when (alignment) {
+                            Alignment.Top -> OrbiterAnchorPoint.StartTop
+                            Alignment.CenterVertically -> OrbiterAnchorPoint.Start
+                            Alignment.Bottom -> OrbiterAnchorPoint.StartBottom
+                            else -> throw IllegalArgumentException("Invalid alignment: $alignment")
+                        }
+                    ContentEdge.End ->
+                        when (alignment) {
+                            Alignment.Top -> OrbiterAnchorPoint.EndTop
+                            Alignment.CenterVertically -> OrbiterAnchorPoint.End
+                            Alignment.Bottom -> OrbiterAnchorPoint.EndBottom
+                            else -> throw IllegalArgumentException("Invalid alignment: $alignment")
+                        }
+                    else -> throw IllegalArgumentException("Invalid position: $position")
+                }
+            val anchorVector =
+                anchorPoint.calculateAnchorVector(
+                    anchorHalfSize = targetSize.toMeterSize(density) / 2f,
+                    layoutDirection = layoutDirection,
+                    orbiterHalfSize = orbiterContentSize.toMeterSize(density) / 2f,
+                )
+            val sideMultiplier = if (position == ContentEdge.Vertical.End) 1f else -1f
+            val xOffset =
+                when (offsetType) {
+                    OrbiterOffsetType.Overlap -> -offset.toMeter().toM()
+                    OrbiterOffsetType.InnerEdge -> offset.toMeter().toM()
+                    OrbiterOffsetType.OuterEdge ->
+                        offset.toMeter().toM() - orbiterContentSize.toMeterSize(density).width
+                    else -> throw IllegalArgumentException("Invalid offsetType: $offsetType")
+                } * sideMultiplier
+            val offsetVector =
+                Vector3(
+                    x = layoutDirection.multiplier * xOffset,
+                    y = 0f,
+                    z = elevation.toMeter().toM(),
+                )
+
+            Pose(translation = anchorVector + offsetVector, rotation = Quaternion.Identity)
+        },
+        shape = shape,
+        content = content,
     )
 }
 
+/**
+ * A composable that creates an orbiter along the edge of a spatial component (e.g.
+ * [androidx.xr.compose.subspace.SpatialPanel]).
+ *
+ * Orbiters are floating elements that are typically used to control the content within spatial
+ * panels and other entities that they're anchored to. They allow the content to have more space and
+ * give users quick access to features like navigation without obstructing the main content.
+ *
+ * The size of the `Orbiter` is constrained by the dimensions of its spatial parent. The spatial
+ * parent of the Orbiter is determined based on where the Orbiter is declared. When the orbiter is
+ * declared within:
+ * * A [Subspace], the nearest spatial component (e.g. [androidx.xr.compose.subspace.SpatialRow],
+ *   [androidx.xr.compose.subspace.SpatialPanel]) is the spatial parent
+ * * `setContent`, the main panel is the spatial parent
+ *
+ * @param anchorPoint The anchored position of the orbiter relative to the spatial component it is
+ *   anchored to. [OrbiterAnchorPoint] is [LayoutDirection] aware.
+ * @param offset The offset of the orbiter based on the outer edge of the orbiter.
+ * @param shape The shape of this Orbiter when it is rendered in 3D space.
+ * @param content The content of the orbiter.
+ */
 @Composable
-private fun Orbiter(data: OrbiterData) {
-    // TODO(b/441560422): We should use movableContentOf here to maintain state between HSM and FSM.
-    // We use movableContentOf here to avoid recreating this content when the spatial capabilities
-    // changes. This allows us to use the same orbiter content both in an orbiter when spatial
-    // capabilities are granted and inline in a non-spatial environment in a way that retains the
-    // orbiter content's internal state.
-    val content = remember(data.content) { data.content }
-    if (
-        LocalSpatialCapabilities.current.isSpatialUiEnabled ||
-            currentComposer.applier is SubspaceNodeApplier
-    ) {
-        PositionedOrbiter(data, content)
-    } else if (data.shouldRenderInNonSpatial) {
-        content()
-    }
+@ComposableOpenTarget(index = -1)
+public fun Orbiter(
+    anchorPoint: OrbiterAnchorPoint,
+    offset: DpVolumeOffset = DpVolumeOffset(0.dp, 0.dp, OrbiterDefaults.Elevation),
+    shape: SpatialShape = OrbiterDefaults.Shape,
+    content: @Composable @UiComposable () -> Unit,
+) {
+    val density = LocalDensity.current
+
+    Orbiter(
+        poseProvider = { targetSize, layoutDirection, orbiterContentSize ->
+            val anchorVector =
+                anchorPoint.calculateAnchorVector(
+                    anchorHalfSize = targetSize.toMeterSize(density) / 2f,
+                    layoutDirection = layoutDirection,
+                    orbiterHalfSize = orbiterContentSize.toMeterSize(density) / 2f,
+                )
+            val offsetVector = offset.toMeterVector()
+
+            Pose(translation = anchorVector + offsetVector, rotation = Quaternion.Identity)
+        },
+        shape = shape,
+        content = content,
+    )
 }
 
+/**
+ * A composable that creates an orbiter along the edge of a spatial component (e.g.
+ * [androidx.xr.compose.subspace.SpatialPanel]).
+ *
+ * Orbiters are floating elements that are typically used to control the content within spatial
+ * panels and other entities that they're anchored to. They allow the content to have more space and
+ * give users quick access to features like navigation without obstructing the main content.
+ *
+ * The size of the `Orbiter` is constrained by the dimensions of its spatial parent. The spatial
+ * parent of the Orbiter is determined based on where the Orbiter is declared. When the orbiter is
+ * declared within:
+ * * A [Subspace], the nearest spatial component (e.g. [androidx.xr.compose.subspace.SpatialRow],
+ *   [androidx.xr.compose.subspace.SpatialPanel]) is the spatial parent
+ * * `setContent`, the main panel is the spatial parent
+ *
+ * Orbiters do not participate in their parent's layout and have no layout nodes in the containing
+ * compose hierarchy.
+ *
+ * @param poseProvider A pose provider for calculating the offset pose of the orbiter relative to
+ *   its spatial parent.
+ * @param shape The shape of this Orbiter when it is rendered in 3D space.
+ * @param content The content of the orbiter.
+ */
 @Composable
-internal fun PositionedOrbiter(data: OrbiterData, content: @Composable @UiComposable () -> Unit) {
+@ComposableOpenTarget(index = -1)
+public fun Orbiter(
+    poseProvider: OrbiterPoseProvider,
+    shape: SpatialShape = OrbiterDefaults.Shape,
+    content: @Composable @UiComposable () -> Unit,
+) {
+    val movableContent = remember { movableContentOf(content) }
+
+    if (
+        currentComposer.applier !is SubspaceNodeApplier &&
+            !LocalSpatialCapabilities.current.isSpatialUiEnabled
+    ) {
+        movableContent()
+        return
+    }
+
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val parentView = LocalView.current
     @Suppress("DEPRECATION") val localId = currentCompositeKeyHash
@@ -237,14 +409,396 @@ internal fun PositionedOrbiter(data: OrbiterData, content: @Composable @UiCompos
                 compositionContext = compositionContext,
                 session = session,
                 localId = localId,
-                initialOrbiterData = data,
+                initialPoseProvider = poseProvider,
+                initialShape = shape,
             )
         }
 
     SideEffect {
         holder.parentEntity = parentEntity
-        holder.orbiterData = data
-        holder.content = content
+        holder.poseProvider = poseProvider
+        holder.shape = shape
+        holder.content = movableContent
+    }
+}
+
+/** Calculates the [Pose] of an [Orbiter] in 3D space relative to its spatial parent. */
+public fun interface OrbiterPoseProvider {
+    /**
+     * Calculate the [Pose] of the [Orbiter].
+     *
+     * @param anchorSize The size of the [Orbiter]'s anchor target in pixels.
+     * @param layoutDirection The layout direction of the [Orbiter].
+     * @param orbiterContentSize The size of the [Orbiter]'s content in pixels.
+     * @return The [Pose] of the [Orbiter] in meters.
+     */
+    public fun calculatePose(
+        anchorSize: IntSize,
+        layoutDirection: LayoutDirection,
+        orbiterContentSize: IntSize,
+    ): Pose
+}
+
+/**
+ * Represents an anchor point for an [Orbiter] relative to its target.
+ *
+ * Each anchor point defines a specific location on the boundary of the target where the orbiter can
+ * be attached. The anchor points are sensitive to [LayoutDirection], ensuring that concepts like
+ * "start" and "end" are correctly interpreted in both LTR and RTL contexts.
+ *
+ * For layout direction-agnostic positioning, use the [Absolute] variants.
+ */
+public sealed class OrbiterAnchorPoint private constructor() {
+
+    internal abstract fun calculateAnchorVector(
+        anchorHalfSize: FloatSize2d,
+        layoutDirection: LayoutDirection,
+        orbiterHalfSize: FloatSize2d,
+    ): Vector3
+
+    /**
+     * Attach the [Orbiter] at the start of the top edge of the content. Start is Left if the layout
+     * direction is LTR and Right if the layout direction is RTL.
+     */
+    public object TopStart : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 =
+            Vector3(
+                x = -layoutDirection.multiplier * (anchorHalfSize.width - orbiterHalfSize.width),
+                y = anchorHalfSize.height + orbiterHalfSize.height,
+                z = 0f,
+            )
+    }
+
+    /** Attach the [Orbiter] at the center of the top edge of the content. */
+    public object Top : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 = Vector3(x = 0f, y = anchorHalfSize.height + orbiterHalfSize.height, z = 0f)
+    }
+
+    /**
+     * Attach the [Orbiter] at the end of the top edge of the content. End is Right if the layout
+     * direction is LTR and Left if the layout direction is RTL.
+     */
+    public object TopEnd : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 =
+            Vector3(
+                x = layoutDirection.multiplier * (anchorHalfSize.width - orbiterHalfSize.width),
+                y = anchorHalfSize.height + orbiterHalfSize.height,
+                z = 0f,
+            )
+    }
+
+    /**
+     * Attach the [Orbiter] at the top of the end edge of the content. End is Right if the layout
+     * direction is LTR and Left if the layout direction is RTL.
+     */
+    public object EndTop : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 =
+            Vector3(
+                x = layoutDirection.multiplier * (anchorHalfSize.width + orbiterHalfSize.width),
+                y = anchorHalfSize.height - orbiterHalfSize.height,
+                z = 0f,
+            )
+    }
+
+    /**
+     * Attach the [Orbiter] at the center of the end edge of the content. End is Right if the layout
+     * direction is LTR and Left if the layout direction is RTL.
+     */
+    public object End : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 =
+            Vector3(
+                x = layoutDirection.multiplier * (anchorHalfSize.width + orbiterHalfSize.width),
+                y = 0f,
+                z = 0f,
+            )
+    }
+
+    /**
+     * Attach the [Orbiter] at the bottom of the end edge of the content. End is Right if the layout
+     * direction is LTR and Left if the layout direction is RTL.
+     */
+    public object EndBottom : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 =
+            Vector3(
+                x = layoutDirection.multiplier * (anchorHalfSize.width + orbiterHalfSize.width),
+                y = -anchorHalfSize.height + orbiterHalfSize.height,
+                z = 0f,
+            )
+    }
+
+    /**
+     * Attach the [Orbiter] at the start of the bottom edge of the content. Start is Left if the
+     * layout direction is LTR and Right if the layout direction is RTL.
+     */
+    public object BottomStart : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 =
+            Vector3(
+                x = -layoutDirection.multiplier * (anchorHalfSize.width - orbiterHalfSize.width),
+                y = -anchorHalfSize.height - orbiterHalfSize.height,
+                z = 0f,
+            )
+    }
+
+    /** Attach the [Orbiter] at the center of the bottom edge of the content. */
+    public object Bottom : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 = Vector3(x = 0f, y = -anchorHalfSize.height - orbiterHalfSize.height, z = 0f)
+    }
+
+    /**
+     * Attach the [Orbiter] at the end of the bottom edge of the content. End is Right if the layout
+     * direction is LTR and Left if the layout direction is RTL.
+     */
+    public object BottomEnd : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 =
+            Vector3(
+                x = layoutDirection.multiplier * (anchorHalfSize.width - orbiterHalfSize.width),
+                y = -anchorHalfSize.height - orbiterHalfSize.height,
+                z = 0f,
+            )
+    }
+
+    /**
+     * Attach the [Orbiter] at the top of the start edge of the content. Start is Left if the layout
+     * direction is LTR and Right if the layout direction is RTL.
+     */
+    public object StartTop : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 =
+            Vector3(
+                x = -layoutDirection.multiplier * (anchorHalfSize.width + orbiterHalfSize.width),
+                y = anchorHalfSize.height - orbiterHalfSize.height,
+                z = 0f,
+            )
+    }
+
+    /**
+     * Attach the [Orbiter] at the center of the start edge of the content. Start is Left if the
+     * layout direction is LTR and Right if the layout direction is RTL.
+     */
+    public object Start : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 =
+            Vector3(
+                x = -layoutDirection.multiplier * (anchorHalfSize.width + orbiterHalfSize.width),
+                y = 0f,
+                z = 0f,
+            )
+    }
+
+    /**
+     * Attach the [Orbiter] at the bottom of the start edge of the content. Start is Left if the
+     * layout direction is LTR and Right if the layout direction is RTL.
+     */
+    public object StartBottom : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 =
+            Vector3(
+                x = -layoutDirection.multiplier * (anchorHalfSize.width + orbiterHalfSize.width),
+                y = -anchorHalfSize.height + orbiterHalfSize.height,
+                z = 0f,
+            )
+    }
+
+    /**
+     * This is not exposed as part of the public API and is intended to prevent exhaustive when
+     * statements.
+     */
+    private object Unused : OrbiterAnchorPoint() {
+        override fun calculateAnchorVector(
+            anchorHalfSize: FloatSize2d,
+            layoutDirection: LayoutDirection,
+            orbiterHalfSize: FloatSize2d,
+        ): Vector3 = Vector3.Zero
+    }
+
+    /** Provides anchor points that are not affected by [LayoutDirection]. */
+    public sealed class Absolute : OrbiterAnchorPoint() {
+        /** Attach the [Orbiter] at the left of the top edge of the content. */
+        public object TopLeft : Absolute() {
+            override fun calculateAnchorVector(
+                anchorHalfSize: FloatSize2d,
+                layoutDirection: LayoutDirection,
+                orbiterHalfSize: FloatSize2d,
+            ): Vector3 =
+                Vector3(
+                    x = -anchorHalfSize.width + orbiterHalfSize.width,
+                    y = anchorHalfSize.height + orbiterHalfSize.height,
+                    z = 0f,
+                )
+        }
+
+        /** Attach the [Orbiter] at the right of the top edge of the content. */
+        public object TopRight : Absolute() {
+            override fun calculateAnchorVector(
+                anchorHalfSize: FloatSize2d,
+                layoutDirection: LayoutDirection,
+                orbiterHalfSize: FloatSize2d,
+            ): Vector3 =
+                Vector3(
+                    x = anchorHalfSize.width - orbiterHalfSize.width,
+                    y = anchorHalfSize.height + orbiterHalfSize.height,
+                    z = 0f,
+                )
+        }
+
+        /** Attach the [Orbiter] at the top of the right edge of the content. */
+        public object RightTop : Absolute() {
+            override fun calculateAnchorVector(
+                anchorHalfSize: FloatSize2d,
+                layoutDirection: LayoutDirection,
+                orbiterHalfSize: FloatSize2d,
+            ): Vector3 =
+                Vector3(
+                    x = anchorHalfSize.width + orbiterHalfSize.width,
+                    y = anchorHalfSize.height - orbiterHalfSize.height,
+                    z = 0f,
+                )
+        }
+
+        /** Attach the [Orbiter] at the center of the right edge of the content. */
+        public object Right : Absolute() {
+            override fun calculateAnchorVector(
+                anchorHalfSize: FloatSize2d,
+                layoutDirection: LayoutDirection,
+                orbiterHalfSize: FloatSize2d,
+            ): Vector3 = Vector3(x = anchorHalfSize.width + orbiterHalfSize.width, y = 0f, z = 0f)
+        }
+
+        /** Attach the [Orbiter] at the bottom of the right edge of the content. */
+        public object RightBottom : Absolute() {
+            override fun calculateAnchorVector(
+                anchorHalfSize: FloatSize2d,
+                layoutDirection: LayoutDirection,
+                orbiterHalfSize: FloatSize2d,
+            ): Vector3 =
+                Vector3(
+                    x = anchorHalfSize.width + orbiterHalfSize.width,
+                    y = -anchorHalfSize.height + orbiterHalfSize.height,
+                    z = 0f,
+                )
+        }
+
+        /** Attach the [Orbiter] at the left of the bottom edge of the content. */
+        public object BottomLeft : Absolute() {
+            override fun calculateAnchorVector(
+                anchorHalfSize: FloatSize2d,
+                layoutDirection: LayoutDirection,
+                orbiterHalfSize: FloatSize2d,
+            ): Vector3 =
+                Vector3(
+                    x = -anchorHalfSize.width + orbiterHalfSize.width,
+                    y = -anchorHalfSize.height - orbiterHalfSize.height,
+                    z = 0f,
+                )
+        }
+
+        /** Attach the [Orbiter] at the right of the bottom edge of the content. */
+        public object BottomRight : Absolute() {
+            override fun calculateAnchorVector(
+                anchorHalfSize: FloatSize2d,
+                layoutDirection: LayoutDirection,
+                orbiterHalfSize: FloatSize2d,
+            ): Vector3 =
+                Vector3(
+                    x = anchorHalfSize.width - orbiterHalfSize.width,
+                    y = -anchorHalfSize.height - orbiterHalfSize.height,
+                    z = 0f,
+                )
+        }
+
+        /** Attach the [Orbiter] at the top of the left edge of the content. */
+        public object LeftTop : Absolute() {
+            override fun calculateAnchorVector(
+                anchorHalfSize: FloatSize2d,
+                layoutDirection: LayoutDirection,
+                orbiterHalfSize: FloatSize2d,
+            ): Vector3 =
+                Vector3(
+                    x = -anchorHalfSize.width - orbiterHalfSize.width,
+                    y = anchorHalfSize.height - orbiterHalfSize.height,
+                    z = 0f,
+                )
+        }
+
+        /** Attach the [Orbiter] at the center of the left edge of the content. */
+        public object Left : Absolute() {
+            override fun calculateAnchorVector(
+                anchorHalfSize: FloatSize2d,
+                layoutDirection: LayoutDirection,
+                orbiterHalfSize: FloatSize2d,
+            ): Vector3 = Vector3(x = -anchorHalfSize.width - orbiterHalfSize.width, y = 0f, z = 0f)
+        }
+
+        /** Attach the [Orbiter] at the bottom of the left edge of the content. */
+        public object LeftBottom : Absolute() {
+            override fun calculateAnchorVector(
+                anchorHalfSize: FloatSize2d,
+                layoutDirection: LayoutDirection,
+                orbiterHalfSize: FloatSize2d,
+            ): Vector3 =
+                Vector3(
+                    x = -anchorHalfSize.width - orbiterHalfSize.width,
+                    y = -anchorHalfSize.height + orbiterHalfSize.height,
+                    z = 0f,
+                )
+        }
+
+        /**
+         * This is not exposed as part of the public API and is intended to prevent exhaustive when
+         * statements.
+         */
+        private object Unused : Absolute() {
+            override fun calculateAnchorVector(
+                anchorHalfSize: FloatSize2d,
+                layoutDirection: LayoutDirection,
+                orbiterHalfSize: FloatSize2d,
+            ): Vector3 = Vector3.Zero
+        }
     }
 }
 
@@ -325,8 +879,8 @@ private fun getMainWindowSize(session: Session): IntVolumeSize {
  *   composition tree.
  * @param session The active XR [Session] required for creating the [PanelEntity].
  * @param localId A unique ID used for saving/restoring state within the Orbiter's composition.
- * @param initialOrbiterData The initial configuration data for the [Orbiter], including offset,
- *   elevation, and shape.
+ * @param initialPoseProvider The initial Pose provider for the `SpatialOrbiter`.
+ * @param initialShape The initial SpatialShape of the `SpatialOrbiter`.
  */
 private class SpatialOrbiter(
     private var context: Context,
@@ -334,14 +888,14 @@ private class SpatialOrbiter(
     private var compositionContext: CompositionContext,
     private var session: Session,
     private var localId: Int,
-    initialOrbiterData: OrbiterData,
+    initialPoseProvider: OrbiterPoseProvider,
+    initialShape: SpatialShape,
 ) : RememberObserver {
     private var view: ComposeView? = null
     private var panelEntity: CorePanelEntity? = null
-
     var content: @Composable () -> Unit by mutableStateOf(EmptyContent)
-
-    var orbiterData: OrbiterData by mutableStateOf(initialOrbiterData)
+    var poseProvider: OrbiterPoseProvider by mutableStateOf(initialPoseProvider)
+    var shape: SpatialShape by mutableStateOf(initialShape)
 
     var parentEntity: CoreEntity? = null
         set(value) {
@@ -389,20 +943,15 @@ private class SpatialOrbiter(
                     placeables.fastForEach { it.place(0, 0) }
                     panelEntity?.size = IntVolumeSize(contentSize.width, contentSize.height, 0)
                     val pose =
-                        calculatePose(
-                            orbiterData.calculateOffset(
-                                IntSize(constraints.maxWidth, constraints.maxHeight),
-                                contentSize,
-                                this@Layout,
-                            ),
-                            IntSize(constraints.maxWidth, constraints.maxHeight),
-                            contentSize,
-                            this@Layout,
-                            orbiterData.elevation,
+                        poseProvider.calculatePose(
+                            anchorSize = IntSize(constraints.maxWidth, constraints.maxHeight),
+                            layoutDirection =
+                                parentEntity?.layout?.layoutDirection ?: LayoutDirection.Ltr,
+                            orbiterContentSize = contentSize,
                         )
                     panelEntity?.poseInMeters = pose
                     panelEntity?.parent = parentEntity
-                    panelEntity?.setShape(orbiterData.shape, this@Layout)
+                    panelEntity?.setShape(shape, this@Layout)
                     panelEntity?.enabled = true
                 }
             }
@@ -486,67 +1035,14 @@ public value class OrbiterOffsetType private constructor(private val value: Int)
     }
 }
 
-internal data class OrbiterData(
-    val position: ContentEdge,
-    val verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    val horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    val offset: Dp,
-    val offsetType: OrbiterOffsetType,
-    val content: @Composable () -> Unit,
-    val shape: SpatialShape,
-    val elevation: Dp = OrbiterDefaults.Elevation,
-    val shouldRenderInNonSpatial: Boolean = true,
-)
+private val LayoutDirection.multiplier: Float
+    get() = if (this == LayoutDirection.Ltr) 1f else -1f
 
-/**
- * Calculates the offset that should be applied to the orbiter given its settings, the panel size,
- * and the size of the orbiter content, using the specified density to convert Dp to pixels.
- */
-private fun OrbiterData.calculateOffset(
-    viewSize: IntSize,
-    contentSize: IntSize,
-    density: Density,
-): Offset {
+private fun IntSize.toMeterSize(density: Density): FloatSize2d =
+    FloatSize2d(
+        width = Meter.fromPixel(width.toFloat(), density).toM(),
+        height = Meter.fromPixel(height.toFloat(), density).toM(),
+    )
 
-    if (position is ContentEdge.Vertical) {
-        val y = verticalAlignment.align(contentSize.height, viewSize.height)
-
-        val xOffset: Float =
-            when (offsetType) {
-                OrbiterOffsetType.OuterEdge -> -offset.toPx(density)
-                OrbiterOffsetType.InnerEdge -> -contentSize.width - offset.toPx(density)
-                OrbiterOffsetType.Overlap -> -contentSize.width + offset.toPx(density)
-                else -> error("Unexpected OrbiterOffsetType: $offsetType")
-            }
-
-        val x: Float =
-            when (position) {
-                ContentEdge.Start -> xOffset
-                ContentEdge.End -> viewSize.width - contentSize.width - xOffset
-                else -> error("Unexpected ContentEdge: $position")
-            }
-        return Offset(x, y.toFloat())
-    } else {
-        // It should be fine to use LTR layout direction here since we can use placeRelative to
-        // adjust
-        val x = horizontalAlignment.align(contentSize.width, viewSize.width, LayoutDirection.Ltr)
-
-        val yOffset: Float =
-            when (offsetType) {
-                OrbiterOffsetType.OuterEdge -> -offset.toPx(density)
-                OrbiterOffsetType.InnerEdge -> -contentSize.height - offset.toPx(density)
-                OrbiterOffsetType.Overlap -> -contentSize.height + offset.toPx(density)
-                else -> error("Unexpected OrbiterOffsetType: $offsetType")
-            }
-
-        val y: Float =
-            when (position) {
-                ContentEdge.Top -> yOffset
-                ContentEdge.Bottom -> viewSize.height - contentSize.height - yOffset
-                else -> error("Unexpected ContentEdge: $position")
-            }
-        return Offset(x.toFloat(), y)
-    }
-}
-
-private fun Dp.toPx(density: Density): Float = with(density) { toPx() }
+private fun DpVolumeOffset.toMeterVector(): Vector3 =
+    Vector3(x = x.toMeter().toM(), y = y.toMeter().toM(), z = z.toMeter().toM())

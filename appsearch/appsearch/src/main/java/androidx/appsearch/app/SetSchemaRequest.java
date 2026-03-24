@@ -113,6 +113,7 @@ public final class SetSchemaRequest {
             EXECUTE_APP_FUNCTIONS,
             PACKAGE_USAGE_STATS,
             PRIVATE_COMPUTE_CORE_UID_ACCESS,
+            DISCOVER_APP_FUNCTIONS
     })
     @Retention(RetentionPolicy.SOURCE)
     @RequiresFeature(
@@ -236,12 +237,34 @@ public final class SetSchemaRequest {
     /**
      * The visibility access for Private Compute Core.
      *
-     * <p>A schema with this permission allows callers with a UID for which {@link
+     * <p>A schema with this permission requires callers to have a UID for which {@link
      * android.os.Process#isPrivateComputeCoreUid} returns true to access the data.
+     *
+     * <p>This permission can be combined with other permissions in the same set. In such cases, the
+     * caller must both have a Private Compute Core UID and hold all other permissions in the set to
+     * gain access.
      */
     @FlaggedApi(Flags.FLAG_ENABLE_PRIVATE_COMPUTE_CORE_UID_ACCESS)
     @ExperimentalAppSearchApi
     public static final int PRIVATE_COMPUTE_CORE_UID_ACCESS = 12;
+
+    /**
+     * The {@link android.Manifest.permission#DISCOVER_APP_FUNCTIONS} AppSearch supported in
+     * {@link SetSchemaRequest.Builder#addRequiredPermissionsForSchemaTypeVisibility}.
+     *
+     * @exportToFramework:hide
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final int DISCOVER_APP_FUNCTIONS = 13;
+
+    /**
+     * The {@link android.Manifest.permission#EXECUTE_APP_FUNCTIONS_SYSTEM} AppSearch supported in
+     * {@link SetSchemaRequest.Builder#addRequiredPermissionsForSchemaTypeVisibility}.
+     *
+     * @exportToFramework:hide
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final int EXECUTE_APP_FUNCTIONS_SYSTEM = 14;
 
     private final Set<AppSearchSchema> mSchemas;
     private final Set<String> mSchemasNotDisplayedBySystem;
@@ -700,8 +723,13 @@ public final class SetSchemaRequest {
                         "The set of required permissions cannot be empty");
             }
             for (int permission : permissions) {
-                Preconditions.checkArgumentInRange(permission, READ_SMS,
-                        PRIVATE_COMPUTE_CORE_UID_ACCESS, "permission");
+                if (android.app.appfunctions.flags.Flags.enableAppFunctionPermissionV2()) {
+                    Preconditions.checkArgumentInRange(
+                            permission, READ_SMS, EXECUTE_APP_FUNCTIONS_SYSTEM, "permission");
+                } else {
+                    Preconditions.checkArgumentInRange(
+                            permission, READ_SMS, PRIVATE_COMPUTE_CORE_UID_ACCESS, "permission");
+                }
             }
             resetIfBuilt();
             Set<Set<Integer>> visibleToPermissions = mSchemasVisibleToPermissions.get(schemaType);

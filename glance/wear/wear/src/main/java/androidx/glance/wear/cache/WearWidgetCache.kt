@@ -74,12 +74,13 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
      *
      * @param containerType The container type to read the spec for.
      * @param instanceId The instance id to use for the returned [WearWidgetParams].
-     * @return The reconstructed [WearWidgetParams], or `null` if it doesn't exist in the cache.
+     * @return The reconstructed [WearWidgetParams].
+     * @throws [WidgetCacheMissException] if the requested cache entry can't be found.
      */
     open suspend fun getWidgetParams(
         @ContainerInfo.ContainerType containerType: Int,
         instanceId: WidgetInstanceId,
-    ): WearWidgetParams? {
+    ): WearWidgetParams {
         val cacheProto = dataStore.data.first()
         return cacheProto.container_type_to_spec[containerType]?.let { specProto ->
             WearWidgetParams(
@@ -91,18 +92,20 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
                 verticalPaddingDp = specProto.vertical_padding_dp,
                 cornerRadiusDp = specProto.corner_radius_dp,
             )
-        }
+        } ?: throw WidgetCacheMissException("No params found for container type $containerType")
     }
 
     /**
      * Reads the container type for a given widget instance from the cache.
      *
      * @param instanceId The instance id of the widget to read the container type for.
-     * @return The container type, or `null` if it doesn't exist in the cache.
+     * @return The container type.
+     * @throws [WidgetCacheMissException] if the requested cache entry can't be found.
      */
-    open suspend fun getInstanceType(instanceId: WidgetInstanceId): Int? {
+    open suspend fun getContainerTypeForInstance(instanceId: WidgetInstanceId): Int {
         val cacheProto = dataStore.data.first()
         return cacheProto.instance_id_to_type[instanceId.flattenToString()]
+            ?: throw WidgetCacheMissException("No container type found for instance $instanceId")
     }
 
     /** Scope for updating the widget cache. */
@@ -118,7 +121,7 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
          * @param instanceId The instance id of the widget.
          * @param containerType The container type to associate with the instance.
          */
-        fun setInstanceType(
+        fun setContainerTypeForInstance(
             instanceId: WidgetInstanceId,
             @ContainerInfo.ContainerType containerType: Int,
         ) {
@@ -149,6 +152,9 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
             )
         }
     }
+
+    /** Exception thrown when a requested cache entry can't be found. */
+    internal class WidgetCacheMissException(message: String) : Exception(message)
 
     internal companion object {
         private const val TAG = "WearWidgetCache"

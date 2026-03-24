@@ -172,6 +172,7 @@ class Animation : ComponentActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     @SubspaceComposable

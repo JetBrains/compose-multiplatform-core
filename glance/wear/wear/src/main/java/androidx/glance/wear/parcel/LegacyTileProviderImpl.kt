@@ -21,7 +21,7 @@ import android.content.Context
 import android.util.Log
 import androidx.glance.wear.GlanceWearWidget
 import androidx.glance.wear.core.ActiveWearWidgetHandle
-import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_FULLSCREEN
+import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_TILE_COMPAT
 import androidx.glance.wear.core.WidgetInstanceId
 import androidx.glance.wear.parcel.legacy.TileAddEventData
 import androidx.glance.wear.parcel.legacy.TileProvider
@@ -52,7 +52,7 @@ internal class LegacyTileProviderImpl(
                     ActiveWearWidgetHandle(
                         providerName,
                         WidgetInstanceId(namespace = "", id = addEvent.tile_id),
-                        CONTAINER_TYPE_FULLSCREEN,
+                        CONTAINER_TYPE_TILE_COMPAT,
                     )
                 widget.onAdded(context, widgetId)
             } catch (ex: IOException) {
@@ -73,7 +73,7 @@ internal class LegacyTileProviderImpl(
                     ActiveWearWidgetHandle(
                         providerName,
                         WidgetInstanceId(namespace = "", id = removeEvent.tile_id),
-                        CONTAINER_TYPE_FULLSCREEN,
+                        CONTAINER_TYPE_TILE_COMPAT,
                     )
                 widget.onRemoved(context, widgetId)
             } catch (ex: IOException) {

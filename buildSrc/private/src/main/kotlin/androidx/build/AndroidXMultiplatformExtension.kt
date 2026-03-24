@@ -95,8 +95,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     fun provideKlibStdLibForTests() {
         val konanBuildService = KonanBuildService.obtain(project)
         // directory format of stdlib klib for use during tests
-        val stdLibKlibDir =
-            konanBuildService.map { it.parameters.konanHome.dir("klib/common/stdlib") }
+        val stdLibKlibDir = konanBuildService.map { it.stdlibKlibDir() }
         project.tasks.withType(Test::class.java).configureEach { task ->
             task.inputs
                 .dir(stdLibKlibDir)
@@ -852,7 +851,7 @@ internal fun Project.configureNode() {
         plugins.withType<WasmYarnPlugin>().configureEach {
             the<WasmYarnRootEnvSpec>().let {
                 it.version.set(getVersionByName("yarn"))
-                it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
+                it.yarnLockMismatchReport.set(yarnLockMisMatchReportSetting())
                 it.downloadBaseUrl.set(javascriptPrebuiltsRoot.toURI().toString())
             }
         }
@@ -860,12 +859,19 @@ internal fun Project.configureNode() {
         plugins.withType<YarnPlugin>().configureEach {
             the<YarnRootEnvSpec>().let {
                 it.version.set(getVersionByName("yarn"))
-                it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
+                it.yarnLockMismatchReport.set(yarnLockMisMatchReportSetting())
                 it.downloadBaseUrl.set(javascriptPrebuiltsRoot.toURI().toString())
             }
         }
     }
 }
+
+private fun Project.yarnLockMisMatchReportSetting() =
+    if (allowLockfileMismatch()) {
+        YarnLockMismatchReport.WARNING
+    } else {
+        YarnLockMismatchReport.FAIL
+    }
 
 @OptIn(ExperimentalWasmDsl::class)
 private fun Project.configureBinaryen() {

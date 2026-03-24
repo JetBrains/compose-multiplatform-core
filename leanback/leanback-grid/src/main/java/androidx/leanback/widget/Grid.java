@@ -18,7 +18,6 @@ package androidx.leanback.widget;
 import android.util.SparseIntArray;
 
 import androidx.collection.CircularIntArray;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.jspecify.annotations.NonNull;
@@ -175,7 +174,7 @@ abstract class Grid {
     /**
      * Creates a single or multiple rows (can be staggered or not staggered) grid
      */
-    public static Grid createGrid(int rows, GridLayoutManager.SpanSizeLookup spanSizeLookup) {
+    public static Grid createGrid(int rows, SpanSizeLookup spanSizeLookup) {
         Grid grid;
         if (rows == 1) {
             grid = new SingleRow();

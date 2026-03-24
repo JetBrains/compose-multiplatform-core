@@ -253,11 +253,15 @@ public interface Profile {
      * <p>
      *
      * @param speculativeLoadingConfig the config to set for this profile session.
+     * @deprecated use {@link Profile#setMaxPrerenders(Integer)},
+     * {@link PrefetchCache#setMaxPrefetches(Integer)} and
+     * {@link PrefetchCache#setPrefetchTtlSeconds(Integer)} instead.
      */
     @RequiresFeature(name = WebViewFeature.SPECULATIVE_LOADING_CONFIG,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
     @ExperimentalUrlPrefetch
+    @Deprecated(forRemoval = true)
     void setSpeculativeLoadingConfig(@NonNull SpeculativeLoadingConfig
             speculativeLoadingConfig);
 
@@ -276,7 +280,6 @@ public interface Profile {
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
     @ExperimentalUrlPrefetch
-    @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP)
     default void setMaxPrerenders(
             @SuppressWarnings("AutoBoxing") @Nullable @IntRange(from = 1) Integer maxPrerenders) {
         // We provide a default implementation of this method so that embedders extending the

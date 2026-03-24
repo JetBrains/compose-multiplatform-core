@@ -160,8 +160,8 @@ class BlendModeTest {
             contentAlignment = RemoteAlignment.TopStart,
         ) {
             RemoteCanvas(RemoteModifier.size(100.rdp)) {
-                val w = remoteWidth
-                val h = remoteHeight
+                val w = width
+                val h = height
 
                 val paint = RemotePaint {
                     style = PaintingStyle.Fill

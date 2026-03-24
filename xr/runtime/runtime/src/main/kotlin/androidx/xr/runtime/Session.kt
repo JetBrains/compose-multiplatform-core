@@ -80,6 +80,27 @@ public constructor(
     public val coroutineScope: CoroutineScope = CoroutineScope(context = EmptyCoroutineContext),
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val lifecycleOwner: LifecycleOwner,
 ) {
+
+    @Deprecated("Use the constructor with an explicit LifecycleOwner instead.")
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @JvmOverloads
+    public constructor(
+        activity: Activity,
+        stateExtenders: List<StateExtender> =
+            loadProviders(StateExtender::class.java, STATE_EXTENDER_PROVIDERS),
+        sessionConnectors: List<SessionConnector> =
+            loadProviders(SessionConnector::class.java, SESSION_CONNECTOR_PROVIDERS),
+        runtimes: List<JxrRuntime> = emptyList(),
+        coroutineScope: CoroutineScope = CoroutineScope(context = EmptyCoroutineContext),
+    ) : this(
+        activity,
+        stateExtenders,
+        sessionConnectors,
+        runtimes,
+        coroutineScope,
+        activity as LifecycleOwner,
+    )
+
     init {
         check(!contextSessionMap.containsKey(context)) {
             "Session already exists for context: $context"
@@ -96,6 +117,24 @@ public constructor(
 
     public companion object {
         private val contextSessionMap = ConcurrentHashMap<Context, Session>()
+
+        /** Restricted version of factory for 1Ps. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @Deprecated(
+            message =
+                "unScaledGravityAlignedActivitySpace flag deprecated, scheduled for removal in future release."
+        )
+        public fun create(
+            activity: Activity,
+            coroutineContext: CoroutineContext,
+            unscaledGravityAlignedActivitySpace: Boolean,
+        ): SessionCreateResult =
+            create(
+                context = activity,
+                lifecycleOwner = activity as LifecycleOwner,
+                coroutineContext = coroutineContext,
+                unscaledGravityAlignedActivitySpace = unscaledGravityAlignedActivitySpace,
+            )
 
         /**
          * Creates a new [Session].
@@ -142,6 +181,7 @@ public constructor(
                 context = activity,
                 lifecycleOwner = lifecycleOwner,
                 coroutineContext = coroutineContext,
+                unscaledGravityAlignedActivitySpace = true,
             )
 
         /**
@@ -189,6 +229,19 @@ public constructor(
             context: Context,
             lifecycleOwner: LifecycleOwner,
             coroutineContext: CoroutineContext = EmptyCoroutineContext,
+        ): SessionCreateResult =
+            create(
+                context = context,
+                lifecycleOwner = lifecycleOwner,
+                coroutineContext = coroutineContext,
+                unscaledGravityAlignedActivitySpace = true,
+            )
+
+        private fun create(
+            context: Context,
+            lifecycleOwner: LifecycleOwner,
+            coroutineContext: CoroutineContext,
+            unscaledGravityAlignedActivitySpace: Boolean = true,
         ): SessionCreateResult {
             check(lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED) {
                 "Cannot create a new session on a destroyed lifecycleOwner."
@@ -232,7 +285,13 @@ public constructor(
                         ),
                         features,
                     )
-                val sceneRuntime = sceneRuntimeFactory?.create(context)
+
+                val sceneRuntime =
+                    if (!unscaledGravityAlignedActivitySpace) {
+                        sceneRuntimeFactory?.create(context, unscaledGravityAlignedActivitySpace)
+                    } else {
+                        sceneRuntimeFactory?.create(context)
+                    }
                 sceneRuntime?.let { runtimes.add(it) }
 
                 val renderingRuntimeFactory =

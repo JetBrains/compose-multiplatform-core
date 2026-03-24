@@ -17,6 +17,7 @@
 package androidx.xr.compose.subspace
 
 import android.content.Intent
+import android.view.View
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
@@ -38,12 +39,16 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.findViewTreeNavigationEventDispatcherOwner
+import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.xr.compose.platform.DefaultDialogManager
@@ -70,11 +75,13 @@ import androidx.xr.scenecore.scene
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.space.ShadowActivityPanel
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
 
 /** Tests for [SpatialPanel]. */
 @RunWith(AndroidJUnit4::class)
@@ -195,6 +202,37 @@ class SpatialPanelTest {
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(100.dp)
         composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(100.dp)
+    }
+
+    @Test
+    fun spatialPanel_propagatesNavigationEventDispatcherOwner() {
+        var hostParentView: View? = null
+        var internalComposeView: View? = null
+
+        val mockDispatcherOwner = mock<NavigationEventDispatcherOwner>()
+
+        composeTestRule.setContent {
+            hostParentView = LocalView.current
+
+            hostParentView.setViewTreeNavigationEventDispatcherOwner(mockDispatcherOwner)
+
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    internalComposeView = LocalView.current
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        assertNotNull(hostParentView)
+        assertNotNull(internalComposeView)
+        assertThat(hostParentView).isNotEqualTo(internalComposeView)
+
+        val actualOwner = internalComposeView?.findViewTreeNavigationEventDispatcherOwner()
+
+        assertNotNull(actualOwner)
+        assertThat(actualOwner).isEqualTo(mockDispatcherOwner)
     }
 
     @Test

@@ -27,16 +27,16 @@ import androidx.xr.scenecore.runtime.SceneRuntime
  * An [Entity] that contains no content, but can have an arbitrary number of children. GroupEntity
  * is useful for organizing the placement and movement of a group of child SceneCore Entities.
  */
-public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: EntityManager) :
-    BaseEntity<RtEntity>(rtEntity, entityManager) {
+public class GroupEntity private constructor(rtEntity: RtEntity, entityRegistry: EntityRegistry) :
+    BaseEntity<RtEntity>(rtEntity, entityRegistry) {
     public companion object {
         /** Factory method to create GroupEntity entities. */
         internal fun create(
             sceneRuntime: SceneRuntime,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             name: String,
             pose: Pose = Pose.Identity,
-            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): GroupEntity =
             GroupEntity(
                 sceneRuntime.createEntity(
@@ -52,7 +52,7 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
                         parent?.rtEntity
                     },
                 ),
-                entityManager,
+                entityRegistry,
             )
 
         /**
@@ -70,7 +70,7 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
             replaceWith = ReplaceWith("Entity.create", "androidx.xr.scenecore.Entity"),
         )
         public fun create(session: Session, name: String, pose: Pose = Pose.Identity): GroupEntity =
-            create(session.sceneRuntime, session.scene.entityManager, name, pose)
+            create(session.sceneRuntime, session.scene.entityRegistry, name, pose)
 
         /**
          * Public factory method for creating a [GroupEntity].
@@ -92,6 +92,6 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
             pose: Pose = Pose.Identity,
             parent: Entity? = session.scene.activitySpace,
         ): GroupEntity =
-            create(session.sceneRuntime, session.scene.entityManager, name, pose, parent)
+            create(session.sceneRuntime, session.scene.entityRegistry, name, pose, parent)
     }
 }

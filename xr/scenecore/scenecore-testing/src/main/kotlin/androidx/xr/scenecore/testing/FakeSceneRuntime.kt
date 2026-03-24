@@ -33,15 +33,23 @@ import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.InteractableComponent
 import androidx.xr.scenecore.runtime.LoggingEntity
+import androidx.xr.scenecore.runtime.MeshEntity
+import androidx.xr.scenecore.runtime.MeshFeature
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.PlaneSemantic
 import androidx.xr.scenecore.runtime.PlaneType
+import androidx.xr.scenecore.runtime.PointSourceParams
 import androidx.xr.scenecore.runtime.PointerCaptureComponent
+import androidx.xr.scenecore.runtime.PositionalAudioComponent
 import androidx.xr.scenecore.runtime.RenderingEntityFactory
 import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SoundEffectPool
+import androidx.xr.scenecore.runtime.SoundEffectPoolComponent
+import androidx.xr.scenecore.runtime.SoundFieldAttributes
+import androidx.xr.scenecore.runtime.SoundFieldAudioComponent
 import androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper
 import androidx.xr.scenecore.runtime.SpatialCapabilities
 import androidx.xr.scenecore.runtime.SpatialModeChangeListener
@@ -196,6 +204,17 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         surfaceEntity.parent = parentEntity
 
         return surfaceEntity
+    }
+
+    override fun createMeshEntity(
+        feature: MeshFeature,
+        pose: Pose,
+        parentEntity: Entity?,
+    ): MeshEntity {
+        val meshEntity = FakeMeshEntity(feature)
+        meshEntity.setPose(pose)
+        meshEntity.parent = parentEntity
+        return meshEntity
     }
 
     override fun createEntity(pose: Pose, name: String?, parent: Entity?): Entity {
@@ -442,6 +461,30 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
 
     override fun removeOnBoundaryConsentChangedListener(listener: Consumer<Boolean>) {
         _boundaryConsentChangedMap.remove(listener)
+    }
+
+    override fun createPositionalAudioComponent(
+        context: Context,
+        params: PointSourceParams,
+    ): PositionalAudioComponent {
+        return FakePositionalAudioComponent(context, params)
+    }
+
+    override fun createSoundFieldAudioComponent(
+        context: Context,
+        rtSoundFieldAttributes: SoundFieldAttributes,
+    ): SoundFieldAudioComponent {
+        return FakeSoundFieldAudioComponent(context)
+    }
+
+    override fun createSoundEffectPool(maxStreams: Int): SoundEffectPool {
+        return FakeSoundEffectPool()
+    }
+
+    override fun createSoundEffectPoolComponent(
+        soundEffectPool: SoundEffectPool
+    ): SoundEffectPoolComponent {
+        return FakeSoundEffectPoolComponent()
     }
 
     /**

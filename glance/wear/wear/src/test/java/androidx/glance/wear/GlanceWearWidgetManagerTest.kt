@@ -85,12 +85,12 @@ class GlanceWearWidgetManagerTest {
         assertThat(widgets[0].instanceId.namespace)
             .isEqualTo(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE)
         assertThat(widgets[0].provider).isEqualTo(component1)
-        assertThat(widgets[0].containerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_FULLSCREEN)
+        assertThat(widgets[0].containerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_TILE_COMPAT)
         assertThat(widgets[1].instanceId.id).isEqualTo(2)
         assertThat(widgets[1].instanceId.namespace)
             .isEqualTo(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE)
         assertThat(widgets[1].provider).isEqualTo(component2)
-        assertThat(widgets[1].containerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_FULLSCREEN)
+        assertThat(widgets[1].containerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_TILE_COMPAT)
     }
 
     @Test(expected = RuntimeException::class)
@@ -119,7 +119,7 @@ class GlanceWearWidgetManagerTest {
         assertThat(widgets[0].instanceId.namespace)
             .isEqualTo(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE)
         assertThat(widgets[0].provider).isEqualTo(component1)
-        assertThat(widgets[0].containerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_FULLSCREEN)
+        assertThat(widgets[0].containerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_TILE_COMPAT)
     }
 
     private class TestWidgetService1 : GlanceWearWidgetService() {

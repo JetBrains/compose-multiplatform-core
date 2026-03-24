@@ -150,6 +150,8 @@ class SimpleSpatialFragment : Fragment() {
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                     ) {
                                         Text("Orbiter Host")
+
+                                        @Suppress("DEPRECATION")
                                         Orbiter(position = ContentEdge.Top, offset = 10.dp) {
                                             Surface(color = Color.Gray) {
                                                 Text(

@@ -18,52 +18,20 @@ package androidx.tracing
 
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope
-import kotlin.concurrent.Volatile
 import kotlinx.coroutines.currentCoroutineContext
 
 /** @return the [ProcessTrack] for the current process. */
 internal expect inline fun TraceContext.currentProcessTrack(): ProcessTrack
 
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 @RestrictTo(Scope.LIBRARY_GROUP)
 public class PerfettoTracer(context: TraceContext) : Tracer(isEnabled = context.isEnabled) {
     // The process track
     @JvmField internal var process: ProcessTrack = context.currentProcessTrack()
 
-    @JvmField @Volatile internal var l1ThreadTrack: ThreadTrack? = null
-    @JvmField @Volatile internal var l2ThreadTrack: ThreadTrack? = null
-
-    // We have a small cache of ThreadTracks here. This is because in particularly hot code
-    // on the same thread, or in suspending contexts where a lot of the work ends up happening on
-    // the same dispatcher, we can avoid looking up a map for the last used thread tracks. So we
-    // maintain the 2 most recently used ThreadTracks.
-    /** @return The [ThreadTrack] instance based on the current execution context. */
-    @Suppress("NOTHING_TO_INLINE", "DEPRECATION")
-    internal inline fun currentThreadTrack(): ThreadTrack {
-        val current = Thread.currentThread()
-        val id = current.id.toInt()
-        val l1 = l1ThreadTrack
-        val l2 = l2ThreadTrack
-        return when {
-            l1 != null && l1.id == id -> l1
-            l2 != null && l2.id == id -> l2
-            else -> {
-                var track = process.threads[id]
-                if (track == null) {
-                    track = process.getOrCreateThreadTrack(id = id, name = current.name)
-                    l2ThreadTrack = l1ThreadTrack
-                    l1ThreadTrack = track
-                }
-                track
-            }
-        }
-    }
-
     // Testing API
     @RestrictTo(Scope.LIBRARY_GROUP)
     public fun resetFillCount() {
-        currentThreadTrack().resetFillCount()
+        process.currentThreadTrack().resetFillCount()
     }
 
     // Testing API
@@ -99,7 +67,7 @@ public class PerfettoTracer(context: TraceContext) : Tracer(isEnabled = context.
     ): EventMetadataCloseable {
         // Out of the box we don't support propagation at all outside of suspending contexts.
         return if (token == null || token == PropagationUnsupportedToken) {
-            val track = currentThreadTrack()
+            val track = process.currentThreadTrack()
             track.beginSection(
                 category = category,
                 name = name,
@@ -110,7 +78,7 @@ public class PerfettoTracer(context: TraceContext) : Tracer(isEnabled = context.
             val parent =
                 token as? PlatformThreadContextElement<*, PerfettoTracer>
                     ?: throw IllegalArgumentException("Unsupported token type $token")
-            val track = currentThreadTrack()
+            val track = process.currentThreadTrack()
             val tokenElement = inheritedPropagationToken(parent = parent, tracer = this)
             track.beginCoroutineSection(category = category, name = name, token = tokenElement)
         }
@@ -150,7 +118,7 @@ public class PerfettoTracer(context: TraceContext) : Tracer(isEnabled = context.
                 }
             tokenElement.name = name
             tokenElement.category = category
-            val track = tokenElement.tracer.currentThreadTrack()
+            val track = tokenElement.tracer.process.currentThreadTrack()
             track.beginCoroutineSection(category = category, name = name, token = tokenElement)
         }
     }
@@ -164,7 +132,7 @@ public class PerfettoTracer(context: TraceContext) : Tracer(isEnabled = context.
 
     @DelicateTracingApi
     override fun instant(category: String, name: String): EventMetadataCloseable {
-        val track = currentThreadTrack()
+        val track = process.currentThreadTrack()
         return track.instant(category = category, name = name)
     }
 }

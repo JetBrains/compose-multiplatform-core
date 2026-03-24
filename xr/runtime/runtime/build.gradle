@@ -54,7 +54,15 @@ dependencies {
 
 android {
     namespace = "androidx.xr.runtime"
-    defaultConfig.consumerProguardFiles("proguard-rules.pro")
+    buildFeatures {
+        resValues true
+    }
+    defaultConfig {
+        consumerProguardFiles("proguard-rules.pro")
+
+        def xrProjectedMinApiVersion = libs.versions.xrProjectedMinApiVersion.get()
+        resValue "string", "xr_projected_min_api_version", xrProjectedMinApiVersion
+    }
 }
 
 androidx {

@@ -63,7 +63,7 @@ import kotlinx.coroutines.launch
  *   this vector resolves that ambiguity. The default is Vector3.Up, which corresponds to the up
  *   direction of the ActivitySpace.
  */
-// TODO(b/461808266): LookAtUser and FollowingSubspace not compatible with each other
+// TODO(b/461808266): RotateToLookAtUser and FollowingSubspace not compatible with each other
 // TODO(b/487087894): [Moohan Emulator] ARCore ArDevice emit identity pose until user moves
 public fun SubspaceModifier.rotateToLookAtUser(
     upDirection: Vector3 = Vector3.Up
@@ -108,7 +108,9 @@ internal class RotateToLookAtUserNode(var upDirection: Vector3) :
             }
 
         if (session.config.deviceTracking == DeviceTrackingMode.DISABLED) {
-            XrLog.warn("Head tracking must be enabled in the Session config to use LookAtUser.")
+            XrLog.warn(
+                "Device tracking must be enabled in the Session config to use RotateToLookAtUser."
+            )
             return
         }
         arDevice = ArDevice.getInstance(session)

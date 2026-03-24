@@ -20,11 +20,8 @@ import android.content.Context
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.glance.wear.composable.WearWidgetContainer
 import androidx.glance.wear.core.WearWidgetParams
 import androidx.glance.wear.core.WearWidgetRawContent
@@ -47,13 +44,6 @@ public class WearWidgetDocument(
     private val content: @RemoteComposable @Composable () -> Unit,
 ) : WearWidgetData {
 
-    // TODO: b/470080675 - Remove this after G3 drop.
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public constructor(
-        backgroundColor: Color,
-        content: @RemoteComposable @Composable () -> Unit,
-    ) : this(WearWidgetBrush.color(backgroundColor.rc), content)
-
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override suspend fun captureRawContent(
         context: Context,
@@ -70,7 +60,7 @@ public class WearWidgetDocument(
             WearWidgetContainer(
                 horizontalPadding = params.horizontalPaddingDp.rdp,
                 verticalPadding = params.verticalPaddingDp.rdp,
-                cornerRadius = params.cornerRadiusDp.dp,
+                cornerRadius = params.cornerRadiusDp.rdp,
                 background = background,
                 content = content,
             )

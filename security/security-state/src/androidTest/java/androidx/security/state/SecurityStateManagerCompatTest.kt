@@ -32,7 +32,6 @@ import java.io.FileInputStream
 import java.io.IOException
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,10 +47,17 @@ class SecurityStateManagerCompatTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private lateinit var securityStateManagerCompat: SecurityStateManagerCompat
 
-    private val SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILE =
-        "/system/etc/security/supplemental_security_patches.xml"
-    private val VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILE =
-        "/vendor/etc/security/supplemental_security_patches.xml"
+    private val SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILES =
+        arrayOf(
+            "/system/etc/security/supplemental_security_patches.xml",
+            "/system_ext/etc/security/supplemental_security_patches.xml",
+            "/product/etc/security/supplemental_security_patches.xml",
+        )
+    private val VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILES =
+        arrayOf(
+            "/vendor/etc/security/supplemental_security_patches.xml",
+            "/odm/etc/security/supplemental_security_patches.xml",
+        )
 
     @Before
     fun setup() {
@@ -99,8 +105,12 @@ class SecurityStateManagerCompatTest {
     }
 
     @Throws(Exception::class)
-    private fun matchesCveIdsFormat(bundle: Bundle, key: String, configFilePath: String): Boolean {
-        val expectedCveIds = getExpectedCveIds(configFilePath)
+    private fun matchesCveIdsFormat(
+        bundle: Bundle,
+        key: String,
+        configFilePaths: Array<String>,
+    ): Boolean {
+        val expectedCveIds = getExpectedCveIdsFromFiles(configFilePaths)
 
         val actualCveIds = bundle.getStringArray(key) ?: emptyArray()
         expectedCveIds.sort()
@@ -109,10 +119,19 @@ class SecurityStateManagerCompatTest {
         return expectedCveIds.contentEquals(actualCveIds)
     }
 
+    private fun getExpectedCveIdsFromFiles(filePaths: Array<String>): Array<String> {
+        return filePaths
+            .flatMap { path -> getExpectedCveIds(path).toList() }
+            .distinct()
+            .toTypedArray()
+    }
+
     private fun getExpectedCveIds(configFilePath: String): Array<String> {
         val configFile = File(configFilePath)
         // skip the test if supplemental_security_patches.xml is not present.
-        assumeTrue(configFile.exists())
+        if (!configFile.exists()) {
+            return emptyArray()
+        }
 
         return try {
             FileInputStream(configFile).use { inputStream ->
@@ -150,14 +169,14 @@ class SecurityStateManagerCompatTest {
             matchesCveIdsFormat(
                 bundle,
                 KEY_SYSTEM_SUPPLEMENTAL_PATCHES,
-                SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILE,
+                SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILES,
             )
         )
         assertTrue(
             matchesCveIdsFormat(
                 bundle,
                 KEY_VENDOR_SUPPLEMENTAL_PATCHES,
-                VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILE,
+                VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILES,
             )
         )
     }
@@ -174,14 +193,14 @@ class SecurityStateManagerCompatTest {
             matchesCveIdsFormat(
                 bundle,
                 KEY_SYSTEM_SUPPLEMENTAL_PATCHES,
-                SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILE,
+                SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILES,
             )
         )
         assertTrue(
             matchesCveIdsFormat(
                 bundle,
                 KEY_VENDOR_SUPPLEMENTAL_PATCHES,
-                VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILE,
+                VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILES,
             )
         )
     }
@@ -198,14 +217,14 @@ class SecurityStateManagerCompatTest {
             matchesCveIdsFormat(
                 bundle,
                 KEY_SYSTEM_SUPPLEMENTAL_PATCHES,
-                SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILE,
+                SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILES,
             )
         )
         assertTrue(
             matchesCveIdsFormat(
                 bundle,
                 KEY_VENDOR_SUPPLEMENTAL_PATCHES,
-                VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILE,
+                VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILES,
             )
         )
     }

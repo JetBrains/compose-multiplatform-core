@@ -37,8 +37,8 @@ import java.util.concurrent.TimeUnit
  * size of the model.
  */
 public class GltfModelEntity
-private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
-    BaseEntity<RtGltfEntity>(rtEntity, entityManager) {
+private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
+    BaseEntity<RtGltfEntity>(rtEntity, entityRegistry) {
     private val _nodes: List<GltfModelNode> by lazy {
         // The unique identifier of a node is their index so we first get the
         // count of the nodes in the model from the native side.
@@ -146,10 +146,10 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
         internal fun create(
             sceneRuntime: SceneRuntime,
             renderingRuntime: RenderingRuntime,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             model: GltfModel,
             pose: Pose = Pose.Identity,
-            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): GltfModelEntity =
             GltfModelEntity(
                 renderingRuntime.createGltfEntity(
@@ -165,7 +165,7 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
                         parent?.rtEntity
                     },
                 ),
-                entityManager,
+                entityRegistry,
             )
 
         /**
@@ -189,7 +189,7 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
             create(
                 session.sceneRuntime,
                 session.renderingRuntime,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 model,
                 pose,
             )
@@ -221,7 +221,7 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
             create(
                 session.sceneRuntime,
                 session.renderingRuntime,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 model,
                 pose,
                 parent,

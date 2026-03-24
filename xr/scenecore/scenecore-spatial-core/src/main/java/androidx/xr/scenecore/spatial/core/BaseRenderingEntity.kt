@@ -33,14 +33,14 @@ internal abstract class BaseRenderingEntity(
     context: Context?,
     private val renderingFeature: RenderingFeature,
     xrExtensions: XrExtensions,
-    entityManager: EntityManager,
+    sceneNodeRegistry: SceneNodeRegistry,
     executor: ScheduledExecutorService,
 ) :
     AndroidXrEntity(
         context,
         assertGetValue(renderingFeature.getNodeHolder(), Node::class.java),
         xrExtensions,
-        entityManager,
+        sceneNodeRegistry,
         executor,
     ) {
     private val subspaceNode: Node? =
@@ -50,12 +50,12 @@ internal abstract class BaseRenderingEntity(
             // subspace node, can be correctly resolved back to this entity. Without this alias,
             // getEntityForNode(subspaceNode) would fail.
             assertGetValue(subspaceNodeHolder, Node::class.java).also {
-                entityManager.setEntityForNode(it, this)
+                sceneNodeRegistry.setEntityForNode(it, this)
             }
         }
 
     override fun dispose() {
-        subspaceNode?.let { mEntityManager.removeEntityForNode(it) }
+        subspaceNode?.let { sceneNodeRegistry.removeEntityForNode(it) }
         renderingFeature.dispose()
         super.dispose()
     }

@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.wear.compose.remote.material3
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
@@ -69,7 +67,6 @@ import androidx.wear.compose.material3.TextButtonDefaults
  */
 @Composable
 @RemoteComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteTextButton(
     onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
@@ -98,7 +95,6 @@ public fun RemoteTextButton(
 }
 
 /** Contains the default values used by [RemoteTextButton]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object RemoteTextButtonDefaults {
     /** Recommended [RemoteShape] for [RemoteTextButton]. */
     public val shape: RemoteRoundedCornerShape
@@ -183,7 +179,6 @@ public object RemoteTextButtonDefaults {
  * @param disabledContentColor the content color of this text button when not enabled.
  */
 @Immutable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteTextButtonColors(
     public val containerColor: RemoteColor,
     public val contentColor: RemoteColor,

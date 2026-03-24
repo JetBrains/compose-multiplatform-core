@@ -162,6 +162,7 @@ class CurvedLayout : ComponentActivity() {
         SpatialPanel(modifier = modifier) { PanelContent(false, title = "Side Panel", text) }
     }
 
+    @Suppress("DEPRECATION")
     @Composable
     private fun PanelContent(backButton: Boolean = false, title: String, vararg text: String) {
         var addHighlight by remember { mutableStateOf(false) }

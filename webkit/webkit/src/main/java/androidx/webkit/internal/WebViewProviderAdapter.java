@@ -33,7 +33,6 @@ import androidx.webkit.Profile;
 import androidx.webkit.SpeculativeLoadingParameters;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebMessagePortCompat;
-import androidx.webkit.WebNavigationClient;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewRenderProcess;
 import androidx.webkit.WebViewRenderProcessClient;
@@ -268,37 +267,9 @@ public class WebViewProviderAdapter {
 
     /**
      * Adapter method for
-     * {@link WebViewCompat#setWebNavigationClient(WebView, WebNavigationClient)}.
-     */
-    @UiThread
-    @WebNavigationClient.ExperimentalNavigationCallback
-    public void setWebNavigationClient(
-            @NonNull WebNavigationClient client) {
-        InvocationHandler clientBoundaryInterface =
-                BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
-                        new WebNavigationClientAdapter(client));
-        mImpl.setWebViewNavigationClient(clientBoundaryInterface);
-    }
-
-    /**
-     * Adapter method for {@link WebViewCompat#getWebNavigationClient(WebView)}.
-     */
-    @UiThread
-    @WebNavigationClient.ExperimentalNavigationCallback
-    public @NonNull WebNavigationClient getWebNavigationClient() {
-        InvocationHandler client = mImpl.getWebViewNavigationClient();
-        if (client == null) return null;
-        return ((WebNavigationClientAdapter)
-                BoundaryInterfaceReflectionUtil.getDelegateFromInvocationHandler(
-                        client)).getWebNavigationClient();
-    }
-
-    /**
-     * Adapter method for
      * {@link WebViewCompat#addNavigationListener(WebView, Executor, NavigationListener)}.
      */
     @UiThread
-    @WebNavigationClient.ExperimentalNavigationCallback
     public void addNavigationListener(@NonNull Executor executor,
             @NonNull NavigationListener listener) {
         InvocationHandler listenerBoundaryInterface =
@@ -312,7 +283,6 @@ public class WebViewProviderAdapter {
      * {@link WebViewCompat#removeNavigationListener(WebView, NavigationListener)}.
      */
     @UiThread
-    @WebNavigationClient.ExperimentalNavigationCallback
     public void removeNavigationListener(@NonNull NavigationListener listener) {
         InvocationHandler listenerBoundaryInterface =
                 BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(

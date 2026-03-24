@@ -49,6 +49,7 @@ import org.gradle.api.Task
 import org.gradle.api.artifacts.ComponentMetadataContext
 import org.gradle.api.artifacts.ComponentMetadataRule
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Bundling
 import org.gradle.api.attributes.Category
@@ -122,7 +123,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             }
         }
         disableUnneededTasks(project)
-        createConfigurations(project)
+        val configurations = Configurations(project)
         val buildOnServer =
             project.tasks.register<DocsBuildOnServer>("buildOnServer") {
                 requiredFile.set(project.getDistributionDirectory().file("docs-$docsType.zip"))
@@ -144,14 +145,14 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 project,
                 unzippedJvmSourcesDirectory,
                 unzippedJvmSamplesSourcesDirectory,
-                docsSourcesConfiguration,
+                configurations.docsSourcesConfiguration,
             )
         val configureMultiplatformSourcesTask =
             configureMultiplatformInputsTasks(
                 project,
                 unzippedMultiplatformSourcesDirectory,
                 unzippedKmpSamplesSourcesDirectory,
-                multiplatformDocsSourcesConfiguration,
+                configurations.multiplatformDocsSourcesConfiguration,
                 mergedProjectMetadata,
             )
 
@@ -166,8 +167,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             unzippedKmpSamplesSources = unzippedKmpSamplesSourcesDirectory,
             dependencyClasspath = dependencyClasspath,
             buildOnServer = buildOnServer,
-            docsConfiguration = docsSourcesConfiguration,
-            multiplatformDocsConfiguration = multiplatformDocsSourcesConfiguration,
+            docsConfiguration = configurations.docsSourcesConfiguration,
+            multiplatformDocsConfiguration = configurations.multiplatformDocsSourcesConfiguration,
+            versionMetadataConfiguration = configurations.versionMetadataConfiguration,
             mergedProjectMetadata = mergedProjectMetadata,
             docsType = docsType,
         )
@@ -276,31 +278,42 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
      *   samples sources
      * - stubs(project(":foo:foo-stubs")) - stubs needed for a documented library
      */
-    private fun createConfigurations(project: Project) {
-        project.dependencies.components.all<SourcesVariantRule>()
-        val docsConfiguration =
+    private class Configurations(val project: Project) {
+        init {
+            project.dependencies.components.all<SourcesVariantRule>()
+        }
+
+        private val docsConfiguration =
             project.configurations.create("docs") {
                 it.isCanBeResolved = false
                 it.isCanBeConsumed = false
             }
+
         // This exists for libraries that are deprecated or not hosted in the AndroidX repo
-        val docsWithoutApiSinceConfiguration =
+        private val docsWithoutApiSinceConfiguration =
             project.configurations.create("docsWithoutApiSince") {
                 it.isCanBeResolved = false
                 it.isCanBeConsumed = false
             }
-        val multiplatformDocsConfiguration =
+        private val multiplatformDocsConfiguration =
             project.configurations.create("kmpDocs") {
                 it.isCanBeResolved = false
                 it.isCanBeConsumed = false
             }
-        val stubsConfiguration =
+
+        // b/491196586: a KMP project without a jvm/android target will not have version metadata
+        private val multiplatformDocsWithoutApiSinceConfiguration =
+            project.configurations.create("kmpDocsWithoutApiSince") {
+                it.isCanBeResolved = false
+                it.isCanBeConsumed = false
+            }
+        private val stubsConfiguration =
             project.configurations.create("stubs") {
                 it.isCanBeResolved = false
                 it.isCanBeConsumed = false
             }
 
-        fun Configuration.setResolveSources() {
+        private fun Configuration.setResolveSources() {
             isTransitive = false
             isCanBeConsumed = false
             attributes {
@@ -322,12 +335,14 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 )
             }
         }
-        docsSourcesConfiguration =
+
+        val docsSourcesConfiguration =
             project.configurations.create("docs-sources") {
                 it.setResolveSources()
                 it.extendsFrom(docsConfiguration, docsWithoutApiSinceConfiguration)
             }
-        multiplatformDocsSourcesConfiguration =
+
+        val multiplatformDocsSourcesConfiguration =
             project.configurations.create("multiplatform-docs-sources") { configuration ->
                 configuration.isTransitive = false
                 configuration.isCanBeConsumed = false
@@ -346,10 +361,13 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                         project.objects.named<LibraryElements>(LibraryElements.JAR),
                     )
                 }
-                configuration.extendsFrom(multiplatformDocsConfiguration)
+                configuration.extendsFrom(
+                    multiplatformDocsConfiguration,
+                    multiplatformDocsWithoutApiSinceConfiguration,
+                )
             }
 
-        versionMetadataConfiguration =
+        val versionMetadataConfiguration =
             project.configurations.create("library-version-metadata") {
                 it.isTransitive = false
                 it.isCanBeConsumed = false
@@ -367,21 +385,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 it.extendsFrom(docsConfiguration, multiplatformDocsConfiguration)
             }
 
-        fun Configuration.setResolveClasspathForUsage(usage: String) {
-            isCanBeConsumed = false
-            attributes {
-                it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named<Usage>(usage))
-                it.attribute(
-                    Category.CATEGORY_ATTRIBUTE,
-                    project.objects.named<Category>(Category.LIBRARY),
-                )
-                it.attribute(
-                    BuildTypeAttr.ATTRIBUTE,
-                    project.objects.named<BuildTypeAttr>("release"),
-                )
-            }
-            extendsFrom(docsConfiguration, stubsConfiguration, docsWithoutApiSinceConfiguration)
-        }
+        private val kotlinDefaultCatalogVersion = androidx.build.KotlinTarget.LATEST.catalogVersion
+        private val kotlinVersionConstraint =
+            project.versionCatalog.findVersion(kotlinDefaultCatalogVersion).get()
 
         // Build a compile & runtime classpaths for needed for documenting the libraries
         // from the configurations above.
@@ -436,6 +442,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         buildOnServer: TaskProvider<*>,
         docsConfiguration: Configuration,
         multiplatformDocsConfiguration: Configuration,
+        versionMetadataConfiguration: Configuration,
         mergedProjectMetadata: Provider<RegularFile>,
         docsType: String,
     ) {

@@ -20,6 +20,7 @@ import static androidx.compose.remote.core.documentation.DocumentedOperation.INT
 import static androidx.compose.remote.core.documentation.DocumentedOperation.REPEATED_FLOAT;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -69,9 +70,6 @@ public class TouchExpression extends Operation
     private float mLastChange = Float.NaN;
     private float mLastCalculatedValue = Float.NaN;
     AnimatedFloatExpression mExp = new AnimatedFloatExpression();
-
-    /** The maximum number of floats in the expression */
-    public static final int MAX_EXPRESSION_SIZE = 32;
 
     private VelocityEasing mEasyTouch = new VelocityEasing();
     private boolean mEasingToStop = false;
@@ -697,7 +695,7 @@ public class TouchExpression extends Operation
         int touchEffects = buffer.readInt();
         int len = buffer.readInt();
         int valueLen = len & 0xFFFF;
-        if (valueLen > MAX_EXPRESSION_SIZE) {
+        if (valueLen > Limits.MAX_EXPRESSION_SIZE) {
             throw new RuntimeException("Float expression to long");
         }
         float[] exp = new float[valueLen];

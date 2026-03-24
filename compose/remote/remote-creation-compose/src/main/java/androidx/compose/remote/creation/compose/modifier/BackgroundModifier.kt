@@ -62,7 +62,7 @@ public fun RemoteModifier.background(color: RemoteColor): RemoteModifier =
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteModifier.background(brush: RemoteBrush): RemoteModifier =
     this.drawWithContent {
-        drawRect(paint = RemotePaint { applyRemoteBrush(brush, remoteSize) })
+        drawRect(paint = RemotePaint { with(brush) { applyTo(this@RemotePaint, size) } })
         drawContent()
     }
 

@@ -122,7 +122,26 @@ class ServiceLoaderExtTest {
         activityInfo.packageName = activity.packageName
         activityInfo.name = activity.componentName.className
         val field = ActivityInfo::class.java.getField("requiredDisplayCategory")
-        field.set(activityInfo, "xr_projected")
+        field.set(activityInfo, REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED)
+        val packageInfo = PackageInfo()
+        packageInfo.packageName = activity.packageName
+        packageInfo.activities = arrayOf(activityInfo)
+
+        shadowOf(activity.packageManager).installPackage(packageInfo)
+
+        assertThat(getDeviceContextFeatures(activity)).contains(Feature.PROJECTED)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    fun getDeviceContextFeatures_onProjectedActivityLegacy_addsProjected() {
+        ShadowBuild.setFingerprint("a_real_device")
+        val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+        val activityInfo = ActivityInfo()
+        activityInfo.packageName = activity.packageName
+        activityInfo.name = activity.componentName.className
+        val field = ActivityInfo::class.java.getField("requiredDisplayCategory")
+        field.set(activityInfo, REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED_LEGACY)
         val packageInfo = PackageInfo()
         packageInfo.packageName = activity.packageName
         packageInfo.activities = arrayOf(activityInfo)

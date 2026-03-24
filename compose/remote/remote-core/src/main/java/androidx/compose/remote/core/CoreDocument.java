@@ -1696,6 +1696,18 @@ public class CoreDocument implements Serializable {
         }
         mTimeVariables.updateTime(context);
         mRepaintNext = context.updateOps();
+
+        // Ensure that variables that are dirty are updated before we do the layout pass
+        for (Operation operation : mOperations) {
+            if (operation.isDirty() && operation instanceof VariableSupport) {
+                ((VariableSupport) operation).updateVariables(context);
+                operation.apply(context);
+            }
+            if (operation == mRootLayoutComponent) {
+                break;
+            }
+        }
+
         if (mRootLayoutComponent != null) {
             if (context.mWidth != mRootLayoutComponent.getWidth()
                     || context.mHeight != mRootLayoutComponent.getHeight()) {

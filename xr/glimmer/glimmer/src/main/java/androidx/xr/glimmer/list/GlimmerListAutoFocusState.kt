@@ -56,6 +56,7 @@ internal class GlimmerListAutoFocusState {
         if (isAutoFocusEnabled && pendingRequestFocus && properties != null) {
             val layoutProperties = properties.layoutProperties
             val focusLinePosition = getFocusLinePosition(properties)
+            val size = node.requireLayoutCoordinates().size
 
             if (layoutProperties.isVertical) {
                 node.requestFocusForChildInLocalBounds(
@@ -64,7 +65,7 @@ internal class GlimmerListAutoFocusState {
                     bottom = focusLinePosition,
                     // Focus spans the cross-axis (width)
                     left = 0,
-                    right = layoutProperties.focusWidth,
+                    right = size.width,
                 )
             } else {
                 node.requestFocusForChildInLocalBounds(
@@ -73,7 +74,7 @@ internal class GlimmerListAutoFocusState {
                     right = focusLinePosition,
                     // Focus spans the cross-axis (height)
                     top = 0,
-                    bottom = layoutProperties.focusHeight,
+                    bottom = size.height,
                 )
             }
 
@@ -116,9 +117,3 @@ private fun getFocusLinePosition(state: GlimmerListAutoFocusProperties): Int {
     // the area where the focus line can exist by one pixel on both sides.
     return focusLinePosition.fastCoerceIn(start + 1, end - 1)
 }
-
-private val ListLayoutProperties.focusWidth: Int
-    get() = contentConstraints.maxWidth + totalHorizontalPadding
-
-private val ListLayoutProperties.focusHeight: Int
-    get() = contentConstraints.maxHeight + totalVerticalPadding

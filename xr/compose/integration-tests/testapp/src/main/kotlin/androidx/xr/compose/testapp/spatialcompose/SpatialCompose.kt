@@ -72,7 +72,6 @@ import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.AnchorPolicy
-import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SceneCoreEntity
 import androidx.xr.compose.subspace.SpatialActivityPanel
@@ -93,6 +92,7 @@ import androidx.xr.compose.subspace.layout.depth
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.rotate
@@ -212,6 +212,7 @@ class SpatialCompose : ComponentActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Composable
     @SubspaceComposable
     fun PanelGrid() {
@@ -272,8 +273,8 @@ class SpatialCompose : ComponentActivity() {
                         modifier =
                             SubspaceModifier.fillMaxHeight()
                                 .fillMaxWidth()
-                                .testTag("ActivityPanel"),
-                        dragPolicy = MovePolicy(true),
+                                .testTag("ActivityPanel")
+                                .movable(),
                     )
                 }
                 SpatialColumn(
@@ -289,14 +290,14 @@ class SpatialCompose : ComponentActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     @SubspaceComposable
     @Composable
     fun AppPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
         var moveResizeLocked by remember { mutableStateOf(true) }
         var alpha by remember { mutableFloatStateOf(1f) }
         SpatialPanel(
-            modifier = modifier.testTag(text).alpha(alpha),
-            dragPolicy = MovePolicy(isEnabled = !moveResizeLocked),
+            modifier = modifier.testTag(text).alpha(alpha).movable(enabled = !moveResizeLocked),
             resizePolicy =
                 ResizePolicy(
                     isEnabled = !moveResizeLocked,
@@ -349,6 +350,7 @@ class SpatialCompose : ComponentActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Composable
     fun PanelContent(content: @Composable () -> Unit) {
         var showArrows by remember { mutableStateOf(false) }

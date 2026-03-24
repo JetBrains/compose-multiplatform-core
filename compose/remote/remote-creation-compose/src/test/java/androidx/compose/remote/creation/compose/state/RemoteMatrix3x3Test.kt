@@ -62,7 +62,7 @@ class RemoteMatrix3x3Test {
     @Test
     fun matrix_concatenation() {
         val m =
-            RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f)) *
+            RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f)) *
                 RemoteMatrix3x3.createScaleX(RemoteFloat(1.5f)) *
                 RemoteMatrix3x3.createScaleY(RemoteFloat(2f))
         val mId = m.getIdForCreationState(creationState)
@@ -96,9 +96,9 @@ class RemoteMatrix3x3Test {
     @Test
     fun matrix_concatenation2() {
         val m =
-            RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f)) *
-                RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f)) *
-                RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f))
+            RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f)) *
+                RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f)) *
+                RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f))
         val mId = m.getIdForCreationState(creationState)
 
         makeAndPaintCoreDocument()
@@ -130,7 +130,7 @@ class RemoteMatrix3x3Test {
     @Test
     fun matrix_concatenation_with_identity() {
         val m =
-            RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f)) *
+            RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f)) *
                 RemoteMatrix3x3.createIdentity()
         val mId = m.getIdForCreationState(creationState)
 
@@ -164,7 +164,7 @@ class RemoteMatrix3x3Test {
     fun matrix_concatenation_with_identity2() {
         val m =
             RemoteMatrix3x3.createIdentity() *
-                RemoteMatrix3x3.createTranslateXY(RemoteFloat(10f), RemoteFloat(20f))
+                RemoteMatrix3x3.createTranslateXy(RemoteFloat(10f), RemoteFloat(20f))
         val mId = m.getIdForCreationState(creationState)
 
         makeAndPaintCoreDocument()

@@ -51,9 +51,7 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 fun RemoteButtonGroupThreeButtons() {
     RemoteButtonGroup(modifier = RemoteModifier.fillMaxWidth()) {
         Button(Icons.Filled.MailOutline, RemoteModifier.weight(1f))
-        Spacer()
         Button(Icons.Filled.Favorite, RemoteModifier.weight(1.5f))
-        Spacer()
         Button(Icons.Filled.Call, RemoteModifier.weight(1f))
     }
 }
@@ -69,7 +67,6 @@ private fun RemoteButtonGroupThreeButtonsPreview(
 fun RemoteButtonGroupTwoButtons() {
     RemoteButtonGroup(modifier = RemoteModifier.fillMaxWidth()) {
         Button(Icons.Filled.MailOutline, RemoteModifier.weight(1f))
-        Spacer()
         Button(Icons.Filled.Call, RemoteModifier.weight(1f))
     }
 }

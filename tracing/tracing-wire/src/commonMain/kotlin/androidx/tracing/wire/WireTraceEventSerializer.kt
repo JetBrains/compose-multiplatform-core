@@ -39,9 +39,6 @@ import androidx.tracing.wire.protos.MutableTrackDescriptor
 import androidx.tracing.wire.protos.MutableTrackEvent
 import com.squareup.wire.ProtoWriter
 
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
-
 /**
  * Optimized serializer of [androidx.tracing.TraceEvent], which writes out binary Perfetto
  * trace_packet.proto with minimal allocations
@@ -109,6 +106,7 @@ internal class WireTraceEventSerializer(sequenceId: Int) {
     }
 
     /** Reset and resize scratch annotations when necessary. */
+    @Suppress("NOTHING_TO_INLINE")
     inline fun resetScratchAnnotations() {
         val index = scratchAnnotationIndex[0]
         val size = index + 1
@@ -128,6 +126,7 @@ internal class WireTraceEventSerializer(sequenceId: Int) {
         scratchAnnotationIndex[0] = -1
     }
 
+    @Suppress("NOTHING_TO_INLINE")
     inline fun resetScratchFrames() {
         if (scratchCallStack.frames.isNotEmpty()) {
             scratchCallStack.frames = emptyList()

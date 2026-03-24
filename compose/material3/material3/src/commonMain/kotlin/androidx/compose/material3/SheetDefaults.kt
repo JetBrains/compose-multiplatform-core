@@ -233,6 +233,7 @@ internal fun BottomSheetImpl(
     val bottomSheetPaneTitle = getString(string = Strings.BottomSheetPaneTitle)
     val spatialFlingSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
     val viewConfiguration = LocalViewConfiguration.current
+    val density = LocalDensity.current
 
     val anchoredDraggableFlingBehavior =
         AnchoredDraggableDefaults.flingBehavior(
@@ -240,13 +241,11 @@ internal fun BottomSheetImpl(
             positionalThreshold = { _ -> state.positionalThreshold.invoke() },
             animationSpec = spatialFlingSpec,
         )
+
     val modalBottomSheetFlingBehavior =
-        remember(anchoredDraggableFlingBehavior) {
+        remember(anchoredDraggableFlingBehavior, state, viewConfiguration, density) {
             object : FlingBehavior {
                 override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
-                    // We clamp this to the device's physical maximum (usually ~8,000 px/s)
-                    // to prevent the math from breaking bounds. This prevents potential overshoot
-                    // bugs caused by migrating the sheet from stiff tween animations.
                     val maxSystemVelocity = viewConfiguration.maximumFlingVelocity
                     var safeVelocity =
                         initialVelocity.coerceIn(-maxSystemVelocity, maxSystemVelocity)
@@ -259,11 +258,19 @@ internal fun BottomSheetImpl(
                         val currentOffset = state.requireOffset()
                         val distanceToFloor = max(0f, hiddenAnchor - currentOffset)
 
-                        // Apply a friction zone to the bottom 400 pixels
-                        val dampeningZone = 400f
+                        val dampeningZone =
+                            with(density) { BottomSheetDefaults.BoundaryDampeningZone.toPx() }
                         if (distanceToFloor < dampeningZone) {
                             val factor = distanceToFloor / dampeningZone
                             safeVelocity *= factor
+
+                            // Ensure previously valid velocities (above velocityThresholdPx) shrink
+                            // at most to velocityThresholdPx to maintain a valid fling.
+                            val velocityThresholdPx =
+                                with(density) { BottomSheetDefaults.VelocityThreshold.toPx() }
+                            if (initialVelocity >= velocityThresholdPx) {
+                                safeVelocity = max(safeVelocity, velocityThresholdPx)
+                            }
                         }
                     }
 
@@ -324,16 +331,15 @@ internal fun BottomSheetImpl(
                         }
                     }
                     val newTarget =
-                        when (state.anchoredDraggableState.targetValue) {
+                        when (state.targetValue) {
                             Hidden -> Hidden
                             PartiallyExpanded -> {
-                                val hasPartiallyExpandedState =
-                                    newAnchors.hasPositionFor(PartiallyExpanded)
-                                val newTarget =
-                                    if (hasPartiallyExpandedState) PartiallyExpanded
-                                    else if (newAnchors.hasPositionFor(Expanded)) Expanded
-                                    else Hidden
-                                newTarget
+                                when {
+                                    newAnchors.hasPositionFor(PartiallyExpanded) ->
+                                        PartiallyExpanded
+                                    newAnchors.hasPositionFor(Expanded) -> Expanded
+                                    else -> Hidden
+                                }
                             }
 
                             Expanded -> {
@@ -808,6 +814,14 @@ object BottomSheetDefaults {
     internal val PositionalThreshold = 56.dp
 
     internal val VelocityThreshold = 125.dp
+
+    /**
+     * The distance from the absolute bottom boundary (Hidden anchor) where nested scroll swipe
+     * velocity begins to exponentially dampen.
+     *
+     * This prevents overshoots from spring physics in expressive theming.
+     */
+    internal val BoundaryDampeningZone = 125.dp
 
     /** The optional visual marker placed on top of a bottom sheet to indicate it may be dragged. */
     @Composable

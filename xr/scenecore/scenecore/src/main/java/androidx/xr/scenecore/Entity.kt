@@ -259,20 +259,26 @@ public interface Entity : ScenePose {
             pose: Pose = Pose.Identity,
             parent: Entity? = session.scene.activitySpace,
         ): Entity =
-            EntityImpl.create(session.sceneRuntime, session.scene.entityManager, name, pose, parent)
+            EntityImpl.create(
+                session.sceneRuntime,
+                session.scene.entityRegistry,
+                name,
+                pose,
+                parent,
+            )
     }
 }
 
 /** The BaseEntity is an implementation of Entity interface that wraps a platform entity. */
 public abstract class BaseEntity<RtEntityType : RtEntity>
-internal constructor(rtEntity: RtEntityType, private val entityManager: EntityManager) :
+internal constructor(rtEntity: RtEntityType, private val entityRegistry: EntityRegistry) :
     Entity, BaseScenePose<RtScenePose>(rtEntity) {
 
     internal var rtEntity: RtEntityType?
 
     init {
         this.rtEntity = rtEntity
-        entityManager.setEntityForRtEntity(rtEntity, this)
+        entityRegistry.setEntityForRtEntity(rtEntity, this)
     }
 
     private val componentList = mutableListOf<Component>()
@@ -301,7 +307,7 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
     override var parent: Entity?
         get() {
             checkNotDisposed()
-            return rtEntity!!.parent?.let { entityManager.getEntityForRtEntity(it) }
+            return rtEntity!!.parent?.let { entityRegistry.getEntityForRtEntity(it) }
         }
         set(value) {
             checkNotDisposed()
@@ -319,7 +325,7 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
     }
 
     private fun getChildrenInternal() =
-        rtEntity?.children?.mapNotNull { entityManager.getEntityForRtEntity(it) } ?: emptyList()
+        rtEntity?.children?.mapNotNull { entityRegistry.getEntityForRtEntity(it) } ?: emptyList()
 
     override val children: List<Entity>
         get() {
@@ -401,7 +407,7 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
         }
         rtEntity?.let {
             removeAllComponents()
-            entityManager.removeEntity(this)
+            entityRegistry.removeEntity(this)
             it.dispose()
             rtEntity = null
         }
@@ -441,16 +447,16 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
     }
 }
 
-internal class EntityImpl private constructor(rtEntity: RtEntity, entityManager: EntityManager) :
-    BaseEntity<RtEntity>(rtEntity, entityManager) {
+internal class EntityImpl private constructor(rtEntity: RtEntity, entityRegistry: EntityRegistry) :
+    BaseEntity<RtEntity>(rtEntity, entityRegistry) {
     public companion object {
         /** Factory method to create EntityImpl entities. */
         internal fun create(
             sceneRuntime: SceneRuntime,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             name: String? = null,
             pose: Pose = Pose.Identity,
-            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): EntityImpl =
             EntityImpl(
                 sceneRuntime.createEntity(
@@ -466,7 +472,7 @@ internal class EntityImpl private constructor(rtEntity: RtEntity, entityManager:
                         parent?.rtEntity
                     },
                 ),
-                entityManager,
+                entityRegistry,
             )
     }
 }

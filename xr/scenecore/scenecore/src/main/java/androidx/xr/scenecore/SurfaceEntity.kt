@@ -53,9 +53,9 @@ public class SurfaceEntity
 private constructor(
     private val perceptionSpace: PerceptionSpace,
     rtEntity: RtSurfaceEntity,
-    entityManager: EntityManager,
+    entityRegistry: EntityRegistry,
     shape: Shape,
-) : BaseEntity<RtSurfaceEntity>(rtEntity, entityManager) {
+) : BaseEntity<RtSurfaceEntity>(rtEntity, entityRegistry) {
 
     /** Represents the shape of the Canvas that backs a SurfaceEntity. */
     public interface Shape {
@@ -587,7 +587,7 @@ private constructor(
          *
          * @param sceneRuntime SceneRuntime to use.
          * @param renderingRuntime RenderingRuntime to use.
-         * @param entityManager A SceneCore EntityManager
+         * @param entityRegistry A SceneCore [EntityRegistry]
          * @param stereoMode An [Int] which defines how surface subregions map to eyes
          * @param mediaBlendingMode The [MediaBlendingMode] which describes the blending mode of the
          *   content.
@@ -614,7 +614,9 @@ private constructor(
             contentColorMetadata: ContentColorMetadata? = null,
             superSampling: SuperSampling = SuperSampling.PENTAGON,
             parent: Entity? =
-                session.scene.entityManager.getEntityForRtEntity(session.sceneRuntime.activitySpace),
+                session.scene.entityRegistry.getEntityForRtEntity(
+                    session.sceneRuntime.activitySpace
+                ),
         ): SurfaceEntity {
             val rtShape =
                 when (shape) {
@@ -649,7 +651,7 @@ private constructor(
                             parent?.rtEntity
                         },
                     ),
-                    session.scene.entityManager,
+                    session.scene.entityRegistry,
                     shape,
                 )
             surfaceEntity.contentColorMetadata = contentColorMetadata

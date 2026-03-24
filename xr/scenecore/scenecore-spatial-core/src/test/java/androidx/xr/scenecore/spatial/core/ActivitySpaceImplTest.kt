@@ -84,7 +84,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
     private lateinit var activitySpace: ActivitySpaceImpl
 
     private fun createTestSceneRuntime(): SceneRuntime {
-        return SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions, EntityManager())
+        return SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions, SceneNodeRegistry())
     }
 
     @Before

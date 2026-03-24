@@ -22,10 +22,12 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -135,7 +137,11 @@ public fun SpatialGltfModel(
     )
 }
 
-/** Remembers a [SpatialGltfModelState] object for use with the [SpatialGltfModel] API. */
+/**
+ * Remembers a [SpatialGltfModelState] object for use with the [SpatialGltfModel] API.
+ *
+ * @param source The [SpatialGltfModelSource] that defines where to load the 3D model from.
+ */
 @Composable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun rememberSpatialGltfModelState(source: SpatialGltfModelSource): SpatialGltfModelState =
@@ -177,8 +183,8 @@ public class SpatialGltfModelState(internal val source: SpatialGltfModelSource) 
      * model fails to load for any reason, the `status` will be a [SpatialGltfModelStatus.Failed]
      * with the exception that was thrown.
      */
-    public val status: State<SpatialGltfModelStatus>
-        get() = _status
+    public val status: SpatialGltfModelStatus
+        get() = _status.value
 
     /**
      * The subnodes defined in the glTF model.
@@ -517,11 +523,23 @@ public class SpatialGltfModelAnimation internal constructor(private val animatio
      *
      * Negative multipliers will play the animation in reverse.
      */
-    public var speed: Float = 1.0f
+    public var speed: Float
+        get() = _speed.floatValue
         set(value) {
-            field = value
-            animation.setSpeed(value)
+            // Update immediately if the animation is playing or paused; otherwise, store the speed
+            // to be updated on the next call to start or loop.
+            val sceneCoreState = animation.animationState
+            if (
+                sceneCoreState == GltfAnimation.AnimationState.PLAYING ||
+                    sceneCoreState == GltfAnimation.AnimationState.PAUSED
+            ) {
+                animation.setSpeed(value)
+            }
+
+            _speed.floatValue = value
         }
+
+    private val _speed: MutableFloatState = mutableFloatStateOf(1.0f)
 
     private var seekStartTime: Duration = 0.seconds
 

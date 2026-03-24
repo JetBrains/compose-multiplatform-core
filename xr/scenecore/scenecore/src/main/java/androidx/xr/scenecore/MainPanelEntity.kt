@@ -42,12 +42,12 @@ internal constructor(
     private val lifecycleManager: LifecycleManager,
     private val sceneRuntime: SceneRuntime,
     perceptionSpace: PerceptionSpace,
-    entityManager: EntityManager,
+    entityRegistry: EntityRegistry,
 ) :
     PanelEntity(
         perceptionSpace,
         sceneRuntime.mainPanelEntity,
-        entityManager,
+        entityRegistry,
         isMainPanelEntity = true,
     ) {
 
@@ -149,9 +149,9 @@ internal constructor(
             lifecycleManager: LifecycleManager,
             sceneRuntime: SceneRuntime,
             perceptionSpace: PerceptionSpace,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
         ): MainPanelEntity =
-            MainPanelEntity(lifecycleManager, sceneRuntime, perceptionSpace, entityManager)
+            MainPanelEntity(lifecycleManager, sceneRuntime, perceptionSpace, entityRegistry)
     }
 
     override fun dispose() {

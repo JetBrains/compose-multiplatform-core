@@ -86,11 +86,27 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
      * @property pose the [Pose] of the eye
      * @property trackingState the [TrackingState] of the eye
      */
-    public class State(
+    public class State
+    internal constructor(
         public val isOpen: Boolean,
         public val pose: Pose,
         public override val trackingState: TrackingState,
-    ) : Trackable.State {}
+    ) : Trackable.State {
+        override fun hashCode(): Int {
+            var result = isOpen.hashCode()
+            result = 31 * result + pose.hashCode()
+            result = 31 * result + trackingState.hashCode()
+            return result
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is State) return false
+            return isOpen == other.isOpen &&
+                pose == other.pose &&
+                trackingState == other.trackingState
+        }
+    }
 
     private var _state =
         MutableStateFlow(State(runtimeEye.isOpen, runtimeEye.pose, runtimeEye.trackingState))

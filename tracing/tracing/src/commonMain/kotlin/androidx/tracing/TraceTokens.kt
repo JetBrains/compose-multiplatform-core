@@ -52,7 +52,7 @@ internal inline fun inheritedPropagationToken(
                 if (
                     element.synchronizedCompareAndSet(expected = STATE_BEGIN, newValue = STATE_END)
                 ) {
-                    element.tracer.currentThreadTrack().endSection()
+                    element.tracer.process.currentThreadTrack().endSection()
                 }
             },
         )
@@ -90,7 +90,7 @@ internal fun inheritedCoroutinePropagationToken(
                         )
                 ) {
                     val result =
-                        contextElement.tracer
+                        contextElement.tracer.process
                             .currentThreadTrack()
                             .beginCoroutineSection(
                                 category = category,
@@ -114,7 +114,7 @@ internal fun inheritedCoroutinePropagationToken(
                             newValue = STATE_END,
                         )
                 ) {
-                    contextElement.tracer.currentThreadTrack().endSection()
+                    contextElement.tracer.process.currentThreadTrack().endSection()
                 }
             },
             close = { platformThreadContextElement ->
@@ -125,7 +125,7 @@ internal fun inheritedCoroutinePropagationToken(
                         newValue = STATE_END,
                     )
                 ) {
-                    platformThreadContextElement.tracer.currentThreadTrack().endSection()
+                    platformThreadContextElement.tracer.process.currentThreadTrack().endSection()
                 }
             },
         )

@@ -54,7 +54,7 @@ class RemoteColorTest {
                     drawRect(paint = RemotePaint { color = copy })
                     drawCircle(
                         paint = RemotePaint { color = copy },
-                        radius = this.remoteSize.minDimension / 2f,
+                        radius = size.minDimension / 2f,
                     )
                 }
             }

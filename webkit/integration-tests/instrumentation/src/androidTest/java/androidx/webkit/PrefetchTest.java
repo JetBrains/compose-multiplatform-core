@@ -127,6 +127,7 @@ public class PrefetchTest {
      * Test to make sure that calling the API won't cause any obvious errors.
      */
     @Test
+    @SuppressWarnings("removal")
     public void testSettingCacheConfig() {
         WebkitUtils.checkFeature(WebViewFeature.SPECULATIVE_LOADING_CONFIG);
         SpeculativeLoadingConfig.Builder builder =

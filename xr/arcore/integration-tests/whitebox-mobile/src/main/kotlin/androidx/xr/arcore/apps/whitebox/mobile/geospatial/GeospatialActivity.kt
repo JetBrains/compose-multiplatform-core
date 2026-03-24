@@ -55,6 +55,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.ArDevice
+import androidx.xr.arcore.CreateGeospatialPoseFromPoseErrorInternal
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseNotTracking
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
 import androidx.xr.arcore.Geospatial
@@ -174,6 +175,9 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
             is CreateGeospatialPoseFromPoseNotTracking -> {
                 XrLog.error { "Failed to create anchor: Geospatial is not tracking." }
             }
+
+            is CreateGeospatialPoseFromPoseErrorInternal ->
+                XrLog.error { geospatialPoseResult.error }
         }
     }
 
@@ -288,6 +292,9 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
                             .trimIndent()
                     is CreateGeospatialPoseFromPoseNotTracking ->
                         "Localization Status: Not tracking"
+
+                    is CreateGeospatialPoseFromPoseErrorInternal ->
+                        "Localization Status: ${result.error}"
                 }
             else -> "Localization Status: Unknown"
         }

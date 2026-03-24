@@ -276,7 +276,11 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
                         : mFontWeight;
         mTextAlignValue = (short) (mTextAlign & 0xFFFF);
         if (mIsDynamicColorEnabled) {
-            mColorValue = context.getColor(mColorId);
+            int color = context.getColor(mColorId);
+            if (color != mColorValue)  {
+                invalidateMeasure();
+            }
+            mColorValue = color;
         } else {
             mColorValue = mColor;
         }

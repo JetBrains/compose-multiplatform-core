@@ -26,6 +26,8 @@ import androidx.xr.compose.subspace.node.SubspaceSemanticsModifierNode
  * Applies a tag to allow modified element to be found in tests.
  *
  * This is a convenience method for a [semantics] that sets [SemanticsPropertyReceiver.testTag].
+ *
+ * @param tag String used to identify the modified element in tests.
  */
 public fun SubspaceModifier.testTag(tag: String): SubspaceModifier = this then TestTagElement(tag)
 

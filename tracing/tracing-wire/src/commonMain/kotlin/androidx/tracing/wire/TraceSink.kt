@@ -18,6 +18,7 @@ package androidx.tracing.wire
 
 import androidx.annotation.GuardedBy
 import androidx.annotation.IntRange
+import androidx.tracing.AbstractTraceSink
 import androidx.tracing.PooledTracePacketArray
 import androidx.tracing.Queue
 import androidx.tracing.synchronized
@@ -34,9 +35,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import okio.BufferedSink
 
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
-
 /**
  * The trace sink that writes [BufferedSink], to a new file per trace session.
  *
@@ -50,10 +48,10 @@ import okio.BufferedSink
  * [C++](https://perfetto.dev/docs/analysis/trace-processor) tool it's built on, or the
  * [Python](https://perfetto.dev/docs/analysis/trace-processor-python) wrapper.
  *
- * As binary protos embed strings as UTF-8, note that any strings serialized by WireTraceSink will
- * be serialized as UTF-8.
+ * As binary protos embed strings as UTF-8, note that any strings serialized by TraceSink will be
+ * serialized as UTF-8.
  *
- * To create a WireTraceSink for a File, you can use `File("myFile").appendingSink().buffer()`.
+ * To create a TraceSink for a File, you can use `File("myFile").appendingSink().buffer()`.
  */
 public class TraceSink(
     /**
@@ -72,7 +70,7 @@ public class TraceSink(
 
     /** Coroutine context to execute the serialization on. */
     private val coroutineContext: CoroutineContext = NonCancellable + Dispatchers.IO,
-) : androidx.tracing.TraceSink() {
+) : AbstractTraceSink() {
     private val protoWriter = ProtoWriter(bufferedSink)
     private val wireTraceEventSerializer = WireTraceEventSerializer(sequenceId)
 
@@ -153,6 +151,7 @@ public class TraceSink(
         }
     }
 
+    @Suppress("NOTHING_TO_INLINE")
     private inline fun drainQueue() {
         while (queue.isNotEmpty()) {
             // We are not trying to be accurate about exactly which specific event has the

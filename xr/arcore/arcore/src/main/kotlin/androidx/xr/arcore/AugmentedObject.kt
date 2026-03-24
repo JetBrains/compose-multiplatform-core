@@ -102,7 +102,24 @@ internal constructor(
         public val category: Category,
         public val centerPose: Pose,
         public val extents: FloatSize3d,
-    ) : Trackable.State {}
+    ) : Trackable.State {
+        override fun hashCode(): Int {
+            var result = trackingState.hashCode()
+            result = 31 * result + category.hashCode()
+            result = 31 * result + centerPose.hashCode()
+            result = 31 * result + extents.hashCode()
+            return result
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is State) return false
+            return trackingState == other.trackingState &&
+                category == other.category &&
+                centerPose == other.centerPose &&
+                extents == other.extents
+        }
+    }
 
     private val _state =
         MutableStateFlow(

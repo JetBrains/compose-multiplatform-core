@@ -94,9 +94,9 @@ package androidx.xr.compose.material3 {
 
   public final class SpaceToggleButtonDefaults {
     method @KotlinOnly @androidx.compose.runtime.Composable public void CollapseIcon();
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void CollapseIcon(androidx.compose.runtime.Composer?, int);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public void CollapseIcon(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public void ExpandIcon();
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void ExpandIcon(androidx.compose.runtime.Composer?, int);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public void ExpandIcon(androidx.compose.runtime.Composer?, int);
     field public static final androidx.xr.compose.material3.SpaceToggleButtonDefaults INSTANCE;
   }
 

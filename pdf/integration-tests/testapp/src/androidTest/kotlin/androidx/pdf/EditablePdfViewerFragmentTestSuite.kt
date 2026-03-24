@@ -28,6 +28,7 @@ import androidx.pdf.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.actions.TwoFingerSwipeDownAction
 import androidx.pdf.actions.TwoFingerSwipeUpAction
 import androidx.pdf.actions.clickOnPdfPoint
+import androidx.pdf.annotation.models.HighlightAnnotation
 import androidx.pdf.ink.R as PdfInkR
 import androidx.pdf.ink.view.AnnotationToolbar
 import androidx.pdf.util.Preconditions
@@ -571,6 +572,50 @@ class EditablePdfViewerFragmentTestSuite {
         assertThat(savedAnnotations).hasSize(1)
     }
 
+    @Test
+    fun testEditablePdfViewerFragment_eraseExistingHighlightAnnotationAndSaveChanges() = runTest {
+        if (!isRequiredSdkExtensionAvailable()) return@runTest
+
+        lateinit var fragment: TestEditablePdfViewerFragment
+        scenario.onFragment { fragment = it }
+        loadDocumentAndSetupFragment(file = PRE_EXISTING_HIGHLIGHTS)
+        enterEditMode()
+
+        // 1. Verify pre-existing Highlight Annotations
+        val initialAnnotations = fragment.fetchAnnotations(pageNum = 0)
+        assertThat(initialAnnotations).isNotEmpty()
+        initialAnnotations.forEach { keyedAnnotation ->
+            assertThat(keyedAnnotation.annotation).isInstanceOf(HighlightAnnotation::class.java)
+        }
+        val initialCount = initialAnnotations.size
+        assertThat(initialCount).isEqualTo(3)
+
+        // 2. Select the Eraser tool
+        onView(withId(PdfInkR.id.eraser_button)).perform(click())
+
+        // 3. Erase the first highlight annotation
+        val firstHighlight = initialAnnotations[0].annotation as HighlightAnnotation
+        val bounds = firstHighlight.bounds[0]
+        val centerPoint = PointF(bounds.centerX(), bounds.centerY())
+
+        onView(withId(PdfR.id.pdfContentLayout)).perform(clickOnPdfPoint(PdfPoint(0, centerPoint)))
+
+        // 4. Apply edits and verify count reduced by 1
+        fragment.pdfApplyEditsIdlingResource.increment()
+        fragment.applyDraftEdits()
+        onIdle()
+
+        val destinationUri = TestUtils.createFile(DESTINATION_FILE_NAME)
+        fragment.writeTo(destinationUri.toPfd())
+
+        fragment.pdfLoadingIdlingResource.increment()
+        fragment.documentUri = destinationUri
+        onIdle()
+
+        val savedAnnotations = fragment.fetchAnnotations(0)
+        assertThat(savedAnnotations).hasSize(initialCount - 1)
+    }
+
     private fun TestEditablePdfViewerFragment.syncApplyEdits() {
         pdfApplyEditsIdlingResource.increment()
         applyDraftEdits()
@@ -603,6 +648,8 @@ class EditablePdfViewerFragmentTestSuite {
     companion object {
         private const val TEST_DOCUMENT_FILE = "sample.pdf"
         private const val DESTINATION_FILE_NAME = "destination.pdf"
+
+        private const val PRE_EXISTING_HIGHLIGHTS = "pre_existing_highlight_annotations.pdf"
         private const val REQUIRED_EXTENSION_VERSION = 18
         private const val FORM_PDF = "click_form.pdf"
 

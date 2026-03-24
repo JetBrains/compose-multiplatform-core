@@ -134,6 +134,6 @@ private fun Modifier.demoBackground(overlayOnBackground: Boolean) =
                     blendMode = BlendMode.Screen
                 }
         } else {
-            Modifier.background(GlimmerTheme.colors.surface)
+            Modifier.background(GlimmerTheme.colors.background)
         }
     )

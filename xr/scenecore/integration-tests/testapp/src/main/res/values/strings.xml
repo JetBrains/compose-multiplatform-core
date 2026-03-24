@@ -36,6 +36,7 @@
     <string name="cuj_scene_viewer_test">3D Model Viewer - SceneViewer XR Test Case</string>
     <string name="cuj_standalone_test">Positional Test Case</string>
     <string name="cuj_gltf_model_material_texture_test">GLTF Model Material Texture Test Case</string>
+    <string name="cuj_mesh_entity_test">Mesh Entity Test Case</string>
     <string name="cuj_movable_test">AnchorPlacement Test Case</string>
     <string name="cuj_panel_rounded_corner">Rounded Corners Test Case</string>
     <string name="cuj_head_locked_ui_test">Headlocked UI Test Case </string>

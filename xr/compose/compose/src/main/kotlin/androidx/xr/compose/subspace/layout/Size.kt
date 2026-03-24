@@ -36,17 +36,27 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.scene
 
-/** Declare the preferred size of the content to be exactly [width] dp along the x dimension. */
+/**
+ * Declare the preferred size of the content to be exactly [width] dp along the x dimension.
+ *
+ * @param width preferred width in [Dp].
+ */
 public fun SubspaceModifier.width(width: Dp): SubspaceModifier =
     this.then(SizeElement(minWidth = width, maxWidth = width, enforceIncoming = true))
 
-/** Declare the preferred size of the content to be exactly [height] dp along the y dimension. */
+/**
+ * Declare the preferred size of the content to be exactly [height] dp along the y dimension.
+ *
+ * @param height preferred height in [Dp].
+ */
 public fun SubspaceModifier.height(height: Dp): SubspaceModifier =
     this.then(SizeElement(minHeight = height, maxHeight = height, enforceIncoming = true))
 
 /**
  * Declare the preferred size of the content to be exactly [depth] dp along the z dimension. Panels
  * have 0 depth and ignore this modifier.
+ *
+ * @param depth preferred depth in [Dp].
  */
 public fun SubspaceModifier.depth(depth: Dp): SubspaceModifier =
     this.then(SizeElement(minDepth = depth, maxDepth = depth, enforceIncoming = true))
@@ -54,6 +64,8 @@ public fun SubspaceModifier.depth(depth: Dp): SubspaceModifier =
 /**
  * Declare the preferred size of the content to be exactly a [size] dp cube. When applied to a
  * Panel, the preferred size will be a [size] dp square instead.
+ *
+ * @param size preferred size in [Dp] for all dimensions.
  */
 public fun SubspaceModifier.size(size: Dp): SubspaceModifier =
     this.then(
@@ -71,6 +83,10 @@ public fun SubspaceModifier.size(size: Dp): SubspaceModifier =
 /**
  * Declare the preferred size of the content to be exactly [width] dp along the x dimensions,
  * [height] dp along the y dimensions, and [depth] dp along the z dimension.
+ *
+ * @param width preferred width in [Dp].
+ * @param height preferred height in [Dp].
+ * @param depth preferred depth in [Dp].
  */
 public fun SubspaceModifier.size(
     width: Dp = Dp.Unspecified,
@@ -92,6 +108,8 @@ public fun SubspaceModifier.size(
 /**
  * Declare the preferred size of the content to be exactly [size] in each of the three dimensions.
  * Panels have 0 depth and ignore the z-component of this modifier.
+ *
+ * @param size preferred volume size as a [DpVolumeSize].
  */
 public fun SubspaceModifier.size(size: DpVolumeSize): SubspaceModifier =
     this.then(
@@ -275,6 +293,8 @@ private class RecommendedSizeNode :
  * This is in contrast to [SubspaceModifier.width], which respects the parent's constraints.
  * `requiredWidth` will ignore the `minWidth` and `maxWidth` from the incoming constraints, which
  * can be useful for sizing an element to a specific value even if it exceeds the parent's bounds.
+ *
+ * @param width required width in [Dp].
  */
 public fun SubspaceModifier.requiredWidth(width: Dp): SubspaceModifier =
     this.then(SizeElement(minWidth = width, maxWidth = width, enforceIncoming = false))
@@ -286,6 +306,8 @@ public fun SubspaceModifier.requiredWidth(width: Dp): SubspaceModifier =
  * This is in contrast to [SubspaceModifier.height], which respects the parent's constraints.
  * `requiredHeight` will ignore the `minHeight` and `maxHeight` from the incoming constraints, which
  * can be useful for sizing an element to a specific value even if it exceeds the parent's bounds.
+ *
+ * @param height required height in [Dp].
  */
 public fun SubspaceModifier.requiredHeight(height: Dp): SubspaceModifier =
     this.then(SizeElement(minHeight = height, maxHeight = height, enforceIncoming = false))
@@ -297,6 +319,8 @@ public fun SubspaceModifier.requiredHeight(height: Dp): SubspaceModifier =
  * This is in contrast to [SubspaceModifier.depth], which respects the parent's constraints.
  * `requiredDepth` will ignore the `minDepth` and `maxDepth` from the incoming constraints, which
  * can be useful for sizing an element to a specific value even if it exceeds the parent's bounds.
+ *
+ * @param depth required depth in [Dp].
  */
 public fun SubspaceModifier.requiredDepth(depth: Dp): SubspaceModifier =
     this.then(SizeElement(minDepth = depth, maxDepth = depth, enforceIncoming = false))
@@ -308,6 +332,8 @@ public fun SubspaceModifier.requiredDepth(depth: Dp): SubspaceModifier =
  * This is in contrast to [SubspaceModifier.size], which respects the parent's constraints.
  * `requiredSize` will ignore all min and max constraints from the incoming constraints, which can
  * be useful for sizing an element to a specific value even if it exceeds the parent's bounds.
+ *
+ * @param size required size in [Dp] for all dimensions.
  */
 public fun SubspaceModifier.requiredSize(size: Dp): SubspaceModifier =
     this.then(
@@ -331,6 +357,8 @@ public fun SubspaceModifier.requiredSize(size: Dp): SubspaceModifier =
  * `requiredSize` will ignore all min and max constraints from the incoming constraints, which can
  * be useful for sizing an element to a specific value even if it exceeds the parent's bounds. The
  * parent will then determine how to handle the overflow.
+ *
+ * @param size required volume size as a [DpVolumeSize].
  */
 public fun SubspaceModifier.requiredSize(size: DpVolumeSize): SubspaceModifier =
     this.then(
@@ -354,6 +382,10 @@ public fun SubspaceModifier.requiredSize(size: DpVolumeSize): SubspaceModifier =
  * `requiredSize` will ignore all min and max constraints from the incoming constraints, which can
  * be useful for sizing an element to a specific value even if it exceeds the parent's bounds. The
  * parent will then determine how to handle the overflow.
+ *
+ * @param width required width in [Dp].
+ * @param height required height in [Dp].
+ * @param depth required depth in [Dp].
  */
 public fun SubspaceModifier.requiredSize(
     width: Dp = Dp.Unspecified,

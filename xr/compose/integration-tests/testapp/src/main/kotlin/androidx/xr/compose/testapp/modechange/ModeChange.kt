@@ -139,6 +139,7 @@ class ModeChange : ComponentActivity() {
             contentAlignment = Alignment.Center,
         ) {
             Column {
+                @Suppress("DEPRECATION")
                 Orbiter(position = ContentEdge.Top, offset = 5.dp) {
                     Text(
                         text = orbiterText,

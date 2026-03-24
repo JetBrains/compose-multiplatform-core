@@ -138,7 +138,7 @@ internal constructor(
          * @param x The distance to translate along the X-axis.
          * @param y The distance to translate along the Y-axis.
          */
-        public fun createTranslateXY(x: RemoteFloat, y: RemoteFloat): RemoteMatrix3x3 =
+        public fun createTranslateXy(x: RemoteFloat, y: RemoteFloat): RemoteMatrix3x3 =
             RemoteMatrix3x3(
                 cacheKey = RemoteOperationCacheKey.create(OperationKey.TRANSLATE_XY, x, y),
                 arrayProvider = { creationState ->

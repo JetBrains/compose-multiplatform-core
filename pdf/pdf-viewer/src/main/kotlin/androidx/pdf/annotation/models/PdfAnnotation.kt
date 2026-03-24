@@ -41,6 +41,10 @@ public abstract class PdfAnnotation(public open val pageNum: Int) : Parcelable {
                 dest.writeInt(STAMP_ANNOTATION_TYPE)
                 writeStampAnnotationToParcel(dest, flags)
             }
+            is HighlightAnnotation -> {
+                dest.writeInt(HIGHLIGHT_ANNOTATION_TYPE)
+                writeHighlightAnnotationToParcel(dest, flags)
+            }
             else -> {
                 dest.writeInt(UNKNOWN_TYPE)
             }
@@ -54,6 +58,9 @@ public abstract class PdfAnnotation(public open val pageNum: Int) : Parcelable {
         /** Stamp annotation type representing [StampAnnotation] */
         internal const val STAMP_ANNOTATION_TYPE: Int = 1
 
+        /** Highlight annotation type representing [HighlightAnnotation] */
+        internal const val HIGHLIGHT_ANNOTATION_TYPE: Int = 2
+
         /** Parcelable creator for [PdfAnnotation]. */
         @JvmField
         public val CREATOR: Parcelable.Creator<PdfAnnotation> =
@@ -62,6 +69,8 @@ public abstract class PdfAnnotation(public open val pageNum: Int) : Parcelable {
                     val type = parcel.readInt()
                     return when (type) {
                         STAMP_ANNOTATION_TYPE -> StampAnnotation.CREATOR.createFromParcel(parcel)
+                        HIGHLIGHT_ANNOTATION_TYPE ->
+                            HighlightAnnotation.CREATOR.createFromParcel(parcel)
                         else -> null
                     }
                 }

@@ -30,13 +30,13 @@
             android:name="androidx.xr.projected.testapp.componentpermissions.PermissionsComponentActivity"
             android:exported="true"
             android:label="Component Permission Activity"
-            android:requiredDisplayCategory="xr_projected">
+            android:requiredDisplayCategory="android.hardware.display.category.XR_PROJECTED">
         </activity>
         <activity
             android:name="androidx.xr.projected.testapp.permissions.PermissionsActivity"
             android:exported="true"
             android:label="Permission Activity"
-            android:requiredDisplayCategory="xr_projected">
+            android:requiredDisplayCategory="android.hardware.display.category.XR_PROJECTED">
         </activity>
         <activity
             android:name="androidx.xr.projected.testapp.projectedcontext.ProjectedContextActivity"
@@ -47,7 +47,7 @@
             android:name="androidx.xr.projected.testapp.projectedcontext.ProjectedActivity"
             android:exported="true"
             android:label="Projected Activity"
-            android:requiredDisplayCategory="xr_projected">
+            android:requiredDisplayCategory="android.hardware.display.category.XR_PROJECTED">
         </activity>
         <activity
             android:name="androidx.xr.projected.testapp.audio.AudioActivity"
@@ -58,7 +58,7 @@
             android:name="androidx.xr.projected.testapp.input.ProjectedInputActivity"
             android:exported="true"
             android:label="Projected Input Activity"
-            android:requiredDisplayCategory="xr_projected">
+            android:requiredDisplayCategory="android.hardware.display.category.XR_PROJECTED">
         </activity>
         <activity
             android:name="androidx.xr.projected.testapp.controller.DisplayControllerActivity"
@@ -70,7 +70,7 @@
             android:exported="true"
             android:label="Controller Projected Activity"
             android:launchMode="singleTop"
-            android:requiredDisplayCategory="xr_projected">
+            android:requiredDisplayCategory="android.hardware.display.category.XR_PROJECTED">
         </activity>
         <activity
             android:name="androidx.xr.projected.testapp.camera.CameraActivity"

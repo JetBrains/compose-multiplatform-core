@@ -38,8 +38,8 @@ public class ActivityPanelEntity
 private constructor(
     perceptionSpace: PerceptionSpace,
     private val rtActivityPanelEntity: RtActivityPanelEntity,
-    entityManager: EntityManager,
-) : PanelEntity(perceptionSpace, rtActivityPanelEntity, entityManager) {
+    entityRegistry: EntityRegistry,
+) : PanelEntity(perceptionSpace, rtActivityPanelEntity, entityRegistry) {
 
     /**
      * Starts an [Activity] in the given panel. Subsequent calls to this method will replace the
@@ -69,12 +69,12 @@ private constructor(
             lifecycleManager: LifecycleManager,
             sceneRuntime: SceneRuntime,
             perceptionSpace: PerceptionSpace,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             pixelDimensions: IntSize2d,
             name: String,
             hostActivity: Activity,
             pose: Pose = Pose.Identity,
-            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): ActivityPanelEntity =
             ActivityPanelEntity(
                 perceptionSpace,
@@ -93,7 +93,7 @@ private constructor(
                         parent?.rtEntity
                     },
                 ),
-                entityManager,
+                entityRegistry,
             )
 
         /**
@@ -124,7 +124,7 @@ private constructor(
                 session.perceptionRuntime.lifecycleManager,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 pixelDimensions,
                 name,
                 session.context as Activity,
@@ -154,7 +154,7 @@ private constructor(
                 session.perceptionRuntime.lifecycleManager,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 pixelDimensions,
                 name,
                 session.context as Activity,

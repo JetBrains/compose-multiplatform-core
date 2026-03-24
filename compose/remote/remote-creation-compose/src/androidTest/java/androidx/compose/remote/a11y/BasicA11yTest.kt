@@ -16,7 +16,9 @@
 
 package androidx.compose.remote.a11y
 
+import androidx.compose.remote.creation.Rc
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
+import androidx.compose.remote.creation.compose.action.ValueChange
 import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
@@ -24,14 +26,19 @@ import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.background
+import androidx.compose.remote.creation.compose.modifier.clickable
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.modifier.semantics
 import androidx.compose.remote.creation.compose.modifier.text
+import androidx.compose.remote.creation.compose.state.rememberMutableRemoteInt
+import androidx.compose.remote.creation.compose.state.rememberMutableRemoteString
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.ui.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -106,6 +113,57 @@ class BasicA11yTest {
 
             val item1_3 = item1.children[2]
             assertThat(item1_3.text).isEqualTo("Item 1.3")
+        }
+    }
+
+    @Test
+    fun textValueChange() {
+        remoteComposeTestRule.runTest {
+            val text = rememberMutableRemoteString("Initial")
+            RemoteBox(
+                modifier =
+                    RemoteModifier.fillMaxSize()
+                        .clickable(ValueChange(text, "Updated".rs))
+                        .background(Color.White),
+                contentAlignment = RemoteAlignment.Center,
+            ) {
+                RemoteText(text)
+            }
+        }
+
+        uiAutomator {
+            val item = onElement { isClickable }
+            assertThat(item).isNotNull()
+
+            item.click()
+            assertThat(item.text).isEqualTo("Updated")
+        }
+    }
+
+    @Test
+    fun intValueChange() {
+        remoteComposeTestRule.runTest {
+            val remoteInt = rememberMutableRemoteInt(0)
+            RemoteBox(
+                modifier =
+                    RemoteModifier.fillMaxSize()
+                        .clickable(ValueChange(remoteInt, remoteInt + 1))
+                        .background(Color.White),
+                contentAlignment = RemoteAlignment.Center,
+            ) {
+                RemoteText("".rs + remoteInt.toRemoteString(3, Rc.TextFromFloat.PAD_PRE_NONE))
+            }
+        }
+
+        uiAutomator {
+            val item = onElement { isClickable }
+            assertThat(item).isNotNull()
+
+            item.click()
+            assertThat(item.text).isEqualTo("1")
+
+            item.click()
+            assertThat(item.text).isEqualTo("2")
         }
     }
 }

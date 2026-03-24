@@ -91,7 +91,7 @@ class RemoteCanvasTest {
     fun TestDrawAnchoredText_colorAndTextSize() {
         val text = "Hello".rs
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
-            val w = remoteWidth
+            val w = width
             drawAnchoredText(
                 text = text,
                 anchorX = w / 2f,
@@ -162,12 +162,10 @@ class RemoteCanvasTest {
         RemoteCanvas(
             modifier =
                 RemoteModifier.size(100.rdp).drawWithContent {
-                    rotate(45.rf, pivot = RemoteOffset(remoteWidth / 2f, remoteHeight / 2f)) {
-                        drawContent()
-                    }
+                    rotate(45.rf, pivot = RemoteOffset(width / 2f, height / 2f)) { drawContent() }
                 }
         ) {
-            val w = remoteWidth
+            val w = width
             drawAnchoredText(
                 text = "Rotated by Canvas 45°".rs,
                 anchorX = 150f.rf,
@@ -192,14 +190,16 @@ class RemoteCanvasTest {
     fun TestDrawAnchoredText_brushAndTextSize() {
         val text = RemoteString("Hello")
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
-            val w = remoteWidth
+            val w = width
             drawAnchoredText(
                 text = text,
                 anchorX = w / 2f,
                 anchorY = 40f.rf,
                 paint =
                     RemotePaint {
-                        applyRemoteBrush(RemoteBrush.solidColor(Color.Red.rc), remoteSize)
+                        with(RemoteBrush.solidColor(Color.Red.rc)) {
+                            applyTo(this@RemotePaint, size)
+                        }
                         textSize = SMALL_FONT_SIZE.rf
                     },
             )
@@ -209,7 +209,9 @@ class RemoteCanvasTest {
                 anchorY = 80f.rf,
                 paint =
                     RemotePaint {
-                        applyRemoteBrush(RemoteBrush.solidColor(Color.Green.rc), remoteSize)
+                        with(RemoteBrush.solidColor(Color.Green.rc)) {
+                            applyTo(this@RemotePaint, size)
+                        }
                         textSize = MEDIUM_FONT_SIZE.rf
                     },
             )
@@ -219,7 +221,9 @@ class RemoteCanvasTest {
                 anchorY = 120f.rf,
                 paint =
                     RemotePaint {
-                        applyRemoteBrush(RemoteBrush.solidColor(Color.Blue.rc), remoteSize)
+                        with(RemoteBrush.solidColor(Color.Blue.rc)) {
+                            applyTo(this@RemotePaint, size)
+                        }
                         textSize = LARGE_FONT_SIZE.rf
                     },
             )
@@ -239,7 +243,7 @@ class RemoteCanvasTest {
             )
         val text = "Visible Hello".rs
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
-            val w = remoteWidth
+            val w = width
             drawAnchoredText(
                 text = text,
                 anchorX = w / 2f,

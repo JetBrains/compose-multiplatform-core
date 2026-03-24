@@ -38,14 +38,14 @@ class SubspaceNodeEntityImplTest {
     fun setUp() {
         val xrExtensions: XrExtensions = requireNotNull(getXrExtensions())
         val activity = Robolectric.buildActivity(Activity::class.java).create().get()
-        val entityManager = EntityManager()
+        val sceneNodeRegistry = SceneNodeRegistry()
         val executor = FakeScheduledExecutorService()
         val activitySpace =
             ActivitySpaceImpl(
                 xrExtensions.createNode(),
                 activity,
                 xrExtensions,
-                entityManager,
+                sceneNodeRegistry,
                 { xrExtensions.getSpatialState(activity) },
                 executor,
             )
@@ -55,7 +55,7 @@ class SubspaceNodeEntityImplTest {
                 activity,
                 xrExtensions,
                 xrExtensions.createNode(),
-                entityManager,
+                sceneNodeRegistry,
                 executor,
             )
         subspaceNodeEntity.parent = activitySpace

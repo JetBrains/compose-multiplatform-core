@@ -24,8 +24,8 @@ import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.layout.RemoteContentDrawScope
 import androidx.compose.remote.creation.compose.layout.RemoteDrawScope
-import androidx.compose.remote.creation.compose.layout.RemoteDrawWithContentScope
 import androidx.compose.remote.creation.compose.layout.RemoteSpaced
 import androidx.compose.remote.creation.compose.layout.encode
 import androidx.compose.remote.creation.compose.layout.find
@@ -63,7 +63,7 @@ internal abstract class RemoteComposeNodeV2 {
         val drawWithContent = modifier.find<DrawWithContentModifier>()
 
         if (drawWithContent != null) {
-            val drawWithContentScope = RemoteDrawWithContentScope(remoteCanvas)
+            val drawWithContentScope = RemoteContentDrawScope(remoteCanvas)
 
             creationState.document.startCanvasOperations()
             drawWithContent.onDraw(drawWithContentScope)
@@ -85,7 +85,7 @@ internal class RemoteCanvasNodeV2 : RemoteComposeNodeV2() {
         val drawWithContent = modifier.find<DrawWithContentModifier>()
 
         if (drawWithContent != null) {
-            val drawWithContentScope = RemoteDrawWithContentScope(remoteCanvas, onDraw)
+            val drawWithContentScope = RemoteContentDrawScope(remoteCanvas, onDraw)
 
             // Draw any drawWithContentModifier, around canvas onDraw
             drawWithContent.onDraw(drawWithContentScope)

@@ -409,7 +409,7 @@ class SpatialGltfModelTest {
 
         composeTestRule.onSubspaceNodeWithTag("model").assertDoesNotExist()
         assertThat(createdAssets).hasSize(0)
-        val status = state.status.value
+        val status = state.status
         assertIs<Failed>(status)
         assertIs<IllegalStateException>(status.exception)
 
@@ -421,7 +421,7 @@ class SpatialGltfModelTest {
         assertThat(createdAssets).hasSize(1)
         assertThat(createdAssets).containsKey("valid.glb")
         assertThat(disposedAssets).isEmpty()
-        assertIs<Loaded>(state.status.value)
+        assertIs<Loaded>(state.status)
     }
 
     // 2. Layout and Sizing
@@ -893,13 +893,13 @@ class SpatialGltfModelTest {
         }
 
         composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertIs<Loading>(state.status.value)
+        assertIs<Loading>(state.status)
 
         completableDeferred.complete(object : GltfModelResource {}) // simulate loading the glTF
 
         composeTestRule.waitForIdle()
         composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertIs<Loaded>(state.status.value)
+        assertIs<Loaded>(state.status)
     }
 
     @Test
@@ -935,14 +935,14 @@ class SpatialGltfModelTest {
         }
 
         composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertIs<Loading>(state.status.value)
+        assertIs<Loading>(state.status)
 
         assets["first_asset.glb"]?.complete(
             object : GltfModelResource {}
         ) // simulate loading the glTF
 
         composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertIs<Loaded>(state.status.value)
+        assertIs<Loaded>(state.status)
 
         state =
             SpatialGltfModelState(
@@ -950,7 +950,7 @@ class SpatialGltfModelTest {
             )
 
         composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertIs<Loading>(state.status.value)
+        assertIs<Loading>(state.status)
     }
 
     @Test
@@ -1134,7 +1134,6 @@ class SpatialGltfModelTest {
         val animation = state.animations[0]
         assertThat(animation.animationState)
             .isEqualTo(SpatialGltfModelAnimation.AnimationState.Stopped)
-        assertThat(fakeGltfEntity?.currentAnimationName).isNull()
 
         animation.start()
 
@@ -1239,7 +1238,6 @@ class SpatialGltfModelTest {
     fun animation_speed_updatesAnimationSpeed() {
         val state =
             SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
-        var fakeGltfEntity: FakeGltfEntity?
         var fakeAnimation: FakeGltfAnimationFeature? = null
 
         composeTestRule.configureFakeSession(
@@ -1251,9 +1249,9 @@ class SpatialGltfModelTest {
                         parentEntity: Entity?,
                     ): GltfEntity {
                         return it.createGltfEntity(pose, loadedGltf, parentEntity).apply {
-                            fakeGltfEntity = this as FakeGltfEntity
-                            fakeAnimation = FakeGltfAnimationFeature()
-                            fakeGltfEntity.addAnimation(fakeAnimation)
+                            val animation = FakeGltfAnimationFeature()
+                            fakeAnimation = animation
+                            (this as FakeGltfEntity).addAnimation(animation)
                         }
                     }
                 }
@@ -1269,11 +1267,76 @@ class SpatialGltfModelTest {
         composeTestRule.onSubspaceNodeWithTag("model").assertExists()
         val animation = state.animations[0]
 
+        // When the animation is stopped, setting the speed property does not update the speed
+        // of the underlying scene core animation.
         animation.speed = 2.0f
-        assertThat(fakeAnimation?.speed).isEqualTo(2.0f)
+        assertThat(fakeAnimation?.speed).isEqualTo(1.0f)
 
+        // When the animation is started, the speed is correctly applied.
         animation.start()
         assertThat(fakeAnimation?.speed).isEqualTo(2.0f)
+
+        // When the animation is playing, setting the speed property updates the speed of
+        // the underlying scene core animation immediately.
+        animation.speed = 3.0f
+        assertThat(fakeAnimation?.speed).isEqualTo(3.0f)
+
+        animation.stop()
+        animation.speed = 4.0f
+        assertThat(fakeAnimation?.speed).isEqualTo(3.0f) // Still at its previous value.
+
+        // When the animation is looping, the speed is correctly applied.
+        animation.loop()
+        assertThat(fakeAnimation?.speed).isEqualTo(4.0f)
+    }
+
+    @Test
+    fun animation_speed_compositionUpdate() {
+        val state =
+            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
+        var fakeAnimation: FakeGltfAnimationFeature? = null
+
+        composeTestRule.configureFakeSession(
+            renderingRuntime = {
+                object : RenderingRuntime by it {
+                    override fun createGltfEntity(
+                        pose: Pose,
+                        loadedGltf: GltfModelResource,
+                        parentEntity: Entity?,
+                    ): GltfEntity {
+                        return it.createGltfEntity(pose, loadedGltf, parentEntity).apply {
+                            val animation = FakeGltfAnimationFeature()
+                            fakeAnimation = animation
+                            (this as FakeGltfEntity).addAnimation(animation)
+                        }
+                    }
+                }
+            }
+        )
+
+        var speed by mutableStateOf(2.0f)
+
+        composeTestRule.setContent {
+            Subspace {
+                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
+            }
+
+            if (state.status is Loaded) {
+                state.animations[0].speed = speed
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
+        val animation = state.animations[0]
+        animation.start()
+        assertThat(fakeAnimation?.speed).isEqualTo(2.0f)
+
+        // Update the speed state
+        speed = 3.0f
+        composeTestRule.waitForIdle()
+
+        assertThat(animation.speed).isEqualTo(3.0f)
+        assertThat(fakeAnimation?.speed).isEqualTo(3.0f)
     }
 
     @Test
@@ -1382,7 +1445,7 @@ class SpatialGltfModelTest {
             SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("model.glb")))
 
         // Before we load the glTF, make sure that the initial state is false
-        assertIs<Loading>(state.status.value)
+        assertIs<Loading>(state.status)
 
         composeTestRule.setContent {
             Subspace {
@@ -1397,17 +1460,17 @@ class SpatialGltfModelTest {
             checkNotNull(
                 composeTestRule.onSubspaceNodeWithTag("model").fetchSemanticsNode().semanticsEntity
             )
-        assertIs<Loaded>(state.status.value)
+        assertIs<Loaded>(state.status)
 
         parentSize = 250.dp
 
-        assertIs<Loaded>(state.status.value)
+        assertIs<Loaded>(state.status)
         composeTestRule.onSubspaceNodeWithTag("model").assertExists()
         val entityAfterRecomposition =
             checkNotNull(
                 composeTestRule.onSubspaceNodeWithTag("model").fetchSemanticsNode().semanticsEntity
             )
-        assertIs<Loaded>(state.status.value)
+        assertIs<Loaded>(state.status)
         assertThat(entityBeforeRecomposition).isSameInstanceAs(entityAfterRecomposition)
     }
 

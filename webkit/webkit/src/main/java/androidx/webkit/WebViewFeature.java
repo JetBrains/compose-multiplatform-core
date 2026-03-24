@@ -140,7 +140,8 @@ public class WebViewFeature {
             PAGE_GET_URL,
             PREFETCH_CACHE_V1,
             SET_MAX_PRERENDERS_V1,
-            JS_INJECTION_IN_FRAME_AND_WORLD
+            JS_INJECTION_IN_FRAME_AND_WORLD,
+            NAVIGATION_LISTENER,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -743,11 +744,49 @@ public class WebViewFeature {
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers {@link WebViewCompat#saveState}.
      */
-    @WebViewCompat.ExperimentalSaveState
     public static final String SAVE_STATE = "SAVE_STATE";
 
     /**
-     * Feature for
+     * @deprecated Use {@link #NAVIGATION_LISTENER} instead.
+     */
+    @Deprecated
+    public static final String NAVIGATION_CALLBACK_BASIC = "WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE";
+
+    /**
+     * @deprecated Use {@link #NAVIGATION_LISTENER} instead.
+     */
+    @Deprecated
+    public static final String NAVIGATION_LISTENER_V1 = "NAVIGATION_LISTENER_V1";
+
+    /**
+     * @deprecated Use {@link #NAVIGATION_LISTENER} instead.
+     */
+    @Deprecated
+    public static final String NAVIGATION_LISTENER_V2 = "NAVIGATION_LISTENER_V2";
+
+    /**
+     * @deprecated Use {@link #NAVIGATION_LISTENER} instead.
+     */
+    @Deprecated
+    public static final String NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED =
+            "NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED";
+
+    /**
+     * @deprecated Use {@link #NAVIGATION_LISTENER} instead.
+     */
+    @Deprecated
+    public static final String NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS =
+            "NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS";
+
+    /**
+     * @deprecated Use {@link #NAVIGATION_LISTENER} instead.
+     */
+    @Deprecated
+    public static final String PAGE_GET_URL = "PAGE_GET_URL";
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers
      * {@link Navigation#getWebResourceError()}
      * {@link WebResourceErrorCompat#getDebugCode()}.
      */
@@ -755,56 +794,32 @@ public class WebViewFeature {
             "NAVIGATION_GET_WEB_RESOURCE_ERROR";
 
     /**
-     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
-     * This feature covers {@link WebViewCompat#getWebNavigationClient(WebView)};
-     * This feature covers
-     * {@link WebViewCompat#setWebNavigationClient(WebView, WebNavigationClient)};
-     * This feature covers {@link Navigation#didCommitErrorPage()}.
-     * This feature covers {@link Navigation#getPage()}.
-     * This feature covers {@link Navigation#isBack()}.
-     * This feature covers {@link Navigation#isForward()}.
-     * This feature covers {@link Navigation#isHistory()}.
-     * This feature covers {@link Navigation#isRestore()}.
-     * This feature covers {@link Navigation#isReload()}.
-     * This feature covers {@link Navigation#wasInitiatedByPage()}.
-     * This feature covers {@link Navigation#isSameDocument()}.
-     * This feature covers {@link Navigation#didCommit()}.
-     * This feature covers the initial version of {@link Page}.
-     */
-    public static final String NAVIGATION_CALLBACK_BASIC = "WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE";
-
-    @WebNavigationClient.ExperimentalNavigationCallback
-    public static final String NAVIGATION_LISTENER_V1 = "NAVIGATION_LISTENER_V1";
-
-    /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
+     * {@link NavigationListener#onNavigationStarted(Navigation)},
+     * {@link NavigationListener#onNavigationRedirected(Navigation)},
+     * {@link NavigationListener#onNavigationCompleted(Navigation)},
+     * {@link NavigationListener#onPageDeleted(Page)},
+     * {@link NavigationListener#onPageLoadEvent(Page)},
+     * {@link NavigationListener#onPageDomContentLoadedEvent(Page)},
      * {@link NavigationListener#onFirstContentfulPaintMillis(Page, long)},
-     * {@link NavigationListener#onLargestContentfulPaintMillis(Page, long)}, and
-     * {@link NavigationListener#onPerformanceMarkMillis(Page, String, long)}
+     * {@link NavigationListener#onLargestContentfulPaintMillis(Page, long)},
+     * {@link NavigationListener#onPerformanceMarkMillis(Page, String, long)},
+     * {@link Navigation#getPage()},
+     * {@link Navigation#getUrl()},
+     * {@link Navigation#wasInitiatedByPage()},
+     * {@link Navigation#isSameDocument()},
+     * {@link Navigation#isReload()},
+     * {@link Navigation#isHistory()},
+     * {@link Navigation#isBack()},
+     * {@link Navigation#isForward()},
+     * {@link Navigation#didCommit()},
+     * {@link Navigation#didCommitErrorPage()},
+     * {@link Navigation#getStatusCode()},
+     * {@link Navigation#isRestore()},
+     * {@link Page#getUrl()}
      */
-    @WebNavigationClient.ExperimentalNavigationCallback
-    public static final String NAVIGATION_LISTENER_V2 = "NAVIGATION_LISTENER_V2";
-
-    /**
-     * When this feature is enabled, {@link NavigationListener#onNavigationCompleted} will be
-     * called even for navigations that do not commit (eg, results in 204/download/cancelled).
-     * <p>
-     * This will become the default behavior of {@link NavigationListener}.
-     */
-    @WebNavigationClient.ExperimentalNavigationCallback
-    public static final String NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED =
-            "NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED";
-
-    /**
-     * When this feature is enabled, {@link Navigation#getPage()} will return non-null for committed
-     * navigations that are same document. Previously {@code null} was returned.
-     * <p>
-     * This will become the default behavior of {@link NavigationListener}.
-     */
-    @WebNavigationClient.ExperimentalNavigationCallback
-    public static final String NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS =
-            "NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS";
+    public static final String NAVIGATION_LISTENER = "NAVIGATION_LISTENER";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
@@ -880,7 +895,6 @@ public class WebViewFeature {
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers {@link WebViewStartUpConfig.Builder#setProfilesToLoadDuringStartup(Set)}.
      */
-    @WebViewCompat.ExperimentalAsyncStartUp
     public static final String STARTUP_FEATURE_SET_PROFILES_TO_LOAD =
             "STARTUP_FEATURE_SET_PROFILES_TO_LOAD";
 
@@ -930,11 +944,6 @@ public class WebViewFeature {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String PROVIDER_WEAKLY_REF_WEBVIEW = "PROVIDER_WEAKLY_REF_WEBVIEW";
-
-    /**
-     * Feature for {@link Page#getUrl()}.
-     */
-    public static final String PAGE_GET_URL = "PAGE_GET_URL";
 
     /**
      * Feature for injecting JavaScript into isolated worlds and iFrames.

@@ -16,6 +16,8 @@
 
 package androidx.compose.animation.core
 
+import platform.posix.pthread_self
+
 internal actual class AtomicReference<V> actual constructor(value: V) {
     actual fun get(): V = implementedInJetBrainsFork()
 
@@ -26,4 +28,8 @@ internal actual class AtomicReference<V> actual constructor(value: V) {
     actual fun getAndSet(value: V): V = implementedInJetBrainsFork()
 
     actual fun compareAndSet(expect: V, newValue: V): Boolean = implementedInJetBrainsFork()
+}
+
+internal actual fun getCurrentThread(): Any {
+    return pthread_self()
 }

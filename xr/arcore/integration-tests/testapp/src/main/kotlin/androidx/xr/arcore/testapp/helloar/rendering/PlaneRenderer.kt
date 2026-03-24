@@ -178,11 +178,7 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
     }
 
     private fun scaledExtents(extents: FloatSize2d): Vector3 {
-        return Vector3(
-            extents.width * MODEL_SCALING_FACTOR,
-            extents.height * MODEL_SCALING_FACTOR,
-            MODEL_DEPTH,
-        )
+        return Vector3(extents.width, extents.height, MODEL_DEPTH)
     }
 
     private companion object {
@@ -190,7 +186,6 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
         private val PANEL_TO_PLANE_ROTATION =
             Pose(Vector3(), Quaternion.fromEulerAngles(-90f, 0f, 0f))
         private const val PANEL_RESIZE_UPDATE_COUNT = 50
-        private const val MODEL_SCALING_FACTOR = 1f / 1.7f / 2f
         private const val MODEL_DEPTH = .001f
         private val DEFAULT_OBJECT_MODEL = "BoundingBoxGreen.glb"
         private val SUPPORTED_OBJECT_MODELS =

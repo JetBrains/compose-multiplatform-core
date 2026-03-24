@@ -28,6 +28,8 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.Session
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraMetadata
+import androidx.camera.camera2.pipe.ControlMode
+import androidx.camera.camera2.pipe.FlashMode
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
@@ -225,6 +227,8 @@ constructor(
         aeMode: AeMode?,
         afMode: AfMode?,
         awbMode: AwbMode?,
+        controlMode: ControlMode?,
+        flashMode: FlashMode?,
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
         awbRegions: List<MeteringRectangle>?,
@@ -232,7 +236,9 @@ constructor(
         controller3A.update3A(
             aeMode = aeMode,
             afMode = afMode,
-            awbMode,
+            awbMode = awbMode,
+            controlMode = controlMode,
+            flashMode = flashMode,
             aeRegions = aeRegions,
             afRegions = afRegions,
             awbRegions = awbRegions,

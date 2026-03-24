@@ -44,16 +44,16 @@ internal constructor(
     context: Context,
     node: Node,
     extensions: XrExtensions,
-    entityManager: EntityManager,
+    sceneNodeRegistry: SceneNodeRegistry,
     executor: ScheduledExecutorService,
-) : AndroidXrEntity(context, node, extensions, entityManager, executor), SystemSpaceEntity {
+) : AndroidXrEntity(context, node, extensions, sceneNodeRegistry, executor), SystemSpaceEntity {
     // Transform for this space's origin in OpenXR reference space.
     internal val openXrReferenceSpaceTransform = AtomicReference<Matrix4?>(null)
     @VisibleForTesting internal var _worldSpaceScale: Vector3 = Vector3(1f, 1f, 1f)
     // Visible for testing.
     public lateinit var nodeTransformCloseable: Closeable
     private var originChangedListener: Runnable? = null
-    private var originChangedExecutor: Executor = mExecutor
+    private var originChangedExecutor: Executor = scheduledExecutor
 
     init {
         // The underlying CPM node is always expected to be updated in response to changes to
@@ -70,7 +70,7 @@ internal constructor(
     /** Registers the SDK layer / application's listener for space origin updates. */
     override fun setOnOriginChangedListener(listener: Runnable?, executor: Executor?) {
         originChangedListener = listener
-        originChangedExecutor = executor ?: mExecutor
+        originChangedExecutor = executor ?: scheduledExecutor
     }
 
     public val poseInOpenXrReferenceSpace: Pose?
@@ -80,7 +80,7 @@ internal constructor(
          * The OpenXR reference space is the space returned by
          * [XrExtensions.getOpenXrWorldReferenceSpaceType]
          */
-        get() = openXrReferenceSpaceTransform.get()?.unscaled()?.pose
+        get() = openXrReferenceSpaceTransform.get()?.unscaled()?.toPose()
 
     /**
      * Sets the pose and scale of the entity in an OpenXR reference space and should call the

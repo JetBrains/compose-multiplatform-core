@@ -188,6 +188,10 @@ open annotation class androidx.room3/Entity : kotlin/Annotation { // androidx.ro
         final fun <get-tableName>(): kotlin/String // androidx.room3/Entity.tableName.<get-tableName>|<get-tableName>(){}[0]
 }
 
+open annotation class androidx.room3/ExperimentalRoomApi : kotlin/Annotation { // androidx.room3/ExperimentalRoomApi|null[0]
+    constructor <init>() // androidx.room3/ExperimentalRoomApi.<init>|<init>(){}[0]
+}
+
 open annotation class androidx.room3/ForeignKey : kotlin/Annotation { // androidx.room3/ForeignKey|null[0]
     constructor <init>(kotlin.reflect/KClass<*>, kotlin/Array<kotlin/String>, kotlin/Array<kotlin/String>, kotlin/Int = ..., kotlin/Int = ..., kotlin/Boolean = ...) // androidx.room3/ForeignKey.<init>|<init>(kotlin.reflect.KClass<*>;kotlin.Array<kotlin.String>;kotlin.Array<kotlin.String>;kotlin.Int;kotlin.Int;kotlin.Boolean){}[0]
 
@@ -250,6 +254,27 @@ open annotation class androidx.room3/Fts4 : kotlin/Annotation { // androidx.room
         final fun <get-tokenizer>(): kotlin/String // androidx.room3/Fts4.tokenizer.<get-tokenizer>|<get-tokenizer>(){}[0]
     final val tokenizerArgs // androidx.room3/Fts4.tokenizerArgs|{}tokenizerArgs[0]
         final fun <get-tokenizerArgs>(): kotlin/Array<kotlin/String> // androidx.room3/Fts4.tokenizerArgs.<get-tokenizerArgs>|<get-tokenizerArgs>(){}[0]
+}
+
+open annotation class androidx.room3/Fts5 : kotlin/Annotation { // androidx.room3/Fts5|null[0]
+    constructor <init>(kotlin/String = ..., kotlin/Array<kotlin/String> = ..., kotlin.reflect/KClass<*> = ..., kotlin/String = ..., kotlin/IntArray = ..., kotlin/Boolean = ..., androidx.room3/FtsOptions.Detail = ..., kotlin/Array<kotlin/String> = ...) // androidx.room3/Fts5.<init>|<init>(kotlin.String;kotlin.Array<kotlin.String>;kotlin.reflect.KClass<*>;kotlin.String;kotlin.IntArray;kotlin.Boolean;androidx.room3.FtsOptions.Detail;kotlin.Array<kotlin.String>){}[0]
+
+    final val contentEntity // androidx.room3/Fts5.contentEntity|{}contentEntity[0]
+        final fun <get-contentEntity>(): kotlin.reflect/KClass<*> // androidx.room3/Fts5.contentEntity.<get-contentEntity>|<get-contentEntity>(){}[0]
+    final val contentRowId // androidx.room3/Fts5.contentRowId|{}contentRowId[0]
+        final fun <get-contentRowId>(): kotlin/String // androidx.room3/Fts5.contentRowId.<get-contentRowId>|<get-contentRowId>(){}[0]
+    final val detail // androidx.room3/Fts5.detail|{}detail[0]
+        final fun <get-detail>(): androidx.room3/FtsOptions.Detail // androidx.room3/Fts5.detail.<get-detail>|<get-detail>(){}[0]
+    final val hasColumnSize // androidx.room3/Fts5.hasColumnSize|{}hasColumnSize[0]
+        final fun <get-hasColumnSize>(): kotlin/Boolean // androidx.room3/Fts5.hasColumnSize.<get-hasColumnSize>|<get-hasColumnSize>(){}[0]
+    final val notIndexed // androidx.room3/Fts5.notIndexed|{}notIndexed[0]
+        final fun <get-notIndexed>(): kotlin/Array<kotlin/String> // androidx.room3/Fts5.notIndexed.<get-notIndexed>|<get-notIndexed>(){}[0]
+    final val prefix // androidx.room3/Fts5.prefix|{}prefix[0]
+        final fun <get-prefix>(): kotlin/IntArray // androidx.room3/Fts5.prefix.<get-prefix>|<get-prefix>(){}[0]
+    final val tokenizer // androidx.room3/Fts5.tokenizer|{}tokenizer[0]
+        final fun <get-tokenizer>(): kotlin/String // androidx.room3/Fts5.tokenizer.<get-tokenizer>|<get-tokenizer>(){}[0]
+    final val tokenizerArgs // androidx.room3/Fts5.tokenizerArgs|{}tokenizerArgs[0]
+        final fun <get-tokenizerArgs>(): kotlin/Array<kotlin/String> // androidx.room3/Fts5.tokenizerArgs.<get-tokenizerArgs>|<get-tokenizerArgs>(){}[0]
 }
 
 open annotation class androidx.room3/Ignore : kotlin/Annotation { // androidx.room3/Ignore|null[0]
@@ -450,14 +475,30 @@ final object androidx.room3/AmbiguousColumnResolver { // androidx.room3/Ambiguou
 }
 
 final object androidx.room3/FtsOptions { // androidx.room3/FtsOptions|null[0]
+    final const val TOKENIZER_ASCII // androidx.room3/FtsOptions.TOKENIZER_ASCII|{}TOKENIZER_ASCII[0]
+        final fun <get-TOKENIZER_ASCII>(): kotlin/String // androidx.room3/FtsOptions.TOKENIZER_ASCII.<get-TOKENIZER_ASCII>|<get-TOKENIZER_ASCII>(){}[0]
     final const val TOKENIZER_ICU // androidx.room3/FtsOptions.TOKENIZER_ICU|{}TOKENIZER_ICU[0]
         final fun <get-TOKENIZER_ICU>(): kotlin/String // androidx.room3/FtsOptions.TOKENIZER_ICU.<get-TOKENIZER_ICU>|<get-TOKENIZER_ICU>(){}[0]
     final const val TOKENIZER_PORTER // androidx.room3/FtsOptions.TOKENIZER_PORTER|{}TOKENIZER_PORTER[0]
         final fun <get-TOKENIZER_PORTER>(): kotlin/String // androidx.room3/FtsOptions.TOKENIZER_PORTER.<get-TOKENIZER_PORTER>|<get-TOKENIZER_PORTER>(){}[0]
     final const val TOKENIZER_SIMPLE // androidx.room3/FtsOptions.TOKENIZER_SIMPLE|{}TOKENIZER_SIMPLE[0]
         final fun <get-TOKENIZER_SIMPLE>(): kotlin/String // androidx.room3/FtsOptions.TOKENIZER_SIMPLE.<get-TOKENIZER_SIMPLE>|<get-TOKENIZER_SIMPLE>(){}[0]
+    final const val TOKENIZER_TRIGRAM // androidx.room3/FtsOptions.TOKENIZER_TRIGRAM|{}TOKENIZER_TRIGRAM[0]
+        final fun <get-TOKENIZER_TRIGRAM>(): kotlin/String // androidx.room3/FtsOptions.TOKENIZER_TRIGRAM.<get-TOKENIZER_TRIGRAM>|<get-TOKENIZER_TRIGRAM>(){}[0]
     final const val TOKENIZER_UNICODE61 // androidx.room3/FtsOptions.TOKENIZER_UNICODE61|{}TOKENIZER_UNICODE61[0]
         final fun <get-TOKENIZER_UNICODE61>(): kotlin/String // androidx.room3/FtsOptions.TOKENIZER_UNICODE61.<get-TOKENIZER_UNICODE61>|<get-TOKENIZER_UNICODE61>(){}[0]
+
+    final enum class Detail : kotlin/Enum<androidx.room3/FtsOptions.Detail> { // androidx.room3/FtsOptions.Detail|null[0]
+        enum entry COLUMN // androidx.room3/FtsOptions.Detail.COLUMN|null[0]
+        enum entry FULL // androidx.room3/FtsOptions.Detail.FULL|null[0]
+        enum entry NONE // androidx.room3/FtsOptions.Detail.NONE|null[0]
+
+        final val entries // androidx.room3/FtsOptions.Detail.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<androidx.room3/FtsOptions.Detail> // androidx.room3/FtsOptions.Detail.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): androidx.room3/FtsOptions.Detail // androidx.room3/FtsOptions.Detail.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<androidx.room3/FtsOptions.Detail> // androidx.room3/FtsOptions.Detail.values|values#static(){}[0]
+    }
 
     final enum class MatchInfo : kotlin/Enum<androidx.room3/FtsOptions.MatchInfo> { // androidx.room3/FtsOptions.MatchInfo|null[0]
         enum entry FTS3 // androidx.room3/FtsOptions.MatchInfo.FTS3|null[0]

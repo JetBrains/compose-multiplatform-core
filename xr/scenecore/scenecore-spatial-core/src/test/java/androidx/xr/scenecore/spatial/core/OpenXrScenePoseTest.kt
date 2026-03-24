@@ -51,7 +51,7 @@ import org.robolectric.Robolectric
 class OpenXrScenePoseTest(private val testScenePoseType: OpenXrScenePoseType) {
     private val xrExtensions: XrExtensions? = XrExtensionsProvider.getXrExtensions()
     private val executor = FakeScheduledExecutorService()
-    private val entityManager = EntityManager()
+    private val sceneNodeRegistry = SceneNodeRegistry()
     private val activity: Activity =
         Robolectric.buildActivity(Activity::class.java).create().start().get()
 
@@ -60,7 +60,7 @@ class OpenXrScenePoseTest(private val testScenePoseType: OpenXrScenePoseType) {
             xrExtensions!!.createNode(),
             activity,
             xrExtensions,
-            entityManager,
+            sceneNodeRegistry,
             { xrExtensions.getSpatialState(activity) },
             executor,
         )
@@ -106,7 +106,7 @@ class OpenXrScenePoseTest(private val testScenePoseType: OpenXrScenePoseType) {
             fakeGltfFeature,
             activitySpace,
             xrExtensions,
-            entityManager,
+            sceneNodeRegistry,
             executor,
         )
     }

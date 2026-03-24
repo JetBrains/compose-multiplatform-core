@@ -58,6 +58,7 @@ class MainPanelFragment : Fragment() {
                         modifier =
                             SubspaceModifier.width(300.dp).height(200.dp).offset(x = xOffset.dp)
                     )
+                    @Suppress("DEPRECATION")
                     Orbiter(
                         position = ContentEdge.Top,
                         offsetType = OrbiterOffsetType.InnerEdge,

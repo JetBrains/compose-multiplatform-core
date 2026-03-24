@@ -178,7 +178,8 @@ public class Component extends PaintOperation
      *
      * @param context the current context
      */
-    protected void updateComponentValues(@NonNull RemoteContext context) {
+    protected void updateComponentValues(@NonNull RemoteContext context, float width,
+            float height) {
         if (DEBUG) {
             System.out.println(
                     "UPDATE COMPONENT VALUES ("
@@ -192,7 +193,7 @@ public class Component extends PaintOperation
             } else {
                 switch (v.getType()) {
                     case ComponentValue.WIDTH:
-                        context.loadFloat(v.getValueId(), mWidth);
+                        context.loadFloat(v.getValueId(), width);
                         if (DEBUG) {
                             System.out.println(
                                     "Updating WIDTH("
@@ -200,11 +201,11 @@ public class Component extends PaintOperation
                                             + ") for "
                                             + mComponentId
                                             + " to "
-                                            + mWidth);
+                                            + width);
                         }
                         break;
                     case ComponentValue.HEIGHT:
-                        context.loadFloat(v.getValueId(), mHeight);
+                        context.loadFloat(v.getValueId(), height);
                         if (DEBUG) {
                             System.out.println(
                                     "Updating HEIGHT("
@@ -212,7 +213,7 @@ public class Component extends PaintOperation
                                             + ") for "
                                             + mComponentId
                                             + " to "
-                                            + mHeight);
+                                            + height);
                         }
                         break;
                     case ComponentValue.POS_X:
@@ -234,7 +235,7 @@ public class Component extends PaintOperation
                         context.loadFloat(v.getValueId(), mLocation[1]);
                         break;
                     case ComponentValue.CONTENT_WIDTH:
-                        float contentWidth = mWidth;
+                        float contentWidth = width;
                         if (this instanceof LayoutComponent) {
                             LayoutComponent layoutComponent = (LayoutComponent) this;
                             if (layoutComponent.mHorizontalScrollDelegate != null) {
@@ -245,7 +246,7 @@ public class Component extends PaintOperation
                         context.loadFloat(v.getValueId(), contentWidth);
                         break;
                     case ComponentValue.CONTENT_HEIGHT:
-                        float contentHeight = mHeight;
+                        float contentHeight = height;
                         if (this instanceof LayoutComponent) {
                             LayoutComponent layoutComponent = (LayoutComponent) this;
                             if (layoutComponent.mVerticalScrollDelegate != null) {
@@ -341,7 +342,7 @@ public class Component extends PaintOperation
         context.mLastComponent = this;
 
         if (!mComponentValues.isEmpty()) {
-            updateComponentValues(context);
+            updateComponentValues(context, mWidth, mHeight);
         }
         context.mLastComponent = prev;
     }
@@ -613,6 +614,7 @@ public class Component extends PaintOperation
 
     /**
      * Apply the measurement to the component.
+     *
      * @param m the ComponentMeasure to apply
      */
     public void applyMeasure(@NonNull ComponentMeasure m) {
@@ -662,11 +664,11 @@ public class Component extends PaintOperation
         }
         if (mAnimateMeasure == null) {
             applyMeasure(m);
-            updateComponentValues(context);
+            updateComponentValues(context, mWidth, mHeight);
             clearNeedsBoundsAnimation();
         } else {
             mAnimateMeasure.apply(context);
-            updateComponentValues(context);
+            updateComponentValues(context, mWidth, mHeight);
             markNeedsBoundsAnimation();
         }
         mFirstLayout = false;
@@ -681,7 +683,7 @@ public class Component extends PaintOperation
     public void animatingBounds(@NonNull RemoteContext context) {
         if (mAnimateMeasure != null) {
             mAnimateMeasure.apply(context);
-            updateComponentValues(context);
+            updateComponentValues(context, mWidth, mHeight);
         } else {
             clearNeedsBoundsAnimation();
         }

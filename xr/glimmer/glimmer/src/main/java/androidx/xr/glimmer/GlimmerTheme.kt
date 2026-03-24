@@ -30,7 +30,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.DelegatableNode
 import androidx.xr.glimmer.GlimmerTheme.Companion.colors
-import androidx.xr.glimmer.GlimmerTheme.Companion.depthLevels
+import androidx.xr.glimmer.GlimmerTheme.Companion.depthEffectLevels
 import androidx.xr.glimmer.GlimmerTheme.Companion.iconSizes
 import androidx.xr.glimmer.GlimmerTheme.Companion.shapes
 
@@ -47,15 +47,17 @@ import androidx.xr.glimmer.GlimmerTheme.Companion.shapes
  *
  * @param colors [Colors] used by components within this hierarchy
  * @param typography [Typography] used by components within this hierarchy
+ * @param componentSpacingValues [ComponentSpacingValues] used by components within this hierarchy
  * @param content The content that can retrieve values from this theme
  */
 @Composable
 public fun GlimmerTheme(
     colors: Colors = GlimmerTheme.colors,
     typography: Typography = GlimmerTheme.typography,
+    componentSpacingValues: ComponentSpacingValues = GlimmerTheme.componentSpacingValues,
     content: @Composable () -> Unit,
 ) {
-    val theme = GlimmerTheme(colors, typography)
+    val theme = GlimmerTheme(colors, typography, componentSpacingValues)
     CompositionLocalProvider(
         _localGlimmerTheme provides theme,
         // TODO: b/413429405
@@ -74,17 +76,20 @@ public fun GlimmerTheme(
  *
  * @property colors [Colors] used by Jetpack Compose Glimmer components
  * @property typography [Typography] used by Jetpack Compose Glimmer components
+ * @property componentSpacingValues [ComponentSpacingValues] used by Jetpack Compose Glimmer
+ *   components
  * @property shapes [Shapes] used by Jetpack Compose Glimmer components
- * @property depthLevels [DepthLevels] used by Jetpack Compose Glimmer components
+ * @property depthEffectLevels [DepthEffectLevels] used by Jetpack Compose Glimmer components
  * @property iconSizes [IconSizes] used by icons
  */
 @Immutable
 public class GlimmerTheme(
     public val colors: Colors = Colors(),
     public val typography: Typography = Typography(),
+    public val componentSpacingValues: ComponentSpacingValues = ComponentSpacingValues(),
 ) {
     public val shapes: Shapes = _shapes
-    public val depthLevels: DepthLevels = _depthLevels
+    public val depthEffectLevels: DepthEffectLevels = _depthEffectLevels
     public val iconSizes: IconSizes = _iconSizes
 
     public companion object {
@@ -96,13 +101,22 @@ public class GlimmerTheme(
         public val typography: Typography
             @Composable @ReadOnlyComposable get() = LocalGlimmerTheme.current.typography
 
+        /**
+         * Retrieves the current [ComponentSpacingValues] at the call site's position in the
+         * hierarchy.
+         */
+        public val componentSpacingValues: ComponentSpacingValues
+            @Composable @ReadOnlyComposable get() = LocalGlimmerTheme.current.componentSpacingValues
+
         /** Retrieves the current [Shapes] at the call site's position in the hierarchy. */
         public val shapes: Shapes
             @Composable @ReadOnlyComposable get() = LocalGlimmerTheme.current.shapes
 
-        /** Retrieves the current [DepthLevels] at the call site's position in the hierarchy. */
-        public val depthLevels: DepthLevels
-            @Composable @ReadOnlyComposable get() = LocalGlimmerTheme.current.depthLevels
+        /**
+         * Retrieves the current [DepthEffectLevels] at the call site's position in the hierarchy.
+         */
+        public val depthEffectLevels: DepthEffectLevels
+            @Composable @ReadOnlyComposable get() = LocalGlimmerTheme.current.depthEffectLevels
 
         /** Retrieves the current [IconSizes] at the call site's position in the hierarchy. */
         public val iconSizes: IconSizes
@@ -125,10 +139,10 @@ public class GlimmerTheme(
         private val _shapes = Shapes()
 
         /**
-         * Cached DepthLevels instance to be used across [GlimmerTheme] instances - currently depth
-         * levels are not user-configurable.
+         * Cached [DepthEffectLevels] instance to be used across [GlimmerTheme] instances -
+         * currently depth effect levels are not user-configurable.
          */
-        private val _depthLevels = DepthLevels()
+        private val _depthEffectLevels = DepthEffectLevels()
 
         /**
          * Cached IconSizes instance to be used across [GlimmerTheme] instances - currently icon

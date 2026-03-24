@@ -109,7 +109,7 @@ public fun Card(
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
-    contentPadding: PaddingValues = CardDefaults.ContentPadding,
+    contentPadding: PaddingValues = CardDefaults.contentPadding,
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
@@ -202,7 +202,7 @@ public fun Card(
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
-    contentPadding: PaddingValues = CardDefaults.ContentPadding,
+    contentPadding: PaddingValues = CardDefaults.contentPadding,
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
@@ -280,7 +280,7 @@ public fun Card(
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
-    contentPadding: PaddingValues = CardDefaults.ContentPadding,
+    contentPadding: PaddingValues = CardDefaults.contentPadding,
     content: @Composable () -> Unit,
 ) {
     // b/436852852 - in a list the button won't be focused until it crosses the focus line.
@@ -326,6 +326,9 @@ private fun CardImpl(
     val colors = GlimmerTheme.colors
     val iconSize = GlimmerTheme.iconSizes.large
     val typography = GlimmerTheme.typography
+    val componentSpacingValues = GlimmerTheme.componentSpacingValues
+    val innerPadding = componentSpacingValues.small
+    val iconSpacing = componentSpacingValues.medium
     val surfaceModifier =
         if (onClick != null) {
             Modifier.surface(
@@ -364,13 +367,13 @@ private fun CardImpl(
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(InnerPadding),
+            modifier = Modifier.fillMaxWidth().padding(innerPadding),
             verticalAlignment = CenterVertically,
         ) {
             if (leadingIcon != null) {
                 Box(
                     Modifier.align(Alignment.Top)
-                        .padding(end = IconSpacing)
+                        .padding(end = iconSpacing)
                         .contentColorProvider(colors.primary),
                     contentAlignment = Alignment.TopStart,
                 ) {
@@ -403,7 +406,7 @@ private fun CardImpl(
             if (trailingIcon != null) {
                 Box(
                     Modifier.align(Alignment.Top)
-                        .padding(start = IconSpacing)
+                        .padding(start = iconSpacing)
                         .contentColorProvider(colors.primary),
                     Alignment.TopEnd,
                 ) {
@@ -552,7 +555,8 @@ public object CardDefaults {
      * container. Note that there is additional padding applied around the content / text / icons
      * inside a card, this only represents the outer padding for the entire content.
      */
-    public val ContentPadding: PaddingValues = PaddingValues(Spacing.Medium)
+    public val contentPadding: PaddingValues
+        @Composable get() = PaddingValues(GlimmerTheme.componentSpacingValues.medium)
 
     /** The default shape of [Card], which determines its corner radius. */
     public val shape: Shape
@@ -561,12 +565,6 @@ public object CardDefaults {
 
 /** Default minimum height for a [Card] */
 private val MinimumHeight = 80.dp
-
-/** Spacing between icons and the text in a [Card] */
-private val IconSpacing = Spacing.Medium
-
-/** Padding around the internal content (text / icons), but not added around header images. */
-private val InnerPadding = Spacing.Small
 
 /** Spacing between title / subtitle / body text */
 private val TextVerticalSpacing = 3.dp

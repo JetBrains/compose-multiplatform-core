@@ -154,6 +154,7 @@ public class ProfileImpl implements Profile {
 
     @Profile.ExperimentalUrlPrefetch
     @Override
+    @SuppressWarnings("removal")
     public void setSpeculativeLoadingConfig(
             @NonNull SpeculativeLoadingConfig speculativeLoadingConfig) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.SPECULATIVE_LOADING_CONFIG;

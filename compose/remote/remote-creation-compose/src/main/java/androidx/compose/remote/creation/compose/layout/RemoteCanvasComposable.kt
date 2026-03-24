@@ -40,7 +40,6 @@ import androidx.compose.ui.graphics.nativeCanvas
  * @param modifier The [RemoteModifier] to apply to this layout.
  * @param content The drawing commands to be executed on the remote canvas via [RemoteDrawScope].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
 public fun RemoteCanvas(

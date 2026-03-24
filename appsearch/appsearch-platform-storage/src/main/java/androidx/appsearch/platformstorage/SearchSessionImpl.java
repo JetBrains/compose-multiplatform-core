@@ -120,7 +120,7 @@ class SearchSessionImpl implements AppSearchSession {
             }
         }
         mPlatformSession.setSchema(
-                SetSchemaRequestToPlatformConverter.toPlatformSetSchemaRequest(request),
+                SetSchemaRequestToPlatformConverter.toPlatformSetSchemaRequest(mContext, request),
                 mExecutor,
                 mExecutor,
                 result -> AppSearchResultToPlatformConverter.platformAppSearchResultToFuture(

@@ -46,8 +46,8 @@ import kotlinx.coroutines.launch
  */
 @SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 public class AnchorEntity
-private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
-    BaseEntity<RtAnchorEntity>(rtEntity, entityManager) {
+private constructor(rtEntity: RtAnchorEntity, entityRegistry: EntityRegistry) :
+    BaseEntity<RtAnchorEntity>(rtEntity, entityRegistry) {
 
     @VisibleForTesting internal var onStateChangedListener: Consumer<State>? = null
     private var onStateChangedExecutor: Executor = HandlerExecutor.mainThreadExecutor
@@ -191,7 +191,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
          * Factory method for AnchorEntity.
          *
          * @param session Session to use.
-         * @param entityManager EntityManager to use.
+         * @param entityRegistry [EntityRegistry] to use.
          * @param minimumPlaneExtents The minimum extents (in meters) of the plane to which this
          *   AnchorEntity should attach.
          * @param planeOrientation Orientation for the plane to which this Anchor should attach.
@@ -201,7 +201,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
          */
         internal fun create(
             session: Session,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             minimumPlaneExtents: FloatSize2d,
             planeOrientation: @PlaneOrientationValue Int,
             planeSemanticType: @PlaneSemanticTypeValue Int,
@@ -212,7 +212,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
             }
 
             val rtAnchorEntity = session.sceneRuntime.createAnchorEntity()
-            val anchorEntity = AnchorEntity(rtAnchorEntity, entityManager)
+            val anchorEntity = AnchorEntity(rtAnchorEntity, entityRegistry)
             rtAnchorEntity.setOnStateChangedListener(anchorEntity.defaultStateChangedListener)
 
             val info =
@@ -234,9 +234,9 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
          */
         internal fun create(
             rtAnchorEntity: RtAnchorEntity,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
         ): AnchorEntity {
-            val anchorEntity = AnchorEntity(rtAnchorEntity, entityManager)
+            val anchorEntity = AnchorEntity(rtAnchorEntity, entityRegistry)
             rtAnchorEntity.setOnStateChangedListener(anchorEntity.defaultStateChangedListener)
             return anchorEntity
         }
@@ -271,7 +271,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
         ): AnchorEntity {
             return create(
                 session,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 minimumPlaneExtents,
                 planeOrientation,
                 planeSemanticType,
@@ -288,7 +288,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
         @JvmStatic
         public fun create(session: Session, anchor: Anchor): AnchorEntity {
             val rtAnchorEntity = session.sceneRuntime.createAnchorEntity()
-            val anchorEntity = AnchorEntity(rtAnchorEntity, session.scene.entityManager)
+            val anchorEntity = AnchorEntity(rtAnchorEntity, session.scene.entityRegistry)
             rtAnchorEntity.setOnStateChangedListener(anchorEntity.defaultStateChangedListener)
             rtAnchorEntity.setAnchor(anchor)
             return anchorEntity

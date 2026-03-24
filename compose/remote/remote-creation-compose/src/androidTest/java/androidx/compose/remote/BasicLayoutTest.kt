@@ -31,7 +31,6 @@ import androidx.compose.remote.creation.compose.action.HostAction
 import androidx.compose.remote.creation.compose.action.ValueChange
 import androidx.compose.remote.creation.compose.capture.rememberAsyncRemoteDocument
 import androidx.compose.remote.creation.compose.capture.rememberRemoteDocument
-import androidx.compose.remote.creation.compose.layout.CaptureAsBitmap
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -43,7 +42,6 @@ import androidx.compose.remote.creation.compose.layout.RemoteRow
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.layout.StateLayout
 import androidx.compose.remote.creation.compose.layout.rememberStateMachine
-import androidx.compose.remote.creation.compose.layout.withGlobalScope
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.clickable
@@ -71,6 +69,7 @@ import androidx.compose.remote.creation.compose.state.rememberNamedRemoteString
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
+import androidx.compose.remote.creation.compose.state.withGlobalScope
 import androidx.compose.remote.creation.compose.vector.painterRemoteVector
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.remote.player.view.RemoteComposePlayer
@@ -472,88 +471,6 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                             .background(Color.White)
                             .padding(8.dp)
                             .background(Color.LightGray)
-                )
-            }
-        }
-    }
-
-    @Ignore("Flaky")
-    @Test
-    fun testAsyncLayout() {
-        val result =
-            """
-ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
-  COLUMN [-3:-1] = [0.0, 0.0, 825.0, 451.0] VISIBLE
-    MODIFIERS
-    BOX [-5:-1] = [0.0, 0.0, 825.0, 88.0] VISIBLE
-      MODIFIERS
-        HEIGHT = 88.0
-        BACKGROUND = [0.0, 0.0, 825.0, 88.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
-      ROW [-7:-1] = [0.0, 0.0, 825.0, 82.5] VISIBLE
-        MODIFIERS
-          BACKGROUND = [0.0, 0.0, 825.0, 82.5] color [0.0, 0.0, 0.0, 1.0] shape [0]
-          HEIGHT = 82.5
-        CANVAS_CONTENT [-19:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-          DATA_TEXT<47> = "Hello, World"
-    ROW [-9:-1] = [0.0, 88.0, 555.0, 275.0] VISIBLE
-      MODIFIERS
-      BOX [-11:-1] = [0.0, 0.0, 88.0, 27.5] VISIBLE
-        MODIFIERS
-          WIDTH = 88.0
-          HEIGHT = 27.5
-          BACKGROUND = [0.0, 0.0, 88.0, 27.5] color [0.0, 0.0, 1.0, 1.0] shape [0]
-      BOX [-13:-1] = [88.0, 0.0, 379.0, 259.0] VISIBLE
-        MODIFIERS
-          WIDTH = 379.0
-          HEIGHT = 259.0
-        CANVAS_CONTENT [-20:-1] = [0.0, 0.0, 379.0, 259.0] VISIBLE
-          BitmapData id 48 (379x259)
-          DATA_TEXT<49> = ""
-      BOX [-15:-1] = [467.0, 0.0, 88.0, 275.0] VISIBLE
-        MODIFIERS
-          WIDTH = 88.0
-          HEIGHT = 275.0
-          BACKGROUND = [0.0, 0.0, 88.0, 275.0] color [0.0, 0.0, 1.0, 1.0] shape [0]
-    BOX [-17:-1] = [0.0, 363.0, 825.0, 88.0] VISIBLE
-      MODIFIERS
-        HEIGHT = 88.0
-        BACKGROUND = [0.0, 0.0, 825.0, 88.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
-"""
-
-        testAsyncLayout(result) {
-            RemoteColumn {
-                RemoteBox(
-                    modifier = RemoteModifier.height(32.rdp).fillMaxWidth().background(Color.Red)
-                ) {
-                    RemoteRow(
-                        modifier =
-                            RemoteModifier.background(Color.Black).fillMaxWidth().height(30.rdp)
-                    ) {
-                        RemoteText("Hello, World", color = Color.White.rc)
-                    }
-                }
-                RemoteRow {
-                    RemoteBox(
-                        modifier =
-                            RemoteModifier.width(32.rdp).height(10.rdp).background(Color.Blue)
-                    )
-                    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-                    CaptureAsBitmap(onCapture = { it.value = true }) {
-                        RemoteColumn(modifier = RemoteModifier.background(Color.Yellow)) {
-                            RemoteText("🏄 🐶 élo! 🥳")
-                            RemoteText("أليس هذا رائعا؟")
-                            RemoteText("किं न शीतलम् ?")
-                            RemoteText("是不是很酷？")
-                            RemoteText("かっこいいでしょう？")
-                        }
-                    }
-                    RemoteBox(
-                        modifier =
-                            RemoteModifier.width(32.rdp).height(100.rdp).background(Color.Blue)
-                    )
-                }
-                RemoteBox(
-                    modifier = RemoteModifier.height(32.rdp).fillMaxWidth().background(Color.Red)
                 )
             }
         }

@@ -74,7 +74,11 @@ class RemoteIconButtonTest {
         ) {
             Center(RemoteModifier.fillMaxSize()) {
                 RemoteIconButton(testAction, enabled = RemoteBoolean(false)) {
-                    RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
+                    RemoteIcon(
+                        imageVector = TestImageVectors.VolumeUp,
+                        contentDescription = null,
+                        modifier = RemoteModifier.size(24.rdp),
+                    )
                 }
             }
         }

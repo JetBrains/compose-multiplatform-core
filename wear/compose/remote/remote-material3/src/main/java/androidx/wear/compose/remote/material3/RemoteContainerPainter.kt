@@ -25,14 +25,12 @@ import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.ui.graphics.Color
 
-@Suppress("RestrictedApiAndroidX")
 internal fun remoteContainerPainter(
     painter: RemotePainter,
     scrim: RemoteBrush? = null,
     alpha: RemoteFloat,
 ): RemotePainter = DefaultRemoteContainerPainter(painter, scrim, alpha)
 
-@Suppress("RestrictedApiAndroidX")
 private class DefaultRemoteContainerPainter(
     private val painter: RemotePainter,
     private val scrim: RemoteBrush?,
@@ -45,7 +43,7 @@ private class DefaultRemoteContainerPainter(
             drawRect(
                 paint =
                     RemotePaint {
-                        applyRemoteBrush(scrim, remoteSize)
+                        with(scrim) { applyTo(this@RemotePaint, size) }
                         color =
                             Color.Black.rc.copy(alpha = this@DefaultRemoteContainerPainter.alpha)
                     }
@@ -54,13 +52,11 @@ private class DefaultRemoteContainerPainter(
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
 internal fun disabledRemoteContainerPainter(
     painter: RemotePainter,
     alpha: RemoteFloat,
 ): RemotePainter = DefaultDisabledRemoteContainerPainter(painter, alpha)
 
-@Suppress("RestrictedApiAndroidX")
 private class DefaultDisabledRemoteContainerPainter(
     private val painter: RemotePainter,
     private val alpha: RemoteFloat,

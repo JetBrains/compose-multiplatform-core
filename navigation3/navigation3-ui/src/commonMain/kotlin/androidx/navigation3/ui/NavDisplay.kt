@@ -665,6 +665,13 @@ public fun <T : Any> NavDisplay(
     val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
     val targetZIndex =
         when {
+            // AnimatedContent does not change the zIndex of content that is already on the
+            // screen, regardless of what you pass as the targetZIndex. So we need to check
+            // if the target is mid-transition and if it is, re-use the previously calculated
+            // zIndex. This ensures that `zIndices` is tracking the correct zIndex and that
+            // it matches the actual zIndex running in AnimatedContent.
+            !inPredictiveBack && transition.targetState != scene && zIndices.contains(targetKey) ->
+                zIndices[targetKey]
             initialKey == targetKey -> initialZIndex
             isPop || inPredictiveBack -> initialZIndex - 1f
             else -> initialZIndex + 1f

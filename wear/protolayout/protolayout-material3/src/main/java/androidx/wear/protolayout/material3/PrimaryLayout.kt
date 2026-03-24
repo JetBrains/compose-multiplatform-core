@@ -75,7 +75,9 @@ import kotlin.math.ceil
  * is responsive and takes care of the elements placement, together with the recommended margin and
  * padding applied.
  *
- * This layout is meant to occupy the whole screen, so nothing else should be added on top of it.
+ * This layout is meant to occupy the whole screen, so nothing else should be added on top of it. It
+ * is highly recommended to use this directly as the first root layout element in the
+ * [androidx.wear.tiles.Material3TileService].
  *
  * On the top, there is an icon that will be automatically placed by the system, followed by the
  * optional title slot. The icon slot needs to be reserved for the whole ProtoLayout Layout and no
@@ -89,6 +91,12 @@ import kotlin.math.ceil
  * results across different screen sizes, it's recommended that this content's dimension are also
  * [DimensionBuilders.expand] or [DimensionBuilders.weight]. Additional content in the main one can
  * be added after a `225dp` breakpoint.
+ *
+ * See [slots](https://developer.android.com/training/wearables/tiles/get_started?version=3#slots),
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param mainSlot The main, central content for this layout. It's recommended for this content to
  *   fill the available width and height for the best result across different screen size. This
@@ -139,9 +147,7 @@ import kotlin.math.ceil
  * @sample androidx.wear.protolayout.material3.samples.graphicDataCardSample
  * @sample androidx.wear.protolayout.material3.samples.primaryLayoutWithTextNotImportantForAccessibility
  */
-// TODO: b/346958146 - Link visuals once they are available.
 // TODO: b/353247528 - Handle the icon.
-// TODO: b/370976767 - Specify that this should be used with MaterialTileService.
 public fun MaterialScope.primaryLayout(
     mainSlot: (MaterialScope.() -> LayoutElement),
     titleSlot: (MaterialScope.() -> LayoutElement)? = null,

@@ -40,12 +40,13 @@ class SpatialPointerComponentImplTest {
     private val xrExtensions = requireNotNull(getXrExtensions())
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
     private val fakeExecutor = FakeScheduledExecutorService()
-    private val entityManager = EntityManager()
+    private val sceneNodeRegistry = SceneNodeRegistry()
     private lateinit var runtime: SceneRuntime
 
     @Before
     fun setUp() {
-        runtime = SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions, EntityManager())
+        runtime =
+            SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions, SceneNodeRegistry())
     }
 
     @After
@@ -67,7 +68,7 @@ class SpatialPointerComponentImplTest {
                 node,
                 view,
                 xrExtensions,
-                entityManager,
+                sceneNodeRegistry,
                 PixelDimensions(sVgaResolutionPx.width.toInt(), sVgaResolutionPx.height.toInt()),
                 "panel",
                 fakeExecutor,

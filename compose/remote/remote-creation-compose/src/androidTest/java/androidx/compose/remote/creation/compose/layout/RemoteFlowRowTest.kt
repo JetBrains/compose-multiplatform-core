@@ -151,43 +151,6 @@ class RemoteFlowRowTest {
         }
     }
 
-    // b/487167164: not honouring vertical arrangement
-    @Test
-    fun fillMaxSize() {
-        composeTestRule.runScreenshotTest(profile = experimentalProfile) {
-            gridScreenshotUI.GridContent(
-                sequence {
-                        for (verticalArrangement in verticalArrangements) {
-                            for (horizontalArrangement in horizontalArrangements) {
-                                yield(
-                                    "${verticalArrangement.propertyName()} ${horizontalArrangement.propertyName()}" to
-                                        @RemoteComposable @Composable {
-                                            RemoteFlowRow(
-                                                modifier = RemoteModifier.fillMaxSize(),
-                                                horizontalArrangement = horizontalArrangement,
-                                                verticalArrangement = verticalArrangement,
-                                            ) {
-                                                RemoteBox(
-                                                    modifier =
-                                                        RemoteModifier.size(48.rdp)
-                                                            .background(Color(0xFF6200EE))
-                                                )
-                                                RemoteBox(
-                                                    modifier =
-                                                        RemoteModifier.size(24.rdp)
-                                                            .background(Color(0xFF03DAC6))
-                                                )
-                                            }
-                                        }
-                                )
-                            }
-                        }
-                    }
-                    .toList()
-            )
-        }
-    }
-
     @Test
     fun spacedBy() =
         composeTestRule.runScreenshotTest(profile = experimentalProfile) {
@@ -279,8 +242,7 @@ class RemoteFlowRowTest {
                             "${verticalArrangement.propertyName()} ${horizontalArrangement.propertyName()}" to
                                 @RemoteComposable @Composable {
                                     RemoteFlowRow(
-                                        // TODO(b/487167164): change to fillMaxSize
-                                        modifier = RemoteModifier.size(100.rdp),
+                                        modifier = RemoteModifier.fillMaxSize(),
                                         horizontalArrangement = horizontalArrangement,
                                         verticalArrangement = verticalArrangement,
                                     ) {
@@ -306,8 +268,7 @@ class RemoteFlowRowTest {
     @Composable
     private fun TestSpacedByRemoteDp() {
         RemoteFlowRow(
-            // TODO(b/487167164): change to fillMaxSize
-            modifier = RemoteModifier.size(100.rdp),
+            modifier = RemoteModifier.fillMaxSize(),
             horizontalArrangement = spacedBy(5.rdp),
             verticalArrangement = RemoteArrangement.Top,
         ) {
@@ -322,8 +283,7 @@ class RemoteFlowRowTest {
     @Composable
     private fun TestSpacedByRemoteFloat() {
         RemoteFlowRow(
-            // TODO(b/487167164): change to fillMaxSize
-            modifier = RemoteModifier.size(100.rdp),
+            modifier = RemoteModifier.fillMaxSize(),
             horizontalArrangement = spacedBy(10f.rf),
             verticalArrangement = RemoteArrangement.Top,
         ) {
@@ -338,8 +298,7 @@ class RemoteFlowRowTest {
     @Composable
     private fun TestSpacedByRemoteDp(alignment: RemoteAlignment.Horizontal) {
         RemoteFlowRow(
-            // TODO(b/487167164): change to fillMaxSize
-            modifier = RemoteModifier.size(100.rdp),
+            modifier = RemoteModifier.fillMaxSize(),
             horizontalArrangement = spacedBy(space = 5.rdp, alignment = alignment),
             verticalArrangement = RemoteArrangement.Top,
         ) {
@@ -354,8 +313,7 @@ class RemoteFlowRowTest {
     @Composable
     private fun TestSpacedByRemoteFloat(alignment: RemoteAlignment.Horizontal) {
         RemoteFlowRow(
-            // TODO(b/487167164): change to fillMaxSize
-            modifier = RemoteModifier.size(100.rdp),
+            modifier = RemoteModifier.fillMaxSize(),
             horizontalArrangement = spacedBy(space = 10f.rf, alignment = alignment),
             verticalArrangement = RemoteArrangement.Top,
         ) {
@@ -366,7 +324,6 @@ class RemoteFlowRowTest {
         }
     }
 
-    // b/489510192: not drawing correctly when wrapping and vertical arrangement is Center or Bottom
     @Test
     fun wrapAndVerticalArrangement() =
         composeTestRule.runScreenshotTest(profile = experimentalProfile) {
@@ -392,8 +349,7 @@ class RemoteFlowRowTest {
         verticalArrangement: RemoteArrangement.Vertical,
     ) {
         RemoteFlowRow(
-            // TODO(b/487167164): change to fillMaxSize
-            modifier = RemoteModifier.size(100.rdp),
+            modifier = RemoteModifier.fillMaxSize(),
             horizontalArrangement = RemoteArrangement.Start,
             verticalArrangement = verticalArrangement,
         ) {

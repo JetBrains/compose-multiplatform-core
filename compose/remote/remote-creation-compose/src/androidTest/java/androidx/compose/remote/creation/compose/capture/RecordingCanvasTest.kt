@@ -143,6 +143,13 @@ class RecordingCanvasTest {
     }
 
     @Test
+    fun creationDisplayInfo() {
+        assertThat(recordingCanvas.creationDisplayInfo.width).isEqualTo(WIDTH)
+        assertThat(recordingCanvas.creationDisplayInfo.height).isEqualTo(HEIGHT)
+        assertThat(recordingCanvas.creationDisplayInfo.densityDpi).isEqualTo(160)
+    }
+
+    @Test
     fun remotePaint() {
         val paint = Paint()
         paint.colorFilter = BlendModeColorFilter(0xffffee70.toInt(), BlendMode.MULTIPLY)

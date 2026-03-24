@@ -32,6 +32,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.ParentDataModifier
@@ -91,14 +94,18 @@ public fun PickerGroup(
     AutoCenteringRow(
         modifier =
             modifier.then(
-                // When touch exploration services are enabled, send the scroll events on the parent
-                // composable to selected picker
                 if (touchExplorationServicesEnabled && selectedPickerState != null) {
+                    // When touch exploration services are enabled, send the scroll events on the
+                    // parent composable to selected picker
                     Modifier.scrollable(
                         state = selectedPickerState,
                         orientation = Orientation.Vertical,
                         reverseDirection = true,
                     )
+                } else if (!touchExplorationServicesEnabled && autoCenter) {
+                    // Apply the single-pointer input filter only when touch exploration is OFF
+                    // and autoCenter is TRUE.
+                    Modifier.singlePointerInput()
                 } else {
                     Modifier
                 }
@@ -174,7 +181,7 @@ public class PickerGroupScope {
                             }
                             coroutineScope {
                                 awaitEachGesture {
-                                    awaitFirstDown(requireUnconsumed = false)
+                                    awaitFirstDown(requireUnconsumed = true)
                                     latestOnSelected()
                                 }
                             }
@@ -324,3 +331,57 @@ internal class AutoCenteringRowParentData
 internal fun Placeable.isAutoCenteringTarget() = (parentData as? AutoCenteringRowParentData) != null
 
 private const val CenteringOffsetNotInitialized = Float.MIN_VALUE
+
+/**
+ * A [Modifier] that enforces single-pointer (single-finger) touch semantics.
+ *
+ * This modifier effectively reduces any single or multitouch gesture to a single-pointer gesture,
+ * governed only by the first pointer to make contact. All subsequent pointer events (down/move/up)
+ * are consumed in the [PointerEventPass.Initial] phase, making them appear consumed to this
+ * Composable and its children.
+ *
+ * Standard UI components and gesture detectors by default ignore consumed events. Child modifiers
+ * or gesture detectors will only react to these consumed secondary pointers if they are explicitly
+ * configured to do so (e.g., by using `awaitFirstDown(requireUnconsumed = false)`).
+ *
+ * This is used within [PickerGroup] when `autoCenter` is true to prevent secondary fingers from
+ * triggering selection changes and subsequent auto centering on other columns or initiating scrolls
+ * within those other columns, which would cause a jarring UX.
+ */
+internal fun Modifier.singlePointerInput(): Modifier =
+    this.pointerInput(Unit) {
+        awaitEachGesture {
+            var primaryPointerId: PointerId? = null
+
+            // First event to establish primaryPointerId
+            val firstEvent = awaitPointerEvent(PointerEventPass.Initial)
+            firstEvent.changes.fastForEach { change ->
+                if (primaryPointerId == null && change.changedToDown()) {
+                    primaryPointerId = change.id
+                }
+            }
+
+            if (primaryPointerId == null) {
+                return@awaitEachGesture // No initial down, end gesture
+            }
+
+            // Consume any other pointers in the first event
+            firstEvent.changes.fastForEach { change ->
+                if (change.id != primaryPointerId) {
+                    change.consume()
+                }
+            }
+
+            // Loop as long as ANY pointer is down
+            do {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                var anyPointerDown = false
+                event.changes.fastForEach { change ->
+                    if (change.pressed) anyPointerDown = true
+                    if (change.id != primaryPointerId) {
+                        change.consume() // Consume all events from other pointers
+                    }
+                }
+            } while (anyPointerDown)
+        }
+    }

@@ -23,8 +23,6 @@ import kotlin.coroutines.CoroutineContext
  * We use the [PlatformThreadContextElement] construct to know when a coroutine has suspended, and
  * about to resume on a `Thread`.
  */
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 public abstract class PlatformThreadContextElement<S, T : Tracer>
 internal constructor(
     /**

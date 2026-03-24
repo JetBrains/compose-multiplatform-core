@@ -155,9 +155,9 @@ internal fun Space.toRtSpace(): Int {
 /**
  * Extension function that converts a [androidx.xr.scenecore.runtime.MoveEvent] to a [MoveEvent].
  */
-internal fun RtMoveEvent.toMoveEvent(entityManager: EntityManager): MoveEvent {
+internal fun RtMoveEvent.toMoveEvent(entityRegistry: EntityRegistry): MoveEvent {
 
-    disposedEntity?.let { entityManager.removeEntity(it) }
+    disposedEntity?.let { entityRegistry.removeEntity(it) }
     return MoveEvent(
         moveState.toMoveState(),
         Ray(initialInputRay.origin, initialInputRay.direction),
@@ -166,18 +166,18 @@ internal fun RtMoveEvent.toMoveEvent(entityManager: EntityManager): MoveEvent {
         currentPose,
         previousScale.x,
         currentScale.x,
-        entityManager.getEntityForRtEntity(initialParent)!!,
+        entityRegistry.getEntityForRtEntity(initialParent)!!,
         updatedParent?.let {
-            entityManager.getEntityForRtEntity(it)
-                ?: AnchorEntity.create(it as RtAnchorEntity, entityManager)
+            entityRegistry.getEntityForRtEntity(it)
+                ?: AnchorEntity.create(it as RtAnchorEntity, entityRegistry)
         },
     )
 }
 
 /** Extension function that converts a [RtHitInfo] to a [HitInfo]. */
-internal fun RtHitInfo.toHitInfo(entityManager: EntityManager): HitInfo? {
+internal fun RtHitInfo.toHitInfo(entityRegistry: EntityRegistry): HitInfo? {
     // TODO: b/377541143 - Replace instance equality check in EntityManager.
-    val hitEntity = entityManager.getEntityForRtEntity(inputEntity)
+    val hitEntity = entityRegistry.getEntityForRtEntity(inputEntity)
     return if (hitEntity == null) {
         null
     } else {
@@ -188,9 +188,9 @@ internal fun RtHitInfo.toHitInfo(entityManager: EntityManager): HitInfo? {
 /**
  * Extension function that converts a [androidx.xr.scenecore.runtime.InputEvent] to a [InputEvent].
  */
-internal fun RtInputEvent.toInputEvent(entityManager: EntityManager): InputEvent {
+internal fun RtInputEvent.toInputEvent(entityRegistry: EntityRegistry): InputEvent {
     val hitInfos = mutableListOf<HitInfo>()
-    hitInfoList.forEach { it.toHitInfo(entityManager)?.let { element -> hitInfos.add(element) } }
+    hitInfoList.forEach { it.toHitInfo(entityRegistry)?.let { element -> hitInfos.add(element) } }
     return InputEvent(
         source.toInputEventSource(),
         pointerType.toInputEventPointer(),

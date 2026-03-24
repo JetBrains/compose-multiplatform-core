@@ -58,10 +58,13 @@ public class ActivitySpaceImpl(
     taskNode: Node,
     activity: Activity,
     extensions: XrExtensions,
-    entityManager: EntityManager,
+    sceneNodeRegistry: SceneNodeRegistry,
     private val spatialStateProvider: Supplier<SpatialState>,
     executor: ScheduledExecutorService,
-) : SystemSpaceEntityImpl(activity, taskNode, extensions, entityManager, executor), ActivitySpace {
+    private val unscaledGravityAlignedActivitySpace: Boolean = true,
+) :
+    SystemSpaceEntityImpl(activity, taskNode, extensions, sceneNodeRegistry, executor),
+    ActivitySpace {
 
     private val boundsListeners =
         Collections.synchronizedSet(HashSet<ActivitySpace.OnBoundsChangedListener>())
@@ -91,8 +94,8 @@ public class ActivitySpaceImpl(
     public val poseInPerceptionSpace: Pose
         get() {
             val perceptionSpaceScenePose =
-                mEntityManager
-                    .getSystemSpaceActivityPoseOfType(PerceptionSpaceScenePose::class.java)
+                sceneNodeRegistry
+                    .getSystemSpaceScenePoseOfType(PerceptionSpaceScenePose::class.java)
                     .single()
             return transformPoseTo(Pose(), perceptionSpaceScenePose)
         }
@@ -122,7 +125,7 @@ public class ActivitySpaceImpl(
             cachedRecommendedContentBox.updateAndGet { currentBox ->
                 currentBox
                     ?: run {
-                        val recommendedBox = mExtensions.recommendedContentBoxInFullSpace
+                        val recommendedBox = extensions.recommendedContentBoxInFullSpace
                         BoundingBox.fromMinMax(
                             Vector3(
                                 recommendedBox.min.x,
@@ -203,35 +206,38 @@ public class ActivitySpaceImpl(
      */
     public fun handleOriginUpdate(newTransform: Matrix4) {
         openXrReferenceSpaceTransform.set(newTransform)
-        sceneParentScaleAbs = Vector3.abs(newTransform.scale)
-        val sceneParentScaleInv = sceneParentScaleAbs.inverse()
-        // Get the unscaled rotation of the activity space.
-        var activitySpaceRotation = newTransform.unscaled().rotation
-        val yaw = activitySpaceRotation.eulerAngles.y
-        val yawRotation = Quaternion.fromEulerAngles(0.0f, yaw, 0.0f)
-        val gravityAlignedRotation = activitySpaceRotation.inverse * yawRotation
-        mExtensions.createNodeTransaction().use { transaction ->
-            transaction
-                .setScale(
-                    getNode(),
-                    sceneParentScaleInv.x,
-                    sceneParentScaleInv.y,
-                    sceneParentScaleInv.z,
-                )
-                .setOrientation(
-                    getNode(),
-                    gravityAlignedRotation.x,
-                    gravityAlignedRotation.y,
-                    gravityAlignedRotation.z,
-                    gravityAlignedRotation.w,
-                )
-                .apply()
+        var activitySpaceRotation = Quaternion.Identity
+        if (unscaledGravityAlignedActivitySpace) {
+            // Get the absolute scale of the scene parent)
+            sceneParentScaleAbs = Vector3.abs(newTransform.scale)
+            val sceneParentScaleInv = sceneParentScaleAbs.inverse()
+            // Get the unscaled rotation of the activity space.
+            activitySpaceRotation = newTransform.unscaled().rotation
+            val yaw = activitySpaceRotation.eulerAngles.y
+            val yawRotation = Quaternion.fromEulerAngles(0.0f, yaw, 0.0f)
+            val gravityAlignedRotation = activitySpaceRotation.inverse * yawRotation
+            extensions.createNodeTransaction().use { transaction ->
+                transaction
+                    .setScale(
+                        getNode(),
+                        sceneParentScaleInv.x,
+                        sceneParentScaleInv.y,
+                        sceneParentScaleInv.z,
+                    )
+                    .setOrientation(
+                        getNode(),
+                        gravityAlignedRotation.x,
+                        gravityAlignedRotation.y,
+                        gravityAlignedRotation.z,
+                        gravityAlignedRotation.w,
+                    )
+                    .apply()
+            }
+            // Update the rotation to be sent out in onSpatialModeChanged.
+            // It needs to provide identity yaw rotation since we already preserved that part of
+            // original rotation for the activity space origin.
+            activitySpaceRotation = yawRotation.inverse * activitySpaceRotation
         }
-        // Update the rotation to be sent out in onSpatialModeChanged.
-        // It needs to provide identity yaw rotation since we already preserved that part of
-        // original rotation for the activity space origin.
-        activitySpaceRotation = yawRotation.inverse * activitySpaceRotation
-
         // The translation is zero - since the activity space origin has been already translated by
         // system. SceneCore is relaying the same rotation and scale that activity space would have
         // inherited if it was in HOME_SPACE mode for continuity in FULL_SPACE_MANAGED mode.
@@ -243,7 +249,7 @@ public class ActivitySpaceImpl(
 
     // TODO: b/469860602 - Remove this override once transform listener fix lands.
     override val worldSpaceScale: Vector3
-        get() = Vector3.One
+        get() = if (unscaledGravityAlignedActivitySpace) Vector3.One else super.worldSpaceScale
 
     override fun addOnBoundsChangedListener(listener: ActivitySpace.OnBoundsChangedListener) {
         boundsListeners.add(listener)
@@ -287,12 +293,12 @@ public class ActivitySpaceImpl(
             }
 
         try {
-            mExtensions.hitTest(
+            extensions.hitTest(
                 activity,
                 Vec3(origin.x, origin.y, origin.z),
                 Vec3(direction.x, direction.y, direction.z),
                 RuntimeUtils.getHitTestFilter(hitTestFilter),
-                mExecutor,
+                scheduledExecutor,
                 consumer,
             )
         } catch (e: Throwable) {

@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/status_bar_latest_event_content"
     android:layout_width="match_parent"
     android:layout_height="64dp"
@@ -24,6 +24,7 @@
     <include layout="@layout/notification_template_icon_group"
         android:layout_width="@dimen/notification_large_icon_width"
         android:layout_height="@dimen/notification_large_icon_height"
+        tools:ignore="PrivateResource"
     />
     <LinearLayout
         android:id="@+id/notification_main_column_container"
@@ -34,7 +35,8 @@
         android:minHeight="@dimen/notification_large_icon_height"
         android:orientation="horizontal"
         android:layout_toLeftOf="@id/cancel_action"
-        android:layout_toStartOf="@id/cancel_action">
+        android:layout_toStartOf="@id/cancel_action"
+        tools:ignore="PrivateResource">
         <FrameLayout
             android:id="@+id/notification_main_column"
             android:layout_width="match_parent"
@@ -44,14 +46,16 @@
             android:layout_marginStart="@dimen/notification_content_margin_start"
             android:layout_marginRight="8dp"
             android:layout_marginEnd="8dp"
-            android:layout_marginBottom="8dp"/>
+            android:layout_marginBottom="8dp"
+            tools:ignore="PrivateResource"/>
         <FrameLayout
             android:id="@+id/right_side"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="8dp"
             android:layout_marginEnd="8dp"
-            android:paddingTop="@dimen/notification_right_side_padding_top">
+            android:paddingTop="@dimen/notification_right_side_padding_top"
+            tools:ignore="PrivateResource">
             <DateTimeView android:id="@+id/time"
                 android:textAppearance="@style/TextAppearance.Compat.Notification.Time.Media"
                 android:layout_width="wrap_content"

@@ -1375,6 +1375,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
             lastOrientation = newConfig?.orientation ?: ORIENTATION_UNDEFINED
         }
+        setupFastScroller()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -1899,6 +1900,36 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         Snackbar.make(this, errorMsg, Snackbar.LENGTH_SHORT).show()
     }
 
+    private fun setupFastScroller() {
+        val localPdfDocument = pdfDocument ?: return
+
+        val fastScrollCalculator = FastScrollCalculator(context)
+        val fastScrollDrawer =
+            FastScrollDrawer(
+                context,
+                localPdfDocument,
+                fastScrollVerticalThumbDrawable,
+                fastScrollPageIndicatorBackgroundDrawable,
+                fastScrollVerticalThumbMarginEnd,
+                fastScrollPageIndicatorMarginEnd,
+            )
+
+        val localFastScroller = FastScroller(fastScrollDrawer, fastScrollCalculator)
+        fastScroller = localFastScroller
+        fastScrollGestureDetector =
+            FastScrollGestureDetector(localFastScroller, fastScrollGestureHandler)
+
+        /* Invalidate the virtual views within the accessibility hierarchy when the fast scroller auto-hides. */
+        fastScroller?.visibilityChangeListener = { isVisible ->
+            if (lastFastScrollerVisibility != isVisible) {
+                lastFastScrollerVisibility = isVisible
+                if (!isVisible) {
+                    pdfViewAccessibilityManager?.invalidateRoot()
+                }
+            }
+        }
+    }
+
     /** Start using the [PdfDocument] to present PDF content */
     // Display.width and height are deprecated in favor of WindowMetrics, but in this case we
     // actually want to use the size of the display and not the size of the window.
@@ -1930,30 +1961,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             onPdfContentInvalidatedListener,
         )
 
-        val fastScrollCalculator = FastScrollCalculator(context)
-        val fastScrollDrawer =
-            FastScrollDrawer(
-                context,
-                localPdfDocument,
-                fastScrollVerticalThumbDrawable,
-                fastScrollPageIndicatorBackgroundDrawable,
-                fastScrollVerticalThumbMarginEnd,
-                fastScrollPageIndicatorMarginEnd,
-            )
-
-        val localFastScroller = FastScroller(fastScrollDrawer, fastScrollCalculator)
-        fastScroller = localFastScroller
-        /* Invalidate the virtual views within the accessibility hierarchy when the fast scroller auto-hides. */
-        fastScroller?.visibilityChangeListener = { isVisible ->
-            if (lastFastScrollerVisibility != isVisible) {
-                lastFastScrollerVisibility = isVisible
-                if (!isVisible) {
-                    pdfViewAccessibilityManager?.invalidateRoot()
-                }
-            }
-        }
-        fastScrollGestureDetector =
-            FastScrollGestureDetector(localFastScroller, fastScrollGestureHandler)
+        setupFastScroller()
         // set initial visibility of fast scroller
         maybeHideFastScroller()
 

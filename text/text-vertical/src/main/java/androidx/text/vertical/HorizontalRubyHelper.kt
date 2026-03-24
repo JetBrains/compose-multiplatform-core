@@ -28,7 +28,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * A helper class that handles the layout logic, measurement, and drawing for [RubySpanCompat].
+ * A helper class that handles the layout logic, measurement, and drawing for [RubySpan].
  *
  * @param text The original Spanned text.
  * @param start The start index of the span.

@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.onConsumedWindowInsetsChanged
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -331,7 +332,6 @@ class ModalBottomSheetTest {
                 }
 
                 @Deprecated("deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 override fun onLowMemory() {
                     // NO-OP
                 }
@@ -387,7 +387,6 @@ class ModalBottomSheetTest {
                 }
 
                 @Deprecated("deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 override fun onLowMemory() {
                     // NO-OP
                 }
@@ -1613,6 +1612,43 @@ class ModalBottomSheetTest {
         assertThat(sheetState.showMotionSpec).isEqualTo(customSpatialSpec)
         assertThat(sheetState.anchoredDraggableMotionSpec).isEqualTo(customSpatialSpec)
         assertThat(sheetState.hideMotionSpec).isEqualTo(customEffectsSpec)
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun bottomSheet_smallSheet_escapesDampeningAndDismisses() {
+        lateinit var sheetState: SheetState
+
+        rule.setContent {
+            val density = LocalDensity.current
+            sheetState =
+                SheetState(
+                    skipPartiallyExpanded = false,
+                    initialValue = SheetValue.Expanded,
+                    positionalThreshold = {
+                        with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
+                    },
+                    velocityThreshold = {
+                        with(density) { BottomSheetDefaults.VelocityThreshold.toPx() }
+                    },
+                )
+
+            Box(Modifier.requiredSize(100.dp)) {
+                BottomSheet(onDismissRequest = {}, state = sheetState, dragHandle = null) {
+                    Text("Extremely small sheet", Modifier.testTag(sheetTag))
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(sheetState.isVisible).isTrue() }
+
+        // Perform a standard swipe down on this tiny sheet
+        rule.onNodeWithTag(sheetTag).performTouchInput { swipeDown() }
+
+        rule.waitForIdle()
+
+        // Verify the sheet successfully dismisses
+        rule.runOnIdle { assertThat(sheetState.isVisible).isFalse() }
     }
 
     private val Bundle.traversalBefore: Int

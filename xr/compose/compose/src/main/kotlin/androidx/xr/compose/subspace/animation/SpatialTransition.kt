@@ -41,6 +41,7 @@ import androidx.xr.compose.unit.IntVolumeSize
  *
  * @see EnterTransition
  */
+@Immutable
 public sealed class SpatialEnterTransition {
     internal abstract val data: SpatialTransitionData
 
@@ -57,8 +58,12 @@ public sealed class SpatialEnterTransition {
         return Impl(data.merge(enter.data))
     }
 
+    public abstract override fun equals(other: Any?): Boolean
+
+    public abstract override fun hashCode(): Int
+
     @Immutable
-    internal class Impl(override val data: SpatialTransitionData) : SpatialEnterTransition()
+    internal data class Impl(override val data: SpatialTransitionData) : SpatialEnterTransition()
 
     public companion object {
         /**
@@ -85,6 +90,7 @@ public sealed class SpatialEnterTransition {
  *
  * @see ExitTransition
  */
+@Immutable
 public sealed class SpatialExitTransition {
     internal abstract val data: SpatialTransitionData
 
@@ -101,8 +107,12 @@ public sealed class SpatialExitTransition {
         return Impl(data.merge(exit.data))
     }
 
+    public abstract override fun equals(other: Any?): Boolean
+
+    public abstract override fun hashCode(): Int
+
     @Immutable
-    internal class Impl(override val data: SpatialTransitionData) : SpatialExitTransition()
+    internal data class Impl(override val data: SpatialTransitionData) : SpatialExitTransition()
 
     public companion object {
         /**

@@ -18,8 +18,11 @@ package androidx.tracing
 
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope
+import androidx.collection.MutableIntObjectMap
+import androidx.collection.MutableScatterMap
 import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableScatterMapOf
+import kotlin.concurrent.Volatile
 
 /** Represents a track for a process in a perfetto trace. */
 @RestrictTo(Scope.LIBRARY_GROUP)
@@ -32,8 +35,11 @@ public open class ProcessTrack(
     public val name: String,
 ) : SliceTrack(context = context, uuid = monotonicId()) {
 
-    internal val threads = mutableIntObjectMapOf<ThreadTrack>()
-    internal val counters = mutableScatterMapOf<String, CounterTrack>()
+    public val threads: MutableIntObjectMap<ThreadTrack> = mutableIntObjectMapOf()
+    internal val counters: MutableScatterMap<String, CounterTrack> = mutableScatterMapOf()
+
+    @JvmField @Volatile public var l1ThreadTrack: ThreadTrack? = null
+    @JvmField @Volatile public var l2ThreadTrack: ThreadTrack? = null
 
     init {
         synchronized(traceEventScope) {
@@ -68,6 +74,33 @@ public open class ProcessTrack(
     public open fun getOrCreateCounterTrack(name: String): CounterTrack {
         return synchronized(counters) {
             counters.getOrPut(key = name) { CounterTrack(name = name, parent = this) }
+        }
+    }
+
+    // We have a small cache of ThreadTracks here. This is because in particularly hot code
+    // on the same thread, or in suspending contexts where a lot of the work ends up happening on
+    // the same dispatcher, we can avoid looking up a map for the last used thread tracks. So we
+    // maintain the 2 most recently used ThreadTracks.
+
+    /** @return The [ThreadTrack] instance based on the current execution context. */
+    @Suppress("NOTHING_TO_INLINE", "DEPRECATION")
+    public inline fun currentThreadTrack(): ThreadTrack {
+        val current = Thread.currentThread()
+        val id = current.id.toInt()
+        val l1 = l1ThreadTrack
+        val l2 = l2ThreadTrack
+        return when {
+            l1 != null && l1.id == id -> l1
+            l2 != null && l2.id == id -> l2
+            else -> {
+                var track = threads[id]
+                if (track == null) {
+                    track = getOrCreateThreadTrack(id = id, name = current.name)
+                }
+                l2ThreadTrack = l1ThreadTrack
+                l1ThreadTrack = track
+                track
+            }
         }
     }
 }

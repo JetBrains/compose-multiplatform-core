@@ -57,6 +57,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.xr.glimmer.testutils.captureToImage
 import com.google.common.truth.Truth.assertThat
+import kotlin.properties.Delegates
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
@@ -143,12 +144,13 @@ class ButtonTest {
     fun shapeAndColorFromThemeIsUsed() {
         lateinit var expectedShape: Shape
         val surfaceColor = Color.Blue
-        rule.setGlimmerThemeContent {
-            GlimmerTheme(Colors(surface = surfaceColor)) {
-                expectedShape = GlimmerTheme.shapes.large
-                Button(onClick = {}, modifier = Modifier.testTag("button"), border = null) {
-                    Box(Modifier.size(100.dp, 100.dp))
-                }
+        val backgroundColor = Color.Red
+        rule.setGlimmerThemeContent(
+            colors = Colors(background = backgroundColor, surface = surfaceColor)
+        ) {
+            expectedShape = GlimmerTheme.shapes.large
+            Button(onClick = {}, modifier = Modifier.testTag("button"), border = null) {
+                Box(Modifier.size(100.dp, 100.dp))
             }
         }
 
@@ -159,7 +161,7 @@ class ButtonTest {
                 density = rule.density,
                 shape = expectedShape,
                 shapeColor = surfaceColor,
-                backgroundColor = Color.Black,
+                backgroundColor = backgroundColor,
                 antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
@@ -260,7 +262,9 @@ class ButtonTest {
 
     @Test
     fun positioning() {
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Button(onClick = { /* Do something! */ }, modifier = Modifier.testTag("button")) {
                 Text("Send", modifier = Modifier.testTag("text"))
             }
@@ -272,12 +276,12 @@ class ButtonTest {
             rule.onNodeWithTag("text", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (textBounds.left - buttonBounds.left).assertIsEqualTo(
-            Spacing.Large,
+            largeSpacing,
             "padding between the start of the button and the start of the text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
-            Spacing.Large,
+            largeSpacing,
             "padding between the end of the text and the end of the button.",
         )
 
@@ -286,7 +290,9 @@ class ButtonTest {
 
     @Test
     fun positioning_buttonSizeLarge() {
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Button(
                 onClick = { /* Do something! */ },
                 modifier = Modifier.testTag("button"),
@@ -302,12 +308,12 @@ class ButtonTest {
             rule.onNodeWithTag("text", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (textBounds.left - buttonBounds.left).assertIsEqualTo(
-            Spacing.Large,
+            largeSpacing,
             "padding between the start of the button and the start of the text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
-            Spacing.Large,
+            largeSpacing,
             "padding between the end of the text and the end of the button.",
         )
 
@@ -316,7 +322,11 @@ class ButtonTest {
 
     @Test
     fun positioning_withIcons() {
+        var extraSmallSpacing: Dp by Delegates.notNull()
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            extraSmallSpacing = GlimmerTheme.componentSpacingValues.extraSmall
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Button(
                 onClick = { /* Do something! */ },
                 modifier = Modifier.testTag("button"),
@@ -349,22 +359,22 @@ class ButtonTest {
             rule.onNodeWithTag("button", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (leadingIconBounds.left - buttonBounds.left).assertIsEqualTo(
-            Spacing.Large,
+            largeSpacing,
             "Padding between start of button and start of leading icon.",
         )
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            Spacing.ExtraSmall,
+            extraSmallSpacing,
             "Padding between end of leading icon and start of text.",
         )
 
         (trailingIconBounds.left - textBounds.right).assertIsEqualTo(
-            Spacing.ExtraSmall,
+            extraSmallSpacing,
             "Padding between end of text and start of trailing icon.",
         )
 
         (buttonBounds.right - trailingIconBounds.right).assertIsEqualTo(
-            Spacing.Large,
+            largeSpacing,
             "padding between end of leading icon and end of button.",
         )
 
@@ -373,7 +383,11 @@ class ButtonTest {
 
     @Test
     fun positioning_withIcons_buttonSizeLarge() {
+        var extraSmallSpacing: Dp by Delegates.notNull()
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            extraSmallSpacing = GlimmerTheme.componentSpacingValues.extraSmall
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Button(
                 onClick = { /* Do something! */ },
                 modifier = Modifier.testTag("button"),
@@ -407,22 +421,22 @@ class ButtonTest {
             rule.onNodeWithTag("button", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (leadingIconBounds.left - buttonBounds.left).assertIsEqualTo(
-            Spacing.Large,
+            largeSpacing,
             "Padding between start of button and start of leading icon.",
         )
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            Spacing.ExtraSmall,
+            extraSmallSpacing,
             "Padding between end of leading icon and start of text.",
         )
 
         (trailingIconBounds.left - textBounds.right).assertIsEqualTo(
-            Spacing.ExtraSmall,
+            extraSmallSpacing,
             "Padding between end of text and start of trailing icon.",
         )
 
         (buttonBounds.right - trailingIconBounds.right).assertIsEqualTo(
-            Spacing.Large,
+            largeSpacing,
             "padding between end of leading icon and end of button.",
         )
 

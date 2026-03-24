@@ -126,6 +126,19 @@ class WidgetUpdateClientImplTest {
     }
 
     @Test
+    fun requestUpdate_withInstanceId_sendsRequestWithId() = runTest {
+        val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+        val id = 1234
+        val instanceId = WidgetInstanceId(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE, id)
+
+        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, instanceId)
+        waitAllScopesIdle()
+
+        assertThat(standardSysUiFakeReceiver.requestedComponents).contains(TEST_PROVIDER_COMPONENT)
+        assertThat(standardSysUiFakeReceiver.requestedIds).contains(id)
+    }
+
+    @Test
     fun requestUpdate_queuesUpdatesWhileBinding() = runTest {
         val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
 
@@ -371,12 +384,44 @@ class WidgetUpdateClientImplTest {
         assertThat(thrownException).isInstanceOf(RuntimeException::class.java)
     }
 
+    @Test
+    fun pushUpdate_withInvalidRequestErrorCallback_throwsIllegalArgumentException() = runTest {
+        val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+        val shadowApp = shadowOf(appContext as Application?)
+        shadowApp.registerForPushBindService(
+            STANDARD_SYSUI_RECEIVER_COMPONENT_NAME,
+            invalidRequestErrorPushUpdateService(),
+        )
+        val instanceId = WidgetInstanceId("ns", 1)
+        val request = WearWidgetUpdateRequest(instanceId)
+        val content = WearWidgetRawContent(byteArrayOf(), Bundle.EMPTY)
+
+        var thrownException: Throwable? = null
+        launch {
+            try {
+                updateClient.pushUpdate(appContext, request, content)
+            } catch (e: Exception) {
+                thrownException = e
+            }
+        }
+        waitAllScopesIdle()
+
+        assertThat(thrownException).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
     private fun standardPushUpdateService() = BaseTestUpdateRequester { callback ->
         callback.onSuccess()
     }
 
     private fun errorPushUpdateService() = BaseTestUpdateRequester { callback ->
         callback.onError(123, "Test error")
+    }
+
+    private fun invalidRequestErrorPushUpdateService() = BaseTestUpdateRequester { callback ->
+        callback.onError(
+            IWearWidgetUpdateRequester.UPDATE_ERROR_CODE_INVALID_REQUEST_ERROR,
+            "Invalid request",
+        )
     }
 
     private fun exceptionPushUpdateService() = BaseTestUpdateRequester {

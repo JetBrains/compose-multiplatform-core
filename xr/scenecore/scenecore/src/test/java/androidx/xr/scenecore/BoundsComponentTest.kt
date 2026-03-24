@@ -90,7 +90,7 @@ class BoundsComponentTest {
             GltfModelEntity.create(
                 fakeSceneRuntime,
                 fakeRenderingRuntime,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 gltfModel,
             )
     }

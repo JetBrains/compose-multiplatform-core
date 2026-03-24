@@ -75,6 +75,8 @@ fun runMetalavaWithArgs(
                 "androidx.annotation.ReplaceWith",
                 "--exclude-annotation",
                 "androidx.compose.runtime.ComposableInferredTarget",
+                "--exclude-annotation",
+                "androidx.compose.runtime.ComposableTarget",
                 // internal annotation, includes debug information and values are not constant
                 "--exclude-annotation",
                 "androidx.compose.runtime.internal.FunctionKeyMeta",

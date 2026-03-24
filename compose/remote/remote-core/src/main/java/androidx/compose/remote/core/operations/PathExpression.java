@@ -20,6 +20,7 @@ import static androidx.compose.remote.core.documentation.DocumentedOperation.FLO
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -44,7 +45,6 @@ import java.util.Objects;
 public class PathExpression extends Operation implements VariableSupport, Serializable {
     private static final int OP_CODE = Operations.PATH_EXPRESSION;
     private static final String CLASS_NAME = "PathExpression";
-    private static final int MAX_EXPRESSION_LENGTH = 32;
     private final PathGenerator mPathGenerator = new PathGenerator();
     private final int mInstanceId;
     private float[] mOutputPath = new float[0];
@@ -66,7 +66,7 @@ public class PathExpression extends Operation implements VariableSupport, Serial
     public static final int MONOTONIC = 2;
     public static final int LINEAR = 4;
     public static final int POLAR = 8;
-    public static final int WINDING_MASK =  0x3000000;
+    public static final int WINDING_MASK = 0x3000000;
 
     @SuppressWarnings("UnknownNullness") // Annotations on a primitive array are compile error.
     public PathExpression(
@@ -246,14 +246,14 @@ public class PathExpression extends Operation implements VariableSupport, Serial
     /**
      * add this operation to the buffer
      *
-     * @param buffer the buffer to add to
-     * @param id the id of the image
+     * @param buffer      the buffer to add to
+     * @param id          the id of the image
      * @param expressionX the x expression
      * @param expressionY the y expression
-     * @param min the min value of the expression
-     * @param max the max value of the expression
-     * @param count the number of points in the expression
-     * @param flags the flags
+     * @param min         the min value of the expression
+     * @param max         the max value of the expression
+     * @param count       the number of points in the expression
+     * @param flags       the flags
      */
     public static void apply(
             @NonNull WireBuffer buffer,
@@ -274,8 +274,9 @@ public class PathExpression extends Operation implements VariableSupport, Serial
         for (float datum : expressionX) {
             buffer.writeFloat(datum);
         }
-        if (expressionY == null) buffer.writeInt(0);
-        else {
+        if (expressionY == null) {
+            buffer.writeInt(0);
+        } else {
             buffer.writeInt(expressionY.length);
             for (float datum : expressionY) {
                 buffer.writeFloat(datum);
@@ -286,7 +287,7 @@ public class PathExpression extends Operation implements VariableSupport, Serial
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer the buffer to read
+     * @param buffer     the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
@@ -296,7 +297,7 @@ public class PathExpression extends Operation implements VariableSupport, Serial
         float max = buffer.readFloat();
         float count = buffer.readFloat();
         int len = buffer.readInt();
-        if (len > MAX_EXPRESSION_LENGTH) {
+        if (len > Limits.MAX_EXPRESSION_SIZE) {
             throw new RuntimeException("Path too long");
         }
         float[] expressionX = new float[len];
@@ -305,7 +306,7 @@ public class PathExpression extends Operation implements VariableSupport, Serial
         }
 
         len = buffer.readInt();
-        if (len > MAX_EXPRESSION_LENGTH) {
+        if (len > Limits.MAX_EXPRESSION_SIZE) {
             throw new RuntimeException("Path too long");
         }
         float[] expressionY = new float[len];
@@ -372,7 +373,7 @@ public class PathExpression extends Operation implements VariableSupport, Serial
                         loop,
                         context.getCollectionsAccess());
             }
-            context.loadPathData(mInstanceId, mWinding,  mOutputPath);
+            context.loadPathData(mInstanceId, mWinding, mOutputPath);
         }
         mPathChanged = false;
     }

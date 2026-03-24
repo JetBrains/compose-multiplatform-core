@@ -54,7 +54,7 @@ import kotlinx.coroutines.flow.StateFlow
 public class MovableComponent
 private constructor(
     private val session: Session,
-    private val entityManager: EntityManager,
+    private val entityRegistry: EntityRegistry,
     private val systemMovable: Boolean = true,
     private val scaleInZ: Boolean = true,
     private val anchorPlacement: Set<AnchorPlacement> = emptySet(),
@@ -72,7 +72,7 @@ private constructor(
     }
     private val moveListenersMap = ConcurrentHashMap<EntityMoveListener, Executor>()
     private val rtMoveEventListener: RtMoveEventListener = RtMoveEventListener { rtMoveEvent ->
-        val moveEvent = rtMoveEvent.toMoveEvent(entityManager)
+        val moveEvent = rtMoveEvent.toMoveEvent(entityRegistry)
         val updatedReformEventInfo: UpdatedReformEventInfo? =
             if (anchorable) getUpdatedReformEventPoseAndParent(moveEvent) else null
         moveListenersMap.forEach { (entityMoveListener, executor) ->
@@ -120,7 +120,7 @@ private constructor(
     private fun Collection<Plane>.filterByAnchorPlacement(
         anchorPlacement: Set<AnchorPlacement>
     ): Collection<Plane> =
-        this.mapNotNull { it ->
+        this.mapNotNull {
             var outPlane: Plane? = null
             val planeData = it.state.value
             val planeOrientation = it.type.toSceneCoreOrientation()
@@ -145,16 +145,20 @@ private constructor(
         }
 
     /**
-     * The size of the move affordance in meters. This property determines the size of the bounding
-     * box that is used to draw the draggable move affordances around the [Entity]. This property
-     * can be modified if the move affordance needs to be larger or smaller than the Entity itself.
+     * The size of the move affordance in local space virtual meters. This property determines the
+     * size of the bounding box that is used to draw the draggable move affordances around the
+     * [Entity]. This property can be modified if the move affordance needs to be larger or smaller
+     * than the Entity itself.
+     *
+     * When attaching this component to an entity, the apps may update this value to appropriate new
+     * value, such as the size of the entity this component is being added to. If apps don't set
+     * this value, the component will try to use the entity's dimensions as value for this property
+     * where applicable, or default to (1 x 1 x 1).
      */
-    public var size: FloatSize3d = kDimensionsOneMeter
+    public var size: FloatSize3d
+        get() = rtMovableComponent.size.toFloatSize3d()
         set(value) {
-            if (field != value) {
-                field = value
-                rtMovableComponent.size = value.toRtDimensions()
-            }
+            rtMovableComponent.size = value.toRtDimensions()
         }
 
     override fun onAttach(entity: Entity): Boolean {
@@ -355,13 +359,12 @@ private constructor(
     }
 
     public companion object {
-        private val kDimensionsOneMeter = FloatSize3d(1f, 1f, 1f)
         internal const val MAX_PLANE_ANCHOR_DISTANCE = 0.2f
 
         /** Factory function for creating a MovableComponent. */
         internal fun create(
             session: Session,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             systemMovable: Boolean = true,
             scaleInZ: Boolean = true,
             anchorPlacement: Set<AnchorPlacement> = emptySet(),
@@ -371,7 +374,7 @@ private constructor(
         ): MovableComponent {
             return MovableComponent(
                 session,
-                entityManager,
+                entityRegistry,
                 systemMovable,
                 scaleInZ,
                 anchorPlacement,
@@ -412,9 +415,9 @@ private constructor(
             executor: Executor?,
             entityMoveListener: EntityMoveListener,
         ): MovableComponent =
-            MovableComponent.create(
+            create(
                 session = session,
-                entityManager = session.scene.entityManager,
+                entityRegistry = session.scene.entityRegistry,
                 systemMovable = false,
                 scaleInZ = scaleInZ,
                 initialListener = entityMoveListener,
@@ -446,9 +449,9 @@ private constructor(
             session: Session,
             scaleInZ: Boolean = true,
         ): MovableComponent =
-            MovableComponent.create(
+            create(
                 session = session,
-                entityManager = session.scene.entityManager,
+                entityRegistry = session.scene.entityRegistry,
                 systemMovable = true,
                 scaleInZ = scaleInZ,
             )
@@ -488,9 +491,9 @@ private constructor(
             require(anchorPlacement.isNotEmpty()) {
                 "Cannot create a MovableComponent with createAnchorable and an empty set for anchorPlacement"
             }
-            return MovableComponent.create(
+            return create(
                 session = session,
-                entityManager = session.scene.entityManager,
+                entityRegistry = session.scene.entityRegistry,
                 systemMovable = true,
                 scaleInZ = false,
                 anchorPlacement = anchorPlacement,

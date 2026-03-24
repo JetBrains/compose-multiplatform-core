@@ -53,7 +53,7 @@ class PanelEntityImplTest {
         Robolectric.buildActivity(Activity::class.java)
     private val activity: Activity = activityController.create().start().get()
     private val fakeExecutor = FakeScheduledExecutorService()
-    private val entityManager = EntityManager()
+    private val sceneNodeRegistry = SceneNodeRegistry()
     private val nodeRepository: NodeRepository = NodeRepository.getInstance()
     private val pixelDimensions = PixelDimensions(2000, 1000)
     private lateinit var sceneRuntime: SpatialSceneRuntime
@@ -66,7 +66,7 @@ class PanelEntityImplTest {
             "+w" + pixelDimensions.width + "dp-h" + pixelDimensions.height + "dp"
         RuntimeEnvironment.setQualifiers(widthAndHeightConfig)
         sceneRuntime =
-            SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions!!, entityManager)
+            SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions!!, sceneNodeRegistry)
         renderViewScenePose.activitySpacePose = Pose(Vector3(0f, 0f, 0f), Quaternion.Identity)
         renderViewFov =
             FieldOfView(
@@ -81,7 +81,7 @@ class PanelEntityImplTest {
     fun tearDown() {
         // Destroy the runtime between test cases to clean up lingering references.
         sceneRuntime.destroy()
-        entityManager.clear()
+        sceneNodeRegistry.clear()
     }
 
     private fun createPanelEntity(surfaceDimensionsPx: Dimensions): PanelEntityImpl {
@@ -97,7 +97,7 @@ class PanelEntityImplTest {
                 node,
                 view,
                 xrExtensions,
-                entityManager,
+                sceneNodeRegistry,
                 PixelDimensions(
                     surfaceDimensionsPx.width.toInt(),
                     surfaceDimensionsPx.height.toInt(),

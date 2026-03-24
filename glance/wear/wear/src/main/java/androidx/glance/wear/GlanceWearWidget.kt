@@ -118,7 +118,7 @@ internal constructor(
      * TODO: Provide a default mechanism for storing instanceId
      */
     public fun triggerUpdate(context: Context, provider: ComponentName) {
-        updateClient.requestUpdate(context, provider)
+        triggerPullUpdate(context, provider)
         val isDebuggable = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         if (isDebuggable) {
             updateClient.sendUpdateBroadcast(context, provider)
@@ -147,25 +147,38 @@ internal constructor(
     }
 
     /**
+     * Trigger a content update for all widgets associated with the [provider] service component.
+     *
+     * @param context the context from which this method is called.
+     * @param provider the component name of the widget provider service to request an update for.
+     * @param instanceId the optional ID of the widget instance to update.
+     */
+    internal fun triggerPullUpdate(
+        context: Context,
+        provider: ComponentName,
+        instanceId: WidgetInstanceId? = null,
+    ) {
+        updateClient.requestUpdate(context, provider, instanceId)
+    }
+
+    /**
      * Generates widget data and pushes the update to the host.
      *
      * The coroutine will be canceled if it doesn't complete within 10 seconds of being called.
      *
      * @param context the context from which this method is called.
      * @param instanceId the ID of the widget instance to update.
-     * @throws IllegalStateException if the widget instance or its parameters cannot be found in the
-     *   local cache.
+     * @throws IllegalArgumentException if the widget instance or its parameters cannot be found in
+     *   the local cache.
+     * @throws [WearWidgetCache.WidgetCacheMissException] if any required cache entry cannot be
+     *   found.
      */
     // TODO: b/446828899 - Add RequiresApi(37) annotation.
     // TODO: b/446828899 - Recover if cache entries are not found.
     private suspend fun pushUpdate(context: Context, instanceId: WidgetInstanceId) {
         val cache = widgetCache ?: WearWidgetCache(context)
-        val containerType =
-            cache.getInstanceType(instanceId)
-                ?: throw IllegalStateException("No container type found for instance $instanceId")
-        val params =
-            cache.getWidgetParams(containerType, instanceId)
-                ?: throw IllegalStateException("No container spec found for type $containerType")
+        val containerType = cache.getContainerTypeForInstance(instanceId)
+        val params = cache.getWidgetParams(containerType, instanceId)
 
         val rawContent =
             withContext(Dispatchers.Main.immediate) {

@@ -32,7 +32,6 @@ import androidx.compose.ui.semantics.Role
  * SemanticsPropertyKey is the infrastructure for setting key/value pairs inside semantics block in
  * a type-safe way. Each key has one particular statically defined value type T.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SemanticsPropertyKey<T>
 internal constructor(
     /** The name of the property. Should be the same as the constant from which it is accessed. */
@@ -57,15 +56,14 @@ internal constructor(
  * SemanticsPropertyReceiver is the scope provided by semantics {} blocks, letting you set key/value
  * pairs primarily via extension functions.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface SemanticsPropertyReceiver {
     public operator fun <T> set(key: SemanticsPropertyKey<T>, value: T?)
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public operator fun <T> get(key: SemanticsPropertyKey<T>): T?
 }
 
 /** General semantics properties, mainly used for accessibility and testing. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object SemanticsProperties {
     public val ContentDescription: SemanticsPropertyKey<RemoteString> =
         SemanticsPropertyKey("ContentDescription")
@@ -80,8 +78,6 @@ public object SemanticsProperties {
  * Developer-set content description of the semantics node, for use in testing, accessibility and
  * similar use cases.
  */
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public var SemanticsPropertyReceiver.contentDescription: RemoteString?
     get() = get(SemanticsProperties.ContentDescription)
     set(value) {
@@ -89,8 +85,6 @@ public var SemanticsPropertyReceiver.contentDescription: RemoteString?
     }
 
 /** The type of user interface element. Accessibility services can use this to describe the node. */
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public var SemanticsPropertyReceiver.role: Role?
     get() = get(SemanticsProperties.Role)
     set(value) {
@@ -98,8 +92,6 @@ public var SemanticsPropertyReceiver.role: Role?
     }
 
 /** Text content for the semantics node. */
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public var SemanticsPropertyReceiver.text: RemoteString?
     get() = get(SemanticsProperties.Text)
     set(value) {
@@ -107,8 +99,6 @@ public var SemanticsPropertyReceiver.text: RemoteString?
     }
 
 /** Description of the state for the semantics node. */
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public var SemanticsPropertyReceiver.stateDescription: RemoteString?
     get() = get(SemanticsProperties.StateDescription)
     set(value) {
@@ -116,8 +106,6 @@ public var SemanticsPropertyReceiver.stateDescription: RemoteString?
     }
 
 /** Whether the component is enabled. */
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public var SemanticsPropertyReceiver.enabled: Boolean
     get() = get(SemanticsProperties.Enabled) ?: true
     set(value) {
@@ -190,28 +178,26 @@ internal class AccessibilitySemantics : SemanticsPropertyReceiver {
 /**
  * Clears the semantics of all descendants and sets new semantics.
  *
- * @param fn A lambda to configure the semantics.
+ * @param properties A lambda to configure the semantics.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteModifier.clearAndSetSemantics(
-    fn: SemanticsPropertyReceiver.() -> Unit
+    properties: SemanticsPropertyReceiver.() -> Unit
 ): RemoteModifier =
-    then(SemanticsModifier(CLEAR_AND_SET, AccessibilitySemantics().apply(fn).props.toMap()))
+    then(SemanticsModifier(CLEAR_AND_SET, AccessibilitySemantics().apply(properties).props.toMap()))
 
 /**
  * Adds semantics to the node.
  *
  * @param mergeDescendants Whether to merge the semantics of all descendants into this node.
- * @param fn A lambda to configure the semantics.
+ * @param properties A lambda to configure the semantics.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteModifier.semantics(
     mergeDescendants: Boolean = false,
-    fn: SemanticsPropertyReceiver.() -> Unit,
+    properties: SemanticsPropertyReceiver.() -> Unit,
 ): RemoteModifier =
     then(
         SemanticsModifier(
             if (mergeDescendants) MERGE else SET,
-            AccessibilitySemantics().apply(fn).props.toMap(),
+            AccessibilitySemantics().apply(properties).props.toMap(),
         )
     )

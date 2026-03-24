@@ -54,7 +54,7 @@ class InteractableComponentImplTest {
     @Before
     fun setUp() {
         fakeRuntime =
-            SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions!!, EntityManager())
+            SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions!!, SceneNodeRegistry())
     }
 
     @After

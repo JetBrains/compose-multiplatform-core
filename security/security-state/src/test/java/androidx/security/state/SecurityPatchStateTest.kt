@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import org.junit.After
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -53,6 +54,7 @@ import org.mockito.Mockito.timeout
 import org.mockito.Mockito.times
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.robolectric.annotation.Config
@@ -63,7 +65,8 @@ class SecurityPatchStateTest {
     private val mockContext: Context = mock<Context>()
     private val mockPackageManager: PackageManager = mock(PackageManager::class.java)
     private val mockBinder: IBinder = mock(IBinder::class.java)
-    private val mockService: IUpdateInfoService = mock(IUpdateInfoService::class.java)
+    private val mockFactory: IUpdateInfoService = mock(IUpdateInfoService::class.java)
+    private val mockSession: IUpdateInfoSession = mock(IUpdateInfoSession::class.java)
 
     private val mockSecurityStateManagerCompat: SecurityStateManagerCompat =
         mock<SecurityStateManagerCompat> {}
@@ -73,7 +76,16 @@ class SecurityPatchStateTest {
     fun setup() {
         `when`(mockContext.packageName).thenReturn("com.example.test")
         `when`(mockContext.packageManager).thenReturn(mockPackageManager)
-        `when`(mockBinder.queryLocalInterface(anyString())).thenReturn(mockService)
+        `when`(mockBinder.queryLocalInterface(anyString())).thenReturn(mockFactory)
+        `when`(mockFactory.openSession(anyString(), any(IBinder::class.java)))
+            .thenReturn(mockSession)
+        `when`(
+                mockPackageManager.checkPermission(
+                    eq("android.permission.READ_PRIVILEGED_PHONE_STATE"),
+                    anyString(),
+                )
+            )
+            .thenReturn(PackageManager.PERMISSION_GRANTED)
         securityState = SecurityPatchState(mockContext, listOf(), mockSecurityStateManagerCompat)
     }
 
@@ -1102,7 +1114,7 @@ class SecurityPatchStateTest {
                 )
 
             // Mock the service to return both results
-            `when`(mockService.listAvailableUpdates()).thenReturn(result1).thenReturn(result2)
+            `when`(mockSession.listAvailableUpdates()).thenReturn(result1).thenReturn(result2)
 
             // WHEN we request the Available SPL for SYSTEM
             val result =
@@ -1190,7 +1202,7 @@ class SecurityPatchStateTest {
                             )
 
                         // Mock the service call for the successful bind
-                        `when`(mockService.listAvailableUpdates()).thenReturn(result)
+                        `when`(mockSession.listAvailableUpdates()).thenReturn(result)
 
                         connection.onServiceConnected(intent.component, mockBinder)
                         true
@@ -1283,7 +1295,7 @@ class SecurityPatchStateTest {
                 )
 
             // Configure the mock service to return different results for the sequential calls.
-            `when`(mockService.listAvailableUpdates())
+            `when`(mockSession.listAvailableUpdates())
                 .thenReturn(systemResult)
                 .thenReturn(kernelResult)
 
@@ -2586,21 +2598,35 @@ class SecurityPatchStateTest {
     }
 
     @Test
-    fun testQueryAllAvailableUpdates_ignoresNonSystemApps() {
+    fun testListAvailableUpdates_ignoresProvidersWithoutPrivilegedPermission() {
         runBlocking {
-            // GIVEN a third-party app exposes the service
-            val untrustedInfo =
-                createUpdateInfoServiceResolveInfo("com.thirdparty", isSystem = false)
+            // GIVEN a system app that DOES NOT have the required permission
+            // (e.g., a pre-installed flashlight app or carrier bloatware)
+            val untrustedSystemApp =
+                createUpdateInfoServiceResolveInfo("com.oem.bloatware", isSystem = true)
 
             `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
-                .thenReturn(listOf(untrustedInfo))
+                .thenReturn(listOf(untrustedSystemApp))
+
+            // Force the permission check to fail
+            `when`(
+                    mockPackageManager.checkPermission(
+                        eq("android.permission.READ_PRIVILEGED_PHONE_STATE"),
+                        eq("com.oem.bloatware"),
+                    )
+                )
+                .thenReturn(PackageManager.PERMISSION_DENIED)
 
             // WHEN we query for all available updates
             val results = securityState.queryAllAvailableUpdates()
 
-            // THEN it is ignored (result list is empty)
-            assertTrue(results.isEmpty())
-            // AND we never attempted to bind
+            // THEN the untrusted app is filtered out, resulting in an empty list
+            assertTrue(
+                "Should ignore system apps lacking the required permission",
+                results.isEmpty(),
+            )
+
+            // AND we never attempted to bind to it
             verify(mockContext, times(0)).bindService(any(), any(), anyInt())
         }
     }
@@ -2630,7 +2656,7 @@ class SecurityPatchStateTest {
     }
 
     @Test
-    fun testQueryAllAvailableUpdates_sendsPackageNameInIntentData() {
+    fun testQueryAllAvailableUpdates_opensSessionWithCorrectPackageName() {
         runBlocking {
             // GIVEN the client app has a specific package name
             val clientPackageName = "com.example.myclient"
@@ -2643,32 +2669,42 @@ class SecurityPatchStateTest {
                 .thenReturn(listOf(trustedInfo))
 
             setupUpdateInfoServiceResponse(emptyList(), "com.google.android.gms")
-
-            // CAPTURE the Intent passed to bindService
-            val intentCaptor = ArgumentCaptor.forClass(Intent::class.java)
-            `when`(
-                    mockContext.bindService(
-                        intentCaptor.capture(),
-                        any(ServiceConnection::class.java),
-                        anyInt(),
-                    )
-                )
-                .thenReturn(true)
+            setupUpdateInfoServiceBinding()
 
             // WHEN we query for all available updates
             securityState.queryAllAvailableUpdates()
 
-            // THEN the Intent contains the correct Data URI
-            val capturedIntent = intentCaptor.value
-            val data = capturedIntent.data
+            // THEN it creates a session using the client's package name for validation
+            verify(mockFactory).openSession(eq(clientPackageName), any(IBinder::class.java))
 
-            assertNotNull("Intent data should not be null", data)
-            assertEquals("scheme should be 'package'", "package", data?.scheme)
-            assertEquals(
-                "schemeSpecificPart should be package name",
-                clientPackageName,
-                data?.schemeSpecificPart,
-            )
+            // AND it correctly closes the session to prevent leaks
+            verify(mockSession).close()
+        }
+    }
+
+    @Test
+    fun testQueryAllAvailableUpdates_handlesSecurityExceptionOnOpenSession() {
+        runBlocking {
+            // GIVEN a trusted provider is found and binds successfully
+            val trustedInfo =
+                createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+            `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+                .thenReturn(listOf(trustedInfo))
+
+            setupUpdateInfoServiceBinding()
+
+            // BUT the provider's factory rejects the package name, throwing a SecurityException
+            `when`(mockFactory.openSession(anyString(), any(IBinder::class.java)))
+                .thenThrow(SecurityException("Spoofing detected"))
+
+            // WHEN we query for all available updates
+            val results = securityState.queryAllAvailableUpdates()
+
+            // THEN the client gracefully catches the exception and returns an empty result
+            // (Ensuring the crash doesn't bubble up and break the app)
+            assertEquals(1, results.size)
+            assertTrue(results[0].updates.isEmpty())
+            assertEquals("com.google.android.gms", results[0].providerPackageName)
         }
     }
 
@@ -2865,7 +2901,7 @@ class SecurityPatchStateTest {
             // Mock a valid response for the working service
             val updates = listOf(UpdateInfo.Builder().setComponent("SYSTEM").build())
             val validResult = UpdateCheckResult("com.working", updates, 0L)
-            `when`(mockService.listAvailableUpdates()).thenReturn(validResult)
+            `when`(mockSession.listAvailableUpdates()).thenReturn(validResult)
 
             // WHEN we query for all available updates
             val results = securityState.queryAllAvailableUpdates()
@@ -2937,7 +2973,7 @@ class SecurityPatchStateTest {
                 .thenReturn(listOf(trustedInfo))
 
             // AND the service will throw a RemoteException during IPC
-            `when`(mockService.listAvailableUpdates()).thenThrow(RemoteException("Test Exception"))
+            `when`(mockSession.listAvailableUpdates()).thenThrow(RemoteException("Test Exception"))
             setupUpdateInfoServiceBinding()
 
             // WHEN we query for all available updates
@@ -2965,7 +3001,7 @@ class SecurityPatchStateTest {
 
             // AND the remote service throws an unexpected RuntimeException during the IPC call.
             // This simulates a crash or logic error within the background thread execution.
-            `when`(mockService.listAvailableUpdates())
+            `when`(mockSession.listAvailableUpdates())
                 .thenThrow(RuntimeException("Unexpected Crash"))
 
             // Trigger the service connection. This simulates the immediate success of bindService,
@@ -2987,6 +3023,83 @@ class SecurityPatchStateTest {
             verifyUpdateInfoServiceUnbound()
         }
     }
+
+    @Test
+    fun testQueryAllAvailableUpdates_closesSessionEvenIfQueryFails() = runBlocking {
+        // GIVEN a trusted provider is found and bound
+        val trustedInfo =
+            createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+        `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+            .thenReturn(listOf(trustedInfo))
+
+        setupUpdateInfoServiceBinding()
+
+        // AND the actual data query throws an exception
+        // (Simulating a crash on the server or a transaction too large error)
+        `when`(mockSession.listAvailableUpdates()).thenThrow(RemoteException("Transaction failed"))
+
+        // WHEN we query for all available updates
+        val results = securityState.queryAllAvailableUpdates()
+
+        // THEN it degrades gracefully (returns an empty list for that provider)
+        assertEquals(1, results.size)
+        assertTrue("Results should be empty due to failure", results[0].updates.isEmpty())
+
+        // AND crucially, it still closes the session to free server resources
+        // This verifies the 'finally' block in fetchFromUpdateInfoService
+        verify(mockSession).close()
+    }
+
+    @Test
+    fun testQueryAllAvailableUpdates_preventsContinuationRace_onSimultaneousDisconnectAndError() =
+        runBlocking {
+            // GIVEN a trusted provider exists
+            val trustedInfo =
+                createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+            `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+                .thenReturn(listOf(trustedInfo))
+
+            // SETUP: Capture the connection so we can trigger callbacks manually
+            val connectionCaptor = ArgumentCaptor.forClass(ServiceConnection::class.java)
+            `when`(
+                    mockContext.bindService(
+                        any(Intent::class.java),
+                        connectionCaptor.capture(),
+                        anyInt(),
+                    )
+                )
+                .thenAnswer {
+                    val connection = connectionCaptor.value
+                    connection.onServiceConnected(
+                        ComponentName("com.test", "MockUpdateInfoService"),
+                        mockBinder,
+                    )
+                    true
+                }
+
+            // SIMULATE THE RACE CONDITION:
+            // We mock the session call to trigger a disconnect AND throw an error at the exact same
+            // time.
+            `when`(mockSession.listAvailableUpdates()).thenAnswer {
+                // 1. The OS notifies the main thread that the service died
+                connectionCaptor.value.onServiceDisconnected(
+                    ComponentName("com.test", "MockUpdateInfoService")
+                )
+
+                // 2. The background thread simultaneously throws a RemoteException due to the dead
+                // binder
+                throw RemoteException("Binder died during transaction")
+            }
+
+            // WHEN we query for all available updates
+            // IF the atomic guard is missing, this will crash the test with:
+            // java.lang.IllegalStateException: Already resumed
+            val results = securityState.queryAllAvailableUpdates()
+
+            // THEN it degrades gracefully without crashing
+            assertEquals(1, results.size)
+            assertTrue("Results should be empty due to failure", results[0].updates.isEmpty())
+        }
 
     // --------------------------------------------------------------------------------------------
     // Phase 5: Safety & Lifecycle (Timeouts & Cancellation)
@@ -3100,6 +3213,107 @@ class SecurityPatchStateTest {
         }
     }
 
+    @Test
+    fun testQueryAllAvailableUpdates_closesSessionOnCancellation_duringActiveQuery() = runBlocking {
+        // GIVEN a trusted provider exists
+        val trustedInfo =
+            createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+        `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+            .thenReturn(listOf(trustedInfo))
+
+        setupUpdateInfoServiceBinding()
+
+        // SETUP: Use two latches to synchronize the test thread and the background thread.
+        // This simulates a hanging network call instantaneously and deterministically.
+        val queryStartedLatch = java.util.concurrent.CountDownLatch(1)
+        val releaseQueryLatch = java.util.concurrent.CountDownLatch(1)
+
+        `when`(mockSession.listAvailableUpdates()).thenAnswer {
+            // 1. Signal to the main test thread that the background thread has started the query.
+            queryStartedLatch.countDown()
+
+            // 2. Block the background thread indefinitely until the test explicitly releases it.
+            // This perfectly simulates a stalled IPC transaction or hanging network call.
+            releaseQueryLatch.await()
+
+            UpdateCheckResult("com.google.android.gms", emptyList(), 0L)
+        }
+
+        // WHEN we launch the update check in a separate coroutine
+        val job = launch { securityState.queryAllAvailableUpdates() }
+
+        // Yield the main test thread to allow the launched coroutine to start executing.
+        // Without this, the coroutine sits in the queue while the latch blocks the thread.
+        yield()
+
+        // Wait until the background thread is actively blocked inside listAvailableUpdates().
+        assertTrue(
+            "Query did not start in time",
+            queryStartedLatch.await(2, java.util.concurrent.TimeUnit.SECONDS),
+        )
+
+        // THEN cancel the coroutine mid-flight (e.g., simulating a timeout or user exit).
+        job.cancel()
+
+        // CRITICAL: Unblock the mock so the background thread can finish its execution
+        // and proceed to the 'finally' cleanup block.
+        releaseQueryLatch.countDown()
+
+        // Wait for the coroutine to fully process the cancellation and teardown logic.
+        job.join()
+
+        // AND verify the cancellation handler successfully closed the session before unbinding.
+        // This ensures the server is notified of the disconnection and local resources are freed.
+        verify(mockSession).close()
+        verify(mockContext).unbindService(any(ServiceConnection::class.java))
+    }
+
+    @Test
+    fun testQueryAllAvailableUpdates_preventsAlreadyResumedCrash_onLateConnection() = runBlocking {
+        // GIVEN a trusted provider
+        val trustedInfo =
+            createUpdateInfoServiceResolveInfo("com.google.android.gms", isSystem = true)
+        `when`(mockPackageManager.queryIntentServices(any(Intent::class.java), anyInt()))
+            .thenReturn(listOf(trustedInfo))
+
+        // SETUP: Capture the ServiceConnection, but DO NOT call onServiceConnected immediately.
+        // This simulates a slow system response.
+        val connectionCaptor = ArgumentCaptor.forClass(ServiceConnection::class.java)
+        `when`(
+                mockContext.bindService(
+                    any(Intent::class.java),
+                    connectionCaptor.capture(),
+                    anyInt(),
+                )
+            )
+            .thenReturn(true)
+
+        // WHEN we launch the update check
+        val job = launch { securityState.queryAllAvailableUpdates() }
+
+        // Yield to allow bindService to be executed
+        yield()
+        verify(mockContext, timeout(2000))
+            .bindService(any(Intent::class.java), any(ServiceConnection::class.java), anyInt())
+
+        // AND the coroutine is canceled (e.g., the withTimeout block expires)
+        job.cancel()
+        job.join()
+
+        // THEN the OS belatedly delivers the connection callback
+        try {
+            connectionCaptor.value.onServiceConnected(
+                ComponentName("com.test", "MockUpdateInfoService"),
+                mockBinder,
+            )
+            // If the atomic guard works, the callback does nothing and we reach this line.
+        } catch (e: IllegalStateException) {
+            Assert.fail(
+                "Crashed with IllegalStateException: Already resumed. The atomic guard is missing or broken."
+            )
+        }
+    }
+
     /** Helper to mock the current Device Security Patch Level. */
     private fun mockDeviceSpl(component: String, spl: String) {
         val bundle = Bundle()
@@ -3168,7 +3382,7 @@ class SecurityPatchStateTest {
 
     /** Configures the mock [IUpdateInfoService] to return a pre-constructed result object. */
     private fun setupUpdateInfoServiceResponse(result: UpdateCheckResult) {
-        `when`(mockService.listAvailableUpdates()).thenReturn(result)
+        `when`(mockSession.listAvailableUpdates()).thenReturn(result)
     }
 
     /** Configures the mock [IUpdateInfoService] to return a result based on a list of updates. */

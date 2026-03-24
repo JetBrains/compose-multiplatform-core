@@ -164,7 +164,7 @@ switch (cacheSetting) {
         if (uplinkLinux.exists() || uplinkMac.exists()) {
             logger.warn("\u001B[31m\nIt looks like you are a Googler running without remote build "
                     + "cache. Enable it for faster builds, see " +
-                    "http://go/androidx-dev#remote-build-cache\u001B[0m\n")
+                    "http://go/androidx-onboarding#remote-build-cache\u001B[0m\n")
         }
 }
 
@@ -645,6 +645,7 @@ includeProject(":compose:remote:remote-player-view", [BuildType.MAIN])
 includeProject(":compose:remote:remote-player-compose", [BuildType.MAIN])
 includeProject(":compose:remote:remote-tooling-preview", [BuildType.MAIN])
 includeProject(":compose:remote:remote-player-compose-testutils", [BuildType.MAIN])
+includeProject(":compose:ui:ui-tooling-preview:ui-tooling-preview-samples", "compose/ui/ui-tooling-preview/samples", [BuildType.COMPOSE])
 includeProject(":core:core-pip", [BuildType.MAIN])
 includeProject(":wear:compose:remote:integration-tests:demos", [BuildType.MAIN])
 includeProject(":wear:compose:remote:remote-material3", [BuildType.MAIN])
@@ -1101,6 +1102,7 @@ includeProject(":text:text-vertical", [BuildType.MAIN])
 includeProject(":text:text-vertical-testapp", "text/text-vertical/testapp", [BuildType.MAIN])
 includeProject(":tracing:tracing")
 includeProject(":tracing:tracing-benchmark", "tracing/benchmark", [BuildType.MAIN, BuildType.COMPOSE])
+includeProject(":tracing:tracing-system-capture")
 includeProject(":tracing:tracing-ktx")
 includeProject(":tracing:tracing-wire")
 includeProject(":tracing:tracing-perfetto")

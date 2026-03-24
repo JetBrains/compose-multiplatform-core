@@ -19,6 +19,8 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -27,11 +29,12 @@ import kotlinx.coroutines.runBlocking
 class StorageContextSwitchTest {
     private val callerCtx = TestElement1("caller_key_1") + TestElement3("caller_key_3")
     private val testStorage = TestStorage()
-    private val store = androidx.datastore.core.DataStoreImpl(testStorage)
 
     @Test
     fun testContextSandwich() =
         runBlocking(callerCtx) {
+            val store =
+                androidx.datastore.core.DataStoreImpl(testStorage, context = coroutineContext)
             // trigger a read to run read assertions in storage
             assertEquals("Initial Value", store.data.first().value)
 
@@ -56,6 +59,7 @@ private class TestStorageConnection : androidx.datastore.core.StorageConnection<
             object :
                 androidx.datastore.core.ReadScope<TestData>, androidx.datastore.core.Closeable {
                 override suspend fun readData(): TestData {
+                    assertTrue(coroutineContext[Job] != null)
                     // Ensure the keys in the caller are available.
                     assertEquals(coroutineContext[TestKey3], TestElement3("caller_key_3"))
                     return data

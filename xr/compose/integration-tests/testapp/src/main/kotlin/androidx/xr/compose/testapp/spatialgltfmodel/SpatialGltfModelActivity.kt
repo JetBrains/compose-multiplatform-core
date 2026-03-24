@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.testapp.spatialgltfmodel
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
@@ -63,7 +62,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialGltfModel
 import androidx.xr.compose.subspace.SpatialGltfModelAnimation
 import androidx.xr.compose.subspace.SpatialGltfModelAnimation.AnimationState.Companion.Paused
@@ -77,7 +75,9 @@ import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.draw.scale
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.heightIn
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.width
@@ -116,12 +116,11 @@ class SpatialGltfModelActivity : ComponentActivity() {
         }
 
         SpatialRow {
-            DragonModel(state)
-            SpatialMainPanel(modifier = SubspaceModifier.width(600.dp).height(1000.dp))
+            DragonModel(state = state, modifier = SubspaceModifier.fillMaxWidth(0.7f))
+            SpatialMainPanel(modifier = SubspaceModifier.fillMaxWidth().heightIn(min = 1000.dp))
         }
     }
 
-    @SuppressLint("PrimitiveInCollection")
     @Composable
     fun GltfControlPanel(state: DragonControlState) {
         val title = intent.getStringExtra("TITLE") ?: "Spatial Gltf Model Test"
@@ -397,10 +396,9 @@ class SpatialGltfModelActivity : ComponentActivity() {
         }
     }
 
-    @SuppressLint("PrimitiveInCollection")
     @Composable
     @SubspaceComposable
-    fun DragonModel(state: DragonControlState) {
+    fun DragonModel(state: DragonControlState, modifier: SubspaceModifier = SubspaceModifier) {
         val dragonModelState =
             rememberSpatialGltfModelState(
                 source = SpatialGltfModelSource.fromPath(Paths.get("models", "Dragon_Evolved.gltf"))
@@ -413,38 +411,35 @@ class SpatialGltfModelActivity : ComponentActivity() {
 
         LaunchedEffect(dragonModelState) { state.dragonModelState = dragonModelState }
 
-        SpatialBox {
-            SpatialGltfModel(state = dragonModelState) {
-                val selectedNode = state.selectedNode
-                if (selectedNode != null) {
-                    val nodeOffset =
-                        createSpatialOffset(
-                            translation = selectedNode.modelPose.translation,
-                            rotation =
-                                if (state.useRotation) selectedNode.modelPose.rotation else null,
-                        )
+        SpatialGltfModel(state = dragonModelState, modifier = modifier) {
+            val selectedNode = state.selectedNode
+            if (selectedNode != null) {
+                val nodeOffset =
+                    createSpatialOffset(
+                        translation = selectedNode.modelPose.translation,
+                        rotation = if (state.useRotation) selectedNode.modelPose.rotation else null,
+                    )
 
-                    SpatialPanel(
-                        shape = SpatialRoundedCornerShape(CornerSize(25)),
-                        modifier = SubspaceModifier.width(700.dp).height(700.dp).then(nodeOffset),
+                SpatialPanel(
+                    shape = SpatialRoundedCornerShape(CornerSize(25)),
+                    modifier = SubspaceModifier.width(700.dp).height(700.dp).then(nodeOffset),
+                ) {
+                    Box(
+                        Modifier.fillMaxSize().background(Color.Blue.copy(alpha = 0.8f)),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Box(
-                            Modifier.fillMaxSize().background(Color.Blue.copy(alpha = 0.8f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = selectedNode.name ?: "Selected",
-                                color = Color.White,
-                                fontSize = 30.sp,
-                            )
-                        }
-                    }
-                    if (state.showArrows) {
-                        SpatialGltfModel(
-                            state = arrowsModelState,
-                            modifier = SubspaceModifier.then(nodeOffset).scale(1.5f),
+                        Text(
+                            text = selectedNode.name ?: "Selected",
+                            color = Color.White,
+                            fontSize = 30.sp,
                         )
                     }
+                }
+                if (state.showArrows) {
+                    SpatialGltfModel(
+                        state = arrowsModelState,
+                        modifier = SubspaceModifier.then(nodeOffset).scale(1.5f),
+                    )
                 }
             }
         }
