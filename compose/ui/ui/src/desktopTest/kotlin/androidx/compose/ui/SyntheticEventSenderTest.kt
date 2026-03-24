@@ -388,8 +388,8 @@ class SyntheticEventSenderTest {
     @Test
     fun `should update pointer position with move event after hover event`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSender {
-            PointerEventResult(received.add(it))
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
         }
         sender.send(mouseEvent(Enter, 10f, 20f, pressed = false))
 
@@ -416,8 +416,8 @@ class SyntheticEventSenderTest {
     @Test
     fun `should update pointer position with move event after pressed event`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSender {
-            PointerEventResult(received.add(it))
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
         }
         sender.send(mouseEvent(Press, 10f, 20f, pressed = true))
 
@@ -444,8 +444,8 @@ class SyntheticEventSenderTest {
     @Test
     fun `should not update pointer position with move event after touch event`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSender {
-            PointerEventResult(received.add(it))
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
         }
         sender.send(event(Press, 1 to touch(10f, 20f, pressed = true)))
 
@@ -470,8 +470,8 @@ class SyntheticEventSenderTest {
     @Test
     fun `should not re-enter after mouse exit`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSender {
-            PointerEventResult(received.add(it))
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
         }
         sender.send(mouseEvent(Move, 10f, 20f, pressed = false))
         sender.send(mouseEvent(Exit, 10f, 20f, pressed = false))
@@ -488,8 +488,8 @@ class SyntheticEventSenderTest {
     @Test
     fun `synthetic events should not duplicate scrollDelta`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSender {
-            PointerEventResult(received.add(it))
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
         }
 
         sender.send(
@@ -513,8 +513,8 @@ class SyntheticEventSenderTest {
     @Test
     fun `synthetic events should not duplicate panGestureOffset`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSender {
-            PointerEventResult(received.add(it))
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
         }
 
         sender.send(
@@ -538,8 +538,8 @@ class SyntheticEventSenderTest {
     @Test
     fun `synthetic events should not duplicate scaleGestureFactor`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSender {
-            PointerEventResult(received.add(it))
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
         }
 
         sender.send(
@@ -715,8 +715,8 @@ class SyntheticEventSenderTest {
     @Test
     fun `scale synthetic events should not duplicate scaleGestureFactor`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSender {
-            PointerEventResult(received.add(it))
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
         }
 
         sender.send(
@@ -733,8 +733,8 @@ class SyntheticEventSenderTest {
     @Test
     fun `pan synthetic events should not duplicate panGestureOffset`() {
         val received = mutableListOf<PointerInputEvent>()
-        val sender = SyntheticEventSender {
-            PointerEventResult(received.add(it))
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
         }
 
         sender.send(
@@ -747,6 +747,60 @@ class SyntheticEventSenderTest {
         }
         assertEquals(Offset(5f, 0f), totalOffset)
     }
+
+    // https://youtrack.jetbrains.com/issue/CMP-9964
+    @Test
+    fun `mouse move unpressing buttons sends release event`() {
+        val received = mutableListOf<PointerInputEvent>()
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
+        }
+
+        sender.send(mouseEvent(Press, 10f, 10f, pressed = true))
+        sender.send(mouseEvent(Move, 10f, 10f, pressed = true))
+        assertEquals(0, received.count { it.eventType == Release })
+
+        sender.send(mouseEvent(Move, 10f, 10f, pressed = false))
+        assertEquals(1, received.count { it.eventType == Release }, "Release event not sent")
+
+        // Also, make sure we don't send an extra release event afterward
+        sender.send(mouseEvent(Release, 10f, 10f, pressed = false))
+        assertEquals(1, received.count { it.eventType == Release }, "Extra release event sent")
+    }
+
+    @Test
+    fun `extra mouse press events are not sent`() {
+        val received = mutableListOf<PointerInputEvent>()
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
+        }
+
+        sender.send(mouseEvent(Press, 10f, 10f, pressed = true))
+        assertEquals(1, received.count { it.eventType == Press }, "Press event not sent!?")
+        sender.send(mouseEvent(Press, 20f, 20f, pressed = true))
+        assertEquals(1, received.count { it.eventType == Press }, "Extra press event sent")
+    }
+
+    @Test
+    fun `extra mouse release events are not sent`() {
+        val received = mutableListOf<PointerInputEvent>()
+        val sender = SyntheticEventSenderConsumingAllMovements {
+            received.add(it)
+        }
+
+        sender.send(mouseEvent(Press, 10f, 10f, pressed = true))
+        assertEquals(1, received.count { it.eventType == Press }, "Press event not sent!?")
+        sender.send(mouseEvent(Release, 10f, 10f, pressed = false))
+        assertEquals(1, received.count { it.eventType == Release }, "Release event not sent!?")
+        sender.send(mouseEvent(Release, 20f, 20f, pressed = false))
+        assertEquals(1, received.count { it.eventType == Release }, "Extra release event sent")
+    }
+
+    private fun SyntheticEventSenderConsumingAllMovements(send: (PointerInputEvent) -> Unit) =
+        SyntheticEventSender {
+            send(it)
+            PointerEventResult(anyMovementConsumed = true)
+        }
 
     private fun eventsSentBy(
         vararg inputEvents: PointerInputEvent

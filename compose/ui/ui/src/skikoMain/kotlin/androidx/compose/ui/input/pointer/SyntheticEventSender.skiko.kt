@@ -92,7 +92,7 @@ internal class SyntheticEventSender(
         val syntheticScaleStartResult = sendMissingScaleStart(event)
         val syntheticPanEndResult = sendMissingPanEnd(event)
         val syntheticPanStartResult = sendMissingPanStart(event)
-        val eventResult = sendInternal(event)
+        val eventResult = if (shouldSend(event)) sendInternal(event) else UnconsumedEventResult
         return syntheticMoveForHoverResult.merging(
             syntheticReleasesResult,
             syntheticPressesResult,
@@ -126,8 +126,22 @@ internal class SyntheticEventSender(
         }
     }
 
+    private fun shouldSend(event: PointerInputEvent): Boolean {
+        if (event.eventType == PointerEventType.Press) {
+            // Filter out press events with the same pressed pointers as the previous event
+            if (event.pressedIds().toSet() == previousEvent?.pressedIds()?.toSet()) return false
+        }
+        if (event.eventType == PointerEventType.Release) {
+            val prevEvent = previousEvent ?: return false
+            // Filter out release events with the same pressed pointers as the previous event
+            if (event.pressedIds().toSet() == prevEvent.pressedIds().toSet()) return false
+        }
+
+        return true
+    }
+
     fun updatePointerPosition(): PointerEventResult {
-        val nothingConsumed = PointerEventResult(anyMovementConsumed = false)
+        val nothingConsumed = UnconsumedEventResult
 
         if (!needUpdatePointerPosition) return nothingConsumed
         needUpdatePointerPosition = false
@@ -152,7 +166,7 @@ internal class SyntheticEventSender(
     private fun sendSyntheticMove(
         pointersSourceEvent: PointerInputEvent
     ): PointerEventResult {
-        val previousEvent = previousEvent ?: return PointerEventResult(anyMovementConsumed = false)
+        val previousEvent = previousEvent ?: return UnconsumedEventResult
         val idToPosition = pointersSourceEvent.pointers.associate { it.id to it.position }
         return sendInternal(
             previousEvent.copySynthetic(
@@ -171,22 +185,24 @@ internal class SyntheticEventSender(
             isMoveEventMissing(previousEvent, currentEvent)) {
             sendSyntheticMove(currentEvent)
         } else {
-            PointerEventResult(anyMovementConsumed = false)
+            UnconsumedEventResult
         }
     }
 
     private fun sendMissingReleases(currentEvent: PointerInputEvent): PointerEventResult {
-        val previousEvent = previousEvent ?: return PointerEventResult(anyMovementConsumed = false)
+        val previousEvent = previousEvent ?: return UnconsumedEventResult
         val previousPressed = previousEvent.pressedIds()
         val currentPressed = currentEvent.pressedIds()
         val newReleased = (previousPressed - currentPressed.toSet()).toList()
         val sendingAsUp = HashSet<PointerId>(newReleased.size)
 
-        var result = PointerEventResult(anyMovementConsumed = false)
-        // Don't send the first released pointer
-        // It will be sent as a real event. Here we only need to send synthetic events
-        // before a real one.
-        for (i in newReleased.size - 2 downTo 0) {
+        var result = UnconsumedEventResult
+        val lastIndex = when (currentEvent.eventType) {
+            // The "real" event itself will be the last one
+            PointerEventType.Release -> newReleased.lastIndex - 1
+            else -> newReleased.lastIndex
+        }
+        for (i in lastIndex downTo 0) {
             sendingAsUp.add(newReleased[i])
 
             sendInternal(
@@ -211,11 +227,13 @@ internal class SyntheticEventSender(
         val newPressed = (currentPressed - previousPressed).toList()
         val sendingAsDown = HashSet<PointerId>(newPressed.size)
 
-        var result = PointerEventResult(anyMovementConsumed = false)
-        // Don't send the last pressed pointer (newPressed.size - 1)
-        // It will be sent as a real event. Here we only need to send synthetic events
-        // before a real one.
-        for (i in 0..newPressed.size - 2) {
+        var result = UnconsumedEventResult
+        val lastIndex = when (currentEvent.eventType) {
+            // The "real" event itself will be the last one
+            PointerEventType.Press -> newPressed.lastIndex - 1
+            else -> newPressed.lastIndex
+        }
+        for (i in 0..lastIndex) {
             sendingAsDown.add(newPressed[i])
 
             sendInternal(
@@ -258,7 +276,7 @@ internal class SyntheticEventSender(
             (event.eventType == PointerEventType.ScaleChange || event.eventType == PointerEventType.ScaleEnd)) {
             sendInternal(event.copySynthetic(PointerEventType.ScaleStart) { it.copySynthetic() })
         } else {
-            PointerEventResult(anyMovementConsumed = false)
+            UnconsumedEventResult
         }
     }
 
@@ -266,7 +284,7 @@ internal class SyntheticEventSender(
         return if (isScaleGestureInProgress && event.eventType == PointerEventType.ScaleStart) {
             sendInternal(event.copySynthetic(PointerEventType.ScaleEnd) { it.copySynthetic() })
         } else {
-            PointerEventResult(anyMovementConsumed = false)
+            UnconsumedEventResult
         }
     }
 
@@ -275,7 +293,7 @@ internal class SyntheticEventSender(
             (event.eventType == PointerEventType.PanMove || event.eventType == PointerEventType.PanEnd)) {
             sendInternal(event.copySynthetic(PointerEventType.PanStart) { it.copySynthetic() })
         } else {
-            PointerEventResult(anyMovementConsumed = false)
+            UnconsumedEventResult
         }
     }
 
@@ -283,7 +301,7 @@ internal class SyntheticEventSender(
         return if (isPanGestureInProgress && event.eventType == PointerEventType.PanStart) {
             sendInternal(event.copySynthetic(PointerEventType.PanEnd) { it.copySynthetic() })
         } else {
-            PointerEventResult(anyMovementConsumed = false)
+            UnconsumedEventResult
         }
     }
 
@@ -339,3 +357,5 @@ internal class SyntheticEventSender(
         originalEventPosition = position,
     )
 }
+
+private val UnconsumedEventResult = PointerEventResult(anyMovementConsumed = false)
