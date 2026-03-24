@@ -127,21 +127,22 @@ internal class SyntheticEventSender(
     }
 
     private fun shouldSend(event: PointerInputEvent): Boolean {
-        // Filter out press/release events with the same pressed pointers and buttons as the
-        // previous event.
+        // Filter out press/release events with the same pressed pointers, buttons and keyboard
+        // modifiers as the previous event.
         // Note that missing move events for this event should have already been sent
-        fun areSamePointersAndButtons(e1: PointerInputEvent, e2: PointerInputEvent): Boolean {
+        fun areSameParams(e1: PointerInputEvent, e2: PointerInputEvent): Boolean {
             if (e1.pressedIds().toSet() != e2.pressedIds().toSet()) return false
             if (e1.buttons != e2.buttons) return false
+            if (e1.keyboardModifiers != e2.keyboardModifiers) return false
             return true
         }
         if (event.eventType == PointerEventType.Press) {
             val prevEvent = previousEvent
-            if ((prevEvent != null) && areSamePointersAndButtons(event, prevEvent)) return false
+            if ((prevEvent != null) && areSameParams(event, prevEvent)) return false
         }
         if (event.eventType == PointerEventType.Release) {
             val prevEvent = previousEvent ?: return false
-            if (areSamePointersAndButtons(event, prevEvent)) return false
+            if (areSameParams(event, prevEvent)) return false
         }
 
         return true
