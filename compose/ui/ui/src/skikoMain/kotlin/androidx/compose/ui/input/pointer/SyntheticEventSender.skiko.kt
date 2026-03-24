@@ -127,14 +127,21 @@ internal class SyntheticEventSender(
     }
 
     private fun shouldSend(event: PointerInputEvent): Boolean {
+        // Filter out press/release events with the same pressed pointers and buttons as the
+        // previous event.
+        // Note that missing move events for this event should have already been sent
+        fun areSamePointersAndButtons(e1: PointerInputEvent, e2: PointerInputEvent): Boolean {
+            if (e1.pressedIds().toSet() != e2.pressedIds().toSet()) return false
+            if (e1.buttons != e2.buttons) return false
+            return true
+        }
         if (event.eventType == PointerEventType.Press) {
-            // Filter out press events with the same pressed pointers as the previous event
-            if (event.pressedIds().toSet() == previousEvent?.pressedIds()?.toSet()) return false
+            val prevEvent = previousEvent
+            if ((prevEvent != null) && areSamePointersAndButtons(event, prevEvent)) return false
         }
         if (event.eventType == PointerEventType.Release) {
             val prevEvent = previousEvent ?: return false
-            // Filter out release events with the same pressed pointers as the previous event
-            if (event.pressedIds().toSet() == prevEvent.pressedIds().toSet()) return false
+            if (areSamePointersAndButtons(event, prevEvent)) return false
         }
 
         return true
@@ -267,7 +274,11 @@ internal class SyntheticEventSender(
         val anyMovementConsumed = _send(event)
         // We don't send nativeEvent for synthetic events.
         // Nullify to avoid memory leaks (native events can point to native views).
-        previousEvent = event.copy(nativeEvent = null)
+        // Copy the pointers list because the original list may be reused
+        previousEvent = event.copy(
+            nativeEvent = null,
+            pointers = event.pointers.toList()
+        )
         return anyMovementConsumed
     }
 
