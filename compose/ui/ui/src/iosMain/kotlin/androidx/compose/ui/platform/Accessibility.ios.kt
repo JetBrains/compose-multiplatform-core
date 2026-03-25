@@ -107,7 +107,6 @@ import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSSelectorFromString
 import platform.QuartzCore.CACurrentMediaTime
 import platform.UIKit.NSStringFromCGRect
-import platform.UIKit.UIAccessibilityAnnouncementNotification
 import platform.UIKit.UIAccessibilityContainerType
 import platform.UIKit.UIAccessibilityContainerTypeNone
 import platform.UIKit.UIAccessibilityContainerTypeSemanticGroup
@@ -991,6 +990,12 @@ internal class AccessibilityNotification private constructor(
     companion object {
         // For testing purposes only
         var lastPostedNotificationForTests: AccessibilityNotification? = null
+            private set
+
+        private val notificationsWithFocusedElement = setOf(
+            UIAccessibilityScreenChangedNotification,
+            UIAccessibilityLayoutChangedNotification
+        )
     }
 
     constructor(
@@ -1000,14 +1005,11 @@ internal class AccessibilityNotification private constructor(
     ) : this(notification, elementToFocus?.let { WeakReference(it) }, message)
 
     fun postNotification() {
-        val focusNotification = notification in listOf(
-            UIAccessibilityScreenChangedNotification,
-            UIAccessibilityLayoutChangedNotification
-        )
+        val focusNotification = notification in notificationsWithFocusedElement
         lastPostedNotificationForTests = this
         UIAccessibilityPostNotification(
             notification,
-            argument = if (focusNotification) elementToFocus else message
+            argument = if (focusNotification) elementToFocus?.value else message
         )
     }
 }

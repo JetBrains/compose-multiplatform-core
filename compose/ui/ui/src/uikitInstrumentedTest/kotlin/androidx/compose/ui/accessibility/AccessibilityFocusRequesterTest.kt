@@ -61,18 +61,16 @@ class AccessibilityFocusRequesterTest {
         focusRequesterB.requestFocus()
         waitForIdle()
 
-        val buttonBElement = findNodeWithLabel("Text B").element
         assertEquals(
-            expected = buttonBElement,
+            expected = findNodeWithLabel("Text B").element,
             actual = AccessibilityNotification.lastPostedNotificationForTests?.elementToFocus?.value
         )
 
         focusRequesterA.requestFocus()
         waitForIdle()
 
-        val buttonAElement = findNodeWithLabel("Text A").element
         assertEquals(
-            expected = buttonAElement,
+            expected = findNodeWithLabel("Text A").element,
             actual = AccessibilityNotification.lastPostedNotificationForTests?.elementToFocus?.value
         )
     }
@@ -89,9 +87,9 @@ class AccessibilityFocusRequesterTest {
                     .focusable()
             ) {
                 Box {
-                    Text("Content 1")
+                    Text("Text 1")
                 }
-                Text("Content 2")
+                Text("Text 2")
             }
         }
 
@@ -102,9 +100,8 @@ class AccessibilityFocusRequesterTest {
         focusRequester.requestFocus()
         waitForIdle()
 
-        val content1Element = findNodeWithLabel("Content 1").element
         assertEquals(
-            expected = content1Element,
+            expected = findNodeWithLabel("Text 1").element,
             actual = AccessibilityNotification.lastPostedNotificationForTests?.elementToFocus?.value
         )
     }
