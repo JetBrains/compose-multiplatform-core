@@ -32,6 +32,8 @@ dependencies {
 
     implementation(libs.espressoCore)
     implementation("androidx.core:core:1.2.0")
+
+    androidTestImplementation(libs.testExtJunit)
 }
 
 android {

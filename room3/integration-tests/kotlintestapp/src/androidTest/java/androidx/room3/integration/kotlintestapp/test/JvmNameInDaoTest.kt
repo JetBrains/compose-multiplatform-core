@@ -29,7 +29,6 @@ import androidx.room3.RoomDatabase
 import androidx.room3.TypeConverter
 import androidx.room3.TypeConverters
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import org.junit.Test
 
 /**
@@ -44,10 +43,7 @@ class JvmNameInDaoTest {
     fun test() {
         val entity =
             JvmNameEntity(id = 1, name = "value1", convertedClass = MyConvertedClass("value2"))
-        val db =
-            Room.inMemoryDatabaseBuilder<JvmNameDb>(ApplicationProvider.getApplicationContext())
-                .setDriver(AndroidSQLiteDriver())
-                .build()
+        val db = Room.inMemoryDatabaseBuilder<JvmNameDb>().setDriver(AndroidSQLiteDriver()).build()
         try {
             db.getDao().insert(entity)
             assertThat(db.getDao().query()).containsExactly(entity)

@@ -1,10 +1,9 @@
 // Signature format: 4.0
 package androidx.pdf {
 
-  public abstract class EditablePdfDocument implements androidx.pdf.PdfDocument {
-    ctor public EditablePdfDocument();
-    method public abstract suspend Object? applyEdit(androidx.pdf.models.FormEditInfo record, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public abstract androidx.pdf.PdfWriteHandle createWriteHandle();
+  public interface EditablePdfDocument extends androidx.pdf.PdfDocument {
+    method public suspend Object? applyEdit(androidx.pdf.models.FormEditInfo record, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public androidx.pdf.PdfWriteHandle createWriteHandle();
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalPdfApi {
@@ -560,7 +559,7 @@ package androidx.pdf.view {
     method @InaccessibleFromKotlin public final int getVisiblePagesCount();
     method @InaccessibleFromKotlin public final float getZoom();
     method @InaccessibleFromKotlin public final boolean isFormFillingEnabled();
-    method @InaccessibleFromKotlin public final boolean isImageSelectionEnabled();
+    method @InaccessibleFromKotlin @RequiresExtension(extension=android.os.Build.VERSION_CODES.S, version=19) public final boolean isImageSelectionEnabled();
     method public final android.graphics.PointF? pdfToViewPoint(androidx.pdf.PdfPoint pdfPoint);
     method public final void removeOnFirstContentLoadListener(androidx.pdf.view.PdfView.OnFirstContentLoadListener listener);
     method public final void removeOnFormWidgetInfoUpdatedListener(androidx.pdf.view.PdfView.OnFormWidgetInfoUpdatedListener listener);
@@ -577,7 +576,7 @@ package androidx.pdf.view {
     method @InaccessibleFromKotlin public final void setFormFillingEnabled(boolean);
     method public final void setHighlights(java.util.List<androidx.pdf.view.Highlight> highlights);
     method @InaccessibleFromKotlin public final void setHorizontalPageSpacing(int);
-    method @InaccessibleFromKotlin public final void setImageSelectionEnabled(boolean);
+    method @InaccessibleFromKotlin @RequiresExtension(extension=android.os.Build.VERSION_CODES.S, version=19) public final void setImageSelectionEnabled(boolean);
     method public final void setLinkClickListener(androidx.pdf.view.PdfView.LinkClickListener? listener);
     method @InaccessibleFromKotlin public final void setMaxZoom(@FloatRange(from=0.5, to=25.0) float);
     method @InaccessibleFromKotlin public final void setMinZoom(@FloatRange(from=0.5, to=25.0) float);
@@ -597,7 +596,7 @@ package androidx.pdf.view {
     property public final int gestureState;
     property public final int horizontalPageSpacing;
     property public final boolean isFormFillingEnabled;
-    property public final boolean isImageSelectionEnabled;
+    property @RequiresExtension(extension=android.os.Build.VERSION_CODES.S, version=19) public final boolean isImageSelectionEnabled;
     property @FloatRange(from=0.5, to=25.0) public final float maxZoom;
     property @FloatRange(from=0.5, to=25.0) public final float minZoom;
     property public final int pagesPerRow;

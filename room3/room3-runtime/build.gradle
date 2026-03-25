@@ -207,18 +207,6 @@ androidx {
     kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
-// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidDeviceTest and kspAndroidDeviceTest
-tasks.withType(AndroidLintAnalysisTask).configureEach {
-    mustRunAfter(tasks.withType(KspAATask))
-}
-
-// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidDeviceTest and kspAndroidDeviceTest
-tasks.withType(LintModelWriterTask).configureEach {
-    mustRunAfter(tasks.withType(KspAATask))
-}
-
 // TODO(b/430983364): Workaround KSP incremental issue
 tasks.withType(KotlinCompile).configureEach {
     incremental = false

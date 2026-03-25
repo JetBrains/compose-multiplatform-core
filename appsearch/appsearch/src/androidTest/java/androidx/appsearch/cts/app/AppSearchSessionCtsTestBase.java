@@ -1446,6 +1446,10 @@ public abstract class AppSearchSessionCtsTestBase {
 
         Exception e = assertThrows(Exception.class, () -> mDb1.setSchemaAsync(request).get());
         if (e instanceof ExecutionException) {
+            // Jetpack local storage or framework AppSearch.
+            // - No joinable property cardinality check will be enforced in AppSearch.
+            // - Icing setSchema API will return an error, and AppSearch will wrap it as
+            //   ExecutionException and throw.
             assertThat(e).hasCauseThat().isInstanceOf(AppSearchException.class);
             AppSearchException a = (AppSearchException) e.getCause();
             assertThat(a.getResultCode()).isEqualTo(RESULT_INVALID_ARGUMENT);
@@ -1453,11 +1457,25 @@ public abstract class AppSearchSessionCtsTestBase {
                     "Qualified id joinable property 'qualifiedId' cannot have REPEATED "
                             + "cardinality");
         } else {
-            // Previous behavior in AppSearchSchema.StringPropertyConfig.Builder#build would throw
-            // IllegalStateException if callers set JOINABLE_VALUE_TYPE_QUALIFIED_ID and
-            // CARDINALITY_REPEATED.
-            // If this test runs against older builds of certain backends, this old exception will
-            // be thrown.
+            // Jetpack platform storage.
+            // - Previous behavior in AppSearchSchema.StringPropertyConfig.Builder#build (platform
+            //   SDK) would throw IllegalStateException if callers set
+            //   JOINABLE_VALUE_TYPE_QUALIFIED_ID and CARDINALITY_REPEATED. If this test runs
+            //   against older builds of certain backends, when converting from jetpack schema to
+            //   platform schema, platform SDK AppSearchSchema.StringPropertyConfig.Builder#build
+            //   will throw this exception.
+            // - New behavior in platform SDK does not throw IllegalStateException. If this test
+            //   runs against newer builds on Android C+ devices (with enableRepeatedFieldJoins()
+            //   ON), then:
+            //   - AppSearch and Icing WON't throw exception or return an error anymore.
+            //   - Normally, this test should've been skipped since the feature is enabled, but
+            //     there is a gap between ramping platform flag and Jetpack platform storage
+            //     isFeatureSupported() feature ramping.
+            //   - IOW, before Jetpack platform storage library releases the feature, this test will
+            //     fail on Android C+ device with new platform SDK (framework AppSearch).
+            // - Therefore, add back cardinality check in SchemaToPlatformConverter to unify the
+            //   Jetpack platform storage library behavior without being affected by different
+            //   platform SDKs (framework AppSearch).
             assertThat(e).isInstanceOf(IllegalStateException.class);
             assertThat(e).hasMessageThat().contains(
                     "Cannot set JOINABLE_VALUE_TYPE_QUALIFIED_ID with CARDINALITY_REPEATED.");
@@ -1550,32 +1568,6 @@ public abstract class AppSearchSessionCtsTestBase {
         Set<AppSearchSchema> actual = mDb1.getSchemaAsync().get().getSchemas();
         assertThat(actual).hasSize(1);
         assertThat(actual).containsExactlyElementsIn(request.getSchemas());
-    }
-
-    @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_RW)
-    public void testGetSchema_deletePropagationTypePropagateFrom_notSupported() throws Exception {
-        assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.JOIN_SPEC_AND_QUALIFIED_ID));
-        assumeFalse(mDb1.getFeatures().isFeatureSupported(
-                Features.SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM));
-
-        AppSearchSchema inSchema = new AppSearchSchema.Builder("Test")
-                .addProperty(new StringPropertyConfig.Builder("qualifiedId")
-                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
-                        .setJoinableValueType(StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID)
-                        .setDeletePropagationType(
-                                StringPropertyConfig.DELETE_PROPAGATION_TYPE_PROPAGATE_FROM)
-                        .build()
-                ).build();
-
-        SetSchemaRequest request = new SetSchemaRequest.Builder()
-                .addSchemas(inSchema).build();
-
-        UnsupportedOperationException e = assertThrows(UnsupportedOperationException.class, () ->
-                mDb1.setSchemaAsync(request).get());
-        assertThat(e.getMessage()).isEqualTo(
-                "StringPropertyConfig.DELETE_PROPAGATION_TYPE_PROPAGATE_FROM is not supported on "
-                        + "this AppSearch implementation.");
     }
 
     @Test

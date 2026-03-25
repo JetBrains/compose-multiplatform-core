@@ -42,7 +42,7 @@ import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.runtime.math.IntSize2d
-import androidx.xr.scenecore.GroupEntity
+import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
 import com.google.common.truth.Truth.assertThat
 import org.junit.Ignore
@@ -78,7 +78,7 @@ class SceneCoreEntityTest {
                     sizeAdapter =
                         SceneCoreEntitySizeAdapter(
                             onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
-                            intrinsicSize = {
+                            currentSize = {
                                 IntVolumeSize(sizeInPixels.width, sizeInPixels.height, 0)
                             },
                         ),
@@ -220,7 +220,7 @@ class SceneCoreEntityTest {
         composeTestRule.setContent {
             Subspace {
                 val session = checkNotNull(LocalSession.current)
-                SceneCoreEntity(factory = { GroupEntity.create(session, "TestEntity") }) {
+                SceneCoreEntity(factory = { Entity.create(session, "TestEntity") }) {
                     SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
                         Text(text = "Panel 1")
                     }
@@ -249,7 +249,7 @@ class SceneCoreEntityTest {
         composeTestRule.setContent {
             Subspace {
                 val session = checkNotNull(LocalSession.current)
-                SceneCoreEntity(factory = { GroupEntity.create(session, "TestEntity") }) {
+                SceneCoreEntity(factory = { Entity.create(session, "TestEntity") }) {
                     SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
                         Text(text = "Panel 1")
                     }
@@ -286,7 +286,7 @@ class SceneCoreEntityTest {
                         SceneCoreEntitySizeAdapter(
                             onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
                             // The intrinsic size is controlled by the mutable state.
-                            intrinsicSize = {
+                            currentSize = {
                                 IntVolumeSize(intrinsicSize.width, intrinsicSize.height, 0)
                             },
                         ),
@@ -341,7 +341,7 @@ class SceneCoreEntityTest {
                     sizeAdapter =
                         SceneCoreEntitySizeAdapter(
                             onLayoutSizeChanged = {},
-                            intrinsicSize = { IntVolumeSize(80, 80, 0) },
+                            currentSize = { IntVolumeSize(80, 80, 0) },
                         ),
                     // Apply a max width constraint of 100dp.
                     modifier =
@@ -363,7 +363,7 @@ class SceneCoreEntityTest {
                         sizeAdapter =
                             SceneCoreEntitySizeAdapter(
                                 onLayoutSizeChanged = {},
-                                intrinsicSize = { IntVolumeSize(120, 120, 0) },
+                                currentSize = { IntVolumeSize(120, 120, 0) },
                             ),
                     )
                 }
@@ -396,7 +396,7 @@ class SceneCoreEntityTest {
                     sizeAdapter =
                         SceneCoreEntitySizeAdapter(
                             onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
-                            intrinsicSize = {
+                            currentSize = {
                                 IntVolumeSize(sizeInPixels.width, sizeInPixels.height, 0)
                             },
                         ),
@@ -431,7 +431,7 @@ class SceneCoreEntityTest {
                     sizeAdapter =
                         SceneCoreEntitySizeAdapter(
                             onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
-                            intrinsicSize = {
+                            currentSize = {
                                 IntVolumeSize(sizeInPixels.width, sizeInPixels.height, 0)
                             },
                         ),
@@ -583,7 +583,7 @@ class SceneCoreEntityTest {
                     sizeAdapter =
                         SceneCoreEntitySizeAdapter(
                             onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
-                            intrinsicSize = { IntVolumeSize(200, 200, 200) },
+                            currentSize = { IntVolumeSize(200, 200, 200) },
                         ),
                     // Apply constraints that are smaller than the intrinsic size.
                     modifier = SubspaceModifier.size(100.dp).testTag("mainPanel"),
@@ -617,7 +617,7 @@ class SceneCoreEntityTest {
                     sizeAdapter =
                         SceneCoreEntitySizeAdapter(
                             onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
-                            intrinsicSize = {
+                            currentSize = {
                                 IntVolumeSize(sizeInPixels.width, sizeInPixels.height, 0)
                             },
                         ),
@@ -635,3 +635,18 @@ class SceneCoreEntityTest {
             .assertHeightIsEqualTo(100.dp)
     }
 }
+
+/** Factory function to cleanly instantiate the `SceneCoreEntitySizeAdapter` interface in tests. */
+private fun <T : Entity> SceneCoreEntitySizeAdapter(
+    onLayoutSizeChanged: T.(IntVolumeSize) -> Unit,
+    currentSize: (T.() -> IntVolumeSize)? = null,
+): SceneCoreEntitySizeAdapter<T> =
+    object : SceneCoreEntitySizeAdapter<T> {
+        override fun onLayoutSizeChanged(entity: T, size: IntVolumeSize) {
+            entity.onLayoutSizeChanged(size)
+        }
+
+        override fun currentSize(entity: T): IntVolumeSize? {
+            return currentSize?.invoke(entity)
+        }
+    }

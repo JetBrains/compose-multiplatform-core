@@ -48,8 +48,10 @@ public open class SecurityStateManagerCompat
 @JvmOverloads
 constructor(
     private val context: Context,
-    private val systemSupplementalPatchConfigFile: String = SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILE,
-    private val vendorSupplementalPatchConfigFile: String = VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILE,
+    private val systemSupplementalPatchConfigFiles: Array<String> =
+        SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILES,
+    private val vendorSupplementalPatchConfigFiles: Array<String> =
+        VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILES,
 ) {
 
     public companion object {
@@ -60,10 +62,17 @@ constructor(
             "ro.vendor.build.security_patch"
         private const val ANDROID_MODULE_METADATA_PROVIDER: String = "com.android.modulemetadata"
 
-        private const val SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILE: String =
-            "/system/etc/security/supplemental_security_patches.xml"
-        private const val VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILE: String =
-            "/vendor/etc/security/supplemental_security_patches.xml"
+        private val SYSTEM_SUPPLEMENTAL_PATCH_CONFIG_FILES: Array<String> =
+            arrayOf(
+                "/system/etc/security/supplemental_security_patches.xml",
+                "/system_ext/etc/security/supplemental_security_patches.xml",
+                "/product/etc/security/supplemental_security_patches.xml",
+            )
+        private val VENDOR_SUPPLEMENTAL_PATCH_CONFIG_FILES: Array<String> =
+            arrayOf(
+                "/vendor/etc/security/supplemental_security_patches.xml",
+                "/odm/etc/security/supplemental_security_patches.xml",
+            )
 
         /**
          * The system supplemental patches key returned as part of the {@code Bundle} from {@code
@@ -166,9 +175,9 @@ constructor(
         // from XML configuration files.
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.BAKLAVA) {
             var systemSupplementalPatches =
-                loadSupplementalPatchesFromFile(systemSupplementalPatchConfigFile)
+                loadSupplementalPatchesFromFiles(systemSupplementalPatchConfigFiles)
             var vendorSupplementalPatches =
-                loadSupplementalPatchesFromFile(vendorSupplementalPatchConfigFile)
+                loadSupplementalPatchesFromFiles(vendorSupplementalPatchConfigFiles)
 
             bundle.apply {
                 putStringArray(KEY_SYSTEM_SUPPLEMENTAL_PATCHES, systemSupplementalPatches)
@@ -307,7 +316,14 @@ constructor(
         }
     }
 
-    internal fun loadSupplementalPatchesFromFile(configFilePath: String): Array<String> {
+    internal fun loadSupplementalPatchesFromFiles(filePaths: Array<String>): Array<String> {
+        return filePaths
+            .flatMap { path -> parseSupplementalPatchFile(path).toList() }
+            .distinct()
+            .toTypedArray()
+    }
+
+    internal fun parseSupplementalPatchFile(configFilePath: String): Array<String> {
         val configFile = File(configFilePath)
 
         // Return if file does not exist

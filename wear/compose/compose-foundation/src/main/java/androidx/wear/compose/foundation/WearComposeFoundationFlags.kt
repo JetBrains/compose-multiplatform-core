@@ -57,6 +57,7 @@ public object WearComposeFoundationFlags {
      * on small items that are partially shown due to fading/scaling in the TransformingLazyColumn.
      * If false, all clicks will be recognized instead
      */
+    // TODO: b/485988796
     @field:Suppress("MutableBareField")
     @JvmField
     public var isTransformingLazyColumnClickableThresholdEnabled: Boolean = true
@@ -66,6 +67,7 @@ public object WearComposeFoundationFlags {
      * for curved text, specially for cursive fonts, but can have a slight performance impact for
      * big curved text.
      */
+    // TODO: b/455602158
     @field:Suppress("MutableBareField")
     @JvmField
     public var isWarpingCurvedTextEnabled: Boolean = true

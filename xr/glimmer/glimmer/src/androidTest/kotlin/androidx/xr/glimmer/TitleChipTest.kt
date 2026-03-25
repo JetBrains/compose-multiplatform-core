@@ -46,6 +46,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.xr.glimmer.testutils.captureToImage
 import com.google.common.truth.Truth.assertThat
+import kotlin.properties.Delegates
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
@@ -73,12 +74,13 @@ class TitleChipTest {
     fun shapeAndColorFromThemeIsUsed() {
         lateinit var expectedShape: Shape
         val surfaceColor = Color.Blue
-        rule.setGlimmerThemeContent {
-            GlimmerTheme(Colors(surface = surfaceColor)) {
-                expectedShape = GlimmerTheme.shapes.large
-                TitleChip(modifier = Modifier.testTag("titleChip"), border = null) {
-                    Box(Modifier.size(100.dp, 100.dp))
-                }
+        val backgroundColor = Color.Red
+        rule.setGlimmerThemeContent(
+            colors = Colors(surface = surfaceColor, background = backgroundColor)
+        ) {
+            expectedShape = GlimmerTheme.shapes.large
+            TitleChip(modifier = Modifier.testTag("titleChip"), border = null) {
+                Box(Modifier.size(100.dp, 100.dp))
             }
         }
 
@@ -89,7 +91,7 @@ class TitleChipTest {
                 density = rule.density,
                 shape = expectedShape,
                 shapeColor = surfaceColor,
-                backgroundColor = Color.Black,
+                backgroundColor = backgroundColor,
                 antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
@@ -150,7 +152,9 @@ class TitleChipTest {
 
     @Test
     fun positioning() {
+        var smallSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
             TitleChip(modifier = Modifier.testTag("titleChip")) {
                 Text("Messages", modifier = Modifier.testTag("text"))
             }
@@ -162,12 +166,12 @@ class TitleChipTest {
             rule.onNodeWithTag("text", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (textBounds.left - titleChipBounds.left).assertIsEqualTo(
-            16.dp,
+            smallSpacing * 2,
             "padding between the start of the titleChip and the start of the text.",
         )
 
         (titleChipBounds.right - textBounds.right).assertIsEqualTo(
-            16.dp,
+            smallSpacing * 2,
             "padding between the end of the text and the end of the titleChip.",
         )
 
@@ -176,7 +180,9 @@ class TitleChipTest {
 
     @Test
     fun positioning_withIcon() {
+        var smallSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            smallSpacing = GlimmerTheme.componentSpacingValues.small
             TitleChip(
                 modifier = Modifier.testTag("titleChip"),
                 leadingIcon = {
@@ -199,17 +205,17 @@ class TitleChipTest {
             rule.onNodeWithTag("titleChip", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (leadingIconBounds.left - titleChipBounds.left).assertIsEqualTo(
-            8.dp,
+            smallSpacing,
             "Padding between start of titleChip and start of leading icon.",
         )
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            8.dp,
+            smallSpacing,
             "Padding between end of leading icon and start of text.",
         )
 
         (titleChipBounds.right - textBounds.right).assertIsEqualTo(
-            16.dp,
+            smallSpacing * 2,
             "padding between the end of the text and the end of the titleChip.",
         )
 
@@ -222,7 +228,7 @@ class TitleChipTest {
             TitleChip(
                 contentPadding = PaddingValues(),
                 modifier =
-                    Modifier.requiredWidthIn(20.dp).requiredHeightIn(15.dp).testTag("titleChip"),
+                    Modifier.requiredWidthIn(30.dp).requiredHeightIn(15.dp).testTag("titleChip"),
             ) {
                 Spacer(Modifier.requiredSize(10.dp))
             }
@@ -230,7 +236,7 @@ class TitleChipTest {
 
         rule.onNodeWithTag("titleChip").apply {
             with(getBoundsInRoot()) {
-                width.assertIsEqualTo(20.dp, "width")
+                width.assertIsEqualTo(30.dp, "width")
                 height.assertIsEqualTo(15.dp, "height")
             }
         }

@@ -35,3 +35,44 @@ import androidx.annotation.RestrictTo
 
 /** Interface for a material resource. This can be used to override materials on meshes. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface MaterialResource : Resource {}
+
+/** Interface for a MeshBuffer resource. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public interface MeshBufferResource : Resource {
+    /** Specifies the attribute of a vertex. */
+    public annotation class VertexAttribute {
+        public companion object {
+            public const val POSITION: Int = 0
+            public const val NORMAL: Int = 1
+            public const val COLOR: Int = 2
+            public const val UV0: Int = 3
+            public const val UV1: Int = 4
+            public const val BONE_INDICES: Int = 5
+            public const val BONE_WEIGHTS: Int = 6
+        }
+    }
+
+    /** Specifies the type of data for a vertex attribute. */
+    public annotation class VertexAttributeType {
+        public companion object {
+            public const val FLOAT: Int = 0
+            public const val FLOAT2: Int = 1
+            public const val FLOAT3: Int = 2
+            public const val FLOAT4: Int = 3
+            public const val UBYTE4_NORM: Int = 4
+            public const val UBYTE: Int = 5
+        }
+    }
+}
+
+/** Interface for a CustomMesh resource. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public interface CustomMeshResource : Resource {
+    /** Specifies the topology of the indices in a MeshSubset. */
+    public annotation class Topology {
+        public companion object {
+            public const val TRIANGLES: Int = 0
+            public const val TRIANGLE_STRIP: Int = 1
+        }
+    }
+}

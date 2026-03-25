@@ -117,7 +117,7 @@ internal class ExtrasCallExtensionProcessor(
     /**
      * Processes call extensions based on a [Flow] of [Call.Details]. This function sets up the
      * necessary extensions using a [CapabilityExchangeRepository], collects updates from the
-     * provided [detailsFlow], and returns a [CapabilityExchangeResult]. It uses a
+     * provided [extrasFlow], and returns a [CapabilityExchangeResult]. It uses a
      * [CompletableDeferred] to ensure all asynchronous operations related to extension setup are
      * completed before returning.
      *
@@ -139,7 +139,7 @@ internal class ExtrasCallExtensionProcessor(
 
     /**
      * Extracts extension updates from [Call.Details] and returns a [CapabilityExchangeResult]. This
-     * method retrieves the extras from the provided [details], determines the VoIP API version, and
+     * method retrieves the extras from the provided [extras], determines the VoIP API version, and
      * constructs a set of supported capabilities. It then calls [processExtras] to handle the
      * individual extra values.
      *

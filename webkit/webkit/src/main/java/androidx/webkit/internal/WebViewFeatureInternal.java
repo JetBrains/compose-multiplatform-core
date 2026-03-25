@@ -34,7 +34,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.core.content.pm.PackageInfoCompat;
 import androidx.webkit.BackForwardCacheSettings;
 import androidx.webkit.Navigation;
-import androidx.webkit.OutcomeReceiverCompat;
+import androidx.webkit.NavigationListener;
 import androidx.webkit.Page;
 import androidx.webkit.PrerenderOperationCallback;
 import androidx.webkit.Profile;
@@ -50,7 +50,6 @@ import androidx.webkit.TracingConfig;
 import androidx.webkit.TracingController;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebMessagePortCompat;
-import androidx.webkit.WebNavigationClient;
 import androidx.webkit.WebResourceErrorCompat;
 import androidx.webkit.WebResourceRequestCompat;
 import androidx.webkit.WebResourceResponseCompat;
@@ -58,6 +57,7 @@ import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewClientCompat;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
+import androidx.webkit.WebViewOutcomeReceiver;
 import androidx.webkit.WebViewStartUpConfig;
 import androidx.webkit.WebViewStartUpResult;
 
@@ -708,9 +708,8 @@ public class WebViewFeatureInternal {
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers
-     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, CancellationSignal, Executor, SpeculativeLoadingParameters, OutcomeReceiverCompat)}
-     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, CancellationSignal, Executor, OutcomeReceiverCompat)}
-     * {@link androidx.webkit.Profile#clearPrefetchAsync(String, Executor, OutcomeReceiverCompat)}
+     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, CancellationSignal, Executor, SpeculativeLoadingParameters, WebViewOutcomeReceiver)}
+     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, CancellationSignal, Executor, WebViewOutcomeReceiver)}
      */
     public static final ApiFeature.NoFramework PROFILE_URL_PREFETCH =
             new ApiFeature.NoFramework(WebViewFeature.PROFILE_URL_PREFETCH,
@@ -732,9 +731,21 @@ public class WebViewFeatureInternal {
      * This feature is not referred to by the app and is only used by the library to choose
      * different code paths based on underlying support from WebView.
      */
-    public static final ApiFeature.NoFramework ASYNC_WEBVIEW_STARTUP =
-            new ApiFeature.NoFramework("IMPLEMENTATION_ONLY_FEATURE",
-                    Features.ASYNC_WEBVIEW_STARTUP);
+    public static final ApiFeature.NoFrameworkInternal ASYNC_WEBVIEW_STARTUP_V2 =
+            new ApiFeature.NoFrameworkInternal(Features.ASYNC_WEBVIEW_STARTUP_V2);
+
+
+    /**
+     * @deprecated Use {@link #ASYNC_WEBVIEW_STARTUP_V2} instead.
+     * Feature that is relevant for the implementation of
+     * {@link androidx.webkit.WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     *
+     * This feature is not referred to by the app and is only used by the library to choose
+     * different code paths based on underlying support from WebView.
+     */
+    @Deprecated
+    public static final ApiFeature.NoFrameworkInternal ASYNC_WEBVIEW_STARTUP =
+            new ApiFeature.NoFrameworkInternal(Features.ASYNC_WEBVIEW_STARTUP);
 
     /**
      * Feature that is relevant for the implementation of
@@ -743,8 +754,9 @@ public class WebViewFeatureInternal {
      * This feature is not referred to by the app and is only used by the library to choose
      * different code paths based on underlying support from WebView.
      */
-    public static final ApiFeature.NoFramework ASYNC_WEBVIEW_STARTUP_ASYNC_STARTUP_LOCATIONS =
-            new ApiFeature.NoFramework("IMPLEMENTATION_ONLY_FEATURE",
+    public static final ApiFeature.NoFrameworkInternal
+            ASYNC_WEBVIEW_STARTUP_ASYNC_STARTUP_LOCATIONS =
+            new ApiFeature.NoFrameworkInternal(
                     Features.ASYNC_WEBVIEW_STARTUP_ASYNC_STARTUP_LOCATIONS);
 
     /**
@@ -775,6 +787,24 @@ public class WebViewFeatureInternal {
 
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link Profile#setMaxPrefetches(Integer)},
+     * {@link Profile#setPrefetchTtlSeconds(Integer)}
+     */
+    public static final ApiFeature.NoFramework PREFETCH_CACHE =
+            new ApiFeature.NoFramework(WebViewFeature.PREFETCH_CACHE_V1,
+                    Features.PREFETCH_CACHE);
+
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link Profile#setMaxPrerenders(Integer)}
+     */
+    public static final ApiFeature.NoFramework SET_MAX_PRERENDERS =
+            new ApiFeature.NoFramework(WebViewFeature.SET_MAX_PRERENDERS_V1,
+                    Features.SET_MAX_PRERENDERS);
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers {@link WebViewCompat#saveState}.
      */
     public static final ApiFeature.NoFramework SAVE_STATE =
@@ -787,7 +817,6 @@ public class WebViewFeatureInternal {
      * {@link Navigation#getWebResourceError()}
      * {@link WebResourceErrorCompat#getDebugCode()}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final ApiFeature.NoFramework NAVIGATION_GET_WEB_RESOURCE_ERROR =
             new ApiFeature.NoFramework(
                     WebViewFeature.NAVIGATION_GET_WEB_RESOURCE_ERROR,
@@ -795,58 +824,37 @@ public class WebViewFeatureInternal {
 
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
-     * This feature covers {@link WebNavigationClient} and all methods within.
-     * This feature covers basic methods in {@link Navigation}.
-     * This feature covers basic version of {@link Page}.
-     */
-    public static final ApiFeature.NoFramework NAVIGATION_CALLBACK_BASIC =
-            new ApiFeature.NoFramework(WebViewFeature.NAVIGATION_CALLBACK_BASIC,
-                    Features.WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE);
-
-    /**
-     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers
      * {@link NavigationListener#onNavigationStarted(Navigation)},
      * {@link NavigationListener#onNavigationRedirected(Navigation)},
-     * {@link NavigationListener#onNavigationCompleted(Navigation)}
+     * {@link NavigationListener#onNavigationCompleted(Navigation)},
      * {@link NavigationListener#onPageDeleted(Page)},
      * {@link NavigationListener#onPageLoadEvent(Page)},
      * {@link NavigationListener#onPageDomContentLoadedEvent(Page)},
-     * {@link NavigationListener#onFirstContentfulPaint(Page, long)}
-     */
-    public static final ApiFeature.NoFramework NAVIGATION_LISTENER_V1 = new ApiFeature.NoFramework(
-            WebViewFeature.NAVIGATION_LISTENER_V1, Features.WEB_VIEW_NAVIGATION_LISTENER_V1);
-
-    /**
-     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
-     * This feature covers
      * {@link NavigationListener#onFirstContentfulPaintMillis(Page, long)},
      * {@link NavigationListener#onLargestContentfulPaintMillis(Page, long)},
-     * {@link NavigationListener#onPerformanceMarkMillis(Page, String, long)}
+     * {@link NavigationListener#onPerformanceMarkMillis(Page, String, long)},
+     * {@link Navigation#getPage()},
+     * {@link Navigation#getUrl()},
+     * {@link Navigation#wasInitiatedByPage()},
+     * {@link Navigation#isSameDocument()},
+     * {@link Navigation#isReload()},
+     * {@link Navigation#isHistory()},
+     * {@link Navigation#isBack()},
+     * {@link Navigation#isForward()},
+     * {@link Navigation#didCommit()},
+     * {@link Navigation#didCommitErrorPage()},
+     * {@link Navigation#getStatusCode()},
+     * {@link Navigation#isRestore()},
+     * {@link Page#getUrl()}
+     * Note that we map to the last Chromium feature related to this set of apis that has
+     * been released to stable at the time of this change, namely PAGE_GET_URL. This is to ensure
+     * that the apis can still be used without needed to wait for a new feature from the Chromium
+     * side to be added and released.
      */
-    public static final ApiFeature.NoFramework NAVIGATION_LISTENER_V2 = new ApiFeature.NoFramework(
-            WebViewFeature.NAVIGATION_LISTENER_V2, Features.WEB_VIEW_NAVIGATION_LISTENER_V2);
+    public static final ApiFeature.NoFramework NAVIGATION_LISTENER = new ApiFeature.NoFramework(
+            WebViewFeature.NAVIGATION_LISTENER, Features.PAGE_GET_URL);
 
-    /**
-     * Feature for {@link WebSettingsFeature#isFeatureSupported(String)}.
-     * This feature covers a behavior change in {@link androidx.webkit.NavigationListener},
-     * see WebViewFeature javadoc for more info.
-     */
-    public static final ApiFeature.NoFramework
-            NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED =
-            new ApiFeature.NoFramework(
-                    WebViewFeature.NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED,
-                    Features.ON_NAVIGATION_COMPLETED_NON_COMMITTED);
-
-    /**
-     * Feature for {@link WebSettingsFeature#isFeatureSupported(String)}.
-     * See {@link WebViewFeature#NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS}.
-     */
-    public static final ApiFeature.NoFramework
-            NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATION =
-            new ApiFeature.NoFramework(
-                    WebViewFeature.NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS,
-                    Features.COMMITTED_NAVIGATION_GET_PAGE_NON_NULL);
 
     /**
      * This is an internal only feature that indicate whether it is safe to cache WebView Provider
@@ -942,7 +950,6 @@ public class WebViewFeatureInternal {
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers {@link WebViewStartUpConfig.Builder#setProfilesToLoadDuringStartup(Set)},
      */
-    @WebViewCompat.ExperimentalAsyncStartUp
     public static final StartupApiFeature.NoFramework STARTUP_FEATURE_SET_PROFILES_TO_LOAD =
             new StartupApiFeature.NoFramework(WebViewFeature.STARTUP_FEATURE_SET_PROFILES_TO_LOAD,
                     StartupFeatures.STARTUP_FEATURE_SET_PROFILES_TO_LOAD);
@@ -954,6 +961,7 @@ public class WebViewFeatureInternal {
      *
      * @deprecated Use {@link #STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2} instead.
      */
+    @WebViewCompat.ExperimentalAsyncStartUp
     @Deprecated
     public static final StartupApiFeature.NoFramework
             STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE =
@@ -966,6 +974,7 @@ public class WebViewFeatureInternal {
      * This feature covers
      * {@link androidx.webkit.ProcessGlobalConfig#setUiThreadStartupMode(Context, int)}.
      */
+    @WebViewCompat.ExperimentalAsyncStartUp
     public static final StartupApiFeature.NoFramework
             STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2 =
             new StartupApiFeature.NoFramework(
@@ -998,13 +1007,19 @@ public class WebViewFeatureInternal {
                     Features.HYPERLINK_CONTEXT_MENU_ITEMS);
 
     /**
-     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
-     * This feature covers {@link Page#getUrl()}
+     * This feature covers {@link
+     * androidx.webkit.WebViewCompat#addJavaScriptOnEvent(android.webkit.WebView, String, int, Set,
+     * androidx.webkit.WebViewCompat.JsExecutionWorld)} {@link
+     * androidx.webkit.WebViewCompat#getExecutionWorld(android.webkit.WebView, String)} {@link
+     * androidx.webkit.WebViewCompat#addWebMessageListener(android.webkit.WebView, String, Set,
+     * WebMessageListener, JsExecutionWorld)} {@link
+     * androidx.webkit.WebViewCompat#removeWebMessageListener(android.webkit.WebView, String,
+     * JsExecutionWorld)}
      */
-    public static final ApiFeature.NoFramework PAGE_GET_URL =
+    public static final ApiFeature.NoFramework JS_INJECTION_IN_FRAME_AND_WORLD =
             new ApiFeature.NoFramework(
-                    WebViewFeature.PAGE_GET_URL,
-                    Features.PAGE_GET_URL);
+                    WebViewFeature.JS_INJECTION_IN_FRAME_AND_WORLD,
+                    Features.JS_INJECTION_IN_FRAME_AND_WORLD);
 
     // --- Add new feature constants above this line ---
 

@@ -92,6 +92,7 @@ import androidx.compose.remote.core.operations.Rem;
 import androidx.compose.remote.core.operations.RootContentBehavior;
 import androidx.compose.remote.core.operations.RootContentDescription;
 import androidx.compose.remote.core.operations.ShaderData;
+import androidx.compose.remote.core.operations.Skip;
 import androidx.compose.remote.core.operations.TextAttribute;
 import androidx.compose.remote.core.operations.TextData;
 import androidx.compose.remote.core.operations.TextFromFloat;
@@ -133,6 +134,7 @@ import androidx.compose.remote.core.operations.layout.managers.ImageLayout;
 import androidx.compose.remote.core.operations.layout.managers.RowLayout;
 import androidx.compose.remote.core.operations.layout.managers.StateLayout;
 import androidx.compose.remote.core.operations.layout.managers.TextLayout;
+import androidx.compose.remote.core.operations.layout.managers.TextStyle;
 import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BackgroundModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BorderModifierOperation;
@@ -181,11 +183,12 @@ import java.util.HashMap;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Operations {
 
-    private Operations() {}
+    private Operations() {
+    }
 
     ////////////////////////////////////////
     // Protocol
-    ////////////////////////////////////////
+    /// /////////////////////////////////////
     public static final int HEADER = 0;
     public static final int LOAD_BITMAP = 4;
     public static final int THEME = 63;
@@ -204,7 +207,7 @@ public class Operations {
 
     ////////////////////////////////////////
     // Draw commands
-    ////////////////////////////////////////
+    /// /////////////////////////////////////
     public static final int DRAW_BITMAP = 44;
     public static final int DRAW_BITMAP_INT = 66;
     public static final int DATA_BITMAP = 101;
@@ -212,7 +215,7 @@ public class Operations {
     public static final int DATA_TEXT = 102;
     public static final int DATA_BITMAP_FONT = 167;
 
-    ///////////////////////////// =====================
+    /// ////////////////////////// =====================
     public static final int CLIP_PATH = 38;
     public static final int CLIP_RECT = 39;
     public static final int PAINT_VALUES = 40;
@@ -304,7 +307,7 @@ public class Operations {
 
     ////////////////////////////////////////
     // Layout commands
-    ////////////////////////////////////////
+    /// /////////////////////////////////////
 
     public static final int LAYOUT_ROOT = 200;
     public static final int LAYOUT_CONTENT = 201;
@@ -319,6 +322,7 @@ public class Operations {
     public static final int LAYOUT_CANVAS_CONTENT = 207;
     public static final int LAYOUT_TEXT = 208;
     public static final int CORE_TEXT = 239;
+    public static final int TEXT_STYLE = 242;
     public static final int LAYOUT_STATE = 217;
     public static final int LAYOUT_IMAGE = 234;
 
@@ -368,10 +372,11 @@ public class Operations {
     public static final int ANIMATION_SPEC = 14;
 
     public static final int COMPONENT_VALUE = 150;
+    public static final int SKIP = 241;
 
     ////////////////////////////////////////
     // Profiles management
-    ////////////////////////////////////////
+    /// /////////////////////////////////////
 
     static UniqueIntMap<CompanionOperation> sMapV6;
     static HashMap<Integer, UniqueIntMap<CompanionOperation>> sMapV7;
@@ -386,11 +391,6 @@ public class Operations {
 
     /**
      * Returns true if the operation exists for the given api level
-     *
-     * @param opId
-     * @param apiLevel
-     * @param profiles
-     * @return
      */
     public static boolean valid(int opId, int apiLevel, int profiles) {
         switch (apiLevel) {
@@ -414,10 +414,6 @@ public class Operations {
 
     /**
      * Returns a map of operations for the given api level
-     *
-     * @param apiLevel
-     * @param profiles
-     * @return
      */
     public static @Nullable UniqueIntMap<CompanionOperation> getOperations(
             int apiLevel, int profiles) {
@@ -460,6 +456,11 @@ public class Operations {
             sMapV7AndroidX.put(PARTICLE_COMPARE, ParticlesCompare::read);
             sMapV7AndroidX.put(DYNAMIC_FLOAT_LIST, DataDynamicListFloat::read);
             sMapV7AndroidX.put(UPDATE_DYNAMIC_FLOAT_LIST, UpdateDynamicFloatList::read);
+            sMapV7AndroidX.put(SKIP, Skip::read);
+            sMapV7AndroidX.put(CORE_TEXT, CoreText::read);
+            sMapV7AndroidX.put(TEXT_STYLE, TextStyle::read);
+            sMapV7AndroidX.put(TEXT_TRANSFORM, TextTransform::read);
+            sMapV7AndroidX.put(COLOR_THEME, ColorTheme::read);
         }
         return sMapV7AndroidX;
     }
@@ -470,9 +471,6 @@ public class Operations {
             // add experimental operations for this profile here
             sMapV7AndroidXExperimental.put(MODIFIER_ALIGN_BY, AlignByModifierOperation::read);
             sMapV7AndroidXExperimental.put(LAYOUT_COMPUTE, LayoutComputeOperation::read);
-            sMapV7AndroidXExperimental.put(CORE_TEXT, CoreText::read);
-            sMapV7AndroidXExperimental.put(TEXT_TRANSFORM, TextTransform::read);
-            sMapV7AndroidXExperimental.put(COLOR_THEME, ColorTheme::read);
             sMapV7AndroidXExperimental.put(LAYOUT_FLOW, FlowLayout::read);
         }
         return sMapV7AndroidXExperimental;
@@ -501,7 +499,11 @@ public class Operations {
             sMapV7Widgets.put(PARTICLE_COMPARE, ParticlesCompare::read);
             sMapV7Widgets.put(DYNAMIC_FLOAT_LIST, DataDynamicListFloat::read);
             sMapV7Widgets.put(UPDATE_DYNAMIC_FLOAT_LIST, UpdateDynamicFloatList::read);
-
+            sMapV7Widgets.put(SKIP, Skip::read);
+            sMapV7Widgets.put(CORE_TEXT, CoreText::read);
+            sMapV7Widgets.put(TEXT_STYLE, TextStyle::read);
+            sMapV7Widgets.put(TEXT_TRANSFORM, TextTransform::read);
+            sMapV7Widgets.put(COLOR_THEME, ColorTheme::read);
         }
         return sMapV7Widgets;
     }
@@ -512,9 +514,6 @@ public class Operations {
             // add experimental operations for this profile here
             sMapV7WidgetsExperimental.put(MODIFIER_ALIGN_BY, AlignByModifierOperation::read);
             sMapV7WidgetsExperimental.put(LAYOUT_COMPUTE, LayoutComputeOperation::read);
-            sMapV7WidgetsExperimental.put(CORE_TEXT, CoreText::read);
-            sMapV7WidgetsExperimental.put(TEXT_TRANSFORM, TextTransform::read);
-            sMapV7WidgetsExperimental.put(COLOR_THEME, ColorTheme::read);
             sMapV7WidgetsExperimental.put(LAYOUT_FLOW, FlowLayout::read);
         }
         return sMapV7WidgetsExperimental;
@@ -530,10 +529,6 @@ public class Operations {
 
     /**
      * Returns a list of operation for the v7 using the given profiles
-     *
-     * @param currentMapV7
-     * @param profiles
-     * @return
      */
     private static HashMap<Integer, UniqueIntMap<CompanionOperation>> createMapV7(
             HashMap<Integer, UniqueIntMap<CompanionOperation>> currentMapV7, int profiles) {

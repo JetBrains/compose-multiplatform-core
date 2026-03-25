@@ -31,7 +31,11 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-/** Implementation of [androidx.xr.arcore.runtime.Geospatial] on OpenXR. */
+/**
+ * Implementation of [Geospatial] on OpenXR.
+ *
+ * @property state the current [Geospatial.State]
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrGeospatial
 internal constructor(
@@ -109,6 +113,11 @@ internal constructor(
         }
     }
 
+    /**
+     * Updates the entity retrieving its state at [xrTime].
+     *
+     * @param xrTime the number of nanoseconds since the start of the OpenXR epoch
+     */
     override fun update(xrTime: Long) {
         state = nativeGetGeospatialState(xrTime) ?: Geospatial.State.NOT_RUNNING
     }

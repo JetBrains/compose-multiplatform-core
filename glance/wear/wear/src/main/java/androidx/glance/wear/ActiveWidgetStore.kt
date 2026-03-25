@@ -103,7 +103,7 @@ internal constructor(
                 provider = componentName,
                 instanceId =
                     WidgetInstanceId(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE, instanceId),
-                containerType = ContainerInfo.CONTAINER_TYPE_FULLSCREEN,
+                containerType = ContainerInfo.CONTAINER_TYPE_TILE_COMPAT,
             )
         }
     }

@@ -29,6 +29,8 @@ public interface SubspaceLayoutAwareModifierNode : DelegatableSubspaceNode {
     /**
      * Called with the final [SubspaceLayoutCoordinates] of the layout node after placement. The
      * coordinates value may or may not have changed since the last callback.
+     *
+     * @param coordinates The layout coordinates of the node.
      */
     public fun onPlaced(coordinates: SubspaceLayoutCoordinates)
 }

@@ -20,7 +20,7 @@ import android.graphics.ImageFormat
 import android.media.ImageReader
 import android.view.Surface
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.FieldOfView
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.runtime.Dimensions
@@ -215,11 +215,11 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
      * @param renderViewFov The [FieldOfView] of the camera.
      * @return A [androidx.xr.scenecore.runtime.PerceivedResolutionResult] which encapsulates the
      *   outcome:
-     *     - [PerceivedResolutionResult.Success] containing the [PixelDimensions] if the calculation
-     *       is successful.
+     *     - [PerceivedResolutionResult.Success] containing the
+     *       [androidx.xr.scenecore.runtime.PixelDimensions] if the calculation is successful.
      *     - [PerceivedResolutionResult.EntityTooClose] if the entity is too close to the camera.
-     *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
-     *       the calculation is invalid or unavailable.
+     *     - [PerceivedResolutionResult.InvalidRenderViewpoint] if the camera information required
+     *       for the calculation is invalid or unavailable.
      *
      * @see androidx.xr.scenecore.runtime.PerceivedResolutionResult
      */

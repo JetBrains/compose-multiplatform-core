@@ -20,14 +20,14 @@ import androidx.annotation.Dimension
 import androidx.annotation.RestrictTo
 import androidx.glance.wear.parcel.WearWidgetRequestParcel
 import androidx.glance.wear.proto.WearWidgetRequestProto
+import java.util.Objects
 
 /**
  * The parameters used for providing data for a Wear Widget.
  *
  * @property instanceId The instance id of the widget for this request. The id is created by the
  *   system and is provided when [GlanceWearWidget.onActivated] is called.
- * @property containerType The container type being requested. See
- *   [androidx.glance.wear.ContainerInfo].
+ * @property containerType The container type being requested. See [ContainerInfo].
  * @property widthDp The width in dp of the content for this widget.
  * @property heightDp The height in dp of the content for this widget.
  */
@@ -38,38 +38,25 @@ public constructor(
     @param:ContainerInfo.ContainerType
     @get:ContainerInfo.ContainerType
     public val containerType: Int,
-    @param:Dimension(unit = Dimension.Companion.DP)
-    @get:Dimension(unit = Dimension.Companion.DP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
     public val widthDp: Float,
-    @param:Dimension(unit = Dimension.Companion.DP)
-    @get:Dimension(unit = Dimension.Companion.DP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
     public val heightDp: Float,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @param:Dimension(unit = Dimension.Companion.DP)
-    @get:Dimension(unit = Dimension.Companion.DP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
     public val horizontalPaddingDp: Float,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @param:Dimension(unit = Dimension.Companion.DP)
-    @get:Dimension(unit = Dimension.Companion.DP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
     public val verticalPaddingDp: Float,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @param:Dimension(unit = Dimension.Companion.DP)
-    @get:Dimension(unit = Dimension.Companion.DP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
     public val cornerRadiusDp: Float,
 ) {
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun withContainerType(containerType: Int = this.containerType): WearWidgetParams {
-        return WearWidgetParams(
-            instanceId = instanceId,
-            containerType = containerType,
-            widthDp = widthDp,
-            heightDp = heightDp,
-            horizontalPaddingDp = horizontalPaddingDp,
-            verticalPaddingDp = verticalPaddingDp,
-            cornerRadiusDp = cornerRadiusDp,
-        )
-    }
 
     /** Converts this object to [androidx.glance.wear.parcel.WearWidgetRequestParcel]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -88,10 +75,35 @@ public constructor(
         return WearWidgetRequestParcel().apply { payload = requestProto.encode() }
     }
 
+    override fun equals(other: Any?): Boolean =
+        when {
+            this === other -> true
+            other !is WearWidgetParams -> false
+            else ->
+                instanceId == other.instanceId &&
+                    containerType == other.containerType &&
+                    widthDp == other.widthDp &&
+                    heightDp == other.heightDp &&
+                    horizontalPaddingDp == other.horizontalPaddingDp &&
+                    verticalPaddingDp == other.verticalPaddingDp &&
+                    cornerRadiusDp == other.cornerRadiusDp
+        }
+
+    override fun hashCode(): Int =
+        Objects.hash(
+            instanceId,
+            containerType,
+            widthDp,
+            heightDp,
+            horizontalPaddingDp,
+            verticalPaddingDp,
+            cornerRadiusDp,
+        )
+
     public companion object {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun fromParcel(parcel: WearWidgetRequestParcel): WearWidgetParams {
-            val requestProto = WearWidgetRequestProto.Companion.ADAPTER.decode(parcel.payload)
+            val requestProto = WearWidgetRequestProto.ADAPTER.decode(parcel.payload)
             return WearWidgetParams(
                 instanceId =
                     WidgetInstanceId(namespace = requestProto.id_namespace, requestProto.id),

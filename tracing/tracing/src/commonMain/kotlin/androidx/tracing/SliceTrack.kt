@@ -22,8 +22,6 @@ import androidx.annotation.RestrictTo.Scope
 /**
  * Horizontal track of time in a trace which contains slice events (`beginSection` / `endSection`).
  */
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 @RestrictTo(Scope.LIBRARY_GROUP)
 public abstract class SliceTrack(
     /** The [TraceContext] instance. */
@@ -31,8 +29,8 @@ public abstract class SliceTrack(
     /**
      * The uuid for the track descriptor.
      *
-     * This ID must be unique within all [Track]s in a given trace produced by [TraceDriver] - it is
-     * used to connect recorded trace events to the containing track.
+     * This ID must be unique within all [Track]s in a given trace produced by
+     * [AbstractTraceDriver] - it is used to connect recorded trace events to the containing track.
      */
     uuid: Long,
 ) : Track(context = context, uuid = uuid) {
@@ -41,6 +39,11 @@ public abstract class SliceTrack(
     @JvmField
     internal val traceEventScope: TraceEventScope =
         TraceEventScope().apply { owner = this@SliceTrack }
+
+    // Use a single shared trace scope to avoid allocations.
+    @JvmField
+    internal val traceAttributes: TraceAttributesImpl =
+        TraceAttributesImpl().apply { owner = this@SliceTrack }
 
     // Use a single shared instance of MetadataCloseable
     @JvmField internal val eventMetadataCloseable: EventMetadataCloseable = EventMetadataCloseable()
@@ -90,7 +93,7 @@ public abstract class SliceTrack(
     internal inline fun beginCoroutineSection(
         category: String,
         name: String,
-        token: PlatformThreadContextElement<*>,
+        token: PlatformThreadContextElement<*, PerfettoTracer>,
     ): EventMetadataCloseable {
         eventMetadataCloseable.metadata = EmptyEventMetadata
         eventMetadataCloseable.closeable = EmptyCloseable
@@ -150,6 +153,14 @@ public abstract class SliceTrack(
         traceEventScope.event = event
         eventMetadataCloseable.metadata = traceEventScope
         return eventMetadataCloseable
+    }
+
+    public fun traceAttributes(): TraceAttributes {
+        if (!context.isEnabled) return EmptyTraceAttributes
+        val event = obtainTraceEvent()
+        event?.timestamp = nanoTime()
+        traceAttributes.event = event
+        return traceAttributes
     }
 
     override fun close() {

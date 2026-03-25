@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.AnchorEntity
@@ -33,15 +34,23 @@ import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.InteractableComponent
 import androidx.xr.scenecore.runtime.LoggingEntity
+import androidx.xr.scenecore.runtime.MeshEntity
+import androidx.xr.scenecore.runtime.MeshFeature
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.PlaneSemantic
 import androidx.xr.scenecore.runtime.PlaneType
+import androidx.xr.scenecore.runtime.PointSourceParams
 import androidx.xr.scenecore.runtime.PointerCaptureComponent
+import androidx.xr.scenecore.runtime.PositionalAudioComponent
 import androidx.xr.scenecore.runtime.RenderingEntityFactory
 import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SoundEffectPool
+import androidx.xr.scenecore.runtime.SoundEffectPoolComponent
+import androidx.xr.scenecore.runtime.SoundFieldAttributes
+import androidx.xr.scenecore.runtime.SoundFieldAudioComponent
 import androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper
 import androidx.xr.scenecore.runtime.SpatialCapabilities
 import androidx.xr.scenecore.runtime.SpatialModeChangeListener
@@ -198,16 +207,38 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         return surfaceEntity
     }
 
-    override fun createGroupEntity(pose: Pose, name: String, parent: Entity?): Entity {
-        val entity = FakeEntity(name)
+    override fun createMeshEntity(
+        feature: MeshFeature,
+        pose: Pose,
+        parentEntity: Entity?,
+    ): MeshEntity {
+        val meshEntity = FakeMeshEntity(feature)
+        meshEntity.setPose(pose)
+        meshEntity.parent = parentEntity
+        return meshEntity
+    }
+
+    override fun createEntity(pose: Pose, name: String?, parent: Entity?): Entity {
+        val entityName = name ?: ""
+        val entity = FakeEntity(entityName)
         entity.setPose(pose)
         entity.parent = parent
 
         return entity
     }
 
+    @Deprecated("Use createEntity instead.")
+    override fun createGroupEntity(pose: Pose, name: String, parent: Entity?): Entity {
+        return createEntity(pose, name, parent)
+    }
+
     override fun createLoggingEntity(pose: Pose): LoggingEntity =
         object : LoggingEntity, FakeEntity() {}
+
+    override fun createSubspaceNodeEntity(
+        nodeHolder: NodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity = FakeSubspaceNodeEntity(size)
 
     /**
      * For test purposes only.
@@ -436,6 +467,30 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
 
     override fun removeOnBoundaryConsentChangedListener(listener: Consumer<Boolean>) {
         _boundaryConsentChangedMap.remove(listener)
+    }
+
+    override fun createPositionalAudioComponent(
+        context: Context,
+        params: PointSourceParams,
+    ): PositionalAudioComponent {
+        return FakePositionalAudioComponent(context, params)
+    }
+
+    override fun createSoundFieldAudioComponent(
+        context: Context,
+        rtSoundFieldAttributes: SoundFieldAttributes,
+    ): SoundFieldAudioComponent {
+        return FakeSoundFieldAudioComponent(context)
+    }
+
+    override fun createSoundEffectPool(maxStreams: Int): SoundEffectPool {
+        return FakeSoundEffectPool()
+    }
+
+    override fun createSoundEffectPoolComponent(
+        soundEffectPool: SoundEffectPool
+    ): SoundEffectPoolComponent {
+        return FakeSoundEffectPoolComponent()
     }
 
     /**

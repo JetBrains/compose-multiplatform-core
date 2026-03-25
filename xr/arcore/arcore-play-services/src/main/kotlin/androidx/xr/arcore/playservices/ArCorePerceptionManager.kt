@@ -49,7 +49,21 @@ import kotlin.time.TimeSource.Monotonic
 /**
  * Implementation of the perception capabilities of a runtime using ARCore.
  *
- * @property timeSource The time source to use for the perception manager.
+ * @property timeSource the time source to use for the perception manager
+ * @property trackables the collection of [Trackable] objects
+ * @property leftEye the left eye, or null if not available
+ * @property rightEye the right eye, or null if not available
+ * @property leftHand the left hand, or null if not available
+ * @property rightHand the right hand, or null if not available
+ * @property userFace the user's face, or null if not available
+ * @property geospatial the [ArCoreEarth] instance
+ * @property arDevice the [ArCoreDevice] instance
+ * @property leftRenderViewpoint the left [RenderViewpoint], or null if not available
+ * @property rightRenderViewpoint the right [RenderViewpoint], or null if not available
+ * @property monoRenderViewpoint the mono [RenderViewpoint], or null if not available
+ * @property leftDepthMap the left [DepthMap], or null if not available
+ * @property rightDepthMap the right [DepthMap], or null if not available
+ * @property monoDepthMap the mono [DepthMap], or null if not available
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ArCorePerceptionManager
@@ -77,6 +91,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     /**
      * The latest [Frame] returned by the underlying [Session].
      *
+     * @return the latest [Frame]
      * @sample androidx.xr.arcore.samples.getARCoreFrame
      */
     @UnsupportedArCoreCompatApi public fun lastFrame(): Frame = _latestFrame
@@ -97,8 +112,8 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
      *
      * This method calls the [Session.createAnchor] method.
      *
-     * @param pose The pose of the anchor.
-     * @return The created anchor.
+     * @param pose the [Pose] of the anchor
+     * @return the created [Anchor]
      */
     override fun createAnchor(pose: Pose): Anchor {
         try {
@@ -115,8 +130,8 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
      *
      * This method calls the [Frame.hitTest] method.
      *
-     * @param ray The ray to perform the hit test against.
-     * @return The list of hit results.
+     * @param ray the [Ray] to perform the hit test against
+     * @return the list of [HitResult] objects
      */
     override fun hitTest(ray: Ray): List<HitResult> {
         val origin = floatArrayOf(ray.origin.x, ray.origin.y, ray.origin.z)
@@ -162,88 +177,35 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
 
     override val trackables: Collection<Trackable> = xrResources.trackables.values
 
-    /**
-     * Returns the left eye.
-     *
-     * ARCore does not support eye tracking, so this property is always null.
-     */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val leftEye: Eye? = null
 
-    /**
-     * Returns the right eye.
-     *
-     * ARCore does not support eye tracking, so this property is always null.
-     */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val rightEye: Eye? = null
 
-    /**
-     * Returns the left hand.
-     *
-     * ARCore does not support hand tracking, so this property is always null.
-     */
     override val leftHand: Hand? = null
 
-    /**
-     * Returns the right hand.
-     *
-     * ARCore does not support hand tracking, so this property is always null.
-     */
     override val rightHand: Hand? = null
 
-    /**
-     * Returns the face
-     *
-     * ARCore does not support face tracking, so this property is always null.
-     */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val userFace: Face? = null
 
-    /** Returns the [Geospatial] instance. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val geospatial: ArCoreEarth = xrResources.geospatial
 
-    /** Returns the [ArDevice] instance. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val arDevice: ArCoreDevice = xrResources.arDevice
 
-    /**
-     * Returns the left [RenderViewpoint] object.
-     *
-     * This is not available in ARCore.
-     */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val leftRenderViewpoint: RenderViewpoint? = null
 
-    /**
-     * Returns the right [RenderViewpoint] object.
-     *
-     * This is not available in ARCore.
-     */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val rightRenderViewpoint: RenderViewpoint? = null
 
-    /**
-     * Returns the mono[RenderViewpoint] object.
-     *
-     * This is not currently implemented in ARCore.
-     */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val monoRenderViewpoint: RenderViewpoint? = null
 
-    /**
-     * Returns the left [DepthMap] object.
-     *
-     * This is not available in ARCore.
-     */
     override val leftDepthMap: DepthMap? = null
 
-    /**
-     * Returns the right [DepthMap] object.
-     *
-     * This is not available in ARCore.
-     */
     override val rightDepthMap: DepthMap? = null
 
-    /** Returns the mono [DepthMap] object. */
     override val monoDepthMap: DepthMap?
         get() = xrResources.depthMap
 
@@ -313,9 +275,10 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     }
 
     /**
-     * Sets the Depth Estimation Mode for the Perception Manager and the [xrResources.depthMap]
+     * Sets the Depth Estimation Mode for the Perception Manager and the [XrResources.depthMap] of
+     * [xrResources]
      *
-     * @param depthMode The desired [DepthEstimationMode].
+     * @param depthMode the desired [DepthEstimationMode]
      */
     public fun setDepthEstimationMode(depthMode: DepthEstimationMode) {
         depthEstimationMode = depthMode

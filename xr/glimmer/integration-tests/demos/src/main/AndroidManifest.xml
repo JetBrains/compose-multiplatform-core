@@ -41,7 +41,7 @@
             android:configChanges="uiMode"
             android:exported="true"
             android:theme="@style/AppTheme"
-            android:requiredDisplayCategory="xr_projected">
+            android:requiredDisplayCategory="android.hardware.display.category.XR_PROJECTED">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>

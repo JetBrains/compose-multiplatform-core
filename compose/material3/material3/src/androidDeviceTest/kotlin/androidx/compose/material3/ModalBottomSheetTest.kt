@@ -25,6 +25,8 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +38,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.onConsumedWindowInsetsChanged
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -329,7 +332,6 @@ class ModalBottomSheetTest {
                 }
 
                 @Deprecated("deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 override fun onLowMemory() {
                     // NO-OP
                 }
@@ -385,7 +387,6 @@ class ModalBottomSheetTest {
                 }
 
                 @Deprecated("deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 override fun onLowMemory() {
                     // NO-OP
                 }
@@ -1566,6 +1567,88 @@ class ModalBottomSheetTest {
             assertThat(reportedTopInset).isWithin(1f).of(actualOffset)
             assertThat(reportedTopInset).isGreaterThan(0)
         }
+    }
+
+    @Test
+    fun bottomSheet_respectsMaterialThemeMotionScheme() {
+        val customSpatialSpec = tween<Float>(durationMillis = 123)
+        val customEffectsSpec = tween<Float>(durationMillis = 456)
+
+        // Mock a MotionScheme that returns our specific specs
+        val customMotionScheme =
+            object : MotionScheme {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T> =
+                    customSpatialSpec as FiniteAnimationSpec<T>
+
+                @Suppress("UNCHECKED_CAST")
+                override fun <T> fastEffectsSpec(): FiniteAnimationSpec<T> =
+                    customEffectsSpec as FiniteAnimationSpec<T>
+
+                override fun <T> fastSpatialSpec() = defaultSpatialSpec<T>()
+
+                override fun <T> slowSpatialSpec() = defaultSpatialSpec<T>()
+
+                override fun <T> defaultEffectsSpec() = fastEffectsSpec<T>()
+
+                override fun <T> slowEffectsSpec() = fastEffectsSpec<T>()
+            }
+
+        lateinit var sheetState: SheetState
+
+        rule.setContent {
+            MaterialTheme(motionScheme = customMotionScheme) {
+                sheetState = rememberModalBottomSheetState()
+
+                BottomSheet(
+                    state = sheetState,
+                    onDismissRequest = {},
+                    content = { /* Empty Content */ },
+                )
+            }
+        }
+
+        rule.waitForIdle()
+        assertThat(sheetState.showMotionSpec).isEqualTo(customSpatialSpec)
+        assertThat(sheetState.anchoredDraggableMotionSpec).isEqualTo(customSpatialSpec)
+        assertThat(sheetState.hideMotionSpec).isEqualTo(customEffectsSpec)
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun bottomSheet_smallSheet_escapesDampeningAndDismisses() {
+        lateinit var sheetState: SheetState
+
+        rule.setContent {
+            val density = LocalDensity.current
+            sheetState =
+                SheetState(
+                    skipPartiallyExpanded = false,
+                    initialValue = SheetValue.PartiallyExpanded,
+                    positionalThreshold = {
+                        with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
+                    },
+                    velocityThreshold = {
+                        with(density) { BottomSheetDefaults.VelocityThreshold.toPx() }
+                    },
+                )
+
+            Box(Modifier.requiredSize(100.dp)) {
+                BottomSheet(onDismissRequest = {}, state = sheetState, dragHandle = null) {
+                    Box(Modifier.fillMaxSize().testTag(sheetTag)) { Text("Extremely small sheet") }
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(sheetState.isVisible).isTrue() }
+
+        // Perform a standard swipe down on this tiny sheet
+        rule.onNodeWithTag(sheetTag).performTouchInput { swipeDown() }
+
+        rule.waitForIdle()
+
+        // Verify the sheet successfully dismisses
+        rule.runOnIdle { assertThat(sheetState.isVisible).isFalse() }
     }
 
     private val Bundle.traversalBefore: Int

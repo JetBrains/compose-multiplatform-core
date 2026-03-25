@@ -85,6 +85,7 @@ public fun <T : R, R> Flow<T>.collectAsState(
  *
  * @see snapshotFlow
  */
+@ExperimentalComposeRuntimeApi
 public class SnapshotFlowManager {
     private var managerImpl: SnapshotFlowManagerImpl? = SingleSubscriptionSnapshotFlowManager()
 
@@ -454,6 +455,7 @@ private class MultiSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() {
     }
 }
 
+@OptIn(ExperimentalComposeRuntimeApi::class)
 private fun <T> snapshotFlowImpl(externalManager: SnapshotFlowManager?, block: () -> T): Flow<T> =
     flow {
         val manager = externalManager ?: SnapshotFlowManager()
@@ -519,6 +521,7 @@ private fun <T> snapshotFlowImpl(externalManager: SnapshotFlowManager?, block: (
  * produce the same result. It is valid for a state observer to both skip intermediate states as
  * well as run multiple times for the same state and the result should be the same.
  */
+@OptIn(ExperimentalComposeRuntimeApi::class)
 public fun <T> snapshotFlow(block: () -> T): Flow<T> {
     return snapshotFlowImpl(externalManager = null, block)
 }

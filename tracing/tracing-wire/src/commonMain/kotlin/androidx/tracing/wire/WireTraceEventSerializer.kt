@@ -16,6 +16,7 @@
 
 package androidx.tracing.wire
 
+import androidx.tracing.ATTRIBUTES_EXPECTED_SIZE
 import androidx.tracing.DEFAULT_LONG
 import androidx.tracing.DEFAULT_STRING
 import androidx.tracing.FRAMES_EXPECTED_SIZE
@@ -34,13 +35,11 @@ import androidx.tracing.wire.protos.MutableCounterDescriptor
 import androidx.tracing.wire.protos.MutableDebugAnnotation
 import androidx.tracing.wire.protos.MutableProcessDescriptor
 import androidx.tracing.wire.protos.MutableThreadDescriptor
+import androidx.tracing.wire.protos.MutableTraceAttributes
 import androidx.tracing.wire.protos.MutableTracePacket
 import androidx.tracing.wire.protos.MutableTrackDescriptor
 import androidx.tracing.wire.protos.MutableTrackEvent
 import com.squareup.wire.ProtoWriter
-
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 
 /**
  * Optimized serializer of [androidx.tracing.TraceEvent], which writes out binary Perfetto
@@ -48,7 +47,7 @@ import com.squareup.wire.ProtoWriter
  *
  * Internally uses mutable protos to avoid allocations / GC churn.
  */
-internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoWriter) {
+internal class WireTraceEventSerializer(sequenceId: Int) {
     /**
      * Private scratchpad packet, used to avoid allocating a packet for each one serialized
      *
@@ -74,6 +73,16 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
     /** This is passed by ref, to avoid unnecessary computation. */
     private val scratchFrameIndex = IntArray(1) { _ -> -1 }
 
+    /** Scratch trace attributes. */
+    private val scratchTraceAttributes = MutableTraceAttributes()
+
+    /** Private scratchpad of trace attribute information. */
+    private var scratchAttributes: MutableList<MutableTraceAttributes.MutableAttribute> =
+        MutableList(size = ATTRIBUTES_EXPECTED_SIZE) { MutableTraceAttributes.MutableAttribute() }
+
+    /** This is passed by ref, to avoid unnecessary computation. */
+    private val scratchAttributeIndex = IntArray(1) { _ -> -1 }
+
     /**
      * Private scratchpad descriptor, used to avoid allocating a descriptor for each new track
      * created
@@ -82,7 +91,21 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
 
     private val scratchTrackEvent = MutableTrackEvent(track_uuid = DEFAULT_LONG)
 
-    fun writeTraceEvent(event: TraceEvent, reportDroppedTraceEvent: Boolean = false) {
+    /**
+     * Currently trace attributes are a part of the [TraceEvent]. This is being done, given it
+     * allows for use-cases where attributes are not emitted at `TraceDriver` init. Instead, they
+     * can be emitted later. This typically comes up in apps where experiments and feature flags
+     * need to be sync-ed with a server (network requests, FCM) so the state of these attributes can
+     * change during the lifetime of the process. This way we can capture the last known value of
+     * the attribute.
+     *
+     * This API does not currently exist on [androidx.tracing.Tracer], but it can in the future.
+     */
+    fun writeTraceEvent(
+        protoWriter: ProtoWriter,
+        event: TraceEvent,
+        reportDroppedTraceEvent: Boolean = false,
+    ) {
         updateScratchPacketFromTraceEvent(
             event = event,
             reportDroppedTraceEvent = reportDroppedTraceEvent,
@@ -94,6 +117,9 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
             scratchCallStack = scratchCallStack,
             scratchFrames = scratchFrames,
             scratchFrameIndex = scratchFrameIndex,
+            scratchTraceAttributes = scratchTraceAttributes,
+            scratchAttributes = scratchAttributes,
+            scratchAttributeIndex = scratchAttributeIndex,
         )
         MutableTracePacket.Companion.ADAPTER.encodeWithTag(
             writer = protoWriter,
@@ -102,9 +128,11 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
         )
         resetScratchAnnotations()
         resetScratchFrames()
+        resetTraceAttributes()
     }
 
     /** Reset and resize scratch annotations when necessary. */
+    @Suppress("NOTHING_TO_INLINE")
     inline fun resetScratchAnnotations() {
         val index = scratchAnnotationIndex[0]
         val size = index + 1
@@ -124,6 +152,7 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
         scratchAnnotationIndex[0] = -1
     }
 
+    @Suppress("NOTHING_TO_INLINE")
     inline fun resetScratchFrames() {
         if (scratchCallStack.frames.isNotEmpty()) {
             scratchCallStack.frames = emptyList()
@@ -142,6 +171,27 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
             scratchFrames = scratchFrames.subList(0, FRAMES_EXPECTED_SIZE)
         }
         scratchFrameIndex[0] = -1
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    inline fun resetTraceAttributes() {
+        if (scratchTraceAttributes.attribute.isNotEmpty()) {
+            scratchTraceAttributes.attribute = emptyList()
+        }
+        val index = scratchAttributeIndex[0]
+        val size = index + 1
+        // Reset
+        repeat(size) {
+            val scratchAttribute = scratchAttributes[it]
+            scratchAttribute.key = null
+            scratchAttribute.string_value = null
+            scratchAttribute.long_value = null
+        }
+        // Resize
+        if (size > ATTRIBUTES_EXPECTED_SIZE) {
+            scratchAttributes = scratchAttributes.subList(0, ATTRIBUTES_EXPECTED_SIZE)
+        }
+        scratchAttributeIndex[0] = -1
     }
 
     companion object {
@@ -163,6 +213,9 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
             scratchCallStack: MutableCallstack,
             scratchFrames: MutableList<MutableCallstack.MutableFrame>,
             scratchFrameIndex: IntArray,
+            scratchTraceAttributes: MutableTraceAttributes,
+            scratchAttributes: MutableList<MutableTraceAttributes.MutableAttribute>,
+            scratchAttributeIndex: IntArray,
         ) {
             scratchTracePacket.timestamp = event.timestamp
             // in the common case when the track_descriptor isn't needed, clear it on the
@@ -265,7 +318,7 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
                 scratchAnnotationIndex[0] = index
                 if (index >= 0) {
                     // The actual usable annotations in the pool.
-                    // The actual resizing happens once we have finished the write.
+                    // The actual resizing happens once we have finished writing.
                     val debugAnnotations = scratchAnnotations.subList(0, index + 1)
                     scratchTrackEvent.debug_annotations = debugAnnotations
                 }
@@ -285,12 +338,35 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
                 scratchFrameIndex[0] = index
                 if (index >= 0) {
                     // The actual number of frames in the pool
-                    // The actual resizing happens once we have finished the write.
+                    // The actual resizing happens once we have finished writing.
                     val frames = scratchFrames.subList(0, index + 1)
                     scratchCallStack.frames = frames
                     scratchTrackEvent.callstack = scratchCallStack
                 } else {
                     scratchTrackEvent.callstack = null
+                }
+                // Trace Attributes
+                index = -1
+                repeat(event.lastAttributeIndex + 1) {
+                    index += 1
+                    if (index >= scratchAttributes.size) {
+                        scratchAttributes += MutableTraceAttributes.MutableAttribute()
+                    }
+                    val attributeEntry = event.attributes[it]
+                    val attribute = scratchAttributes[it]
+                    attribute.key = attributeEntry.name
+                    attribute.string_value = attributeEntry.stringValue
+                    attribute.long_value = attributeEntry.longValue
+                }
+                scratchAttributeIndex[0] = index
+                if (index >= 0) {
+                    // The actual number of attributes in the pool
+                    // The actual resizing happens once we have finished writing.
+                    val traceAttributes = scratchAttributes.subList(0, index + 1)
+                    scratchTraceAttributes.attribute = traceAttributes
+                    scratchTracePacket.trace_attributes = scratchTraceAttributes
+                } else {
+                    scratchTracePacket.trace_attributes = null
                 }
                 // Update trace packet
                 scratchTracePacket.track_event = scratchTrackEvent

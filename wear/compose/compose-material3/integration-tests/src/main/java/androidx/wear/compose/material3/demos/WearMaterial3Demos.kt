@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.wear.compose.integration.demos.common.Centralize
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.integration.demos.common.Material3DemoCategory
+import androidx.wear.compose.material3.RevealDirection.Companion.Bidirectional
 import androidx.wear.compose.material3.samples.AnimatedTextSample
 import androidx.wear.compose.material3.samples.AnimatedTextSampleButtonResponse
 import androidx.wear.compose.material3.samples.AnimatedTextSampleSharedFontRegistry
@@ -30,7 +31,6 @@ import androidx.wear.compose.material3.samples.ButtonGroupSample
 import androidx.wear.compose.material3.samples.ButtonGroupThreeButtonsSample
 import androidx.wear.compose.material3.samples.ButtonWithImageSample
 import androidx.wear.compose.material3.samples.CustomCompositingStrategyTransformationSpecSample
-import androidx.wear.compose.material3.samples.EdgeButtonListSample
 import androidx.wear.compose.material3.samples.EdgeButtonSample
 import androidx.wear.compose.material3.samples.EdgeSwipeForSwipeToDismiss
 import androidx.wear.compose.material3.samples.FadingExpandingLabelButtonSample
@@ -98,9 +98,10 @@ val WearMaterial3Demos =
                     "Edge Button",
                     listOf(
                         ComposableDemo("Simple Edge Button") { EdgeButtonSample() },
+                        ComposableDemo("Sizes") { EdgeButtonSizeDemo() },
                         ComposableDemo("Sizes and Colors") { EdgeButtonMultiDemo() },
                         ComposableDemo("Configurable") { EdgeButtonConfigurableDemo() },
-                        ComposableDemo("Simple Edge Button below SLC") { EdgeButtonListSample() },
+                        ComposableDemo("Simple Edge Button below SLC") { EdgeButtonListDemo() },
                         ComposableDemo("Edge Button Below LC") {
                             EdgeButtonBelowLazyColumnDemo(reverseLayout = false)
                         },
@@ -214,8 +215,16 @@ val WearMaterial3Demos =
                         ComposableDemo("In TLC") {
                             SwipeToRevealWithTransformingLazyColumnSample()
                         },
+                        ComposableDemo("In TLC, two actions") {
+                            SwipeToRevealTwoActionsWithTransformingLazyColumnDemo()
+                        },
                         ComposableDemo("In TLC, bi-directional") {
                             SwipeToRevealWithTransformingLazyColumnDemo()
+                        },
+                        ComposableDemo("In TLC, bi-directional, two actions") {
+                            SwipeToRevealTwoActionsWithTransformingLazyColumnDemo(
+                                revealDirection = Bidirectional
+                            )
                         },
                         ComposableDemo("In TLC, icon only") {
                             SwipeToRevealIconOnlyWithTransformingLazyColumnDemo()

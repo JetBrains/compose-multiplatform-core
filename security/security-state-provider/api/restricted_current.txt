@@ -49,8 +49,8 @@ package androidx.security.state.provider {
     method protected abstract suspend Object? fetchUpdates(kotlin.coroutines.Continuation<? super java.util.List<androidx.security.state.UpdateInfo>>);
     method protected int getCallerUid();
     method public final android.os.IBinder? onBind(android.content.Intent? intent);
-    method protected void onClientConnected(android.content.Intent intent);
-    method protected void onClientDisconnected(android.content.Intent? intent);
+    method protected void onClientConnected(String packageName, int callerUid);
+    method protected void onClientDisconnected(String packageName, int callerUid);
     method protected void onFetchFailed(Exception e);
     method protected void onRequestCompleted(androidx.security.state.provider.UpdateCheckTelemetry telemetry);
     method public final boolean onUnbind(android.content.Intent? intent);

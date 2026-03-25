@@ -105,7 +105,6 @@ public fun RemoteText(
  * @param style The [RemoteTextStyle] to be applied to the text.
  * @param fontVariationSettings The font variation settings to be applied to the text.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
 @RemoteComposable
 public fun RemoteText(
@@ -213,7 +212,7 @@ public fun RemoteText(
         LocalRemoteComposeCreationState.current.profile.supportedOperations.contains(
             Operations.CORE_TEXT
         )
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     if (useCoreTextComponent) {
         androidx.compose.foundation.layout.Box(
             RemoteComposeCoreTextComponentModifier(
@@ -329,6 +328,7 @@ internal class RemoteComposeCoreTextComponentModifier(
             canvas.document.startTextComponent(
                 modifier,
                 id.getIdForCreationState(canvas.creationState),
+                -1,
                 color.constantValueOrNull?.toArgb() ?: Color.Black.toArgb(),
                 if (color.hasConstantValue) -1
                 else color.getIdForCreationState(canvas.creationState),

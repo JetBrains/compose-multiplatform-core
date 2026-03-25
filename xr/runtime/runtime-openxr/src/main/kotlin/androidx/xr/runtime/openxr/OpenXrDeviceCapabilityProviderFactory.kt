@@ -23,14 +23,6 @@ import androidx.xr.runtime.interfaces.XrDeviceCapabilityProviderFactory
 import kotlin.coroutines.CoroutineContext
 
 internal class OpenXrDeviceCapabilityProviderFactory() : XrDeviceCapabilityProviderFactory {
-    companion object {
-        private const val LIBRARY_NAME: String = "androidx.xr.runtime.openxr"
-
-        init {
-            // TODO(b/461561664): Add proper logging to this library.
-            System.loadLibrary(LIBRARY_NAME)
-        }
-    }
 
     override val requirements: Set<Feature> = setOf(Feature.FULLSTACK, Feature.OPEN_XR)
 

@@ -64,6 +64,9 @@ public abstract class WebResourceErrorCompat {
      * returns true for {@link WebViewFeature#WEB_RESOURCE_ERROR_GET_CODE}.
      *
      * @return The error code of the error
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#WEB_RESOURCE_ERROR_GET_CODE}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.WEB_RESOURCE_ERROR_GET_CODE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -79,10 +82,12 @@ public abstract class WebResourceErrorCompat {
      * returns true for {@link WebViewFeature#NAVIGATION_GET_WEB_RESOURCE_ERROR}.
      *
      * @return The internal error code
+     * @throws UnsupportedOperationException if the
+     *                                      {@link WebViewFeature#NAVIGATION_GET_WEB_RESOURCE_ERROR}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.NAVIGATION_GET_WEB_RESOURCE_ERROR,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public abstract int getDebugCode();
 
     /**
@@ -95,6 +100,9 @@ public abstract class WebResourceErrorCompat {
      * returns true for {@link WebViewFeature#WEB_RESOURCE_ERROR_GET_DESCRIPTION}.
      *
      * @return The description of the error
+     * @throws UnsupportedOperationException if the
+     *                                     {@link WebViewFeature#WEB_RESOURCE_ERROR_GET_DESCRIPTION}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

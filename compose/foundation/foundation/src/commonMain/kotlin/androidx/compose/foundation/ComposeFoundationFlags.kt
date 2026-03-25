@@ -59,19 +59,24 @@ object ComposeFoundationFlags {
      * [BasicTextField][androidx.compose.foundation.text.BasicTextField]s. If false, the previous
      * context menu that has no public APIs will be used instead.
      */
-    @field:Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled = true
+    // TODO: b/455589857
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isNewContextMenuEnabled: Boolean = isNewContextMenuInitiallyEnabled
 
     /**
      * Whether to use the new smart selection feature in
      * [androidx.compose.foundation.text.selection.SelectionContainer] and all
      * [androidx.compose.foundation.text.BasicTextField]s.
      */
+    // TODO: b/455592302
     @field:Suppress("MutableBareField") @JvmField var isSmartSelectionEnabled = true
 
     /**
      * Whether to support inherited text styles. If enabled, text styles set by the styles API will
      * be inherited by text composables contained in a style box.
      */
+    // TODO: b/485968143
     @field:Suppress("MutableBareField") @JvmField var isInheritedTextStyleEnabled = true
 
     /**
@@ -80,6 +85,7 @@ object ComposeFoundationFlags {
      * can only perform the composition for parts of the LazyColumn's next item during one ui frame,
      * and then continue composing the rest of it in the next frames.
      */
+    // TODO: b/455589928
     @field:Suppress("MutableBareField") @JvmField var isPausableCompositionInPrefetchEnabled = true
 
     /**
@@ -87,12 +93,14 @@ object ComposeFoundationFlags {
      * of 1 item in the direction of the scroll. The window used will be 1 view port AFTER the
      * currently composed items, this includes visible and items composed through beyond bounds.
      */
+    // TODO: b/485967807
     @field:Suppress("MutableBareField") @JvmField var isCacheWindowForPagerEnabled = true
 
     /**
      * When Pager was used with a keyboard in RTL the pages would bounce indefinitely due to the
      * bring into view animation. If this flag is off the fix for that behavior will be disabled.
      */
+    // TODO: b/485967682
     @field:Suppress("MutableBareField")
     @JvmField
     var isBringIntoViewRltBouncyBehaviorInPagerFixEnabled: Boolean = true
@@ -105,6 +113,7 @@ object ComposeFoundationFlags {
      * changed. For instance, if C and D are 2 items in the cache window and later they're removed
      * from the dataset, the cache window won't know it until it tries to prefetch them.
      */
+    // TODO: b/485967875
     @field:Suppress("MutableBareField") @JvmField var isCacheWindowRefillFixEnabled = true
 
     /**
@@ -117,6 +126,7 @@ object ComposeFoundationFlags {
      * same offset, for example: `DraggableAnchors { Expanded at 100f; HalfExpanded at 0f; Hidden at
      * 0f;}` Disabling the flag restores this previous behavior.
      */
+    // TODO: b/485967318
     @field:Suppress("MutableBareField")
     @JvmField
     var isAnchoredDraggableTargetValueCalculationFixEnabled = true
@@ -127,6 +137,7 @@ object ComposeFoundationFlags {
      * PointerInputEvent. Moreover, all containers where a drag gesture happens (e.g. scrollable,
      * draggable, anchored draggable) will cause the presses to be delayed.
      */
+    // TODO: b/485966702
     @field:Suppress("MutableBareField")
     @JvmField
     var isDelayPressesUsingGestureConsumptionEnabled = true
@@ -146,15 +157,37 @@ object ComposeFoundationFlags {
      * With this flag on, nested draggable components (e.g. Lists, Pagers, Grids) will handle
      * conflicting gestures by deciding which has a higher priority.
      */
+    // TODO: b/485966180
     @field:Suppress("MutableBareField")
     @JvmField
     var isNestedDraggablesTouchConflictFixEnabled = true
 
     /**
-     * With this flag on we don't use suspend pointer input as part of Modifier.combinedClickable
-     * implementation as an optimization.
+     * This flag controls performance optimizations related to
+     * [androidx.compose.foundation.text.BasicTextField]'s internal min height calculations.
      */
+    // TODO: Remove this flag once it has soaked (b/487251541)
     @field:Suppress("MutableBareField")
     @JvmField
-    var isNonSuspendingPointerInputInCombinedClickableEnabled = true
+    var isBasicTextFieldMinSizeOptimizationEnabled = true
+
+    /**
+     * This flag controls the fix where item placement animation in
+     * [androidx.compose.foundation.lazy.LazyColumn] and [androidx.compose.foundation.lazy.LazyRow]
+     * is disabled when animated scroll happens.
+     */
+    // TODO: Remove this flag once it has soaked (b/493183465)
+    @field:Suppress("MutableBareField") @JvmField var isSkipItemPlacementAnimationFixEnabled = true
+
+    /**
+     * This flag controls the fix where we correctly dispatch deltas in pager's default
+     * pageNestedScrollConnection by considering the role of reverse layout.
+     */
+    // TODO: Remove this flag once it has soaked (b/493462428)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isReverseLayoutNestedScrollConnectionInPagerFixEnabled = true
 }
+
+/** The initial value of [ComposeFoundationFlags.isNewContextMenuEnabled] */
+internal expect val isNewContextMenuInitiallyEnabled: Boolean

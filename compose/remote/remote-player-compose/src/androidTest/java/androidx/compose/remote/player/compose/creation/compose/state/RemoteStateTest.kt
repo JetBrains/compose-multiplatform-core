@@ -32,6 +32,7 @@ import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteC
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import java.text.DecimalFormat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -63,12 +64,14 @@ class RemoteStateTest {
                 val configurableWidth2 =
                     rememberNamedRemoteFloat(name = "configurableWidth2") { width }
 
-                RemoteText(RemoteString("Width: ") + width.toRemoteString(3, 0))
+                RemoteText(RemoteString("Width: ") + width.toRemoteString(DecimalFormat("###0")))
                 RemoteText(
-                    RemoteString("Configurable Width: ") + configurableWidth.toRemoteString(3, 0)
+                    RemoteString("Configurable Width: ") +
+                        configurableWidth.toRemoteString(DecimalFormat("###0"))
                 )
                 RemoteText(
-                    RemoteString("Configurable Width2: ") + configurableWidth2.toRemoteString(3, 0)
+                    RemoteString("Configurable Width2: ") +
+                        configurableWidth2.toRemoteString(DecimalFormat("###0"))
                 )
 
                 with(creationState) {

@@ -27,10 +27,12 @@ import androidx.camera.camera2.pipe.core.TimeSource
 import androidx.camera.camera2.pipe.core.TimestampNs
 import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
+import androidx.camera.camera2.pipe.internal.CriticalCameraErrorListener
 import androidx.camera.camera2.pipe.testing.FakeCamera2MetadataProvider
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
+import javax.inject.Provider
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -114,7 +116,10 @@ internal class PruningCamera2DeviceManagerImplTest {
                 TODO("Not yet implemented")
             }
         }
-    private val fakeCamera2ErrorProcessor = Camera2ErrorProcessor()
+    private val fakeCriticalCameraErrorListener: CriticalCameraErrorListener = mock()
+    private val criticalCameraErrorListenerProvider = Provider { fakeCriticalCameraErrorListener }
+    private val fakeCamera2ErrorProcessor =
+        Camera2ErrorProcessor(criticalCameraErrorListenerProvider)
 
     private val deviceManager =
         PruningCamera2DeviceManager(

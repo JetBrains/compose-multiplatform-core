@@ -34,37 +34,31 @@ package androidx.camera.camera2.impl
 
 import android.hardware.camera2.CameraCharacteristics.CONTROL_AE_STATE_FLASH_REQUIRED
 import android.hardware.camera2.CameraDevice
-import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
-import android.view.Surface
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.adapter.CaptureConfigAdapter
-import androidx.camera.camera2.adapter.CaptureResultAdapter
+import androidx.camera.camera2.adapter.FrameMetadataConverter.toCameraCaptureResult
 import androidx.camera.camera2.adapter.future
 import androidx.camera.camera2.compat.workaround.UseTorchAsFlash
 import androidx.camera.camera2.compat.workaround.isFlashAvailable
 import androidx.camera.camera2.compat.workaround.shouldStopRepeatingBeforeCapture
+import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.config.UseCaseCameraScope
-import androidx.camera.camera2.config.UseCaseGraphContext
 import androidx.camera.camera2.impl.Camera2Logger.debug
 import androidx.camera.camera2.impl.CapturePipelineImpl.PipelineTask.MAIN_CAPTURE
 import androidx.camera.camera2.impl.CapturePipelineImpl.PipelineTask.POST_CAPTURE
 import androidx.camera.camera2.impl.CapturePipelineImpl.PipelineTask.PRE_CAPTURE
 import androidx.camera.camera2.impl.TorchControl.TorchMode
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.Lock3ABehavior
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
-import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.Result3A
-import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.core.ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
 import androidx.camera.core.ImageCapture.CaptureMode
 import androidx.camera.core.ImageCapture.ERROR_CAMERA_CLOSED
@@ -79,7 +73,6 @@ import androidx.camera.core.ImageCapture.FlashType
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.TorchState
 import androidx.camera.core.imagecapture.CameraCapturePipeline
-import androidx.camera.core.impl.CameraCaptureResult
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.ConvergenceUtils
@@ -87,7 +80,6 @@ import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Provider
-import kotlin.reflect.KClass
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -135,7 +127,7 @@ constructor(
     private val useTorchAsFlash: UseTorchAsFlash,
     cameraProperties: CameraProperties,
     private val useCaseCameraStateProvider: Provider<UseCaseCameraState>,
-    private val useCaseGraphContext: UseCaseGraphContext,
+    private val useCaseCameraContext: UseCaseCameraContext,
 ) : CapturePipeline {
     private enum class PipelineTask {
         PRE_CAPTURE,
@@ -412,7 +404,7 @@ constructor(
                 if (triggerAePreCapture) {
                     debug { "CapturePipeline#torchApplyCapture: Locking 3A for capture" }
                     val result3A =
-                        useCaseGraphContext.useGraphSession {
+                        useCaseCameraContext.useGraphSession {
                             it.lock3AForCapture(
                                     timeLimitNs = timeLimitNs,
                                     triggerAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY,
@@ -459,7 +451,7 @@ constructor(
                 if (triggerAePreCapture) {
                     debug { "CapturePipeline#torchApplyCapture: Unlocking 3A for capture" }
                     @Suppress("DeferredResultUnused")
-                    useCaseGraphContext.useGraphSession {
+                    useCaseCameraContext.useGraphSession {
                         it.unlock3APostCapture(
                             cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY
                         )
@@ -489,7 +481,7 @@ constructor(
                 debug {
                     "CapturePipeline#aePreCaptureApplyCapture: Acquiring session for locking 3A"
                 }
-                useCaseGraphContext.useGraphSession {
+                useCaseCameraContext.useGraphSession {
                     debug { "CapturePipeline#aePreCaptureApplyCapture: Locking 3A for capture" }
                     it.lock3AForCapture(
                             timeLimitNs = timeLimitNs,
@@ -506,7 +498,7 @@ constructor(
                 debug {
                     "CapturePipeline#aePreCaptureApplyCapture: Acquiring session for unlocking 3A"
                 }
-                useCaseGraphContext.useGraphSession {
+                useCaseCameraContext.useGraphSession {
                     debug { "CapturePipeline#aePreCaptureApplyCapture: Unlocking 3A" }
                     @Suppress("DeferredResultUnused")
                     it.unlock3APostCapture(cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY)
@@ -543,7 +535,7 @@ constructor(
     public suspend fun invokeScreenFlashPreCaptureTasks(@CaptureMode captureMode: Int) {
         flashControl.startScreenFlashCaptureTasks()
 
-        useCaseGraphContext.useGraphSession { session ->
+        useCaseCameraContext.useGraphSession { session ->
             // Trigger AE precapture & wait for 3A converge
             debug { "screenFlashPreCapture: Locking 3A for capture" }
             val result3A =
@@ -564,7 +556,7 @@ constructor(
 
         // Unlock 3A
         debug { "screenFlashPostCapture: Acquiring session for unlocking 3A" }
-        useCaseGraphContext.useGraphSession { session ->
+        useCaseCameraContext.useGraphSession { session ->
             debug { "screenFlashPostCapture: Unlocking 3A" }
             @Suppress("DeferredResultUnused")
             session.unlock3APostCapture(cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY)
@@ -580,7 +572,7 @@ constructor(
      * condition is used (i.e. [ConvergenceUtils.is3AConverged]).
      */
     private suspend fun lockAf(convergedTimeLimitNs: Long, isTorchAsFlash: Boolean): Result3A =
-        useCaseGraphContext
+        useCaseCameraContext
             .useGraphSession {
                 it.lock3A(
                     aeLockBehavior = null,
@@ -599,52 +591,9 @@ constructor(
         ConvergenceUtils.is3AConverged(frameMetadata.toCameraCaptureResult(), isTorchAsFlash)
     }
 
-    private fun FrameMetadata.toCameraCaptureResult(): CameraCaptureResult {
-        val frameInfo =
-            object : FrameInfo {
-                private val frameMetadata = this@toCameraCaptureResult
-                override val metadata: FrameMetadata = frameMetadata
-
-                override fun get(camera: CameraId): FrameMetadata? = frameMetadata
-
-                override val camera: CameraId = frameMetadata.camera
-                override val frameNumber: FrameNumber = frameMetadata.frameNumber
-                override val requestMetadata: RequestMetadata = emptyRequestMetadata
-
-                @Suppress("UNCHECKED_CAST")
-                override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
-            }
-
-        return CaptureResultAdapter(
-            emptyRequestMetadata,
-            /** RequestMetadata not to be used here */
-            frameNumber,
-            frameInfo,
-        )
-    }
-
-    private val emptyRequestMetadata =
-        object : RequestMetadata {
-            override fun <T> get(key: CaptureRequest.Key<T>): T? = null
-
-            override fun <T> getOrDefault(key: CaptureRequest.Key<T>, default: T): T = default
-
-            override val template: RequestTemplate = RequestTemplate(0)
-            override val streams: Map<StreamId, Surface> = mapOf()
-            override val repeating: Boolean = true
-            override val request: Request = Request(listOf())
-            override val requestNumber: RequestNumber = RequestNumber(0)
-
-            override fun <T> get(key: Metadata.Key<T>): T? = null
-
-            override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T = default
-
-            override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
-        }
-
     /** Unlocks any active AF lock by triggering an AF cancel. */
     private suspend fun unlockAf(timeLimitNs: Long): Result3A =
-        useCaseGraphContext
+        useCaseCameraContext
             .useGraphSession { it.unlock3A(af = true, timeLimitNs = timeLimitNs) }
             .await()
 
@@ -728,7 +677,7 @@ constructor(
             var requiresStopRepeating = false
 
             try {
-                useCaseGraphContext.useGraphSession { session ->
+                useCaseCameraContext.useGraphSession { session ->
                     requiresStopRepeating = requests.shouldStopRepeatingBeforeCapture()
                     if (requiresStopRepeating) {
                         session.stopRepeating()

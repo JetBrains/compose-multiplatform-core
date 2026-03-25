@@ -25,12 +25,12 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.HandTrackingMode
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
-import androidx.xr.runtime.internal.GooglePlayServicesLocationLibraryNotLinkedException
+import androidx.xr.runtime.internal.LibraryNotLinkedException
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
@@ -53,9 +53,10 @@ import kotlinx.coroutines.delay
 /**
  * Manages the lifecycle of an ARCore session.
  *
- * @property context The [Context] instance.
- * @property perceptionManager The [ArCorePerceptionManager] instance.
- * @property timeSource The [ArCoreTimeSource] instance.
+ * @property context The [Context] instance
+ * @property perceptionManager the [ArCorePerceptionManager] instance
+ * @property timeSource the [ArCoreTimeSource] instance
+ * @property config the current [Config] of the session
  */
 @Suppress("NotCloseable")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -72,6 +73,7 @@ internal constructor(
     /**
      * The underlying [Session] instance.
      *
+     * @return the underlying [Session] instance
      * @sample androidx.xr.arcore.samples.getARCoreSession
      */
     @UnsupportedArCoreCompatApi public fun session(): Session = _session
@@ -161,7 +163,7 @@ internal constructor(
         } catch (e: FineLocationPermissionNotGrantedException) {
             throw SecurityException(e)
         } catch (e: ARCore1xGooglePlayServicesLocationLibraryNotLinkedException) {
-            throw GooglePlayServicesLocationLibraryNotLinkedException(e)
+            throw LibraryNotLinkedException("com.google.android.gms:play-services-location", e)
         } catch (e: UnsupportedConfigurationException) {
             throw UnsupportedOperationException(e)
         }
@@ -212,7 +214,7 @@ internal constructor(
                 throw ApkNotInstalledException(ARCORE_PACKAGE_NAME)
             }
             Availability.UNSUPPORTED_DEVICE_NOT_CAPABLE -> {
-                Log.error {
+                XrLog.error {
                     "Session cannot be created because ARCore is not supported on this device."
                 }
                 throw UnsupportedDeviceException()

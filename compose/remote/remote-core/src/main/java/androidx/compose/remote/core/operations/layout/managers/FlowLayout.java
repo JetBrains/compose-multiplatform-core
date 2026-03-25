@@ -33,6 +33,7 @@ import androidx.compose.remote.core.operations.layout.measure.MeasurePass;
 import androidx.compose.remote.core.operations.layout.measure.Size;
 import androidx.compose.remote.core.operations.layout.modifiers.WidthInModifierOperation;
 import androidx.compose.remote.core.operations.layout.utils.DebugLog;
+import androidx.compose.remote.core.serialize.MapSerializer;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -56,18 +57,27 @@ public class FlowLayout extends RowLayout {
     public static final int SPACE_EVENLY = 7;
     public static final int SPACE_AROUND = 8;
 
+    public int mMaxItemsInEachRow = Integer.MAX_VALUE;
+    public int mMaxLines = Integer.MAX_VALUE;
+
     public FlowLayout(
             @Nullable Component parent,
             int componentId, int animationId, float x, float y, float width, float height,
-            int horizontalPositioning, int verticalPositioning, float spacedBy) {
+            int horizontalPositioning, int verticalPositioning, float spacedBy,
+            int maxItemsInEachRow, int maxLines) {
         super(parent, componentId, animationId, x, y, width, height, horizontalPositioning,
                 verticalPositioning, spacedBy);
+        mMaxItemsInEachRow = maxItemsInEachRow;
+        mMaxLines = maxLines;
     }
 
     public FlowLayout(@Nullable Component parent, int componentId, int animationId,
-            int horizontalPositioning, int verticalPositioning, float spacedBy) {
+            int horizontalPositioning, int verticalPositioning, float spacedBy,
+            int maxItemsInEachRow, int maxLines) {
         super(parent, componentId, animationId, horizontalPositioning, verticalPositioning,
                 spacedBy);
+        mMaxItemsInEachRow = maxItemsInEachRow;
+        mMaxLines = maxLines;
     }
 
     @NonNull
@@ -94,6 +104,7 @@ public class FlowLayout extends RowLayout {
      * @param horizontalPositioning horizontal positioning rules
      * @param verticalPositioning   vertical positioning rules
      * @param spacedBy              spaced by value
+     * @param maxItemsInEachRow     maximum number of items in each row
      */
     public static void apply(
             @NonNull WireBuffer buffer,
@@ -101,13 +112,17 @@ public class FlowLayout extends RowLayout {
             int animationId,
             int horizontalPositioning,
             int verticalPositioning,
-            float spacedBy) {
+            float spacedBy,
+            int maxItemsInEachRow,
+            int maxLines) {
         buffer.start(id());
         buffer.writeInt(componentId);
         buffer.writeInt(animationId);
         buffer.writeInt(horizontalPositioning);
         buffer.writeInt(verticalPositioning);
         buffer.writeFloat(spacedBy);
+        buffer.writeInt(maxItemsInEachRow);
+        buffer.writeInt(maxLines);
     }
 
     /**
@@ -122,6 +137,8 @@ public class FlowLayout extends RowLayout {
         int horizontalPositioning = buffer.readInt();
         int verticalPositioning = buffer.readInt();
         float spacedBy = buffer.readFloat();
+        int maxItemsInEachRow = buffer.readInt();
+        int maxLines = buffer.readInt();
         operations.add(
                 new FlowLayout(
                         null,
@@ -129,7 +146,29 @@ public class FlowLayout extends RowLayout {
                         animationId,
                         horizontalPositioning,
                         verticalPositioning,
-                        spacedBy));
+                        spacedBy,
+                        maxItemsInEachRow,
+                        maxLines));
+    }
+
+    @Override
+    public void write(@NonNull WireBuffer buffer) {
+        apply(
+                buffer,
+                mComponentId,
+                mAnimationId,
+                mHorizontalPositioning,
+                mVerticalPositioning,
+                mSpacedBy,
+                mMaxItemsInEachRow,
+                mMaxLines);
+    }
+
+    @Override
+    public void serialize(@NonNull MapSerializer serializer) {
+        super.serialize(serializer);
+        serializer.add("maxItemsInEachRow", mMaxItemsInEachRow);
+        serializer.add("maxLines", mMaxLines);
     }
 
     private boolean hasWeight(@NonNull Component c) {
@@ -150,12 +189,21 @@ public class FlowLayout extends RowLayout {
         ArrayList<Component> currentRow = new ArrayList<>();
         rows.add(currentRow);
         float currentWidth = 0;
+        float currentRowMaxHeight = 0;
+        float currentTotalHeight = 0;
+        boolean overflow = false;
 
         for (Component c : mChildrenComponents) {
-            // get the width of the component
+            if (overflow) {
+                measure.get(c).setVisibility(Component.Visibility.GONE);
+                continue;
+            }
+            // get the dimensions of the component
             float componentWidth = 0f;
+            float componentHeight = 0f;
             if (measure.get(c).isGone()) {
                 componentWidth = 0f;
+                componentHeight = 0f;
             } else if (hasWeight(c)) {
                 // need to check if we have minimum width
                 WidthInModifierOperation widthInConstraints =
@@ -166,21 +214,33 @@ public class FlowLayout extends RowLayout {
                         componentWidth = min;
                     }
                 }
+                componentHeight = c.minIntrinsicHeight(context.getContext());
             } else {
                 // Let's measure it
                 c.measure(context, 0f, maxWidth, 0f, maxHeight, measure);
                 ComponentMeasure m = measure.get(c);
                 componentWidth = m.getW();
+                componentHeight = m.getH();
             }
 
-            if (componentWidth + currentWidth > maxWidth) {
+            if (componentWidth + currentWidth > maxWidth
+                    || currentRow.size() >= mMaxItemsInEachRow) {
+                if (rows.size() >= mMaxLines
+                        || currentTotalHeight + currentRowMaxHeight >= maxHeight) {
+                    overflow = true;
+                    measure.get(c).setVisibility(Component.Visibility.GONE);
+                    continue;
+                }
                 // New row
+                currentTotalHeight += currentRowMaxHeight;
                 currentRow = new ArrayList<>();
                 rows.add(currentRow);
                 currentWidth = 0;
+                currentRowMaxHeight = 0;
             }
             currentRow.add(c);
-            currentWidth += componentWidth;
+            currentWidth += componentWidth + mSpacedBy;
+            currentRowMaxHeight = Math.max(currentRowMaxHeight, componentHeight);
         }
         DebugLog.s(() -> "COMPUTED " + rows.size() + " SEGMENTS OF ROWS for " + this + " ("
                 + mComponentId + ")");
@@ -269,7 +329,7 @@ public class FlowLayout extends RowLayout {
         float rowWidth = selfWidth;
         float rowsHeight = 0f;
         for (ArrayList<Component> row : rows) {
-            rowsHeight += minIntrinsicHeight(context.getContext(), row, false);
+            rowsHeight += minIntrinsicHeight(context.getContext(), row, true);
         }
         switch (mVerticalPositioning) {
             case RowLayout.CENTER:
@@ -280,13 +340,12 @@ public class FlowLayout extends RowLayout {
         }
 
         for (ArrayList<Component> row : rows) {
-            float rowHeight = minIntrinsicHeight(context.getContext(), row, false);
+            float rowHeight = minIntrinsicHeight(context.getContext(), row, true);
             internalLayoutMeasure(context, measure, row, rowWidth, rowHeight, positionX, positionY,
                     rowSize);
             positionY += rowSize.getHeight();
         }
     }
-
 
     /**
      * Populate the documentation with a description of this operation
@@ -313,7 +372,9 @@ public class FlowLayout extends RowLayout {
                 .possibleValues("TOP", TOP)
                 .possibleValues("CENTER", CENTER)
                 .possibleValues("BOTTOM", BOTTOM)
-                .field(FLOAT, "spacedBy", "Horizontal spacing between components");
+                .field(FLOAT, "spacedBy", "Horizontal spacing between components")
+                .field(INT, "maxItemsInEachRow", "Maximum number of items in each row")
+                .field(INT, "maxLines", "Maximum number of lines in the layout");
     }
 
 }

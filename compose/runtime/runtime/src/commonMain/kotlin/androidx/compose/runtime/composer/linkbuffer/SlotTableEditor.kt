@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composer
 import androidx.compose.runtime.RecomposeScopeImpl
 import androidx.compose.runtime.RememberObserverHolder
 import androidx.compose.runtime.ReusableRememberObserverHolder
+import androidx.compose.runtime.asLinkRememberObserverHolder
 import androidx.compose.runtime.composer.GroupSourceInformation
 import androidx.compose.runtime.composer.RememberManager
 import androidx.compose.runtime.debugRuntimeCheck
@@ -94,12 +95,12 @@ internal class SlotTableEditor(val table: SlotTable) {
         val groups = addressSpace.groups
         val slots = addressSpace.slots
         val groupFlags = groups.groupFlags(group)
-        val slotIndex = nodeSlotIndex(groupFlags)
         debugRuntimeCheck(IsNodeFlag in groupFlags) {
             "Cannot update node for group that does not have node slot"
         }
+
         val slotRange = groups.groupSlotRange(group)
-        val slotAddress = slotAddressOf(slotRange + slotIndex)
+        val slotAddress = slotAddressOf(slotRange) + nodeSlotIndex(groupFlags)
         slots[slotAddress] = newValue
     }
 
@@ -531,14 +532,14 @@ internal class SlotTableEditor(val table: SlotTable) {
 
         slots.forEachSlotInRangeIndexed(slotRange) { slotIndex, slotValue ->
             if (slotValue is RememberObserverHolder) {
-                val requiredLastChild = slotValue.afterGroupIndex
+                val requiredLastChild = slotValue.asLinkRememberObserverHolder().after.address
                 while (lastVisitedChild != requiredLastChild) {
                     val nextGroup =
                         when {
                             lastVisitedChild < 0 -> groups.groupChild(inGroup)
                             else -> groups.groupNext(lastVisitedChild)
                         }
-                    debugRuntimeCheck(nextGroup >= 0) {
+                    runtimeCheck(nextGroup >= 0) {
                         "A RememberObserver cannot be forgotten correctly because its group " +
                             "ordering metadata is inconsistent with the rest of the SlotTable"
                     }
@@ -583,7 +584,7 @@ internal class SlotTableEditor(val table: SlotTable) {
         val end = start + tailSlots
         slots.forEachSlotInRangeIndexed(start, end) { slotIndex, slotValue ->
             if (slotValue is RememberObserverHolder) {
-                val requiredLastChild = slotValue.afterGroupIndex
+                val requiredLastChild = slotValue.asLinkRememberObserverHolder().after.address
                 while (lastVisitedChild != requiredLastChild) {
                     val nextGroup =
                         when {

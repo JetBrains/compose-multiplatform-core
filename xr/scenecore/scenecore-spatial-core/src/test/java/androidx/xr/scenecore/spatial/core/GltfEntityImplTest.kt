@@ -20,7 +20,6 @@ import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.BoundingBox.Companion.fromMinMax
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.GltfModelNodeFeature
 import androidx.xr.scenecore.runtime.Space
@@ -30,8 +29,6 @@ import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.node.Node
 import com.google.common.truth.Truth
-import java.util.concurrent.Executor
-import java.util.function.Consumer
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -48,7 +45,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Config.TARGET_SDK])
 class GltfEntityImplTest {
     private val xrExtensions = requireNotNull(getXrExtensions())
-    private val entityManager = EntityManager()
+    private val sceneNodeRegistry = SceneNodeRegistry()
     private val fakeScheduledExecutorService = FakeScheduledExecutorService()
     private val mockGltfFeature: GltfFeature = mock<GltfFeature>()
     private lateinit var activitySpace: ActivitySpaceImpl
@@ -70,11 +67,11 @@ class GltfEntityImplTest {
                 taskNode,
                 activity,
                 xrExtensions,
-                entityManager,
+                sceneNodeRegistry,
                 { xrExtensions.getSpatialState(activity) },
                 fakeScheduledExecutorService,
             )
-        entityManager.addSystemSpaceActivityPose(PerceptionSpaceScenePoseImpl(activitySpace))
+        sceneNodeRegistry.addSystemSpaceScenePose(PerceptionSpaceScenePoseImpl(activitySpace))
 
         gltfEntityImpl = createGltfEntity(activity)
     }
@@ -93,7 +90,7 @@ class GltfEntityImplTest {
             fakeGltfFeature,
             activitySpace,
             xrExtensions,
-            entityManager,
+            sceneNodeRegistry,
             fakeScheduledExecutorService,
         )
     }
@@ -107,68 +104,6 @@ class GltfEntityImplTest {
 
         verify(mockGltfFeature).getGltfModelBoundingBox()
         Truth.assertThat(boundingBox).isEqualTo(expectedResult)
-    }
-
-    @Test
-    fun startAnimation_startsAnimation() {
-        whenever(mockGltfFeature.animationState).thenReturn(GltfEntity.AnimationState.PLAYING)
-
-        gltfEntityImpl.startAnimation(/* looping= */ true, "test_animation")
-
-        verify(mockGltfFeature).startAnimation(true, "test_animation", fakeScheduledExecutorService)
-        Truth.assertThat(gltfEntityImpl.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
-    }
-
-    @Test
-    fun stopAnimation_stopsAnimation() {
-        gltfEntityImpl.startAnimation(/* looping= */ true, "test_animation")
-
-        verify(mockGltfFeature).startAnimation(true, "test_animation", fakeScheduledExecutorService)
-
-        gltfEntityImpl.stopAnimation()
-
-        verify(mockGltfFeature).stopAnimation()
-    }
-
-    @Test
-    fun pauseAnimation_pauseAnimation() {
-        gltfEntityImpl.startAnimation(/* looping= */ true, "test_animation")
-        verify(mockGltfFeature).startAnimation(true, "test_animation", fakeScheduledExecutorService)
-
-        gltfEntityImpl.pauseAnimation()
-
-        verify(mockGltfFeature).pauseAnimation()
-    }
-
-    @Test
-    fun resumeAnimation_resumeAnimation() {
-        gltfEntityImpl.startAnimation(/* looping= */ true, "test_animation")
-        verify(mockGltfFeature).startAnimation(true, "test_animation", fakeScheduledExecutorService)
-        gltfEntityImpl.pauseAnimation()
-        verify(mockGltfFeature).pauseAnimation()
-
-        gltfEntityImpl.resumeAnimation()
-
-        verify(mockGltfFeature).resumeAnimation()
-    }
-
-    @Test
-    fun addAnimationStateListener_addsListener() {
-        val executor = Executor { it.run() }
-        val listener = Consumer { value: Int -> Truth.assertThat(value).isNotNull() }
-
-        gltfEntityImpl.addAnimationStateListener(executor, listener)
-
-        verify(mockGltfFeature).addAnimationStateListener(executor, listener)
-    }
-
-    @Test
-    fun removeAnimationStateListener_removesListener() {
-        val listener = Consumer { value: Int -> Truth.assertThat(value).isNotNull() }
-
-        gltfEntityImpl.removeAnimationStateListener(listener)
-
-        verify(mockGltfFeature).removeAnimationStateListener(listener)
     }
 
     @Test

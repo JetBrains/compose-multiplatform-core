@@ -36,6 +36,7 @@ import androidx.room3.compiler.processing.PropertySpecHelper
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.KotlinCollectionMemberNames
 import androidx.room3.ext.KotlinTypeNames
+import androidx.room3.ext.RoomMemberNames
 import androidx.room3.ext.RoomTypeNames
 import androidx.room3.ext.decapitalize
 import androidx.room3.ext.stripNonJava
@@ -58,9 +59,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
             setVisibility(VisibilityModifier.INTERNAL)
             addFunction(createOpenDelegate())
             addFunction(createCreateInvalidationTracker())
-            if (database.overrideClearAllTables) {
-                addFunction(createClearAllTables())
-            }
+            addFunction(createClearAllTables())
             addFunction(createCreateTypeConvertersMap())
             addFunction(createCreateAutoMigrationSpecsSet())
             addFunction(createGetAutoMigrations())
@@ -169,13 +168,19 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                 name = "clearAllTables",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
+                isSuspend = true,
             )
             .apply {
                 val tableNames =
                     database.entities.sortedWith(EntityDeleteComparator()).joinToString(", ") {
                         "\"${it.tableName}\""
                     }
-                addStatement("super.performClear(%L, %L)", database.enableForeignKeys, tableNames)
+                addStatement(
+                    "%M(this, %L, %L)",
+                    RoomMemberNames.DB_UTIL_PERFORM_CLEAR,
+                    database.enableForeignKeys,
+                    tableNames,
+                )
             }
             .build()
     }

@@ -1063,7 +1063,7 @@ class AppFunctionCompilerTest {
 
         compilationTestHelper.assertErrorWithMessage(
             report,
-            "All subclasses of OneOfSealedInterface should be annotated with @AppFunctionSerializable. Did you forget to annotate OneOfSealedInterface\$ASubclass?",
+            "OneOfSealedInterface\$ASubclass cannot be represented as an app function serializable. Did you forget to annotate OneOfSealedInterface\$ASubclass?",
         )
     }
 
@@ -1092,6 +1092,7 @@ class AppFunctionCompilerTest {
             compilationTestHelper.compileAll(
                 sourceFileNames =
                     listOf(
+                        "oneofserializable/NonSealedOneOfSerializable.KT",
                         "oneofserializable/OneOfSealedClass.KT",
                         "oneofserializable/OneOfSealedInterface.KT",
                         "oneofserializable/OneOfFunctions.KT",
@@ -1108,6 +1109,20 @@ class AppFunctionCompilerTest {
             report = report,
             expectGeneratedResourceFileName = "app_functions_v2.xml",
             goldenFileName = "oneofserializable/oneOfFunctions_app_function_dynamic_schema.xml",
+        )
+    }
+
+    @Test
+    fun oneOfSerializable_nonSealedOneOfSerializable_generatesFactory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("oneofserializable/NonSealedOneOfSerializable.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report,
+            "NonSealedOneOfSerializableFactory.kt",
+            "oneofserializable/\$NonSealedOneOfSerializableFactory.KT",
         )
     }
 

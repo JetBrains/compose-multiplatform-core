@@ -42,7 +42,7 @@ class PointerCaptureComponentImplTest {
     private val node: Node = xrExtensions!!.createNode()
     private val shadowNode: ShadowNode = ShadowNode.extract(node)
     private val entity: Entity =
-        object : AndroidXrEntity(null, node, xrExtensions!!, EntityManager(), fakeScheduler) {}
+        object : AndroidXrEntity(null, node, xrExtensions!!, SceneNodeRegistry(), fakeScheduler) {}
 
     private fun sendInputEvent(inputEvent: InputEvent?) {
         shadowNode.inputExecutor.execute { shadowNode.inputListener.accept(inputEvent) }

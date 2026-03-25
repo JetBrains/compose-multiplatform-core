@@ -44,6 +44,7 @@ public class StampAnnotation(
         if (this === other) return true
         if (other !is StampAnnotation) return false
 
+        if (pageNum != other.pageNum) return false
         if (bounds != other.bounds) return false
         if (pdfObjects != other.pdfObjects) return false
 

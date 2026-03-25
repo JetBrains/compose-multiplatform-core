@@ -37,6 +37,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * @param activity the [ComponentActivity] to create the session in
+ * @param userRequestedInstall whether the user has requested to install the ARCore APK
+ */
 @Sampled
 fun callSessionCreate(activity: ComponentActivity, userRequestedInstall: Boolean = false) {
     // Note: registerForActivityResult must be called before the Activity is STARTED.
@@ -151,6 +155,10 @@ fun callSessionCreate(activity: ComponentActivity, userRequestedInstall: Boolean
                 }
                 is SessionCreateUnknownError -> {
                     Toast.makeText(activity, result.errorMessage, Toast.LENGTH_LONG)
+                }
+
+                else -> {
+                    Toast.makeText(activity, "Session creation failed.", Toast.LENGTH_LONG)
                 }
             }
         } catch (e: SecurityException) {

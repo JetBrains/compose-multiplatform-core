@@ -32,6 +32,8 @@ dependencies {
     api(libs.kotlinCoroutinesCore)
     api(project(":xr:runtime:runtime-manifest"))
     api(project(":xr:runtime:runtime-interfaces"))
+    // TODO(b/461561664): Change this to impl. dependency once OpenXrInstanceManager is internal.
+    api(project(":xr:runtime:runtime-openxr"))
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.lifecycle:lifecycle-common:2.8.7")
 
@@ -44,7 +46,6 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
     testImplementation(project(":kruth:kruth"))
-    testImplementation(project(":xr:arcore:arcore-testing"))
     testImplementation(project(":xr:runtime:runtime-testing"))
     testImplementation("androidx.appcompat:appcompat:1.2.0")
     testImplementation(libs.testRules)
@@ -52,7 +53,15 @@ dependencies {
 
 android {
     namespace = "androidx.xr.runtime"
-    defaultConfig.consumerProguardFiles("proguard-rules.pro")
+    buildFeatures {
+        resValues true
+    }
+    defaultConfig {
+        consumerProguardFiles("proguard-rules.pro")
+
+        def xrProjectedMinApiVersion = libs.versions.xrProjectedMinApiVersion.get()
+        resValue "string", "xr_projected_min_api_version", xrProjectedMinApiVersion
+    }
 }
 
 androidx {

@@ -33,11 +33,11 @@ internal class ActivityPanelEntityImpl(
     node: Node,
     name: String,
     extensions: XrExtensions,
-    entityManager: EntityManager,
+    sceneNodeRegistry: SceneNodeRegistry,
     private val activityPanel: ActivityPanel,
     windowBoundsPx: PixelDimensions,
     executor: ScheduledExecutorService,
-) : BasePanelEntity(context, node, extensions, entityManager, executor), ActivityPanelEntity {
+) : BasePanelEntity(context, node, extensions, sceneNodeRegistry, executor), ActivityPanelEntity {
 
     // TODO(b/352630140): Add a static factory method and remove the business logic from
     // SpatialSceneRuntime.
@@ -45,7 +45,7 @@ internal class ActivityPanelEntityImpl(
         super.sizeInPixels = windowBoundsPx
         // We need to notify our base class of the pixelDimensions, even though the Extensions are
         // initialized in the factory method. (ext.ActivityPanel.setWindowBounds, etc.)
-        mExtensions.createNodeTransaction().use { transaction ->
+        extensions.createNodeTransaction().use { transaction ->
             transaction
                 .setVisibility(activityPanel.node, true)
                 .setName(activityPanel.node, name)

@@ -101,6 +101,8 @@ public sealed interface SpatialConfiguration {
          * XR Spatial APIs are supported for this system. This is equivalent to
          * PackageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL). When this feature is available,
          * it is safe to assume we are in an XR environment.
+         *
+         * @param context The application or activity context used to check for the system feature.
          */
         public fun hasXrSpatialFeature(context: Context): Boolean {
             return context.packageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL)

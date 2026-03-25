@@ -25,10 +25,6 @@ internal class PerceptionSpaceScenePoseImpl(activitySpace: ActivitySpaceImpl) :
     BaseScenePose(), PerceptionSpaceScenePose {
     private val openXrScenePoseHelper: OpenXrScenePoseHelper = OpenXrScenePoseHelper(activitySpace)
 
-    // TODO: b/378680989 - Remove getPoseInActivitySpace from Impl.
-    override val poseInActivitySpace: Pose
-        get() = openXrScenePoseHelper.getPoseInActivitySpace(Pose())
-
     override val activitySpacePose: Pose
         get() = openXrScenePoseHelper.getActivitySpacePose(Pose())
 

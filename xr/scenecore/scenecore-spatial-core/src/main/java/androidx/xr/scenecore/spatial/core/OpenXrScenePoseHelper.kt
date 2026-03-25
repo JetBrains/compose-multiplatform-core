@@ -28,7 +28,7 @@ internal class OpenXrScenePoseHelper(private val activitySpace: ActivitySpaceImp
      * space. If there is an error retrieving the openXR reference space, this will return the
      * identity pose.
      */
-    fun getPoseInActivitySpace(openXrToPose: Pose?): Pose {
+    fun getActivitySpacePose(openXrToPose: Pose?): Pose {
         // The ScenePose should have unit scale (1.0f, 1.0f, 1.0f) and it should have no
         // direct parent, but the activity space can have a non-unit scale.
         // However, openXrToActivitySpace does not have the scale applied to it so we need to apply
@@ -53,15 +53,6 @@ internal class OpenXrScenePoseHelper(private val activitySpace: ActivitySpaceImp
                 openXrToPose.rotation,
             )
         return scaledActivitySpaceToOpenXr.compose(scaledOpenXrToPose)
-    }
-
-    /** Returns the ScenePose's pose in the activity space. */
-    fun getActivitySpacePose(openXrToPose: Pose?): Pose {
-        // ActivitySpace and the nodeless entity have unit scale and the nodeless entity has no
-        // direct parent so we can just compose the two poses without scaling.
-        val activitySpaceToPose = this.getPoseInActivitySpace(openXrToPose)
-        val worldSpaceToActivitySpace = activitySpace.poseInActivitySpace.inverse
-        return worldSpaceToActivitySpace.compose(activitySpaceToPose)
     }
 
     /** Returns the scale of the WorldPose with respect to the activity space. */

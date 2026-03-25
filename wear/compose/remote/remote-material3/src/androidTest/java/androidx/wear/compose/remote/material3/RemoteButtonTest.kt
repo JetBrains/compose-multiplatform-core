@@ -21,7 +21,6 @@ import android.content.Context
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.action.HostAction
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
@@ -37,6 +36,7 @@ import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rememberNamedRemoteBitmap
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -73,6 +73,7 @@ class RemoteButtonTest {
     @Test
     fun button_enabled() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -83,6 +84,7 @@ class RemoteButtonTest {
     @Test
     fun button_disabled() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -101,6 +103,7 @@ class RemoteButtonTest {
     @Test
     fun button_overrides_colors() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -130,6 +133,7 @@ class RemoteButtonTest {
     @Test
     fun button_overrides_padding() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -148,6 +152,7 @@ class RemoteButtonTest {
     @Test
     fun button_overrides_size() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -166,6 +171,7 @@ class RemoteButtonTest {
     @Test
     fun button_overrides_textStyle() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -188,6 +194,7 @@ class RemoteButtonTest {
     @Test
     fun button_with_border() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -198,6 +205,7 @@ class RemoteButtonTest {
     @Test
     fun button_with_circle_shape() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -218,6 +226,7 @@ class RemoteButtonTest {
     @Test
     fun button_enabled_container_background_image() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -242,6 +251,7 @@ class RemoteButtonTest {
     @Test
     fun button_disabled_container_background_image() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -268,6 +278,7 @@ class RemoteButtonTest {
     @Test
     fun button_with_icon_and_label_and_secondary_label() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -278,6 +289,7 @@ class RemoteButtonTest {
     @Test
     fun button_with_icon_and_label() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -288,6 +300,7 @@ class RemoteButtonTest {
     @Test
     fun button_with_label_and_secondary_label() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -343,12 +356,7 @@ class RemoteButtonTest {
         modifier: RemoteModifier,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
-        RemoteBox(
-            modifier,
-            horizontalAlignment = RemoteAlignment.CenterHorizontally,
-            verticalArrangement = RemoteArrangement.Center,
-            content = content,
-        )
+        RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
     }
 
     private val testAction = HostAction("testAction".rs, 1.rf)

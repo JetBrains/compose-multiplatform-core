@@ -19,8 +19,8 @@ package androidx.xr.scenecore
 import android.app.Activity
 import android.content.Intent
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -38,8 +38,8 @@ public class ActivityPanelEntity
 private constructor(
     perceptionSpace: PerceptionSpace,
     private val rtActivityPanelEntity: RtActivityPanelEntity,
-    entityManager: EntityManager,
-) : PanelEntity(perceptionSpace, rtActivityPanelEntity, entityManager) {
+    entityRegistry: EntityRegistry,
+) : PanelEntity(perceptionSpace, rtActivityPanelEntity, entityRegistry) {
 
     /**
      * Starts an [Activity] in the given panel. Subsequent calls to this method will replace the
@@ -69,12 +69,12 @@ private constructor(
             lifecycleManager: LifecycleManager,
             sceneRuntime: SceneRuntime,
             perceptionSpace: PerceptionSpace,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             pixelDimensions: IntSize2d,
             name: String,
             hostActivity: Activity,
             pose: Pose = Pose.Identity,
-            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): ActivityPanelEntity =
             ActivityPanelEntity(
                 perceptionSpace,
@@ -84,7 +84,7 @@ private constructor(
                     name,
                     hostActivity,
                     if (parent != null && parent !is BaseEntity<*>) {
-                        Log.warn(
+                        XrLog.warn(
                             "The provided parent is not a BaseEntity. The ActivityPanelEntity " +
                                 "will be created without a parent."
                         )
@@ -93,7 +93,7 @@ private constructor(
                         parent?.rtEntity
                     },
                 ),
-                entityManager,
+                entityRegistry,
             )
 
         /**
@@ -124,7 +124,7 @@ private constructor(
                 session.perceptionRuntime.lifecycleManager,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 pixelDimensions,
                 name,
                 session.context as Activity,
@@ -154,7 +154,7 @@ private constructor(
                 session.perceptionRuntime.lifecycleManager,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 pixelDimensions,
                 name,
                 session.context as Activity,

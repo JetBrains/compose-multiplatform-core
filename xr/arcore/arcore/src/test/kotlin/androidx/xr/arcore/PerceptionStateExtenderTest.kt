@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
+// removed.
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.arcore
 
 import android.app.Activity
@@ -161,13 +165,12 @@ class PerceptionStateExtenderTest {
         // act
         timeSource += 10.milliseconds
         val handJoints: Map<HandJointType, Pose> =
-            HandJointType.values().associate { joint ->
+            HandJointType.entries.associateWith { joint ->
                 val i = joint.ordinal.toFloat()
-                joint to
-                    Pose(
-                        Vector3(i + 0.5f, i + 0.6f, i + 0.7f),
-                        Quaternion(i + 0.1f, i + 0.2f, i + 0.3f, i + 0.4f),
-                    )
+                Pose(
+                    Vector3(i + 0.5f, i + 0.6f, i + 0.7f),
+                    Quaternion(i + 0.1f, i + 0.2f, i + 0.3f, i + 0.4f),
+                )
             }
 
         val leftRuntimeHand = fakePerceptionRuntime.perceptionManager.leftHand!! as FakeRuntimeHand
@@ -185,7 +188,7 @@ class PerceptionStateExtenderTest {
             .isEqualTo(TrackingState.TRACKING)
         assertThat(coreState2.perceptionState!!.rightHand!!.state.value.trackingState)
             .isEqualTo(TrackingState.TRACKING)
-        for (jointType in HandJointType.values()) {
+        for (jointType in HandJointType.entries) {
             val leftHandJoints = coreState2.perceptionState!!.leftHand!!.state.value.handJoints
             val rightHandJoints = coreState2.perceptionState!!.rightHand!!.state.value.handJoints
             assertThat(leftHandJoints[jointType]!!.translation)

@@ -29,7 +29,16 @@ import java.nio.FloatBuffer
 import java.util.LinkedList
 import java.util.Queue
 
-/** Provides depth map data from ArCore through the [DepthMap] interface. */
+/**
+ * Provides depth map data from ARCore through the [DepthMap] interface.
+ *
+ * @property width the width of the depth map
+ * @property height the height of the depth map
+ * @property rawDepthMap the raw depth map
+ * @property rawConfidenceMap the raw confidence map
+ * @property smoothDepthMap the smooth depth map
+ * @property smoothConfidenceMap the smooth confidence map
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ArCoreDepthMap internal constructor() : DepthMap {
     override val width: Int

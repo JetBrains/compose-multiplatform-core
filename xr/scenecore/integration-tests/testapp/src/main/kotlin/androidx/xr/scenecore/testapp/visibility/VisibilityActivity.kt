@@ -206,7 +206,7 @@ class VisibilityActivity : AppCompatActivity() {
             createPanel(
                 "Parent Panel",
                 session!!.scene.activitySpace,
-                Pose(Vector3(-0.5f, -0.65f, 0f)),
+                Pose(Vector3(-0.5f, -0.65f, 0.1f)),
             )
         childPanelEntity1 =
             createPanel("Child Panel 1", parentPanelEntity, Pose(Vector3(0.5f, 0f, 0f)))
@@ -239,7 +239,7 @@ class VisibilityActivity : AppCompatActivity() {
 
     private fun createGltfEntities() {
         parentGltfEntity =
-            GltfModelEntity.create(session!!, model, Pose(Vector3(0.7f, 0f, 0f))).also {
+            GltfModelEntity.create(session!!, model, Pose(Vector3(1f, 0f, 0f))).also {
                 it.setScale(0.5f)
                 it.parent = session!!.scene.activitySpace
             }

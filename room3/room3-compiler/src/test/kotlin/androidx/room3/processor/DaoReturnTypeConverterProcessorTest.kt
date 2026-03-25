@@ -21,15 +21,18 @@ import androidx.room3.compiler.processing.isTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.runKspTest
+import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_ANNOTATION_MUST_HAVE_OPERATION_TYPE
 import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_EMPTY_CLASS
+import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_FUNCTIONS_MUST_HAVE_AT_MOST_ONE_TYPE_PARAMETER
 import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_FUNCTIONS_WITHOUT_TYPE_PARAM_SHOULD_RETURN_UNIT
 import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_LAMBDA_MUST_BE_LAST_PARAM
 import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_MUST_CONTAIN_AN_ANNOTATED_FUNCTION
 import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_MUST_HAVE_ONE_LAMBDA_PARAM_THAT_IS_SUSPEND
+import androidx.room3.processor.ProcessorErrors.FOUND_DAO_TYPE_CONVERTER_WITH_NON_SUSPEND_LAMBDA
 import androidx.room3.processor.ProcessorErrors.daoReturnTypeConverterFunctionsWithATypeParamShouldHaveReturnTypeContainingTheSameTypeArg
+import androidx.room3.processor.ProcessorErrors.daoReturnTypeFunctionForOpWithBadParam
 import androidx.room3.processor.ProcessorErrors.duplicateDaoReturnTypeConverters
 import androidx.room3.testing.context
-import org.junit.Ignore
 import org.junit.Test
 
 class DaoReturnTypeConverterProcessorTest {
@@ -87,7 +90,7 @@ class DaoReturnTypeConverterProcessorTest {
                 import androidx.room3.*
 
                 class FooReturnTypeConverter {
-                    @DaoReturnTypeConverter
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
                     suspend fun <T> convert(
                         executeAndConvert: suspend () -> T,
                     ): Foo {
@@ -108,7 +111,6 @@ class DaoReturnTypeConverterProcessorTest {
         )
     }
 
-    @Ignore /// b/482978786
     @Test
     fun withMethodTypeParamMustHaveReturnTypeContainingSameTypeParam() {
         val problematicConverter =
@@ -120,7 +122,7 @@ class DaoReturnTypeConverterProcessorTest {
                 class Baz<E>(val value: E)
 
                 class BazReturnTypeConverter<E> {
-                    @DaoReturnTypeConverter
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
                     suspend fun <T> convert(
                         executeAndConvert: suspend () -> T,
                     ): Baz<E> {
@@ -159,13 +161,13 @@ class DaoReturnTypeConverterProcessorTest {
     fun withMethodTypeParamMustHaveReturnTypeWithOnlyOneGenericParamType() {
         val problematicConverter =
             Source.kotlin(
-                "EitherReturnTypeConverter.kt",
+                "FooReturnTypeConverter.kt",
                 """
                 import androidx.room3.*
                 import arrow.core.*
 
-                class EitherReturnTypeConverter {
-                    @DaoReturnTypeConverter
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
                     suspend fun <L, R> convert(
                         executeAndConvert: suspend () -> R,
                     ): Either<L, R> {
@@ -198,10 +200,9 @@ class DaoReturnTypeConverterProcessorTest {
                     .trimIndent(),
             )
         runTest(
-            sources =
-                listOf(EITHER, problematicConverter, DATABASE, dao, FOO_CONVERTER, FOO_BAR_TYPES),
-            expectedErrorCount = 0,
-            expectedError = "",
+            sources = listOf(EITHER, problematicConverter, DATABASE, dao, FOO_BAR_TYPES),
+            expectedErrorCount = 1,
+            expectedError = DAO_RETURN_TYPE_CONVERTER_FUNCTIONS_MUST_HAVE_AT_MOST_ONE_TYPE_PARAMETER,
         )
     }
 
@@ -214,7 +215,7 @@ class DaoReturnTypeConverterProcessorTest {
                 import androidx.room3.*
 
                 class OtherFooReturnTypeConverter {
-                    @DaoReturnTypeConverter
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
                     suspend fun <T> convert(
                         executeAndConvert: suspend () -> T,
                     ): Foo<T> {
@@ -255,10 +256,9 @@ class DaoReturnTypeConverterProcessorTest {
                 import androidx.room3.*
 
                 class FooReturnTypeConverter {
-                    @DaoReturnTypeConverter
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
                     suspend fun convert(
                         database: RoomDatabase,
-                        tableNames: Array<String>
                     ): Foo {
                         TODO()
                     }
@@ -282,12 +282,41 @@ class DaoReturnTypeConverterProcessorTest {
                 import androidx.room3.*
 
                 class FooReturnTypeConverter {
-                    @DaoReturnTypeConverter
+                    @DaoReturnTypeConverter(operations = [OperationType.READ])
                     suspend fun convert(
                         database: RoomDatabase,
                         roomRawQuery: RoomRawQuery,
                         tableNames: Array<String>,
                         executeAndConvert: suspend (RoomRawQuery, Array<String>) -> Unit,
+                    ): Foo {
+                        TODO()
+                    }
+                }
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(problematicConverter, DATABASE, DAO, FOO_BAR_TYPES),
+            expectedErrorCount = 1,
+            expectedError = DAO_RETURN_TYPE_CONVERTER_MUST_HAVE_ONE_LAMBDA_PARAM_THAT_IS_SUSPEND,
+        )
+    }
+
+    @Test
+    fun lambdaParamWithBadParamParamType() {
+        val problematicConverter =
+            Source.kotlin(
+                "FooReturnTypeConverter.kt",
+                """
+                import androidx.room3.*
+
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter(operations = [OperationType.READ])
+                    suspend fun convert(
+                        database: RoomDatabase,
+                        roomRawQuery: RoomRawQuery,
+                        tableNames: Array<String>,
+                        executeAndConvert: suspend (Array<String>) -> Unit,
                     ): Foo {
                         TODO()
                     }
@@ -311,7 +340,7 @@ class DaoReturnTypeConverterProcessorTest {
                 import androidx.room3.*
 
                 class FooReturnTypeConverter {
-                    @DaoReturnTypeConverter
+                    @DaoReturnTypeConverter(operations = [OperationType.READ])
                     suspend fun <T> convert(
                         database: RoomDatabase,
                         executeAndConvert: suspend () -> T,
@@ -342,7 +371,7 @@ class DaoReturnTypeConverterProcessorTest {
                 class Baz(data: MyEntity)
 
                 class BazReturnTypeConverter {
-                    @DaoReturnTypeConverter
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
                     suspend fun convert(
                         executeAndConvert: suspend () -> MyEntity,
                     ): Baz {
@@ -371,6 +400,145 @@ class DaoReturnTypeConverterProcessorTest {
             expectedErrorCount = 1,
             expectedError =
                 DAO_RETURN_TYPE_CONVERTER_FUNCTIONS_WITHOUT_TYPE_PARAM_SHOULD_RETURN_UNIT,
+        )
+    }
+
+    @Test
+    fun foundNonSuspendLambda() {
+        val problematicConverter =
+            Source.kotlin(
+                "FooReturnTypeConverter.kt",
+                """
+                import androidx.room3.*
+
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
+                    suspend fun convert(
+                        executeAndConvert: () -> Unit,
+                    ): Foo {
+                        TODO()
+                    }
+                }
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(problematicConverter, DATABASE, DAO, FOO_BAR_TYPES),
+            expectedErrorCount = 2,
+            expectedError = FOUND_DAO_TYPE_CONVERTER_WITH_NON_SUSPEND_LAMBDA,
+        )
+    }
+
+    @Test
+    fun forgotToProvideOperationType() {
+        val problematicConverter =
+            Source.kotlin(
+                "FooReturnTypeConverter.kt",
+                """
+                import androidx.room3.*
+
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter
+                    suspend fun <T> convert(
+                        executeAndConvert: suspend () -> T,
+                    ): Foo<T> {
+                       TODO()
+                    }
+                }
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(problematicConverter, DATABASE, DAO, FOO_BAR_TYPES),
+            expectedErrorCount = 1,
+            expectedError = DAO_RETURN_TYPE_CONVERTER_ANNOTATION_MUST_HAVE_OPERATION_TYPE,
+        )
+    }
+
+    @Test
+    fun roomRawQueryParamInWriteConverter() {
+        val problematicConverter =
+            Source.kotlin(
+                "FooReturnTypeConverter.kt",
+                """
+                import androidx.room3.*
+
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter(operations = [OperationType.WRITE])
+                    suspend fun <T> convert(
+                        rawQuery: RoomRawQuery,
+                        executeAndConvert: suspend () -> T,
+                    ): Foo<T> {
+                       TODO()
+                    }
+                }
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(problematicConverter, DATABASE, DAO, FOO_BAR_TYPES),
+            expectedErrorCount = 1,
+            expectedError =
+                daoReturnTypeFunctionForOpWithBadParam("WRITE", "androidx.room3.RoomRawQuery"),
+        )
+    }
+
+    @Test
+    fun tableNamesListParamInWriteConverter() {
+        val problematicConverter =
+            Source.kotlin(
+                "FooReturnTypeConverter.kt",
+                """
+                import androidx.room3.*
+
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter(operations = [OperationType.WRITE])
+                    suspend fun <T> convert(
+                        tableNames: List<String>,
+                        executeAndConvert: suspend () -> T,
+                    ): Foo<T> {
+                       TODO()
+                    }
+                }
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(problematicConverter, DATABASE, DAO, FOO_BAR_TYPES),
+            expectedErrorCount = 1,
+            expectedError =
+                daoReturnTypeFunctionForOpWithBadParam(
+                    "WRITE",
+                    "kotlin.collections.List<kotlin.String>",
+                ),
+        )
+    }
+
+    @Test
+    fun tableNamesArrayParamInWriteConverter() {
+        val problematicConverter =
+            Source.kotlin(
+                "FooReturnTypeConverter.kt",
+                """
+                import androidx.room3.*
+
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter(operations = [OperationType.WRITE])
+                    suspend fun <T> convert(
+                        tableNames: Array<String>,
+                        executeAndConvert: suspend () -> T,
+                    ): Foo<T> {
+                       TODO()
+                    }
+                }
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(problematicConverter, DATABASE, DAO, FOO_BAR_TYPES),
+            expectedErrorCount = 1,
+            expectedError =
+                daoReturnTypeFunctionForOpWithBadParam("WRITE", "kotlin.Array<kotlin.String>"),
         )
     }
 
@@ -439,7 +607,7 @@ class DaoReturnTypeConverterProcessorTest {
                 import androidx.room3.*
 
                 class FooReturnTypeConverter {
-                    @DaoReturnTypeConverter
+                    @DaoReturnTypeConverter(operations = [OperationType.READ, OperationType.WRITE])
                     suspend fun <T> convert(
                         executeAndConvert: suspend () -> T,
                     ): Foo<T> {

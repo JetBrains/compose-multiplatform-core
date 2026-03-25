@@ -112,7 +112,7 @@ public fun RemoteImage(
     }
 
     val creationState = LocalRemoteComposeCreationState.current
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     Box(
         modifier =
             RemoteComposeImageModifier(

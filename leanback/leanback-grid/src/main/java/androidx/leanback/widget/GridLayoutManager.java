@@ -728,7 +728,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     /**
      * Optional SpanSizeLookup retrieved from Adapter.
      */
-    private androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup mSpanSizeLookup;
+    private SpanSizeLookup mSpanSizeLookup;
 
     public GridLayoutManager() {
         this(null);
@@ -1636,11 +1636,15 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
         int heightUsed = lp.topMargin + lp.bottomMargin + sTempRect.top + sTempRect.bottom;
 
         final int spanSize = lp.mSpanSize;
-        final int secondarySpec =
-                (mRowSizeSecondaryRequested == ViewGroup.LayoutParams.WRAP_CONTENT)
-                        ? MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
-                        : MeasureSpec.makeMeasureSpec(mFixedRowSizeSecondary * spanSize
-                                + (spanSize - 1) * mSpacingSecondary, MeasureSpec.EXACTLY);
+        final int secondarySpec;
+        if (spanSize == SpanSizeLookup.FILL_ALL_SPANS_AND_PADDINGS) {
+            secondarySpec = MeasureSpec.makeMeasureSpec(mMaxSizeSecondary, MeasureSpec.EXACTLY);
+        } else if (mRowSizeSecondaryRequested == ViewGroup.LayoutParams.WRAP_CONTENT) {
+            secondarySpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
+        } else {
+            secondarySpec = MeasureSpec.makeMeasureSpec(mFixedRowSizeSecondary * spanSize
+                    + (spanSize - 1) * mSpacingSecondary, MeasureSpec.EXACTLY);
+        }
         int widthSpec, heightSpec;
 
         if (mOrientation == HORIZONTAL) {
@@ -1826,7 +1830,11 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     void layoutChild(int rowIndex, View v, int start, int end, int startSecondary) {
         int sizeSecondary = mOrientation == HORIZONTAL ? getDecoratedMeasuredHeightWithMargin(v)
                 : getDecoratedMeasuredWidthWithMargin(v);
-        if (((LayoutParams) v.getLayoutParams()).mSpanSize == 1) {
+        if (((LayoutParams) v.getLayoutParams()).mSpanSize
+                == SpanSizeLookup.FILL_ALL_SPANS_AND_PADDINGS) {
+            startSecondary = 0;
+            sizeSecondary = mMaxSizeSecondary;
+        } else if (((LayoutParams) v.getLayoutParams()).mSpanSize == 1) {
             // For single span item, we cap size within the fixed column size and adjust location
             // within the column according to gravity.
             if (mFixedRowSizeSecondary > 0) {
@@ -3739,9 +3747,8 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
             mFacetProviderAdapter = null;
         }
         if (newAdapter instanceof FacetProvider) {
-            mSpanSizeLookup = (androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup)
-                    ((FacetProvider) newAdapter).getFacet(
-                            androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup.class);
+            mSpanSizeLookup = (SpanSizeLookup) ((FacetProvider) newAdapter).getFacet(
+                            SpanSizeLookup.class);
         } else {
             mSpanSizeLookup = null;
         }

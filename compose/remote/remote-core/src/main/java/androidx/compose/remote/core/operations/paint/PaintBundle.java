@@ -457,7 +457,7 @@ public class PaintBundle implements Serializable {
         int ret = i;
         int type = (cmd >> 16);
         int tileMode = 0;
-        int len = array[ret++];
+        int len = 0xFF & array[ret++];
         int[] colors = null;
         String[] stops = null;
         switch (type) {
@@ -496,7 +496,7 @@ public class PaintBundle implements Serializable {
                         colors[j] = array[ret++];
                     }
                 }
-                len = array[ret++];
+                len = 0xFF & array[ret++];
                 if (len > 0) {
                     stops = new String[len];
                     for (int j = 0; j < stops.length; j++) {
@@ -522,7 +522,7 @@ public class PaintBundle implements Serializable {
                         colors[j] = array[ret++];
                     }
                 }
-                len = array[ret++];
+                len = 0xFF & array[ret++];
                 if (len > 0) {
                     stops = new String[len];
                     for (int j = 0; j < stops.length; j++) {

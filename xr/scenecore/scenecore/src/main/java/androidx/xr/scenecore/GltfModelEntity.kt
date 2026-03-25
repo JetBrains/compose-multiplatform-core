@@ -20,19 +20,15 @@ import android.os.Build
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.GltfEntity as RtGltfEntity
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.Collections
-import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asExecutor
 
 /**
  * GltfModelEntity is a concrete implementation of Entity that hosts a glTF model.
@@ -41,13 +37,8 @@ import kotlinx.coroutines.asExecutor
  * size of the model.
  */
 public class GltfModelEntity
-private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
-    BaseEntity<RtGltfEntity>(rtEntity, entityManager) {
-    // TODO: b/417750821 - Add an OnAnimationEvent() Listener interface
-
-    private val mAnimationStateListeners: MutableMap<Consumer<AnimationState>, Executor> =
-        Collections.synchronizedMap(mutableMapOf())
-
+private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
+    BaseEntity<RtGltfEntity>(rtEntity, entityRegistry) {
     private val _nodes: List<GltfModelNode> by lazy {
         // The unique identifier of a node is their index so we first get the
         // count of the nodes in the model from the native side.
@@ -123,39 +114,6 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
             return _animations
         }
 
-    /** Specifies the current animation state of the GltfModelEntity. */
-    public class AnimationState private constructor(private val name: String) {
-
-        public companion object {
-            /** The animation is currently playing. */
-            @JvmField public val PLAYING: AnimationState = AnimationState("PLAYING")
-            /** The animation is currently stopped. */
-            @JvmField public val STOPPED: AnimationState = AnimationState("STOPPED")
-            /** The animation is currently paused. */
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-            @JvmField
-            public val PAUSED: AnimationState = AnimationState("PAUSED")
-        }
-
-        public override fun toString(): String = name
-    }
-
-    /**
-     * The current animation state of the GltfModelEntity.
-     *
-     * @return The current animation state.
-     */
-    public val animationState: AnimationState
-        get() {
-            checkNotDisposed()
-            return when (rtEntity!!.animationState) {
-                RtGltfEntity.AnimationState.PLAYING -> AnimationState.PLAYING
-                RtGltfEntity.AnimationState.STOPPED -> AnimationState.STOPPED
-                RtGltfEntity.AnimationState.PAUSED -> AnimationState.PAUSED
-                else -> AnimationState.STOPPED
-            }
-        }
-
     /**
      * Retrieves the axis-aligned bounding box (AABB) of an instanced glTF model in meters in the
      * model's local coordinate space.
@@ -188,17 +146,17 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
         internal fun create(
             sceneRuntime: SceneRuntime,
             renderingRuntime: RenderingRuntime,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             model: GltfModel,
             pose: Pose = Pose.Identity,
-            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): GltfModelEntity =
             GltfModelEntity(
                 renderingRuntime.createGltfEntity(
                     pose,
                     model.model,
                     if (parent != null && parent !is BaseEntity<*>) {
-                        Log.warn(
+                        XrLog.warn(
                             "The provided parent is not a BaseEntity. The GltfModelEntity will " +
                                 "be created without a parent."
                         )
@@ -207,7 +165,7 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
                         parent?.rtEntity
                     },
                 ),
-                entityManager,
+                entityRegistry,
             )
 
         /**
@@ -231,7 +189,7 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
             create(
                 session.sceneRuntime,
                 session.renderingRuntime,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 model,
                 pose,
             )
@@ -263,160 +221,10 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
             create(
                 session.sceneRuntime,
                 session.renderingRuntime,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 model,
                 pose,
                 parent,
             )
-    }
-
-    /**
-     * Starts the animation with the given name. Only one animation can be playing at a time.
-     *
-     * This method must be called from the main thread.
-     * https://developer.android.com/guide/components/processes-and-threads
-     *
-     * If this GltfModelEntity currently has an animation that is playing or paused, that animation
-     * will be stopped.
-     *
-     * @param loop If true, the animation plays in a loop indefinitely until [stopAnimation] is
-     *   called. If false, the animation plays once and then stops.
-     * @param animationName The name of the animation to start.
-     * @throws IllegalArgumentException if the underlying model doesn't contain an animation with
-     *   the given name.
-     */
-    @MainThread
-    public fun startAnimation(loop: Boolean, animationName: String) {
-        checkNotDisposed()
-        try {
-            rtEntity!!.startAnimation(loop, animationName)
-        } catch (_: Exception) {
-            throw IllegalArgumentException("Animation name is invalid.")
-        }
-    }
-
-    /**
-     * Starts animating the glTF with the first animation found in the model.
-     *
-     * This method must be called from the main thread.
-     * https://developer.android.com/guide/components/processes-and-threads
-     *
-     * @param loop Whether the animation should loop over or stop after animating once. Defaults to
-     *   true.
-     * @throws IllegalArgumentException if the underlying model doesn't contain any animations.
-     */
-    @MainThread
-    @JvmOverloads
-    public fun startAnimation(loop: Boolean = true) {
-        checkNotDisposed()
-        try {
-            rtEntity!!.startAnimation(loop, null)
-        } catch (_: Exception) {
-            throw IllegalArgumentException("Model doesn't contain any animations.")
-        }
-    }
-
-    /**
-     * Stops the currently active animation.
-     *
-     * This method must be called from the main thread.
-     * https://developer.android.com/guide/components/processes-and-threads
-     */
-    @MainThread
-    public fun stopAnimation() {
-        checkNotDisposed()
-        rtEntity!!.stopAnimation()
-    }
-
-    /**
-     * Pauses the currently playing animation.
-     *
-     * This method must be called from the main thread.
-     * https://developer.android.com/guide/components/processes-and-threads
-     *
-     * Use [resumeAnimation] to continue playing. If the AnimationState is not
-     * [AnimationState.PLAYING], this method has no effect.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    @MainThread
-    public fun pauseAnimation() {
-        checkNotDisposed()
-        rtEntity!!.pauseAnimation()
-    }
-
-    /**
-     * Resumes the currently active animation.
-     *
-     * This method must be called from the main thread.
-     * https://developer.android.com/guide/components/processes-and-threads
-     *
-     * If the AnimationState is not [AnimationState.PAUSED], this method has no effect.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    @MainThread
-    public fun resumeAnimation() {
-        checkNotDisposed()
-        rtEntity!!.resumeAnimation()
-    }
-
-    /**
-     * Registers a listener to be invoked when the animation state of the GltfModelEntity changes.
-     *
-     * The only intended client is currently XR Compose. See b/457481325.
-     *
-     * @param executor The executor on which the listener will be invoked.
-     * @param listener The listener to be invoked.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun addAnimationStateListener(executor: Executor, listener: Consumer<AnimationState>) {
-        checkNotDisposed()
-        if (mAnimationStateListeners.isEmpty()) {
-            rtEntity!!.addAnimationStateListener(
-                executor = Dispatchers.Main.asExecutor(),
-                listener = this::onAnimationStateUpdated,
-            )
-        }
-        mAnimationStateListeners[listener] = executor
-    }
-
-    /**
-     * Registers a listener to be invoked on the main thread when the animation state of the
-     * GltfModelEntity changes.
-     *
-     * The only intended client is currently XR Compose. See b/457481325.
-     *
-     * @param listener The listener to be invoked.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun addAnimationStateListener(listener: Consumer<AnimationState>) {
-        addAnimationStateListener(executor = Dispatchers.Main.asExecutor(), listener = listener)
-    }
-
-    /**
-     * Unregisters a previously registered animation state update listener.
-     *
-     * The only intended client is currently XR Compose. See b/457481325.
-     *
-     * @param listener The listener to be removed.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun removeAnimationStateListener(listener: Consumer<AnimationState>) {
-        mAnimationStateListeners.remove(listener)
-        if (mAnimationStateListeners.isEmpty()) {
-            rtEntity?.removeAnimationStateListener(this::onAnimationStateUpdated)
-        }
-    }
-
-    private fun onAnimationStateUpdated(@RtGltfEntity.AnimationStateValue animationState: Int) {
-        val result =
-            when (animationState) {
-                RtGltfEntity.AnimationState.PLAYING -> AnimationState.PLAYING
-                RtGltfEntity.AnimationState.STOPPED -> AnimationState.STOPPED
-                RtGltfEntity.AnimationState.PAUSED -> AnimationState.PAUSED
-                else -> AnimationState.STOPPED
-            }
-        for ((listener, executor) in mAnimationStateListeners.entries) {
-            executor.execute { listener.accept(result) }
-        }
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.creation.compose.text.RemoteTextStyle
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
@@ -53,6 +54,7 @@ class RemoteTypographyTest {
         val monoTypography = RemoteTypography(defaultFontFamily = FontFamily.Monospace)
 
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             creationDisplayInfo = creationDisplayInfo,
             backgroundColor = Color.Black,
         ) {
@@ -94,6 +96,7 @@ class RemoteTypographyTest {
             RemoteTypography(bodyLarge = RemoteTextStyle(fontSize = 40.rsp, color = Color.Red.rc))
 
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             creationDisplayInfo = creationDisplayInfo,
             backgroundColor = Color.Black,
         ) {

@@ -162,8 +162,9 @@ class ResizableModifierTest {
             Subspace {
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = true, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = true) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -191,8 +192,9 @@ class ResizableModifierTest {
                 var resizableEnabled by remember { mutableStateOf(true) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = resizableEnabled) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -223,8 +225,9 @@ class ResizableModifierTest {
                 var resizableEnabled by remember { mutableStateOf(false) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = resizableEnabled) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -286,8 +289,9 @@ class ResizableModifierTest {
             Subspace {
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = true, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = true) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -320,8 +324,9 @@ class ResizableModifierTest {
                 var resizableEnabled by remember { mutableStateOf(true) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = resizableEnabled) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -357,8 +362,9 @@ class ResizableModifierTest {
                 var resizableEnabled by remember { mutableStateOf(false) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = resizableEnabled) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),

@@ -16,6 +16,7 @@
 package androidx.compose.remote.core.operations;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -45,9 +46,6 @@ public class BitmapData extends Operation implements SerializableToString, Seria
     short mType;
     short mEncoding;
     byte @NonNull [] mBitmap;
-
-    /** The max size of width or height */
-    public static final int MAX_IMAGE_DIMENSION = 8000;
 
     /** The data is encoded in the file (default) */
     public static final short ENCODING_INLINE = 0;
@@ -262,8 +260,8 @@ public class BitmapData extends Operation implements SerializableToString, Seria
         }
         if (width < 1
                 || height < 1
-                || height > MAX_IMAGE_DIMENSION
-                || width > MAX_IMAGE_DIMENSION) {
+                || height > Limits.MAX_IMAGE_DIMENSION
+                || width > Limits.MAX_IMAGE_DIMENSION) {
             throw new RuntimeException("Dimension of image is invalid " + width + "x" + height);
         }
         byte[] bitmap = buffer.readBuffer();

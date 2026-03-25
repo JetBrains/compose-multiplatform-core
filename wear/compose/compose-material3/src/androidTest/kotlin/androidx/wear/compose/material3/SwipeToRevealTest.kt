@@ -475,8 +475,15 @@ class SwipeToRevealTest {
     }
 
     @Test
-    fun onAboveVelocityThresholdSmallDistanceSwipe_stateToRevealing() {
+    fun onAboveVelocityRevealingThresholdSmallDistanceSwipe_stateToRevealing() {
         verifyGesture(expectedRevealValue = RightRevealing, enableTouchSlop = false) { density ->
+            swipeLeft(endX = (LARGE_SCREEN_WIDTH_DP - 32) * density, durationMillis = 100L)
+        }
+    }
+
+    @Test
+    fun onAboveVelocityRevealedThresholdSmallDistanceSwipe_stateToRevealing() {
+        verifyGesture(expectedRevealValue = RightRevealed, enableTouchSlop = false) { density ->
             swipeLeft(endX = (LARGE_SCREEN_WIDTH_DP - 32) * density, durationMillis = 30L)
         }
     }
@@ -489,8 +496,15 @@ class SwipeToRevealTest {
     }
 
     @Test
-    fun onAboveVelocityThresholdLongDistanceSwipe_stateToRevealing() {
+    fun onAboveVelocityRevealingThresholdLongDistanceSwipe_stateToRevealing() {
         verifyGesture(expectedRevealValue = RightRevealing, enableTouchSlop = false) { density ->
+            swipeLeft(endX = (LARGE_SCREEN_WIDTH_DP - 64) * density, durationMillis = 100L)
+        }
+    }
+
+    @Test
+    fun onAboveVelocityRevealedThresholdLongDistanceSwipe_stateToRevealing() {
+        verifyGesture(expectedRevealValue = RightRevealed, enableTouchSlop = false) { density ->
             swipeLeft(endX = (LARGE_SCREEN_WIDTH_DP - 64) * density, durationMillis = 30L)
         }
     }

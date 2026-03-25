@@ -24,7 +24,6 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.math.assertRotation
 import androidx.xr.scenecore.ScenePose.HitTestFilter
 import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.runtime.AnchorPlacement as RtAnchorPlacement
@@ -122,9 +121,9 @@ class UtilsTest {
 
         val initialInputRay = Ray(vector0, vector1)
         val currentInputRay = Ray(vector1, vector2)
-        val entityManager = EntityManager()
+        val entityRegistry = EntityRegistry()
         val activitySpace = mock<RtActivitySpace>()
-        entityManager.setEntityForRtEntity(activitySpace, mock<Entity>())
+        entityRegistry.setEntityForRtEntity(activitySpace, mock<Entity>())
         val moveEvent =
             RuntimeMoveEvent(
                     RuntimeMoveEvent.MOVE_STATE_ONGOING,
@@ -138,7 +137,7 @@ class UtilsTest {
                     null,
                     null,
                 )
-                .toMoveEvent(entityManager)
+                .toMoveEvent(entityRegistry)
 
         assertThat(moveEvent.moveState).isEqualTo(MoveEvent.MOVE_STATE_ONGOING)
 
@@ -179,9 +178,9 @@ class UtilsTest {
 
     @Test
     fun verifyRtInputEventToInputEventConversion() {
-        val entityManager = EntityManager()
+        val entityRegistry = EntityRegistry()
         val activitySpace = mock<RtActivitySpace>()
-        entityManager.setEntityForRtEntity(activitySpace, mock<Entity>())
+        entityRegistry.setEntityForRtEntity(activitySpace, mock<Entity>())
         val inputEvent =
             RuntimeInputEvent(
                     RuntimeInputEvent.Source.HANDS,
@@ -192,7 +191,7 @@ class UtilsTest {
                     RuntimeInputEvent.Action.DOWN,
                     emptyList(),
                 )
-                .toInputEvent(entityManager)
+                .toInputEvent(entityRegistry)
         assertThat(inputEvent.source).isEqualTo(InputEvent.Source.HANDS)
         assertThat(inputEvent.pointerType).isEqualTo(InputEvent.Pointer.LEFT)
         assertThat(inputEvent.timestamp).isEqualTo(123456789)
@@ -208,13 +207,13 @@ class UtilsTest {
 
     @Test
     fun verifyRtHitInfoToHitInfoConversion() {
-        val entityManager = EntityManager()
+        val entityRegistry = EntityRegistry()
         val rtMockEntity = mock<RuntimeEntity>()
         val mockEntity = mock<Entity>()
-        entityManager.setEntityForRtEntity(rtMockEntity, mockEntity)
+        entityRegistry.setEntityForRtEntity(rtMockEntity, mockEntity)
         val hitPosition = Vector3(1f, 2f, 3f)
         val transform = Matrix4.Identity
-        val hitInfo = RuntimeHitInfo(rtMockEntity, hitPosition, transform).toHitInfo(entityManager)
+        val hitInfo = RuntimeHitInfo(rtMockEntity, hitPosition, transform).toHitInfo(entityRegistry)
 
         assertThat(hitInfo).isNotNull()
         assertThat(hitInfo!!.inputEntity).isEqualTo(mockEntity)
@@ -224,13 +223,13 @@ class UtilsTest {
 
     @Test
     fun verifyRtHitInfoToHitInfoConversionWhenEntityNotFound() {
-        val entityManager = EntityManager()
+        val entityRegistry = EntityRegistry()
         val rtMockEntity = mock<RuntimeEntity>()
         val hitPosition = Vector3(1f, 2f, 3f)
         val transform = Matrix4.Identity
-        val hitInfo = RuntimeHitInfo(rtMockEntity, hitPosition, transform).toHitInfo(entityManager)
+        val hitInfo = RuntimeHitInfo(rtMockEntity, hitPosition, transform).toHitInfo(entityRegistry)
 
-        // EntityManager does not have the entity for the given RuntimeEntity, so the hit info is
+        // EntityRegistry does not have the entity for the given RuntimeEntity, so the hit info is
         // null.
         assertThat(hitInfo).isNull()
     }
@@ -768,19 +767,5 @@ class UtilsTest {
 
         assertThat(result)
             .isInstanceOf(PerceivedResolutionResult.InvalidRenderViewpoint::class.java)
-    }
-
-    @Test
-    fun rotateEntityToPlane_rotatesToPlan() {
-        // Moving from (0f, 0f, 0f, 1f) int the common space to (0f, 0f, 0f, 1f) in the plane
-        // rotation results in an updated rotation of (-0.707f, 0f, 0f, 0.707f). This quaternion
-        // represents a 90 degree rotation around the x-axis Which is expected when the panel is
-        // rotated into the plane's reference space.
-        val planeRotation = Quaternion(0f, 0f, 0f, 1f)
-        val proposedRotation = Quaternion(0f, 0f, 0f, 1f)
-        val updatedRotation = rotateEntityToPlane(proposedRotation, planeRotation)
-        val expectedRotation = Quaternion(-0.707f, 0f, 0f, 0.707f)
-
-        assertRotation(updatedRotation, expectedRotation)
     }
 }

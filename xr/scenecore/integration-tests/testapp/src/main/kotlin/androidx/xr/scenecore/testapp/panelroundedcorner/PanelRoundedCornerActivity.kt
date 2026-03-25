@@ -76,7 +76,7 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
             PanelEntity.create(
                 session!!,
                 panelEntityView,
-                IntSize2d(640, 480),
+                IntSize2d(640, 600),
                 "panel_entity",
                 Pose(Vector3(0.1f, -0.5f, 0.1f)),
             )

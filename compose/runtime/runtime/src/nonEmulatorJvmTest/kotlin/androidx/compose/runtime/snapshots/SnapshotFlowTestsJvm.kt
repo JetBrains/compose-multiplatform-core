@@ -51,6 +51,7 @@ class SnapshotFlowTestsJvm {
      * the [SnapshotFlowManager] backing the [snapshotFlow] are determined by
      * [snapshotFlowManagerKind].
      */
+    @OptIn(ExperimentalComposeRuntimeApi::class)
     private fun snapshotFlowManagerRaceTestsImpl(snapshotFlowManagerKind: SnapshotFlowManagerKind) =
         runBlocking {
             (0 until 100).forEach { _ ->

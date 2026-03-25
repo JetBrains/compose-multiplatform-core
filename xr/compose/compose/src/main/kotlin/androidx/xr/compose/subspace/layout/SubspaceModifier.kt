@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,6 +35,9 @@ public interface SubspaceModifier {
     /**
      * Accumulates a value starting with [initial] and applying [operation] to the current value and
      * each [SubspaceModifierNodeElement] from outside in.
+     *
+     * @param initial initial value for the accumulation.
+     * @param operation function to apply to the current accumulated value and the next element.
      */
     public fun <R> foldIn(initial: R, operation: (R, SubspaceModifierNodeElement<Node>) -> R): R =
         initial
@@ -42,6 +45,9 @@ public interface SubspaceModifier {
     /**
      * Accumulates a value starting with [initial] and applying [operation] to the current value and
      * each [SubspaceModifierNodeElement] from inside out.
+     *
+     * @param initial initial value for the accumulation.
+     * @param operation function to apply to the next element and the current accumulated value.
      */
     public fun <R> foldOut(initial: R, operation: (SubspaceModifierNodeElement<Node>, R) -> R): R =
         initial
@@ -49,12 +55,16 @@ public interface SubspaceModifier {
     /**
      * Returns `true` if [predicate] returns true for any [SubspaceModifierNodeElement] in this
      * [SubspaceModifier].
+     *
+     * @param predicate condition to evaluate for each element.
      */
     public fun any(predicate: (SubspaceModifierNodeElement<Node>) -> Boolean): Boolean = false
 
     /**
      * Returns `true` if [predicate] returns true for all [SubspaceModifierNodeElement]s in this
      * [SubspaceModifier] or if this [SubspaceModifier] contains no Elements.
+     *
+     * @param predicate condition to evaluate for each element.
      */
     public fun all(predicate: (SubspaceModifierNodeElement<Node>) -> Boolean): Boolean = true
 
@@ -62,6 +72,8 @@ public interface SubspaceModifier {
      * Concatenates this modifier with another.
      *
      * Returns a [SubspaceModifier] representing this modifier followed by [other] in sequence.
+     *
+     * @param other [SubspaceModifier] to concatenate to this one.
      */
     public infix fun then(other: SubspaceModifier): SubspaceModifier =
         if (other === SubspaceModifier) this else CombinedSubspaceModifier(this, other)
@@ -204,32 +216,3 @@ internal class CombinedSubspaceModifier(
             } +
             "]"
 }
-
-/**
- * Generates a lazy sequence that walks up the node tree to the root.
- *
- * If this node is the root, an empty sequence is returned.
- */
-internal fun SubspaceModifier.Node.traverseAncestors(): Sequence<SubspaceModifier.Node> {
-    return generateSequence(seed = parent) { it.parent }
-}
-
-/** Generates a sequence with self and elements up the node tree to the root. */
-internal fun SubspaceModifier.Node.traverseSelfThenAncestors(): Sequence<SubspaceModifier.Node> =
-    sequenceOf(this) + traverseAncestors()
-
-/**
- * Generates a lazy sequence that walks down the node tree.
- *
- * If this node is a leaf node, an empty sequence is returned.
- */
-internal fun SubspaceModifier.Node.traverseDescendants(): Sequence<SubspaceModifier.Node> {
-    return generateSequence(seed = child) { it.child }
-}
-
-/** Generates a sequence with self and elements down the node tree. */
-internal fun SubspaceModifier.Node.traverseSelfThenDescendants(): Sequence<SubspaceModifier.Node> =
-    sequenceOf(this) + traverseDescendants()
-
-/** Returns the first element of type [T] in the sequence, or `null` if none match. */
-internal inline fun <reified T> Sequence<*>.findInstance(): T? = firstOrNull { it is T } as T?

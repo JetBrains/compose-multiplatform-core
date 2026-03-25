@@ -18,6 +18,7 @@
 package androidx.binarycompatibilityvalidator
 
 import java.io.File
+import kotlin.text.removeSuffix
 import org.jetbrains.kotlin.library.abi.AbiClass
 import org.jetbrains.kotlin.library.abi.AbiClassifierReference.ClassReference
 import org.jetbrains.kotlin.library.abi.AbiClassifierReference.TypeParameterReference
@@ -59,8 +60,13 @@ class BinaryCompatibilityChecker(
                         LibraryAbiReader.readAbiInfo(it)
                             .allDeclarations()
                             .filterIsInstance<AbiClass>()
-                    } catch (e: IllegalArgumentException) {
-                        // Malformed library, probably missing IR and can't be used
+                    } catch (_: IllegalStateException) {
+                        // Malformed library, probably missing IR and can't be used.
+                        // Happens for cinterop dependencies (e.g.
+                        // atomicfu-linuxX64Cinterop-interopMain-0.28.0.klib)
+                        // which we don't need for BCV. If a necessary library fails to load, we'll
+                        // catch it later
+                        // by failing symbol lookup with an exception.
                         listOf()
                     }
                 }
@@ -517,9 +523,9 @@ private fun DecoratedAbiValueParameter.isBinaryCompatibleWith(
     errors: CompatibilityErrors,
 ) {
     type.isBinaryCompatibleWith(otherParam.type, parentQualifiedName, errors)
-    if (isVararg != otherParam.isVararg) {
+    if (effectiveIsVararg != otherParam.effectiveIsVararg) {
         errors.add(
-            "isVararg changed from ${otherParam.isVararg} to $isVararg for parameter " +
+            "isVararg changed from ${otherParam.effectiveIsVararg} to $effectiveIsVararg for parameter " +
                 "${asString()} of $parentQualifiedName"
         )
     }
@@ -664,7 +670,8 @@ fun AbiType.asString(): String =
             val builder = StringBuilder()
             when (val classifier = classifierReference) {
                 is ClassReference -> {
-                    builder.append(classifier.className)
+                    // b/493871877
+                    builder.append(classifier.className.toString().removeSuffix("..."))
                     if (arguments.isNotEmpty()) {
                         builder.append("<")
                         builder.append(
@@ -747,7 +754,7 @@ private fun <T> List<T>.isBinaryCompatibleWith(
 ) {
     val oldEntities = oldEntitiesList.associateBy { it.uniqueId() }
     val newEntities = associateBy { it.uniqueId() }
-    val removedEntities = oldEntities.keys - newEntities.keys
+    val removedEntities = oldEntities.keys.toSet() - newEntities.keys.toSet()
     removedEntities.forEach { errors.add("Removed $entityName $it from $parentQualifiedName") }
     val addedEntities = newEntities.keys - oldEntities.keys
     val disallowedAdditions = addedEntities.filterNot { newEntities[it]!!.isAllowedAddition() }
@@ -928,3 +935,7 @@ fun AbiFunction.contextReceiverParametersCount(): Int =
 
 private fun AbiFunction.hasExtensionReceiverParameter() =
     valueParameters.any { it.kind == AbiValueParameterKind.EXTENSION_RECEIVER }
+
+// b/493871877
+private val AbiValueParameter.effectiveIsVararg
+    get() = isVararg || type.className.toString().endsWith("...")

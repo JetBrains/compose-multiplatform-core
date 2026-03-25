@@ -68,10 +68,10 @@ import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
-import androidx.xr.runtime.FieldOfView
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.XrLog
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -109,7 +109,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 this,
                 Config(
                     anchorPersistence = AnchorPersistenceMode.LOCAL,
-                    deviceTracking = DeviceTrackingMode.LAST_KNOWN,
+                    deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
                 ),
                 onSessionAvailable = { session ->
                     this.session = session
@@ -159,6 +159,9 @@ class PersistentAnchorsActivity : ComponentActivity() {
         }
     }
 
+    // TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
+    // removed.
+    @Suppress("DEPRECATION")
     private fun updatePanelInViewStatusUpdates(cameraStates: List<RenderViewpoint.State>) {
         val mainPanelEntity = session.scene.mainPanelEntity
         val panelPoseInActivitySpace = mainPanelEntity.getPose()
@@ -173,7 +176,13 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 val isInView =
                     isPanelInView(
                         cameraPoseInPerceptionSpace = cameraState.pose,
-                        cameraFov = cameraState.fieldOfView,
+                        cameraFov =
+                            FieldOfView(
+                                cameraState.fieldOfView.angleLeft,
+                                cameraState.fieldOfView.angleRight,
+                                cameraState.fieldOfView.angleUp,
+                                cameraState.fieldOfView.angleDown,
+                            ),
                         panelPoseInPerceptionSpace = panelPoseInPerceptionSpace,
                         panelSizeInMeters = panelSizeInMeters,
                     )
@@ -406,11 +415,11 @@ class PersistentAnchorsActivity : ComponentActivity() {
         when (anchorResult) {
             is AnchorCreateSuccess -> createAnchorPanel(anchorResult.anchor)
             is AnchorCreateResourcesExhausted -> {
-                Log.error { "Failed to create anchor: anchor resources exhausted." }
+                XrLog.error { "Failed to create anchor: anchor resources exhausted." }
                 Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
             }
             else -> {
-                Log.error { "Failed to create anchor: ${anchorResult::class.simpleName}" }
+                XrLog.error { "Failed to create anchor: ${anchorResult::class.simpleName}" }
                 Toast.makeText(this, "Anchor failed to create.", Toast.LENGTH_LONG).show()
             }
         }
@@ -475,7 +484,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 anchor.persist()
                 uuids.emit(Anchor.getPersistedAnchorUuids(session))
             } catch (e: RuntimeException) {
-                Log.error(e) { "Error persisting anchor: ${e.message}" }
+                XrLog.error(e) { "Error persisting anchor: ${e.message}" }
             }
         }
     }
@@ -495,7 +504,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
             try {
                 Anchor.load(session, uuid)
             } catch (e: IllegalStateException) {
-                Log.error(e) { "Failed to create anchor: ${e.message}" }
+                XrLog.error(e) { "Failed to create anchor: ${e.message}" }
                 return
             }
 
@@ -508,15 +517,15 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 }
             }
             is AnchorCreateResourcesExhausted -> {
-                Log.error { "Failed to load anchor: anchor resources exhausted." }
+                XrLog.error { "Failed to load anchor: anchor resources exhausted." }
                 Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
             }
             is AnchorLoadInvalidUuid -> {
-                Log.error { "Failed to load anchor: invalid UUID." }
+                XrLog.error { "Failed to load anchor: invalid UUID." }
                 Toast.makeText(this, "Invalid UUID.", Toast.LENGTH_LONG).show()
             }
             else -> {
-                Log.error { "Failed to load anchor: ${anchorResult::class.simpleName}" }
+                XrLog.error { "Failed to load anchor: ${anchorResult::class.simpleName}" }
                 Toast.makeText(this, "Anchor failed to load.", Toast.LENGTH_LONG).show()
             }
         }

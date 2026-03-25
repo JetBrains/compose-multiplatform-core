@@ -34,7 +34,12 @@ import java.util.concurrent.atomic.AtomicReference
  * integration tests.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeActivitySpace : FakeSystemSpaceEntity(), ActivitySpace {
+public class FakeActivitySpace() : FakeSystemSpaceEntity(), ActivitySpace {
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Deprecated(
+        "unscaledGravityAlignedActivitySpace flag deprecated, scheduled for removal in future release."
+    )
+    public constructor(unscaledGravityAlignedActivitySpace: Boolean) : this()
 
     private val _bounds: AtomicReference<Dimensions> =
         AtomicReference<Dimensions>(

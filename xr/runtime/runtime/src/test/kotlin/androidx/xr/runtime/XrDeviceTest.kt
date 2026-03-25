@@ -17,8 +17,6 @@ package androidx.xr.runtime
 
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.testing.FakeLifecycleManager
-import androidx.xr.arcore.testing.FakePerceptionRuntime
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -46,7 +44,7 @@ class XrDeviceTest {
         activity = activityController.get()
 
         val shadowApplication = shadowOf(activity.application)
-        FakeLifecycleManager.TestPermissions.forEach { permission ->
+        StubPerceptionRuntime.TestPermissions.forEach { permission ->
             shadowApplication.grantPermissions(permission)
         }
     }
@@ -56,7 +54,7 @@ class XrDeviceTest {
         activityController.create()
         session = createSession()
         session.runtimes
-            .filterIsInstance<FakePerceptionRuntime>()
+            .filterIsInstance<StubPerceptionRuntime>()
             .single()
             .xrDevicePreferredDisplayBlendMode = DisplayBlendMode.ADDITIVE
 
@@ -71,6 +69,26 @@ class XrDeviceTest {
         val xrDevice = XrDevice.getCurrentDevice(session)
 
         assertThat(xrDevice.getLifecycle()).isEqualTo((session.lifecycleOwner.lifecycle))
+    }
+
+    @OptIn(ExperimentalXrDeviceLifecycleApi::class)
+    @Test
+    fun getCurrentDevice_returnsCachedDevice() {
+        val device1 = XrDevice.getCurrentDevice(activity)
+        val device2 = XrDevice.getCurrentDevice(activity)
+
+        assertThat(device1).isSameInstanceAs(device2)
+    }
+
+    @OptIn(ExperimentalXrDeviceLifecycleApi::class)
+    @Test
+    fun getCurrentDevice_returnsDifferentDeviceForDifferentContext() {
+        val device1 = XrDevice.getCurrentDevice(activity)
+        val activityController2 = Robolectric.buildActivity(ComponentActivity::class.java)
+        val activity2 = activityController2.get()
+        val device2 = XrDevice.getCurrentDevice(activity2)
+
+        assertThat(device1).isNotSameInstanceAs(device2)
     }
 
     private fun createSession(coroutineDispatcher: CoroutineDispatcher = testDispatcher): Session {

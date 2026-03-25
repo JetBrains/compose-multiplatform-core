@@ -29,9 +29,6 @@ internal class OpenXrScenePose(
 
     private val openXrScenePoseHelper: OpenXrScenePoseHelper = OpenXrScenePoseHelper(activitySpace)
 
-    override val poseInActivitySpace: Pose
-        get() = openXrScenePoseHelper.getPoseInActivitySpace(poseInOpenXrReferenceSpace)
-
     override val activitySpacePose: Pose
         get() = openXrScenePoseHelper.getActivitySpacePose(poseInOpenXrReferenceSpace)
 

@@ -18,6 +18,7 @@
 
 package androidx.tracing.wire
 
+import androidx.tracing.AbstractTraceSink
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -35,12 +36,15 @@ private fun File.perfettoTraceFile(): File {
     return traceFile
 }
 
+// StreamFiles is not relevant because the provided File represents a directory
+// in which new trace files are dynamically created, rather than a specific file to read/write.
+@Suppress("StreamFiles")
 @JvmOverloads
 public fun TraceSink(
     directory: File,
     sequenceId: Int,
     coroutineContext: CoroutineContext = Dispatchers.IO,
-): TraceSink =
+): AbstractTraceSink =
     TraceSink(
         sequenceId = sequenceId,
         bufferedSink = directory.perfettoTraceFile().appendingSink().buffer(),

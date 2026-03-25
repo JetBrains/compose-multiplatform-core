@@ -16,6 +16,7 @@
 
 package androidx.appsearch.platformstorage.converter;
 
+import android.content.Context;
 import android.os.Build;
 
 import androidx.annotation.DoNotInline;
@@ -58,12 +59,14 @@ public final class SetSchemaRequestToPlatformConverter {
      */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static android.app.appsearch.@NonNull SetSchemaRequest toPlatformSetSchemaRequest(
+            @NonNull Context context,
             @NonNull SetSchemaRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         android.app.appsearch.SetSchemaRequest.Builder platformBuilder =
                 new android.app.appsearch.SetSchemaRequest.Builder();
         for (AppSearchSchema jetpackSchema : jetpackRequest.getSchemas()) {
-            platformBuilder.addSchemas(SchemaToPlatformConverter.toPlatformSchema(jetpackSchema));
+            platformBuilder.addSchemas(
+                    SchemaToPlatformConverter.toPlatformSchema(context, jetpackSchema));
         }
         for (String schemaNotDisplayedBySystem : jetpackRequest.getSchemasNotDisplayedBySystem()) {
             platformBuilder.setSchemaTypeDisplayedBySystem(

@@ -46,10 +46,10 @@ import androidx.xr.arcore.testapp.helloar.rendering.AnchorRenderer
 import androidx.xr.arcore.testapp.helloar.rendering.PlaneRenderer
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Config
@@ -77,7 +77,7 @@ class HelloArPlaneActivity : ComponentActivity() {
                 this,
                 Config(
                     planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                    deviceTracking = DeviceTrackingMode.LAST_KNOWN,
+                    deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
                 ),
                 onSessionAvailable = { session ->
                     this.session = session
@@ -91,8 +91,8 @@ class HelloArPlaneActivity : ComponentActivity() {
                         Subspace {
                             SpatialPanel(
                                 modifier =
-                                    SubspaceModifier.size(DpVolumeSize(640.dp, 480.dp, 0.dp)),
-                                dragPolicy = MovePolicy(),
+                                    SubspaceModifier.size(DpVolumeSize(640.dp, 480.dp, 0.dp))
+                                        .movable(),
                                 resizePolicy = ResizePolicy(),
                             ) {
                                 HelloPlanes(session)
@@ -109,6 +109,8 @@ class HelloArPlaneActivity : ComponentActivity() {
     fun HelloPlanes(session: Session) {
         val state by session.state.collectAsStateWithLifecycle()
         val perceptionState = state.perceptionState
+        val arDevice = androidx.xr.arcore.ArDevice.getInstance(session)
+        val arDeviceState by arDevice.state.collectAsStateWithLifecycle()
         var title = intent.getStringExtra("TITLE")
         if (title == null) title = "Hello AR Plane"
         val blendMode = XrDevice.getCurrentDevice(session).getPreferredDisplayBlendMode()
@@ -144,6 +146,20 @@ class HelloArPlaneActivity : ComponentActivity() {
                     Text(
                         modifier = Modifier.padding(start = 10.dp).weight(3f),
                         text = "${state.timeMark}",
+                        fontSize = 20.sp,
+                    )
+                }
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        modifier = Modifier.padding(start = 10.dp).weight(1f),
+                        text = "Tracking State:",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = 10.dp).weight(3f),
+                        text = "${arDeviceState.trackingState}",
                         fontSize = 20.sp,
                     )
                 }

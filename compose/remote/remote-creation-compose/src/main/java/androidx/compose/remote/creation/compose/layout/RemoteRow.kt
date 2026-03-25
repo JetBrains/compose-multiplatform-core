@@ -31,6 +31,7 @@ import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.platform.LocalLayoutDirection
 
 /** Utility modifier to record the layout information */
 internal class RemoteComposeRowModifier(
@@ -42,7 +43,7 @@ internal class RemoteComposeRowModifier(
         drawIntoRemoteCanvas { canvas ->
             canvas.document.startRow(
                 modifier,
-                horizontalArrangement.toRemote(),
+                horizontalArrangement.toRemote(this.layoutDirection),
                 verticalAlignment.toRemote(),
             )
             this@draw.drawContent()
@@ -86,7 +87,12 @@ public fun RemoteRow(
     content: @Composable RemoteRowScope.() -> Unit,
 ) {
     if (currentComposer.applier is RemoteComposeApplierV2) {
-        RemoteRowV2(modifier, horizontalArrangement, verticalAlignment) {
+        RemoteRowV2(
+            modifier,
+            horizontalArrangement,
+            verticalAlignment,
+            LocalLayoutDirection.current,
+        ) {
             // Bridge V1 scope to V2 scope
             val v1Scope = remember { RemoteRowScope() }
             v1Scope.content()
@@ -104,7 +110,7 @@ public fun RemoteRow(
             )
             .then(modifier.toComposeUiLayout())
 
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     androidx.compose.foundation.layout.Row(
         composeModifiers,
         horizontalArrangement = horizontalArrangement.toComposeUi(),

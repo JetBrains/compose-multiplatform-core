@@ -146,8 +146,8 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
          *
          * Whether a call can make a video call is ultimately controlled by
          * [androidx.core.telecom.CallAttributesCompat]s capability
-         * [androidx.core.telecom.CallAttributesCompat.CallType]#[CALL_TYPE_VIDEO_CALL], which
-         * indicates that particular call is currently capable of making a video call.
+         * [androidx.core.telecom.CallAttributesCompat.Companion.CallType]#[CALL_TYPE_VIDEO_CALL],
+         * which indicates that particular call is currently capable of making a video call.
          */
         public const val CAPABILITY_SUPPORTS_VIDEO_CALLING: Int = 1 shl 1
 
@@ -156,7 +156,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
          * a call can be streamed from a root device to another device to continue the call without
          * completely transferring it. The call continues to take place on the source device,
          * however media and control are streamed to another device.
-         * [androidx.core.telecom.CallAttributesCompat.CallType]#[CAPABILITY_SUPPORTS_CALL_STREAMING]
+         * [androidx.core.telecom.CallAttributesCompat.Companion.CallType]#[CAPABILITY_SUPPORTS_CALL_STREAMING]
          * must also be set on per call basis in the event an application wants to gate this
          * capability on a stricter basis.
          */

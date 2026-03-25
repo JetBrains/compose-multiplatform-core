@@ -47,7 +47,7 @@ class WearWidgetProviderInfoTest {
                     context.packageManager,
                     service,
                     serviceInfo,
-                    defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_FULLSCREEN,
+                    defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_TILE_COMPAT,
                     defaultGroup = "default.group",
                 )
         assertThat(info.providerService).isEqualTo(service)
@@ -202,7 +202,7 @@ class WearWidgetProviderInfoTest {
                     context.packageManager,
                     service,
                     serviceInfo,
-                    defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_FULLSCREEN,
+                    defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_TILE_COMPAT,
                     defaultGroup = "default.group",
                 )
 
@@ -240,7 +240,7 @@ class WearWidgetProviderInfoTest {
                     context.packageManager,
                     service,
                     serviceInfo,
-                    defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_FULLSCREEN,
+                    defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_TILE_COMPAT,
                     defaultGroup = "default.group",
                 )
 
@@ -308,7 +308,7 @@ class WearWidgetProviderInfoTest {
     }
 
     @Test(expected = XmlPullParserException::class)
-    fun parseWearWidgetProviderInfo_withFullscreenContainer_failsValidation() {
+    fun parseWearWidgetProviderInfo_withTileCompatContainer_failsValidation() {
         val serviceInfo = createServiceInfo(service)
         getXml(R.xml.wear_widget_provider_info_fullscreen_container)
             .parseWearWidgetProviderInfo(

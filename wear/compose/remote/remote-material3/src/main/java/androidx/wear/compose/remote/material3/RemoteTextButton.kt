@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.wear.compose.remote.material3
 
-import android.annotation.SuppressLint
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
@@ -70,8 +67,6 @@ import androidx.wear.compose.material3.TextButtonDefaults
  */
 @Composable
 @RemoteComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("RestrictedApiAndroidX")
 public fun RemoteTextButton(
     onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
@@ -100,10 +95,8 @@ public fun RemoteTextButton(
 }
 
 /** Contains the default values used by [RemoteTextButton]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object RemoteTextButtonDefaults {
     /** Recommended [RemoteShape] for [RemoteTextButton]. */
-    @Suppress("RestrictedApiAndroidX")
     public val shape: RemoteRoundedCornerShape
         get() = RemoteCircleShape
 
@@ -186,7 +179,6 @@ public object RemoteTextButtonDefaults {
  * @param disabledContentColor the content color of this text button when not enabled.
  */
 @Immutable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteTextButtonColors(
     public val containerColor: RemoteColor,
     public val contentColor: RemoteColor,
@@ -194,13 +186,11 @@ public class RemoteTextButtonColors(
     public val disabledContentColor: RemoteColor,
 ) {
     @Stable
-    @SuppressLint("RestrictedApiAndroidX")
     internal fun contentColor(enabled: RemoteBoolean = true.rb): RemoteColor {
         return enabled.select(ifTrue = contentColor, ifFalse = disabledContentColor)
     }
 
     @Stable
-    @SuppressLint("RestrictedApiAndroidX")
     internal fun containerColor(enabled: RemoteBoolean = true.rb): RemoteColor {
         return enabled.select(ifTrue = containerColor, ifFalse = disabledContainerColor)
     }

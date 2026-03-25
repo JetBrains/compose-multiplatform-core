@@ -16,6 +16,7 @@
 
 package androidx.tracing.wire
 
+import androidx.tracing.AbstractTraceSink
 import androidx.tracing.TraceContext
 import kotlin.coroutines.CoroutineContext
 import kotlinx.benchmark.Benchmark
@@ -37,12 +38,20 @@ import okio.buffer
 open class TracingJvmBenchmark {
     private val disabledTraceContext =
         buildTraceContext(sink = buildInMemorySink(), isEnabled = false)
+    private val disabledRingBufferTraceContext =
+        buildTraceContext(sink = buildInMemoryRingBufferSink(), isEnabled = false)
 
     private val disabledTracer = disabledTraceContext.createTracer()
+    private val disabledRingBufferTracer = disabledRingBufferTraceContext.createTracer()
 
     private val enabledTraceContext =
         buildTraceContext(sink = buildInMemorySink(), isEnabled = true)
+    private val enabledRingBufferTraceContext =
+        buildTraceContext(sink = buildInMemoryRingBufferSink(), isEnabled = true)
+
     private val enabledTracer = enabledTraceContext.createTracer()
+    private val enabledRingBufferTracer = enabledRingBufferTraceContext.createTracer()
+
     private val category = "Tests"
 
     init {
@@ -69,8 +78,22 @@ open class TracingJvmBenchmark {
         }
     }
 
+    @Benchmark
+    open fun traceSectionRingBufferDisabled() {
+        disabledRingBufferTracer.trace(category = category, name = "benchmark") {
+            // Do nothing
+        }
+    }
+
+    @Benchmark
+    open fun traceSectionRingBufferEnabled() {
+        enabledRingBufferTracer.trace(category = category, name = "benchmark") {
+            // Do nothing
+        }
+    }
+
     private fun buildTraceContext(
-        sink: TraceSink,
+        sink: AbstractTraceSink,
         @Suppress("SameParameterValue") isEnabled: Boolean,
     ): TraceContext {
         return TraceContext(sink = sink, isEnabled = isEnabled)
@@ -82,5 +105,9 @@ open class TracingJvmBenchmark {
             bufferedSink = blackholeSink().buffer(),
             coroutineContext = coroutineContext,
         )
+    }
+
+    fun buildInMemoryRingBufferSink(): AbstractTraceSink {
+        return InMemoryRingBufferTraceSink(capacityInBytes = 5_000_000, sequenceId = 1)
     }
 }

@@ -534,35 +534,50 @@ class CameraControllerTest {
 
     @UiThreadTest
     @Test
-    fun sensorRotationChanges_useCaseTargetRotationUpdated() {
+    fun getBoundSessionConfig_autoRotationEnabledIsTrue() {
+        // Arrange.
+        completeCameraInitialization()
+
         // Act.
-        controller.mDeviceRotationListener.onRotationChanged(Surface.ROTATION_180)
+        val sessionConfig = controller.getBoundSessionConfig()
 
         // Assert.
-        assertThat(controller.mImageAnalysis.targetRotation).isEqualTo(Surface.ROTATION_180)
-        assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_180)
-        val videoConfig = controller.mVideoCapture.currentConfig as ImageOutputConfig
-        assertThat(videoConfig.targetRotation).isEqualTo(Surface.ROTATION_180)
+        assertThat(sessionConfig?.isAutoRotationEnabled).isTrue()
     }
 
+    @UiThreadTest
     @Test
-    fun useCaseIsRecreated_rotationIsRetained() {
-        // Act: Manually trigger the rotation listener to set the internal state.
-        controller.mDeviceRotationListener.onRotationChanged(Surface.ROTATION_90)
+    fun setAutoRotationEnabledToFalse_getBoundSessionConfig_autoRotationEnabledIsFalse() {
+        // Arrange.
+        completeCameraInitialization()
 
-        // Assert: The existing ImageCapture instance has the correct rotation.
-        assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_90)
+        // Act.
+        controller.isAutoRotationEnabled = false
+        val sessionConfig = controller.getBoundSessionConfig()
 
-        // --- Test with ROTATION_270 ---
+        // Assert.
+        assertThat(controller.isAutoRotationEnabled).isFalse()
+        assertThat(sessionConfig?.isAutoRotationEnabled).isFalse()
+    }
 
-        // Act: Manually trigger the listener with a different rotation.
-        controller.mDeviceRotationListener.onRotationChanged(Surface.ROTATION_270)
+    @UiThreadTest
+    @Test
+    fun setAutoRotationEnabled_dynamicallyUpdatesBoundSessionConfig() {
+        // Arrange.
+        completeCameraInitialization()
+        assertThat(controller.getBoundSessionConfig()?.isAutoRotationEnabled).isTrue()
 
-        // Act: Recreate the ImageCapture use case by setting a different capture mode.
-        controller.imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+        // Act: Disable auto-rotation.
+        controller.isAutoRotationEnabled = false
 
-        // Assert: The new ImageCapture instance has the updated rotation.
-        assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_270)
+        // Assert: Bound SessionConfig is updated.
+        assertThat(controller.getBoundSessionConfig()?.isAutoRotationEnabled).isFalse()
+
+        // Act: Re-enable auto-rotation.
+        controller.isAutoRotationEnabled = true
+
+        // Assert: Bound SessionConfig is updated again.
+        assertThat(controller.getBoundSessionConfig()?.isAutoRotationEnabled).isTrue()
     }
 
     @UiThreadTest

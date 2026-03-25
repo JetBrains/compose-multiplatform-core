@@ -34,6 +34,8 @@ import androidx.annotation.RestrictTo
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val FRAMES_EXPECTED_SIZE: Int = 4
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val ATTRIBUTES_EXPECTED_SIZE: Int = 4
+
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val LAST_INDEX_WHEN_EMPTY: Int = -1
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val LAST_CATEGORY_INDEX: Int = 0
@@ -49,8 +51,6 @@ import androidx.annotation.RestrictTo
  * Code outside of tracing-driver implementation should only ever consume these objects, not produce
  * them.
  */
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 @DelicateTracingApi
 public class TraceEvent
 internal constructor(
@@ -172,6 +172,20 @@ internal constructor(
     @field:Suppress("MutableBareField") // public / mutable to minimize overhead
     @JvmField
     public var lastFrameIndex: Int,
+
+    /** The list of trace attributes associated with the trace. */
+    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
+    @JvmField
+    public var attributes: MutableList<AttributeEntry>,
+
+    /**
+     * Keeping track of the index separately for [attributes], because the `MutableList` is
+     * pre-allocated with sentinel objects for performance reasons. This `index` can be used to
+     * determine the true `size` of the [attributes] `MutableList`.
+     */
+    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
+    @JvmField
+    public var lastAttributeIndex: Int,
 ) {
     public constructor() :
         this(
@@ -192,14 +206,18 @@ internal constructor(
             lastCategoryIndex = LAST_CATEGORY_INDEX,
             frames = MutableList(size = FRAMES_EXPECTED_SIZE) { Frame() },
             lastFrameIndex = LAST_INDEX_WHEN_EMPTY,
+            attributes = MutableList(ATTRIBUTES_EXPECTED_SIZE) { AttributeEntry() },
+            lastAttributeIndex = LAST_INDEX_WHEN_EMPTY,
         )
 
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setPreamble(trackDescriptor: TrackDescriptor) {
         this.trackDescriptor = trackDescriptor
         this.timestamp = nanoTime()
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setBeginSection(trackUuid: Long, name: String) {
         type = TRACE_EVENT_TYPE_BEGIN
         this.trackUuid = trackUuid
@@ -208,6 +226,7 @@ internal constructor(
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setBeginSectionWithFlows(
         trackUuid: Long,
         name: String,
@@ -221,6 +240,7 @@ internal constructor(
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setEndSection(trackUuid: Long) {
         type = TRACE_EVENT_TYPE_END
         this.trackUuid = trackUuid
@@ -228,6 +248,7 @@ internal constructor(
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setInstant(trackUuid: Long, name: String) {
         type = TRACE_EVENT_TYPE_INSTANT
         this.trackUuid = trackUuid
@@ -236,6 +257,7 @@ internal constructor(
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setCounterLong(trackUuid: Long, value: Long) {
         type = TRACE_EVENT_TYPE_COUNTER
         this.trackUuid = trackUuid
@@ -244,6 +266,7 @@ internal constructor(
     }
 
     @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
     internal inline fun setCounterDouble(trackUuid: Long, value: Double) {
         type = TRACE_EVENT_TYPE_COUNTER
         this.trackUuid = trackUuid
@@ -254,6 +277,83 @@ internal constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public inline fun forEachMetadataEntry(block: (MetadataEntry) -> Unit) {
         repeat(lastMetadataEntryIndex + 1) { block(metadataEntries[it]) }
+    }
+
+    public fun copyFrom(src: TraceEvent) {
+        type = src.type
+        trackUuid = src.trackUuid
+        timestamp = src.timestamp
+        name = src.name
+        counterDoubleValue = src.counterDoubleValue
+        counterLongValue = src.counterLongValue
+        correlationId = src.correlationId
+        correlationIdString = src.correlationIdString
+        flowIds = src.flowIds
+        trackDescriptor = src.trackDescriptor
+        primaryCategory = src.primaryCategory
+
+        // Metadata
+        lastMetadataEntryIndex = src.lastMetadataEntryIndex
+        while (metadataEntries.size <= lastMetadataEntryIndex) {
+            metadataEntries.add(MetadataEntry())
+        }
+        for (i in 0..lastMetadataEntryIndex) {
+            val s = src.metadataEntries[i]
+            val d = metadataEntries[i]
+            d.name = s.name
+            d.type = s.type
+            d.booleanValue = s.booleanValue
+            d.longValue = s.longValue
+            d.doubleValue = s.doubleValue
+            d.stringValue = s.stringValue
+        }
+        for (i in (lastMetadataEntryIndex + 1) until metadataEntries.size) {
+            metadataEntries[i].reset()
+        }
+
+        // Categories
+        lastCategoryIndex = src.lastCategoryIndex
+        while (categories.size <= lastCategoryIndex) {
+            categories.add(DEFAULT_STRING)
+        }
+        for (i in 0..lastCategoryIndex) {
+            categories[i] = src.categories[i]
+        }
+        for (i in (lastCategoryIndex + 1) until categories.size) {
+            categories[i] = DEFAULT_STRING
+        }
+
+        // Frames
+        lastFrameIndex = src.lastFrameIndex
+        while (frames.size <= lastFrameIndex) {
+            frames.add(Frame())
+        }
+        for (i in 0..lastFrameIndex) {
+            val s = src.frames[i]
+            val d = frames[i]
+            d.name = s.name
+            d.sourceFile = s.sourceFile
+            d.lineNumber = s.lineNumber
+        }
+        for (i in (lastFrameIndex + 1) until frames.size) {
+            frames[i].reset()
+        }
+
+        // Attributes
+        lastAttributeIndex = src.lastAttributeIndex
+        while (attributes.size <= lastAttributeIndex) {
+            attributes.add(AttributeEntry())
+        }
+        for (i in 0..lastAttributeIndex) {
+            val s = src.attributes[i]
+            val d = attributes[i]
+            d.name = s.name
+            d.longValue = s.longValue
+            d.stringValue = s.stringValue
+        }
+        for (i in (lastAttributeIndex + 1) until attributes.size) {
+            attributes[i].reset()
+        }
     }
 
     public fun reset() {
@@ -290,6 +390,13 @@ internal constructor(
                 frames = frames.subList(0, FRAMES_EXPECTED_SIZE)
             }
             lastFrameIndex = LAST_INDEX_WHEN_EMPTY
+        }
+        if (lastAttributeIndex >= 0) {
+            repeat(lastAttributeIndex + 1) { attributes[it].reset() }
+            if (lastAttributeIndex >= ATTRIBUTES_EXPECTED_SIZE) {
+                attributes = attributes.subList(0, ATTRIBUTES_EXPECTED_SIZE)
+            }
+            lastAttributeIndex = LAST_INDEX_WHEN_EMPTY
         }
     }
 }

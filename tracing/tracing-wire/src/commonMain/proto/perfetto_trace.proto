@@ -317,6 +317,38 @@ message TrackEventDefaults {
   uint64 track_uuid = 11;
 }
 
+// Arbitrary key value pairs which can attached to a trace to provide context
+// about any facet of the trace. This can include, what data it contains,
+// properties of the host / machine the trace was collected on, and other
+// interesting information about a trace.
+///
+// Examples include:
+// gradle_version = "9.0.10-alpha01"
+// java_major_version = 24
+///
+// All keys get prefixed with `trace_attribute.` in the UI and in
+// `traceprocessor`. If there are multiple trace attribute packets that use the
+// same key, then the latest value wins.
+// These key value pairs show up in the `Overview` section in
+// Perfetto UI. Additionally, these key, value pairs can also be queried using
+// Perfetto SQL by using the following query:
+///
+//`SELECT * FROM metadata WHERE name GLOB 'trace_attribute.*';`
+
+message TraceAttributes {
+  message Attribute {
+    // The key
+    optional string key = 1;
+    // The value
+    oneof value {
+      int64 long_value = 2;
+      string string_value = 3;
+    }
+  }
+
+  repeated Attribute attribute = 1;
+}
+
 message TracePacket {
   uint64 timestamp = 8;
   uint32 timestamp_clock_id = 58;
@@ -324,6 +356,8 @@ message TracePacket {
     TrackEvent track_event = 11;
     TrackDescriptor track_descriptor = 60;
     TraceUuid trace_uuid = 89;
+    TraceAttributes trace_attributes = 126;
+
     bytes compressed_packets = 50; // kept for testing purposes
   }
   uint32 trusted_packet_sequence_id = 10;

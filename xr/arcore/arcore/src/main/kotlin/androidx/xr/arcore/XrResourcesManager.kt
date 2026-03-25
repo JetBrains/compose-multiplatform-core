@@ -202,6 +202,8 @@ internal class XrResourcesManager {
                 is RuntimePlane -> Plane(runtimeTrackable, this)
                 is RuntimeObject -> AugmentedObject(runtimeTrackable, this)
                 is RuntimeFace -> Face(runtimeTrackable, this)
+                is RuntimeEye -> Eye(runtimeTrackable)
+                is RuntimeHand -> Hand(runtimeTrackable)
                 else ->
                     throw IllegalArgumentException(
                         "Unsupported trackable type: ${runtimeTrackable.javaClass}"

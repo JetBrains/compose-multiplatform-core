@@ -22,6 +22,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.LayoutDirection
 
 @Composable
 @RemoteComposable
@@ -30,14 +31,22 @@ public fun FitBoxV2(
     modifier: RemoteModifier = RemoteModifier,
     horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.CenterHorizontally,
     verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Center,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     content: @RemoteComposable @Composable () -> Unit = {},
 ) {
     RemoteComposeNode(
         factory = ::RemoteFitBoxNodeV2,
         update = {
             set(modifier) { nodeModifier -> this.modifier = nodeModifier }
-            set(horizontalAlignment) { hAlign -> this.horizontalAlignment = hAlign }
-            set(verticalArrangement) { vArr -> this.verticalArrangement = vArr }
+            set(horizontalAlignment) { nodeHorizontalAlignment ->
+                this.horizontalAlignment = nodeHorizontalAlignment
+            }
+            set(verticalArrangement) { nodeVerticalArrangement ->
+                this.verticalArrangement = nodeVerticalArrangement
+            }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
+            }
         },
         content = content,
     )

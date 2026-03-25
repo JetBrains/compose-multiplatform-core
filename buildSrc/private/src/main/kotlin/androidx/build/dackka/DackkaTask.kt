@@ -182,16 +182,9 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                 }
             return objects.fileCollection().from(dirs)
         }
-        val externalDocs =
-            externalLinks.map { (name, url) ->
-                DokkaInputModels.GlobalDocsLink(
-                    url = url,
-                    packageListUrl =
-                        "file://${
-                            projectListsDirectory.get().asFile.absolutePath
-                        }/$name/package-list",
-                )
-            }
+
+        val externalDocs = loadPackageLists(projectListsDirectory.get().asFile)
+
         val gson = GsonBuilder().create()
         val multiplatformSourceSets =
             projectStructureMetadataFile
@@ -324,6 +317,25 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
         }
     }
 
+    /**
+     * Creates [DokkaInputModels.GlobalDocsLink]s with the package-list file and URL for each
+     * package-list in the [packageLists] directory.
+     *
+     * It is expected that each subdirectory of [packageLists] contains a `package-list` file and
+     * `url` file, where `url` contains the URL of an external refdocs site and `package-list`
+     * contains the list of packages documented at that site.
+     */
+    private fun loadPackageLists(packageLists: File): List<DokkaInputModels.GlobalDocsLink> {
+        return packageLists.listFiles().map { dir ->
+            val packageList = File(dir, "package-list")
+            val urlFile = File(dir, "url")
+            DokkaInputModels.GlobalDocsLink(
+                url = urlFile.readText().trim(),
+                packageListUrl = "file://${packageList.absolutePath}",
+            )
+        }
+    }
+
     // Documentation for Dackka command line usage and arguments can be found at
     // https://kotlin.github.io/dokka/1.6.0/user_guide/cli/usage/
     // Documentation for the DevsitePlugin arguments can be found at
@@ -407,56 +419,6 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
             argsFile = computeArguments(),
             workerExecutor = workerExecutor,
         )
-    }
-
-    companion object {
-        private val externalLinks =
-            mapOf(
-                "coroutinesCore" to "https://kotlinlang.org/api/kotlinx.coroutines/",
-                "android" to "https://developer.android.com/reference",
-                "guava" to "https://guava.dev/releases/18.0/api/docs/",
-                "kotlin" to "https://kotlinlang.org/api/core/kotlin-stdlib/",
-                "junit" to "https://junit.org/junit4/javadoc/4.12/",
-                "okio" to "https://square.github.io/okio/3.x/okio/",
-                "protobuf" to "https://protobuf.dev/reference/java/api-docs/",
-                "kotlinpoet" to "https://square.github.io/kotlinpoet/1.x/kotlinpoet/",
-                "skiko" to "https://jetbrains.github.io/skiko/",
-                "reactivex" to "https://reactivex.io/RxJava/2.x/javadoc/",
-                "reactivex-rxjava3" to "http://reactivex.io/RxJava/3.x/javadoc/",
-                "grpc" to "https://grpc.github.io/grpc-java/javadoc/",
-                // From developer.android.com/reference/com/google/android/play/core/package-list
-                "play" to "https://developer.android.com/reference/",
-                // From developer.android.com/reference/com/google/android/material/package-list
-                "material" to "https://developer.android.com/reference",
-                "okhttp3" to "https://square.github.io/okhttp/5.x/",
-                "truth" to "https://truth.dev/api/0.41/",
-                // From developer.android.com/reference/android/support/wearable/package-list
-                "wearable" to "https://developer.android.com/reference/",
-                // Filtered to just java.awt and javax packages (base java packages are included in
-                // the android package-list)
-                "javase8" to "https://docs.oracle.com/javase/8/docs/api/",
-                "javaee7" to "https://docs.oracle.com/javaee%2F7%2Fapi%2F%2F",
-                "findbugs" to "https://www.javadoc.io/doc/com.google.code.findbugs/jsr305/latest/",
-                // All package-lists below were created manually
-                "mlkit" to "https://developers.google.com/android/reference/",
-                "dagger" to "https://dagger.dev/api/latest/",
-                "reactivestreams" to
-                    "https://www.reactive-streams.org/reactive-streams-1.0.4-javadoc/",
-                "jetbrains-annotations" to
-                    "https://javadoc.io/doc/org.jetbrains/annotations/latest/",
-                "auto-value" to
-                    "https://www.javadoc.io/doc/com.google.auto.value/auto-value/latest/",
-                "robolectric" to "https://robolectric.org/javadoc/4.11/",
-                "interactive-media" to
-                    "https://developers.google.com/interactive-media-ads/docs/sdks/android/" +
-                        "client-side/api/reference/com/google/ads/interactivemedia/v3",
-                "errorprone" to "https://errorprone.info/api/latest/",
-                "gms" to "https://developers.google.com/android/reference",
-                "checkerframework" to "https://checkerframework.org/api/",
-                "chromium" to
-                    "https://developer.android.com/develop/connectivity/cronet/reference/",
-                "jspecify" to "https://jspecify.dev/docs/api/",
-            )
     }
 }
 

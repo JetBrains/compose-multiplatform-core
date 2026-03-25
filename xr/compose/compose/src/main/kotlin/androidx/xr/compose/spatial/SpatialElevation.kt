@@ -44,6 +44,7 @@ import androidx.xr.compose.subspace.rememberComposeView
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.scene
 
 /**
  * Composable that creates a panel in 3D space when spatialization is enabled.
@@ -97,6 +98,7 @@ private fun LayoutSpatialElevation(elevation: Dp, content: @Composable () -> Uni
                     view = view,
                     pixelDimensions = IntSize2d(0, 0),
                     name = "SpatialElevation:${view.id}",
+                    parent = session.scene.activitySpace,
                 )
             )
             .apply {

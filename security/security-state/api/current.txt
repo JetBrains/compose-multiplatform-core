@@ -94,9 +94,9 @@ package androidx.security.state {
 
   public class SecurityStateManagerCompat {
     ctor public SecurityStateManagerCompat(android.content.Context context);
-    ctor public SecurityStateManagerCompat(android.content.Context context, optional String systemSupplementalPatchConfigFile);
-    ctor public SecurityStateManagerCompat(android.content.Context context, optional String systemSupplementalPatchConfigFile, optional String vendorSupplementalPatchConfigFile);
-    ctor @BytecodeOnly public SecurityStateManagerCompat(android.content.Context!, String!, String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public SecurityStateManagerCompat(android.content.Context context, optional String[] systemSupplementalPatchConfigFiles);
+    ctor public SecurityStateManagerCompat(android.content.Context context, optional String[] systemSupplementalPatchConfigFiles, optional String[] vendorSupplementalPatchConfigFiles);
+    ctor @BytecodeOnly public SecurityStateManagerCompat(android.content.Context!, String![]!, String![]!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public android.os.Bundle getGlobalSecurityState();
     method public android.os.Bundle getGlobalSecurityState(optional String moduleMetadataProviderPackageName);
     method @BytecodeOnly public static android.os.Bundle! getGlobalSecurityState$default(androidx.security.state.SecurityStateManagerCompat!, String!, int, Object!);

@@ -26,8 +26,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.completeWith
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.dropWhile
@@ -58,15 +58,27 @@ internal class DataStoreImpl<T>(
      * simply throws the exception and does not produce new data.
      */
     private val corruptionHandler: CorruptionHandler<T> = ReThrowCorruptionHandler(),
-    private val scope: CoroutineScope = CoroutineScope(ioDispatcher() + SupervisorJob()),
+    context: CoroutineContext = ioDispatcher(),
     private val tracer: DataStoreTracer? = null,
 ) : CurrentDataProviderStore<T> {
+    // The coroutine scope for launching coroutines asynchronous to callers.
+    // It is built using the given coroutine context which is required to have a
+    // Job to control this scope since there is no close API.
+    private val scope: CoroutineScope
+
+    init {
+        val job = context[Job]
+        check(job != null) { "Missing Job on Coroutine context: $context" }
+        scope = CoroutineScope(context + job)
+    }
 
     /**
      * The actual values of DataStore. This is exposed in the API via [data] to be able to combine
      * its lifetime with IPC update collection ([updateCollection]).
      */
     override val data: Flow<T> = flow {
+        // Need to check this as long as we allow users to create a DataStore with a CoroutineScope.
+        scope.coroutineContext.ensureActive()
         // Get new token to pass the trace along to the child spans in `
         // readAndInitOrPropagateAndThrowFailure` and `readAndUpdateCache`.
         val token = captureTraceToken(tracer)
@@ -122,6 +134,8 @@ internal class DataStoreImpl<T>(
     }
 
     override suspend fun currentData(): T {
+        // Need to check this as long as we allow users to create a DataStore with a CoroutineScope.
+        scope.coroutineContext.ensureActive()
         val token = captureTraceToken(tracer)
         when (val startState = readState(requireLock = false, token = token)) {
             is Data<T> -> return startState.value
@@ -170,6 +184,8 @@ internal class DataStoreImpl<T>(
     }
 
     override suspend fun updateData(transform: suspend (t: T) -> T): T {
+        // Need to check this as long as we allow users to create a DataStore with a CoroutineScope.
+        scope.coroutineContext.ensureActive()
         return trace(tracer = tracer, name = "DataStore.updateData") {
             // Get new token as we will have a new span under `JDS.updateData` after `withContext`
             val token = captureTraceToken(tracer)

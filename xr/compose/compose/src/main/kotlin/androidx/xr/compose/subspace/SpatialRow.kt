@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.xr.compose.subspace.layout.SpatialAlignment
@@ -46,6 +47,7 @@ import kotlin.math.sin
  * A layout composable that arranges its children in a horizontal sequence. For arranging children
  * vertically, see [SpatialColumn].
  *
+ * @sample androidx.xr.compose.samples.SimpleSpatialRowSample
  * @param modifier Appearance modifiers to apply to this Composable.
  * @param verticalAlignment The default vertical alignment for child elements within the row.
  * @param depthAlignment The default depth alignment for child elements within the row.
@@ -80,6 +82,7 @@ public inline fun SpatialRow(
 /**
  * A layout composable that arranges its children in a curved horizontal sequence.
  *
+ * @sample androidx.xr.compose.samples.SimpleSpatialCurvedRowSample
  * @param modifier Appearance modifiers to apply to this Composable.
  * @param verticalAlignment The default vertical alignment for child elements within the row.
  * @param depthAlignment The default depth alignment for child elements within the row.
@@ -206,12 +209,19 @@ internal class SpatialRowMeasurePolicy(
         }
     }
 
-    override fun getMainAxisOffset(contentSize: IntVolumeSize, containerSize: IntVolumeSize): Int {
+    override fun getMainAxisOffset(
+        contentSize: IntVolumeSize,
+        containerSize: IntVolumeSize,
+        layoutDirection: LayoutDirection,
+    ): Int {
         // Each child will have its main-axis offset adjusted, based on extra space available and
         // the provided alignment. `mainAxisOffset` represents the left edge of the content
         // in the container space.
-        return (alignment.horizontalOffset(contentSize.width, containerSize.width) -
-                containerSize.width / 2.0)
+        return (alignment.horizontalOffset(
+                contentSize.width,
+                containerSize.width,
+                layoutDirection,
+            ) - containerSize.width / 2.0)
             .fastRoundToInt()
     }
 
@@ -256,6 +266,7 @@ internal class SpatialRowMeasurePolicy(
         resolvedMeasurable: ResolvedMeasurable,
         containerSize: IntVolumeSize,
         mainAxisOffset: Int,
+        layoutDirection: LayoutDirection,
     ): Pose {
         val mainAxisPosition = (resolvedMeasurable.mainAxisPosition ?: 0) + mainAxisOffset
 
@@ -425,10 +436,10 @@ private operator fun SpatialAlignment.Vertical.plus(
         is SpatialBiasAlignment.Vertical ->
             SpatialBiasAlignment(
                 horizontalBias = 0f,
-                verticalBias = bias,
+                verticalBias = verticalBias,
                 depthBias =
                     when (other) {
-                        is SpatialBiasAlignment.Depth -> other.bias
+                        is SpatialBiasAlignment.Depth -> other.depthBias
                         else -> 0f
                     },
             )

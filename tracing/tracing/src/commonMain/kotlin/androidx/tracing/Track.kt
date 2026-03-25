@@ -31,8 +31,6 @@ import androidx.annotation.RestrictTo
  *   on a specific thread. With synchronous (non-coroutine) code, this is where most trace events
  *   should go.
  */
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class Track(
     /** The [TraceContext] instance. */
@@ -43,8 +41,8 @@ public abstract class Track(
     /**
      * The uuid for the track descriptor.
      *
-     * This ID must be unique within all [Track]s in a given trace produced by [TraceDriver] - it is
-     * used to connect recorded trace events to the containing track.
+     * This ID must be unique within all [Track]s in a given trace produced by
+     * [AbstractTraceDriver] - it is used to connect recorded trace events to the containing track.
      */
     @field:Suppress("ShowingMemberInHiddenClass")
     @JvmField // avoid getter generation
@@ -63,6 +61,7 @@ public abstract class Track(
 
     // this would be private, but internal prevents getters from being created
     @JvmField // avoid getter generation
+    @Volatile
     internal var currentPacketArray: PooledTracePacketArray? = pool.obtainTracePacketArray()
 
     internal fun flush() {
@@ -112,7 +111,8 @@ public abstract class Track(
     }
 
     /** Test API for benchmarking */
-    public fun resetFillCount() {
+    public fun resetTraceEvents() {
+        currentPacketArray?.forEach { event -> event.reset() }
         currentPacketArray?.fillCount = 0
     }
 

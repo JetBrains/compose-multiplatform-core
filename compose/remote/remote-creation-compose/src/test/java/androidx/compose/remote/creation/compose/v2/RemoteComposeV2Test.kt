@@ -29,16 +29,15 @@ import androidx.compose.remote.creation.compose.layout.RemoteCollapsibleColumn
 import androidx.compose.remote.creation.compose.layout.RemoteCollapsibleRow
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteRow
+import androidx.compose.remote.creation.compose.layout.RemoteStateLayout
 import androidx.compose.remote.creation.compose.layout.RemoteText
-import androidx.compose.remote.creation.compose.layout.StateLayout
 import androidx.compose.remote.creation.compose.layout.rememberStateMachine
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemotePaint
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteInt
+import androidx.compose.remote.creation.compose.state.rc
+import androidx.compose.remote.creation.compose.state.rememberMutableRemoteEnum
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNotNull
@@ -124,12 +123,7 @@ class RemoteComposeV2Test {
         val displayInfo = CreationDisplayInfo(500, 500, 1)
         val document =
             captureSingleRemoteDocumentV2(creationDisplayInfo = displayInfo, context = context) {
-                RemoteCanvas {
-                    drawRect(
-                        paint =
-                            RemotePaint().apply { remoteColor = RemoteColor(Color.Red.toArgb()) }
-                    )
-                }
+                RemoteCanvas { drawRect(paint = RemotePaint { color = Color.Red.rc }) }
             }
 
         assertNotNull(document)
@@ -170,16 +164,19 @@ class RemoteComposeV2Test {
         val displayInfo = CreationDisplayInfo(500, 500, 1)
         val document =
             captureSingleRemoteDocumentV2(creationDisplayInfo = displayInfo, context = context) {
-                val checked = rememberMutableRemoteInt(1)
-                val off = 0
-                val on = 1
-                val stateMachine = rememberStateMachine(checked, off, on)
-                StateLayout(stateMachine = stateMachine) { state ->
-                    RemoteText(text = "State $state")
+                val checked = rememberMutableRemoteEnum(ToggleState.On)
+                val stateMachine = rememberStateMachine(checked)
+                RemoteStateLayout(stateMachine = stateMachine) { state ->
+                    RemoteText(text = "State $state".rs)
                 }
             }
 
         assertNotNull(document)
         assertTrue(document.bytes.isNotEmpty())
+    }
+
+    private enum class ToggleState {
+        Off,
+        On,
     }
 }

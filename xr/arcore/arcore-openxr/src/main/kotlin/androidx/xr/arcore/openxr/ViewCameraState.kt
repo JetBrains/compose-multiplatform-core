@@ -17,14 +17,14 @@
 package androidx.xr.arcore.openxr
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.FieldOfView
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Pose
 
 /**
- * Represents the current state of a [RenderViewpoint].
+ * Represents the current state of a [androidx.xr.arcore.runtime.RenderViewpoint].
  *
- * @property pose the pose of the view camera.
- * @property fieldOfView the field of view of the view camera.
+ * @property pose the [Pose] of the view camera
+ * @property fieldOfView the [FieldOfView] of the view camera
  */
 // TODO(b/439895601): Rename ViewCameraState to RenderViewpointState
 @Suppress("DataClassDefinition")

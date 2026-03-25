@@ -44,7 +44,7 @@ import org.robolectric.annotation.Config
 class PerceptionSpaceScenePoseImplTest {
     private val xrExtensions = getXrExtensions()!!
     private val fakeScheduledExecutor = FakeScheduledExecutorService()
-    private val entityManager = EntityManager()
+    private val sceneNodeRegistry = SceneNodeRegistry()
     private val activity: Activity =
         Robolectric.buildActivity(Activity::class.java).create().start().get()
     private val activitySpace =
@@ -52,7 +52,7 @@ class PerceptionSpaceScenePoseImplTest {
             xrExtensions.createNode(),
             activity,
             xrExtensions,
-            entityManager,
+            sceneNodeRegistry,
             { xrExtensions.getSpatialState(activity) },
             fakeScheduledExecutor,
         )
@@ -72,7 +72,7 @@ class PerceptionSpaceScenePoseImplTest {
             FakeGltfFeature(node),
             activitySpace,
             xrExtensions,
-            entityManager,
+            sceneNodeRegistry,
             fakeScheduledExecutor,
         )
     }
@@ -83,7 +83,7 @@ class PerceptionSpaceScenePoseImplTest {
     }
 
     @Test
-    fun getPoseInActivitySpace_returnsInverseOfActivitySpacePose() {
+    fun getActivitySpacePose_returnsInverseOfActivitySpaceMatrix() {
         val activitySpaceMatrix =
             fromTrs(
                 Vector3(1.0f, 2.0f, 3.0f),
@@ -93,11 +93,11 @@ class PerceptionSpaceScenePoseImplTest {
         sendTransformEvent(ShadowNodeTransform.create(Mat4f(activitySpaceMatrix.data)))
         fakeScheduledExecutor.runAll()
 
-        val poseInActivitySpace = mPerceptionSpaceScenePose!!.poseInActivitySpace
+        val activitySpacePose = mPerceptionSpaceScenePose!!.activitySpacePose
 
-        val expectedPose = activitySpaceMatrix.inverse.pose
+        val expectedPose = activitySpaceMatrix.inverse.toPose()
 
-        assertPose(poseInActivitySpace, expectedPose)
+        assertPose(activitySpacePose, expectedPose)
     }
 
     @Test
@@ -113,7 +113,7 @@ class PerceptionSpaceScenePoseImplTest {
 
         val transformedPose = mPerceptionSpaceScenePose!!.transformPoseTo(Pose(), activitySpace)
 
-        val expectedPose = activitySpaceMatrix.inverse.pose
+        val expectedPose = activitySpaceMatrix.inverse.toPose()
 
         assertPose(transformedPose, expectedPose)
     }
@@ -133,7 +133,7 @@ class PerceptionSpaceScenePoseImplTest {
 
         val transformedPose = mPerceptionSpaceScenePose!!.transformPoseTo(Pose(), gltfEntity)
 
-        val unscaledPose = activitySpaceMatrix.inverse.pose
+        val unscaledPose = activitySpaceMatrix.inverse.toPose()
         val expectedPose =
             Pose(unscaledPose.translation.scale(Vector3(0.5f, 0.5f, 0.5f)), unscaledPose.rotation)
 

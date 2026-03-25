@@ -29,6 +29,7 @@ import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.platform.LocalLayoutDirection
 
 /** Utility modifier to record the layout information */
 internal class RemoteComposeColumnModifier(
@@ -40,7 +41,7 @@ internal class RemoteComposeColumnModifier(
         drawIntoRemoteCanvas { canvas ->
             canvas.document.startColumn(
                 canvas.toRecordingModifier(modifier),
-                horizontalAlignment.toRemote(),
+                horizontalAlignment.toRemote(this.layoutDirection),
                 verticalArrangement.toRemote(),
             )
             this@draw.drawContent()
@@ -84,7 +85,12 @@ public fun RemoteColumn(
     content: @Composable RemoteColumnScope.() -> Unit,
 ) {
     if (currentComposer.applier is RemoteComposeApplierV2) {
-        RemoteColumnV2(modifier, verticalArrangement, horizontalAlignment) {
+        RemoteColumnV2(
+            modifier,
+            verticalArrangement,
+            horizontalAlignment,
+            LocalLayoutDirection.current,
+        ) {
             // Bridge V1 scope to V2 scope
             val v1Scope = remember { RemoteColumnScope() }
             v1Scope.content()
@@ -97,7 +103,7 @@ public fun RemoteColumn(
     val composeModifiers =
         RemoteComposeColumnModifier(modifier, horizontalAlignment, verticalArrangement)
             .then(modifier.toComposeUiLayout())
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     androidx.compose.foundation.layout.Column(
         composeModifiers,
         horizontalAlignment = horizontalAlignment.toComposeUi(),

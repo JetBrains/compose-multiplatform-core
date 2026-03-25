@@ -37,6 +37,7 @@ import com.android.extensions.xr.node.InputEvent
 import com.android.extensions.xr.node.Mat4f
 import com.android.extensions.xr.node.NodeTransaction
 import com.android.extensions.xr.node.ReformEvent
+import com.android.extensions.xr.node.ShadowInputEvent
 import com.android.extensions.xr.node.Vec3
 import com.android.extensions.xr.space.HitTestResult
 import com.android.extensions.xr.space.PerceivedResolution
@@ -56,7 +57,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Config.TARGET_SDK])
 class RuntimeUtilsTest {
 
-    fun createSceneRuntime(entityManager: EntityManager): SpatialSceneRuntime {
+    fun createSceneRuntime(sceneNodeRegistry: SceneNodeRegistry): SpatialSceneRuntime {
         val activityController: ActivityController<Activity> =
             Robolectric.buildActivity(Activity::class.java)
         val activity: Activity = activityController.create().start().get()
@@ -64,7 +65,7 @@ class RuntimeUtilsTest {
         val fakeExecutor = FakeScheduledExecutorService()
         val xrExtensions = getXrExtensions()
         checkNotNull(xrExtensions) { "XrExtensions is null. Stop testing" }
-        return SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions, entityManager)
+        return SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions, sceneNodeRegistry)
     }
 
     @Test
@@ -424,10 +425,9 @@ class RuntimeUtilsTest {
 
     @Test
     fun getHitInfo_convertsFromHitInfo() {
-        val entityManager = EntityManager()
-        val sceneRuntime = createSceneRuntime(entityManager)
-        val testEntity =
-            sceneRuntime.createGroupEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
+        val sceneNodeRegistry = SceneNodeRegistry()
+        val sceneRuntime = createSceneRuntime(sceneNodeRegistry)
+        val testEntity = sceneRuntime.createEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
         val testNode = (testEntity as AndroidXrEntity).getNode()
 
         val expectedTransform =
@@ -437,7 +437,7 @@ class RuntimeUtilsTest {
         val hitPosition = Vec3(1f, 2f, 3f)
 
         val extensionHitInfo = InputEvent.HitInfo(1, testNode, transform, hitPosition)
-        val hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, entityManager)
+        val hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, sceneNodeRegistry)
 
         Truth.assertThat(hitInfo).isNotNull()
         Truth.assertThat(hitInfo!!.inputEntity).isEqualTo(testEntity)
@@ -451,16 +451,16 @@ class RuntimeUtilsTest {
 
     @Test
     fun getHitInfo_nullHitInfo_returnsNull() {
-        val entityManager = EntityManager()
+        val sceneNodeRegistry = SceneNodeRegistry()
 
-        Truth.assertThat(RuntimeUtils.getHitInfo(null, entityManager)).isNull()
+        Truth.assertThat(RuntimeUtils.getHitInfo(null, sceneNodeRegistry)).isNull()
     }
 
     @Test
     fun getHitInfo_unKnownNode_returnsNull() {
-        val entityManager = EntityManager()
-        val sceneRuntime = createSceneRuntime(entityManager)
-        sceneRuntime.createGroupEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
+        val sceneNodeRegistry = SceneNodeRegistry()
+        val sceneRuntime = createSceneRuntime(sceneNodeRegistry)
+        sceneRuntime.createEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
         val testNode = getXrExtensions()!!.createNode()
 
         val transformData =
@@ -469,17 +469,16 @@ class RuntimeUtilsTest {
         val hitPosition = Vec3(1f, 2f, 3f)
 
         val extensionHitInfo = InputEvent.HitInfo(1, testNode, transform, hitPosition)
-        val hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, entityManager)
+        val hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, sceneNodeRegistry)
 
         Truth.assertThat(hitInfo).isNull()
     }
 
     @Test
     fun getHitInfo_nullHitPosition_convertsFromHitInfo() {
-        val entityManager = EntityManager()
-        val sceneRuntime = createSceneRuntime(entityManager)
-        val testEntity =
-            sceneRuntime.createGroupEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
+        val sceneNodeRegistry = SceneNodeRegistry()
+        val sceneRuntime = createSceneRuntime(sceneNodeRegistry)
+        val testEntity = sceneRuntime.createEntity(Pose(), "testGroup", sceneRuntime.activitySpace)
         val testNode = (testEntity as AndroidXrEntity).getNode()
 
         val expectedTransform =
@@ -488,7 +487,7 @@ class RuntimeUtilsTest {
         val hitPosition: Vec3? = null
 
         val extensionHitInfo = InputEvent.HitInfo(1, testNode, transform, hitPosition)
-        val hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, entityManager)
+        val hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, sceneNodeRegistry)
 
         Truth.assertThat(hitInfo).isNotNull()
         Truth.assertThat(hitInfo!!.inputEntity).isNotNull()
@@ -744,5 +743,50 @@ class RuntimeUtilsTest {
         Truth.assertThat(result.y).isWithin(1.0e-5f).of(0f)
         Truth.assertThat(result.z).isWithin(1.0e-5f).of(0.70710677f)
         Truth.assertThat(result.w).isWithin(1.0e-5f).of(0.70710677f)
+    }
+
+    @Test
+    fun getInputEvent_appliesActivitySpaceScale() {
+        val sceneNodeRegistry = SceneNodeRegistry()
+        val sceneRuntime = createSceneRuntime(sceneNodeRegistry)
+        val activitySpace = sceneRuntime.activitySpace as ActivitySpaceImpl
+        val scaleFactor = 2.0f
+        activitySpace.sceneParentScaleAbs = Vector3(scaleFactor, scaleFactor, scaleFactor)
+
+        val xrInputEvent =
+            ShadowInputEvent.create(
+                InputEvent.SOURCE_UNKNOWN,
+                InputEvent.POINTER_TYPE_DEFAULT,
+                1000L,
+                Vec3(1f, 1f, 1f),
+                Vec3(0f, 0f, 1f),
+                InputEvent.DISPATCH_FLAG_NONE,
+                InputEvent.ACTION_MOVE,
+            )
+
+        val inputEvent = RuntimeUtils.getInputEvent(xrInputEvent, sceneNodeRegistry)
+
+        assertVector3(inputEvent.origin, Vector3(scaleFactor, scaleFactor, scaleFactor))
+        assertVector3(inputEvent.direction, Vector3(0f, 0f, scaleFactor))
+    }
+
+    @Test
+    fun getHitInfo_appliesActivitySpaceScale() {
+        val sceneNodeRegistry = SceneNodeRegistry()
+        val sceneRuntime = createSceneRuntime(sceneNodeRegistry)
+        val activitySpace = sceneRuntime.activitySpace as ActivitySpaceImpl
+        val scaleFactor = 3.0f
+        activitySpace.sceneParentScaleAbs = Vector3(scaleFactor, scaleFactor, scaleFactor)
+
+        val testEntity = sceneRuntime.createEntity(Pose(), "testEntity", activitySpace)
+        val testNode = (testEntity as AndroidXrEntity).getNode()
+
+        val xrHitInfo =
+            InputEvent.HitInfo(1, testNode, Mat4f(Matrix4.Identity.data), Vec3(1f, 1f, 1f))
+
+        val hitInfo = RuntimeUtils.getHitInfo(xrHitInfo, sceneNodeRegistry)
+
+        Truth.assertThat(hitInfo).isNotNull()
+        assertVector3(hitInfo!!.hitPosition!!, Vector3(scaleFactor, scaleFactor, scaleFactor))
     }
 }

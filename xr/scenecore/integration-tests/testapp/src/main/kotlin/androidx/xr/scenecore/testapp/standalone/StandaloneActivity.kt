@@ -81,7 +81,7 @@ class StandaloneActivity : AppCompatActivity() {
                 panelEntityView,
                 IntSize2d(720, 480),
                 "panel_entity",
-                Pose(Vector3(0f, -0.25f, 0.5f)),
+                Pose(Vector3(0f, -0.25f, 0.2f)),
             )
         panelEntity.parent = session!!.scene.keyEntity
 
@@ -97,7 +97,7 @@ class StandaloneActivity : AppCompatActivity() {
     }
 
     private fun createModelSolarSystem(session: Session, model: GltfModel) {
-        val sunEntity = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 0.5f, -0.5f)))
+        val sunEntity = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 0.5f, -1f)))
         sunEntity.parent = session.scene.keyEntity
         // Each child is scaled down relative to the parent to make it more visually clear which
         // entities are the "sun", "planet", and "moon".

@@ -146,15 +146,6 @@
     </issue>
 
     <issue
-        id="PrivateResource"
-        message="The resource `@color/glance_colorErrorContainer` is marked as private in androidx.glance:glance:1.3.0-alpha01"
-        errorLine1="    android:background=&quot;@color/glance_colorErrorContainer&quot;"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/error_ui_app_widget_on_error_layout.xml"/>
-    </issue>
-
-    <issue
         id="PrimitiveInCollection"
         message="constructor AppWidgetDesc has parameter sizes with type List&lt;DpSize>: replace with LongList"
         errorLine1="data class AppWidgetDesc(val appWidgetId: GlanceId, val sizes: List&lt;DpSize>)"

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Pose
 import java.util.concurrent.Executor
@@ -151,17 +152,31 @@ public interface SceneRuntime : JxrRuntime {
     public fun createAnchorEntity(): AnchorEntity
 
     /**
-     * A factory function to create a group entity. This entity is used as a connection point for
+     * A factory function to create a basic entity. This entity is used as a connection point for
      * attaching children entities and managing them (i.e. setPose()) as a group.
      *
      * @param pose Initial pose of the entity.
      * @param name Name of the entity.
      * @param parent Parent entity.
      */
+    public fun createEntity(pose: Pose, name: String?, parent: Entity?): Entity
+
+    @Deprecated(message = "Use createEntity instead.")
     public fun createGroupEntity(pose: Pose, name: String, parent: Entity?): Entity
 
     /** A function to create a XR Runtime Entity. */
     public fun createLoggingEntity(pose: Pose): LoggingEntity
+
+    /**
+     * A factory function to create a SubspaceNodeEntity.
+     *
+     * @param nodeHolder Hold the Node to create the SubspaceNodeEntity from.
+     * @param size The (width, depth, height) of the [SubspaceNodeEntity].
+     */
+    public fun createSubspaceNodeEntity(
+        nodeHolder: NodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity
 
     /**
      * Adds the given {@link Consumer} as a listener to be invoked when this Session's current
@@ -481,4 +496,58 @@ public interface SceneRuntime : JxrRuntime {
      * @param listener The [Consumer] to be removed. It will no longer receive change events.
      */
     public fun removeOnBoundaryConsentChangedListener(listener: Consumer<Boolean>)
+
+    /**
+     * Creates a [PositionalAudioComponent].
+     *
+     * This component allows an entity to emit sound that appears to originate from its position in
+     * the scene.
+     *
+     * @param context The application context.
+     * @param params The parameters defining the audio source's behavior.
+     * @return A new [PositionalAudioComponent].
+     */
+    public fun createPositionalAudioComponent(
+        context: Context,
+        params: PointSourceParams,
+    ): PositionalAudioComponent
+
+    /**
+     * Creates a [SoundFieldAudioComponent].
+     *
+     * This component allows an entity to emit sound that represents a sound field (e.g.
+     * Ambisonics).
+     *
+     * @param context The application context.
+     * @param rtSoundFieldAttributes The attributes defining the sound field's behavior.
+     * @return A new [SoundFieldAudioComponent].
+     */
+    public fun createSoundFieldAudioComponent(
+        context: Context,
+        rtSoundFieldAttributes: SoundFieldAttributes,
+    ): SoundFieldAudioComponent
+
+    /**
+     * Creates a [SoundEffectPool].
+     *
+     * A sound effect pool manages a collection of sound resources and can play them with low
+     * latency.
+     *
+     * @param maxStreams The maximum number of simultaneous streams that can be played by this pool.
+     * @return A new [SoundEffectPool].
+     */
+    public fun createSoundEffectPool(maxStreams: Int): SoundEffectPool
+
+    /**
+     * Creates a [SoundEffectPoolComponent].
+     *
+     * This component allows an entity to play sound effects from a [SoundEffectPool] as positional
+     * audio.
+     *
+     * @param soundEffectPool The [SoundEffectPool] to use for playing sound effects.
+     * @return A new [SoundEffectPoolComponent].
+     */
+    public fun createSoundEffectPoolComponent(
+        soundEffectPool: SoundEffectPool
+    ): SoundEffectPoolComponent
 }

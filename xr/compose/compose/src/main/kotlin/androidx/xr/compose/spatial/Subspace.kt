@@ -70,7 +70,6 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Entity
-import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 
@@ -118,7 +117,7 @@ internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
  */
 @Composable
 @ComposableOpenTarget(index = -1)
-@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
 public fun Subspace(
     modifier: SubspaceModifier = SubspaceModifier,
     allowUnboundedSubspace: Boolean = false,
@@ -159,7 +158,7 @@ private fun Subspace(
     val context = LocalContext.current
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val compositionContext = rememberCompositionContext()
-    val subspaceRoot = remember { GroupEntity.create(session, "SubspaceRoot") }
+    val subspaceRoot = remember { Entity.create(session, "SubspaceRoot") }
     val scene by remember {
         if (SceneManager.getSceneCount(context) == 0) {
             session.scene.mainPanelEntity.setEnabled(false)
@@ -229,7 +228,7 @@ private fun Subspace(
  */
 @Composable
 @UiComposable
-@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
 public fun PlanarEmbeddedSubspace(
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit
 ) {
@@ -247,7 +246,7 @@ public fun PlanarEmbeddedSubspace(
     // subspace properly.
     val subspaceRootContainer by remember {
         disposableValueOf(
-            CoreGroupEntity(GroupEntity.create(session, "SubspaceRootContainer")).apply {
+            CoreGroupEntity(Entity.create(session, "SubspaceRootContainer")).apply {
                 enabled = false
                 parent = coreEntity
             }
@@ -257,7 +256,7 @@ public fun PlanarEmbeddedSubspace(
     }
     val scene by remember {
         val subspaceRoot =
-            CoreGroupEntity(GroupEntity.create(session, "SubspaceRoot")).apply {
+            CoreGroupEntity(Entity.create(session, "SubspaceRoot")).apply {
                 parent = subspaceRootContainer
             }
         disposableValueOf(
@@ -362,24 +361,26 @@ public annotation class ExperimentalFollowingSubspaceApi
  *
  * Each call to `FollowingSubspace` creates a new, independent spatial UI hierarchy. It does **not**
  * inherit the spatial position, orientation, or scale of any parent `Subspace` it is nested within.
- * Its position in the world is determined solely by its `target` parameter. By default, this
- * Subspace is automatically bounded by the system's recommended content box, similar to [Subspace].
+ * Its scale is decided by the system's recommended scale. Its position in the world is determined
+ * solely by its `target` parameter. By default, this Subspace is automatically bounded by the
+ * system's recommended content box, similar to [Subspace].
  *
  * When the target parameter is specified to be [FollowTarget.ArDevice], the content will be
  * positioned relative the view of the AR device. This is sometimes referred to as head-locked
- * content. For this API, it is required for headtracking to not be disabled in the session
+ * content. For this API, it is required for device tracking to not be disabled in the session
  * configuration. If it is disabled, this API will not return anything. The session configuration
  * should resemble `session.configure( config = session.config.copy(deviceTracking =
- * Config.DeviceTrackingMode.LAST_KNOWN) )` The [FollowTarget.ArDevice] is not compatible with
- * [FollowBehavior.Tight]. Combining these together will cause this composable to not be displayed.
- * For a near tight experience, use [FollowBehavior.Soft] with a low duration value such as
- * `FollowBehavior.Soft([FollowBehavior.Companion.MIN_SOFT_DURATION_MS])`
+ * Config.DeviceTrackingMode.SPATIAL_LAST_KNOWN) )` The [FollowTarget.ArDevice] is not compatible
+ * with [FollowBehavior.Tight]. Combining these together will cause this composable to not be
+ * displayed. For a near tight experience, use [FollowBehavior.Soft] with a low duration value such
+ * as `FollowBehavior.Soft([FollowBehavior.Companion.MIN_SOFT_DURATION_MS])`
  *
  * When the target parameter is specified to be [FollowTarget.Anchor], the content will be
  * positioned around an anchor. This is useful for placing UI elements on real-world surfaces or at
  * specific spatial locations. The visual stability of the anchored content depends on the
- * underlying system's ability to track the [AnchorEntity]. For Creating, loading, and persisting
- * anchors, please check [androidx.xr.scenecore.AnchorEntity] for more information
+ * underlying system's ability to track the [androidx.xr.scenecore.AnchorEntity]. For Creating,
+ * loading, and persisting anchors, please check [androidx.xr.scenecore.AnchorEntity] for more
+ * information
  *
  * This composable is a no-op in non-XR environments (i.e., Phone and Tablet).
  *
@@ -449,15 +450,16 @@ public fun FollowingSubspace(
         )
     } else {
         val subspaceRoot by remember {
-            disposableValueOf(GroupEntity.create(session, "subspaceRoot")) { it.dispose() }
+            disposableValueOf(Entity.create(session, "subspaceRoot")) { it.dispose() }
         }
+        // TODO(b/491504073): Use observers to update the scale instead of SideEffect.
         SideEffect {
             session.scene.keyEntity?.getScale(relativeTo = Space.REAL_WORLD)?.let { scale ->
                 subspaceRoot.setScale(scale)
             }
         }
         val subspaceRootNode by remember {
-            disposableValueOf(CoreGroupEntity(subspaceRoot).apply { enabled = true }) {
+            disposableValueOf(CoreGroupEntity(subspaceRoot).apply { enabled = false }) {
                 it.dispose()
             }
         }
@@ -503,7 +505,7 @@ private fun validateFollowingSubspaceConfiguration(
     behavior: FollowBehavior,
     config: Config,
 ): Boolean {
-    // Following an AR device requires head tracking to be enabled.
+    // Following an AR device requires device tracking to be enabled.
     if (target is ArDeviceTarget && config.deviceTracking == DeviceTrackingMode.DISABLED) {
         return false
     }

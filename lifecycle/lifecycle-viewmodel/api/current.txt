@@ -106,6 +106,7 @@ package androidx.lifecycle {
 
   public final class ViewModelProviderGetKt {
     method @KotlinOnly @MainThread public static inline <reified VM extends androidx.lifecycle.ViewModel> VM get(androidx.lifecycle.ViewModelProvider);
+    method @KotlinOnly @MainThread public static inline <reified VM extends androidx.lifecycle.ViewModel> VM get(androidx.lifecycle.ViewModelProvider, String key);
   }
 
   public class ViewModelStore {
@@ -116,6 +117,13 @@ package androidx.lifecycle {
   public interface ViewModelStoreOwner {
     method @InaccessibleFromKotlin public androidx.lifecycle.ViewModelStore getViewModelStore();
     property public abstract androidx.lifecycle.ViewModelStore viewModelStore;
+  }
+
+  public final class ViewModelStoreOwnerDefaults {
+    method @InaccessibleFromKotlin public static androidx.lifecycle.viewmodel.CreationExtras getViewModelCreationExtras(androidx.lifecycle.ViewModelStoreOwner?);
+    method @InaccessibleFromKotlin public static androidx.lifecycle.ViewModelProvider.Factory getViewModelProviderFactory(androidx.lifecycle.ViewModelStoreOwner?);
+    property public static androidx.lifecycle.viewmodel.CreationExtras androidx.lifecycle.ViewModelStoreOwner?.defaultViewModelCreationExtras;
+    property public static androidx.lifecycle.ViewModelProvider.Factory androidx.lifecycle.ViewModelStoreOwner?.defaultViewModelProviderFactory;
   }
 
   public final class ViewTreeViewModelKt {

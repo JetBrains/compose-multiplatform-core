@@ -59,7 +59,7 @@ class SpatialEnvironmentTest {
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private lateinit var renderingRuntime: RenderingRuntime
-    private lateinit var entityManager: EntityManager
+    private lateinit var entityRegistry: EntityRegistry
     private lateinit var gltfModelEntity: GltfModelEntity
 
     @Before
@@ -72,13 +72,13 @@ class SpatialEnvironmentTest {
         session = (result as SessionCreateSuccess).session
         sceneRuntime = session.sceneRuntime
         renderingRuntime = session.renderingRuntime
-        entityManager = session.scene.entityManager
+        entityRegistry = session.scene.entityRegistry
         fakeEnvironment = sceneRuntime.spatialEnvironment as FakeSpatialEnvironment
-        environment = SpatialEnvironment(sceneRuntime, entityManager)
+        environment = SpatialEnvironment(sceneRuntime, entityRegistry)
 
         val gltfModel = GltfModel.create(session, Paths.get("test.glb"))
         gltfModelEntity =
-            GltfModelEntity.create(sceneRuntime, renderingRuntime, entityManager, gltfModel)
+            GltfModelEntity.create(sceneRuntime, renderingRuntime, entityRegistry, gltfModel)
     }
 
     @Test

@@ -79,10 +79,7 @@ public fun <T : Entity> SceneCoreEntity(
         update = {
             set(compositionLocalMap, SetCompositionLocalMap)
             set(modifier, SetModifier)
-            set(
-                SceneCoreEntityMeasurePolicy(sizeAdapter?.intrinsicSize?.invoke(entity)),
-                SetMeasurePolicy,
-            )
+            set(SceneCoreEntityMeasurePolicy(sizeAdapter?.currentSize(entity)), SetMeasurePolicy)
             set(sizeAdapter) {
                 getAdaptableCoreEntity<T>()?.sceneCoreEntitySizeAdapter = sizeAdapter
             }
@@ -90,6 +87,38 @@ public fun <T : Entity> SceneCoreEntity(
         },
         content = content,
     )
+}
+
+/**
+ * The sizing strategy used by [SceneCoreEntity] to control and read the size of an entity.
+ *
+ * The developer should use [onLayoutSizeChanged] to apply compose layout size changes to the
+ * entity. Compose will not inherently affect the size of the [Entity].
+ *
+ * If the developer uses [onLayoutSizeChanged] to change the size of the entity, but [currentSize]
+ * is not provided, then the intrinsic size of the entity will be ignored and the layout size as
+ * determined solely by compose will be used to size the entity. If the [SceneCoreEntity] has no
+ * children or size modifiers then compose doesn't know how to size this node and it will be size 0,
+ * causing it not to render at all. In such a case, please do one of the following: (1) provide
+ * [currentSize] so compose can infer the size from the entity, (2) add a sizing modifier to control
+ * the size of the entity, or (3) remove the adapter from the [SceneCoreEntity] as without an
+ * adapter compose will not try to control the size of this entity.
+ *
+ * Note that many SceneCore entities accept sizes in meter units instead of pixels. The [Meter] type
+ * may be used to convert from pixels to meters.
+ *
+ * @sample androidx.xr.compose.samples.SceneCoreEntitySizeAdapterSample
+ */
+public interface SceneCoreEntitySizeAdapter<T : Entity> {
+    /** A callback that is invoked with the final layout size of the composable in pixels. */
+    public fun onLayoutSizeChanged(entity: T, size: IntVolumeSize)
+
+    /**
+     * A getter method that returns the current [IntVolumeSize] in pixels of the entity. This isn't
+     * as critical for compose as [onLayoutSizeChanged]; however, this can help to inform compose of
+     * the intrinsic size of the entity.
+     */
+    public fun currentSize(entity: T): IntVolumeSize? = null
 }
 
 /**
@@ -114,34 +143,33 @@ public fun <T : Entity> SceneCoreEntity(
  * Meter.fromPixel(px, density).toM()
  * ```
  *
+ * Deprecated constructor function to maintain backwards compatibility after changing
+ * SceneCoreEntitySizeAdapter from a class to an interface.
+ *
  * @param onLayoutSizeChanged a callback that is invoked with the final layout size of the
  *   composable in pixels.
  * @param intrinsicSize a getter method that returns the current [IntVolumeSize] in pixels of the
  *   entity. This isn't as critical for compose as [onLayoutSizeChanged]; however, this can help to
  *   inform compose of the intrinsic size of the entity.
  */
-public class SceneCoreEntitySizeAdapter<T : Entity>(
-    public val onLayoutSizeChanged: T.(IntVolumeSize) -> Unit,
-    public val intrinsicSize: (T.() -> IntVolumeSize)? = null,
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+@Deprecated(
+    message =
+        "SceneCoreEntitySizeAdapter is now an interface and intrinsicSize has been renamed to currentSize.",
+    level = DeprecationLevel.WARNING,
+)
+public fun <T : Entity> SceneCoreEntitySizeAdapter(
+    onLayoutSizeChanged: T.(IntVolumeSize) -> Unit,
+    intrinsicSize: (T.() -> IntVolumeSize)? = null,
+): SceneCoreEntitySizeAdapter<T> =
+    object : SceneCoreEntitySizeAdapter<T> {
+        override fun onLayoutSizeChanged(entity: T, size: IntVolumeSize) {
+            entity.onLayoutSizeChanged(size)
+        }
 
-        other as SceneCoreEntitySizeAdapter<*>
-
-        if (onLayoutSizeChanged !== other.onLayoutSizeChanged) return false
-        if (intrinsicSize !== other.intrinsicSize) return false
-
-        return true
+        override fun currentSize(entity: T): IntVolumeSize? {
+            return intrinsicSize?.invoke(entity)
+        }
     }
-
-    override fun hashCode(): Int {
-        var result = onLayoutSizeChanged.hashCode()
-        result = 31 * result + (intrinsicSize?.hashCode() ?: 0)
-        return result
-    }
-}
 
 private class SceneCoreEntityMeasurePolicy(private val originalSize: IntVolumeSize?) :
     SubspaceMeasurePolicy {

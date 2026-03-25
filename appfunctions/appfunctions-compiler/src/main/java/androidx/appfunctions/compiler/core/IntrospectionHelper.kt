@@ -49,6 +49,12 @@ object IntrospectionHelper {
         const val PROPERTY_VERSION = "version"
     }
 
+    object AppFunctionOneOfTypeAnnotation {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionOneOfType")
+        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKdoc"
+        const val PROPERTY_MATCH_ONE_OF = "matchOneOf"
+    }
+
     object AppFunctionSerializableAnnotation {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionSerializable")
         const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKDoc"

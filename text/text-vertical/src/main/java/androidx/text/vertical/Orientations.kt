@@ -66,6 +66,7 @@ public object TextOrientation {
     public const val SIDEWAYS: Int = 2
 }
 
+// TODO(b/493693386): refactor to enum class
 @IntDef(value = [TextOrientation.MIXED, TextOrientation.UPRIGHT, TextOrientation.SIDEWAYS])
 @Retention(AnnotationRetention.SOURCE)
 internal annotation class OrientationMode

@@ -46,6 +46,8 @@ internal class BuilderTest_TestDatabase_Impl : BuilderTest.TestDatabase() {
         return InvalidationTracker(this, emptyMap(), emptyMap())
     }
 
+    override suspend fun clearAllTables() {}
+
     override fun createAutoMigrations(
         autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
     ): List<Migration> {

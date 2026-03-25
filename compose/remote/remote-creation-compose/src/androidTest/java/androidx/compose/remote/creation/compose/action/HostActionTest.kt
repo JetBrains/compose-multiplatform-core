@@ -58,7 +58,7 @@ class HostActionTest {
     @Test
     fun hostActionWithVariableName() {
         val value = 1.ri
-        val name = "a".rs + createNamedRemoteFloat("abc", 3f).toRemoteString(0, 0)
+        val name = "a".rs + createNamedRemoteFloat("abc", 3f).toRemoteString()
 
         runActionTest(value = value, expected = 1)
     }
@@ -94,8 +94,8 @@ class HostActionTest {
         remoteComposeTestRule.runTest {
             val valueString =
                 when (value) {
-                    is RemoteInt -> value.toRemoteString(2)
-                    is RemoteFloat -> value.toRemoteString(2, 2)
+                    is RemoteInt -> value.toRemoteString()
+                    is RemoteFloat -> value.toRemoteString()
                     is RemoteString -> value
                     else -> "null".rs
                 }

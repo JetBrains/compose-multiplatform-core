@@ -31,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -78,7 +77,7 @@ class RemoteIconFromResTest {
 
     @Composable
     private fun Icon(
-        modifier: RemoteModifier = RemoteModifier.padding(8.dp).size(24.rdp),
+        modifier: RemoteModifier = RemoteModifier.padding(8.rdp).size(24.rdp),
         resId: Int,
     ) {
         RemoteIcon(

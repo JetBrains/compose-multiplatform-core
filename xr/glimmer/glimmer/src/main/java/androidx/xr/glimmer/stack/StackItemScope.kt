@@ -43,7 +43,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastForEach
-import androidx.xr.glimmer.DepthNode
+import androidx.xr.glimmer.DepthEffectNode
 import androidx.xr.glimmer.GlimmerTheme.Companion.LocalGlimmerTheme
 import kotlin.math.abs
 
@@ -52,11 +52,18 @@ import kotlin.math.abs
 public sealed interface StackItemScope {
 
     /**
-     * Adds a decoration shape for this item, which is used in transition animations (to clip items
-     * behind) and depth effect. Each item must have its decoration shape set, as otherwise the
-     * clipping and depth will not be applied.
+     * Adds a decoration shape for this item, which is used in graphical effects applied to stack
+     * items, e.g., item masking and depth effects. For each distinct shape inside a stack item,
+     * this modifier should be applied to match that shape's bounds. For simple items with just one
+     * shape (such as a card), only one modifier is needed.
      *
-     * @param shape The shape of this stack item.
+     * Applying this modifier is optional but highly recommended. If not applied, the item will
+     * render normally but will not have the expected depth effect or masking behavior. Omitting
+     * this modifier is a valid use case when no visual item decoration effects are desired.
+     *
+     * @sample androidx.xr.glimmer.samples.VerticalStackSample
+     * @sample androidx.xr.glimmer.samples.VerticalStackWithMultipleShapesSample
+     * @param shape The shape of the element this modifier is applied to.
      */
     public fun Modifier.itemDecoration(shape: Shape): Modifier =
         this then ItemDecorationElement(this@StackItemScope as StackItemScopeImpl, shape)
@@ -165,7 +172,7 @@ internal class ItemDecorationNode(
     internal var outline: Outline? = null
     internal var offset: Offset = Offset.Zero
 
-    private var depthNode: DepthNode? = null
+    private var depthEffectNode: DepthEffectNode? = null
     private var coordinates: LayoutCoordinates? = null
 
     private var lastOutlineForCachedMaskBottomY: Outline? = null
@@ -176,7 +183,7 @@ internal class ItemDecorationNode(
     private var pathMeasure: PathMeasure? = null
 
     override fun onAttach() {
-        depthNode = delegate(DepthNode(currentValueOfDepth(), shape))
+        depthEffectNode = delegate(DepthEffectNode(currentValueOfDepth(), shape))
         stackItemScope.decorations.add(this)
         if (size != Size.Zero) {
             // If this node is reused, update the decoration in case there is no remeasure.
@@ -197,7 +204,7 @@ internal class ItemDecorationNode(
 
     override fun onDetach() {
         stackItemScope.decorations.remove(this)
-        depthNode?.let { undelegate(it) }
+        depthEffectNode?.let { undelegate(it) }
     }
 
     override fun ContentDrawScope.draw() {
@@ -211,7 +218,7 @@ internal class ItemDecorationNode(
             calculateContentAlpha(index = index, topItem = topItem, offsetFraction = offsetFraction)
 
         // Apply alpha to the depth separately from the content so that the shadows are not clipped.
-        depthNode?.apply { drawDepth(alpha = contentAlpha) }
+        depthEffectNode?.apply { drawDepthEffect(alpha = contentAlpha) }
 
         // Draw item content with a scrim based on the current alpha.
         drawContent()
@@ -236,7 +243,7 @@ internal class ItemDecorationNode(
     }
 
     fun update(stackItemScope: StackItemScopeImpl, shape: Shape) {
-        depthNode?.update(currentValueOfDepth(), shape)
+        depthEffectNode?.update(currentValueOfDepth(), shape)
         if (this.stackItemScope != stackItemScope || this.shape != shape) {
             this.stackItemScope.decorations.remove(this)
             stackItemScope.decorations.add(this)
@@ -306,7 +313,7 @@ internal class ItemDecorationNode(
             else -> null
         }
 
-    private fun currentValueOfDepth() = currentValueOf(LocalGlimmerTheme).depthLevels.level1
+    private fun currentValueOfDepth() = currentValueOf(LocalGlimmerTheme).depthEffectLevels.level1
 
     /**
      * Returns the Y coordinate within [Outline] where the bottom boundary of the mask should be.

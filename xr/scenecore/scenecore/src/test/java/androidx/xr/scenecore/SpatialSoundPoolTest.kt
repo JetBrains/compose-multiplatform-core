@@ -32,7 +32,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -52,7 +51,7 @@ class SpatialSoundPoolTest {
 
     private var mockRtSoundPoolExtensions: RtSoundPoolExtensionsWrapper = mock()
 
-    private val mockGroupEntity = mock<RtEntity>()
+    private val mockEntity = mock<RtEntity>()
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private val mockActivitySpace = mock<RtActivitySpace>()
@@ -66,7 +65,7 @@ class SpatialSoundPoolTest {
             on { activitySpace } doReturn mockActivitySpace
             on { perceptionSpaceActivityPose } doReturn mock()
             on { mainPanelEntity } doReturn mock()
-            on { createGroupEntity(any(), any(), any()) } doReturn mockGroupEntity
+            on { createEntity(any(), any(), any()) } doReturn mockEntity
             on { spatialCapabilities } doReturn RtSpatialCapabilities(0)
         }
 
@@ -86,13 +85,14 @@ class SpatialSoundPoolTest {
         val expectedStreamId = 1234
 
         val soundPool = SoundPool.Builder().build()
-        val entity = GroupEntity.create(session, "test")
-        val pointSourceAttributes = PointSourceParams(entity)
+        val entity = Entity.create(session, "test")
+        val pointSourceAttributes = PointSourceParams()
         whenever(
                 mockRtSoundPoolExtensions.play(
                     eq(soundPool),
                     any(),
                     any<RtPointSourceParams>(),
+                    any<RtEntity>(),
                     any(),
                     any(),
                     any(),
@@ -107,6 +107,7 @@ class SpatialSoundPoolTest {
                 soundPool,
                 TEST_SOUND_ID,
                 pointSourceAttributes,
+                entity,
                 TEST_VOLUME,
                 TEST_PRIORITY,
                 TEST_LOOP,
@@ -116,7 +117,8 @@ class SpatialSoundPoolTest {
             .play(
                 eq(soundPool),
                 eq(TEST_SOUND_ID),
-                argWhere<RtPointSourceParams> { it.entity == mockGroupEntity },
+                any(),
+                eq(mockEntity),
                 eq(TEST_VOLUME),
                 eq(TEST_PRIORITY),
                 eq(TEST_LOOP),

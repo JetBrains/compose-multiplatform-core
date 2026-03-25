@@ -114,8 +114,9 @@ public class ProcessGlobalConfig {
      * @param suffix The directory name suffix to be used for the current
      *               process. Must not contain a path separator and should not be empty.
      * @return the ProcessGlobalConfig that has the value set to allow chaining of setters
-     * @throws UnsupportedOperationException if underlying WebView does not support the use of
-     *                                       the method.
+     * @throws UnsupportedOperationException if the
+     *                              {@link WebViewFeature#STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX}
+     *                                       feature is not supported.
      * @throws IllegalArgumentException if the suffix contains a path separator or is empty.
      */
     @RequiresFeature(name = WebViewFeature.STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX,
@@ -169,8 +170,9 @@ public class ProcessGlobalConfig {
      * @param dataDirectoryBasePath the absolute base path for the WebView data directory.
      * @param cacheDirectoryBasePath the absolute base path for the WebView cache directory.
      * @return the ProcessGlobalConfig that has the value set to allow chaining of setters
-     * @throws UnsupportedOperationException if underlying WebView does not support the use of
-     *                                       the method.
+     * @throws UnsupportedOperationException if the
+     *                               {@link WebViewFeature#STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS}
+     *                                       feature is not supported.
      * @throws IllegalArgumentException if the paths supplied do not have the right permissions
      * @deprecated Please use {@link #setDataDirectorySuffix(Context, String)}
      *              to set the suffix instead.
@@ -208,6 +210,13 @@ public class ProcessGlobalConfig {
      *
      * <p>
      * This is enabled for WebView M114 and above.
+     *
+     * @param context a Context to access application assets. This value cannot be null.
+     * @param isEnabled whether partitioned cookies should be enabled.
+     * @return the ProcessGlobalConfig that has the value set to allow chaining of setters
+     * @throws UnsupportedOperationException if the
+     *                          {@link WebViewFeature#STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES,
             enforcement =
@@ -319,8 +328,9 @@ public class ProcessGlobalConfig {
      * @param context a Context to access application assets. This value cannot be null.
      * @param startupMode the mode to run WebView's UI thread initialization in.
      * @return the ProcessGlobalConfig that has the value set to allow chaining of setters
-     * @throws UnsupportedOperationException if underlying WebView does not support the use of the
-     *     method.
+     * @throws UnsupportedOperationException if the
+     *                             {@link WebViewFeature#STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE}
+     *                                       feature is not supported.
      *
      * @deprecated Use {@link #setUiThreadStartupModeV2(Context, int)} instead.
      */
@@ -350,8 +360,9 @@ public class ProcessGlobalConfig {
      * @param context a Context to access application assets. This value cannot be null.
      * @param startupMode the mode to run WebView's UI thread initialization in.
      * @return the ProcessGlobalConfig that has the value set to allow chaining of setters
-     * @throws UnsupportedOperationException if underlying WebView does not support the use of the
-     *     method.
+     * @throws UnsupportedOperationException if the
+     *                          {@link WebViewFeature#STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2}
+     *                                       feature is not supported.
      */
     @ExperimentalAsyncStartUp
     @RequiresFeature(

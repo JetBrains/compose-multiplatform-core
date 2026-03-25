@@ -89,4 +89,8 @@ public interface JxrRuntime {
      * after calling [destroy]. The runtime must not be resumed when this method is called.
      */
     public fun destroy() {}
+
+    /** Gets the pointer to the underlying native session if applicable. */
+    public val sessionPointer: Long?
+        get() = null
 }

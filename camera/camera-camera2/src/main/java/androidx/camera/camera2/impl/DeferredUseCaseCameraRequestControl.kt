@@ -20,6 +20,7 @@ import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
 import androidx.camera.camera2.config.UseCaseCameraScope
 import androidx.camera.camera2.pipe.AeMode
+import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.core.ImageCapture
@@ -175,6 +176,7 @@ constructor(
         awbLockBehavior: Lock3ABehavior?,
         afTriggerStartAeMode: AeMode?,
         timeLimitNs: Long,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
     ): Deferred<Result3A> = runOnSequential {
         startFocusAndMeteringAsync(
             aeRegions,
@@ -185,6 +187,7 @@ constructor(
             awbLockBehavior,
             afTriggerStartAeMode,
             timeLimitNs,
+            convergedCondition,
         )
     }
 

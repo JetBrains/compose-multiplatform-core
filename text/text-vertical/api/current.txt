@@ -1,15 +1,29 @@
 // Signature format: 4.0
 package androidx.text.vertical {
 
-  public final class EmphasisSpan extends android.text.style.MetricAffectingSpan {
+  public enum AnnotationPosition {
+    method public static androidx.text.vertical.AnnotationPosition fromInt(int value);
+    property public int value;
+    enum_constant public static final androidx.text.vertical.AnnotationPosition AFTER;
+    enum_constant public static final androidx.text.vertical.AnnotationPosition BEFORE;
+    enum_constant public static final androidx.text.vertical.AnnotationPosition UNKNOWN;
+    field public static final androidx.text.vertical.AnnotationPosition.Companion Companion;
+    field public final int value;
+  }
+
+  public static final class AnnotationPosition.Companion {
+    method public androidx.text.vertical.AnnotationPosition fromInt(int value);
+  }
+
+  public final class EmphasisSpan extends android.text.style.ReplacementSpan {
     ctor public EmphasisSpan();
     ctor public EmphasisSpan(optional int style, optional boolean isFilled, optional float scale);
     ctor @BytecodeOnly public EmphasisSpan(int, boolean, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method public void draw(android.graphics.Canvas canvas, CharSequence? text, int start, int end, float x, int top, int y, int bottom, android.graphics.Paint paint);
     method @InaccessibleFromKotlin public float getScale();
+    method public int getSize(android.graphics.Paint paint, CharSequence? text, int start, int end, android.graphics.Paint.FontMetricsInt? fm);
     method @InaccessibleFromKotlin public int getStyle();
     method @InaccessibleFromKotlin public boolean isFilled();
-    method public void updateDrawState(android.text.TextPaint? p0);
-    method public void updateMeasureState(android.text.TextPaint p0);
     property public boolean isFilled;
     property public float scale;
     property public int style;
@@ -51,13 +65,26 @@ package androidx.text.vertical {
     property public static float DEFAULT_FONT_SHEAR;
   }
 
-  public final class RubySpan {
+  public final class RubySpan extends android.text.style.ReplacementSpan implements android.os.Parcelable {
+    ctor public RubySpan(CharSequence text);
+    ctor public RubySpan(CharSequence text, optional androidx.text.vertical.AnnotationPosition position);
+    ctor public RubySpan(CharSequence text, optional androidx.text.vertical.AnnotationPosition position, optional int orientation);
+    ctor public RubySpan(CharSequence text, optional androidx.text.vertical.AnnotationPosition position, optional int orientation, optional float textScale);
+    ctor @BytecodeOnly public RubySpan(CharSequence!, androidx.text.vertical.AnnotationPosition!, int, float, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method public int describeContents();
+    method public void draw(android.graphics.Canvas canvas, CharSequence? text, int start, int end, float x, int top, int y, int bottom, android.graphics.Paint paint);
     method @InaccessibleFromKotlin public int getOrientation();
-    method @InaccessibleFromKotlin public CharSequence getText();
+    method public int getSize(android.graphics.Paint paint, CharSequence? text, int start, int end, android.graphics.Paint.FontMetricsInt? fm);
     method @InaccessibleFromKotlin public float getTextScale();
+    method public void writeToParcel(android.os.Parcel parcel, int flags);
     property public int orientation;
+    property public androidx.text.vertical.AnnotationPosition position;
     property public CharSequence text;
     property public float textScale;
+    field public static final android.os.Parcelable.Creator<androidx.text.vertical.RubySpan> CREATOR;
+    field public static final androidx.text.vertical.RubySpan.Companion Companion;
+    field public final androidx.text.vertical.AnnotationPosition position;
+    field public final CharSequence text;
   }
 
   public static final class RubySpan.Builder {
@@ -65,6 +92,10 @@ package androidx.text.vertical {
     method public androidx.text.vertical.RubySpan build();
     method public androidx.text.vertical.RubySpan.Builder setOrientation(int orientation);
     method public androidx.text.vertical.RubySpan.Builder setTextScale(float textScale);
+  }
+
+  public static final class RubySpan.Companion {
+    property public android.os.Parcelable.Creator<androidx.text.vertical.RubySpan> CREATOR;
   }
 
   public final class TextOrientation {

@@ -336,6 +336,9 @@ public final class ProxyConfig {
          * returns {@code true} for {@link WebViewFeature#PROXY_OVERRIDE_REVERSE_BYPASS}.
          *
          * @return This Builder object
+         * @throws UnsupportedOperationException if the
+         *                                      {@link WebViewFeature#PROXY_OVERRIDE_REVERSE_BYPASS}
+         *                                       feature is not supported.
          */
         @RequiresFeature(name = WebViewFeature.PROXY_OVERRIDE_REVERSE_BYPASS,
                 enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
