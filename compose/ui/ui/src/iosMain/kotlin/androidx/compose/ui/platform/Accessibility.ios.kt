@@ -64,6 +64,7 @@ import androidx.compose.ui.window.DisplayLinkListener
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.native.ref.WeakReference
 import kotlin.time.measureTime
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
@@ -990,7 +991,9 @@ private class AccessibilityNotification(
         } else {
             UIAccessibilityLayoutChangedNotification
         }
-        AccessibilityMediator.lastFocusedElementForTests = newElementToFocus
+        AccessibilityMediator.lastFocusedElementForTests = newElementToFocus?.let {
+            WeakReference(it)
+        }
         UIAccessibilityPostNotification(notificationName, newElementToFocus)
     }
 }
@@ -1055,7 +1058,7 @@ internal class AccessibilityMediator(
 ) {
     companion object {
         // For testing purposes only
-        var lastFocusedElementForTests: Any? = null
+        var lastFocusedElementForTests: WeakReference<Any>? = null
     }
 
     private var focusMode: AccessibilityElementFocusMode = AccessibilityElementFocusMode.None

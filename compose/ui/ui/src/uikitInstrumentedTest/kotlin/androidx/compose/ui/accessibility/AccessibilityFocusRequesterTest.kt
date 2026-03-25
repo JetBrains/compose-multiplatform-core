@@ -28,9 +28,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import kotlin.experimental.ExperimentalNativeApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(ExperimentalNativeApi::class)
 class AccessibilityFocusRequesterTest {
     @Test
     fun testFocusRequesterMovesAccessibilityFocus() = runUIKitInstrumentedTest {
@@ -39,12 +41,16 @@ class AccessibilityFocusRequesterTest {
 
         setContent {
             Column {
-                Text("Text A", modifier =  Modifier
-                    .focusRequester(focusRequesterA)
-                    .focusable())
-                Text("Text B", modifier =  Modifier
-                    .focusRequester(focusRequesterB)
-                    .focusable())
+                Text(
+                    "Text A", modifier = Modifier
+                        .focusRequester(focusRequesterA)
+                        .focusable()
+                )
+                Text(
+                    "Text B", modifier = Modifier
+                        .focusRequester(focusRequesterB)
+                        .focusable()
+                )
             }
         }
 
@@ -56,13 +62,19 @@ class AccessibilityFocusRequesterTest {
         waitForIdle()
 
         val buttonBElement = findNodeWithLabel("Text B").element
-        assertEquals(buttonBElement, AccessibilityMediator.lastFocusedElementForTests)
+        assertEquals(
+            expected = buttonBElement,
+            actual = AccessibilityMediator.lastFocusedElementForTests?.value
+        )
 
         focusRequesterA.requestFocus()
         waitForIdle()
 
         val buttonAElement = findNodeWithLabel("Text A").element
-        assertEquals(buttonAElement, AccessibilityMediator.lastFocusedElementForTests)
+        assertEquals(
+            expected = buttonAElement,
+            actual = AccessibilityMediator.lastFocusedElementForTests?.value
+        )
     }
 
     @Test
@@ -91,6 +103,9 @@ class AccessibilityFocusRequesterTest {
         waitForIdle()
 
         val content1Element = findNodeWithLabel("Content 1").element
-        assertEquals(content1Element, AccessibilityMediator.lastFocusedElementForTests)
+        assertEquals(
+            expected = content1Element,
+            actual = AccessibilityMediator.lastFocusedElementForTests?.value
+        )
     }
 }
