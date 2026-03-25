@@ -46,6 +46,7 @@ import androidx.xr.scenecore.testing.FakeScenePose
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.time.TestTimeSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asExecutor
@@ -54,6 +55,7 @@ import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -211,7 +213,7 @@ class MovableComponentTest {
     @Test
     fun addMovableComponent_addsRuntimeMovableComponent() {
         createCustomSession()
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val moveListener = FakeEntityMoveListener()
@@ -236,7 +238,7 @@ class MovableComponentTest {
     @Test
     fun addAutoMovableComponent_addsRuntimeMovableComponent() {
         createCustomSession()
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val movableComponent =
@@ -255,7 +257,7 @@ class MovableComponentTest {
     @Test
     fun addMovableAnchorableComponent_addsRuntimeMovableComponent() {
         createCustomSession()
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val anchorPlacement =
@@ -317,7 +319,7 @@ class MovableComponentTest {
     @Test
     fun addMovableComponentDefaultArguments_addsRuntimeMovableComponentWithDefaults() {
         createCustomSession()
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val movableComponent = MovableComponent.createSystemMovable(session)
@@ -335,22 +337,23 @@ class MovableComponentTest {
     @Test
     fun removeMovableComponent_removesRuntimeMovableComponent() {
         createCustomSession()
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
         assertThat(entity).isNotNull()
+        val rtEntity = (entity as BaseEntity<*>).rtEntity
 
         val movableComponent = MovableComponent.createSystemMovable(session)
         assertThat(entity.addComponent(movableComponent)).isTrue()
-        assertThat(entity.rtEntity?.getComponents()).hasSize(1)
+        assertThat(rtEntity?.getComponents()).hasSize(1)
 
         entity.removeComponent(movableComponent)
-        assertThat(entity.rtEntity?.getComponents()).hasSize(0)
+        assertThat(rtEntity?.getComponents()).hasSize(0)
     }
 
     @Test
     fun movableComponent_canAttachOnlyOnce() {
         createCustomSession()
-        val entity = GroupEntity.create(session, "test")
-        val entity2 = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
+        val entity2 = Entity.create(session, "test")
         assertThat(entity).isNotNull()
         val movableComponent = MovableComponent.createSystemMovable(session)
 
@@ -361,7 +364,7 @@ class MovableComponentTest {
     @Test
     fun movableComponent_setSizeInvokesRuntimeMovableComponentSetSize() {
         createCustomSession()
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val movableComponent = MovableComponent.createSystemMovable(session)
@@ -381,7 +384,7 @@ class MovableComponentTest {
     @Test
     fun movableComponent_addMoveListenerInvokesRuntimeMovableComponentAddMoveEventListener() {
         createCustomSession()
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
 
         assertThat(entity).isNotNull()
 
@@ -410,7 +413,7 @@ class MovableComponentTest {
         // Simulates a move start event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        var expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+        var expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
 
         assertThat(moveListener.onMoveStartedCount).isEqualTo(1)
         assertThat(moveListener.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -432,7 +435,7 @@ class MovableComponentTest {
         // Simulates a move ongoing event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+        expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
 
         assertThat(moveListener.onMoveUpdatedCount).isEqualTo(1)
         assertThat(moveListener.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -455,7 +458,7 @@ class MovableComponentTest {
         // Simulates a move end event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+        expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
 
         assertThat(moveListener.onMoveEndedCount).isEqualTo(1)
         assertThat(moveListener.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -464,7 +467,7 @@ class MovableComponentTest {
     @Test
     fun movableComponent_addMultipleMoveEventListenersInvokesAllListeners() {
         createCustomSession()
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
 
         assertThat(entity).isNotNull()
 
@@ -495,7 +498,7 @@ class MovableComponentTest {
         // Simulates a move start event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        val expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+        val expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
 
         assertThat(moveListener1.onMoveStartedCount).isEqualTo(1)
         assertThat(moveListener1.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -506,7 +509,7 @@ class MovableComponentTest {
     @Test
     fun movableComponent_removeMoveEventListenerInvokesRuntimeRemoveMoveEventListener() {
         createCustomSession()
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
 
         assertThat(entity).isNotNull()
 
@@ -537,7 +540,7 @@ class MovableComponentTest {
         // Simulates a move start event from runtime.
         rtMovableComponent.onMoveEvent(rtMoveEvent)
         // Expects to receive a scenecore event.
-        val expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+        val expectedEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
 
         assertThat(moveListener1.onMoveStartedCount).isEqualTo(1)
         assertThat(moveListener1.stateMatchesEvent(entity, expectedEvent)).isTrue()
@@ -565,7 +568,7 @@ class MovableComponentTest {
     @Test
     fun movablecomponent_canAttachAgainAfterDetach() {
         createCustomSession()
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
         assertThat(entity).isNotNull()
         val movableComponent = MovableComponent.createSystemMovable(session)
 
@@ -592,7 +595,7 @@ class MovableComponentTest {
     fun customMovableComponent_invokesInitialListener() {
         createCustomSession()
         runTest(testDispatcher) {
-            val entity = GroupEntity.create(session, "test")
+            val entity = Entity.create(session, "test")
             assertThat(entity).isNotNull()
             val moveListener = FakeEntityMoveListener()
             val movableComponent =
@@ -622,7 +625,7 @@ class MovableComponentTest {
             // Simulates a move start event from runtime.
             rtMovableComponent.onMoveEvent(rtMoveEvent)
             // Expects to receive a scenecore event.
-            val moveEvent = rtMoveEvent.toMoveEvent(session.scene.entityManager)
+            val moveEvent = rtMoveEvent.toMoveEvent(session.scene.entityRegistry)
             advanceUntilIdle()
 
             assertThat(moveListener.onMoveStartedCount).isEqualTo(1)
@@ -774,11 +777,11 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val groupEntityPose = Pose(Vector3(0f, -1f, 0f), Quaternion.Identity)
-            val groupEntity = GroupEntity.create(session, "test", groupEntityPose)
-            (groupEntity.rtScenePose as FakeScenePose).activitySpacePose = groupEntityPose
+            val entityPose = Pose(Vector3(0f, -1f, 0f), Quaternion.Identity)
+            val entity = Entity.create(session, "test", entityPose) as BaseEntity<*>
+            (entity.rtScenePose as FakeScenePose).activitySpacePose = entityPose
             val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
-            panelEntity.parent = groupEntity
+            panelEntity.parent = entity
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             val proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -792,7 +795,7 @@ class MovableComponentTest {
                     proposedPose,
                     entityScale,
                     entityScale,
-                    groupEntity.rtEntity!!,
+                    entity.rtEntity!!,
                     updatedParent = null,
                     disposedEntity = null,
                 )
@@ -1602,7 +1605,7 @@ class MovableComponentTest {
 
             // Create a parent entity whose pose is below the activity space pose.
             val parentPose = Pose(Vector3(0f, -1f, 0f), Quaternion.Identity)
-            val parentEntity: Entity = GroupEntity.create(session, "test", parentPose)
+            val parentEntity: Entity = Entity.create(session, "test", parentPose)
             panelEntity.parent = parentEntity
 
             var proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -1778,7 +1781,9 @@ class MovableComponentTest {
 
             // Verify that the anchor entity was disposed by checking that it is no longer in the
             // entity manager.
-            assertThat(session.scene.entityManager.getEntitiesOfType(AnchorEntity::class.java).size)
+            assertThat(
+                    session.scene.entityRegistry.getEntitiesOfType(AnchorEntity::class.java).size
+                )
                 .isEqualTo(0)
         }
     }
@@ -1860,7 +1865,7 @@ class MovableComponentTest {
 
             // Cache anchor entity and give it a child
             val anchorEntity = panelEntity.parent
-            val childEntity = GroupEntity.create(session, "test", Pose.Identity)
+            val childEntity = Entity.create(session, "test", Pose.Identity)
             childEntity.parent = anchorEntity
 
             proposedPose = Pose(Vector3(1f, 4f, 1f), Quaternion.Identity)
@@ -1889,10 +1894,12 @@ class MovableComponentTest {
 
             // Verify that the anchor entity has not been disposed by checking that it is still in
             // the entity manager.
-            assertThat(session.scene.entityManager.getEntitiesOfType(AnchorEntity::class.java).size)
+            assertThat(
+                    session.scene.entityRegistry.getEntitiesOfType(AnchorEntity::class.java).size
+                )
                 .isEqualTo(1)
             anchorEntityToDispose =
-                session.scene.entityManager.getEntitiesOfType(AnchorEntity::class.java).first()
+                session.scene.entityRegistry.getEntitiesOfType(AnchorEntity::class.java).first()
         }
     }
 
@@ -2006,6 +2013,68 @@ class MovableComponentTest {
             // Verify that runtime movable component has had plane pose set with null pose
             assertThat(rtMovableComponent.setPlanePoseForMoveUpdatePoseCallCount).isEqualTo(1)
             assertThat(rtMovableComponent.lastPlanePose).isNull()
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun createAnchorable_unsupportedEntityType_throwsIllegalArgumentException() {
+        createSession()
+        runTest(testDispatcher) {
+            activityController.create().start().resume()
+
+            val activitySpacePose = Pose(Vector3(-1f, -1f, 0f), Quaternion.Identity)
+            assertNotNull(session.scene.activitySpace.rtEntity).setPose(activitySpacePose)
+            (session.scene.perceptionSpace.rtScenePose as FakeScenePose).activitySpacePose =
+                activitySpacePose.inverse
+
+            val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
+            val plane =
+                FakeRuntimePlane(
+                    trackingState = TrackingState.TRACKING,
+                    type = Plane.Type.HORIZONTAL_UPWARD_FACING,
+                    label = Plane.Label.FLOOR,
+                    extents = FloatSize2d(5.0f, 5.0f),
+                    centerPose = planeCenterPose,
+                )
+            mFakePerceptionManager.addTrackable(plane)
+            advanceUntilIdle()
+
+            val movableComponent = MovableComponent.createAnchorable(session)
+
+            // Create a mock Entity that is not PanelEntity or GltfModelEntity
+            val mockEntity = Entity.create(session, "test")
+            assertTrue(mockEntity.addComponent(movableComponent))
+
+            val proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
+            val entityScale = Vector3.One * mockEntity.getScale()
+
+            val rtMoveEndEvent =
+                RtMoveEvent(
+                    MoveEvent.MOVE_STATE_END,
+                    Ray(Vector3(0f, 0f, 0f), Vector3(1f, 1f, 1f)),
+                    Ray(Vector3(1f, 1f, 1f), Vector3(2f, 2f, 2f)),
+                    proposedPose,
+                    proposedPose,
+                    entityScale,
+                    entityScale,
+                    checkNotNull(session.scene.activitySpace.rtEntity),
+                    updatedParent = null,
+                    disposedEntity = null,
+                )
+
+            val rtMovableComponent = movableComponent.rtMovableComponent as FakeMovableComponent
+
+            // Expect an IllegalArgumentException because mockEntity is not a supported type.
+            val exception =
+                assertFailsWith<IllegalArgumentException> {
+                    rtMovableComponent.onMoveEvent(rtMoveEndEvent)
+                }
+
+            assertThat(exception.message)
+                .isEqualTo(
+                    "Movable component can be applied to either a PanelEntity or GltfModelEntity"
+                )
         }
     }
 }

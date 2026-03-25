@@ -16,7 +16,6 @@
 
 package androidx.xr.arcore.testing
 
-import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.Face as RuntimeFace
 import androidx.xr.arcore.runtime.Mesh
 import androidx.xr.runtime.TrackingState
@@ -26,26 +25,13 @@ import androidx.xr.runtime.math.Vector3
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 
-/**
- * Fake implementation of [androidx.xr.arcore.runtime.Face] for testing purposes.
- *
- * @property trackingState The current tracking state of the face.
- * @property isValid Indicates whether the face is valid.
- * @property blendShapeValues The array of blend shape values.
- * @property confidenceValues The array of confidence values.
- */
+/** Fake implementation of [Face][RuntimeFace] for testing purposes. */
 public class FakeRuntimeFace(
     override var trackingState: TrackingState = TrackingState.PAUSED,
     override var isValid: Boolean = true,
     override var blendShapeValues: FloatArray = FloatArray(0),
     override var confidenceValues: FloatArray = FloatArray(0),
 ) : RuntimeFace {
-
-    /**
-     * Controls whether calling [createAnchor] will succeed or throw an [IllegalStateException].
-     * Defaults to `true`.
-     */
-    @get:JvmName("canCreateAnchors") public var canCreateAnchors: Boolean = true
 
     override var centerPose: Pose = Pose()
 
@@ -71,17 +57,5 @@ public class FakeRuntimeFace(
         mesh.normals!!.put(1f)
         mesh.textureCoordinates!!.put(1f)
         mesh.vertices!!.put(1f)
-    }
-
-    /**
-     * Controls whether calling [createAnchor] will succeed or throw an [IllegalStateException].
-     *
-     * Defaults to `true`.
-     */
-    override fun createAnchor(pose: Pose): Anchor {
-        if (!canCreateAnchors) {
-            throw IllegalStateException()
-        }
-        return FakeRuntimeAnchor(pose)
     }
 }

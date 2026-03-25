@@ -46,7 +46,7 @@ android {
         abortOnError = false
     }
     namespace = "androidx.lint.integration.tests"
-    compileSdk { version = release(36) }
+    compileSdk { version = release(36) { minorApiLevel = 1 }}
 }
 
 

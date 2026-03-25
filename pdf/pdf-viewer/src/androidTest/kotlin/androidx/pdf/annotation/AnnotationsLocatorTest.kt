@@ -24,6 +24,7 @@ import android.os.SystemClock
 import android.util.SparseArray
 import android.view.MotionEvent
 import androidx.pdf.annotation.AnnotationsView.PageAnnotationsData
+import androidx.pdf.annotation.models.HighlightAnnotation
 import androidx.pdf.annotation.models.PathPdfObject
 import androidx.pdf.annotation.models.PathPdfObject.PathInput
 import androidx.pdf.annotation.models.PdfAnnotation
@@ -146,6 +147,72 @@ class AnnotationsLocatorTest {
 
         // Distance is 0, which is <= touchSlop, so it must return an empty list
         assertThat(moveResults).isEmpty()
+    }
+
+    @Test
+    fun findAnnotations_highlightAnnotation_hitDetected() {
+        val annotationBounds = listOf(RectF(100f, 100f, 200f, 150f))
+        val annotation = HighlightAnnotation(0, annotationBounds, Color.YELLOW)
+        val annotationsData = createAnnotationsData(listOf(annotation))
+
+        // Simulate Touch inside bounds at (150, 125)
+        val event = obtainMotionEvent(MotionEvent.ACTION_DOWN, 150f, 125f)
+
+        val results = annotationsLocator.findAnnotations(annotationsData, event)
+
+        assertThat(results).isNotEmpty()
+        assertThat(results).hasSize(1)
+        assertThat(results[0].annotation).isEqualTo(annotation)
+    }
+
+    @Test
+    fun findAnnotations_highlightAnnotation_multiBounds_hitDetected() {
+        // Highlight spanning multiple lines/rects
+        val annotationBounds = listOf(RectF(100f, 100f, 200f, 120f), RectF(100f, 130f, 180f, 150f))
+        val annotation = HighlightAnnotation(0, annotationBounds, Color.YELLOW)
+        val annotationsData = createAnnotationsData(listOf(annotation))
+
+        // 1. Hit first rectangle at (150, 110)
+        val event1 = obtainMotionEvent(MotionEvent.ACTION_DOWN, 150f, 110f)
+        val results1 = annotationsLocator.findAnnotations(annotationsData, event1)
+        assertThat(results1).hasSize(1)
+        assertThat(results1[0].annotation).isEqualTo(annotation)
+
+        // 2. Hit second rectangle at (140, 140)
+        val event2 = obtainMotionEvent(MotionEvent.ACTION_DOWN, 140f, 140f)
+        val results2 = annotationsLocator.findAnnotations(annotationsData, event2)
+        assertThat(results2).hasSize(1)
+        assertThat(results2[0].annotation).isEqualTo(annotation)
+    }
+
+    @Test
+    fun findAnnotations_highlightAnnotation_outside_noHit() {
+        val annotationBounds = listOf(RectF(100f, 100f, 200f, 150f))
+        val annotation = HighlightAnnotation(0, annotationBounds, Color.YELLOW)
+        val annotationsData = createAnnotationsData(listOf(annotation))
+
+        // Simulate Touch outside bounds at (350, 125) - way outside slop
+        val event = obtainMotionEvent(MotionEvent.ACTION_DOWN, 350f, 125f)
+
+        val results = annotationsLocator.findAnnotations(annotationsData, event)
+
+        assertThat(results).isEmpty()
+    }
+
+    @Test
+    fun findAnnotations_highlightAnnotation_nearBoundary_hitDetectedDueToSlop() {
+        val annotationBounds = listOf(RectF(100f, 100f, 200f, 150f))
+        val annotation = HighlightAnnotation(0, annotationBounds, Color.YELLOW)
+        val annotationsData = createAnnotationsData(listOf(annotation))
+
+        // Simulate Touch slightly outside (e.g. 1 pixel outside)
+        // touchSlop is > 0, so this should still be a hit
+        val event = obtainMotionEvent(MotionEvent.ACTION_DOWN, 99f, 125f)
+
+        val results = annotationsLocator.findAnnotations(annotationsData, event)
+
+        assertThat(results).hasSize(1)
+        assertThat(results[0].annotation).isEqualTo(annotation)
     }
 
     // --- Helpers ---

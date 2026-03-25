@@ -24,6 +24,7 @@ import androidx.datastore.core.IOException
 import androidx.datastore.core.Serializer
 import androidx.datastore.dataStore
 import androidx.glance.wear.core.ContainerInfo
+import androidx.glance.wear.core.WearWidgetParams
 import androidx.glance.wear.core.WidgetInstanceId
 import androidx.glance.wear.proto.WearWidgetCacheProto
 import androidx.glance.wear.proto.WidgetContainerSpecProto
@@ -41,7 +42,7 @@ private val Context.dataStore: DataStore<WearWidgetCacheProto> by
  *
  * @param dataStore The [DataStore] to use for the cache.
  */
-internal class WearWidgetCache
+internal open class WearWidgetCache
 @VisibleForTesting
 internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
 
@@ -54,7 +55,7 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
      * @param block The block of code to run within the update scope.
      * @return `true` if the update was successful, `false` otherwise.
      */
-    suspend fun update(block: WidgetCacheUpdateScope.() -> Unit): Boolean {
+    open suspend fun update(block: WidgetCacheUpdateScope.() -> Unit): Boolean {
         return try {
             dataStore.updateData { cacheProto ->
                 val scope = WidgetCacheUpdateScope(cacheProto)
@@ -72,26 +73,49 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
      * Reads the container spec for a given container type from the cache.
      *
      * @param containerType The container type to read the spec for.
-     * @return The [WidgetContainerSpec], or `null` if it doesn't exist in the cache.
+     * @param instanceId The instance id to use for the returned [WearWidgetParams].
+     * @return The reconstructed [WearWidgetParams].
+     * @throws [WidgetCacheMissException] if the requested cache entry can't be found.
      */
-    suspend fun getContainerSpec(
-        @ContainerInfo.ContainerType containerType: Int
-    ): WidgetContainerSpec? {
+    open suspend fun getWidgetParams(
+        @ContainerInfo.ContainerType containerType: Int,
+        instanceId: WidgetInstanceId,
+    ): WearWidgetParams {
         val cacheProto = dataStore.data.first()
-        return cacheProto.container_type_to_spec[containerType]?.let {
-            WidgetContainerSpec.fromProto(it)
-        }
+        return cacheProto.container_type_to_spec[containerType]?.let { specProto ->
+            WearWidgetParams(
+                instanceId = instanceId,
+                containerType = containerType,
+                widthDp = specProto.width_dp,
+                heightDp = specProto.height_dp,
+                horizontalPaddingDp = specProto.horizontal_padding_dp,
+                verticalPaddingDp = specProto.vertical_padding_dp,
+                cornerRadiusDp = specProto.corner_radius_dp,
+            )
+        } ?: throw WidgetCacheMissException("No params found for container type $containerType")
     }
 
     /**
      * Reads the container type for a given widget instance from the cache.
      *
      * @param instanceId The instance id of the widget to read the container type for.
-     * @return The container type, or `null` if it doesn't exist in the cache.
+     * @return The container type.
+     * @throws [WidgetCacheMissException] if the requested cache entry can't be found.
      */
-    suspend fun getInstanceType(instanceId: WidgetInstanceId): Int? {
+    open suspend fun getContainerTypeForInstance(instanceId: WidgetInstanceId): Int {
         val cacheProto = dataStore.data.first()
         return cacheProto.instance_id_to_type[instanceId.flattenToString()]
+            ?: throw WidgetCacheMissException("No container type found for instance $instanceId")
+    }
+
+    /**
+     * Reads the service-to-widget class mapping from the cache.
+     *
+     * @return The mapping from service class name to widget class name.
+     */
+    open suspend fun getServiceToWidgetMapping(): Map<String, String> {
+        val cacheProto = dataStore.data.first()
+        return cacheProto.service_to_widget_name
     }
 
     /** Scope for updating the widget cache. */
@@ -99,6 +123,7 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
     class WidgetCacheUpdateScope(private val initialProto: WearWidgetCacheProto) {
         private val instanceIdToType = initialProto.instance_id_to_type.toMutableMap()
         private val containerTypeToSpec = initialProto.container_type_to_spec.toMutableMap()
+        private val serviceToWidgetName = initialProto.service_to_widget_name.toMutableMap()
 
         /**
          * Sets the container type for a given widget instance. Overwrites any existing entry for
@@ -107,7 +132,7 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
          * @param instanceId The instance id of the widget.
          * @param containerType The container type to associate with the instance.
          */
-        fun setInstanceType(
+        fun setContainerTypeForInstance(
             instanceId: WidgetInstanceId,
             @ContainerInfo.ContainerType containerType: Int,
         ) {
@@ -115,46 +140,46 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
         }
 
         /**
-         * Sets the container spec for a given container type. Overwrites any existing entry for the
-         * same [containerType].
+         * Sets the params for a given container type. Overwrites any existing entry for the same
+         * container type in [params].
          *
-         * @param containerType The container type.
-         * @param spec The [WidgetContainerSpec] for the container type.
+         * @param params The parameters to be updated in the cache.
          */
-        fun setContainerSpec(
-            @ContainerInfo.ContainerType containerType: Int,
-            spec: WidgetContainerSpec,
-        ) {
-            containerTypeToSpec[containerType] = spec.toProto()
+        fun setWidgetParams(params: WearWidgetParams) {
+            containerTypeToSpec[params.containerType] =
+                WidgetContainerSpecProto(
+                    width_dp = params.widthDp,
+                    height_dp = params.heightDp,
+                    horizontal_padding_dp = params.horizontalPaddingDp,
+                    vertical_padding_dp = params.verticalPaddingDp,
+                    corner_radius_dp = params.cornerRadiusDp,
+                )
+        }
+
+        /**
+         * Puts the widget class name for a given service class name, overriding existing values.
+         *
+         * @param serviceName The class name of the service.
+         * @param widgetName The class name of the widget.
+         */
+        fun putServiceToWidgetMapping(serviceName: String, widgetName: String) {
+            serviceToWidgetName[serviceName] = widgetName
         }
 
         internal fun toProto(): WearWidgetCacheProto {
             return initialProto.copy(
                 instance_id_to_type = instanceIdToType,
                 container_type_to_spec = containerTypeToSpec,
+                service_to_widget_name = serviceToWidgetName,
             )
         }
     }
 
+    /** Exception thrown when a requested cache entry can't be found. */
+    internal class WidgetCacheMissException(message: String) : Exception(message)
+
     internal companion object {
         private const val TAG = "WearWidgetCache"
-    }
-}
-
-/**
- * Represents the container spec for widget containers.
- *
- * @property widthDp The width of the content area in dp.
- * @property heightDp The height of the content area in dp.
- */
-internal data class WidgetContainerSpec(val widthDp: Float, val heightDp: Float) {
-    /** Converts this [WidgetContainerSpec] to a [WidgetContainerSpecProto]. */
-    internal fun toProto() = WidgetContainerSpecProto(width_dp = widthDp, height_dp = heightDp)
-
-    internal companion object {
-        /** Converts a [WidgetContainerSpecProto] to a [WidgetContainerSpec]. */
-        internal fun fromProto(specProto: WidgetContainerSpecProto) =
-            WidgetContainerSpec(widthDp = specProto.width_dp, heightDp = specProto.height_dp)
     }
 }
 

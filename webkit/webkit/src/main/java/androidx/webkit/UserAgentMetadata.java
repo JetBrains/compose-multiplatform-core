@@ -258,7 +258,9 @@ public final class UserAgentMetadata {
      * @see Builder#setFormFactors
      *
      * @return A list of strings to indicate the form factors of the user-agent.
-     *
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#USER_AGENT_METADATA_FORM_FACTORS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA_FORM_FACTORS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -676,9 +678,9 @@ public final class UserAgentMetadata {
          * @param formFactors The form factors is used to generate user-agent client hint
          *                    {@code sec-ch-ua-form-factors}.
          * @throws IllegalArgumentException if the list contains an invalid form factor string.
-         * @throws UnsupportedOperationException if this feature is not supported by the current
-         *         WebView.
-         *
+         * @throws UnsupportedOperationException if the
+         *                                   {@link WebViewFeature#USER_AGENT_METADATA_FORM_FACTORS}
+         *                                       feature is not supported.
          */
         @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA_FORM_FACTORS,
                 enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

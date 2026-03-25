@@ -73,10 +73,10 @@ class FlexBoxTest {
                                 height = it.height
                             }
                     ) {
-                        repeat(3) { _ ->
+                        repeat(3) { index ->
                             Box(
                                 Modifier.size(20.toDp()).onPlaced {
-                                    positions.add(it.positionInParent().x)
+                                    positions.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -99,11 +99,11 @@ class FlexBoxTest {
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 Box(Modifier.size(200.dp)) {
-                    FlexBox(config = { direction = FlexDirection.Row }) {
-                        repeat(3) { _ ->
+                    FlexBox(config = { direction(FlexDirection.Row) }) {
+                        repeat(3) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions.add(it.positionInParent().x)
+                                    xPositions.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -124,11 +124,11 @@ class FlexBoxTest {
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 Box(Modifier.size(200.dp)) {
-                    FlexBox(config = { direction = FlexDirection.Column }) {
-                        repeat(3) { _ ->
+                    FlexBox(config = { direction(FlexDirection.Column) }) {
+                        repeat(3) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    yPositions.add(it.positionInParent().y)
+                                    yPositions.add(index, it.positionInParent().y)
                                 }
                             )
                         }
@@ -151,12 +151,12 @@ class FlexBoxTest {
                 Box(Modifier.size(200.dp)) {
                     FlexBox(
                         modifier = Modifier.fillMaxWidth(),
-                        config = { direction = FlexDirection.RowReverse },
+                        config = { direction(FlexDirection.RowReverse) },
                     ) {
-                        repeat(3) { _ ->
+                        repeat(3) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions.add(it.positionInParent().x)
+                                    xPositions.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -180,12 +180,12 @@ class FlexBoxTest {
                 Box(Modifier.size(200.dp)) {
                     FlexBox(
                         modifier = Modifier.fillMaxHeight(),
-                        config = { direction = FlexDirection.ColumnReverse },
+                        config = { direction(FlexDirection.ColumnReverse) },
                     ) {
-                        repeat(3) { _ ->
+                        repeat(3) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    yPositions.add(it.positionInParent().y)
+                                    yPositions.add(index, it.positionInParent().y)
                                 }
                             )
                         }
@@ -210,8 +210,8 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.onSizeChanged { height = it.height },
                         config = {
-                            direction = FlexDirection.Row
-                            wrap = FlexWrap.Wrap
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
                         },
                     ) {
                         repeat(6) { Box(Modifier.size(20.dp)) }
@@ -235,14 +235,14 @@ class FlexBoxTest {
                 Box(Modifier.size(100.dp)) {
                     FlexBox(
                         config = {
-                            direction = FlexDirection.Row
-                            wrap = FlexWrap.WrapReverse
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.WrapReverse)
                         }
                     ) {
-                        repeat(6) { _ ->
+                        repeat(6) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    yPositions.add(it.positionInParent().y)
+                                    yPositions.add(index, it.positionInParent().y)
                                 }
                             )
                         }
@@ -268,8 +268,8 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.onSizeChanged { width = it.width },
                         config = {
-                            direction = FlexDirection.Column
-                            wrap = FlexWrap.Wrap
+                            direction(FlexDirection.Column)
+                            wrap(FlexWrap.Wrap)
                         },
                     ) {
                         repeat(6) { Box(Modifier.size(20.dp)) }
@@ -296,14 +296,14 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.fillMaxWidth(),
                         config = {
-                            direction = FlexDirection.Row
-                            justifyContent = FlexJustifyContent.Start
+                            direction(FlexDirection.Row)
+                            justifyContent(FlexJustifyContent.Start)
                         },
                     ) {
-                        repeat(3) { _ ->
+                        repeat(3) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions.add(it.positionInParent().x)
+                                    xPositions.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -327,14 +327,14 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.fillMaxWidth(),
                         config = {
-                            direction = FlexDirection.Row
-                            justifyContent = FlexJustifyContent.End
+                            direction(FlexDirection.Row)
+                            justifyContent(FlexJustifyContent.End)
                         },
                     ) {
-                        repeat(3) { _ ->
+                        repeat(3) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions.add(it.positionInParent().x)
+                                    xPositions.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -359,14 +359,14 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.fillMaxWidth(),
                         config = {
-                            direction = FlexDirection.Row
-                            justifyContent = FlexJustifyContent.Center
+                            direction(FlexDirection.Row)
+                            justifyContent(FlexJustifyContent.Center)
                         },
                     ) {
-                        repeat(3) { _ ->
+                        repeat(3) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions.add(it.positionInParent().x)
+                                    xPositions.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -391,14 +391,14 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.fillMaxWidth(),
                         config = {
-                            direction = FlexDirection.Row
-                            justifyContent = FlexJustifyContent.SpaceBetween
+                            direction(FlexDirection.Row)
+                            justifyContent(FlexJustifyContent.SpaceBetween)
                         },
                     ) {
-                        repeat(3) { _ ->
+                        repeat(3) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions.add(it.positionInParent().x)
+                                    xPositions.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -424,14 +424,14 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.fillMaxWidth(),
                         config = {
-                            direction = FlexDirection.Row
-                            justifyContent = FlexJustifyContent.SpaceAround
+                            direction(FlexDirection.Row)
+                            justifyContent(FlexJustifyContent.SpaceAround)
                         },
                     ) {
-                        repeat(5) { _ ->
+                        repeat(5) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions.add(it.positionInParent().x)
+                                    xPositions.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -458,14 +458,14 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.fillMaxWidth(),
                         config = {
-                            direction = FlexDirection.Row
-                            justifyContent = FlexJustifyContent.SpaceEvenly
+                            direction(FlexDirection.Row)
+                            justifyContent(FlexJustifyContent.SpaceEvenly)
                         },
                     ) {
-                        repeat(3) { _ ->
+                        repeat(3) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions.add(it.positionInParent().x)
+                                    xPositions.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -493,14 +493,14 @@ class FlexBoxTest {
                 Box(Modifier.size(200.dp)) {
                     FlexBox(
                         config = {
-                            direction = FlexDirection.Row
-                            alignItems = FlexAlignItems.Start
+                            direction(FlexDirection.Row)
+                            alignItems(FlexAlignItems.Start)
                         }
                     ) {
-                        itemSizes.forEachIndexed { _, size ->
+                        itemSizes.forEachIndexed { index, size ->
                             Box(
                                 Modifier.size(20.dp, size.dp).onPlaced {
-                                    yPositions.add(it.positionInParent().y)
+                                    yPositions.add(index, it.positionInParent().y)
                                 }
                             )
                         }
@@ -525,14 +525,14 @@ class FlexBoxTest {
                 Box(Modifier.size(200.dp)) {
                     FlexBox(
                         config = {
-                            direction = FlexDirection.Row
-                            alignItems = FlexAlignItems.End
+                            direction(FlexDirection.Row)
+                            alignItems(FlexAlignItems.End)
                         }
                     ) {
-                        itemSizes.forEachIndexed { _, size ->
+                        itemSizes.forEachIndexed { index, size ->
                             Box(
                                 Modifier.size(20.dp, size.dp).onPlaced {
-                                    yPositions.add(it.positionInParent().y)
+                                    yPositions.add(index, it.positionInParent().y)
                                 }
                             )
                         }
@@ -558,14 +558,14 @@ class FlexBoxTest {
                 Box(Modifier.size(200.dp)) {
                     FlexBox(
                         config = {
-                            direction = FlexDirection.Row
-                            alignItems = FlexAlignItems.Center
+                            direction(FlexDirection.Row)
+                            alignItems(FlexAlignItems.Center)
                         }
                     ) {
-                        itemSizes.forEachIndexed { _, size ->
+                        itemSizes.forEachIndexed { index, size ->
                             Box(
                                 Modifier.size(20.dp, size.dp).onPlaced {
-                                    yPositions.add(it.positionInParent().y)
+                                    yPositions.add(index, it.positionInParent().y)
                                 }
                             )
                         }
@@ -590,17 +590,17 @@ class FlexBoxTest {
                 Box(Modifier.size(200.dp)) {
                     FlexBox(
                         config = {
-                            direction = FlexDirection.Row
-                            alignItems = FlexAlignItems.Stretch
+                            direction(FlexDirection.Row)
+                            alignItems(FlexAlignItems.Stretch)
                         }
                     ) {
                         // This item will decide the line height
                         Box(Modifier.width(20.dp).height(40.dp))
-                        repeat(2) { _ ->
+                        repeat(2) { index ->
                             Box(
                                 Modifier.width(20.dp)
                                     // No height specified - should stretch
-                                    .onSizeChanged { heights.add(it.height) }
+                                    .onSizeChanged { heights.add(index, it.height) }
                             )
                         }
                     }
@@ -624,14 +624,14 @@ class FlexBoxTest {
                 FlexBox(
                     modifier = Modifier.size(200.dp),
                     config = {
-                        direction = FlexDirection.Row
-                        alignItems = FlexAlignItems.End
+                        direction(FlexDirection.Row)
+                        alignItems(FlexAlignItems.End)
                     },
                 ) {
-                    itemSizes.forEachIndexed { _, size ->
+                    itemSizes.forEachIndexed { index, size ->
                         Box(
                             Modifier.size(20.dp, size.dp).onPlaced {
-                                yPositions.add(it.positionInParent().y)
+                                yPositions.add(index, it.positionInParent().y)
                             }
                         )
                     }
@@ -656,14 +656,14 @@ class FlexBoxTest {
                 FlexBox(
                     modifier = Modifier.size(200.dp),
                     config = {
-                        direction = FlexDirection.Row
-                        alignItems = FlexAlignItems.Center
+                        direction(FlexDirection.Row)
+                        alignItems(FlexAlignItems.Center)
                     },
                 ) {
-                    itemSizes.forEachIndexed { _, size ->
+                    itemSizes.forEachIndexed { index, size ->
                         Box(
                             Modifier.size(20.dp, size.dp).onPlaced {
-                                yPositions.add(it.positionInParent().y)
+                                yPositions.add(index, it.positionInParent().y)
                             }
                         )
                     }
@@ -687,15 +687,15 @@ class FlexBoxTest {
                 FlexBox(
                     modifier = Modifier.size(200.dp),
                     config = {
-                        direction = FlexDirection.Row
-                        alignItems = FlexAlignItems.Stretch
+                        direction(FlexDirection.Row)
+                        alignItems(FlexAlignItems.Stretch)
                     },
                 ) {
-                    repeat(2) { _ ->
+                    repeat(2) { index ->
                         Box(
                             Modifier.width(20.dp)
                                 // No height specified - should stretch
-                                .onSizeChanged { heights.add(it.height) }
+                                .onSizeChanged { heights.add(index, it.height) }
                         )
                     }
                 }
@@ -719,15 +719,15 @@ class FlexBoxTest {
                 Box(Modifier.size(100.dp)) {
                     FlexBox(
                         config = {
-                            direction = FlexDirection.Row
-                            wrap = FlexWrap.Wrap
-                            rowGap = 10.dp
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
+                            rowGap(10.dp)
                         }
                     ) {
-                        repeat(10) { _ ->
+                        repeat(10) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    yPositions.add(it.positionInParent().y)
+                                    yPositions.add(index, it.positionInParent().y)
                                 }
                             )
                         }
@@ -753,14 +753,14 @@ class FlexBoxTest {
                 Box(Modifier.size(200.dp)) {
                     FlexBox(
                         config = {
-                            direction = FlexDirection.Row
-                            columnGap = 10.dp
+                            direction(FlexDirection.Row)
+                            columnGap(10.dp)
                         }
                     ) {
-                        repeat(3) { _ ->
+                        repeat(3) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions.add(it.positionInParent().x)
+                                    xPositions.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -786,15 +786,15 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.onSizeChanged { height = it.height },
                         config = {
-                            direction = FlexDirection.Row
-                            wrap = FlexWrap.Wrap
-                            gap(10.dp) // Sets both rowGap and columnGap
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
+                            gap(10.dp)
                         },
                     ) {
-                        repeat(6) { _ ->
+                        repeat(6) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions.add(it.positionInParent().x)
+                                    xPositions.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -821,8 +821,8 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.onSizeChanged { height = it.height },
                         config = {
-                            direction = FlexDirection.Row
-                            wrap = FlexWrap.Wrap
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
                             gap(10.dp)
                         },
                     ) {
@@ -855,8 +855,8 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.onSizeChanged { height = it.height },
                         config = {
-                            direction = FlexDirection.Row
-                            wrap = FlexWrap.Wrap
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
                             gap(15.dp)
                         },
                     ) {
@@ -891,20 +891,20 @@ class FlexBoxTest {
                 Box(Modifier.size(100.dp)) {
                     FlexBox(
                         config = {
-                            direction = FlexDirection.Row
+                            direction(FlexDirection.Row)
                             gap(10.dp)
                         }
                     ) {
                         // Item 1: 0dp
                         Box(
                             Modifier.size(0.dp, 20.dp).onPlaced {
-                                xPositions.add(it.positionInParent().x)
+                                xPositions.add(0, it.positionInParent().x)
                             }
                         )
                         // Item 2: 20dp
                         Box(
                             Modifier.size(20.dp, 20.dp).onPlaced {
-                                xPositions.add(it.positionInParent().x)
+                                xPositions.add(1, it.positionInParent().x)
                             }
                         )
                     }
@@ -930,21 +930,21 @@ class FlexBoxTest {
                 Box(Modifier.size(200.dp)) {
                     FlexBox(
                         modifier = Modifier.fillMaxWidth(),
-                        config = { direction = FlexDirection.Row },
+                        config = { direction(FlexDirection.Row) },
                     ) {
                         // Item with grow=0 (default)
-                        Box(Modifier.size(20.dp).onSizeChanged { widths.add(it.width) })
+                        Box(Modifier.size(20.dp).onSizeChanged { widths.add(0, it.width) })
                         // Item with grow=1
                         Box(
                             Modifier.size(20.dp)
-                                .flex { grow = 1f }
-                                .onSizeChanged { widths.add(it.width) }
+                                .flex { grow(1f) }
+                                .onSizeChanged { widths.add(1, it.width) }
                         )
                         // Item with grow=2
                         Box(
                             Modifier.size(20.dp)
-                                .flex { grow = 2f }
-                                .onSizeChanged { widths.add(it.width) }
+                                .flex { grow(2f) }
+                                .onSizeChanged { widths.add(2, it.width) }
                         )
                     }
                 }
@@ -971,21 +971,21 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.width(100.dp),
                         config = {
-                            direction = FlexDirection.Row
-                            wrap = FlexWrap.NoWrap
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.NoWrap)
                         },
                     ) {
                         // Item with shrink=0 (won't shrink)
                         Box(
                             Modifier.width(60.dp)
                                 .height(20.dp)
-                                .flex { shrink = 0f }
-                                .onSizeChanged { widths.add(it.width) }
+                                .flex { shrink(0f) }
+                                .onSizeChanged { widths.add(0, it.width) }
                         )
                         // Item with shrink=1 (default, will shrink)
                         Box(
                             Modifier.widthIn(min = 40.dp, max = 60.dp).height(20.dp).onSizeChanged {
-                                widths.add(it.width)
+                                widths.add(1, it.width)
                             }
                         )
                     }
@@ -1009,11 +1009,11 @@ class FlexBoxTest {
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 Box(Modifier.size(200.dp)) {
-                    FlexBox(config = { direction = FlexDirection.Row }) {
+                    FlexBox(config = { direction(FlexDirection.Row) }) {
                         Box(
                             Modifier.flex { basis(50.dp) }
                                 .height(20.dp)
-                                .onSizeChanged { widths.add(it.width) }
+                                .onSizeChanged { widths.add(0, it.width) }
                         )
                     }
                 }
@@ -1034,12 +1034,12 @@ class FlexBoxTest {
                 Box(Modifier.size(200.dp)) {
                     FlexBox(
                         modifier = Modifier.fillMaxWidth(),
-                        config = { direction = FlexDirection.Row },
+                        config = { direction(FlexDirection.Row) },
                     ) {
                         Box(
                             Modifier.flex { basis(0.5f) } // 50%
                                 .height(20.dp)
-                                .onSizeChanged { widths.add(it.width) }
+                                .onSizeChanged { widths.add(0, it.width) }
                         )
                     }
                 }
@@ -1060,27 +1060,27 @@ class FlexBoxTest {
                 Box(Modifier.size(200.dp)) {
                     FlexBox(
                         config = {
-                            direction = FlexDirection.Row
-                            alignItems = FlexAlignItems.Start
+                            direction(FlexDirection.Row)
+                            alignItems(FlexAlignItems.Start)
                         }
                     ) {
                         // Normal item at start
                         Box(
                             Modifier.size(20.dp, 40.dp).onPlaced {
-                                yPositions.add(it.positionInParent().y)
+                                yPositions.add(0, it.positionInParent().y)
                             }
                         )
                         // Item with alignSelf override to End
                         Box(
                             Modifier.size(20.dp)
-                                .flex { alignSelf = FlexAlignSelf.End }
-                                .onPlaced { yPositions.add(it.positionInParent().y) }
+                                .flex { alignSelf(FlexAlignSelf.End) }
+                                .onPlaced { yPositions.add(1, it.positionInParent().y) }
                         )
                         // Item with alignSelf override to Center
                         Box(
                             Modifier.size(20.dp)
-                                .flex { alignSelf = FlexAlignSelf.Center }
-                                .onPlaced { yPositions.add(it.positionInParent().y) }
+                                .flex { alignSelf(FlexAlignSelf.Center) }
+                                .onPlaced { yPositions.add(2, it.positionInParent().y) }
                         )
                     }
                 }
@@ -1103,11 +1103,11 @@ class FlexBoxTest {
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 Box(Modifier.size(200.dp)) {
-                    FlexBox(config = { direction = FlexDirection.Row }) {
+                    FlexBox(config = { direction(FlexDirection.Row) }) {
                         // Item A with order=2
                         Box(
                             Modifier.size(20.dp)
-                                .flex { order = 2 }
+                                .flex { order(2) }
                                 .onPlaced { xPositions[0] = it.positionInParent().x }
                         )
                         // Item B with order=0 (default)
@@ -1119,7 +1119,7 @@ class FlexBoxTest {
                         // Item C with order=1
                         Box(
                             Modifier.size(20.dp)
-                                .flex { order = 1 }
+                                .flex { order(1) }
                                 .onPlaced { xPositions[2] = it.positionInParent().x }
                         )
                     }
@@ -1213,16 +1213,16 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.fillMaxSize(),
                         config = {
-                            direction = FlexDirection.Row
-                            wrap = FlexWrap.Wrap
-                            alignContent = FlexAlignContent.Start
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
+                            alignContent(FlexAlignContent.Start)
                         },
                     ) {
                         // Force 2 rows: 5 items of 50dp each = 250dp, wraps at 200dp
-                        repeat(6) { _ ->
+                        repeat(6) { index ->
                             Box(
                                 Modifier.size(50.dp).onPlaced {
-                                    yPositions.add(it.positionInParent().y)
+                                    yPositions.add(index, it.positionInParent().y)
                                 }
                             )
                         }
@@ -1249,15 +1249,15 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.fillMaxSize(),
                         config = {
-                            direction = FlexDirection.Row
-                            wrap = FlexWrap.Wrap
-                            alignContent = FlexAlignContent.Center
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
+                            alignContent(FlexAlignContent.Center)
                         },
                     ) {
-                        repeat(6) { _ ->
+                        repeat(6) { index ->
                             Box(
                                 Modifier.size(50.dp).onPlaced {
-                                    yPositions.add(it.positionInParent().y)
+                                    yPositions.add(index, it.positionInParent().y)
                                 }
                             )
                         }
@@ -1284,15 +1284,15 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.fillMaxSize(),
                         config = {
-                            direction = FlexDirection.Row
-                            wrap = FlexWrap.Wrap
-                            alignContent = FlexAlignContent.SpaceBetween
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
+                            alignContent(FlexAlignContent.SpaceBetween)
                         },
                     ) {
-                        repeat(6) { _ ->
+                        repeat(6) { index ->
                             Box(
                                 Modifier.size(50.dp).onPlaced {
-                                    yPositions.add(it.positionInParent().y)
+                                    yPositions.add(index, it.positionInParent().y)
                                 }
                             )
                         }
@@ -1319,17 +1319,20 @@ class FlexBoxTest {
                 FlexBox(
                     modifier = Modifier.width(100.dp),
                     config = {
-                        direction = FlexDirection.Row
-                        wrap = FlexWrap.Wrap
-                        justifyContent = FlexJustifyContent.SpaceBetween
-                        alignItems = FlexAlignItems.Center
+                        direction(FlexDirection.Row)
+                        wrap(FlexWrap.Wrap)
+                        justifyContent(FlexJustifyContent.SpaceBetween)
+                        alignItems(FlexAlignItems.Center)
                         gap(10.dp)
                     },
                 ) {
-                    listOf(30, 40, 20, 50, 25).forEachIndexed { _, width ->
+                    listOf(30, 40, 20, 50, 25).forEachIndexed { index, width ->
                         Box(
                             Modifier.size(width.dp, 20.dp).onPlaced {
-                                positions.add(it.positionInParent().x to it.positionInParent().y)
+                                positions.add(
+                                    index,
+                                    it.positionInParent().x to it.positionInParent().y,
+                                )
                             }
                         )
                     }
@@ -1352,11 +1355,11 @@ class FlexBoxTest {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 FlexBox(
                     modifier = Modifier.onSizeChanged { outerWidth = it.width },
-                    config = { direction = FlexDirection.Column },
+                    config = { direction(FlexDirection.Column) },
                 ) {
                     FlexBox(
                         modifier = Modifier.onSizeChanged { innerWidth = it.width },
-                        config = { direction = FlexDirection.Row },
+                        config = { direction(FlexDirection.Row) },
                     ) {
                         repeat(3) { Box(Modifier.size(20.dp)) }
                     }
@@ -1380,27 +1383,27 @@ class FlexBoxTest {
 
         // Define reusable style outside composition
         val centeredRowStyle = FlexBoxConfig {
-            direction = FlexDirection.Row
-            justifyContent = FlexJustifyContent.Center
+            direction(FlexDirection.Row)
+            justifyContent(FlexJustifyContent.Center)
         }
 
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 Column {
                     FlexBox(modifier = Modifier.width(100.dp), config = centeredRowStyle) {
-                        repeat(2) { _ ->
+                        repeat(2) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions1.add(it.positionInParent().x)
+                                    xPositions1.add(index, it.positionInParent().x)
                                 }
                             )
                         }
                     }
                     FlexBox(modifier = Modifier.width(100.dp), config = centeredRowStyle) {
-                        repeat(2) { _ ->
+                        repeat(2) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions2.add(it.positionInParent().x)
+                                    xPositions2.add(index, it.positionInParent().x)
                                 }
                             )
                         }
@@ -1455,8 +1458,8 @@ class FlexBoxTest {
                     FlexBox(
                         modifier = Modifier.width(100.dp).onSizeChanged { height = it.height },
                         config = {
-                            direction = FlexDirection.Row
-                            wrap = FlexWrap.Wrap
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
                         },
                     ) {
                         repeat(100) { Box(Modifier.size(10.dp).onPlaced { itemsPlaced++ }) }
@@ -1485,8 +1488,8 @@ class FlexBoxTest {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 FlexBox(
                     config = {
-                        direction = FlexDirection.Row
-                        alignItems = FlexAlignItems.Baseline
+                        direction(FlexDirection.Row)
+                        alignItems(FlexAlignItems.Baseline)
                     }
                 ) {
                     BaselineTestLayout(
@@ -1496,7 +1499,7 @@ class FlexBoxTest {
                         horizontalLine = FirstBaseline,
                         modifier =
                             Modifier.onGloballyPositioned {
-                                yPositions.add(it.positionInParent().y)
+                                yPositions.add(0, it.positionInParent().y)
                             },
                     )
                     BaselineTestLayout(
@@ -1506,7 +1509,7 @@ class FlexBoxTest {
                         horizontalLine = FirstBaseline,
                         modifier =
                             Modifier.onGloballyPositioned {
-                                yPositions.add(it.positionInParent().y)
+                                yPositions.add(1, it.positionInParent().y)
                             },
                     )
                 }
@@ -1532,8 +1535,8 @@ class FlexBoxTest {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 FlexBox(
                     config = {
-                        direction = FlexDirection.Row
-                        alignItemsToBaseline(TestHorizontalLine)
+                        direction(FlexDirection.Row)
+                        alignItems(TestHorizontalLine)
                     }
                 ) {
                     BaselineTestLayout(
@@ -1543,7 +1546,7 @@ class FlexBoxTest {
                         horizontalLine = TestHorizontalLine,
                         modifier =
                             Modifier.onGloballyPositioned {
-                                yPositions.add(it.positionInParent().y)
+                                yPositions.add(0, it.positionInParent().y)
                             },
                     )
                     BaselineTestLayout(
@@ -1553,7 +1556,7 @@ class FlexBoxTest {
                         horizontalLine = TestHorizontalLine,
                         modifier =
                             Modifier.onGloballyPositioned {
-                                yPositions.add(it.positionInParent().y)
+                                yPositions.add(1, it.positionInParent().y)
                             },
                     )
                 }
@@ -1576,18 +1579,18 @@ class FlexBoxTest {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 FlexBox(
                     config = {
-                        direction = FlexDirection.Row
-                        alignItemsToBaseline { it.measuredHeight / 2 }
+                        direction(FlexDirection.Row)
+                        alignItems { it.measuredHeight / 2 }
                     }
                 ) {
                     Box(
                         Modifier.size(20.dp).onGloballyPositioned {
-                            yPositions.add(it.positionInParent().y)
+                            yPositions.add(0, it.positionInParent().y)
                         }
                     )
                     Box(
                         Modifier.size(40.dp).onGloballyPositioned {
-                            yPositions.add(it.positionInParent().y)
+                            yPositions.add(1, it.positionInParent().y)
                         }
                     )
                 }
@@ -1613,8 +1616,8 @@ class FlexBoxTest {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 FlexBox(
                     config = {
-                        direction = FlexDirection.Row
-                        alignItems = FlexAlignItems.Start
+                        direction(FlexDirection.Row)
+                        alignItems(FlexAlignItems.Start)
                     }
                 ) {
                     BaselineTestLayout(
@@ -1623,8 +1626,8 @@ class FlexBoxTest {
                         baseline = baseline1.dp,
                         horizontalLine = TestHorizontalLine,
                         modifier =
-                            Modifier.flex { alignSelfToBaseline(TestHorizontalLine) }
-                                .onGloballyPositioned { yPositions.add(it.positionInParent().y) },
+                            Modifier.flex { alignSelf(TestHorizontalLine) }
+                                .onGloballyPositioned { yPositions.add(0, it.positionInParent().y) },
                     )
                     BaselineTestLayout(
                         width = 50.dp,
@@ -1632,8 +1635,8 @@ class FlexBoxTest {
                         baseline = baseline2.dp,
                         horizontalLine = TestHorizontalLine,
                         modifier =
-                            Modifier.flex { alignSelfToBaseline(TestHorizontalLine) }
-                                .onGloballyPositioned { yPositions.add(it.positionInParent().y) },
+                            Modifier.flex { alignSelf(TestHorizontalLine) }
+                                .onGloballyPositioned { yPositions.add(1, it.positionInParent().y) },
                     )
                 }
             }
@@ -1659,21 +1662,17 @@ class FlexBoxTest {
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 FlexBox(
                     config = {
-                        direction = FlexDirection.Column
-                        // In Column, cross-axis is horizontal, so we align using a
-                        // VerticalAlignmentLine
-                        alignItemsToBaseline(TestVerticalLine)
+                        direction(FlexDirection.Column)
+                        alignItems(TestVerticalLine)
                     }
                 ) {
-                    // BaselineTestLayout sets both TestHorizontalLine and TestVerticalLine to
-                    // 'baseline'
                     BaselineTestLayout(
                         width = width.dp,
                         height = 50.dp,
                         baseline = baseline1.dp,
                         modifier =
                             Modifier.onGloballyPositioned {
-                                xPositions.add(it.positionInParent().x)
+                                xPositions.add(0, it.positionInParent().x)
                             },
                     )
                     BaselineTestLayout(
@@ -1682,7 +1681,7 @@ class FlexBoxTest {
                         baseline = baseline2.dp,
                         modifier =
                             Modifier.onGloballyPositioned {
-                                xPositions.add(it.positionInParent().x)
+                                xPositions.add(1, it.positionInParent().x)
                             },
                     )
                 }
@@ -1703,9 +1702,9 @@ class FlexBoxTest {
     // Test overflow behavior
     @OptIn(ExperimentalFlexBoxApi::class)
     @Test
-    fun testFlexBox_overflow_mainAxis_itemClipped() {
+    fun testFlexBox_overflow_mainAxis_itemOverflows() {
         val itemSize = 50
-        val containerSize = 120 // Can fit 2 items (50 + 50 = 100), third overflows hence clipped
+        val containerSize = 120 // Can fit 2 items (50 + 50 = 100), third overflows visually
         val sizes = mutableListOf<Int>()
 
         rule.setContent {
@@ -1713,21 +1712,23 @@ class FlexBoxTest {
                 FlexBox(
                     modifier = Modifier.size(containerSize.dp),
                     config = {
-                        direction = FlexDirection.Row
-                        wrap = FlexWrap.NoWrap
+                        direction(FlexDirection.Row)
+                        wrap(FlexWrap.NoWrap)
                     },
                 ) {
                     repeat(3) { index ->
                         Box(
                             Modifier.size(itemSize.dp)
-                                .flex { shrink = 0f }
-                                .onSizeChanged { sizes.add(it.width) }
+                                .flex { shrink(0f) }
+                                .onSizeChanged { sizes.add(index, it.width) }
                         )
                     }
                 }
             }
         }
-        Truth.assertThat(sizes).containsExactly(itemSize, itemSize, 20).inOrder()
+
+        rule.waitForIdle()
+        Truth.assertThat(sizes).containsExactly(itemSize, itemSize, itemSize).inOrder()
     }
 
     @OptIn(ExperimentalFlexBoxApi::class)
@@ -1742,15 +1743,15 @@ class FlexBoxTest {
                 FlexBox(
                     modifier = Modifier.size(containerSize.dp),
                     config = {
-                        direction = FlexDirection.Row
-                        wrap = FlexWrap.Wrap
+                        direction(FlexDirection.Row)
+                        wrap(FlexWrap.Wrap)
                     },
                 ) {
                     repeat(6) { index ->
                         Box(
                             Modifier.size(itemSize.dp)
-                                .flex { shrink = 0f }
-                                .onSizeChanged { sizes.add(it.height) }
+                                .flex { shrink(0f) }
+                                .onSizeChanged { sizes.add(index, it.height) }
                         )
                     }
                 }
@@ -1771,12 +1772,12 @@ class FlexBoxTest {
                 FlexBox(
                     modifier = Modifier.size(containerSize.dp),
                     config = {
-                        direction = FlexDirection.Row
-                        wrap = FlexWrap.NoWrap
+                        direction(FlexDirection.Row)
+                        wrap(FlexWrap.NoWrap)
                     },
                 ) {
                     repeat(3) { index ->
-                        Box(Modifier.size(itemSize.dp).testTag("item$index").flex { shrink = 0f })
+                        Box(Modifier.size(itemSize.dp).testTag("item$index").flex { shrink(0f) })
                     }
                 }
             }
@@ -1797,12 +1798,12 @@ class FlexBoxTest {
                 FlexBox(
                     modifier = Modifier.size(containerSize.dp),
                     config = {
-                        direction = FlexDirection.Row
-                        wrap = FlexWrap.Wrap
+                        direction(FlexDirection.Row)
+                        wrap(FlexWrap.Wrap)
                     },
                 ) {
                     repeat(6) { index ->
-                        Box(Modifier.size(itemSize.dp).flex { shrink = 0f }.testTag("item$index"))
+                        Box(Modifier.size(itemSize.dp).flex { shrink(0f) }.testTag("item$index"))
                     }
                 }
             }
@@ -1818,6 +1819,116 @@ class FlexBoxTest {
 
     @OptIn(ExperimentalFlexBoxApi::class)
     @Test
+    fun testFlexBox_directionRowReverse_withGap_positionsCorrectly() {
+        val xPositions = mutableListOf<Float>()
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                Box(Modifier.size(200.dp)) {
+                    FlexBox(
+                        modifier = Modifier.fillMaxWidth(),
+                        config = {
+                            direction(FlexDirection.RowReverse)
+                            columnGap(10.dp)
+                        },
+                    ) {
+                        repeat(3) { index ->
+                            Box(
+                                Modifier.size(20.dp).onPlaced {
+                                    xPositions.add(index, it.positionInParent().x)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+
+        Truth.assertThat(xPositions).containsExactly(180f, 150f, 120f).inOrder()
+    }
+
+    @OptIn(ExperimentalFlexBoxApi::class)
+    @Test
+    fun testFlexBox_directionColumnReverse_withGap_positionsCorrectly() {
+        val yPositions = mutableListOf<Float>()
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                Box(Modifier.size(200.dp)) {
+                    FlexBox(
+                        modifier = Modifier.fillMaxHeight(),
+                        config = {
+                            direction(FlexDirection.ColumnReverse)
+                            rowGap(10.dp)
+                        },
+                    ) {
+                        repeat(3) { index ->
+                            Box(
+                                Modifier.size(20.dp).onPlaced {
+                                    yPositions.add(index, it.positionInParent().y)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+
+        Truth.assertThat(yPositions).containsExactly(180f, 150f, 120f).inOrder()
+    }
+
+    @OptIn(ExperimentalFlexBoxApi::class)
+    @Test
+    fun testFlexBox_directionRow_withGap_justifyContentEnd_positionsCorrectly() {
+        val xPositions = mutableListOf<Float>()
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                Box(Modifier.size(200.dp)) {
+                    FlexBox(
+                        modifier = Modifier.fillMaxWidth(),
+                        config = {
+                            direction(FlexDirection.Row)
+                            columnGap(10.dp)
+                            justifyContent(FlexJustifyContent.End)
+                        },
+                    ) {
+                        repeat(3) { index ->
+                            Box(
+                                Modifier.size(20.dp).onPlaced {
+                                    xPositions.add(index, it.positionInParent().x)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+
+        // Container width is 200px.
+        // 3 items of 20px each = 60px.
+        // 2 gaps of 10px each = 20px.
+        // Total line width = 80px.
+        // Remaining space = 200 - 80 = 120px.
+        // Because of JustifyContent.End, the first item should start at 120px.
+        //
+        // Item 0: x = 120
+        // Item 1: 120 + 20 + 10 = 150
+        // Item 2: 150 + 20 + 10 = 180
+        //
+        // If the gap was double-counted (making line width look like 100px),
+        // the remaining space would incorrectly be 100px, shifting everything left.
+        Truth.assertThat(xPositions).containsExactly(120f, 150f, 180f).inOrder()
+    }
+
+    @OptIn(ExperimentalFlexBoxApi::class)
+    @Test
     fun testFlexBox_overflow_column_mainAxis_itemsSkipped() {
         val itemSize = 50
         val containerSize = 100
@@ -1827,12 +1938,12 @@ class FlexBoxTest {
                 FlexBox(
                     modifier = Modifier.size(containerSize.dp),
                     config = {
-                        direction = FlexDirection.Column
-                        wrap = FlexWrap.NoWrap
+                        direction(FlexDirection.Column)
+                        wrap(FlexWrap.NoWrap)
                     },
                 ) {
                     repeat(3) { index ->
-                        Box(Modifier.size(itemSize.dp).testTag("item$index").flex { shrink = 0f })
+                        Box(Modifier.size(itemSize.dp).testTag("item$index").flex { shrink(0f) })
                     }
                 }
             }
@@ -1855,12 +1966,12 @@ class FlexBoxTest {
                 FlexBox(
                     modifier = Modifier.size(containerSize.dp),
                     config = {
-                        direction = FlexDirection.Row
+                        direction(FlexDirection.Row)
                         gap(gap.dp)
                     },
                 ) {
                     repeat(3) { index ->
-                        Box(Modifier.size(itemSize.dp).testTag("item$index").flex { shrink = 0f })
+                        Box(Modifier.size(itemSize.dp).testTag("item$index").flex { shrink(0f) })
                     }
                 }
             }
@@ -1875,7 +1986,7 @@ class FlexBoxTest {
     @OptIn(ExperimentalFlexBoxApi::class)
     @Test
     fun test_invalidFlexGrow_negative() {
-        val negativeValueModifier = Modifier.flex { grow = -1f }
+        val negativeValueModifier = Modifier.flex { grow(-1f) }
 
         assertThrows(IllegalArgumentException::class.java) {
             rule.setContent { FlexBox { Box(negativeValueModifier) } }
@@ -1886,7 +1997,7 @@ class FlexBoxTest {
     @OptIn(ExperimentalFlexBoxApi::class)
     @Test
     fun test_invalidFlexGrow_nan() {
-        val nanValueModifier = Modifier.flex { grow = Float.NaN }
+        val nanValueModifier = Modifier.flex { grow(Float.NaN) }
 
         assertThrows(IllegalArgumentException::class.java) {
             rule.setContent { FlexBox { Box(nanValueModifier) } }
@@ -1897,7 +2008,7 @@ class FlexBoxTest {
     @OptIn(ExperimentalFlexBoxApi::class)
     @Test
     fun test_invalidFlexShrink_negative() {
-        val negativeValueModifier = Modifier.flex { shrink = -1f }
+        val negativeValueModifier = Modifier.flex { shrink(-1f) }
 
         assertThrows(IllegalArgumentException::class.java) {
             rule.setContent { FlexBox { Box(negativeValueModifier) } }
@@ -1908,7 +2019,7 @@ class FlexBoxTest {
     @OptIn(ExperimentalFlexBoxApi::class)
     @Test
     fun test_invalidFlexShrink_nan() {
-        val nanValueModifier = Modifier.flex { shrink = Float.NaN }
+        val nanValueModifier = Modifier.flex { shrink(Float.NaN) }
 
         assertThrows(IllegalArgumentException::class.java) {
             rule.setContent { FlexBox { Box(nanValueModifier) } }

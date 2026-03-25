@@ -16,7 +16,7 @@
 
 package androidx.datastore.core
 
-import androidx.datastore.core.handlers.ReThrowCorruptionHandler
+import androidx.datastore.core.util.getContextFromScope
 
 /** Public factory for creating DataStore instances. */
 actual object DataStoreFactory {
@@ -26,11 +26,9 @@ actual object DataStoreFactory {
         migrations: List<DataMigration<T>>,
         scope: kotlinx.coroutines.CoroutineScope,
     ): DataStore<T> {
-        return DataStoreImpl(
-            storage = storage,
-            corruptionHandler = corruptionHandler ?: ReThrowCorruptionHandler(),
-            initTasksList = listOf(DataMigrationInitializer.getInitializer(migrations)),
-            scope = scope,
-        )
+        return DataStore.Builder(storage = storage, context = getContextFromScope(scope))
+            .apply { corruptionHandler?.let { setCorruptionHandler(it) } }
+            .addMigrations(migrations)
+            .build()
     }
 }

@@ -267,10 +267,22 @@ internal object GridScopeInstance : GridScope {
  * respective axes.
  *
  * @sample androidx.compose.foundation.layout.samples.GridConfigurationDslSample
+ * @sample androidx.compose.foundation.layout.samples.GridWithConstraints
  */
 @LayoutScopeMarker
 @ExperimentalGridApi
 interface GridConfigurationScope : Density {
+
+    /**
+     * The layout constraints passed to this [Grid] from its parent.
+     *
+     * These constraints represent the minimum and maximum size limits that the parent has imposed
+     * on this Grid. This can be useful for creating responsive layouts that adapt based on
+     * available space.
+     *
+     * @see Constraints
+     */
+    val constraints: Constraints
 
     /**
      * The direction in which items that do not specify a position are placed. Defaults to
@@ -349,6 +361,21 @@ interface GridConfigurationScope : Density {
      * @throws IllegalArgumentException if [gap] is negative.
      */
     fun rowGap(gap: Dp)
+
+    /**
+     * A flexible track with an explicitly defined minimum base size and a flexible maximum size.
+     * Conceptually, this behaves identically to the CSS Grid `minmax(min, max)` function.
+     *
+     * **Usage with Lazy Lists:** Because `minmax` relies on a predefined [min] size (e.g., `0.dp`),
+     * it entirely bypasses the intrinsic measurement pass. This makes it the **required** choice
+     * when placing `SubcomposeLayout`-backed components (such as `LazyColumn` or `LazyRow`) inside
+     * a flexible grid track.
+     *
+     * @sample androidx.compose.foundation.layout.samples.GridWithLazyList
+     * @param min The explicit minimum fixed base size (e.g., `0.dp`).
+     * @param max The maximum flexible distribution weight (e.g., `1.fr`).
+     */
+    @Stable fun minmax(min: Dp, max: Fr): GridTrackSize = GridTrackSize.MinMax(min, max)
 
     /** Creates an [Fr] unit from an [Int]. */
     @Stable
@@ -451,11 +478,20 @@ value class Fr(val value: Float) {
 @ExperimentalGridApi
 value class GridTrackSize internal constructor(internal val encodedValue: Long) : GridTrackSpec {
 
+    // 1. Unpacking the Type
     internal val type: Int
-        get() = (encodedValue ushr 32).toInt()
+        get() = (encodedValue ushr 60).toInt() // Top 4 bits
 
+    // 2. Unpacking a single value (for Fixed, Flex, Percentage)
     internal val value: Float
-        get() = Float.fromBits(encodedValue.toInt())
+        get() = Float.fromBits(encodedValue.toInt()) // Bottom 32 bits
+
+    // 3. Unpacking dual values (for MinMax)
+    internal val minValue: Float
+        get() = Float.fromBits(((encodedValue ushr 30) and 0x3FFFFFFF).toInt() shl 2)
+
+    internal val maxValue: Float
+        get() = Float.fromBits((encodedValue and 0x3FFFFFFF).toInt() shl 2)
 
     override fun toString(): String =
         when (type) {
@@ -465,6 +501,7 @@ value class GridTrackSize internal constructor(internal val encodedValue: Long) 
             TypeMinContent -> "MinContent"
             TypeMaxContent -> "MaxContent"
             TypeAuto -> "Auto"
+            TypeMinMax -> "MinMax(${minValue}dp, ${maxValue}fr)"
             else -> "Unknown"
         }
 
@@ -475,6 +512,7 @@ value class GridTrackSize internal constructor(internal val encodedValue: Long) 
         internal const val TypeMinContent = 4
         internal const val TypeMaxContent = 5
         internal const val TypeAuto = 6
+        internal const val TypeMinMax = 7
 
         /**
          * A track with a fixed [Dp] size.
@@ -508,17 +546,56 @@ value class GridTrackSize internal constructor(internal val encodedValue: Long) 
         }
 
         /**
-         * A flexible track that takes a share of the **remaining** space after Fixed and Percentage
-         * tracks are allocated.
+         * A flexible track that takes a share of the **remaining** space in the grid after
+         * non-flexible tracks (like [Fixed] and [Percentage]) are allocated.
          *
-         * @param weight The flexible weight. Space is distributed proportional to this weight
-         *   divided by the total flex weight. Must be non-negative.
+         * **Intrinsic Sizing:** By default, a [Flex] track behaves like CSS `1fr` (which implies
+         * `minmax(min-content, <weight>fr)`). Before distributing the remaining space, it queries
+         * the minimum intrinsic size (`min-content`) of its children to establish a base size and
+         * ensure content is not crushed.
+         *
+         * Jetpack Compose strictly forbids querying the intrinsic size of a `SubcomposeLayout`
+         * (such as [LazyColumn][androidx.compose.foundation.lazy.LazyColumn] or
+         * [LazyRow][androidx.compose.foundation.lazy.LazyRow]). Placing a lazy list directly inside
+         * a standard [Flex] track will result in an `IllegalStateException` crash. To safely place
+         * lazy lists in a flexible track, use [MinMax] instead.
+         *
+         * @param weight The flexible weight. Remaining space is distributed proportionally to this
+         *   weight divided by the sum of all flex weights. Must be non-negative.
          * @throws IllegalArgumentException if [weight] is negative.
+         * @see MinMax
          */
         @Stable
         fun Flex(@FloatRange(from = 0.0) weight: Fr): GridTrackSize {
-            require(weight.value >= 0f) { "Flex weight must be positive" }
+            require(weight.value >= 0f) { "Flex weight must be non-negative" }
             return pack(TypeFlex, weight.value)
+        }
+
+        /**
+         * A flexible track with an explicitly defined minimum base size and a flexible maximum
+         * size. Conceptually, this behaves identically to the CSS Grid `minmax(min, max)` function.
+         *
+         * **Difference from [Flex]:** While a standard [Flex] track inherently queries the
+         * `min-content` intrinsic size of its children to determine its minimum base size, [MinMax]
+         * strictly uses the provided [min] size.
+         *
+         * **Usage with Lazy Lists:** Because [MinMax] relies on a predefined [min] size (e.g.,
+         * `0.dp`), it entirely bypasses the intrinsic measurement pass. This makes it the
+         * **required** choice when placing `SubcomposeLayout`-backed components (such as
+         * `LazyColumn` or `LazyRow`) inside a flexible grid track, as these components will crash
+         * if their intrinsic sizes are queried.
+         *
+         * @sample androidx.compose.foundation.layout.samples.GridWithLazyList
+         * @param min The explicit minimum fixed base size (e.g., `0.dp`).
+         * @param max The maximum flexible distribution weight (e.g., `1.fr`).
+         * @throws IllegalArgumentException if [min] is negative or [max] is negative.
+         * @see Flex
+         */
+        @Stable
+        fun MinMax(min: Dp, @FloatRange(from = 0.0) max: Fr): GridTrackSize {
+            require(min.value >= 0f) { "MinMax minimum size cannot be negative" }
+            require(max.value >= 0f) { "MinMax max weight cannot be negative" }
+            return packMinMax(min.value, max.value)
         }
 
         /** A track that sizes itself to fit the minimum intrinsic size of its contents. */
@@ -533,10 +610,20 @@ value class GridTrackSize internal constructor(internal val encodedValue: Long) 
          */
         val Auto = pack(TypeAuto, 0f)
 
+        private fun packMinMax(min: Float, max: Float): GridTrackSize {
+            require(min >= 0f && max >= 0f) { "minmax values must be non-negative" }
+            val typeLong = TypeMinMax.toLong() and 0xFL
+            val minLong = (min.toRawBits() ushr 2).toLong() and 0x3FFFFFFFL
+            val maxLong = (max.toRawBits() ushr 2).toLong() and 0x3FFFFFFFL
+            val raw = (typeLong shl 60) or (minLong shl 30) or maxLong
+            return GridTrackSize(raw)
+        }
+
         private fun pack(type: Int, value: Float): GridTrackSize {
-            // Pack Type (High 32) and Float bits (Low 32) into one Long.
-            // Mask 0xFFFFFFFFL prevents sign extension when casting int to long.
-            val raw = (type.toLong() shl 32) or (value.toRawBits().toLong() and 0xFFFFFFFFL)
+            val typeLong = type.toLong() and 0xFL // 4 bits
+            val valLong = value.toRawBits().toLong() and 0xFFFFFFFFL // 32 bits
+            // Format: [4 bits Type] [28 bits Empty] [32 bits Value]
+            val raw = (typeLong shl 60) or valLong
             return GridTrackSize(raw)
         }
     }
@@ -616,7 +703,8 @@ private class GridItemElement(
  * @property columnSpan The number of columns the item should occupy.
  * @property alignment The alignment of the content within the grid cell.
  * @throws IllegalArgumentException if [rows] or [columns] ranges are empty, or if the derived
- *   row/column indices or spans do not meet the requirements of the primary [gridItem] function.
+ *   row/column indices or spans do not meet the requirements of the primary [GridScope.gridItem]
+ *   function.
  * @see GridScope.gridItem for the public API and input validation.
  */
 private class GridItemNode(
@@ -640,7 +728,7 @@ internal class GridMeasurePolicy(
         constraints: Constraints,
     ): MeasureResult {
         // 1. Run Configuration DSL
-        val gridConfig = GridConfigurationScopeImpl(this).apply(configState.value)
+        val gridConfig = GridConfigurationScopeImpl(this, constraints).apply(configState.value)
 
         // 2. Resolve Grid Item Indices (Resolve explicit and Auto placement)
         // This calculates the concrete index (row, col) for every item and determines total grid
@@ -698,7 +786,7 @@ internal class GridMeasurePolicy(
     }
 }
 
-private class GridConfigurationScopeImpl(density: Density) :
+private class GridConfigurationScopeImpl(density: Density, override val constraints: Constraints) :
     GridConfigurationScope, Density by density {
     val columnSpecs = mutableLongListOf()
     val rowSpecs = mutableLongListOf()
@@ -1102,8 +1190,8 @@ private fun resolveToZeroBasedIndex(index: Int, maxCount: Int): Int {
  * beyond the spec list sizes) are treated as `GridTrackSize.Auto`.
  *
  * **Spanning Items:** The function accounts for items spanning multiple tracks, potentially
- * increasing the sizes of growable tracks ([Auto], [MinContent], [MaxContent], [Flex]) to
- * accommodate them.
+ * increasing the sizes of growable tracks ([GridTrackSize.Auto], [GridTrackSize.MinContent],
+ * [GridTrackSize.MaxContent], [GridTrackSize.Flex]) to accommodate them.
  *
  * @param density The current screen density, used for converting Dp to pixels.
  * @param gridItems The list of all grid items, including their placement and spans.
@@ -1188,8 +1276,10 @@ private fun calculateGridTrackSizes(
             rowGap = rowGapPx,
         )
 
-    val totalColumnGap = max(0, columnSpecs.size - 1) * colGapPx
-    val totalRowGap = max(0, rowSpecs.size - 1) * rowGapPx
+    // Use totalColCount and totalRowCount instead of the explicit spec sizes.
+    // This ensures gaps between implicitly created tracks are included in the final Grid size.
+    val totalColumnGap = max(0, totalColCount - 1) * colGapPx
+    val totalRowGap = max(0, totalRowCount - 1) * rowGapPx
 
     return GridTrackSizes(
         columnWidths = columnWidths,
@@ -1264,11 +1354,6 @@ private fun calculateColumnWidths(
             (availableSpace - totalGapSpace).coerceAtLeast(0)
         }
 
-    // Height constraint used when measuring intrinsic width.
-    // Usually Infinity (standard intrinsic measurement), unless parent enforces strict height.
-    val crossAxisAvailable =
-        if (constraints.hasBoundedHeight) constraints.maxHeight else Constraints.Infinity
-
     // Keep track of which columns are Auto so we can expand them later
     val autoIndices = MutableIntList()
 
@@ -1295,7 +1380,7 @@ private fun calculateColumnWidths(
                         // If the Grid is in a horizontally scrolling container
                         // (infinite width), we cannot calculate a percentage of "Infinity".
                         // We default to 'Auto' (MaxIntrinsic) so the content remains visible.
-                        calculateMaxIntrinsicWidth(itemsByColumn[index], crossAxisAvailable)
+                        calculateMaxIntrinsicWidth(itemsByColumn[index])
                     }
                 }
 
@@ -1305,21 +1390,18 @@ private fun calculateColumnWidths(
                     // This implements `minmax(min-content, <flex-factor>fr)`.
                     // It ensures that even if there is no remaining space to distribute,
                     // the column is at least wide enough to show its content.
-                    calculateMinIntrinsicWidth(itemsByColumn[index], crossAxisAvailable)
+                    calculateMinIntrinsicWidth(itemsByColumn[index])
                 }
 
-                GridTrackSize.TypeMinContent ->
-                    calculateMinIntrinsicWidth(itemsByColumn[index], crossAxisAvailable)
-                GridTrackSize.TypeMaxContent ->
-                    calculateMaxIntrinsicWidth(itemsByColumn[index], crossAxisAvailable)
+                GridTrackSize.TypeMinContent -> calculateMinIntrinsicWidth(itemsByColumn[index])
+                GridTrackSize.TypeMaxContent -> calculateMaxIntrinsicWidth(itemsByColumn[index])
                 GridTrackSize.TypeAuto -> {
                     if (availableTrackSpace == Constraints.Infinity) {
                         // If infinite space, Auto behaves like MaxContent
-                        calculateMaxIntrinsicWidth(itemsByColumn[index], crossAxisAvailable)
+                        calculateMaxIntrinsicWidth(itemsByColumn[index])
                     } else {
                         // Finite space: Auto needs Min (for base) AND Max (for growth).
-                        val packed =
-                            calculateMinMaxIntrinsicWidth(itemsByColumn[index], crossAxisAvailable)
+                        val packed = calculateMinMaxIntrinsicWidth(itemsByColumn[index])
                         // Unpack the Long (High 32 = Max, Low 32 = Min)
                         val max = (packed ushr 32).toInt()
                         val min = (packed and 0xFFFFFFFFL).toInt()
@@ -1331,8 +1413,14 @@ private fun calculateColumnWidths(
                         min
                     }
                 }
+                GridTrackSize.TypeMinMax -> {
+                    // Accumulate the max Fr weight for Pass 2
+                    totalFlex += spec.maxValue
+                    // The base size is the exact fixed minimum, skipping intrinsic queries.
+                    with(density) { spec.minValue.dp.roundToPx() }
+                }
                 // Measure the max intrinsic width of all items in this column.
-                else -> calculateMaxIntrinsicWidth(itemsByColumn[index], crossAxisAvailable)
+                else -> calculateMaxIntrinsicWidth(itemsByColumn[index])
             }
         outSizes[index] = size
     }
@@ -1362,44 +1450,14 @@ private fun calculateColumnWidths(
         )
     }
 
-    var usedSpace = 0
-    for (size in outSizes) {
-        usedSpace += size
-    }
-
     // --- Pass 2: Flex Distribution ---
-    // If we have finite width and unused space, distribute it to Flex columns.
-    val remainingSpace =
-        if (availableTrackSpace == Constraints.Infinity) 0
-        else max(0, availableTrackSpace - usedSpace)
-
-    var totalAddedFromFlex = 0
-    if (totalFlex > 0 && remainingSpace > 0) {
-        var distributed = 0
-        var accumulatedFlex = 0f
-
-        for (index in 0 until totalCount) {
-            val specRaw =
-                if (index < explicitSpecs.size) explicitSpecs[index]
-                else GridTrackSize.Auto.encodedValue
-            val spec = GridTrackSize(specRaw)
-
-            if (spec.type == GridTrackSize.TypeFlex) {
-                accumulatedFlex += spec.value
-                // Distribute space proportionally based on weight.
-                // Uses an accumulation algorithm to avoid rounding errors summing to >
-                // remainingSpace.
-                val targetSpace = (accumulatedFlex / totalFlex * remainingSpace).roundToInt()
-                val share = max(0, targetSpace - distributed)
-
-                outSizes[index] += share
-                distributed += share
-                totalAddedFromFlex = distributed
-            }
-        }
-    }
-
-    return usedSpace + totalAddedFromFlex
+    return distributeFlexSpaceAndGetTotal(
+        outSizes = outSizes,
+        availableTrackSpace = availableTrackSpace,
+        totalFlex = totalFlex,
+        totalCount = totalCount,
+        explicitSpecs = explicitSpecs,
+    )
 }
 
 /**
@@ -1519,12 +1577,14 @@ private fun calculateRowHeights(
                         columnWidths = columnWidths,
                         fallbackWidth = constraints.maxWidth,
                     )
+
                 GridTrackSize.TypeMaxContent ->
                     calculateMaxIntrinsicHeight(
                         items = itemsByRow[index],
                         columnWidths = columnWidths,
                         fallbackWidth = constraints.maxWidth,
                     )
+
                 GridTrackSize.TypeAuto -> {
                     // If infinite space, Auto behaves like MaxContent
                     if (availableTrackSpace == Constraints.Infinity) {
@@ -1552,6 +1612,14 @@ private fun calculateRowHeights(
                         min
                     }
                 }
+
+                GridTrackSize.TypeMinMax -> {
+                    // Accumulate the max [Fr] weight for Pass 2
+                    totalFlex += spec.maxValue
+                    // The base size is the fixed minimum, skipping intrinsic queries.
+                    with(density) { spec.minValue.dp.roundToPx() }
+                }
+
                 else ->
                     calculateMaxIntrinsicHeight(
                         items = itemsByRow[index],
@@ -1587,14 +1655,33 @@ private fun calculateRowHeights(
         )
     }
 
+    // --- Pass 2: Flex Distribution ---
+    return distributeFlexSpaceAndGetTotal(
+        outSizes = outSizes,
+        availableTrackSpace = availableTrackSpace,
+        totalFlex = totalFlex,
+        totalCount = totalCount,
+        explicitSpecs = explicitSpecs,
+    )
+}
+
+/**
+ * Calculates the total used space and distributes any remaining finite space proportionally among
+ * tracks defined as [GridTrackSize.Flex].
+ */
+private fun distributeFlexSpaceAndGetTotal(
+    outSizes: IntArray,
+    availableTrackSpace: Int,
+    totalFlex: Float,
+    totalCount: Int,
+    explicitSpecs: LongList,
+): Int {
     var usedSpace = 0
     for (size in outSizes) {
         usedSpace += size
     }
 
-    // --- Pass 2: Flex Distribution ---
-    //
-    // If we have finite height and unused space, distribute it to Flex rows.
+    // If we have finite space and unused space, distribute it to Flex tracks.
     val remainingSpace =
         if (availableTrackSpace == Constraints.Infinity) 0
         else max(0, availableTrackSpace - usedSpace)
@@ -1609,9 +1696,14 @@ private fun calculateRowHeights(
                 if (index < explicitSpecs.size) explicitSpecs[index]
                 else GridTrackSize.Auto.encodedValue
             val spec = GridTrackSize(specRaw)
-
-            if (spec.type == GridTrackSize.TypeFlex) {
-                accumulatedFlex += spec.value
+            val weight =
+                when (spec.type) {
+                    GridTrackSize.TypeFlex -> spec.value
+                    GridTrackSize.TypeMinMax -> spec.maxValue
+                    else -> 0f
+                }
+            if (weight > 0f) {
+                accumulatedFlex += weight
                 // Distribute space proportionally based on weight.
                 // Uses an accumulation algorithm to avoid rounding errors summing to >
                 // remainingSpace.
@@ -1628,30 +1720,28 @@ private fun calculateRowHeights(
     return usedSpace + totalAddedFromFlex
 }
 
-private fun calculateMaxIntrinsicWidth(
-    items: MutableObjectList<GridItem>?,
-    heightConstraint: Int,
-): Int {
+private fun calculateMaxIntrinsicWidth(items: MutableObjectList<GridItem>?): Int {
     if (items == null) return 0
     var maxSize = 0
     items.forEach { item ->
         if (item.columnSpan == 1) {
-            val size = item.measurable.maxIntrinsicWidth(heightConstraint)
+            val size = wrapIntrinsicException {
+                item.measurable.maxIntrinsicWidth(Constraints.Infinity)
+            }
             if (size > maxSize) maxSize = size
         }
     }
     return maxSize
 }
 
-private fun calculateMinIntrinsicWidth(
-    items: MutableObjectList<GridItem>?,
-    heightConstraint: Int,
-): Int {
+private fun calculateMinIntrinsicWidth(items: MutableObjectList<GridItem>?): Int {
     if (items == null) return 0
     var maxSize = 0
     items.forEach { item ->
         if (item.columnSpan == 1) {
-            val size = item.measurable.minIntrinsicWidth(heightConstraint)
+            val size = wrapIntrinsicException {
+                item.measurable.minIntrinsicWidth(Constraints.Infinity)
+            }
             if (size > maxSize) maxSize = size
         }
     }
@@ -1669,7 +1759,7 @@ private fun calculateMaxIntrinsicHeight(
         if (item.rowSpan == 1) {
             val colIndex = item.column
             val width = if (colIndex < columnWidths.size) columnWidths[colIndex] else fallbackWidth
-            val size = item.measurable.maxIntrinsicHeight(width)
+            val size = wrapIntrinsicException { item.measurable.maxIntrinsicHeight(width) }
             if (size > maxSize) maxSize = size
         }
     }
@@ -1687,7 +1777,7 @@ private fun calculateMinIntrinsicHeight(
         if (item.rowSpan == 1) {
             val colIndex = item.column
             val width = if (colIndex < columnWidths.size) columnWidths[colIndex] else fallbackWidth
-            val size = item.measurable.minIntrinsicHeight(width)
+            val size = wrapIntrinsicException { item.measurable.minIntrinsicHeight(width) }
             if (size > maxSize) maxSize = size
         }
     }
@@ -1699,22 +1789,22 @@ private fun calculateMinIntrinsicHeight(
  * pass.
  *
  * @param items The list of items in this column.
- * @param heightConstraint The available height to measure against (often [Constraints.Infinity]).
  * @return A packed [Long] containing both values to avoid object allocation:
  * * **High 32 bits:** The maximum intrinsic width. Extract via `(packed ushr 32).toInt()`.
  * * **Low 32 bits:** The minimum intrinsic width. Extract via `(packed and 0xFFFFFFFFL).toInt()`.
  */
-private fun calculateMinMaxIntrinsicWidth(
-    items: MutableObjectList<GridItem>?,
-    heightConstraint: Int,
-): Long {
+private fun calculateMinMaxIntrinsicWidth(items: MutableObjectList<GridItem>?): Long {
     if (items == null) return 0L
     var maxMin = 0
     var maxMax = 0
     items.forEach { item ->
         if (item.columnSpan == 1) {
-            val min = item.measurable.minIntrinsicWidth(heightConstraint)
-            val max = item.measurable.maxIntrinsicWidth(heightConstraint)
+            val min = wrapIntrinsicException {
+                item.measurable.minIntrinsicWidth(Constraints.Infinity)
+            }
+            val max = wrapIntrinsicException {
+                item.measurable.maxIntrinsicWidth(Constraints.Infinity)
+            }
             if (min > maxMin) maxMin = min
             if (max > maxMax) maxMax = max
         }
@@ -1746,8 +1836,8 @@ private fun calculateMinMaxIntrinsicHeight(
         if (item.rowSpan == 1) {
             val colIndex = item.column
             val width = if (colIndex < columnWidths.size) columnWidths[colIndex] else fallbackWidth
-            val min = item.measurable.minIntrinsicHeight(width)
-            val max = item.measurable.maxIntrinsicHeight(width)
+            val min = wrapIntrinsicException { item.measurable.minIntrinsicHeight(width) }
+            val max = wrapIntrinsicException { item.measurable.maxIntrinsicHeight(width) }
             if (min > maxMin) maxMin = min
             if (max > maxMax) maxMax = max
         }
@@ -1843,15 +1933,12 @@ private fun distributeSpanningSpace(
                     // If we don't know column widths, constrain only by parent max.
                     itemWidth = constraints.maxWidth
                 }
-                item.measurable.maxIntrinsicHeight(itemWidth)
+                wrapIntrinsicException { item.measurable.maxIntrinsicHeight(itemWidth) }
             } else {
                 // Case: Calculating Column Widths.
-                // Intrinsic width is typically calculated against infinite height (maxContent),
-                // or the parent's bounded height if specified.
-                val heightConstraint =
-                    if (constraints.hasBoundedHeight) constraints.maxHeight
-                    else Constraints.Infinity
-                item.measurable.maxIntrinsicWidth(heightConstraint)
+                // Intrinsic width must be calculated against infinite height to prevent
+                // aspect ratio modifiers from demanding widths based on the grid's height.
+                wrapIntrinsicException { item.measurable.maxIntrinsicWidth(Constraints.Infinity) }
             }
 
         // --- Step 3: Distribute Deficit ---
@@ -2068,3 +2155,27 @@ private fun calculateTrackOffsets(sizes: IntArray, gapPx: Int): IntArray {
     }
     return offsets
 }
+
+/**
+ * Executes intrinsic measurements and intercepts SubcomposeLayout crashes. If a SubcomposeLayout
+ * (like LazyColumn) causes a crash, it wraps the framework exception with a Grid-specific solution
+ * directing the developer to use [GridTrackSize.MinMax].
+ */
+private inline fun <T> wrapIntrinsicException(block: () -> T): T {
+    return try {
+        block()
+    } catch (e: IllegalStateException) {
+        if (e.message?.contains("SubcomposeLayout") == true) {
+            throw IllegalStateException(SubcomposeLayoutIntrinsicErrorMessage, e)
+        }
+        throw e
+    }
+}
+
+@ExperimentalGridApi
+internal const val SubcomposeLayoutIntrinsicErrorMessage =
+    "Grid intrinsic measurement failed because a SubcomposeLayout (e.g., LazyColumn or LazyRow) " +
+        "was placed inside a track that queries its intrinsic measurements (like `Auto` or `Flex`).\n\n" +
+        "To fix this, change the track definition to `GridTrackSize.MinMax(min = 0.dp, max = 1.fr)` " +
+        "(or your desired flex weight for max) to explicitly set a minimum base size and bypass " +
+        "the intrinsic measurement pass."

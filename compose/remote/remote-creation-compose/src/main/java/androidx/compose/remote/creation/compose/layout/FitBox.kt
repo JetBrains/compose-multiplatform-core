@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.currentComposer
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.platform.LocalLayoutDirection
 
 /** Utility modifier to record the layout information */
 internal class RemoteComposeFitBoxModifier(
@@ -38,7 +39,7 @@ internal class RemoteComposeFitBoxModifier(
         drawIntoRemoteCanvas { canvas ->
             canvas.document.startFitBox(
                 canvas.toRecordingModifier(modifier),
-                horizontalAlignment.toRemote(),
+                horizontalAlignment.toRemote(this.layoutDirection),
                 verticalArrangement.toRemote(),
             )
             this@draw.drawContent()
@@ -62,10 +63,16 @@ public fun FitBox(
     content: @RemoteComposable @Composable () -> Unit,
 ) {
     if (currentComposer.applier is RemoteComposeApplierV2) {
-        FitBoxV2(modifier, horizontalAlignment, verticalArrangement, content)
+        FitBoxV2(
+            modifier,
+            horizontalAlignment,
+            verticalArrangement,
+            LocalLayoutDirection.current,
+            content,
+        )
         return
     }
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     androidx.compose.foundation.layout.Box(
         RemoteComposeFitBoxModifier(modifier, horizontalAlignment, verticalArrangement)
             .then(modifier.toComposeUiLayout())

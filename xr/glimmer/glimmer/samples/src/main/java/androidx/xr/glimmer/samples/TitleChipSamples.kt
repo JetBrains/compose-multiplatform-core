@@ -63,7 +63,7 @@ fun TitleChipWithLeadingIconSample() {
 fun TitleChipWithCardSample() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         TitleChip { Text("Title Chip") }
-        Spacer(Modifier.height(TitleChipDefaults.AssociatedContentSpacing))
+        Spacer(Modifier.height(TitleChipDefaults.associatedContentSpacing))
         Card(
             title = { Text("Title") },
             subtitle = { Text("Subtitle") },

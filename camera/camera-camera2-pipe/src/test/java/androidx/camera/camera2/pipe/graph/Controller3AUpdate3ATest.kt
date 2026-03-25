@@ -22,6 +22,8 @@ import android.hardware.camera2.params.MeteringRectangle
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AwbMode
+import androidx.camera.camera2.pipe.ControlMode
+import androidx.camera.camera2.pipe.FlashMode
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestNumber
@@ -158,6 +160,54 @@ internal class Controller3AUpdate3ATest {
                             CaptureResult.CONTROL_AWB_MODE to
                                 CaptureResult.CONTROL_AWB_MODE_CLOUDY_DAYLIGHT
                         ),
+                ),
+            )
+        }
+        val result3A = result.await()
+        assertThat(result3A.frameMetadata!!.frameNumber.value).isEqualTo(101L)
+        assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
+    }
+
+    @Test
+    fun testControlModeUpdate() = runTest {
+        initGraphProcessor()
+
+        val result = controller3A.update3A(controlMode = ControlMode.OFF)
+        launch {
+            listener3A.onRequestSequenceCreated(
+                FakeRequestMetadata(requestNumber = RequestNumber(1))
+            )
+            listener3A.onPartialCaptureResult(
+                FakeRequestMetadata(requestNumber = RequestNumber(1)),
+                FrameNumber(101L),
+                FakeFrameMetadata(
+                    frameNumber = FrameNumber(101L),
+                    resultMetadata =
+                        mapOf(CaptureResult.CONTROL_MODE to CaptureResult.CONTROL_MODE_OFF),
+                ),
+            )
+        }
+        val result3A = result.await()
+        assertThat(result3A.frameMetadata!!.frameNumber.value).isEqualTo(101L)
+        assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
+    }
+
+    @Test
+    fun testFlashModeUpdate() = runTest {
+        initGraphProcessor()
+
+        val result = controller3A.update3A(flashMode = FlashMode.SINGLE)
+        launch {
+            listener3A.onRequestSequenceCreated(
+                FakeRequestMetadata(requestNumber = RequestNumber(1))
+            )
+            listener3A.onPartialCaptureResult(
+                FakeRequestMetadata(requestNumber = RequestNumber(1)),
+                FrameNumber(101L),
+                FakeFrameMetadata(
+                    frameNumber = FrameNumber(101L),
+                    resultMetadata =
+                        mapOf(CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_SINGLE),
                 ),
             )
         }

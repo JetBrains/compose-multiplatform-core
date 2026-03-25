@@ -24,6 +24,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.LayoutDirection
 
 @Composable
 @RemoteComposable
@@ -32,6 +33,7 @@ public fun RemoteCollapsibleRowV2(
     modifier: RemoteModifier = RemoteModifier,
     horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start,
     verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.Top,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     content: @Composable RemoteCollapsibleRowScope.() -> Unit,
 ) {
     val scope = remember { RemoteCollapsibleRowScope() }
@@ -39,8 +41,15 @@ public fun RemoteCollapsibleRowV2(
         factory = ::RemoteCollapsibleRowNodeV2,
         update = {
             set(modifier) { nodeModifier -> this.modifier = nodeModifier }
-            set(horizontalArrangement) { hArr -> this.horizontalArrangement = hArr }
-            set(verticalAlignment) { vAlign -> this.verticalAlignment = vAlign }
+            set(horizontalArrangement) { nodeHorizontalArrangement ->
+                this.horizontalArrangement = nodeHorizontalArrangement
+            }
+            set(verticalAlignment) { nodeVerticalAlignment ->
+                this.verticalAlignment = nodeVerticalAlignment
+            }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
+            }
         },
         content = { scope.content() },
     )

@@ -133,7 +133,7 @@ constructor(private val threads: Threads, cameraPipeConfig: CameraPipe.Config) :
             val imageReader =
                 AndroidMultiResolutionImageReader.create(
                     cameraStream,
-                    capacity,
+                    imageReaderCapacity,
                     executorProvider(),
                     usage,
                     enableConcurrentOutputs,

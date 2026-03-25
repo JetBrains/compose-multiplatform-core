@@ -55,7 +55,10 @@ import kotlinx.coroutines.withTimeout
 internal open class FakeEditablePdfDocument(
     internal val pages: List<Point?> = listOf(),
     override val formType: Int = PDF_FORM_TYPE_NONE,
-    @Deprecated("Deprecated in Java, Use getLinearizationStatus() instead")
+    @Deprecated(
+        "Deprecated, Use linearizationStatus instead",
+        replaceWith = ReplaceWith("linearizationStatus"),
+    )
     override val isLinearized: Boolean = false,
     override val renderParams: RenderParams = RenderParams(RenderParams.RENDER_MODE_FOR_DISPLAY),
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
@@ -65,7 +68,7 @@ internal open class FakeEditablePdfDocument(
     private val pageFormWidgetInfos: Map<Int, List<FormWidgetInfo>> = mapOf(),
     initialEdits: List<PdfAnnotation> = emptyList(),
     override val linearizationStatus: Int = LINEARIZATION_STATUS_UNKNOWN,
-) : EditablePdfDocument() {
+) : EditablePdfDocument {
     override val pageCount: Int = pages.size
 
     @get:Synchronized @set:Synchronized internal var layoutReach: Int = 0
@@ -283,11 +286,16 @@ internal open class FakeEditablePdfDocument(
         override fun close() {}
     }
 
-    override fun addOnEditsAppliedListener(executor: Executor, listener: OnEditsAppliedListener) {
+    override fun addOnEditsAppliedListener(
+        executor: Executor,
+        listener: EditablePdfDocument.OnEditsAppliedListener,
+    ) {
         TODO("Not yet implemented")
     }
 
-    override fun removeOnEditsAppliedListener(listener: OnEditsAppliedListener) {
+    override fun removeOnEditsAppliedListener(
+        listener: EditablePdfDocument.OnEditsAppliedListener
+    ) {
         TODO("Not yet implemented")
     }
 

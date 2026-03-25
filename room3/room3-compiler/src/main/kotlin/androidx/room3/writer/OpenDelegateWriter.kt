@@ -33,10 +33,10 @@ import androidx.room3.vo.FtsEntity
 import java.util.ArrayDeque
 
 /**
- * The threshold amount of statements in a validateMigration() method before creating additional
+ * The threshold amount of statements in a onValidateSchema() function before creating additional
  * secondary validate methods.
  */
-const val VALIDATE_CHUNK_SIZE = 1000
+const val VALIDATE_CHUNK_SIZE = 500
 
 /** Create an open helper using SupportSQLiteOpenHelperFactory */
 class OpenDelegateWriter(val database: Database) {

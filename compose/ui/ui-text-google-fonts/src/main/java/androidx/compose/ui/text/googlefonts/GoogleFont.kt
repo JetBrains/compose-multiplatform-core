@@ -49,6 +49,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 /**
  * Load a font from Google Fonts via Downloadable Fonts.
  *
+ * This function allows specifying a custom font provider. For most common use cases with Google
+ * Play Services, consider using the overload that omits the [fontProvider] parameter.
+ *
  * To learn more about the features supported by Google Fonts, see
  * [Get Started with the Google Fonts for Android](https://developers.google.com/fonts/docs/android)
  *
@@ -65,6 +68,44 @@ fun Font(
     weight: FontWeight = FontWeight.W400,
     style: FontStyle = FontStyle.Normal,
 ): Font {
+    return GoogleFontImpl(
+        name = googleFont.name,
+        fontProvider = fontProvider,
+        weight = weight,
+        style = style,
+        bestEffort = googleFont.bestEffort,
+    )
+}
+
+/**
+ * Load a font from Google Fonts via Downloadable Fonts using the default [GoogleFont.Provider].
+ *
+ * This overload function simplifies the setup by automatically configuring the
+ * [GoogleFont.Provider] with the default font certificates required to fetch fonts from Google Play
+ * Services.
+ *
+ * To learn more about the features supported by Google Fonts, see
+ * [Get Started with the Google Fonts for Android](https://developers.google.com/fonts/docs/android)
+ *
+ * @sample androidx.compose.ui.text.googlefonts.samples.GoogleFontSample
+ * @param googleFont A font to load from fonts.google.com
+ * @param weight font weight to load
+ * @param style italic or normal font
+ */
+// contains Google in name because this function provides integration with fonts.google.com
+@Suppress("MentionsGoogle")
+fun Font(
+    googleFont: GoogleFont,
+    weight: FontWeight = FontWeight.W400,
+    style: FontStyle = FontStyle.Normal,
+): Font {
+    val fontProvider =
+        GoogleFont.Provider(
+            providerAuthority = "com.google.android.gms.fonts",
+            providerPackage = "com.google.android.gms",
+            certificates = R.array.com_google_android_gms_fonts_certs,
+        )
+
     return GoogleFontImpl(
         name = googleFont.name,
         fontProvider = fontProvider,

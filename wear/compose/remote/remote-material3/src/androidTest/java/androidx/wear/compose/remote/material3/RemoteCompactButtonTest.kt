@@ -21,7 +21,6 @@ import android.content.Context
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.action.HostAction
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
@@ -29,6 +28,7 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -38,6 +38,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.remote.material3.previews.RemoteCompactButtonWithIcon
 import androidx.wear.compose.remote.material3.previews.RemoteCompactButtonWithIconAndLabel
 import androidx.wear.compose.remote.material3.previews.RemoteCompactButtonWithLabel
+import androidx.wear.compose.remote.material3.previews.RemoteCompactButtonWithShape
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,6 +60,7 @@ class RemoteCompactButtonTest {
     @Test
     fun compact_button_disabled() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
@@ -103,18 +105,23 @@ class RemoteCompactButtonTest {
         }
     }
 
+    @Test
+    fun compact_button_with_shape() {
+        remoteComposeTestRule.runScreenshotTest(
+            backgroundColor = Color.Black,
+            creationDisplayInfo = creationDisplayInfo,
+        ) {
+            Center(RemoteModifier.fillMaxSize()) { RemoteCompactButtonWithShape() }
+        }
+    }
+
     @Composable
     @RemoteComposable
     private fun Center(
         modifier: RemoteModifier,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
-        RemoteBox(
-            modifier,
-            horizontalAlignment = RemoteAlignment.CenterHorizontally,
-            verticalArrangement = RemoteArrangement.Center,
-            content = content,
-        )
+        RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
     }
 }
 

@@ -22,15 +22,14 @@ import kotlin.concurrent.Volatile
 
 /**
  * This is something that is only typically created once per process. All the traces emitted are
- * managed and written into a single [TraceSink] in an optimal way based on the underlying platform.
+ * managed and written into a single [AbstractTraceSink] in an optimal way based on the underlying
+ * platform.
  */
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 @RestrictTo(Scope.LIBRARY_GROUP)
 public open class TraceContext
 internal constructor(
     /** The sink all the trace events are written to. */
-    @JvmField public val sink: TraceSink,
+    @JvmField public val sink: AbstractTraceSink,
     /** Is tracing enabled ? */
     @JvmField public val isEnabled: Boolean,
     /** Debug mode */
@@ -39,7 +38,10 @@ internal constructor(
     @JvmField internal val isDebug: Boolean,
 ) : AutoCloseable {
 
-    public constructor(sink: TraceSink, isEnabled: Boolean) : this(sink, isEnabled, isDebug = false)
+    public constructor(
+        sink: AbstractTraceSink,
+        isEnabled: Boolean,
+    ) : this(sink, isEnabled, isDebug = false)
 
     @JvmField internal val processTrackLock = Any()
 
@@ -65,12 +67,16 @@ internal constructor(
         }
     }
 
-    /** Flushes the trace packets into the underlying [TraceSink]. */
+    /** Flushes the trace packets into the underlying [AbstractTraceSink]. */
     public fun flush() {
         if (isEnabled) {
             process.flush()
-            process.threads.forEachValue { threadTrack -> threadTrack.flush() }
-            process.counters.forEachValue { counterTrack -> counterTrack.flush() }
+            synchronized(process.threads) {
+                process.threads.forEachValue { threadTrack -> threadTrack.flush() }
+            }
+            synchronized(process.counters) {
+                process.counters.forEachValue { counterTrack -> counterTrack.flush() }
+            }
 
             // Call flush() on the sink after all the tracks have been flushed.
             sink.flush()
@@ -89,16 +95,28 @@ internal constructor(
         }
         var count = 0L
         count += process.pool.poolableCount()
-        process.threads.forEachValue { threadTrack -> count += threadTrack.pool.poolableCount() }
-        process.counters.forEachValue { counterTrack -> count += counterTrack.pool.poolableCount() }
+        synchronized(process.threads) {
+            process.threads.forEachValue { threadTrack ->
+                count += threadTrack.pool.poolableCount()
+            }
+        }
+        synchronized(process.counters) {
+            process.counters.forEachValue { counterTrack ->
+                count += counterTrack.pool.poolableCount()
+            }
+        }
         return count
     }
 
     internal fun validateTrackPools(validateTrackPool: (Track) -> Unit) {
         if (isDebug) {
             validateTrackPool(process)
-            process.threads.forEachValue { threadTrack -> validateTrackPool(threadTrack) }
-            process.counters.forEachValue { counterTrack -> validateTrackPool(counterTrack) }
+            synchronized(process.threads) {
+                process.threads.forEachValue { threadTrack -> validateTrackPool(threadTrack) }
+            }
+            synchronized(process.counters) {
+                process.counters.forEachValue { counterTrack -> validateTrackPool(counterTrack) }
+            }
         }
     }
 }

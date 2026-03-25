@@ -124,7 +124,7 @@ internal constructor(
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
                 isAtLeastSdkExtension21()
         ) {
-            this.toPlatformRecord()
+            val unused = this.toPlatformRecord()
         } else {
             require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
             if (segments.isNotEmpty()) {

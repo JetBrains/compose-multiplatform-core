@@ -98,7 +98,6 @@ Previews are located in `samples/src/main/java/.../previews/` and are essential 
     - Developers must be able to view all variants via previews in the IDE or the demo app.
 - **Testing**: Test ALL variants in an automated way.
 - **Annotations**:
-    - Add `@file:Suppress("RestrictedApiAndroidX")` (often needed for internal APIs).
     - Annotate the preview function with `@WearPreviewDevices`.
 - **RemotePreview**: Wrap the composable to be previewed in a `RemotePreview`.
 - **Profile Parameters**: Use `@PreviewParameter(ProfilePreviewParameterProvider::class)` to test

@@ -18,8 +18,8 @@ package androidx.xr.scenecore.spatial.core
 
 import androidx.core.app.ComponentActivity
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
-import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3

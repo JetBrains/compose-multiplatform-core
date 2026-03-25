@@ -20,6 +20,7 @@ import androidx.room3.RewriteQueriesToDropUnusedColumns
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.processing.XElement
 import androidx.room3.compiler.processing.XProcessingEnv
+import androidx.room3.ext.RoomTypeNames
 import androidx.room3.log.RLog
 import androidx.room3.parser.optimization.RemoveUnusedColumnQueryRewriter
 import androidx.room3.preconditions.Checks
@@ -267,18 +268,24 @@ private constructor(
     /**
      * Check if the target platform is only Android.
      *
-     * Note that there is no 'Android' target in the `targetPlatforms` list, so instead we check for
-     * JVM and also validate that an Android only class `android.content.Context` is in the
-     * classpath.
+     * Note that there is no 'Android' target in the `targetPlatforms` list, so we check for JVM and
+     * also validate that an Android only function is found in the classpath of an expect / actual
+     * declaration.
      */
     fun isAndroidOnlyTarget(): Boolean {
         val targetPlatforms = this.processingEnv.targetPlatforms
         return targetPlatforms.size == 1 &&
             targetPlatforms.contains(XProcessingEnv.Platform.JVM) &&
-            this.processingEnv.findType("android.content.Context") != null
+            isAndroidMakerFunctionInProcessingEnv()
     }
 
-    /** Check if the target platform is JVM. */
+    private fun isAndroidMakerFunctionInProcessingEnv(): Boolean =
+        this.processingEnv
+            .findTypeElement(RoomTypeNames.ANDROID_MARKER)
+            ?.getDeclaredMethods()
+            ?.firstOrNull { it.name == "isAndroid" } != null
+
+    /** Check if the target platform is JVM, which includes Android. */
     fun isJvmOnlyTarget(): Boolean {
         val targetPlatforms = this.processingEnv.targetPlatforms
         return targetPlatforms.size == 1 && targetPlatforms.contains(XProcessingEnv.Platform.JVM)

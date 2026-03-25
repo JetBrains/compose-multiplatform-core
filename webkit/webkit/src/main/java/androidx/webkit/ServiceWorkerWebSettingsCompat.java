@@ -74,6 +74,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      *             {@link WebSettings#LOAD_DEFAULT}.
      * @see WebSettings#setCacheMode
      * @see #getCacheMode
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#SERVICE_WORKER_CACHE_MODE}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SERVICE_WORKER_CACHE_MODE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -89,6 +92,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      *
      * @return the current setting for overriding the cache mode
      * @see #setCacheMode
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#SERVICE_WORKER_CACHE_MODE}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SERVICE_WORKER_CACHE_MODE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -104,6 +110,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      *
      * @see WebSettings#setAllowContentAccess
      * @see #getAllowContentAccess
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#SERVICE_WORKER_CONTENT_ACCESS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SERVICE_WORKER_CONTENT_ACCESS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -118,6 +127,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      * returns true for {@link WebViewFeature#SERVICE_WORKER_CONTENT_ACCESS}.
      *
      * @see #setAllowContentAccess
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#SERVICE_WORKER_CONTENT_ACCESS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SERVICE_WORKER_CONTENT_ACCESS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -133,6 +145,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      *
      * @see WebSettings#setAllowFileAccess
      * @see #getAllowContentAccess
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#SERVICE_WORKER_FILE_ACCESS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SERVICE_WORKER_FILE_ACCESS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -147,6 +162,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      * returns true for {@link WebViewFeature#SERVICE_WORKER_FILE_ACCESS}.
      *
      * @see #setAllowFileAccess
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#SERVICE_WORKER_FILE_ACCESS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SERVICE_WORKER_FILE_ACCESS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -163,6 +181,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      * @param flag {@code true} means block network loads by the Service Workers
      * @see WebSettings#setBlockNetworkLoads
      * @see #getBlockNetworkLoads
+     * @throws UnsupportedOperationException if the
+     *                                     {@link WebViewFeature#SERVICE_WORKER_BLOCK_NETWORK_LOADS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SERVICE_WORKER_BLOCK_NETWORK_LOADS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -179,6 +200,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      * @return {@code true} if the Service Workers are not allowed to load any resources from the
      * network
      * @see #setBlockNetworkLoads
+     * @throws UnsupportedOperationException if the
+     *                                     {@link WebViewFeature#SERVICE_WORKER_BLOCK_NETWORK_LOADS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SERVICE_WORKER_BLOCK_NETWORK_LOADS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -200,6 +224,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      * @see WebSettingsCompat#getRequestedWithHeaderOriginAllowList(WebSettings)
      * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
      * API now just returns an empty set.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#REQUESTED_WITH_HEADER_ALLOW_LIST}
+     *                                       feature is not supported.
      */
 
     @Deprecated(forRemoval = true)
@@ -229,6 +256,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      * @see WebSettingsCompat#setRequestedWithHeaderOriginAllowList(WebSettings, Set)
      * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
      * API no longer does anything.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#REQUESTED_WITH_HEADER_ALLOW_LIST}
+     *                                       feature is not supported.
      */
     @Deprecated(forRemoval = true)
     @SuppressWarnings("removal")
@@ -253,6 +283,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      * {@link WebViewFeature#COOKIE_INTERCEPT}.
      *
      * @param enabled Whether cookie access during request intercept should be enabled.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#COOKIE_INTERCEPT}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.COOKIE_INTERCEPT,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -266,6 +299,9 @@ public abstract class ServiceWorkerWebSettingsCompat {
      * {@link WebViewFeature#COOKIE_INTERCEPT}.
      *
      * @see #setIncludeCookiesOnShouldInterceptRequestEnabled(boolean)
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#COOKIE_INTERCEPT}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.COOKIE_INTERCEPT,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

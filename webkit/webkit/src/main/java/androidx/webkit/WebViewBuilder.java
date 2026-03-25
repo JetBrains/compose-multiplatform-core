@@ -118,6 +118,9 @@ public final class WebViewBuilder {
      * called, as per {@link ProfileStore#getOrCreateProfile(String)}.
      *
      * @param profileName The name of the profile to use.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#MULTI_PROFILE}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -150,6 +153,9 @@ public final class WebViewBuilder {
      * @param context The Activity Context for the WebView.
      * @throws WebViewBuilderException if there was an issue with validation or constructing the
      *                                 WebView.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V1}
+     *                                       feature is not supported.
      */
     @UiThread
     @RequiresFeature(
@@ -187,6 +193,9 @@ public final class WebViewBuilder {
      * @throws WebViewBuilderException if there was an issue with validation or constructing the
      *                                 WebView.
      * @throws IllegalStateException if the WebView has already been used or configured in some way.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V2}
+     *                                       feature is not supported.
      */
     @UiThread
     @RequiresFeature(

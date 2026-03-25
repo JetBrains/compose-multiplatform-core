@@ -55,6 +55,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.ArDevice
+import androidx.xr.arcore.CreateGeospatialPoseFromPoseErrorInternal
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseNotTracking
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
 import androidx.xr.arcore.Geospatial
@@ -68,9 +69,9 @@ import androidx.xr.arcore.playservices.cameraState
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.GeospatialMode
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import java.util.concurrent.CopyOnWriteArrayList
@@ -100,7 +101,7 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
                 config =
                     Config(
                         planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                        deviceTracking = DeviceTrackingMode.LAST_KNOWN,
+                        deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
                         geospatial = GeospatialMode.VPS_AND_GPS,
                     ),
                 onSessionAvailable = { session ->
@@ -150,7 +151,7 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
     private fun createAnchorAtPose(pose: Pose) {
         val geospatial = Geospatial.getInstance(session)
         if (geospatial.state.value != Geospatial.State.RUNNING) {
-            Log.error { "Failed to create anchor: Geospatial is not running." }
+            XrLog.error { "Failed to create anchor: Geospatial is not running." }
             return
         }
 
@@ -172,8 +173,11 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
                     }
             }
             is CreateGeospatialPoseFromPoseNotTracking -> {
-                Log.error { "Failed to create anchor: Geospatial is not tracking." }
+                XrLog.error { "Failed to create anchor: Geospatial is not tracking." }
             }
+
+            is CreateGeospatialPoseFromPoseErrorInternal ->
+                XrLog.error { geospatialPoseResult.error }
         }
     }
 
@@ -288,6 +292,9 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
                             .trimIndent()
                     is CreateGeospatialPoseFromPoseNotTracking ->
                         "Localization Status: Not tracking"
+
+                    is CreateGeospatialPoseFromPoseErrorInternal ->
+                        "Localization Status: ${result.error}"
                 }
             else -> "Localization Status: Unknown"
         }

@@ -37,4 +37,15 @@ public class CarAppApiLevelsTest {
     public void isValid_apiHigherThanLatest_notValid() {
         assertThat(CarAppApiLevels.isValid(CarAppApiLevels.getLatest() + 1)).isFalse();
     }
+
+    @Test
+    public void getLatest_isStable() {
+        // 1. Initial load
+        int firstCall = CarAppApiLevels.getLatest();
+
+        // 2. Second call should return exactly the same value from memory
+        // (This confirms stability, though not strictly that it didn't hit I/O)
+        int secondCall = CarAppApiLevels.getLatest();
+        assertThat(secondCall).isEqualTo(firstCall);
+    }
 }

@@ -938,6 +938,7 @@ class Scrollable2DTest {
         rule.onNodeWithTag("childScrollable").performTouchInput {
             down(centerLeft)
             moveBy(Offset(100f, 100f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -1281,6 +1282,7 @@ class Scrollable2DTest {
         rule.onNodeWithTag(scrollable2DBoxTag).performTouchInput {
             down(this.center)
             moveBy(Offset(115f, 0f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
         assertThat(flingCalled).isEqualTo(1)
@@ -1793,6 +1795,7 @@ class Scrollable2DTest {
         rule.onRoot().performTouchInput {
             down(center)
             moveBy(Offset(scrollDelta, scrollDelta))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -2028,8 +2031,7 @@ class Scrollable2DTest {
                 moveBy(Offset(delta, delta), delayMillis = 8L)
                 previousScrollValue += delta.toInt()
             }
-            // stop for a moment
-            advanceEventTime(3000L)
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -2136,10 +2138,7 @@ class Scrollable2DTest {
 
         rule.onNodeWithTag(scrollable2DBoxTag).performTouchInput { swipeUp() }
 
-        rule.runOnIdle {
-            assertThat(flingDelta.x).isNotEqualTo(previousDelta.x)
-            assertThat(flingDelta.y).isNotEqualTo(previousDelta.y)
-        }
+        rule.runOnIdle { assertThat(flingDelta).isNotEqualTo(previousDelta) }
     }
 
     @Test

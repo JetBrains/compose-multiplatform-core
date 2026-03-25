@@ -16,19 +16,17 @@
 
 package androidx.glance.wear.composable
 
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.layout.RemoteOffset
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.background
-import androidx.compose.remote.creation.compose.modifier.clip
+import androidx.compose.remote.creation.compose.modifier.drawWithContent
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.state.RemoteDp
-import androidx.compose.remote.creation.compose.state.rc
+import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
+import androidx.glance.wear.WearWidgetBrush
 
 /**
  * A container for a remote compose widget, applying standard styling.
@@ -40,15 +38,21 @@ import androidx.compose.ui.unit.Dp
 internal fun WearWidgetContainer(
     horizontalPadding: RemoteDp,
     verticalPadding: RemoteDp,
-    cornerRadius: Dp,
-    backgroundColor: Color,
+    cornerRadius: RemoteDp,
+    background: WearWidgetBrush,
     content: @RemoteComposable @Composable () -> Unit,
 ) {
     RemoteBox(
         modifier =
-            RemoteModifier.fillMaxSize()
-                .clip(shape = RoundedCornerShape(size = cornerRadius))
-                .background(backgroundColor.rc)
+            RemoteModifier.fillMaxSize().drawWithContent {
+                val cornerRadiusOffset = RemoteOffset(cornerRadius.toPx(), cornerRadius.toPx())
+                val paint = RemotePaint()
+                background.foldIn(Unit) { _, element ->
+                    with(element.brush) { applyTo(paint, size) }
+                    drawRoundRect(paint = paint, cornerRadius = cornerRadiusOffset)
+                }
+                drawContent()
+            }
     ) {
         RemoteBox(
             modifier =

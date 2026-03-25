@@ -90,9 +90,10 @@ import kotlin.math.sqrt
  * This button represents the most important action on the screen, and must take the whole width of
  * the screen as well as being anchored to the screen bottom.
  *
- * When used with a list, such as [TransformingLazyColumn] or [ScalingLazyColumn], it is recommended
- * to pass [EdgeButton] into the [ScreenScaffold]'s edgeButton slot, which grows and shrinks to take
- * the available space after the scrollable content.
+ * When used with a list, such as [androidx.wear.compose.foundation.lazy.TransformingLazyColumn] or
+ * [androidx.wear.compose.foundation.lazy.ScalingLazyColumn], it is recommended to pass [EdgeButton]
+ * into the [ScreenScaffold]'s edgeButton slot, which grows and shrinks to take the available space
+ * after the scrollable content.
  *
  * [EdgeButton] has 4 standard sizes, taking 1 line of text for the extra small, 2 for small and
  * medium, and 3 for the large. See the standard values on [ButtonDefaults], and specify it using
@@ -109,18 +110,20 @@ import kotlin.math.sqrt
  *
  * Edge button can be enabled or disabled. A disabled button will not respond to click events.
  *
- * Example of an [EdgeButton]:
+ * Example of an [EdgeButton] placed at the bottom of the screen:
  *
  * @sample androidx.wear.compose.material3.samples.EdgeButtonSample
  *
- * Example of an EdgeButton with [TransformingLazyColumn] and [ScreenScaffold]:
+ * Example of an EdgeButton with [androidx.wear.compose.foundation.lazy.TransformingLazyColumn] and
+ * [ScreenScaffold]:
  *
  * @sample androidx.wear.compose.material3.samples.ScaffoldWithTLCEdgeButtonSample
  *
- * Example of [EdgeButton] integrating with [ScalingLazyColumn], where it is recommended to pass
+ * Example of [EdgeButton] integrating with
+ * [androidx.wear.compose.foundation.lazy.ScalingLazyColumn], where it is recommended to pass
  * autoCentering = null to achieve the correct spacing above the [EdgeButton]:
  *
- * @sample androidx.wear.compose.material3.samples.EdgeButtonListSample
+ * @sample androidx.wear.compose.material3.samples.ScaffoldWithSLCEdgeButtonSample
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button. When animating the button to appear/
  *   disappear from the screen, a Modifier.height can be used to change the height of the component,

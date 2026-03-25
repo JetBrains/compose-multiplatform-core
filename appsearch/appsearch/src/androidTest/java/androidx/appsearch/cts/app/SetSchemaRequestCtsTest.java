@@ -22,11 +22,8 @@ import static androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.TOKENI
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeTrue;
 
 import androidx.appsearch.annotation.Document;
-import androidx.appsearch.app.AppSearchEnvironment;
-import androidx.appsearch.app.AppSearchEnvironmentFactory;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.DocumentClassFactoryRegistry;
 import androidx.appsearch.app.GenericDocument;
@@ -301,22 +298,6 @@ public class SetSchemaRequestCtsTest {
                                 ImmutableSet.of(SetSchemaRequest.READ_EXTERNAL_STORAGE)
                         )
                 );
-    }
-
-    @Test
-    public void testAddRequiredPermissionsForSchemaTypeVisibility_emptyPermissions() {
-        assumeTrue(AppSearchEnvironmentFactory.getEnvironmentInstance()
-                .getEnvironment()
-                != AppSearchEnvironment.FRAMEWORK_ENVIRONMENT);
-        AppSearchSchema schema = new AppSearchSchema.Builder("Schema").build();
-        SetSchemaRequest.Builder setSchemaRequestBuilder = new SetSchemaRequest.Builder()
-                .addSchemas(schema);
-
-        IllegalArgumentException expected = assertThrows(IllegalArgumentException.class,
-                () -> setSchemaRequestBuilder.addRequiredPermissionsForSchemaTypeVisibility(
-                        "Schema", ImmutableSet.of()));
-        assertThat(expected).hasMessageThat().contains(
-                "The set of required permissions cannot be empty");
     }
 
     @Test

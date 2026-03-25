@@ -75,15 +75,6 @@ class OpenXrManagerTest {
     }
 
     @Test
-    fun instancePointer_initializedAfterCreate() = initOpenXrManagerAndRunTest {
-        check(underTest.instancePointer == 0L)
-
-        underTest.create()
-
-        assertThat(underTest.instancePointer).isGreaterThan(0L)
-    }
-
-    @Test
     fun create_initializesNativeOpenXrManager() = initOpenXrManagerAndRunTest {
         check(underTest.nativePointer == 0L)
 
@@ -157,7 +148,7 @@ class OpenXrManagerTest {
         check(underTest.config.deviceTracking == DeviceTrackingMode.DISABLED)
         check(perceptionManager.xrResources.updatables.isEmpty())
 
-        underTest.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
+        underTest.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN))
 
         assertThat(perceptionManager.xrResources.updatables)
             .containsExactly(perceptionManager.xrResources.arDevice)
@@ -166,7 +157,7 @@ class OpenXrManagerTest {
     @Test
     fun configure_deviceTrackingDisabled_removesDeviceToUpdatables() = initOpenXrManagerAndRunTest {
         underTest.create()
-        underTest.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
+        underTest.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN))
         check(
             perceptionManager.xrResources.updatables.contains(
                 perceptionManager.xrResources.arDevice
@@ -337,7 +328,7 @@ class OpenXrManagerTest {
             check(perceptionManager.xrResources.updatables.isEmpty())
 
             underTest.configure(
-                Config(augmentedObjectCategories = listOf(AugmentedObjectCategory.KEYBOARD))
+                Config(augmentedObjectCategories = setOf(AugmentedObjectCategory.KEYBOARD))
             )
             underTest.update()
 

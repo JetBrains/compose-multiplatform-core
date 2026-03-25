@@ -890,9 +890,13 @@ private fun ExerciseSessionRecord.toPlatformExerciseSessionRecord(): PlatformExe
             if (exerciseRouteResult is ExerciseRouteResult.Data) {
                 setRoute(exerciseRouteResult.exerciseRoute.toPlatformExerciseRoute())
             }
-            plannedExerciseSessionId?.let { setPlannedExerciseSessionId(it) }
+            if (isAtLeastSdkExtension13()) {
+                plannedExerciseSessionId?.let { setPlannedExerciseSessionId(it) }
+            }
             if (isAtLeastSdkExtension21()) {
-                rateOfPerceivedExertion?.let { setRateOfPerceivedExertion(it) }
+                rateOfPerceivedExertion?.let {
+                    val unused = setRateOfPerceivedExertion(it)
+                }
             }
         }
         .build()
@@ -927,9 +931,15 @@ fun ExerciseSegment.toPlatformExerciseSegment() =
         .setRepetitionsCount(repetitions)
         .apply {
             if (isAtLeastSdkExtension21()) {
-                weight?.let { setWeight(it.toPlatformMass()) }
-                setIndex?.let { setSetIndex(it) }
-                rateOfPerceivedExertion?.let { setRateOfPerceivedExertion(it) }
+                weight?.let {
+                    val unused = setWeight(it.toPlatformMass())
+                }
+                setIndex?.let {
+                    val unused = setSetIndex(it)
+                }
+                rateOfPerceivedExertion?.let {
+                    val unused = setRateOfPerceivedExertion(it)
+                }
             }
         }
         .build()

@@ -17,17 +17,13 @@
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.layout.padding
 import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
-import androidx.compose.remote.creation.compose.state.asRdp
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 internal class PaddingModifier(
     public val left: RemoteFloat,
@@ -85,42 +81,6 @@ public fun RemoteModifier.padding(
 ): RemoteModifier =
     padding(left = horizontal, top = vertical, right = horizontal, bottom = vertical)
 
-/** Adds [all] padding to each edge of the content. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun RemoteModifier.padding(all: Dp): RemoteModifier =
-    padding(left = all, top = all, right = all, bottom = all)
-
-/**
- * Adds padding to each edge of the content using [Dp] values.
- *
- * @param left Padding at the left edge.
- * @param top Padding at the top edge.
- * @param right Padding at the right edge.
- * @param bottom Padding at the bottom edge.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun RemoteModifier.padding(
-    left: Dp = 0.dp,
-    top: Dp = 0.dp,
-    right: Dp = 0.dp,
-    bottom: Dp = 0.dp,
-): RemoteModifier {
-    return padding(
-        left = left.asRdp(),
-        top = top.asRdp(),
-        right = right.asRdp(),
-        bottom = bottom.asRdp(),
-    )
-}
-
-/**
- * Adds [horizontal] padding to the left and right edges, and [vertical] padding to the top and
- * bottom edges.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun RemoteModifier.padding(horizontal: Dp = 0.dp, vertical: Dp = 0.dp): RemoteModifier =
-    padding(left = horizontal, top = vertical, right = horizontal, bottom = vertical)
-
 /** Adds padding defined by the [padding] object. */
 public fun RemoteModifier.padding(padding: RemotePaddingValues): RemoteModifier =
     padding(
@@ -135,7 +95,7 @@ public fun RemoteModifier.padding(all: RemoteDp): RemoteModifier =
     padding(left = all, top = all, right = all, bottom = all)
 
 /**
- * Adds padding to each edge of the content using [Dp] values.
+ * Adds padding to each edge of the content using [RemoteDp] values.
  *
  * @param left Padding at the left edge.
  * @param top Padding at the top edge.

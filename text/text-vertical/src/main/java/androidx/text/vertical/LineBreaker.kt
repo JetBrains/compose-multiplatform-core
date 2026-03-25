@@ -218,7 +218,7 @@ private data class WordBreaker(val text: CharSequence, val locale: Locale) {
 private data class Context(
     val text: CharSequence,
     val paint: TextPaint,
-    @Px val heightConstraint: Float,
+    @param:Px val heightConstraint: Float,
 ) {
     val breaker = WordBreaker(text, paint.textLocale)
     var currentLineHeight: Float = 0f

@@ -224,6 +224,9 @@ public class WebResourceResponseCompat {
      * {@link WebViewFeature#COOKIE_INTERCEPT}.
      *
      * @param cookies List of valid {@code Set-Cookie} header values
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#COOKIE_INTERCEPT}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.COOKIE_INTERCEPT,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -237,6 +240,10 @@ public class WebResourceResponseCompat {
 
     /**
      * Get the list of cookies set by {@link #setCookies(List)} or an empty list.
+     *
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#COOKIE_INTERCEPT}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.COOKIE_INTERCEPT, enforcement = "androidx.webkit"
             + ".WebViewFeature#isFeatureSupported")

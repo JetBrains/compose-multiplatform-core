@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/status_bar_latest_event_content"
     android:layout_width="match_parent"
     android:layout_height="128dp"
@@ -23,6 +23,7 @@
     <include layout="@layout/notification_template_icon_group"
         android:layout_width="@dimen/notification_large_icon_width"
         android:layout_height="@dimen/notification_large_icon_height"
+        tools:ignore="PrivateResource"
     />
     <include layout="@layout/notification_media_cancel_action"
         android:layout_width="48dp"
@@ -38,7 +39,8 @@
         android:layout_marginLeft="@dimen/notification_large_icon_width"
         android:layout_marginStart="@dimen/notification_large_icon_width"
         android:layout_toLeftOf="@id/cancel_action"
-        android:layout_toStartOf="@id/cancel_action"/>
+        android:layout_toStartOf="@id/cancel_action"
+        tools:ignore="PrivateResource"/>
     <LinearLayout
         android:id="@+id/media_actions"
         android:layout_width="match_parent"

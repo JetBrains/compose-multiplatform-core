@@ -18,6 +18,7 @@ package androidx.compose.foundation.layout.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.Grid
@@ -26,8 +27,10 @@ import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.GridTrackSize.Companion.Fixed
 import androidx.compose.foundation.layout.columns
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.rows
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -176,6 +179,89 @@ fun GridConfigurationDslSample() {
             contentAlignment = Alignment.Center,
         ) {
             Text("Row: 1, Column: 2", color = Color.White)
+        }
+    }
+}
+
+@Sampled
+@Composable
+@OptIn(ExperimentalGridApi::class)
+fun GridWithConstraints() {
+    Grid(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        config = {
+            val maxWidthDp = constraints.maxWidth.toDp()
+            if (maxWidthDp < 600.dp) {
+                // Compact Layout: 2 Columns
+                repeat(2) { column(1.fr) }
+            } else {
+                // Expanded Layout: 4 Columns
+                repeat(4) { column(1.fr) }
+            }
+
+            // Rows are auto-generated based on content
+            gap(8.dp)
+        },
+    ) {
+        repeat(8) { index ->
+            Box(
+                modifier = Modifier.background(Color.Cyan).padding(24.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("Item $index")
+            }
+        }
+    }
+}
+
+@Sampled
+@Composable
+@OptIn(ExperimentalGridApi::class)
+fun GridWithLazyList() {
+    Grid(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        config = {
+            column(120.dp) // Sidebar width
+            column(minmax(0.dp, 1.fr)) // Content width
+
+            row(60.dp) // Header height
+            // IMPORTANT:
+            // Flex track '1.fr' queries child intrinsic sizes. Since SubcomposeLayouts
+            // (like LazyColumn) crash on intrinsic queries, we MUST use 'GridTrackSize.MinMax' with
+            // an explicit minimum size (0.dp) to bypass the measurement crash safely!
+            row(minmax(0.dp, 1.fr))
+
+            gap(16.dp)
+        },
+    ) {
+        // Top Header spanning both columns
+        Box(
+            Modifier.gridItem(row = 1, column = 1, columnSpan = 2)
+                .background(Color.DarkGray)
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("App Header", color = Color.White)
+        }
+
+        // Left Sidebar
+        Box(
+            Modifier.gridItem(row = 2, column = 1).background(Color.LightGray).fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Navigation")
+        }
+
+        // Scrollable LazyColumn safely constrained in the flex area
+        LazyColumn(
+            modifier = Modifier.gridItem(row = 2, column = 2).fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(50) { index ->
+                Box(Modifier.fillMaxWidth().background(Color(0xFFE0E0FF)).padding(16.dp)) {
+                    Text("Scrollable Content #$index")
+                }
+            }
         }
     }
 }

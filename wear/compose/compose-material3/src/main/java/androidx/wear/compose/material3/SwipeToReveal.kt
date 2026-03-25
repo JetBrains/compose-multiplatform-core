@@ -173,19 +173,20 @@ import kotlinx.coroutines.launch
  *
  * @sample androidx.wear.compose.material3.samples.SwipeToRevealSingleActionCardSample
  *
- * Example of [SwipeToReveal] with a [TransformingLazyColumn], including resetting the [RevealState]
- * to [RevealValue.Covered] when scrolling:
+ * Example of [SwipeToReveal] with a [androidx.wear.compose.foundation.lazy.TransformingLazyColumn],
+ * including resetting the [RevealState] to [RevealValue.Covered] when scrolling:
  *
  * @sample androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnSample
  *
- * Example of [SwipeToReveal] with a [ScalingLazyColumn], including resetting the [RevealState] to
- * [RevealValue.Covered] when scrolling:
+ * Example of [SwipeToReveal] with a [androidx.wear.compose.foundation.lazy.ScalingLazyColumn],
+ * including resetting the [RevealState] to [RevealValue.Covered] when scrolling:
  *
  * @sample androidx.wear.compose.material3.samples.SwipeToRevealWithScalingLazyColumnSample
  *
- * Example of [SwipeToReveal] with a [ScalingLazyColumn] that only executes the primary action when
- * fully swiped (and does not settle after partially revealing the action) by setting
- * [hasPartiallyRevealedState] = false (so [RevealState] does not need to be reset when scrolling):
+ * Example of [SwipeToReveal] with a [androidx.wear.compose.foundation.lazy.ScalingLazyColumn] that
+ * only executes the primary action when fully swiped (and does not settle after partially revealing
+ * the action) by setting [hasPartiallyRevealedState] = false (so [RevealState] does not need to be
+ * reset when scrolling):
  *
  * @sample androidx.wear.compose.material3.samples.SwipeToRevealNoPartialRevealWithScalingLazyColumnSample
  * @param primaryAction The primary action of this component.
@@ -1439,7 +1440,7 @@ private fun <T> anchoredDraggableFlingBehavior(
             anchoredDraggableLayoutInfoProvider(
                 state = state,
                 positionalThreshold = positionalThreshold,
-                velocityThreshold = { with(density) { VelocityThreshold.toPx() } },
+                velocityThreshold = { threshold -> with(density) { threshold.toPx() } },
             ),
     )
 
@@ -1470,7 +1471,7 @@ private val NoOpDecayAnimationSpec: DecayAnimationSpec<Float> =
 private fun <T> anchoredDraggableLayoutInfoProvider(
     state: AnchoredDraggableState<T>,
     positionalThreshold: (totalDistance: Float) -> Float,
-    velocityThreshold: () -> Float,
+    velocityThreshold: (threshold: Dp) -> Float,
 ): SnapLayoutInfoProvider =
     object : SnapLayoutInfoProvider {
 
@@ -1495,7 +1496,7 @@ private fun <T> DraggableAnchors<T>.computeTarget(
     currentOffset: Float,
     velocity: Float,
     positionalThreshold: (totalDistance: Float) -> Float,
-    velocityThreshold: () -> Float,
+    velocityThreshold: (threshold: Dp) -> Float,
 ): T {
     val currentAnchors = this
     require(!currentOffset.isNaN()) { "The offset provided to computeTarget must not be NaN." }
@@ -1504,8 +1505,13 @@ private fun <T> DraggableAnchors<T>.computeTarget(
     // When we're not moving, pick the closest anchor and don't consider directionality
     return if (!isMoving) {
         currentAnchors.closestAnchor(currentOffset)!!
-    } else if (abs(velocity) >= abs(velocityThreshold())) {
-        currentAnchors.closestAnchor(currentOffset, searchUpwards = isMovingForward)!!
+    } else if (abs(velocity) >= abs(velocityThreshold(VelocityNearThreshold))) {
+        if (abs(velocity) >= abs(velocityThreshold(VelocityRevealedThreshold))) {
+            if (velocity < 0) currentAnchors.closestAnchor(currentAnchors.minPosition())!!
+            else currentAnchors.closestAnchor(currentAnchors.maxPosition())!!
+        } else {
+            currentAnchors.closestAnchor(currentOffset, searchUpwards = isMovingForward)!!
+        }
     } else {
         val left = currentAnchors.closestAnchor(currentOffset, false)!!
         val leftAnchorPosition = currentAnchors.positionOf(left)
@@ -1523,7 +1529,17 @@ private fun <T> DraggableAnchors<T>.computeTarget(
     }
 }
 
-private val VelocityThreshold = 800.dp
+/**
+ * The minimum swipe velocity required to snap to the next adjacent anchor. Swipes above this speed,
+ * but below [VelocityRevealedThreshold], will advance the state normally.
+ */
+private val VelocityNearThreshold = 200.dp
+
+/**
+ * The velocity required to trigger a fast fling. Swipes exceeding this speed will bypass
+ * intermediate positional checks and snap directly to the fully revealed end state.
+ */
+private val VelocityRevealedThreshold = 800.dp
 
 internal const val CustomTouchSlopMultiplier = 1.20f
 

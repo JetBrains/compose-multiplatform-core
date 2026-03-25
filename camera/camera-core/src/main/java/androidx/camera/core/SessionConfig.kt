@@ -103,6 +103,7 @@ constructor(
     public val frameRateRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
     public val requiredFeatureGroup: Set<GroupableFeature> = emptySet(),
     public val preferredFeatureGroup: List<GroupableFeature> = emptyList(),
+    public val isAutoRotationEnabled: Boolean = false,
 ) {
     public val useCases: List<UseCase> = useCases.distinct()
 
@@ -113,8 +114,6 @@ constructor(
     public open val requireNonEmptyUseCases: Boolean = true
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public open val cameraFilter: CameraFilter? = null
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public open val isAutoRotationEnabled: Boolean = false
 
     /**
      * Gets the feature selection listener set to this session config.
@@ -421,9 +420,8 @@ constructor(
          * When enabled, CameraX will monitor the device motion sensor and set the target rotation
          * for ImageCapture, VideoCapture and ImageAnalysis.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun setAutoRotationEnabled(isAutoRotationEnabled: Boolean): Builder {
-            this.isAutoRotationEnabled = isAutoRotationEnabled
+        public fun setAutoRotationEnabled(autoRotationEnabled: Boolean): Builder {
+            this.isAutoRotationEnabled = autoRotationEnabled
             return this
         }
 
@@ -437,8 +435,8 @@ constructor(
                     frameRateRange = frameRateRange,
                     requiredFeatureGroup = requiredFeatureGroup.toSet(),
                     preferredFeatureGroup = preferredFeatureGroup.toList(),
+                    isAutoRotationEnabled = isAutoRotationEnabled,
                 ) {
-                override val isAutoRotationEnabled: Boolean = this@Builder.isAutoRotationEnabled
                 override val cameraFilter: CameraFilter? = this@Builder.cameraFilter
                 override val sessionType: Int = this@Builder.sessionType
                 override val requireNonEmptyUseCases: Boolean = this@Builder.requireNonEmptyUseCases

@@ -41,8 +41,8 @@ import androidx.camera.extensions.util.ExtensionsTestUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
-import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.LabTestRule
+import androidx.camera.testing.impl.RequireForegroundRule
 import androidx.camera.testing.impl.activity.RequestResultTestActivity
 import androidx.camera.testing.impl.activity.RequestResultTestActivity.INTENT_EXTRA_BUNDLE
 import androidx.test.core.app.ActivityScenario
@@ -51,12 +51,11 @@ import androidx.test.espresso.Espresso
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import org.junit.After
-import org.junit.Before
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -67,6 +66,9 @@ import org.junit.runners.Parameterized
 class ReleaseApkTest(private val config: CameraXExtensionTestParams) {
 
     @get:Rule
+    val requireForegroundRule = RequireForegroundRule { assumeTrue(CameraUtil.deviceHasCamera()) }
+
+    @get:Rule
     val cameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
             PreTestCameraIdList(Camera2Config.defaultConfig())
@@ -74,27 +76,13 @@ class ReleaseApkTest(private val config: CameraXExtensionTestParams) {
 
     @get:Rule val labTestRule = LabTestRule()
 
-    private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     private lateinit var requestResultActivityScenario: ActivityScenario<RequestResultTestActivity>
-
-    @Before
-    fun setUp() {
-        // Clear the device UI and check if there is no dialog or lock screen on the top of the
-        // window before start the test.
-        CoreAppTestUtil.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())
-    }
 
     @After
     fun tearDown(): Unit = runBlocking {
         if (::requestResultActivityScenario.isInitialized) {
             requestResultActivityScenario.close()
         }
-
-        // Unfreeze rotation so the device can choose the orientation via its own policy. Be nice
-        // to other tests :)
-        device.unfreezeRotation()
-        device.pressHome()
-        device.waitForIdle(3000)
     }
 
     @LabTestRule.LabTestOnly
@@ -115,7 +103,6 @@ class ReleaseApkTest(private val config: CameraXExtensionTestParams) {
                 putExtra(
                     INTENT_EXTRA_BUNDLE,
                     Bundle().apply {
-                        putString(INTENT_EXTRA_CAMERA_IMPLEMENTATION, CAMERA2_IMPLEMENTATION_OPTION)
                         putString(INTENT_EXTRA_RUNNING_MODE_CHECK, "release")
                         putString(INTENT_EXTRA_KEY_CAMERA_ID, config.cameraId)
                         putInt(INTENT_EXTRA_KEY_EXTENSION_MODE, config.extensionMode)
@@ -142,9 +129,6 @@ class ReleaseApkTest(private val config: CameraXExtensionTestParams) {
     }
 
     companion object {
-        /** Launches the activity with the specified CameraX implementation. */
-        private const val INTENT_EXTRA_CAMERA_IMPLEMENTATION = "camera_implementation"
-
         /** Launches the activity with the specified id of camera. */
         private const val INTENT_EXTRA_KEY_CAMERA_ID = "camera_id"
 
@@ -156,8 +140,6 @@ class ReleaseApkTest(private val config: CameraXExtensionTestParams) {
 
         /** Result error code - no error */
         private const val RESULT_ERROR_NONE = 0
-
-        private const val CAMERA2_IMPLEMENTATION_OPTION: String = "camera2"
 
         private val context = ApplicationProvider.getApplicationContext<Context>()!!
 

@@ -73,11 +73,11 @@ class InvalidationTrackerTest {
                     context = mock(),
                     name = null,
                     migrationContainer = RoomDatabase.MigrationContainer(),
-                    callbacks = null,
+                    callbacks = emptyList(),
                     allowMainThreadQueries = true,
                     journalMode = RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING,
                     multiInstanceInvalidationServiceIntent = null,
-                    requireMigration = true,
+                    isMigrationRequired = true,
                     allowDestructiveMigrationOnDowngrade = false,
                     migrationNotRequiredFrom = null,
                     prepackagedDatabaseCallback = null,
@@ -526,7 +526,7 @@ class InvalidationTrackerTest {
             }
         }
 
-        override fun clearAllTables() {}
+        override suspend fun clearAllTables() {}
 
         override fun createAutoMigrations(
             autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
@@ -575,7 +575,7 @@ class InvalidationTrackerTest {
             override fun close() {}
         }
 
-        private inner class FakeSQLiteStatement(private val invalidateTables: IntArray?) :
+        private class FakeSQLiteStatement(private val invalidateTables: IntArray?) :
             SQLiteStatement {
 
             private var position = -1

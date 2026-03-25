@@ -27,6 +27,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.TextureSampler
 import com.google.ar.imp.view.View
+import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
@@ -291,7 +292,7 @@ public interface ImpressApi {
      * @return a Coroutine which fires when the animation stops. It will return an exception if the
      *   animation can't play.
      */
-    public suspend fun animateGltfModelNew(
+    public suspend fun animateGltfModel(
         impressNode: ImpressNode,
         animationName: String?,
         looping: Boolean,
@@ -301,40 +302,12 @@ public interface ImpressApi {
     ): Void?
 
     /**
-     * Starts an animation on an instanced glTF model.
-     *
-     * @param impressNode The object of the Impress node for the instance of the glTF model.
-     * @param animationName A nullable String which contains a requested animation to play. If null
-     *   is provided, this will attempt to play the first animation it finds
-     * @param looping True if the animation should loop. Note that if the animation is looped, the
-     *   returned Coroutine will never fire successfully.
-     * @return a Coroutine which fires when the animation stops. It will return an exception if the
-     *   animation can't play.
-     */
-    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
-    // to new animation system.
-    public suspend fun animateGltfModel(
-        impressNode: ImpressNode,
-        animationName: String?,
-        looping: Boolean,
-    ): Void?
-
-    /**
      * Stops an animation on an instanced glTF model on a specific channel.
      *
      * @param impressNode The object of the Impress node for the instance of the glTF model.
      * @param channel The channel of the animation.
      */
-    public fun stopGltfModelAnimationNew(impressNode: ImpressNode, channel: Int)
-
-    /**
-     * Stops an animation on an instanced glTF model.
-     *
-     * @param impressNode The object of the Impress node for the instance of the glTF model.
-     */
-    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
-    // to new animation system.
-    public fun stopGltfModelAnimation(impressNode: ImpressNode)
+    public fun stopGltfModelAnimation(impressNode: ImpressNode, channel: Int)
 
     /**
      * Toggles the playback of a glTF model's animation to pause or resume on a specific channel.
@@ -343,17 +316,7 @@ public interface ImpressApi {
      * @param playing `true` to resume the animation, `false` to pause it.
      * @param channel The channel of the animation.
      */
-    public fun toggleGltfModelAnimationNew(impressNode: ImpressNode, playing: Boolean, channel: Int)
-
-    /**
-     * Toggles the playback of a glTF model's animation to pause or resume.
-     *
-     * @param impressNode The object of the Impress node for the instance of the glTF model.
-     * @param playing `true` to resume the animation, `false` to pause it.
-     */
-    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
-    // to new animation system.
-    public fun toggleGltfModelAnimation(impressNode: ImpressNode, playing: Boolean)
+    public fun toggleGltfModelAnimation(impressNode: ImpressNode, playing: Boolean, channel: Int)
 
     /**
      * Sets the playback time of a glTF model's animation on a specific channel.
@@ -515,7 +478,7 @@ public interface ImpressApi {
      *
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
      * @return An int impress node ID which can be used for updating the surface later
-     * @throws InvalidArgumentException if stereoMode is invalid.
+     * @throws IllegalArgumentException if stereoMode is invalid.
      */
     // TODO - b/411225487: Remove this method.
     public fun createStereoSurface(@StereoMode stereoMode: Int): ImpressNode
@@ -528,7 +491,7 @@ public interface ImpressApi {
      * @param contentSecurityLevel The [Int] contentSecurityLevel to apply. Must be a member of
      *   ContentSecurityLevel.
      * @return An int impress node ID which can be used for updating the surface later
-     * @throws InvalidArgumentException if stereoMode or contentSecurityLevel are invalid.
+     * @throws IllegalArgumentException if stereoMode or contentSecurityLevel are invalid.
      */
     public fun createStereoSurface(
         @StereoMode stereoMode: Int,
@@ -545,7 +508,7 @@ public interface ImpressApi {
      * @param useSuperSampling This [Boolean] specifies if the super sampling filter is enabled when
      *   rendering the surface.
      * @return An int impress node ID which can be used for updating the surface later
-     * @throws InvalidArgumentException if stereoMode or contentSecurityLevel are invalid.
+     * @throws IllegalArgumentException if stereoMode or contentSecurityLevel are invalid.
      */
     public fun createStereoSurface(
         @StereoMode stereoMode: Int,
@@ -565,7 +528,7 @@ public interface ImpressApi {
      * @param useSuperSampling This [Boolean] specifies if the super sampling filter is enabled when
      *   rendering the surface.
      * @return An int impress node ID which can be used for updating the surface later
-     * @throws InvalidArgumentException if stereoMode, mediaBlendingMode or contentSecurityLevel are
+     * @throws IllegalArgumentException if stereoMode, mediaBlendingMode or contentSecurityLevel are
      *   invalid.
      */
     public fun createStereoSurface(
@@ -668,7 +631,7 @@ public interface ImpressApi {
      *
      * @param panelImpressNode The Impress node which hosts the panel to be updated.
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode
-     * @throws InvalidArgumentException if stereoMode is invalid.
+     * @throws IllegalArgumentException if stereoMode is invalid.
      */
     public fun setStereoModeForStereoSurface(
         panelImpressNode: ImpressNode,
@@ -1339,7 +1302,8 @@ public interface ImpressApi {
      * This method sets the IBL asset preference of the client to be set by the system.
      *
      * @param iblToken The native handle of the IBL asset to be used by the system.
-     * @throws NotFoundException if iblToken is not a previously loaded IBL asset.
+     * @throws android.content.res.Resources.NotFoundException if iblToken is not a previously
+     *   loaded IBL asset.
      * @throws IllegalStateException if the SplitEngineSerializer is not valid.
      */
     public fun setPreferredEnvironmentLight(iblToken: Long)
@@ -1357,4 +1321,78 @@ public interface ImpressApi {
      * This should be called when the Impress Split Engine instance is no longer needed.
      */
     public fun disposeAllResources()
+
+    /**
+     * This method creates a mesh buffer and returns its mesh buffer object.
+     *
+     * @param attributeIds The attribute IDs.
+     * @param attributeTypes The attribute types.
+     * @param bufferIndices The buffer indices.
+     * @param maxVertices The maximum number of vertices.
+     * @param maxIndices The maximum number of indices.
+     * @param vertexData The vertex data arrays.
+     * @param vertexDataSizes The sizes of the vertex data arrays.
+     * @param indexData The index data.
+     * @param indexDataSize The size of the index data.
+     * @return A MeshBuffer object.
+     */
+    public fun createMeshBuffer(
+        attributeIds: IntArray,
+        attributeTypes: IntArray,
+        bufferIndices: ByteArray,
+        maxVertices: Int,
+        maxIndices: Int,
+        vertexData: Array<ByteBuffer>?,
+        vertexDataSizes: IntArray?,
+        indexData: ByteBuffer?,
+        indexDataSize: Int,
+    ): MeshBuffer
+
+    /**
+     * This method destroys a mesh buffer using its native handle.
+     *
+     * @param meshBufferHandle The native handle of the mesh buffer to be destroyed.
+     */
+    public fun destroyMeshBuffer(meshBufferHandle: Long)
+
+    /**
+     * This method creates a custom mesh and returns its custom mesh object.
+     *
+     * @param meshBufferHandle The native handle of the mesh buffer.
+     * @param subsetOffsets The subset offsets into the index buffer for each subset.
+     * @param subsetCounts The number of indices for each subset.
+     * @return A CustomMesh object.
+     */
+    public fun createCustomMesh(
+        meshBufferHandle: Long,
+        subsetOffsets: IntArray,
+        subsetCounts: IntArray,
+        subsetTopologies: IntArray,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
+    ): CustomMesh
+
+    /**
+     * This method destroys a custom mesh using its native handle.
+     *
+     * @param customMeshHandle The native handle of the custom mesh to be destroyed.
+     */
+    public fun destroyCustomMesh(customMeshHandle: Long)
+
+    /**
+     * This method creates an Impress node with a custom mesh and returns the node handle.
+     *
+     * @param customMeshHandle The native handle of the custom mesh.
+     * @param materialHandles The native handles of the materials.
+     * @return An int handle for the created Impress node.
+     */
+    public fun createCustomMeshNode(
+        customMeshHandle: Long,
+        materialHandles: LongArray,
+        boneCount: Int,
+    ): Int
 }

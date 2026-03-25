@@ -51,7 +51,7 @@ import org.robolectric.Robolectric
 class OpenXrScenePoseTest(private val testScenePoseType: OpenXrScenePoseType) {
     private val xrExtensions: XrExtensions? = XrExtensionsProvider.getXrExtensions()
     private val executor = FakeScheduledExecutorService()
-    private val entityManager = EntityManager()
+    private val sceneNodeRegistry = SceneNodeRegistry()
     private val activity: Activity =
         Robolectric.buildActivity(Activity::class.java).create().start().get()
 
@@ -60,7 +60,7 @@ class OpenXrScenePoseTest(private val testScenePoseType: OpenXrScenePoseType) {
             xrExtensions!!.createNode(),
             activity,
             xrExtensions,
-            entityManager,
+            sceneNodeRegistry,
             { xrExtensions.getSpatialState(activity) },
             executor,
         )
@@ -106,40 +106,41 @@ class OpenXrScenePoseTest(private val testScenePoseType: OpenXrScenePoseType) {
             fakeGltfFeature,
             activitySpace,
             xrExtensions,
-            entityManager,
+            sceneNodeRegistry,
             executor,
         )
     }
 
     @Test
-    fun getPoseInActivitySpace_noActivitySpaceOpenXrReferenceSpacePose_returnsIdentityPose() {
+    fun getActivitySpacePose_noActivitySpaceOpenXrReferenceSpacePose_returnsIdentityPose() {
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
         testScenePose = createTestScenePose(pose)
 
         assertNotNull(testScenePose)
-        assertPose(testScenePose!!.poseInActivitySpace, Pose())
+        assertPose(testScenePose!!.activitySpacePose, Pose())
     }
 
     @Test
-    fun getPoseInActivitySpace_whenAtSamePose_returnsIdentityPose() {
+    fun getActivitySpacePose_whenAtSamePose_returnsIdentityPose() {
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
         testScenePose = createTestScenePose(pose)
         activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
 
-        assertPose(testScenePose!!.poseInActivitySpace, Pose())
+        assertPose(testScenePose!!.activitySpacePose, Pose())
     }
 
     @Test
-    fun getPoseInActivitySpace_returnsDifferencePose() {
+    fun getActivitySpacePose_returnsDifferencePose() {
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
         testScenePose = createTestScenePose(pose)
         activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity)
 
-        assertPose(testScenePose!!.poseInActivitySpace, pose)
+        assertNotNull(testScenePose)
+        assertPose(testScenePose!!.activitySpacePose, pose)
     }
 
     @Test
-    fun getPoseInActivitySpace_witRotatedPerceptionPose_returnsDifferencePose() {
+    fun getActivitySpacePose_witRotatedPerceptionPose_returnsDifferencePose() {
         val perceptionQuaternion = Quaternion.fromEulerAngles(Vector3(0f, 0f, 90f))
         val pose = Pose(Vector3(0f, 0f, 0f), perceptionQuaternion)
         testScenePose = createTestScenePose(pose)
@@ -154,11 +155,11 @@ class OpenXrScenePoseTest(private val testScenePoseType: OpenXrScenePoseType) {
         // If the activitySpace has an identity rotation, then there shouldn't be any change
         val expectedPose = Pose(Vector3(0f, 0f, 0f), perceptionQuaternion)
 
-        assertPose(testScenePose!!.poseInActivitySpace, expectedPose)
+        assertPose(testScenePose!!.activitySpacePose, expectedPose)
     }
 
     @Test
-    fun getPoseInActivitySpace_witRotatedActivitySpace_returnsDifferencePose() {
+    fun getActivitySpacePose_witRotatedActivitySpace_returnsDifferencePose() {
         val activitySpaceQuaternion = Quaternion.fromEulerAngles(Vector3(0f, 0f, 90f))
         val pose = Pose(Vector3(0f, 0f, 0f), Quaternion.Identity)
         testScenePose = createTestScenePose(pose)
@@ -174,20 +175,10 @@ class OpenXrScenePoseTest(private val testScenePoseType: OpenXrScenePoseType) {
         val expectedPose =
             Pose(Vector3(0f, 0f, 0f), Quaternion.fromEulerAngles(Vector3(0f, 0f, -90f)))
 
-        assertPose(testScenePose!!.poseInActivitySpace, expectedPose)
+        assertPose(testScenePose!!.activitySpacePose, expectedPose)
     }
 
     // TODO: Add tests with children of these entities
-
-    @Test
-    fun getActivitySpacePose_returnsDifferencePose() {
-        activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity)
-        val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
-        testScenePose = createTestScenePose(pose)
-
-        assertNotNull(testScenePose)
-        assertPose(testScenePose!!.activitySpacePose, pose)
-    }
 
     @Test
     fun transformPoseTo_withActivitySpace_returnsTransformedPose() {

@@ -48,15 +48,15 @@ import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.DeviceTrackingMode
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.XrLog
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlinx.coroutines.runBlocking
@@ -87,12 +87,12 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
     private val rawConfig =
         Config(
             depthEstimation = DepthEstimationMode.RAW_ONLY,
-            deviceTracking = DeviceTrackingMode.LAST_KNOWN,
+            deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
         )
     private val smoothConfig =
         Config(
             depthEstimation = DepthEstimationMode.SMOOTH_ONLY,
-            deviceTracking = DeviceTrackingMode.LAST_KNOWN,
+            deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
         )
     private var configurationMutex = Mutex()
 
@@ -151,7 +151,7 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
             depthMapRenderer.createDepthGradientTexture(/* context= */ this)
             depthMapRenderer.createDepthShaders(/* context= */ this, depthTexture.depthTextureId)
         } catch (e: Exception) {
-            Log.error(e) { "Failed to read an asset file" }
+            XrLog.error(e) { "Failed to read an asset file" }
         }
     }
 
@@ -180,10 +180,11 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Composable
     fun DepthMapPanel(view: View) {
         Subspace {
-            SpatialPanel(modifier = SubspaceModifier, dragPolicy = MovePolicy()) {
+            SpatialPanel(modifier = SubspaceModifier.movable()) {
                 AndroidView(
                     modifier = Modifier.width(1200.dp).height(1200.dp),
                     factory = { _ -> surfaceView },

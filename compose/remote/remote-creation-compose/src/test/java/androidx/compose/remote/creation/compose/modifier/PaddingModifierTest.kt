@@ -42,7 +42,7 @@ class PaddingModifierTest {
 
     val creationState = RemoteComposeCreationState(AndroidxRcPlatformServices(), Size(1f, 1f))
 
-    /** Tests that negative start padding is not allowed. */
+    /** Tests that negative left padding is not allowed. */
     @Test(expected = IllegalArgumentException::class)
     fun negativeLeftPadding_throws() {
         RemoteModifier.padding(left = (-1f).rf)
@@ -54,7 +54,7 @@ class PaddingModifierTest {
         RemoteModifier.padding(top = (-1f).rf)
     }
 
-    /** Tests that negative end padding is not allowed. */
+    /** Tests that negative right padding is not allowed. */
     @Test(expected = IllegalArgumentException::class)
     fun negativeRightPadding_throws() {
         RemoteModifier.padding(right = (-1f).rf)
@@ -86,7 +86,7 @@ class PaddingModifierTest {
 
     /** Tests that the [padding]-all and [padding] factories return equivalent modifiers. */
     @Test
-    fun allEqualToAbsoluteWithExplicitSides() {
+    fun allEqualToExplicitSides() {
         assertTrue(
             haveSameValues(
                 RemoteModifier.padding(10f.rf, 10f.rf, 10f.rf, 10f.rf),
@@ -97,7 +97,7 @@ class PaddingModifierTest {
 
     /** Tests that the symmetrical-[padding] and [padding] factories return equivalent modifiers. */
     @Test
-    fun symmetricEqualToAbsoluteWithExplicitSides() {
+    fun symmetricEqualToExplicitSides() {
         assertTrue(
             haveSameValues(
                 RemoteModifier.padding(
@@ -143,6 +143,74 @@ class PaddingModifierTest {
                     right = 12f.rdp,
                     bottom = 13f.rdp,
                 ),
+            )
+        )
+    }
+
+    /** Tests that negative left padding is not allowed. */
+    @Test
+    fun negativeLeftPaddingRemoteDp_doesNotThrow() {
+        RemoteModifier.padding(left = (-1).rdp)
+    }
+
+    /** Tests that negative top padding is not allowed. */
+    @Test
+    fun negativeTopPaddingRemoteDp_doesNotThrow() {
+        RemoteModifier.padding(top = (-1).rdp)
+    }
+
+    /** Tests that negative right padding is not allowed. */
+    @Test
+    fun negativeRightPaddingRemoteDp_doesNotThrow() {
+        RemoteModifier.padding(right = (-1).rdp)
+    }
+
+    /** Tests that negative bottom padding is not allowed. */
+    @Test
+    fun negativeBottomPaddingRemoteDp_doesNotThrow() {
+        RemoteModifier.padding(bottom = (-1).rdp)
+    }
+
+    /** Tests that negative all padding is not allowed. */
+    @Test
+    fun negativeAllPaddingRemoteDp_doesNotThrow() {
+        RemoteModifier.padding(all = (-1).rdp)
+    }
+
+    /** Tests that negative horizontal padding is not allowed. */
+    @Test
+    fun negativeHorizontalPaddingRemoteDp_doesNotThrow() {
+        RemoteModifier.padding(horizontal = (-1).rdp)
+    }
+
+    /** Tests that negative vertical padding is not allowed. */
+    @Test
+    fun negativeVerticalPaddingRemoteDp_doesNotThrow() {
+        RemoteModifier.padding(vertical = (-1).rdp)
+    }
+
+    /** Tests that the [padding]-all and [padding] factories return equivalent modifiers. */
+    @Test
+    fun allRemoteDpEqualToExplicitSides() {
+        context.density = 1f
+
+        assertTrue(
+            haveSameValues(
+                RemoteModifier.padding(10.rdp, 10.rdp, 10.rdp, 10.rdp),
+                RemoteModifier.padding(10.rdp),
+            )
+        )
+    }
+
+    /** Tests that the symmetrical-[padding] and [padding] factories return equivalent modifiers. */
+    @Test
+    fun symmetricRemoteDpEqualToExplicitSides() {
+        context.density = 1f
+
+        assertTrue(
+            haveSameValues(
+                RemoteModifier.padding(10.rdp, 20.rdp, 10.rdp, 20.rdp),
+                RemoteModifier.padding(10.rdp, 20.rdp),
             )
         )
     }

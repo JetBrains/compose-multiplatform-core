@@ -17,8 +17,6 @@
 package androidx.tracing
 
 /** A holder for a [EventMetadata] and the [AutoCloseable]. */
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 @DelicateTracingApi
 public class EventMetadataCloseable(
     @field:Suppress("MutableBareField") // public / mutable to minimize overhead

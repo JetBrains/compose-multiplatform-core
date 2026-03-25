@@ -82,13 +82,43 @@ class FakeGltfAnimationFeatureTest {
     }
 
     @Test
-    fun seekAnimation_updatesSeekTime() {
-        underTest.seekAnimation(10.0f)
-        assertThat(underTest.seekStartTimeSeconds).isEqualTo(10.0f)
+    fun seekAnimation_whenStopped_doesNotUpdateSeekStartTime() {
+        underTest.seekAnimation(0.5f)
+        assertThat(underTest.seekStartTimeSeconds).isEqualTo(0.0f)
     }
 
     @Test
-    fun setAnimationSpeed_updatesSpeed() {
+    fun seekAnimation_whenPlaying_updatesSeekStartTime() {
+        underTest.startAnimation(loop = false, speed = 1.0f, seekStartTimeSeconds = 0.0f)
+        underTest.seekAnimation(0.5f)
+        assertThat(underTest.seekStartTimeSeconds).isEqualTo(0.5f)
+    }
+
+    @Test
+    fun seekAnimation_whenPaused_updatesSeekStartTime() {
+        underTest.startAnimation(loop = false, speed = 1.0f, seekStartTimeSeconds = 0.0f)
+        underTest.pauseAnimation()
+        underTest.seekAnimation(0.5f)
+        assertThat(underTest.seekStartTimeSeconds).isEqualTo(0.5f)
+    }
+
+    @Test
+    fun setAnimationSpeed_whenStopped_doesNotUpdateSpeed() {
+        underTest.setAnimationSpeed(0.5f)
+        assertThat(underTest.speed).isEqualTo(1.0f)
+    }
+
+    @Test
+    fun setAnimationSpeed_whenPlaying_updatesSpeed() {
+        underTest.startAnimation(loop = false, speed = 1.0f, seekStartTimeSeconds = 0.0f)
+        underTest.setAnimationSpeed(0.5f)
+        assertThat(underTest.speed).isEqualTo(0.5f)
+    }
+
+    @Test
+    fun setAnimationSpeed_whenPaused_updatesSpeed() {
+        underTest.startAnimation(loop = false, speed = 1.0f, seekStartTimeSeconds = 0.0f)
+        underTest.pauseAnimation()
         underTest.setAnimationSpeed(0.5f)
         assertThat(underTest.speed).isEqualTo(0.5f)
     }

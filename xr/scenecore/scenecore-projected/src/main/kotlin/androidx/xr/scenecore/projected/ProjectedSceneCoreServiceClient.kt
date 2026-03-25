@@ -24,7 +24,9 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.IBinder
-import androidx.xr.runtime.Log
+import android.os.Looper
+import androidx.annotation.WorkerThread
+import androidx.xr.runtime.XrLog
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -44,10 +46,18 @@ internal open class ProjectedSceneCoreServiceClient {
      * @return The connected [IProjectedSceneCoreService].
      * @throws IllegalStateException If the service cannot be found or binding fails.
      */
+    @WorkerThread
     public open suspend fun bindService(context: Context): IProjectedSceneCoreService {
         // Return immediately if already connected
         service?.let {
             return it
+        }
+
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            throw IllegalStateException(
+                "The Projected SceneCore Service cannot be bound from the main thread. " +
+                    "Please call this method from a background thread."
+            )
         }
 
         return suspendCancellableCoroutine { continuation ->
@@ -62,7 +72,7 @@ internal open class ProjectedSceneCoreServiceClient {
             val connection =
                 object : ServiceConnection {
                     override fun onServiceConnected(className: ComponentName, binder: IBinder) {
-                        Log.info { "Projected SceneCore Service Connected" }
+                        XrLog.info { "Projected SceneCore Service Connected" }
                         val connectedService = IProjectedSceneCoreService.Stub.asInterface(binder)
                         service = connectedService
 
@@ -72,7 +82,7 @@ internal open class ProjectedSceneCoreServiceClient {
                     }
 
                     override fun onServiceDisconnected(className: ComponentName) {
-                        Log.info { "Projected SceneCore Service Disconnected" }
+                        XrLog.info { "Projected SceneCore Service Disconnected" }
                         service = null
                         // We do not unbind here automatically; the system might attempt to
                         // reconnect. However, if the caller relies on a non-null service, they must
@@ -82,7 +92,7 @@ internal open class ProjectedSceneCoreServiceClient {
                     }
 
                     override fun onBindingDied(name: ComponentName?) {
-                        Log.warn { "Binding died for $name" }
+                        XrLog.warn { "Binding died for $name" }
                         unbindService()
                         if (continuation.isActive) {
                             continuation.resumeWithException(
@@ -92,7 +102,7 @@ internal open class ProjectedSceneCoreServiceClient {
                     }
 
                     override fun onNullBinding(name: ComponentName?) {
-                        Log.warn { "Null binding for $name" }
+                        XrLog.warn { "Null binding for $name" }
                         unbindService()
                         if (continuation.isActive) {
                             continuation.resumeWithException(
@@ -117,7 +127,7 @@ internal open class ProjectedSceneCoreServiceClient {
                 val didBind =
                     context.bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
                 if (didBind) {
-                    Log.info { "bindService request accepted, waiting for connection..." }
+                    XrLog.info { "bindService request accepted, waiting for connection..." }
                     mActiveConnection = connection
                     mBoundContext = context
                 } else {
@@ -141,7 +151,7 @@ internal open class ProjectedSceneCoreServiceClient {
                 context.unbindService(connection)
             } catch (e: IllegalArgumentException) {
                 // Service likely not registered or already unbound
-                Log.warn { "Error unbinding service: ${e.message}" }
+                XrLog.warn { "Error unbinding service: ${e.message}" }
             }
         }
 

@@ -491,9 +491,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                         mutableListOf(
                             "-Xskip-metadata-version-check",
                             "-jvm-default=no-compatibility",
-                            // These two args can be removed once kotlin 2.1 is used
-                            "-Xjspecify-annotations=strict",
-                            "-Xtype-enhancement-improvements-strict-mode",
                         )
                     if (androidXExtension.type.get().targetsKotlinConsumersOnly) {
                         // The Kotlin Compiler adds intrinsic assertions which are only relevant
@@ -637,7 +634,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     ) {
         androidComponents.onVariants { variant ->
             variant.configureTests(project.getKeystore())
-            variant.enableMicrobenchmarkInternalDefaults(project)
+            variant.enableBenchmarkInternalDefaults(project)
             project.validateKotlinModuleFiles(
                 variant.name,
                 variant.artifacts.get(SingleArtifact.AAR),
@@ -655,13 +652,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     private fun AarMetadata.configureMinAgpVersion() {
         @Suppress("UnstableApiUsage") // usage of minAgpVersion
         minAgpVersion.set(
-            @Suppress(
-                "Deprecated"
-            ) // TODO: use `minCompileSdkVersion` once http://ag/38072823 merged
-            minCompileSdk.map { value ->
+            minCompileSdkVersion.map { value ->
                 // Taken from
                 // https://developer.android.com/build/releases/about-agp#api-level-support
-                when (value) {
+                when (value.apiLevel) {
                     1 -> "7.2.0"
                     33 -> "7.2.0"
                     34 -> "8.1.1"
@@ -691,12 +685,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             kotlinMultiplatformAndroidComponentsExtension,
         )
         kotlinMultiplatformAndroidComponentsExtension.apply {
-            finalizeDsl {
-                it.lint.targetSdk = project.defaultAndroidConfig.targetSdk
-                project.setUpBlankProguardFileForKmpAarIfNeeded(
-                    kotlinMultiplatformAndroidTarget.optimization.consumerKeepRules
-                )
-            }
+            finalizeDsl { it.lint.targetSdk = project.defaultAndroidConfig.targetSdk }
         }
 
         kotlinMultiplatformAndroidComponentsExtension.onVariants { variant ->
@@ -845,7 +834,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
 
         libraryAndroidComponentsExtension.apply {
             finalizeDsl {
-                project.setUpBlankProguardFileForAarIfNeeded(it.defaultConfig)
                 it.lint.targetSdk = project.defaultAndroidConfig.targetSdk
                 it.testOptions.targetSdk = project.defaultAndroidConfig.targetSdk
                 // Replace with a public API once available, see b/360392255
@@ -920,7 +908,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             }
         }
 
-        project.setUpBlankProguardFileForJarIfNeeded(javaExtension)
         project.configureJavaCompilationWarnings(androidXExtension)
 
         if (

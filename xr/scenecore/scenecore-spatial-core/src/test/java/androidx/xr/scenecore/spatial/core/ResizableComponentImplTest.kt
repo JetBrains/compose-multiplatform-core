@@ -64,8 +64,8 @@ class ResizableComponentImplTest {
     private val activity: Activity = activityController.create().start().get()
     private val fakeExecutor = FakeScheduledExecutorService()
     private val xrExtensions = getXrExtensions()!!
-    private val entityManager = EntityManager()
-    private val panelShadowRenderer: PanelShadowRenderer = mock<PanelShadowRenderer>()
+    private val sceneNodeRegistry = SceneNodeRegistry()
+    private val panelShadowRenderer: EntityShadowRenderer = mock<EntityShadowRenderer>()
     private val nodeRepository: NodeRepository = NodeRepository.getInstance()
     private lateinit var activitySpaceImpl: ActivitySpaceImpl
     private lateinit var fakeSceneRuntime: SpatialSceneRuntime
@@ -79,12 +79,12 @@ class ResizableComponentImplTest {
                 activitySpaceNode,
                 activity,
                 xrExtensions,
-                entityManager,
+                sceneNodeRegistry,
                 { xrExtensions.getSpatialState(activity) },
                 fakeExecutor,
             )
         fakeSceneRuntime =
-            SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions, entityManager)
+            SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions, sceneNodeRegistry)
     }
 
     @After
@@ -94,7 +94,7 @@ class ResizableComponentImplTest {
     }
 
     private fun createTestEntity(): Entity {
-        return fakeSceneRuntime.createGroupEntity(Pose(), "test", fakeSceneRuntime.activitySpace)
+        return fakeSceneRuntime.createEntity(Pose(), "test", fakeSceneRuntime.activitySpace)
     }
 
     /**

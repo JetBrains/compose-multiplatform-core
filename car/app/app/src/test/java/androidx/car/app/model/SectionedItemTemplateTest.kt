@@ -169,11 +169,11 @@ class SectionedItemTemplateTest {
     }
 
     @Test
-    fun build_throwsException_whenFilterChipSectionIsNotFirst() {
+    fun build_throwsException_whenChipSectionIsNotFirst() {
         try {
             SectionedItemTemplate.Builder()
                 .addSection(RowSection.Builder().build())
-                .addSection(buildFilterChipSection())
+                .addSection(buildChipSection())
                 .build()
             assertWithMessage("Expected builder to throw exception, but it didn't").fail()
         } catch (e: IllegalArgumentException) {
@@ -182,21 +182,21 @@ class SectionedItemTemplateTest {
     }
 
     @Test
-    fun build_throwsException_whenMultipleFilterChipSections() {
+    fun build_throwsException_whenMultipleChipSections() {
         try {
             SectionedItemTemplate.Builder()
-                .addSection(buildFilterChipSection())
-                .addSection(buildFilterChipSection())
+                .addSection(buildChipSection())
+                .addSection(buildChipSection())
                 .build()
             assertWithMessage("Expected builder to throw exception, but it didn't").fail()
         } catch (e: IllegalArgumentException) {
-            assertThat(e.message).contains("Only one FilterChipSection is allowed")
+            assertThat(e.message).contains("Only one ChipSection is allowed")
         }
     }
 
     @Test
-    fun build_allowsFilterChipSectionAsFirstSection() {
-        val section = buildFilterChipSection()
+    fun build_allowsChipSectionAsFirstSection() {
+        val section = buildChipSection()
         val template = SectionedItemTemplate.Builder().addSection(section).build()
 
         assertThat(template.sections).containsExactly(section)
@@ -301,9 +301,9 @@ class SectionedItemTemplateTest {
     private fun createRowWithMediaAction(): Row =
         Row.Builder().setTitle("Bananas").addAction(Action.MEDIA_PLAYBACK).build()
 
-    private fun buildFilterChipSection(): FilterChipSection {
-        return FilterChipSection.Builder()
-            .addItem(FilterChip.Builder().setTitle("Chip").setOnClickListener {}.build())
+    private fun buildChipSection(): ChipSection {
+        return ChipSection.Builder()
+            .addItem(Chip.Builder().setTitle("Chip").setOnClickListener {}.build())
             .build()
     }
 }

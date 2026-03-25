@@ -24,14 +24,14 @@
             android:name="androidx.xr.arcore.projected.testapp.ProjectedTestAppActivity"
             android:exported="true"
             android:label="Geospatial and Tracking testcase"
-            android:requiredDisplayCategory="xr_projected">
+            android:requiredDisplayCategory="android.hardware.display.category.XR_PROJECTED">
         </activity>
         <activity
             android:name=".tiltgesture.TiltGestureTrackingActivity"
             android:configChanges="uiMode"
             android:label="TiltGesture testcase"
             android:exported="true"
-            android:requiredDisplayCategory="xr_projected">
+            android:requiredDisplayCategory="android.hardware.display.category.XR_PROJECTED">
         </activity>
         <activity
             android:name=".MainActivity"

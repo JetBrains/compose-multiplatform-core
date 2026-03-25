@@ -67,7 +67,7 @@ import org.robolectric.android.controller.ActivityController
 @RunWith(AndroidJUnit4::class)
 class AnchorEntityTest {
     private val fakeAnchorEntity = FakeAnchorEntity()
-    private lateinit var entityManager: EntityManager
+    private lateinit var entityRegistry: EntityRegistry
     private lateinit var session: Session
     private lateinit var anchor: Anchor
     private lateinit var mFakeRuntime: FakePerceptionRuntime
@@ -165,6 +165,49 @@ class AnchorEntityTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    fun createViaSemantic_twice_doesNotReanchor() {
+        runTest(testDispatcher) {
+            activityController.create().start().resume()
+            val plane1 =
+                FakeRuntimePlane(
+                    type = Plane.Type.HORIZONTAL_DOWNWARD_FACING,
+                    label = Plane.Label.CEILING,
+                    extents = FloatSize2d(1.0f, 1.0f),
+                )
+            mFakePerceptionManager.addTrackable(plane1)
+
+            val anchorEntity =
+                AnchorEntity.create(
+                    session,
+                    FloatSize2d(1.0f, 1.0f),
+                    PlaneOrientation.HORIZONTAL,
+                    PlaneSemanticType.CEILING,
+                    timeout = 0.toDuration(DurationUnit.SECONDS).toJavaDuration(),
+                )
+            advanceUntilIdle()
+
+            assertThat(anchorEntity.state).isEqualTo(AnchorEntity.State.ANCHORED)
+            val anchor1 = anchorEntity.getAnchor()
+            assertThat(anchor1).isNotNull()
+
+            // Add another matching plane
+            val plane2 =
+                FakeRuntimePlane(
+                    type = Plane.Type.HORIZONTAL_DOWNWARD_FACING,
+                    label = Plane.Label.CEILING,
+                    extents = FloatSize2d(1.0f, 1.0f),
+                )
+            mFakePerceptionManager.addTrackable(plane2)
+            advanceUntilIdle()
+
+            // Should still be anchored to the first one
+            assertThat(anchorEntity.state).isEqualTo(AnchorEntity.State.ANCHORED)
+            assertThat(anchorEntity.getAnchor()).isEqualTo(anchor1)
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
     fun createViaSemantic_pastTimeout_returnsTimedOutAnchorEntity() {
         runTest(testDispatcher) {
             activityController.create().start().resume()
@@ -235,7 +278,7 @@ class AnchorEntityTest {
 
     @Test
     fun setOnOriginChangedListener_withNullParams_callsRuntimeSetOnOriginChangedListener() {
-        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityManager)
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityRegistry)
         anchorEntity.setOnOriginChangedListener(null)
         assertThat(fakeAnchorEntity.onOriginChangedListener).isNull()
     }
@@ -243,7 +286,7 @@ class AnchorEntityTest {
     @Test
     fun setOnOriginChangedListener_receivesRuntimeSetOnOriginChangedListenerCallbacks() {
         var listenerCalled = false
-        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityManager)
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityRegistry)
         anchorEntity.setOnOriginChangedListener(directExecutor()) { listenerCalled = true }
 
         assertThat(fakeAnchorEntity.onOriginChangedListener).isNotNull()
@@ -345,7 +388,7 @@ class AnchorEntityTest {
 
     @Test
     fun dispose_clearsListeners() {
-        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityManager)
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityRegistry)
 
         anchorEntity.setOnStateChangedListener(directExecutor(), {})
         anchorEntity.setOnOriginChangedListener(directExecutor(), {})
@@ -362,7 +405,7 @@ class AnchorEntityTest {
 
     @Test
     fun dispose_callingTwiceDoesNotCrash() {
-        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityManager)
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityRegistry)
         anchorEntity.dispose()
         anchorEntity.dispose()
     }
@@ -374,7 +417,7 @@ class AnchorEntityTest {
         session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         val anchorPose = Pose(Vector3(1.0f, 2.0f, 3.0f), Quaternion.Identity)
         anchor = (Anchor.create(session, anchorPose) as AnchorCreateSuccess).anchor
-        entityManager = session.scene.entityManager
+        entityRegistry = session.scene.entityRegistry
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

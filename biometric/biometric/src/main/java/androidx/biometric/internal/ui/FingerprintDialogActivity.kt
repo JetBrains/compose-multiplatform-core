@@ -37,7 +37,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.R
 import androidx.biometric.internal.data.CanceledFrom
-import androidx.biometric.internal.isManagingDeviceCredentialButton
 import androidx.biometric.internal.viewmodel.AuthenticationViewModel
 import androidx.biometric.internal.viewmodel.AuthenticationViewModelFactory
 import androidx.biometric.internal.viewmodel.FingerprintDialogViewModel
@@ -121,16 +120,11 @@ public class FingerprintDialogActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
+        destroyAlertDialog()
+
         if (!isChangingConfigurations) {
             cancelAuthentication(CanceledFrom.INTERNAL)
         }
-    }
-
-    /** Handles the pause event, removing any pending callbacks. */
-    override fun onPause() {
-        super.onPause()
-
-        destroyAlertDialog()
     }
 
     /**
@@ -190,7 +184,7 @@ public class FingerprintDialogActivity : ComponentActivity() {
             ) {
                 getString(R.string.confirm_device_credential_password)
             } else {
-                authenticationViewModel.negativeButtonText
+                authenticationViewModel.singleFallbackOptionText
             }
         builder.setNegativeButton(negativeButtonText) { _, _ ->
             authenticationViewModel.setNegativeButtonPressPending()
@@ -310,9 +304,7 @@ public class FingerprintDialogActivity : ComponentActivity() {
                 // Define the special cases where we should NOT show an error message.
                 val isLockoutHandledByButton =
                     ErrorUtils.isLockoutError(knownErrorCode) &&
-                        isManagingDeviceCredentialButton(
-                            authenticationViewModel.allowedAuthenticators
-                        )
+                        authenticationViewModel.isOverriddenDeviceCredential
 
                 val isCanceled = knownErrorCode == BiometricPrompt.ERROR_CANCELED
 

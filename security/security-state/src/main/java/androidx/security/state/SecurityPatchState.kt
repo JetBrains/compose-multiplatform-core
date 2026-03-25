@@ -21,9 +21,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.RemoteException
@@ -42,12 +42,22 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern
 import kotlin.coroutines.resume
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -211,6 +221,77 @@ constructor(
             val newEndpoint = "v1/android_sdk_${Build.VERSION.SDK_INT}.json"
             return serverUrl.buildUpon().appendEncodedPath(newEndpoint).build()
         }
+
+        /**
+         * The maximum number of concurrent threads allocated for IPC calls to update providers.
+         *
+         * This limit acts as a bounded bulkhead. It is large enough to allow querying multiple OEM
+         * providers concurrently, but small enough to prevent unbounded thread explosion (and
+         * subsequent App crashes or IO pool exhaustion) if multiple remote providers deadlock.
+         */
+        @VisibleForTesting internal const val UPDATE_INFO_SERVICE_MAX_IPC_THREADS = 4
+
+        /**
+         * The maximum number of pending IPC requests allowed in the dispatcher's queue before
+         * subsequent requests are rejected.
+         *
+         * This limit balances concurrency needs against memory safety:
+         * 1. **Burst Tolerance:** It is large enough to handle legitimate bursts of concurrent
+         *    update checks (e.g., querying for system, vendor, and kernel components simultaneously
+         *    across multiple providers) without accidental rejection.
+         * 2. **OOM Prevention:** It is small enough to prevent an unbounded queue from causing an
+         *    `OutOfMemoryError` if the active threads become permanently deadlocked on a broken
+         *    remote provider.
+         *
+         * If this queue capacity is reached, it indicates the update mechanism is in a terminal
+         * state. The dispatcher's `DiscardPolicy` will instantly drop new requests, allowing the
+         * caller's `withTimeout` block to gracefully handle the failure.
+         */
+        @VisibleForTesting internal const val UPDATE_INFO_SERVICE_MAX_QUEUE_SIZE = 16
+
+        /**
+         * Dedicated bounded thread pool dispatcher for remote IPC calls.
+         *
+         * Synchronous Binder calls cannot be cooperatively canceled. If a remote OEM updater
+         * deadlocks, the executing thread is permanently blocked. By isolating these calls to a
+         * dedicated thread pool, we prevent a buggy remote provider from exhausting the calling
+         * app's shared [kotlinx.coroutines.Dispatchers.IO] pool and causing unrelated ANRs.
+         *
+         * This custom [ThreadPoolExecutor] provides three critical safety guarantees:
+         * 1. **Bounded Threads:** Capped at [UPDATE_INFO_SERVICE_MAX_IPC_THREADS] to contain the
+         *    blast radius of deadlocks.
+         * 2. **Bounded Queue:** Capped at [UPDATE_INFO_SERVICE_MAX_QUEUE_SIZE] with a
+         *    [ThreadPoolExecutor.DiscardPolicy]. If all threads are deadlocked, the queue will
+         *    safely fill up and subsequent requests will be instantly discarded without causing an
+         *    OutOfMemoryError. The caller's `withTimeout` block will naturally handle the timeout.
+         * 3. **Idle Timeout:** Threads are allowed to die after 60 seconds of inactivity to prevent
+         *    wasting host app RAM.
+         */
+        private val UpdateInfoServiceIpcDispatcher =
+            ThreadPoolExecutor(
+                    UPDATE_INFO_SERVICE_MAX_IPC_THREADS, // corePoolSize
+                    UPDATE_INFO_SERVICE_MAX_IPC_THREADS, // maximumPoolSize
+                    60L,
+                    TimeUnit.SECONDS, // keepAliveTime
+                    ArrayBlockingQueue(UPDATE_INFO_SERVICE_MAX_QUEUE_SIZE), // Bounded queue
+                    object : java.util.concurrent.ThreadFactory {
+                        private val index = AtomicInteger(1)
+
+                        override fun newThread(runnable: Runnable): Thread {
+                            return Thread(
+                                    runnable,
+                                    "UpdateInfoServiceIpcThread-${index.getAndIncrement()}",
+                                )
+                                .apply { isDaemon = true }
+                        }
+                    },
+                    ThreadPoolExecutor.DiscardPolicy(), // Drop tasks when exhausted
+                )
+                .apply {
+                    // Allows the core threads to timeout and be destroyed when idle
+                    allowCoreThreadTimeOut(true)
+                }
+                .asCoroutineDispatcher()
 
         private const val TAG = "SecurityPatchState"
         private const val ACTION_UPDATE_INFO_SERVICE =
@@ -819,14 +900,14 @@ constructor(
      *
      * This method performs a comprehensive check by:
      * 1. **Discovering** all trusted services on the device that implement the `UpdateInfoService`
-     *    protocol (e.g., c, Google Play Store).
+     *    protocol (e.g., System Updater, Google Play Store).
      * 2. **Querying** each service concurrently to retrieve its status.
      * 3. **Collecting** the results into a list.
      *
      * **Freshness & Caching:** The freshness of the returned data depends on the internal policies
      * of the individual update providers. Providers are expected to maintain a reasonably fresh
      * cache (typically refreshing at least once per hour). If a provider determines its cache is
-     * stale, this call may block while it performs a network fetch.
+     * stale, this call may **suspend** while it performs a network fetch.
      *
      * @param timeoutMillis The maximum time to wait for each provider to respond, in milliseconds.
      *   Defaults to [UPDATE_INFO_SERVICE_BINDING_TIMEOUT_MS].
@@ -855,29 +936,43 @@ constructor(
         }
 
     /**
-     * Binds to a specific [IUpdateInfoService] implementation, retrieves its status, and unbinds.
+     * Binds to a specific [IUpdateInfoService] implementation, establishes a secure session,
+     * retrieves its status, and unbinds.
      *
-     * This method handles the asynchronous lifecycle of the Android [ServiceConnection], wrapping
-     * the callback-based [Context.bindService] API into a suspending function.
+     * This method handles the asynchronous lifecycle of the Android
+     * [android.content.ServiceConnection], wrapping the callback-based
+     * [android.content.Context.bindService] API into a suspending function.
      *
-     * To ensure safety and responsiveness:
-     * 1. It enforces a strict timeout (specified by [timeoutMillis]) to prevent indefinite
-     *    suspension.
-     * 2. It executes the blocking IPC call on a background thread to avoid ANRs on the main thread.
+     * **Concurrency & Timeout Safety:** Synchronous AIDL calls block at the kernel level and cannot
+     * be cooperatively canceled by Kotlin coroutines. To prevent the caller from hanging
+     * indefinitely if the remote service deadlocks, the blocking IPC transaction is detached from
+     * the parent coroutine's structured concurrency by launching an independent scope on a
+     * dedicated bounded thread pool. This allows [withTimeout] to successfully abandon the blocked
+     * thread. By using a bounded dispatcher instead of the shared IO pool, we strictly contain the
+     * blast radius of a deadlock and prevent host app thread starvation while maintaining
+     * concurrency.
      *
-     * **Telemetry & Identity:** The `Intent` used to bind includes the client's package name as a
-     * data URI (`package:com.example.client`). This serves two purposes:
-     * 1. **Identity:** Allows the service to identify the caller in its `onClientConnected` and
-     *    `onClientDisconnected` lifecycle hooks (e.g., for tracking session duration).
-     * 2. **Session Tracking:** Forces the Android system to treat each client's connection as a
-     *    unique binding. By default, Android caches the Binder for identical Intents and suppresses
-     *    subsequent `onBind` calls. Adding unique data ensures the service receives a lifecycle
-     *    event for *every* client session.
+     * **Telemetry & Identity:** To securely attribute telemetry and prevent Intent spoofing, this
+     * method implements the Session Pattern:
+     * 1. **Factory Bind:** Binds to the provider's factory interface ([IUpdateInfoService]).
+     * 2. **Session Creation:** Calls `openSession(packageName, clientToken)` to establish a
+     *    dedicated [IUpdateInfoSession]. The provider validates this package name against the
+     *    kernel-verified calling UID. The `clientToken` is an anonymous Binder used by the service
+     *    to monitor for unexpected client process death.
+     * 3. **Session Closure:** Explicitly closes the session after retrieving data to trigger
+     *    accurate disconnection telemetry on the provider side. Because `close()` is a `oneway`
+     *    AIDL method, it returns instantly and is perfectly safe to call during cleanup without
+     *    risking a secondary thread freeze.
      *
-     * @param component The [ComponentName] of the [IUpdateInfoService] to bind to.
+     * **Race Condition Guards:** Uses atomic state tracking (`isResumed`, `isCleanedUp`, `jobRef`)
+     * to prevent `IllegalStateException` ("Already resumed") crashes, memory leaks, and dual-unbind
+     * errors if a timeout or service disconnection occurs concurrently with the background thread's
+     * execution.
+     *
+     * @param component The [android.content.ComponentName] of the [IUpdateInfoService] to bind to.
      * @param timeoutMillis The maximum time to wait for the service to respond.
      * @return An [UpdateCheckResult] containing the data from the provider. If the operation fails,
-     *   returns an empty result with the provider's package name.
+     *   returns an empty result with the provider's package name and a timestamp of 0.
      */
     private suspend fun fetchFromUpdateInfoService(
         component: ComponentName,
@@ -897,39 +992,85 @@ constructor(
             withTimeout(timeoutMillis) {
                 suspendCancellableCoroutine { continuation ->
                     val intent =
-                        Intent(ACTION_UPDATE_INFO_SERVICE).apply {
-                            this.component = component
-                            // Attach unique data to identify the caller and force a fresh bind for
-                            // each client
-                            data = Uri.fromParts("package", context.packageName, null)
-                        }
+                        Intent(ACTION_UPDATE_INFO_SERVICE).apply { this.component = component }
+
+                    // Thread-safe state tracking for cleanup and resumption.
+                    // This prevents "Already resumed" exceptions and dual-unbinds.
+                    val isCleanedUp = AtomicBoolean(false)
+                    val isResumed = AtomicBoolean(false)
+                    val sessionRef = AtomicReference<IUpdateInfoSession?>(null)
+                    val jobRef = AtomicReference<Job?>(null)
 
                     val connection =
                         object : ServiceConnection {
                             override fun onServiceConnected(name: ComponentName, service: IBinder) {
+                                val serviceConnection = this
                                 // Critical: onServiceConnected runs on the Main (UI) Thread.
-                                // The AIDL call `listAvailableUpdates` is blocking (not oneway) and
-                                // may
-                                // perform network operations. We must offload this to a background
-                                // thread
-                                // to avoid freezing the app (ANR).
-                                Thread {
+                                // The AIDL call `listAvailableUpdates` may block (wait for network
+                                // operations) and cannot be cooperatively canceled.
+                                // We launch an independent coroutine scope to detach the execution
+                                // from the parent's structured concurrency, allowing withTimeout to
+                                // successfully abort the wait if the remote service deadlocks.
+                                // We use a dedicated thread pool to prevent a hanging IPC call from
+                                // exhausting the host app's shared Dispatchers.IO pool.
+                                val job =
+                                    CoroutineScope(UpdateInfoServiceIpcDispatcher).launch {
                                         try {
-                                            val binder =
+                                            // 1. Cast to the Factory interface
+                                            val factory =
                                                 IUpdateInfoService.Stub.asInterface(service)
-                                            val result = binder.listAvailableUpdates()
 
-                                            if (continuation.isActive) continuation.resume(result)
+                                            // 2. Open Session (passing package name for validation
+                                            // and a token for death monitoring)
+                                            val session =
+                                                factory.openSession(context.packageName, Binder())
+
+                                            // Store the session so the cancellation handler can
+                                            // reach it
+                                            sessionRef.set(session)
+
+                                            // If the coroutine was canceled while the factory was
+                                            // opening the session, the cancellation handler missed
+                                            // it.
+                                            // Abort now so the finally block closes it.
+                                            if (isCleanedUp.get()) {
+                                                return@launch
+                                            }
+
+                                            // 3. Query the data from our dedicated session.
+                                            // Using safe-call operator instead of non-null
+                                            // assertion
+                                            // to prevent crashes if the remote factory gracefully
+                                            // returns a null session.
+                                            val result =
+                                                session?.listAvailableUpdates() ?: emptyResult
+
+                                            // Thread-safe resumption
+                                            if (isResumed.compareAndSet(false, true)) {
+                                                continuation.resume(result)
+                                            }
                                         } catch (e: RemoteException) {
                                             // Log warning for "swallowed" exceptions to help
                                             // debugging
                                             Log.w(
                                                 TAG,
-                                                "Error calling listAvailableUpdates on ${name.packageName}",
+                                                "Error communicating with update provider: ${name.packageName}",
                                                 e,
                                             )
-                                            if (continuation.isActive)
+                                            if (isResumed.compareAndSet(false, true)) {
                                                 continuation.resume(emptyResult)
+                                            }
+                                        } catch (e: SecurityException) {
+                                            // Handle case where package validation fails on the
+                                            // host side
+                                            Log.w(
+                                                TAG,
+                                                "SecurityException opening session with ${name.packageName}",
+                                                e,
+                                            )
+                                            if (isResumed.compareAndSet(false, true)) {
+                                                continuation.resume(emptyResult)
+                                            }
                                         } catch (e: Exception) {
                                             // Catch generic exceptions from the background thread
                                             // wrapper
@@ -938,32 +1079,65 @@ constructor(
                                                 "Error in background IPC for ${name.packageName}",
                                                 e,
                                             )
-                                            if (continuation.isActive)
+                                            if (isResumed.compareAndSet(false, true)) {
                                                 continuation.resume(emptyResult)
+                                            }
                                         } finally {
-                                            // Cleanup: Always unbind after the IPC is done.
-                                            // This must happen here (in the background) to ensure
-                                            // we don't
-                                            // unbind while the binder is still in use.
+                                            // 4. Clean up: Atomically consume the session
+                                            // reference.
+                                            // This guarantees close() is only ever called exactly
+                                            // once.
+                                            // Note: close() is a oneway AIDL method, so it is safe
+                                            // to call
+                                            // here without risking a secondary thread hang.
                                             try {
-                                                context.unbindService(this)
+                                                sessionRef.getAndSet(null)?.close()
                                             } catch (e: Exception) {
-                                                // Ignore unbind errors (e.g., service already died)
+                                                Log.w(
+                                                    TAG,
+                                                    "Failed to close session for ${name.packageName}",
+                                                    e,
+                                                )
+                                            }
+
+                                            // Guard the unbind so it only happens once
+                                            if (isCleanedUp.compareAndSet(false, true)) {
+                                                try {
+                                                    context.unbindService(serviceConnection)
+                                                } catch (e: Exception) {
+                                                    // Ignore unbind errors (e.g., service already
+                                                    // died)
+                                                }
                                             }
                                         }
                                     }
-                                    .start()
+
+                                // Publish the job so the cancellation handler can reach it
+                                jobRef.set(job)
+
+                                // If the timeout expired exactly between `launch` returning and
+                                // `jobRef.set()`, the cancellation handler missed this job.
+                                // We check `isCancelled` to ensure we manually cancel it here.
+                                if (continuation.isCancelled) {
+                                    job.cancel()
+                                }
                             }
 
                             override fun onServiceDisconnected(name: ComponentName) {
                                 // Handle unexpected disconnection (crash of the remote service)
                                 Log.w(TAG, "Service disconnected unexpectedly: ${name.packageName}")
-                                if (continuation.isActive) continuation.resume(emptyResult)
 
-                                // Ensure we clean up our side of the connection to prevent leaks
-                                try {
-                                    context.unbindService(this)
-                                } catch (e: Exception) {}
+                                // Thread-safe resumption
+                                if (isResumed.compareAndSet(false, true)) {
+                                    continuation.resume(emptyResult)
+                                }
+
+                                // Cleanup guard for unexpected disconnects
+                                if (isCleanedUp.compareAndSet(false, true)) {
+                                    try {
+                                        context.unbindService(this)
+                                    } catch (e: Exception) {}
+                                }
                             }
                         }
 
@@ -972,7 +1146,9 @@ constructor(
                             context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
                         if (!bound) {
                             Log.w(TAG, "Failed to bind to service: ${component.packageName}")
-                            continuation.resume(emptyResult)
+                            if (isResumed.compareAndSet(false, true)) {
+                                continuation.resume(emptyResult)
+                            }
                         }
                     } catch (e: SecurityException) {
                         Log.w(
@@ -980,14 +1156,53 @@ constructor(
                             "Security exception binding to service: ${component.packageName}",
                             e,
                         )
-                        continuation.resume(emptyResult)
+                        if (isResumed.compareAndSet(false, true)) {
+                            continuation.resume(emptyResult)
+                        }
                     }
 
-                    // Ensure we unbind if the coroutine is cancelled by the caller
+                    // Ensure we cleanly close the session and unbind if the coroutine is canceled
+                    // by the caller (e.g., if withTimeout expires)
                     continuation.invokeOnCancellation {
+                        // Cancel the detached job.
+                        // Note: If the pool is deadlocked, this prevents the coroutine from
+                        // executing
+                        // if a thread eventually becomes available. While `cancel()` doesn't
+                        // physically
+                        // remove the Runnable from the Executor's queue, the custom
+                        // ThreadPoolExecutor
+                        // uses a bounded ArrayBlockingQueue to guarantee the queue will never grow
+                        // unbounded and cause an OutOfMemoryError.
+                        jobRef.get()?.cancel()
+
+                        // Mark as resumed so delayed callbacks don't attempt to resume a canceled
+                        // coroutine
+                        isResumed.set(true)
+
+                        // Atomically consume the session reference during cancellation
+                        // close() is oneway, so it will not hang the cancellation block
                         try {
-                            context.unbindService(connection)
-                        } catch (e: Exception) {}
+                            sessionRef.getAndSet(null)?.close()
+                        } catch (e: Exception) {
+                            Log.w(
+                                TAG,
+                                "Failed to close session during cancellation for ${component.packageName}",
+                                e,
+                            )
+                        }
+
+                        // Guard the unbind so it only happens once
+                        if (isCleanedUp.compareAndSet(false, true)) {
+                            try {
+                                context.unbindService(connection)
+                            } catch (e: Exception) {
+                                Log.w(
+                                    TAG,
+                                    "Failed to cleanly unbind service for ${component.packageName}",
+                                    e,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1001,12 +1216,24 @@ constructor(
     /**
      * Discovers trusted system services that implement the UpdateInfoService protocol.
      *
-     * This method queries the [PackageManager] for services that handle the
-     * [ACTION_UPDATE_INFO_SERVICE] intent, using the `PackageManager.MATCH_SYSTEM_ONLY` flag. This
-     * flag ensures that only components from applications installed on the system image are
-     * returned, which includes both original and updated system apps.
+     * This method queries the [android.content.pm.PackageManager] for services that handle the
+     * [ACTION_UPDATE_INFO_SERVICE] intent and filters them to ensure that only authentic, highly
+     * privileged system components are trusted.
      *
-     * @return A list of [ComponentName]s for all trusted update services found on the device.
+     * **Optimization:** The initial query uses the
+     * [android.content.pm.PackageManager.MATCH_SYSTEM_ONLY] flag to efficiently filter out standard
+     * third-party applications at the OS level, reducing the number of IPC permission checks
+     * required.
+     *
+     * **Trust Model & Security:** Relying solely on `MATCH_SYSTEM_ONLY` is insufficient for a
+     * strict security boundary, as OEMs may preload unprivileged third-party applications
+     * (bloatware) on the system partition. To enforce true trust, this method explicitly verifies
+     * that the application hosting the service has been granted the
+     * `android.permission.READ_PRIVILEGED_PHONE_STATE` permission. This is a strictly controlled
+     * `signature|privileged` capability held by core OS updaters, guaranteeing the provider is a
+     * legitimate system component.
+     *
+     * @return A list of [ComponentName]s for all fully trusted update services found on the device.
      */
     @VisibleForTesting
     internal fun getTrustedUpdateInfoServices(): List<ComponentName> {
@@ -1016,18 +1243,26 @@ constructor(
             context.packageManager.queryIntentServices(intent, PackageManager.MATCH_SYSTEM_ONLY)
 
         return resolveInfos.mapNotNull { resolveInfo ->
-            val serviceInfo = resolveInfo.serviceInfo
-            if (serviceInfo?.applicationInfo == null) {
-                null
-            } else {
-                val isSystem =
-                    (serviceInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                if (isSystem) {
-                    ComponentName(serviceInfo.packageName, serviceInfo.name)
-                } else {
+            val serviceName = resolveInfo.serviceInfo?.name
+            val packageName = resolveInfo.serviceInfo?.packageName
+
+            when {
+                // Rule 1: Drop malformed OS data silently
+                packageName == null || serviceName == null -> null
+
+                // Rule 2: If the provider is trusted, map it to a ComponentName
+                context.packageManager.checkPermission(
+                    "android.permission.READ_PRIVILEGED_PHONE_STATE",
+                    packageName,
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    ComponentName(packageName, serviceName)
+                }
+
+                // Rule 3: If it lacks the permission, log a warning and drop it
+                else -> {
                     Log.w(
                         TAG,
-                        "Ignoring non-system provider found with MATCH_SYSTEM_ONLY: ${serviceInfo.packageName}",
+                        "Ignoring untrusted update provider (lacks READ_PRIVILEGED_PHONE_STATE): $packageName",
                     )
                     null
                 }

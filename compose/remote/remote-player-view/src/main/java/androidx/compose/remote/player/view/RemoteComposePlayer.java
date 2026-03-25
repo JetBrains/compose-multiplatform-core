@@ -36,6 +36,7 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.CoreDocument.ShaderControl;
+import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.RemoteContextActions;
 import androidx.compose.remote.core.operations.NamedVariable;
@@ -105,6 +106,51 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
             int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context, attrs, defStyleAttr);
+    }
+
+    /**
+     * Sets the maximum number of operations that can be executed in a single frame.
+     *
+     * @param maxOpCount the maximum number of operations
+     */
+    public void setMaxOpCount(int maxOpCount) {
+        Limits.MAX_OP_COUNT = maxOpCount;
+    }
+
+    /**
+     * Sets the maximum dimension (width or height) of an image that can be loaded.
+     *
+     * @param maxImageDimension the maximum dimension
+     */
+    public void setMaxImageDimension(int maxImageDimension) {
+        Limits.MAX_IMAGE_DIMENSION = maxImageDimension;
+    }
+
+    /**
+     * Sets the maximum bitmap memory allowed for a single player instance.
+     *
+     * @param maxBitmapMemory the maximum memory in bytes
+     */
+    public void setMaxBitmapMemory(int maxBitmapMemory) {
+        Limits.MAX_BITMAP_MEMORY = maxBitmapMemory;
+    }
+
+    /**
+     * Sets the default maximum frames per second for the player.
+     *
+     * @param defaultMaxFps the default maximum fps
+     */
+    public void setDefaultMaxFps(int defaultMaxFps) {
+        Limits.DEFAULT_MAX_FPS = defaultMaxFps;
+    }
+
+    /**
+     * Sets the absolute maximum frames per second for the player.
+     *
+     * @param maxFps the absolute maximum fps
+     */
+    public void setMaxFps(int maxFps) {
+        Limits.MAX_FPS = maxFps;
     }
 
     private @NonNull RemoteContext getRemoteContext() {

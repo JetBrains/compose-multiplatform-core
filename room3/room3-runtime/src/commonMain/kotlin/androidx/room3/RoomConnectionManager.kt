@@ -21,7 +21,6 @@ import androidx.room3.RoomDatabase.JournalMode.TRUNCATE
 import androidx.room3.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING
 import androidx.room3.coroutines.ConnectionFactory
 import androidx.room3.coroutines.ExclusiveMutex
-import androidx.room3.util.findMigrationPath
 import androidx.room3.util.isMigrationRequired
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
@@ -81,17 +80,23 @@ public abstract class BaseRoomConnectionManager {
                             "callbacks?"
                     }
                     val connection = delegate.open(resolvedFileName)
-                    if (!isConfigured) {
-                        // Perform initial connection configuration
-                        try {
-                            isInitializing = true
-                            configureDatabase(connection)
-                        } finally {
-                            isInitializing = false
+                    try {
+                        if (!isConfigured) {
+                            // Perform initial connection configuration
+                            try {
+                                isInitializing = true
+                                configureDatabase(connection)
+                            } finally {
+                                isInitializing = false
+                            }
+                        } else {
+                            // Perform other non-initial connection configuration
+                            configurationConnection(connection)
                         }
-                    } else {
-                        // Perform other non-initial connection configuration
-                        configurationConnection(connection)
+                    } catch (th: Throwable) {
+                        // Close connection if anything goes wrong during configuration, avoids leak
+                        connection.close()
+                        throw th
                     }
                     return@withLock connection
                 },

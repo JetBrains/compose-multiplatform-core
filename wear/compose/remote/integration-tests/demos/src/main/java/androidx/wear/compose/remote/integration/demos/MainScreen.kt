@@ -48,13 +48,23 @@ fun MainScreen(navigateToRoute: (String) -> Unit, modifier: Modifier = Modifier)
                             ),
                     transformation = SurfaceTransformation(transformationSpec),
                 ) {
-                    Text("Remote Compose Wear Material3 Demos")
+                    Text(
+                        "Remote Compose Wear Material3 Demos",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
             item {
                 MenuButton(
                     "RemoteButton",
                     onClick = { navigateToRoute(Screen.RemoteButtonDemosScreen.route) },
+                )
+            }
+            item {
+                MenuButton(
+                    "RemoteCompactButton",
+                    onClick = { navigateToRoute(Screen.RemoteCompactButtonDemosScreen.route) },
                 )
             }
             item {
@@ -87,6 +97,30 @@ fun MainScreen(navigateToRoute: (String) -> Unit, modifier: Modifier = Modifier)
                     onClick = {
                         navigateToRoute(Screen.RemoteCircularProgressIndicatorDemosScreen.route)
                     },
+                )
+            }
+            item {
+                MenuButton(
+                    "RemoteAppCard",
+                    onClick = { navigateToRoute(Screen.RemoteAppCardDemosScreen.route) },
+                )
+            }
+            item {
+                MenuButton(
+                    "RemoteCard",
+                    onClick = { navigateToRoute(Screen.RemoteCardDemosScreen.route) },
+                )
+            }
+            item {
+                MenuButton(
+                    "RemoteTitleCard",
+                    onClick = { navigateToRoute(Screen.RemoteTitleCardDemosScreen.route) },
+                )
+            }
+            item {
+                MenuButton(
+                    "RemoteText",
+                    onClick = { navigateToRoute(Screen.RemoteTextDemosScreen.route) },
                 )
             }
         }

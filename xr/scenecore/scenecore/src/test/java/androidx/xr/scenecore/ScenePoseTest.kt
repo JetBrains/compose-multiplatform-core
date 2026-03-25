@@ -38,7 +38,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class ScenePoseTest {
-    private val entityManager = EntityManager()
+    private val entityRegistry = EntityRegistry()
     private lateinit var activitySpace: ActivitySpace
     private lateinit var perceptionSpace: PerceptionSpace
 
@@ -50,7 +50,7 @@ class ScenePoseTest {
         val fakeRuntimeFactory = FakeSceneRuntimeFactory()
         fakeRuntime = fakeRuntimeFactory.create(activity)
 
-        activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
+        activitySpace = ActivitySpace.create(fakeRuntime, entityRegistry)
         perceptionSpace = PerceptionSpace.create(fakeRuntime)
     }
 

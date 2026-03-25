@@ -17,15 +17,25 @@
 package androidx.xr.arcore.playservices
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.Face
 import androidx.xr.arcore.runtime.Mesh
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import com.google.ar.core.AugmentedFace
-import java.lang.IllegalStateException
 
-/** Wraps the native [AugmentedFace] with the [Face] interface. */
+/**
+ * Wraps an ARCore [AugmentedFace] with the [Face] interface.
+ *
+ * @property trackingState the [TrackingState] of the face
+ * @property isValid whether the face is valid
+ * @property blendShapeValues the blend shape values of the face
+ * @property confidenceValues the confidence values of the face
+ * @property centerPose the [Pose] of the center of the face
+ * @property mesh the face [Mesh]
+ * @property noseTipPose the [Pose] of the nose tip
+ * @property foreheadLeftPose the [Pose] of the left forehead
+ * @property foreheadRightPose the [Pose] of the right forehead
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ArCoreFace internal constructor(private val arCoreFace: AugmentedFace) : Face {
     @UnsupportedArCoreCompatApi public fun arCoreAugmentedFace(): AugmentedFace = arCoreFace
@@ -64,14 +74,4 @@ public class ArCoreFace internal constructor(private val arCoreFace: AugmentedFa
 
     override val foreheadRightPose: Pose
         get() = arCoreFace.getRegionPose(AugmentedFace.RegionType.FOREHEAD_RIGHT).toRuntimePose()
-
-    /**
-     * ARCore AugmentedFace supports front-facing (selfie) camera only, and does not support
-     * attaching anchors nor raycast hit testing. Calling [createAnchor] will always throw
-     * [IllegalStateException].
-     *
-     * @throws [IllegalStateException]
-     */
-    override fun createAnchor(pose: Pose): Anchor =
-        throw IllegalStateException("createAnchor is not supported by AugmentedFaces")
 }

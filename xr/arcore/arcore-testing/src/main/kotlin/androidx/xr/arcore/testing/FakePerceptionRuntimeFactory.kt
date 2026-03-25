@@ -23,19 +23,21 @@ import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
-/** Factory for creating test-only instances of [Runtime]. */
+/** Factory for creating a [FakePerceptionRuntime] for testing purposes. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakePerceptionRuntimeFactory() : PerceptionRuntimeFactory {
     public companion object {
-        /** Will be passed to the [FakeLifecycleManager] constructor during testing */
+        /** Will be passed to the [FakeLifecycleManager] constructor during testing. */
         @JvmStatic
         @get:JvmName("hasCreatePermission")
         public var hasCreatePermission: Boolean = true
 
         /**
-         * Exception that will be thrown when [FakeLifecycleManager.create] is called. Setting this
-         * value will cause the next call to [FakeLifecycleManager.create] to throw this exception.
-         * Setting this value to null will clear the exception and allow the next call to succeed.
+         * Exception that will be thrown when [FakeLifecycleManager.create] is called.
+         *
+         * Setting this value will cause the next call to [FakeLifecycleManager.create] to throw
+         * this exception. Setting this value to null will clear the exception and allow the next
+         * call to succeed.
          */
         public var lifecycleCreateException: Exception? = null
     }
@@ -46,6 +48,12 @@ public class FakePerceptionRuntimeFactory() : PerceptionRuntimeFactory {
     public fun createRuntime(context: Context): FakePerceptionRuntime =
         createRuntime(context, EmptyCoroutineContext)
 
+    /**
+     * Creates a [FakePerceptionRuntime] instance for testing purposes.
+     *
+     * @param context The host [Context].
+     * @param coroutineContext The [CoroutineContext] for the runtime to use during testing.
+     */
     override fun createRuntime(
         context: Context,
         coroutineContext: CoroutineContext,

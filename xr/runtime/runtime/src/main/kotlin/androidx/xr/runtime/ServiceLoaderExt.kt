@@ -24,6 +24,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.xr.runtime.interfaces.Feature
 import androidx.xr.runtime.interfaces.Service
 import androidx.xr.runtime.manifest.FEATURE_XR_API_OPENXR
@@ -71,8 +72,12 @@ public fun <S : Any> loadProviders(service: Class<S>, providersClassNames: List<
     return providers + filteredServiceLoaderClasses
 }
 
-private const val REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED = "xr_projected"
 private const val PROJECTED_DEVICE_NAME = "ProjectionDevice"
+
+@VisibleForTesting
+internal const val REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED =
+    "android.hardware.display.category.XR_PROJECTED"
+@VisibleForTesting internal const val REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED_LEGACY = "xr_projected"
 
 private fun hasXrProjectedDisplayCategory(activityInfo: ActivityInfo): Boolean {
     // TODO b/460536048 - Remove reflection once requiredDisplayCategory is public in SDK 36
@@ -81,7 +86,8 @@ private fun hasXrProjectedDisplayCategory(activityInfo: ActivityInfo): Boolean {
     return try {
         val field = ActivityInfo::class.java.getField("requiredDisplayCategory")
         val category = field.get(activityInfo) as? String
-        category == REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED
+        category == REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED ||
+            category == REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED_LEGACY
     } catch (e: Exception) {
         false
     }

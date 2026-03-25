@@ -6,6 +6,7 @@ import androidx.room3.util.FtsTableInfo
 import androidx.room3.util.TableInfo
 import androidx.room3.util.ViewInfo
 import androidx.room3.util.dropFtsSyncTriggers
+import androidx.room3.util.performClear
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.executeSQL
 import javax.`annotation`.processing.Generated
@@ -27,7 +28,7 @@ import androidx.room3.util.TableInfo.Companion.read as tableInfoRead
 import androidx.room3.util.ViewInfo.Companion.read as viewInfoRead
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
 internal class MyDatabase_Impl : MyDatabase() {
   private val _myDao: Lazy<MyDao> = lazy {
     MyDao_Impl(this)
@@ -141,8 +142,8 @@ internal class MyDatabase_Impl : MyDatabase() {
     return InvalidationTracker(this, _shadowTablesMap, _viewTables, "MyParentEntity", "MyEntity", "MyFtsEntity")
   }
 
-  public override fun clearAllTables() {
-    super.performClear(true, "MyParentEntity", "MyEntity", "MyFtsEntity")
+  public override suspend fun clearAllTables() {
+    performClear(this, true, "MyParentEntity", "MyEntity", "MyFtsEntity")
   }
 
   protected override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {

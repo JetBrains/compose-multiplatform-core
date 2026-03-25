@@ -25,6 +25,7 @@ import android.util.SparseArray
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import androidx.pdf.annotation.AnnotationsView.PageAnnotationsData
+import androidx.pdf.annotation.models.HighlightAnnotation
 import androidx.pdf.annotation.models.PathPdfObject
 import androidx.pdf.annotation.models.PathPdfObject.PathInput
 import androidx.pdf.annotation.models.PdfAnnotation
@@ -149,6 +150,7 @@ internal class AnnotationsLocator(
                 }
                 false
             }
+            is HighlightAnnotation -> annotation.bounds.any { RectF.intersects(it, touchRectPdf) }
             else -> false
         }
     }

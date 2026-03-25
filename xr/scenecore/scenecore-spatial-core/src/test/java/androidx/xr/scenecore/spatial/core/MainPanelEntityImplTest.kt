@@ -49,7 +49,12 @@ class MainPanelEntityImplTest {
     @Before
     fun setUp() {
         sceneRuntime =
-            SpatialSceneRuntime.create(hostActivity, fakeExecutor, xrExtensions, EntityManager())
+            SpatialSceneRuntime.create(
+                hostActivity,
+                fakeExecutor,
+                xrExtensions,
+                SceneNodeRegistry(),
+            )
 
         mainPanelEntity = sceneRuntime.mainPanelEntity as MainPanelEntityImpl
     }

@@ -59,6 +59,7 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.scene
 import java.nio.file.Paths
 
 /**
@@ -283,7 +284,9 @@ fun StaticXyzArrow(modifier: SubspaceModifier = SubspaceModifier) {
 
     if (gltfModel != null) {
         SceneCoreEntity(
-            factory = { GltfModelEntity.create(session, gltfModel!!) },
+            factory = {
+                GltfModelEntity.create(session, gltfModel!!, parent = session.scene.activitySpace)
+            },
             // Apply only the incoming modifier from the parent hierarchy.
             // Also set a default size for visibility.
             modifier = modifier.size(modelSize),

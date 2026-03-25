@@ -404,7 +404,7 @@ public class ImpressApiImpl : ImpressApi {
      * @param channel The channel of the animation.
      * @return a [Void] result when the animation completed.
      */
-    override suspend fun animateGltfModelNew(
+    override suspend fun animateGltfModel(
         impressNode: ImpressNode,
         animationName: String?,
         looping: Boolean,
@@ -412,7 +412,7 @@ public class ImpressApiImpl : ImpressApi {
         startTime: Float,
         channel: Int,
     ): Void? = suspendCancellableCoroutine { continuation ->
-        nAnimateGltfModelNew(
+        nAnimateGltfModel(
             getViewNativeHandle(view),
             impressNode.handle,
             animationName,
@@ -449,74 +449,13 @@ public class ImpressApiImpl : ImpressApi {
     }
 
     /**
-     * Starts an animation on an instanced GLTFModel.
-     *
-     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
-     * @param animationName A nullable String which contains a requested animation to play. If null
-     *   is provided, this will attempt to play the first animation it finds
-     * @param looping True if the animation should loop. Note that if the animation is looped, the
-     *   returned Future will never fire successfully.
-     * @return a [Void] result when the animation stops. An exception is thrown if the animation
-     *   can't play.
-     */
-    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
-    // to new animation system.
-    override suspend fun animateGltfModel(
-        impressNode: ImpressNode,
-        animationName: String?,
-        looping: Boolean,
-    ): Void? = suspendCancellableCoroutine { continuation ->
-        nAnimateGltfModel(
-            getViewNativeHandle(view),
-            impressNode.handle,
-            animationName,
-            looping,
-            object : AssetAnimator {
-                override fun onComplete() {
-                    continuation.resume(null)
-                }
-
-                override fun onFailure(message: String) {
-                    // We can safely check for the CANCELLED string here since we
-                    // know that the underlying absl Status code is being
-                    // translated to a java Exception and the message is being
-                    // propagated. Ideally the native code would generate a separate
-                    // signal call for this.
-                    // TODO: b/374217508 - Publish a more precisely typed Exception
-                    // interface for this.
-                    if (message.contains("CANCELLED")) {
-                        onCancelled(message)
-                    } else {
-                        continuation.resumeWithException(Exception(message))
-                    }
-                }
-
-                override fun onCancelled(message: String) {
-                    continuation.cancel(Exception(message))
-                }
-            },
-        )
-        "AnimateGltfModel Operation"
-    }
-
-    /**
-     * Stops an animation on an instanced GLTFModel.
-     *
-     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
-     */
-    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
-    // to new animation system.
-    override fun stopGltfModelAnimation(impressNode: ImpressNode): Unit =
-        nStopGltfModelAnimation(getViewNativeHandle(view), impressNode.handle)
-
-    /**
      * Stops an animation on an instanced glTF model on a specific channel.
      *
      * @param impressNode The integer ID of the Impress node for the instance of the GLTF
      * @param channel The channel of the animation.
      */
-    override fun stopGltfModelAnimationNew(impressNode: ImpressNode, channel: Int): Unit =
-        nStopGltfModelAnimationNew(getViewNativeHandle(view), impressNode.handle, channel)
+    override fun stopGltfModelAnimation(impressNode: ImpressNode, channel: Int): Unit =
+        nStopGltfModelAnimation(getViewNativeHandle(view), impressNode.handle, channel)
 
     /**
      * Toggles an animation on an instanced glTF model on a specific channel.
@@ -525,28 +464,12 @@ public class ImpressApiImpl : ImpressApi {
      * @param playing True if the animation should play, false if it should stop.
      * @param channel The channel of the animation.
      */
-    override fun toggleGltfModelAnimationNew(
+    override fun toggleGltfModelAnimation(
         impressNode: ImpressNode,
         playing: Boolean,
         channel: Int,
     ): Unit =
-        nToggleGltfModelAnimationNew(
-            getViewNativeHandle(view),
-            impressNode.handle,
-            playing,
-            channel,
-        )
-
-    /**
-     * Toggles an animation on an instanced GLTFModel.
-     *
-     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
-     * @param playing True if the animation should play, false if it should stop.
-     */
-    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
-    // to new animation system.
-    override fun toggleGltfModelAnimation(impressNode: ImpressNode, playing: Boolean): Unit =
-        nToggleGltfModelAnimation(getViewNativeHandle(view), impressNode.handle, playing)
+        nToggleGltfModelAnimation(getViewNativeHandle(view), impressNode.handle, playing, channel)
 
     /**
      * Sets the playback time of an animation on an instanced glTF model on a specific channel.
@@ -663,7 +586,7 @@ public class ImpressApiImpl : ImpressApi {
         nGetImpressNodeName(getViewNativeHandle(view), impressNode.handle)
 
     override fun setImpressNodeLocalTransform(impressNode: ImpressNode, transform: Matrix4) {
-        val pose = transform.pose
+        val pose = transform.toPose()
         val scale = transform.scale
         nSetImpressNodeLocalTransform(
             getViewNativeHandle(view),
@@ -697,7 +620,7 @@ public class ImpressApiImpl : ImpressApi {
         relativeNode: ImpressNode,
         transform: Matrix4,
     ) {
-        val pose = transform.pose
+        val pose = transform.toPose()
         val scale = transform.scale
         nSetImpressNodeRelativeTransform(
             getViewNativeHandle(view),
@@ -1730,6 +1653,86 @@ public class ImpressApiImpl : ImpressApi {
         nDisposeAllResources(getViewNativeHandle(view))
     }
 
+    override fun createMeshBuffer(
+        attributeIds: IntArray,
+        attributeTypes: IntArray,
+        bufferIndices: ByteArray,
+        maxVertices: Int,
+        maxIndices: Int,
+        vertexData: Array<java.nio.ByteBuffer>?,
+        vertexDataSizes: IntArray?,
+        indexData: java.nio.ByteBuffer?,
+        indexDataSize: Int,
+    ): MeshBuffer {
+        val meshBufferHandle =
+            nCreateMeshBuffer(
+                getViewNativeHandle(view),
+                attributeIds,
+                attributeTypes,
+                bufferIndices,
+                maxVertices,
+                maxIndices,
+                vertexData,
+                vertexDataSizes,
+                indexData,
+                indexDataSize,
+            )
+        return MeshBuffer.Builder()
+            .setImpressApi(this)
+            .setNativeMeshBuffer(meshBufferHandle)
+            .build()
+    }
+
+    override fun destroyMeshBuffer(meshBufferHandle: Long): Unit =
+        nDestroyMeshBuffer(getViewNativeHandle(view), meshBufferHandle)
+
+    override fun createCustomMesh(
+        meshBufferHandle: Long,
+        subsetOffsets: IntArray,
+        subsetCounts: IntArray,
+        subsetTopologies: IntArray,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
+    ): CustomMesh {
+        val customMeshHandle =
+            nCreateCustomMesh(
+                getViewNativeHandle(view),
+                meshBufferHandle,
+                subsetOffsets,
+                subsetCounts,
+                subsetTopologies,
+                centerX,
+                centerY,
+                centerZ,
+                halfExtentX,
+                halfExtentY,
+                halfExtentZ,
+            )
+        return CustomMesh.Builder()
+            .setImpressApi(this)
+            .setNativeCustomMesh(customMeshHandle)
+            .build()
+    }
+
+    override fun destroyCustomMesh(customMeshHandle: Long): Unit =
+        nDestroyCustomMesh(getViewNativeHandle(view), customMeshHandle)
+
+    override fun createCustomMeshNode(
+        customMeshHandle: Long,
+        materialHandles: LongArray,
+        boneCount: Int,
+    ): Int =
+        nCreateCustomMeshNode(
+            getViewNativeHandle(view),
+            customMeshHandle,
+            materialHandles,
+            boneCount,
+        )
+
     private fun getViewNativeHandle(view: View?): Long {
         if (view != null) {
             return view.nativeHandle
@@ -1787,7 +1790,7 @@ public class ImpressApiImpl : ImpressApi {
         systemMovable: Boolean,
     )
 
-    private external fun nAnimateGltfModelNew(
+    private external fun nAnimateGltfModel(
         view: Long,
         impressNode: Int,
         animationName: String?,
@@ -1798,32 +1801,14 @@ public class ImpressApiImpl : ImpressApi {
         assetAnimator: AssetAnimator,
     )
 
-    // TODO: b/465818627 - Remove old animation APIs once all clients are
-    // migrated to new animation system.
-    private external fun nAnimateGltfModel(
-        view: Long,
-        impressNode: Int,
-        animationName: String?,
-        loop: Boolean,
-        assetAnimator: AssetAnimator,
-    )
+    private external fun nStopGltfModelAnimation(view: Long, impressNode: Int, channelId: Int)
 
-    private external fun nStopGltfModelAnimationNew(view: Long, impressNode: Int, channelId: Int)
-
-    // TODO: b/465818627 - Remove old animation APIs once all clients are
-    // migrated to new animation system.
-    private external fun nStopGltfModelAnimation(view: Long, impressNode: Int)
-
-    private external fun nToggleGltfModelAnimationNew(
+    private external fun nToggleGltfModelAnimation(
         view: Long,
         impressNode: Int,
         toggle: Boolean,
         channelId: Int,
     )
-
-    // TODO: b/465818627 - Remove old animation APIs once all clients are
-    // migrated to new animation system.
-    private external fun nToggleGltfModelAnimation(view: Long, impressNode: Int, toggle: Boolean)
 
     private external fun nSetGltfModelAnimationPlaybackTime(
         view: Long,
@@ -2476,4 +2461,42 @@ public class ImpressApiImpl : ImpressApi {
     private external fun nClearEnvironmentLight(view: Long)
 
     private external fun nDisposeAllResources(view: Long)
+
+    private external fun nCreateMeshBuffer(
+        view: Long,
+        attributeIds: IntArray,
+        attributeTypes: IntArray,
+        bufferIndices: ByteArray,
+        maxVertices: Int,
+        maxIndices: Int,
+        vertexData: Array<java.nio.ByteBuffer>?,
+        vertexDataSizes: IntArray?,
+        indexData: java.nio.ByteBuffer?,
+        indexDataSize: Int,
+    ): Long
+
+    private external fun nDestroyMeshBuffer(view: Long, meshBufferHandle: Long)
+
+    private external fun nCreateCustomMesh(
+        view: Long,
+        meshBufferHandle: Long,
+        subsetOffsets: IntArray,
+        subsetCounts: IntArray,
+        subsetTopologies: IntArray,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
+    ): Long
+
+    private external fun nDestroyCustomMesh(view: Long, customMeshHandle: Long)
+
+    private external fun nCreateCustomMeshNode(
+        view: Long,
+        customMeshHandle: Long,
+        materialHandles: LongArray,
+        boneCount: Int,
+    ): Int
 }

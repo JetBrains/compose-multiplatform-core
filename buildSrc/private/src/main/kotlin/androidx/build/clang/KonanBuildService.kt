@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
@@ -161,7 +162,8 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
                         TempFiles(),
                         objectFiles = objectFiles,
                         executable = outputFile.canonicalPath,
-                        libraries = linkedObjectFiles,
+                        dynamicLibraries = linkedObjectFiles,
+                        staticLibraries = emptyList(),
                         linkerArgs = linkerFlags,
                         optimize = true,
                         debug = false,
@@ -241,6 +243,10 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
                     .trimIndent()
             )
         }
+    }
+
+    fun stdlibKlibDir(): Provider<Directory> {
+        return parameters.konanHome.dir("klib/common/stdlib")
     }
 
     interface Parameters : BuildServiceParameters {

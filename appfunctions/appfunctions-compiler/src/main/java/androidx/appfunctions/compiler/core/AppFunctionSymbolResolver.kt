@@ -27,7 +27,6 @@ import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.Modifier
 
 /** The helper class to resolve AppFunction related symbols. */
 class AppFunctionSymbolResolver(private val resolver: Resolver) {
@@ -41,7 +40,7 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
             .map { declaration ->
                 if (declaration !is KSClassDeclaration) {
                     throw ProcessingException(
-                        "Only classes can be annotated with @AppFunctionSerializableProxy",
+                        "Only class can be annotated with @AppFunctionSchemaDefinition",
                         declaration,
                     )
                 }
@@ -113,13 +112,7 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                 declaration
             }
             .sortedBy { checkNotNull(it.qualifiedName).asString() }
-            .map { declaration ->
-                if (declaration.modifiers.contains(Modifier.SEALED)) {
-                    AnnotatedOneOfAppFunctionSerializable(declaration).validate()
-                } else {
-                    AnnotatedAppFunctionSerializable(declaration).validate()
-                }
-            }
+            .map { declaration -> AppFunctionSerializableType.create(declaration).validate() }
             .toList()
     }
 

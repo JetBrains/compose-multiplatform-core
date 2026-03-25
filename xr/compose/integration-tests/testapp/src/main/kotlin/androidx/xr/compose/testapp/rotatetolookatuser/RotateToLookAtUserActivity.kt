@@ -105,10 +105,10 @@ class RotateToLookAtUserActivity : ComponentActivity() {
     private fun MainContent() {
         val session = checkNotNull(LocalSession.current) { "session must be initialized" }
         session.configure(
-            config = session.config.copy(deviceTracking = DeviceTrackingMode.LAST_KNOWN)
+            config = session.config.copy(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN)
         )
 
-        var isRotateToLookAtUserOn by remember { mutableStateOf(false) }
+        var isRotateToLookAtUserOn by remember { mutableStateOf(true) }
 
         IntegrationTestsAppTheme {
             Subspace(modifier = SubspaceModifier.width(1600.dp).height(1400.dp)) {
@@ -193,7 +193,6 @@ class RotateToLookAtUserActivity : ComponentActivity() {
         }
 
         val innerContent: @Composable () -> Unit = {
-            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
             Box(
                 modifier =
                     Modifier.fillMaxSize()

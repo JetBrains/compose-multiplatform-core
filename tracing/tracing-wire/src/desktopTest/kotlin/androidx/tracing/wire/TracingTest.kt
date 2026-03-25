@@ -16,34 +16,38 @@
 
 package androidx.tracing.wire
 
+import androidx.tracing.AbstractTraceDriver
+import androidx.tracing.AbstractTraceSink
 import androidx.tracing.DEFAULT_LONG
+import androidx.tracing.ExperimentalContextPropagation
 import androidx.tracing.PooledTracePacketArray
 import androidx.tracing.TRACE_PACKET_BUFFER_SIZE
 import androidx.tracing.TRACE_PACKET_POOL_ARRAY_POOL_SIZE
-import androidx.tracing.TraceDriver
-import androidx.tracing.TraceSink
 import androidx.tracing.Tracer
 import androidx.tracing.wire.protos.MutableCallstack
+import androidx.tracing.wire.protos.MutableTraceAttributes
 import androidx.tracing.wire.protos.MutableTracePacket
 import androidx.tracing.wire.protos.MutableTrackDescriptor
 import androidx.tracing.wire.protos.MutableTrackEvent
+import kotlin.concurrent.thread
 import kotlin.test.Ignore
 import kotlin.test.Test
-import kotlin.test.assertContains
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import okio.blackholeSink
 import okio.buffer
 import org.junit.Before
 
-class TestSink : TraceSink() {
+class TestSink : AbstractTraceSink() {
     internal val packets = mutableListOf<MutableTracePacket>()
 
     override fun enqueue(pooledPacketArray: PooledTracePacketArray) {
@@ -74,6 +78,9 @@ class TestSink : TraceSink() {
                             scratchCallStack = MutableCallstack(),
                             scratchFrames = mutableListOf(),
                             scratchFrameIndex = IntArray(size = 1) { _ -> -1 },
+                            scratchTraceAttributes = MutableTraceAttributes(),
+                            scratchAttributes = mutableListOf(),
+                            scratchAttributeIndex = IntArray(size = 1) { _ -> -1 },
                         )
                     }
             )
@@ -95,7 +102,7 @@ class TestSink : TraceSink() {
 
 class TracingTest {
     private val sink = TestSink()
-    lateinit var driver: TraceDriver
+    lateinit var driver: AbstractTraceDriver
     lateinit var tracer: Tracer
 
     @Before
@@ -103,6 +110,23 @@ class TracingTest {
         sink.packets.clear()
         driver = TraceDriver(sink = sink, isEnabled = true)
         tracer = driver.tracer
+    }
+
+    @Test
+    internal fun testAttributes() {
+        // Add attributes
+        driver =
+            TraceDriver(
+                sink = sink,
+                isEnabled = true,
+                attributes = { addAttribute("isTest", "true") },
+            )
+        driver.use {
+            // Do nothing
+        }
+        val attributes = sink.attributes()
+        assertTrue { attributes.isNotEmpty() }
+        assertEquals(attributes["isTest"], "true")
     }
 
     @Test
@@ -215,14 +239,78 @@ class TracingTest {
         assertNotNull(flowId) { "Packet $start does not include a flow_id" }
         val (method1, _) = sink.firstStartStopWithName("method1")
         val (method2, _) = sink.firstStartStopWithName("method2")
-        assertContains(method1.track_event?.flow_ids ?: emptyList(), flowId)
-        assertContains(method2.track_event?.flow_ids ?: emptyList(), flowId)
+        val method1FlowIds = method1.track_event?.flow_ids ?: emptyList()
+        val method2FlowIds = method2.track_event?.flow_ids ?: emptyList()
+        // Method 1, 2 should be assigned unique flow ids.
+        assertFalse { method1FlowIds.contains(flowId) }
+        assertFalse { method2FlowIds.contains(flowId) }
+    }
+
+    @Test
+    // The amount of time spent sleeping does not affect the outcome of the test.
+    @Suppress("BanThreadSleep")
+    @OptIn(ExperimentalContextPropagation::class)
+    internal fun testTrackEventsWithManualContextPropagation() = runTest {
+        driver.use {
+            val token = tracer.tokenForManualPropagation()
+            val threads = mutableListOf<Thread>()
+            threads += thread {
+                tracer.trace(category = "category", name = "first", token = token) {
+                    Thread.sleep(100L)
+                    tracer.trace(category = "category", name = "second", token = token) {
+                        Thread.sleep(200L)
+
+                        runBlocking {
+                            tracer.traceCoroutine(
+                                category = "category",
+                                name = "third",
+                                token = token,
+                            ) {
+                                delay(200L)
+                            }
+                        }
+                    }
+                }
+            }
+            threads.forEach { it.join() }
+        }
+        assertTrue(message = "Missing Packets in Trace Sink") { sink.packets.isNotEmpty() }
+        val (start, _) = sink.firstStartStopWithName("first")
+        val flowId = start.track_event?.flow_ids?.first()
+        assertNotNull(flowId) { "Packet $start does not include a flow_id" }
+        val (secondSlice, _) = sink.firstStartStopWithName("second")
+        val (thirdSlice, _) = sink.firstStartStopWithName("third")
+        val secondFlowIds = secondSlice.track_event?.flow_ids ?: emptyList()
+        val thirdFlowIds = thirdSlice.track_event?.flow_ids ?: emptyList()
+        // Method second and third should be assigned the same flow id as that of the first slice.
+        assertTrue { secondFlowIds.contains(flowId) }
+        assertTrue { thirdFlowIds.contains(flowId) }
+    }
+
+    @Test
+    internal fun testTrackEventsWithExplicitPropagation() = runTest {
+        driver.use {
+            tracer.traceCoroutine(category = "category", name = "first") {
+                val token = tracer.tokenFromCoroutineContext()
+                tracer.traceCoroutine(category = "category", name = "second", token = token) {
+                    delay(10)
+                }
+            }
+        }
+        assertTrue(message = "Missing Packets in Trace Sink") { sink.packets.isNotEmpty() }
+        val (start, _) = sink.firstStartStopWithName("first")
+        val flowId = start.track_event?.flow_ids?.first()
+        assertNotNull(flowId) { "Packet $start does not include a flow_id" }
+        val (secondSlice, _) = sink.firstStartStopWithName("second")
+        val secondFlowIds = secondSlice.track_event?.flow_ids ?: emptyList()
+        // Method second should be assigned the same flow id as that of the first slice.
+        assertTrue { secondFlowIds.contains(flowId) }
     }
 
     @Test
     internal fun testCounterTrackEvents() {
         driver.use { tracer.counter(category = "counter", "counter").setValue(10L) }
-        assertEquals(3, sink.packets.size)
+        assertEquals(4, sink.packets.size)
         val packet =
             sink.packets.firstOrNull { packet ->
                 packet.track_event?.type == MutableTrackEvent.Type.TYPE_COUNTER
@@ -351,7 +439,7 @@ class TracingTest {
         }
     }
 
-    internal class TraceSinkDelegate(private val sink: TraceSink) : TraceSink() {
+    internal class TraceSinkDelegate(private val sink: AbstractTraceSink) : AbstractTraceSink() {
         internal var reportDroppedTracePacket = false
         internal var packetCount: Int = 0
         internal var packetCountOnDroppedTracePacket = 0

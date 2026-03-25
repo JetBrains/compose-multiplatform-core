@@ -22,6 +22,7 @@ import android.graphics.Outline
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.os.Build
+import android.os.IBinder
 import android.os.Looper
 import android.view.Gravity
 import android.view.KeyEvent
@@ -110,6 +111,29 @@ import org.jetbrains.annotations.TestOnly
  *   systemGestureExclusionRects. The default is true.
  * @property usePlatformDefaultWidth Whether the width of the popup's content should be limited to
  *   the platform default, which is smaller than the screen width.
+ * @property windowType An optional [WindowManager.LayoutParams.type] for the popup window. Defaults
+ *   to [WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL]. Overriding this allows you to
+ *   change the layer or behavior of the popup. For example, setting it to
+ *   [WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY] can be used to display a popup on top of
+ *   all other applications (which requires the [android.Manifest.permission.SYSTEM_ALERT_WINDOW]
+ *   permission). Note: If you are displaying a popup from a non-Activity context (such as an
+ *   [android.app.Service]) but still want it to be anchored to an existing application window, you
+ *   should leave this as the default sub-panel type and instead provide the [windowToken] of the
+ *   target application window.
+ * @property windowToken An optional [android.os.IBinder] to be used as the window token for the
+ *   popup window. In most cases, this can be left null, and the popup will use the token from the
+ *   hosting Compose view ([android.view.View.getApplicationWindowToken]). However, this parameter
+ *   is essential for cross-process scenarios. For instance, if a Service running in a different
+ *   process needs to display a popup anchored to a window in the main application process, the main
+ *   application's window token must be provided here. The provided token must be a
+ *   valid[android.os.IBinder] from an existing window and must have the necessary permissions to
+ *   add sub-windows of the specified[windowType]. Providing an invalid, stale, or permission-denied
+ *   token will typically result in an [android.view.WindowManager.BadTokenException] when the popup
+ *   attempts to show.
+ *
+ *   Example usage:
+ *
+ * @sample androidx.compose.ui.samples.PopupFromServiceSample
  */
 @Immutable
 actual class PopupProperties
@@ -120,6 +144,8 @@ constructor(
     actual val dismissOnClickOutside: Boolean = true,
     val excludeFromSystemGesture: Boolean = true,
     actual val usePlatformDefaultWidth: Boolean = false,
+    val windowType: Int = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL,
+    val windowToken: IBinder? = null,
 ) {
     actual constructor(
         focusable: Boolean,
@@ -135,6 +161,48 @@ constructor(
         excludeFromSystemGesture = true,
         clippingEnabled = clippingEnabled,
         usePlatformDefaultWidth = usePlatformDefaultWidth,
+        windowType = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL,
+        windowToken = null,
+    )
+
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    constructor(
+        focusable: Boolean = false,
+        dismissOnBackPress: Boolean = true,
+        dismissOnClickOutside: Boolean = true,
+        securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
+        excludeFromSystemGesture: Boolean = true,
+        clippingEnabled: Boolean = true,
+        usePlatformDefaultWidth: Boolean = false,
+    ) : this(
+        focusable = focusable,
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        securePolicy = securePolicy,
+        excludeFromSystemGesture = excludeFromSystemGesture,
+        clippingEnabled = clippingEnabled,
+        usePlatformDefaultWidth = usePlatformDefaultWidth,
+        windowType = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL,
+        windowToken = null,
+    )
+
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    constructor(
+        flags: Int,
+        inheritSecurePolicy: Boolean = true,
+        dismissOnBackPress: Boolean = true,
+        dismissOnClickOutside: Boolean = true,
+        excludeFromSystemGesture: Boolean = true,
+        usePlatformDefaultWidth: Boolean = false,
+    ) : this(
+        flags = flags,
+        inheritSecurePolicy = inheritSecurePolicy,
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        excludeFromSystemGesture = excludeFromSystemGesture,
+        usePlatformDefaultWidth = usePlatformDefaultWidth,
+        windowType = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL,
+        windowToken = null,
     )
 
     @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
@@ -191,6 +259,29 @@ constructor(
      *   will allow windows to be accurately positioned. The default value is true.
      * @param usePlatformDefaultWidth Whether the width of the popup's content should be limited to
      *   the platform default, which is smaller than the screen width.
+     * @param windowType An optional [WindowManager.LayoutParams.type] for the popup window.
+     *   Defaults to [WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL]. Overriding this allows
+     *   you to change the layer or behavior of the popup. For example, setting it to
+     *   [WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY] can be used to display a popup on top
+     *   of all other applications (which requires the
+     *   [android.Manifest.permission.SYSTEM_ALERT_WINDOW] permission). Note: If you are displaying
+     *   a popup from a non-Activity context (such as an [android.app.Service]) but still want it to
+     *   be anchored to an existing application window, you should leave this as the default
+     *   sub-panel type and instead provide the [windowToken] of the target application window.
+     * @param windowToken An optional [android.os.IBinder] to be used as the window token for the
+     *   popup window. In most cases, this can be left null, and the popup will use the token from
+     *   the hosting Compose view ([android.view.View.getApplicationWindowToken]). However, this
+     *   parameter is essential for cross-process scenarios. For instance, if a Service running in a
+     *   different process needs to display a popup anchored to a window in the main application
+     *   process, the main application's window token must be provided here. The provided token must
+     *   be a valid[android.os.IBinder] from an existing window and must have the necessary
+     *   permissions to add sub-windows of the specified[windowType]. Providing an invalid, stale,
+     *   or permission-denied token will typically result in an
+     *   [android.view.WindowManager.BadTokenException] when the popup attempts to show.
+     *
+     *   Example usage:
+     *
+     * @sample androidx.compose.ui.samples.PopupFromServiceSample
      */
     constructor(
         focusable: Boolean = false,
@@ -200,6 +291,8 @@ constructor(
         excludeFromSystemGesture: Boolean = true,
         clippingEnabled: Boolean = true,
         usePlatformDefaultWidth: Boolean = false,
+        windowType: Int = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL,
+        windowToken: IBinder? = null,
     ) : this(
         flags = createFlags(focusable, securePolicy, clippingEnabled),
         inheritSecurePolicy = securePolicy == SecureFlagPolicy.Inherit,
@@ -207,6 +300,8 @@ constructor(
         dismissOnClickOutside = dismissOnClickOutside,
         excludeFromSystemGesture = excludeFromSystemGesture,
         usePlatformDefaultWidth = usePlatformDefaultWidth,
+        windowType = windowType,
+        windowToken = windowToken,
     )
 
     /**
@@ -243,6 +338,8 @@ constructor(
         if (dismissOnClickOutside != other.dismissOnClickOutside) return false
         if (excludeFromSystemGesture != other.excludeFromSystemGesture) return false
         if (usePlatformDefaultWidth != other.usePlatformDefaultWidth) return false
+        if (windowType != other.windowType) return false
+        if (windowToken != other.windowToken) return false
 
         return true
     }
@@ -254,6 +351,9 @@ constructor(
         result = 31 * result + dismissOnClickOutside.hashCode()
         result = 31 * result + excludeFromSystemGesture.hashCode()
         result = 31 * result + usePlatformDefaultWidth.hashCode()
+        result = 31 * result + windowType
+        result = 31 * result + (windowToken?.hashCode() ?: 0)
+
         return result
     }
 }
@@ -286,7 +386,9 @@ actual fun Popup(
     content: @Composable () -> Unit,
 ) {
     val popupPositioner =
-        remember(alignment, offset) { AlignmentOffsetPositionProvider(alignment, offset) }
+        remember(alignment, offset, properties.windowType, properties.windowToken) {
+            AlignmentOffsetPositionProvider(alignment, offset)
+        }
 
     Popup(
         popupPositionProvider = popupPositioner,
@@ -508,7 +610,9 @@ internal class PopupLayout(
     popupId: UUID,
     private val isNested: Boolean,
     private val popupLayoutHelper: PopupLayoutHelper =
-        if (Build.VERSION.SDK_INT >= 29) {
+        if (Build.VERSION.SDK_INT >= 30) {
+            PopupLayoutHelperImpl30()
+        } else if (Build.VERSION.SDK_INT >= 29) {
             PopupLayoutHelperImpl29()
         } else {
             PopupLayoutHelperImpl()
@@ -634,7 +738,7 @@ internal class PopupLayout(
             // platform default. Therefore, we create a new measure spec for width, which
             // corresponds to the full screen width. We do the same for height, even if
             // ViewRootImpl gives it to us from the first measure.
-            val visibleDisplayBounds = getVisibleDisplayBounds()
+            val visibleDisplayBounds = getDisplayBounds()
             val displayWidthMeasureSpec =
                 makeMeasureSpec(visibleDisplayBounds.width, MeasureSpec.AT_MOST)
             val displayHeightMeasureSpec =
@@ -795,8 +899,7 @@ internal class PopupLayout(
         val parentBounds = parentBounds ?: return
         val popupContentSize = popupContentSize ?: return
 
-        val windowSize =
-            getVisibleDisplayBounds().let { IntSize(width = it.width, height = it.height) }
+        val windowSize = getDisplayBounds().let { IntSize(width = it.width, height = it.height) }
 
         // The PopupPositionProvider returns the desired position of the popup.
         // If isNested is true, parentBounds are absolute, so the result is absolute.
@@ -881,10 +984,10 @@ internal class PopupLayout(
 
             flags = properties.flagsWithSecureFlagInherited(composeView.isFlagSecureEnabled())
 
-            type = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL
+            type = properties.windowType
 
-            // Get the Window token from the parent view
-            token = composeView.applicationWindowToken
+            // Use windowToken if provided else get the Window token from the parent view
+            token = properties.windowToken ?: composeView.applicationWindowToken
 
             // Wrap the frame layout which contains composable content
             width = WindowManager.LayoutParams.WRAP_CONTENT
@@ -898,11 +1001,16 @@ internal class PopupLayout(
         }
     }
 
-    private fun getVisibleDisplayBounds(): IntRect =
-        previousWindowVisibleFrame.let {
-            popupLayoutHelper.getWindowVisibleDisplayFrame(composeView, it)
-            it.toIntBounds()
+    private fun getDisplayBounds(): IntRect {
+        return previousWindowVisibleFrame.let { rect ->
+            if (properties.clippingEnabled) {
+                popupLayoutHelper.getWindowVisibleDisplayFrame(composeView, rect)
+            } else {
+                popupLayoutHelper.getWindowBounds(composeView, rect)
+            }
+            rect.toIntBounds()
         }
+    }
 
     private companion object {
         private val onCommitAffectingPopupPosition = { popupLayout: PopupLayout ->
@@ -948,6 +1056,8 @@ private object Api33Impl {
 internal interface PopupLayoutHelper {
     fun getWindowVisibleDisplayFrame(composeView: View, outRect: Rect)
 
+    fun getWindowBounds(composeView: View, outRect: Rect)
+
     fun setGestureExclusionRects(composeView: View, width: Int, height: Int)
 
     fun updateViewLayout(
@@ -960,6 +1070,11 @@ internal interface PopupLayoutHelper {
 private open class PopupLayoutHelperImpl : PopupLayoutHelper {
     override fun getWindowVisibleDisplayFrame(composeView: View, outRect: Rect) {
         composeView.getWindowVisibleDisplayFrame(outRect)
+    }
+
+    override fun getWindowBounds(composeView: View, outRect: Rect) {
+        val displayMetrics = composeView.resources.displayMetrics
+        outRect.set(0, 0, displayMetrics.widthPixels, displayMetrics.heightPixels)
     }
 
     override fun setGestureExclusionRects(composeView: View, width: Int, height: Int) {
@@ -976,9 +1091,19 @@ private open class PopupLayoutHelperImpl : PopupLayoutHelper {
 }
 
 @RequiresApi(29)
-private class PopupLayoutHelperImpl29 : PopupLayoutHelperImpl() {
+private open class PopupLayoutHelperImpl29 : PopupLayoutHelperImpl() {
     override fun setGestureExclusionRects(composeView: View, width: Int, height: Int) {
         composeView.systemGestureExclusionRects = mutableListOf(Rect(0, 0, width, height))
+    }
+}
+
+@RequiresApi(30)
+private class PopupLayoutHelperImpl30 : PopupLayoutHelperImpl29() {
+    override fun getWindowBounds(composeView: View, outRect: Rect) {
+        val windowManager =
+            composeView.context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val bounds = windowManager.currentWindowMetrics.bounds
+        outRect.set(bounds)
     }
 }
 

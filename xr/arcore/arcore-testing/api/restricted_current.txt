@@ -106,11 +106,14 @@ package androidx.xr.arcore.testing {
     method public androidx.xr.arcore.testing.FakePerceptionManager component2();
     method public androidx.xr.arcore.testing.FakePerceptionRuntime copy(optional androidx.xr.arcore.testing.FakeLifecycleManager lifecycleManager, optional androidx.xr.arcore.testing.FakePerceptionManager perceptionManager);
     method @BytecodeOnly public static androidx.xr.arcore.testing.FakePerceptionRuntime! copy$default(androidx.xr.arcore.testing.FakePerceptionRuntime!, androidx.xr.arcore.testing.FakeLifecycleManager!, androidx.xr.arcore.testing.FakePerceptionManager!, int, Object!);
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Config getConfig();
     method @InaccessibleFromKotlin public androidx.xr.arcore.testing.FakeLifecycleManager getLifecycleManager();
     method @InaccessibleFromKotlin public androidx.xr.arcore.testing.FakePerceptionManager getPerceptionManager();
     method @InaccessibleFromKotlin public androidx.xr.runtime.DisplayBlendMode getXrDevicePreferredDisplayBlendMode();
+    method @InaccessibleFromKotlin public void setConfig(androidx.xr.runtime.Config);
     method @InaccessibleFromKotlin public void setXrDevicePreferredDisplayBlendMode(androidx.xr.runtime.DisplayBlendMode);
     method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.time.ComparableTimeMark?>);
+    property public androidx.xr.runtime.Config config;
     property public androidx.xr.arcore.testing.FakeLifecycleManager lifecycleManager;
     property public androidx.xr.arcore.testing.FakePerceptionManager perceptionManager;
     property public androidx.xr.runtime.DisplayBlendMode xrDevicePreferredDisplayBlendMode;
@@ -173,29 +176,29 @@ package androidx.xr.arcore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRuntimeArDevice implements androidx.xr.arcore.runtime.ArDevice {
     ctor public FakeRuntimeArDevice();
-    ctor public FakeRuntimeArDevice(optional androidx.xr.runtime.math.Pose devicePose);
-    ctor @BytecodeOnly public FakeRuntimeArDevice(androidx.xr.runtime.math.Pose!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public FakeRuntimeArDevice(optional androidx.xr.runtime.math.Pose devicePose, optional androidx.xr.runtime.TrackingState trackingState);
+    ctor @BytecodeOnly public FakeRuntimeArDevice(androidx.xr.runtime.math.Pose!, androidx.xr.runtime.TrackingState!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getDevicePose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     method @InaccessibleFromKotlin public void setDevicePose(androidx.xr.runtime.math.Pose);
+    method @InaccessibleFromKotlin public void setTrackingState(androidx.xr.runtime.TrackingState);
     property public androidx.xr.runtime.math.Pose devicePose;
+    property public androidx.xr.runtime.TrackingState trackingState;
     field public static final androidx.xr.arcore.testing.FakeRuntimeArDevice.Companion Companion;
   }
 
   public static final class FakeRuntimeArDevice.Companion {
   }
 
-  public final class FakeRuntimeAugmentedObject implements androidx.xr.arcore.testing.AnchorHolder androidx.xr.arcore.runtime.AugmentedObject {
+  public final class FakeRuntimeAugmentedObject implements androidx.xr.arcore.runtime.AugmentedObject {
     ctor public FakeRuntimeAugmentedObject();
     ctor @BytecodeOnly public FakeRuntimeAugmentedObject(androidx.xr.runtime.math.Pose!, androidx.xr.runtime.math.FloatSize3d!, androidx.xr.runtime.AugmentedObjectCategory!, androidx.xr.runtime.TrackingState!, java.util.Collection!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public FakeRuntimeAugmentedObject(optional androidx.xr.runtime.math.Pose centerPose, optional androidx.xr.runtime.math.FloatSize3d extents, optional androidx.xr.runtime.AugmentedObjectCategory category, optional androidx.xr.runtime.TrackingState trackingState, optional java.util.Collection<androidx.xr.arcore.runtime.Anchor> anchors);
-    method public androidx.xr.arcore.runtime.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
-    method public void detachAnchor(androidx.xr.arcore.runtime.Anchor anchor);
     method @InaccessibleFromKotlin public java.util.Collection<androidx.xr.arcore.runtime.Anchor> getAnchors();
     method @InaccessibleFromKotlin public androidx.xr.runtime.AugmentedObjectCategory getCategory();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getCenterPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize3d getExtents();
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void onAnchorPersisted(androidx.xr.arcore.runtime.Anchor anchor);
     method @InaccessibleFromKotlin public void setCategory(androidx.xr.runtime.AugmentedObjectCategory);
     method @InaccessibleFromKotlin public void setCenterPose(androidx.xr.runtime.math.Pose);
     method @InaccessibleFromKotlin public void setExtents(androidx.xr.runtime.math.FloatSize3d);
@@ -248,8 +251,6 @@ package androidx.xr.arcore.testing {
     ctor public FakeRuntimeFace();
     ctor public FakeRuntimeFace(optional androidx.xr.runtime.TrackingState trackingState, optional boolean isValid, optional float[] blendShapeValues, optional float[] confidenceValues);
     ctor @BytecodeOnly public FakeRuntimeFace(androidx.xr.runtime.TrackingState!, boolean, float[]!, float[]!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    method @InaccessibleFromKotlin public boolean canCreateAnchors();
-    method public androidx.xr.arcore.runtime.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public float[] getBlendShapeValues();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getCenterPose();
     method @InaccessibleFromKotlin public float[] getConfidenceValues();
@@ -260,7 +261,6 @@ package androidx.xr.arcore.testing {
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     method @InaccessibleFromKotlin public boolean isValid();
     method @InaccessibleFromKotlin public void setBlendShapeValues(float[]);
-    method @InaccessibleFromKotlin public void setCanCreateAnchors(boolean);
     method @InaccessibleFromKotlin public void setCenterPose(androidx.xr.runtime.math.Pose);
     method @InaccessibleFromKotlin public void setConfidenceValues(float[]);
     method @InaccessibleFromKotlin public void setForeheadLeftPose(androidx.xr.runtime.math.Pose);
@@ -270,7 +270,6 @@ package androidx.xr.arcore.testing {
     method @InaccessibleFromKotlin public void setTrackingState(androidx.xr.runtime.TrackingState);
     method @InaccessibleFromKotlin public void setValid(boolean);
     property public float[] blendShapeValues;
-    property public boolean canCreateAnchors;
     property public androidx.xr.runtime.math.Pose centerPose;
     property public float[] confidenceValues;
     property public androidx.xr.runtime.math.Pose foreheadLeftPose;
@@ -358,13 +357,13 @@ package androidx.xr.arcore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRuntimeRenderViewpoint implements androidx.xr.arcore.runtime.RenderViewpoint {
     ctor public FakeRuntimeRenderViewpoint();
-    ctor public FakeRuntimeRenderViewpoint(optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.runtime.FieldOfView fieldOfView);
+    ctor public FakeRuntimeRenderViewpoint(optional androidx.xr.runtime.math.Pose pose, optional @Deprecated androidx.xr.runtime.FieldOfView fieldOfView);
     ctor @BytecodeOnly public FakeRuntimeRenderViewpoint(androidx.xr.runtime.math.Pose!, androidx.xr.runtime.FieldOfView!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    method @InaccessibleFromKotlin public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method @InaccessibleFromKotlin @Deprecated public androidx.xr.runtime.FieldOfView getFieldOfView();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
-    method @InaccessibleFromKotlin public void setFieldOfView(androidx.xr.runtime.FieldOfView);
+    method @InaccessibleFromKotlin @Deprecated public void setFieldOfView(androidx.xr.runtime.FieldOfView);
     method @InaccessibleFromKotlin public void setPose(androidx.xr.runtime.math.Pose);
-    property public androidx.xr.runtime.FieldOfView fieldOfView;
+    property @Deprecated public androidx.xr.runtime.FieldOfView fieldOfView;
     property public androidx.xr.runtime.math.Pose pose;
   }
 

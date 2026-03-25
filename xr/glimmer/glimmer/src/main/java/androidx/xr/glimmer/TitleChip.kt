@@ -22,8 +22,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -46,7 +48,7 @@ import androidx.compose.ui.unit.dp
  * @sample androidx.xr.glimmer.samples.TitleChipWithLeadingIconSample
  *
  * To use a title chip with another component, place the title chip
- * [TitleChipDefaults.AssociatedContentSpacing] above the other component. For example, to use a
+ * [TitleChipDefaults.associatedContentSpacing] above the other component. For example, to use a
  * title chip with a card:
  *
  * @sample androidx.xr.glimmer.samples.TitleChipWithCardSample
@@ -70,11 +72,12 @@ public fun TitleChip(
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
-    contentPadding: PaddingValues = TitleChipDefaults.contentPadding(hasIcon = leadingIcon != null),
+    contentPadding: PaddingValues = TitleChipDefaults.contentPadding,
     content: @Composable RowScope.() -> Unit,
 ) {
     val colors = GlimmerTheme.colors
     val iconSize = GlimmerTheme.iconSizes.medium
+    val horizontalInnerContentPadding = GlimmerTheme.componentSpacingValues.small
 
     CompositionLocalProvider(LocalTextStyle provides GlimmerTheme.typography.titleSmall) {
         Row(
@@ -84,7 +87,7 @@ public fun TitleChip(
                     shape = shape,
                     color = color,
                     contentColor = contentColor,
-                    depth = null,
+                    depthEffect = null,
                     border = border,
                 )
                 .defaultMinSize(minHeight = MinimumHeight)
@@ -94,24 +97,22 @@ public fun TitleChip(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (leadingIcon != null) {
-                Box(Modifier.padding(end = IconSpacing).contentColorProvider(colors.primary)) {
+                Box(Modifier.contentColorProvider(colors.primary)) {
                     CompositionLocalProvider(LocalIconSize provides iconSize, content = leadingIcon)
                 }
             }
+            Spacer(Modifier.width(horizontalInnerContentPadding))
             content()
+            Spacer(Modifier.width(horizontalInnerContentPadding))
         }
     }
 }
 
 /** Default values used for [TitleChip]. */
 public object TitleChipDefaults {
-    /**
-     * Default content padding used for a [TitleChip]
-     *
-     * @param hasIcon whether the [TitleChip] has an icon specified
-     */
-    public fun contentPadding(hasIcon: Boolean): PaddingValues =
-        if (hasIcon) ContentPaddingWithIcon else ContentPadding
+    /** Default content padding for a [TitleChip]. */
+    public val contentPadding: PaddingValues
+        @Composable get() = PaddingValues(GlimmerTheme.componentSpacingValues.small)
 
     /**
      * Default spacing between the bottom of a [TitleChip] and content associated with this title
@@ -120,21 +121,12 @@ public object TitleChipDefaults {
      *
      * @sample androidx.xr.glimmer.samples.TitleChipWithCardSample
      */
-    public val AssociatedContentSpacing: Dp = 12.dp
+    public val associatedContentSpacing: Dp
+        @Composable get() = GlimmerTheme.componentSpacingValues.medium
 }
-
-/** Default content padding for a [TitleChip] */
-private val ContentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-
-/** Default content padding for a [TitleChip] with an icon specified */
-private val ContentPaddingWithIcon =
-    PaddingValues(start = 8.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
 
 /** Default minimum height for a [TitleChip] */
 private val MinimumHeight = 56.dp
 
 /** Default maximum width for a [TitleChip] */
 private val MaximumWidth = 352.dp
-
-/** Spacing between icons and the text in a [TitleChip] */
-private val IconSpacing = 8.dp

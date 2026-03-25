@@ -64,31 +64,4 @@
             file="src/main/java/androidx/mediarouter/media/RemotePlaybackClient.java"/>
     </issue>
 
-    <issue
-        id="PrivateResource"
-        message="The resource `@layout/abc_alert_dialog_button_bar_material` is marked as private in androidx.appcompat:appcompat:1.1.0"
-        errorLine1="        &lt;include layout=&quot;@layout/abc_alert_dialog_button_bar_material&quot; />"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/mr_controller_material_dialog_b.xml"/>
-    </issue>
-
-    <issue
-        id="PrivateResource"
-        message="The resource `@color/background_floating_material_dark` is marked as private in androidx.appcompat:appcompat:1.1.0"
-        errorLine1="    &lt;solid android:color=&quot;@color/background_floating_material_dark&quot; />"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/drawable/mr_dialog_material_background_dark.xml"/>
-    </issue>
-
-    <issue
-        id="PrivateResource"
-        message="The resource `@color/background_floating_material_light` is marked as private in androidx.appcompat:appcompat:1.1.0"
-        errorLine1="    &lt;solid android:color=&quot;@color/background_floating_material_light&quot; />"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/drawable/mr_dialog_material_background_light.xml"/>
-    </issue>
-
 </issues>

@@ -20,6 +20,7 @@ import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.ActivitySpace
@@ -39,16 +40,23 @@ import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.PlaneSemantic
 import androidx.xr.scenecore.runtime.PlaneType
+import androidx.xr.scenecore.runtime.PointSourceParams
 import androidx.xr.scenecore.runtime.PointerCaptureComponent
+import androidx.xr.scenecore.runtime.PositionalAudioComponent
 import androidx.xr.scenecore.runtime.ResizableComponent
 import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SoundEffectPool
+import androidx.xr.scenecore.runtime.SoundEffectPoolComponent
+import androidx.xr.scenecore.runtime.SoundFieldAttributes
+import androidx.xr.scenecore.runtime.SoundFieldAudioComponent
 import androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper
 import androidx.xr.scenecore.runtime.SpatialCapabilities
 import androidx.xr.scenecore.runtime.SpatialEnvironment
 import androidx.xr.scenecore.runtime.SpatialModeChangeListener
 import androidx.xr.scenecore.runtime.SpatialPointerComponent
 import androidx.xr.scenecore.runtime.SpatialVisibility
+import androidx.xr.scenecore.runtime.SubspaceNodeEntity
 import java.util.concurrent.Executor
 import java.util.concurrent.ScheduledExecutorService
 import java.util.function.Consumer
@@ -135,11 +143,23 @@ internal constructor(
         TODO("Not yet implemented")
     }
 
-    override fun createGroupEntity(pose: Pose, name: String, parent: Entity?): Entity {
+    override fun createEntity(pose: Pose, name: String?, parent: Entity?): Entity {
         TODO("Not yet implemented")
     }
 
+    @Deprecated(message = "Use createEntity instead.")
+    override fun createGroupEntity(pose: Pose, name: String, parent: Entity?): Entity {
+        return createEntity(pose, name, parent)
+    }
+
     override fun createLoggingEntity(pose: Pose): LoggingEntity {
+        TODO("Not yet implemented")
+    }
+
+    override fun createSubspaceNodeEntity(
+        nodeHolder: NodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity {
         TODO("Not yet implemented")
     }
 
@@ -249,6 +269,30 @@ internal constructor(
     }
 
     override fun removeOnBoundaryConsentChangedListener(listener: Consumer<Boolean>) {
+        TODO("Not yet implemented")
+    }
+
+    override fun createPositionalAudioComponent(
+        context: Context,
+        params: PointSourceParams,
+    ): PositionalAudioComponent {
+        TODO("Not yet implemented")
+    }
+
+    override fun createSoundFieldAudioComponent(
+        context: Context,
+        rtSoundFieldAttributes: SoundFieldAttributes,
+    ): SoundFieldAudioComponent {
+        TODO("Not yet implemented")
+    }
+
+    override fun createSoundEffectPool(maxStreams: Int): SoundEffectPool {
+        TODO("Not yet implemented")
+    }
+
+    override fun createSoundEffectPoolComponent(
+        soundEffectPool: SoundEffectPool
+    ): SoundEffectPoolComponent {
         TODO("Not yet implemented")
     }
 

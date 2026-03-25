@@ -29,16 +29,29 @@ import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.manifest.HAND_TRACKING
+import androidx.xr.runtime.openxr.OpenXrInstanceManager
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 
-/** Manages the lifecycle of an OpenXR session. */
+/**
+ * Manages the lifecycle of an OpenXR session.
+ *
+ * @property activity the [Activity] instance
+ * @property perceptionManager the [OpenXrPerceptionManager] instance
+ * @property timeSource the [OpenXrTimeSource] instance
+ * @property nativePointer a pointer to the native `OpenXrManager`
+ * @property sessionPointer a pointer to the native
+ *   [XrSession](https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XrSession)
+ * @property instancePointer a pointer to the native
+ *   [XrInstance](https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XrInstance)
+ * @property config the current [Config] of the session
+ */
 @Suppress("NotCloseable")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrManager
@@ -53,41 +66,31 @@ internal constructor(
         private val contextList = mutableListOf<Context>()
     }
 
-    /**
-     * A pointer to the native OpenXrManager. Only valid after [create] and before [stop] have been
-     * called.
-     */
     internal var nativePointer: Long = 0L
         private set
 
-    /**
-     * A pointer to the native XrSession. Only valid after [create] and before [stop] have been
-     * called.
-     */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override var sessionPointer: Long = 0L
         private set
 
-    /**
-     * A pointer to the native XrInstance. Only valid after [create] and before [stop] have been
-     * called.
-     */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override var instancePointer: Long = 0L
+    public var instancePointer: Long = 0L
+        private set
+
+    internal var instanceProcAddr: Long = 0L
         private set
 
     override fun create() {
         nativePointer = nativeGetPointer()
+        instancePointer = OpenXrInstanceManager.getXrInstanceHandle(context)
+        instanceProcAddr = OpenXrInstanceManager.getXrInstanceProcAddr()
         // Only initialize the OpenXrManager and bring up resources.
-        check(nativeInit(context, startPollingThread = false))
+        check(nativeInit(context, startPollingThread = false, instancePointer, instanceProcAddr))
         contextList.add(context)
         setAuthentication(context)
         sessionPointer = nativeGetXrSessionHandle()
-        instancePointer = nativeGetXrInstanceHandle()
     }
 
-    /** The current state of the runtime configuration for the session. */
-    // TODO(b/392660855): Disable all features by default once this API is fully implemented.
     override var config: Config =
         Config(
             PlaneTrackingMode.DISABLED,
@@ -99,6 +102,12 @@ internal constructor(
         private set
 
     override fun configure(config: Config) {
+        if (config.deviceTracking == DeviceTrackingMode.INERTIAL_LAST_KNOWN) {
+            throw UnsupportedOperationException(
+                "OpenXR does not support native 3DoF tracking (INERTIAL_LAST_KNOWN)."
+            )
+        }
+
         if (config.depthEstimation == DepthEstimationMode.SMOOTH_AND_RAW) {
             throw UnsupportedOperationException(
                 "Failed to configure session, runtime does not support raw and smooth depth simultaneously."
@@ -173,7 +182,7 @@ internal constructor(
         }
 
         if (config.deviceTracking != this.config.deviceTracking) {
-            if (config.deviceTracking == DeviceTrackingMode.LAST_KNOWN) {
+            if (config.deviceTracking == DeviceTrackingMode.SPATIAL_LAST_KNOWN) {
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.arDevice)
             } else {
                 perceptionManager.xrResources.removeUpdatable(
@@ -227,7 +236,7 @@ internal constructor(
         // lifecycle. Ideally make this two different functions.
         // The initialization will be a no-op but it will start the polling loop for the resumed
         // lifecycle.
-        check(nativeInit(context, startPollingThread = true))
+        check(nativeInit(context, startPollingThread = true, instancePointer, instanceProcAddr))
     }
 
     override suspend fun update(): ComparableTimeMark {
@@ -301,10 +310,10 @@ internal constructor(
         }
 
         if (apiKey == null) {
-            Log.verbose("No API Key provided, using keyless authentication.")
+            XrLog.verbose("No API Key provided, using keyless authentication.")
             nativeSetKeylessAuth()
         } else {
-            Log.verbose("Using provided API Key.")
+            XrLog.verbose("Using provided API Key.")
             nativeSetApiKeyAuth(apiKey)
         }
     }
@@ -315,7 +324,12 @@ internal constructor(
 
     private external fun nativeGetXrInstanceHandle(): Long
 
-    private external fun nativeInit(context: Context, startPollingThread: Boolean): Boolean
+    private external fun nativeInit(
+        context: Context,
+        startPollingThread: Boolean,
+        instancePointer: Long,
+        instanceProcAddr: Long,
+    ): Boolean
 
     private external fun nativeDeInit(): Boolean
 

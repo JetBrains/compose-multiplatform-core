@@ -24,6 +24,11 @@ package androidx.xr.runtime
  * @property angleUp The angle in radians of the top edge of the field of view.
  * @property angleDown The angle in radians of the bottom edge of the field of view.
  */
+@Deprecated(
+    message = "Use androidx.xr.runtime.math.FieldOfView instead",
+    replaceWith =
+        ReplaceWith(expression = "FieldOfView", imports = ["androidx.xr.runtime.math.FieldOfView"]),
+)
 public class FieldOfView
 constructor(
     public val angleLeft: Float,
@@ -31,6 +36,7 @@ constructor(
     public val angleUp: Float,
     public val angleDown: Float,
 ) {
+    @Suppress("DEPRECATION")
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is FieldOfView) return false
@@ -55,6 +61,7 @@ constructor(
         "Fov{\n\tangleLeft=$angleLeft\n\tangleRight=$angleRight\n\tangleUp=$angleUp\n\tangleDown=$angleDown\n}"
 
     @JvmOverloads
+    @Suppress("DEPRECATION")
     public fun copy(
         angleLeft: Float = this.angleLeft,
         angleRight: Float = this.angleRight,

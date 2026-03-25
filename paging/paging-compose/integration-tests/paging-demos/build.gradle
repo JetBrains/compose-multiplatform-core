@@ -37,12 +37,19 @@ dependencies {
     implementation(project(":compose:integration-tests:demos:common"))
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:material:material"))
+    implementation(project(":lifecycle:lifecycle-viewmodel-compose"))
     implementation(project(":paging:paging-compose"))
     implementation(project(":paging:paging-compose:paging-compose-samples"))
 
+    // Room 2.0
     ksp("androidx.room:room-compiler:2.7.2")
     implementation("androidx.room:room-ktx:2.7.2")
     implementation("androidx.room:room-paging:2.7.2")
+
+    // Room 3.0
+    ksp(project(":room3:room3-compiler"))
+    implementation(project(":room3:room3-runtime"))
+    implementation(project(":sqlite:sqlite-bundled"))
 }
 
 androidx {

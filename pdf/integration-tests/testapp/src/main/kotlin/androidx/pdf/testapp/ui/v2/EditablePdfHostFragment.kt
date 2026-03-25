@@ -22,6 +22,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
+import android.os.ext.SdkExtensions
 import android.view.ActionMode
 import android.view.LayoutInflater
 import android.view.View
@@ -138,8 +139,9 @@ class EditablePdfHostFragment : EditablePdfViewerFragment() {
                 }
             }
         }
-
-        pdfView.isImageSelectionEnabled = true
+        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 19) {
+            pdfView.isImageSelectionEnabled = true
+        }
         pdfView.isFormFillingEnabled = true
         setupPdfViewListeners()
     }

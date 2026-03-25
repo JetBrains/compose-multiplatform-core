@@ -57,14 +57,25 @@ public class Matrix4(dataToCopy: FloatArray) {
     /** Returns the rotation component of this matrix. */
     public val rotation: Quaternion by lazy(LazyThreadSafetyMode.NONE) { rotation() }
 
+    private val cachedPose: Pose by lazy(LazyThreadSafetyMode.NONE) { Pose(translation, rotation) }
+
     /** Returns the pose (i.e. rotation and translation) of this matrix. */
-    public val pose: Pose by lazy(LazyThreadSafetyMode.NONE) { Pose(translation, rotation) }
+    @Deprecated(
+        message = "Use toPose() instead.",
+        replaceWith = ReplaceWith("toPose()"),
+        level = DeprecationLevel.WARNING,
+    )
+    public val pose: Pose
+        get() = toPose()
 
     /**
      * Returns true if this matrix is a valid transformation matrix that can be decomposed into
      * translation, rotation and scale using determinant properties.
      */
     public val isTrs: Boolean by lazy(LazyThreadSafetyMode.NONE) { determinant() != 0.0f }
+
+    /** Converts this matrix to a [Pose] object. */
+    public fun toPose(): Pose = cachedPose
 
     /** Creates a new matrix with a deep copy of the data from the [other] [Matrix4]. */
     public constructor(other: Matrix4) : this(other.data.copyOf())

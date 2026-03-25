@@ -23,6 +23,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.LayoutDirection
 
 @Composable
 @RemoteComposable
@@ -31,6 +32,7 @@ public fun RemoteColumnV2(
     modifier: RemoteModifier = RemoteModifier,
     verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
     horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     content: @Composable RemoteColumnScopeV2.() -> Unit,
 ) {
     val scope = remember { RemoteColumnScopeV2() }
@@ -38,8 +40,15 @@ public fun RemoteColumnV2(
         factory = ::RemoteColumnNodeV2,
         update = {
             set(modifier) { nodeModifier -> this.modifier = nodeModifier }
-            set(verticalArrangement) { vArr -> this.verticalArrangement = vArr }
-            set(horizontalAlignment) { hAlign -> this.horizontalAlignment = hAlign }
+            set(verticalArrangement) { nodeVerticalArrangement ->
+                this.verticalArrangement = nodeVerticalArrangement
+            }
+            set(horizontalAlignment) { nodeHorizontalAlignment ->
+                this.horizontalAlignment = nodeHorizontalAlignment
+            }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
+            }
         },
         content = { scope.content() },
     )

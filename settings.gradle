@@ -38,7 +38,7 @@ buildscript {
         if (agpOverride != null) {
             classpath("com.android.settings:com.android.settings.gradle.plugin:$agpOverride")
         } else {
-            classpath("com.android.settings:com.android.settings.gradle.plugin:9.1.0-alpha06")
+            classpath("com.android.settings:com.android.settings.gradle.plugin:9.2.0-alpha03")
         }
         // set guava version to be compatible with Depdendency analysis gradle plugin
         classpath("com.google.guava:guava:33.3.1-jre")
@@ -55,7 +55,7 @@ def supportRootFolder = buildscript.sourceFile.getParentFile()
 skikoSetup.defineSkikoInVersionCatalog(settings)
 
 // Abort immediately if we're running in Studio, but not a managed instance of Studio.
-if (startParameter.projectProperties.containsKey('android.injected.invoked.from.ide')) {
+if (providers.gradleProperty("android.injected.invoked.from.ide").isPresent()) {
     def expectedAgpVersion = System.getenv().get("EXPECTED_AGP_VERSION")
     if (expectedAgpVersion == null) {
         throw new Exception("Android Studio must be run from studiow or gradlew studio.")
@@ -164,7 +164,7 @@ switch (cacheSetting) {
         if (uplinkLinux.exists() || uplinkMac.exists()) {
             logger.warn("\u001B[31m\nIt looks like you are a Googler running without remote build "
                     + "cache. Enable it for faster builds, see " +
-                    "http://go/androidx-dev#remote-build-cache\u001B[0m\n")
+                    "http://go/androidx-onboarding#remote-build-cache\u001B[0m\n")
         }
 }
 
@@ -417,6 +417,7 @@ includeProject(":annotation:annotation-experimental-lint")
 includeProject(":annotation:annotation-experimental-lint-integration-tests", "annotation/annotation-experimental-lint/integration-tests")
 includeProject(":annotation:annotation-keep", [BuildType.MAIN])
 includeProject(":annotation:annotation-keep-gradle-plugin", [BuildType.MAIN])
+includeProject(":annotation:annotation-keep:annotation-keep-samples", "annotation/annotation-keep/samples", [BuildType.MAIN])
 includeProject(":annotation:annotation-sampled")
 includeProject(":appcompat:appcompat", [BuildType.MAIN])
 includeProject(":appcompat:appcompat-benchmark", [BuildType.MAIN])
@@ -485,7 +486,7 @@ includeProject(":biometric:integration-tests:testapp-compose", [BuildType.MAIN])
 includeProject(":browser:browser", [BuildType.MAIN])
 includeProject(":buildSrc-tests", [BuildType.MAIN, BuildType.TOOLS])
 // these projects intentionally fail to compile unless androidx.useMaxDepVersions is enabled
-if (startParameter.projectProperties.containsKey("androidx.useMaxDepVersions")) {
+if (providers.gradleProperty("androidx.useMaxDepVersions").isPresent()) {
     includeProject(":buildSrc-tests:max-dep-versions:buildSrc-tests-max-dep-versions-dep", [BuildType.MAIN])
     includeProject(":buildSrc-tests:max-dep-versions:buildSrc-tests-max-dep-versions-main", [BuildType.MAIN])
 }
@@ -639,6 +640,7 @@ includeProject(":compose:remote:remote-player-view", [BuildType.MAIN])
 includeProject(":compose:remote:remote-player-compose", [BuildType.MAIN])
 includeProject(":compose:remote:remote-tooling-preview", [BuildType.MAIN])
 includeProject(":compose:remote:remote-player-compose-testutils", [BuildType.MAIN])
+includeProject(":compose:ui:ui-tooling-preview:ui-tooling-preview-samples", "compose/ui/ui-tooling-preview/samples", [BuildType.COMPOSE])
 includeProject(":core:core-pip", [BuildType.MAIN])
 includeProject(":wear:compose:remote:integration-tests:demos", [BuildType.MAIN])
 includeProject(":wear:compose:remote:remote-material3", [BuildType.MAIN])
@@ -689,6 +691,7 @@ includeProject(":compose:ui:ui-test-manifest-lint", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-test-manifest:integration-tests:testapp", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-text", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-text-google-fonts", [BuildType.COMPOSE])
+includeProject(":compose:ui:ui-text-google-fonts:ui-text-google-fonts-samples", "compose/ui/ui-text-google-fonts/samples", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-text-lint", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-text:ui-text-benchmark", "compose/ui/ui-text/benchmark", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-text:ui-text-samples", "compose/ui/ui-text/samples", [BuildType.COMPOSE])
@@ -758,8 +761,6 @@ includeProject(":core:uwb:uwb-rxjava3", [BuildType.MAIN])
 includeProject(":credentials:credentials", [BuildType.MAIN])
 includeProject(":credentials:credentials-samples", "credentials/credentials/samples", [BuildType.MAIN])
 includeProject(":credentials:credentials-play-services-auth", [BuildType.MAIN])
-includeProject(":credentials:credentials-e2ee", [BuildType.MAIN])
-includeProject(":credentials:credentials-play-services-e2ee", [BuildType.MAIN])
 includeProject(":credentials:providerevents:providerevents", [BuildType.MAIN])
 includeProject(":credentials:providerevents:providerevents-play-services", [BuildType.MAIN])
 includeProject(":credentials:registry:registry-digitalcredentials-mdoc", [BuildType.MAIN])
@@ -786,6 +787,7 @@ includeProject(":datastore:datastore-proto", [BuildType.MAIN, BuildType.INFRAROG
 includeProject(":datastore:datastore-rxjava2", [BuildType.MAIN, BuildType.INFRAROGUE, BuildType.KMP])
 includeProject(":datastore:datastore-rxjava3", [BuildType.MAIN, BuildType.INFRAROGUE, BuildType.KMP])
 includeProject(":datastore:datastore-sampleapp", [BuildType.MAIN, BuildType.INFRAROGUE, BuildType.KMP])
+includeProject(":datastore:datastore-tink", [BuildType.MAIN, BuildType.INFRAROGUE, BuildType.KMP])
 includeProject(":datastore:integration-tests:baselineprofile", [BuildType.MAIN])
 includeProject(":datastore:integration-tests:macrobenchmark", [BuildType.MAIN])
 includeProject(":datastore:integration-tests:macrobenchmark-target", [BuildType.MAIN])
@@ -1029,6 +1031,7 @@ includeProject(":room3:integration-tests:room-incremental-annotation-processing"
 includeProject(":room3:integration-tests:room-testapp-autovalue", "room3/integration-tests/autovaluetestapp", [BuildType.MAIN])
 includeProject(":room3:integration-tests:room-testapp-kotlin", "room3/integration-tests/kotlintestapp", [BuildType.MAIN, BuildType.KMP])
 includeProject(":room3:integration-tests:room-testapp-multiplatform", "room3/integration-tests/multiplatformtestapp", [BuildType.MAIN, BuildType.KMP, BuildType.INFRAROGUE])
+includeProject(":room3:integration-tests:room-testapp-multiplatform-library", "room3/integration-tests/multiplatformtestapp/library", [BuildType.MAIN, BuildType.KMP, BuildType.INFRAROGUE])
 includeProject(":room3:room3-benchmark", "room3/benchmark", [BuildType.MAIN])
 includeProject(":room3:room3-common", [BuildType.MAIN, BuildType.COMPOSE, BuildType.KMP, BuildType.INFRAROGUE])
 includeProject(":room3:room3-compiler", [BuildType.MAIN, BuildType.COMPOSE, BuildType.KMP])
@@ -1093,6 +1096,7 @@ includeProject(":text:text-vertical", [BuildType.MAIN])
 includeProject(":text:text-vertical-testapp", "text/text-vertical/testapp", [BuildType.MAIN])
 includeProject(":tracing:tracing")
 includeProject(":tracing:tracing-benchmark", "tracing/benchmark", [BuildType.MAIN, BuildType.COMPOSE])
+includeProject(":tracing:tracing-system-capture")
 includeProject(":tracing:tracing-ktx")
 includeProject(":tracing:tracing-wire")
 includeProject(":tracing:tracing-perfetto")
@@ -1329,8 +1333,8 @@ includeProject(":noto-emoji-compat-font", new File(externalRoot, "noto-fonts/emo
 includeProject(":noto-emoji-compat-flatbuffers", new File(externalRoot, "noto-fonts/emoji-compat-flatbuffers"), [BuildType.MAIN, BuildType.COMPOSE])
 
 includeProject(":compose-hero-benchmarks", new File(externalRoot, "compose-hero-benchmarks"), [BuildType.COMPOSE])
-includeProject(":compose-hero-benchmarks:poxedex-compose", new File(externalRoot, "compose-hero-benchmarks/poxedex-compose"), [BuildType.COMPOSE])
-includeProject(":compose-hero-benchmarks:poxedex-compose:app", new File(externalRoot, "compose-hero-benchmarks/poxedex-compose/app"), [BuildType.COMPOSE])
+includeProject(":compose-hero-benchmarks:pokedex-compose", new File(externalRoot, "compose-hero-benchmarks/pokedex-compose"), [BuildType.COMPOSE])
+includeProject(":compose-hero-benchmarks:pokedex-compose:app", new File(externalRoot, "compose-hero-benchmarks/pokedex-compose/app"), [BuildType.COMPOSE])
 includeProject(":compose-hero-benchmarks:pokedex-views", new File(externalRoot, "compose-hero-benchmarks/pokedex-views"), [BuildType.COMPOSE])
 includeProject(":compose-hero-benchmarks:pokedex-views:app", new File(externalRoot, "compose-hero-benchmarks/pokedex-views/app"), [BuildType.COMPOSE])
 

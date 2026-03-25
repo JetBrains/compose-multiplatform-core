@@ -39,14 +39,14 @@ import java.util.function.Consumer
 // TODO: b/440429756 - Define dispose policy for SceneCore singletons like main panel and system
 // spaces.
 public class ActivitySpace
-private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManager) :
-    BaseEntity<RtActivitySpace>(rtActivitySpace, entityManager) {
+private constructor(rtActivitySpace: RtActivitySpace, entityRegistry: EntityRegistry) :
+    BaseEntity<RtActivitySpace>(rtActivitySpace, entityRegistry) {
 
     internal companion object {
         internal fun create(
             sceneRuntime: SceneRuntime,
-            entityManager: EntityManager,
-        ): ActivitySpace = ActivitySpace(sceneRuntime.activitySpace, entityManager)
+            entityRegistry: EntityRegistry,
+        ): ActivitySpace = ActivitySpace(sceneRuntime.activitySpace, entityRegistry)
     }
 
     private val boundsListeners:

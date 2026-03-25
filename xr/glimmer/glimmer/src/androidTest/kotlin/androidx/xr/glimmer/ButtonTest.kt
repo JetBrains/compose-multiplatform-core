@@ -57,6 +57,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.xr.glimmer.testutils.captureToImage
 import com.google.common.truth.Truth.assertThat
+import kotlin.properties.Delegates
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
@@ -143,12 +144,13 @@ class ButtonTest {
     fun shapeAndColorFromThemeIsUsed() {
         lateinit var expectedShape: Shape
         val surfaceColor = Color.Blue
-        rule.setGlimmerThemeContent {
-            GlimmerTheme(Colors(surface = surfaceColor)) {
-                expectedShape = GlimmerTheme.shapes.large
-                Button(onClick = {}, modifier = Modifier.testTag("button"), border = null) {
-                    Box(Modifier.size(100.dp, 100.dp))
-                }
+        val backgroundColor = Color.Red
+        rule.setGlimmerThemeContent(
+            colors = Colors(background = backgroundColor, surface = surfaceColor)
+        ) {
+            expectedShape = GlimmerTheme.shapes.large
+            Button(onClick = {}, modifier = Modifier.testTag("button"), border = null) {
+                Box(Modifier.size(100.dp, 100.dp))
             }
         }
 
@@ -159,7 +161,7 @@ class ButtonTest {
                 density = rule.density,
                 shape = expectedShape,
                 shapeColor = surfaceColor,
-                backgroundColor = Color.Black,
+                backgroundColor = backgroundColor,
                 antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
@@ -223,7 +225,7 @@ class ButtonTest {
         var actualTrailingIconSize: Dp? = null
         var expectedIconSize: Dp? = null
         rule.setGlimmerThemeContent {
-            expectedIconSize = GlimmerTheme.iconSizes.medium
+            expectedIconSize = GlimmerTheme.iconSizes.small
             Button(
                 onClick = {},
                 leadingIcon = { actualLeadingIconSize = LocalIconSize.current },
@@ -243,7 +245,7 @@ class ButtonTest {
         var actualTrailingIconSize: Dp? = null
         var expectedIconSize: Dp? = null
         rule.setGlimmerThemeContent {
-            expectedIconSize = GlimmerTheme.iconSizes.large
+            expectedIconSize = GlimmerTheme.iconSizes.small
             Button(
                 onClick = {},
                 buttonSize = ButtonSize.Large,
@@ -260,7 +262,9 @@ class ButtonTest {
 
     @Test
     fun positioning() {
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Button(onClick = { /* Do something! */ }, modifier = Modifier.testTag("button")) {
                 Text("Send", modifier = Modifier.testTag("text"))
             }
@@ -272,21 +276,23 @@ class ButtonTest {
             rule.onNodeWithTag("text", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (textBounds.left - buttonBounds.left).assertIsEqualTo(
-            16.dp,
+            largeSpacing,
             "padding between the start of the button and the start of the text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
-            16.dp,
+            largeSpacing,
             "padding between the end of the text and the end of the button.",
         )
 
-        buttonBounds.height.assertIsEqualTo(56.dp, "height of button.")
+        buttonBounds.height.assertIsEqualTo(48.dp, "height of button.")
     }
 
     @Test
     fun positioning_buttonSizeLarge() {
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Button(
                 onClick = { /* Do something! */ },
                 modifier = Modifier.testTag("button"),
@@ -302,12 +308,12 @@ class ButtonTest {
             rule.onNodeWithTag("text", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (textBounds.left - buttonBounds.left).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "padding between the start of the button and the start of the text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "padding between the end of the text and the end of the button.",
         )
 
@@ -316,7 +322,11 @@ class ButtonTest {
 
     @Test
     fun positioning_withIcons() {
+        var extraSmallSpacing: Dp by Delegates.notNull()
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            extraSmallSpacing = GlimmerTheme.componentSpacingValues.extraSmall
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Button(
                 onClick = { /* Do something! */ },
                 modifier = Modifier.testTag("button"),
@@ -349,31 +359,35 @@ class ButtonTest {
             rule.onNodeWithTag("button", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (leadingIconBounds.left - buttonBounds.left).assertIsEqualTo(
-            16.dp,
+            largeSpacing,
             "Padding between start of button and start of leading icon.",
         )
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            8.dp,
+            extraSmallSpacing,
             "Padding between end of leading icon and start of text.",
         )
 
         (trailingIconBounds.left - textBounds.right).assertIsEqualTo(
-            8.dp,
+            extraSmallSpacing,
             "Padding between end of text and start of trailing icon.",
         )
 
         (buttonBounds.right - trailingIconBounds.right).assertIsEqualTo(
-            16.dp,
+            largeSpacing,
             "padding between end of leading icon and end of button.",
         )
 
-        buttonBounds.height.assertIsEqualTo(56.dp, "height of button.")
+        buttonBounds.height.assertIsEqualTo(48.dp, "height of button.")
     }
 
     @Test
     fun positioning_withIcons_buttonSizeLarge() {
+        var extraSmallSpacing: Dp by Delegates.notNull()
+        var largeSpacing: Dp by Delegates.notNull()
         rule.setGlimmerThemeContent {
+            extraSmallSpacing = GlimmerTheme.componentSpacingValues.extraSmall
+            largeSpacing = GlimmerTheme.componentSpacingValues.large
             Button(
                 onClick = { /* Do something! */ },
                 modifier = Modifier.testTag("button"),
@@ -407,22 +421,22 @@ class ButtonTest {
             rule.onNodeWithTag("button", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         (leadingIconBounds.left - buttonBounds.left).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "Padding between start of button and start of leading icon.",
         )
 
         (textBounds.left - leadingIconBounds.right).assertIsEqualTo(
-            8.dp,
+            extraSmallSpacing,
             "Padding between end of leading icon and start of text.",
         )
 
         (trailingIconBounds.left - textBounds.right).assertIsEqualTo(
-            8.dp,
+            extraSmallSpacing,
             "Padding between end of text and start of trailing icon.",
         )
 
         (buttonBounds.right - trailingIconBounds.right).assertIsEqualTo(
-            20.dp,
+            largeSpacing,
             "padding between end of leading icon and end of button.",
         )
 

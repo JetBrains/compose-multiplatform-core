@@ -45,7 +45,7 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
     ) {
         this.configuration = config
         this.openDelegate = openDelegate
-        this.callbacks = config.callbacks ?: emptyList()
+        this.callbacks = config.callbacks
         this.connectionPool =
             if (config.sqliteDriver.hasConnectionPool) {
                 // If the driver already has a connection pool then use a pass-through pool to
@@ -96,7 +96,7 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
         if (fileName != ":memory:") {
             // Get database path from context, if the database name is not an absolute path, then
             // the app's database directory will be used, otherwise the given path is used.
-            configuration.context.getDatabasePath(fileName).absolutePath
+            configuration.context?.getDatabasePath(fileName)?.absolutePath ?: fileName
         } else {
             fileName
         }

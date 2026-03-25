@@ -52,18 +52,10 @@ class WebStorageTest {
     @BeforeTest
     fun setUp() {
         testSessionStorage =
-            WebStorage(
-                name = testSessionStorageName,
-                serializer = testingSerializer,
-                storageType = WebStorageType.SESSION,
-            )
+            WebSessionStorage(name = testSessionStorageName, serializer = testingSerializer)
 
         testLocalStorage =
-            WebStorage(
-                name = testLocalStorageName,
-                serializer = testingSerializer,
-                storageType = WebStorageType.LOCAL,
-            )
+            WebLocalStorage(name = testLocalStorageName, serializer = testingSerializer)
     }
 
     @AfterTest
@@ -196,11 +188,7 @@ class WebStorageTest {
             }
 
         val storage: Storage<ByteArray> =
-            WebStorage(
-                serializer = rawByteSerializer,
-                name = storeName,
-                storageType = WebStorageType.SESSION,
-            )
+            WebSessionStorage(serializer = rawByteSerializer, name = storeName)
 
         // Binary data with invalid UTF-8 sequences
         val originalData =

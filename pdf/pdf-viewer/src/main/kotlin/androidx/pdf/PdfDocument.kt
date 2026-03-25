@@ -48,7 +48,10 @@ public interface PdfDocument : Closeable {
     public val pageCount: Int
 
     /** Indicates whether the document is linearized (optimized for fast web viewing). */
-    @Deprecated("Deprecated in Java, Use getLinearizationStatus() instead")
+    @Deprecated(
+        "Deprecated, Use linearizationStatus instead",
+        replaceWith = ReplaceWith("linearizationStatus"),
+    )
     public val isLinearized: Boolean
 
     /** Indicates the linearization status of the document. */
@@ -255,7 +258,7 @@ public interface PdfDocument : Closeable {
      * @property width The width of the page in points.
      * @property formWidgetInfos (Optional) A list of [FormWidgetInfo] objects representing the form
      *   widgets present on the given [pageNum]. This property is only populated if
-     *   [PdfDocument.INCLUDE_PAGE_FORM_WIDGET_INFO] is set in the 'pageInfoFlags' passed to
+     *   [PdfDocument.PAGE_INFO_INCLUDE_FORM_WIDGET] is set in the 'pageInfoFlags' passed to
      *   [PdfDocument.getPageInfo]. It will be empty if FormWidgetInfo is not requested or if there
      *   are no form widgets present on the page.
      */

@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.GridScope
 import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.columns
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,8 +38,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -79,6 +82,12 @@ fun GridDemo() {
         MinContentSafetyDemo()
         Spacer(Modifier.height(32.dp))
         AutoSizingDemo()
+        Spacer(Modifier.height(32.dp))
+        ResponsiveConstraintsDemo()
+        Spacer(Modifier.height(32.dp))
+        AspectRatioDemo()
+        Spacer(Modifier.height(32.dp))
+        LazyListInGridDemo()
     }
 }
 
@@ -405,6 +414,144 @@ private fun AutoSizingDemo() {
     ) {
         GridDemoItem(text = "MinContent crushes me", color = Color.Red, row = 1, column = 1)
         GridDemoItem(text = "Auto wraps me nicely", color = Color.Green, row = 1, column = 2)
+    }
+}
+
+@Composable
+private fun ResponsiveConstraintsDemo() {
+    DemoHeader("Responsive Layout (Constraints)")
+
+    Text(
+        "Resize the slider to change the container width.\n" +
+            "The Grid config reads 'constraints.maxWidth' to determine column count.",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    var containerWidth by remember { mutableStateOf(300.dp) }
+
+    Column(Modifier.fillMaxWidth().border(1.dp, Color.LightGray).padding(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Width: ${containerWidth.value.toInt()}dp",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Slider(
+                value = containerWidth.value,
+                onValueChange = { containerWidth = it.dp },
+                valueRange = 200f..500f,
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+            )
+        }
+
+        // 2. Responsive Container
+        Box(
+            modifier =
+                Modifier.width(containerWidth)
+                    .border(2.dp, Color.Blue.copy(alpha = 0.5f))
+                    .padding(4.dp)
+        ) {
+            Grid(
+                config = {
+                    // Accessing 'constraints' from GridConfigurationScope.
+                    val maxWidthDp = constraints.maxWidth.toDp()
+
+                    val columnCount =
+                        when {
+                            maxWidthDp < 300.dp -> 2 // Compact
+                            maxWidthDp < 400.dp -> 3 // Medium
+                            else -> 4 // Expanded
+                        }
+
+                    // Define columns based on calculation
+                    repeat(columnCount) { column(1.fr) }
+                    gap(4.dp)
+                }
+            ) {
+                // Populate plenty of items to show the flow
+                repeat(8) {
+                    val color =
+                        when {
+                            containerWidth < 300.dp -> Color.Red // Compact Theme
+                            containerWidth < 400.dp -> Color.Yellow // Medium Theme
+                            else -> Color.Green // Expanded Theme
+                        }
+                    GridDemoItem(text = "${it + 1}", color = color, measureSize = false)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AspectRatioDemo() {
+    DemoHeader("Aspect Ratio in Flex Tracks")
+    Text(
+        "Aspect ratio modifiers should be respected within flexible tracks without exploding grid bounds.",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    Grid(
+        config = {
+            column(160.dp)
+            column(1.fr)
+            row(90.dp)
+            row(1.fr)
+            gap(8.dp)
+        },
+        modifier = Modifier.height(300.dp).fillMaxWidth().border(1.dp, Color.Gray).padding(8.dp),
+    ) {
+        val modifier = Modifier.aspectRatio(16f / 9f).fillMaxSize()
+        GridDemoItem("Fixed / Fixed", modifier = modifier, row = 1, column = 1, color = Color.Red)
+        GridDemoItem("Flex / Fixed", modifier = modifier, row = 1, column = 2, color = Color.Blue)
+        GridDemoItem("Fixed / Flex", modifier = modifier, row = 2, column = 1, color = Color.Green)
+        GridDemoItem("Flex / Flex", modifier = modifier, row = 2, column = 2, color = Color.Yellow)
+    }
+}
+
+@Composable
+private fun LazyListInGridDemo() {
+    DemoHeader("Lazy List in Flex Track")
+    Text(
+        "Flex tracks (1.fr) allowing SubcomposeLayouts like LazyColumn to be safely placed inside them.",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    Grid(
+        config = {
+            column(minmax(0.dp, 1.fr))
+            row(GridTrackSize.Auto)
+            row(minmax(0.dp, 1.fr))
+            gap(8.dp)
+        },
+        // We provide a fixed height so the 1.fr row has a finite boundary
+        // within the vertically scrolling parent Column.
+        modifier = Modifier.height(300.dp).demoContainer(borderColor = Color.Green),
+    ) {
+        // Row 1: Fixed/Auto header
+        GridDemoItem(text = "Header (Auto Row)", color = Color.Yellow)
+
+        // Row 2: LazyColumn in a minmax track
+        LazyColumn(
+            modifier =
+                Modifier.fillMaxSize()
+                    .background(Color.LightGray.copy(alpha = 0.3f))
+                    .border(1.dp, Color.Gray)
+        ) {
+            items(50) { index ->
+                Text(
+                    text = "Lazy Item #${index + 1}",
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    fontSize = 12.sp,
+                )
+            }
+        }
     }
 }
 

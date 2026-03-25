@@ -25,13 +25,13 @@ import java.util.Set;
 /** The base communication buffer capable of encoding and decoding various types */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WireBuffer {
-    private static final int BUFFER_SIZE = 1024 * 1024;
     int mMaxSize;
     byte @NonNull [] mBuffer;
     int mIndex = 0;
     int mStartingIndex = 0;
     int mSize = 0;
     boolean[] mValidOperations = new boolean[256];
+    @NonNull SystemInfo mSystemInfo = new SystemInfo();
 
     /**
      * Create a wire buffer
@@ -46,7 +46,7 @@ public class WireBuffer {
 
     /** Create a wire buffer of default size */
     public WireBuffer() {
-        this(BUFFER_SIZE);
+        this(Limits.BUFFER_SIZE);
     }
 
     private void resize(int need) {
@@ -54,6 +54,24 @@ public class WireBuffer {
             mMaxSize = Math.max(mMaxSize * 2, mSize + need);
             mBuffer = Arrays.copyOf(mBuffer, mMaxSize);
         }
+    }
+
+    /**
+     * get the system info
+     *
+     * @return system information that can be used during parsing of the buffer
+     */
+    public @NonNull SystemInfo getSystemInfo() {
+        return mSystemInfo;
+    }
+
+    /**
+     * set the system info
+     *
+     * @param systemInfo  information that can be used during parsing of the buffer
+     */
+    public void setSystemInfo(@NonNull SystemInfo systemInfo) {
+        mSystemInfo = systemInfo;
     }
 
     /**
@@ -382,6 +400,20 @@ public class WireBuffer {
         mBuffer[mIndex++] = (byte) (value & 0xFF);
         mSize += need;
     }
+
+    /**
+     * overwrite an integer at a specific position  a int (4 byte) value
+     *
+     * @param position position to write
+     * @param value value to write
+     */
+    public void overwriteInt(int position, int value) {
+        mBuffer[position++] = (byte) (value >>> 24 & 0xFF);
+        mBuffer[position++] = (byte) (value >>> 16 & 0xFF);
+        mBuffer[position++] = (byte) (value >>> 8 & 0xFF);
+        mBuffer[position] = (byte) (value & 0xFF);
+    }
+
 
     /**
      * Write a long (8 byte) value

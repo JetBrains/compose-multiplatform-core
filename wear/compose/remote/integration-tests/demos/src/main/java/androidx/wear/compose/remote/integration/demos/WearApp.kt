@@ -23,12 +23,17 @@ import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import androidx.wear.compose.remote.integration.demos.components.RemoteAppCardDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteButtonDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteButtonGroupDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteCardDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteCircularProgressIndicatorDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteCompactButtonDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteIconButtonDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteIconDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteTextButtonDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteTextDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteTitleCardDemos
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 
 @Composable
@@ -45,6 +50,9 @@ fun WearApp(
                 MainScreen(navigateToRoute = navController::navigate)
             }
             composable(route = Screen.RemoteButtonDemosScreen.route) { RemoteButtonDemos() }
+            composable(route = Screen.RemoteCompactButtonDemosScreen.route) {
+                RemoteCompactButtonDemos()
+            }
             composable(route = Screen.RemoteIconButtonDemosScreen.route) { RemoteIconButtonDemos() }
             composable(route = Screen.RemoteTextButtonDemosScreen.route) { RemoteTextButtonDemos() }
             composable(route = Screen.RemoteButtonGroupDemosScreen.route) {
@@ -54,6 +62,10 @@ fun WearApp(
             composable(route = Screen.RemoteCircularProgressIndicatorDemosScreen.route) {
                 RemoteCircularProgressIndicatorDemos()
             }
+            composable(route = Screen.RemoteAppCardDemosScreen.route) { RemoteAppCardDemos() }
+            composable(route = Screen.RemoteCardDemosScreen.route) { RemoteCardDemos() }
+            composable(route = Screen.RemoteTitleCardDemosScreen.route) { RemoteTitleCardDemos() }
+            composable(route = Screen.RemoteTextDemosScreen.route) { RemoteTextDemos() }
         }
     }
 }

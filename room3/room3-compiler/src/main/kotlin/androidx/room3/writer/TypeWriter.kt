@@ -101,11 +101,12 @@ abstract class TypeWriter(val context: WriterContext) {
                 addAnnotation(
                     KAnnotationSpec.builder(Suppress::class)
                         .addMember(
-                            "names = [%S, %S, %S, %S]",
+                            "names = [%S, %S, %S, %S, %S]",
                             "UNCHECKED_CAST",
                             "DEPRECATION",
                             "REDUNDANT_PROJECTION",
                             "REMOVAL",
+                            "MemberExtensionConflict", // b/493549452
                         )
                         .build()
                 )

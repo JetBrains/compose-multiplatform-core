@@ -19,7 +19,7 @@ package androidx.compose.remote.creation.compose.v2
 import android.annotation.SuppressLint
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.compose.layout.StateMachineSpec
+import androidx.compose.remote.creation.compose.layout.RemoteStateMachine
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
@@ -29,10 +29,10 @@ import androidx.compose.ui.util.fastForEach
 @Composable
 @RemoteComposable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun StateLayoutV2(
-    stateMachine: StateMachineSpec,
+public fun <T> StateLayoutV2(
+    stateMachine: RemoteStateMachine<T>,
     modifier: RemoteModifier = RemoteModifier,
-    content: @Composable @RemoteComposable (Int) -> Unit,
+    content: @Composable @RemoteComposable (T) -> Unit,
 ) {
     RemoteComposeNode(
         factory = ::RemoteStateLayoutNodeV2,

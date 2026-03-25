@@ -93,7 +93,7 @@ public object TiltGesture {
      * The device's tilt is calculated based on the `devicePose.rotation` from this state.
      *
      * **Precondition**: The [session] must be configured with device tracking set to
-     * [androidx.xr.runtime.DeviceTrackingMode.LAST_KNOWN]. If
+     * [androidx.xr.runtime.DeviceTrackingMode.SPATIAL_LAST_KNOWN]. If
      * [androidx.xr.runtime.DeviceTrackingMode.DISABLED] is used, this function will throw an
      * [IllegalStateException] when attempting to acquire the [ArDevice] instance.
      *
@@ -104,12 +104,12 @@ public object TiltGesture {
      * It is recommended to collect this flow from a coroutine scope with the same coroutine context
      * used to create the XR [Session], as changes to [ArDevice.state] drive the emissions.
      *
-     * @param session The active XR session. It must be configured with device tracking enabled
-     *   [androidx.xr.runtime.DeviceTrackingMode.LAST_KNOWN]
-     * @return A [Flow] that emits the current [State], starting with an initial state of
-     *   [State.tilt] as [Tilt.UP] and [State.progress] as 0f.
+     * @param session the active XR session configured with
+     *   [androidx.xr.runtime.DeviceTrackingMode.SPATIAL_LAST_KNOWN]
+     * @return a [Flow] that emits the current [State], starting with an initial state of
+     *   [State.tilt] as [Tilt.UP] and [State.progress] as 0f
      * @throws IllegalStateException if [session] is configured with
-     *   [androidx.xr.runtime.DeviceTrackingMode.DISABLED].
+     *   [androidx.xr.runtime.DeviceTrackingMode.DISABLED]
      */
     public fun detect(session: Session): Flow<State> {
         return ArDevice.getInstance(session).state.runningFold(State()) { lastValue, state ->
@@ -120,9 +120,8 @@ public object TiltGesture {
     /**
      * Represents the tilt state of the device, transition progress.
      *
-     * @param tilt The current tilt state ([Tilt.UP] or [Tilt.DOWN]).
-     * @param progress A value from 0.0 to 1.0 indicating the progress of the current transition. It
-     *   is 0.0 if no transition is in progress. This is useful for driving animations.
+     * @property tilt the current tilt state ([Tilt.UP] or [Tilt.DOWN])
+     * @property progress a value from 0.0 to 1.0 indicating the progress of the current transition
      */
     @ExperimentalGesturesApi
     public class State(
@@ -169,9 +168,9 @@ public object TiltGesture {
      * This ensures that when the device's tilt angle is between the two thresholds, the state
      * remains stable and only changes when a threshold is definitively crossed.
      *
-     * @param previousTilt The most recent [Tilt] state of the device.
-     * @param rotation The device's current rotation, represented as a [Quaternion].
-     * @return The new [State] including tilt and progress.
+     * @param previousTilt the most recent [Tilt] state of the device
+     * @param rotation the device's current rotation, represented as a [Quaternion]
+     * @return the new [State] including tilt and progress
      */
     private fun getTiltFromPoseRotation(previousTilt: Tilt, rotation: Quaternion): State {
         val angle = getTiltAngleFromQuaternion(rotation)
@@ -191,8 +190,8 @@ public object TiltGesture {
      * It checks if the current tilt [angle] has crossed the [TILT_DOWN_START_THRESHOLD] to initiate
      * a downward transition.
      *
-     * @param angle The current tilt angle in degrees (0-180).
-     * @return A new [State] reflecting the potential transition.
+     * @param angle the current tilt angle in degrees (0-180)
+     * @return a new [State] reflecting the potential transition
      */
     private fun handleStateUp(angle: Float): State {
         val newInternalTiltValue =
@@ -206,8 +205,8 @@ public object TiltGesture {
      * It checks if the current tilt [angle] has crossed the [TILT_UP_START_THRESHOLD] to initiate
      * an upward transition.
      *
-     * @param angle The current tilt angle in degrees (0-180).
-     * @return A new [State] reflecting the potential transition.
+     * @param angle the current tilt angle in degrees (0-180)
+     * @return a new [State] reflecting the potential transition
      */
     private fun handleStateDown(angle: Float): State {
         val newInternalTiltValue =
@@ -222,8 +221,8 @@ public object TiltGesture {
      * canceled (angle > [TILT_DOWN_START_THRESHOLD]), or is still in progress. Calculates the
      * progress value for the transition.
      *
-     * @param angle The current tilt angle in degrees (0-180).
-     * @return A new [State] reflecting the transition's status and progress.
+     * @param angle the current tilt angle in degrees (0-180)
+     * @return a new [State] reflecting the transition's status and progress
      */
     private fun handleStateTransitioningDown(angle: Float): State {
         return if (angle <= TILT_DOWN_COMPLETE_THRESHOLD) {
@@ -247,8 +246,8 @@ public object TiltGesture {
      * canceled (angle < [TILT_UP_START_THRESHOLD]), or is still in progress. Calculates the
      * progress value for the transition.
      *
-     * @param angle The current tilt angle in degrees (0-180).
-     * @return A new [State] reflecting the transition's status and progress.
+     * @param angle the current tilt angle in degrees (0-180)
+     * @return a new [State] reflecting the transition's status and progress
      */
     private fun handleStateTransitioningUp(angle: Float): State {
         return if (angle >= TILT_UP_COMPLETE_THRESHOLD) {
@@ -277,8 +276,8 @@ public object TiltGesture {
      * This function derives the angle by calculating the pitch from the quaternion and mapping it
      * to the desired 0-to-180-degree range.
      *
-     * @param quaternion The rotation of the device pose.
-     * @return The tilt angle in degrees (0-180), where 90 is horizontal.
+     * @param quaternion the rotation of the device pose
+     * @return the tilt angle in degrees (0-180), where 90 is horizontal
      */
     private fun getTiltAngleFromQuaternion(quaternion: Quaternion): Float {
         // The device's forward vector is the local -Z axis. Its projection onto the world Y-axis

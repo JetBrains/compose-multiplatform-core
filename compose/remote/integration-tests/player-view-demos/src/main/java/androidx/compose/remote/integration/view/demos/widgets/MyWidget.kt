@@ -34,6 +34,7 @@ import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.creation.compose.widgets.RemoteComposeWidget
 import androidx.compose.remote.creation.compose.widgets.onClick
@@ -53,13 +54,12 @@ class MyWidget : RemoteComposeWidget() {
     fun Button(text: String, modifier: RemoteModifier = RemoteModifier, onClick: () -> Unit) {
         RemoteBox(
             modifier
-                .padding(16.dp)
+                .padding(16.rdp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(Color.LightGray)
-                .padding(20.dp)
+                .padding(20.rdp)
                 .onClick(onClick),
-            RemoteAlignment.CenterHorizontally,
-            RemoteArrangement.Center,
+            contentAlignment = RemoteAlignment.Center,
         ) {
             RemoteText(text, fontSize = 32.rsp, color = RemoteColor(Color.White))
         }
@@ -71,7 +71,7 @@ class MyWidget : RemoteComposeWidget() {
         val counter = readCounter(context, widgetId)
         RemoteRow(
             RemoteModifier.background(Color.White).fillMaxSize(),
-            horizontalArrangement = RemoteArrangement.CenterHorizontally,
+            horizontalArrangement = RemoteArrangement.Center,
             verticalAlignment = RemoteAlignment.CenterVertically,
         ) {
             Button("-", RemoteModifier.weight(1f)) { writeCounter(context, widgetId, -1) }

@@ -63,6 +63,8 @@ import androidx.xr.compose.R
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.findNearestParentEntity
+import androidx.xr.compose.platform.getActivity
+import androidx.xr.compose.platform.isEmbedded
 import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.spatialComposeView
@@ -70,9 +72,13 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.scene
 
 /**
  * A composable that creates a panel in 3D space to hoist Popup based composables.
+ *
+ * In non-spatialized environments or embedded activities, a standard Compose [Popup] is utilized to
+ * display the content.
  *
  * @param alignment the alignment of the popup relative to its parent.
  * @param offset An offset from the original aligned position of the popup. Offset respects the
@@ -94,8 +100,11 @@ public fun SpatialPopup(
     properties: PopupProperties = PopupProperties(),
     content: @Composable () -> Unit,
 ) {
+    val activity = LocalContext.current.getActivity()
     val movableContent = remember { movableContentOf(content) }
-    if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
+    val isActivityEmbedded = activity?.isEmbedded() ?: false
+
+    if (!isActivityEmbedded && LocalSpatialCapabilities.current.isSpatialUiEnabled) {
         LayoutSpatialPopup(
             alignment = alignment,
             offset = offset,
@@ -286,6 +295,7 @@ private class SpatialPopupRenderer(
                         view = view,
                         pixelDimensions = IntSize2d(IntSize.Zero.width, IntSize.Zero.height),
                         name = "ElevatedPanel:${view.id}",
+                        parent = session.scene.activitySpace,
                     )
                 )
                 .apply { view.setTag(R.id.compose_xr_local_view_entity, this) }

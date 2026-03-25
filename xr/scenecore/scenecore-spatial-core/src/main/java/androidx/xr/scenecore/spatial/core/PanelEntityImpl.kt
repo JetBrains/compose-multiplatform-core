@@ -53,11 +53,11 @@ internal class PanelEntityImpl : BasePanelEntity, PanelEntity {
         node: Node,
         view: View,
         extensions: XrExtensions,
-        entityManager: EntityManager,
+        sceneNodeRegistry: SceneNodeRegistry,
         surfaceDimensionsPx: PixelDimensions,
         name: String,
         executor: ScheduledExecutorService,
-    ) : super(context, node, extensions, entityManager, executor) {
+    ) : super(context, node, extensions, sceneNodeRegistry, executor) {
         val reparentedView = maybeReparentView(view, context)
         surfaceControlViewHost =
             SurfaceControlViewHost(
@@ -74,11 +74,11 @@ internal class PanelEntityImpl : BasePanelEntity, PanelEntity {
         node: Node,
         view: View,
         extensions: XrExtensions,
-        entityManager: EntityManager,
+        sceneNodeRegistry: SceneNodeRegistry,
         surfaceDimensions: Dimensions,
         name: String,
         executor: ScheduledExecutorService,
-    ) : super(context, node, extensions, entityManager, executor) {
+    ) : super(context, node, extensions, sceneNodeRegistry, executor) {
         val surfaceDimensionsPx =
             PixelDimensions(
                 (surfaceDimensions.width * defaultPixelDensity).toInt(),
@@ -112,17 +112,17 @@ internal class PanelEntityImpl : BasePanelEntity, PanelEntity {
         // extensions are initialized in the factory method. (ext.setWindowBounds, etc.)
         super.sizeInPixels = surfaceDimensionsPx
         try {
-            mExtensions.createNodeTransaction().use { transaction ->
+            extensions.createNodeTransaction().use { transaction ->
                 transaction
-                    .setName(mNode, name)
-                    .setSurfacePackage(mNode, surfacePackage)
+                    .setName(node, name)
+                    .setSurfacePackage(node, surfacePackage)
                     .setWindowBounds(
                         surfacePackage,
                         surfaceDimensionsPx.width,
                         surfaceDimensionsPx.height,
                     )
-                    .setVisibility(mNode, true)
-                    .setCornerRadius(mNode, defaultCornerRadiusInMeters)
+                    .setVisibility(node, true)
+                    .setCornerRadius(node, defaultCornerRadiusInMeters)
                     .apply()
             }
         } finally {
@@ -158,7 +158,7 @@ internal class PanelEntityImpl : BasePanelEntity, PanelEntity {
             if (super.sizeInPixels == value) return
             surfaceControlViewHost.relayout(value.width, value.height)
             val surfacePackage = surfaceControlViewHost.surfacePackage!!
-            mExtensions.createNodeTransaction().use { transaction ->
+            extensions.createNodeTransaction().use { transaction ->
                 transaction.setWindowBounds(surfacePackage, value.width, value.height).apply()
             }
             surfacePackage.release()

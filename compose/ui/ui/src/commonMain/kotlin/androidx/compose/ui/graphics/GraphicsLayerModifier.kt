@@ -19,8 +19,6 @@ package androidx.compose.ui.graphics
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
@@ -731,9 +729,6 @@ internal class BlockGraphicsLayerModifier(var layerBlock: GraphicsLayerScope.() 
     override fun toString(): String = "BlockGraphicsLayerModifier(" + "block=$layerBlock)"
 
     override fun SemanticsPropertyReceiver.applySemantics() {
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (!ComposeUiFlags.isGraphicsLayerShapeSemanticsEnabled) return
-
         val coordinator = requireCoordinator(Nodes.Layout)
         val shape: Shape
         val clip: Boolean
@@ -870,9 +865,6 @@ private class SimpleGraphicsLayerModifier(
             ")"
 
     override fun SemanticsPropertyReceiver.applySemantics() {
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (!ComposeUiFlags.isGraphicsLayerShapeSemanticsEnabled) return
-
         if (!this@SimpleGraphicsLayerModifier.clip) {
             // We only set the shape if clip == true, as otherwise the modifier may just be drawing
             // a shape without it actually representing the boundary of the UI element.

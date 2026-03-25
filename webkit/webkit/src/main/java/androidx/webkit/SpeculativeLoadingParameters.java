@@ -97,6 +97,9 @@ public final class SpeculativeLoadingParameters {
          * Use to finish building the PrefetchParams
          *
          * @return built PrefetchParams object.
+         * @throws UnsupportedOperationException if the
+         *                                       {@link WebViewFeature#PROFILE_URL_PREFETCH}
+         *                                       feature is not supported.
          */
         @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
                 enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

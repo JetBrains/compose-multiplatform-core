@@ -85,20 +85,26 @@ public class UpdateInfoManager(
     /**
      * Retrieves the timestamp of the last successful update check.
      *
-     * @return The epoch timestamp in milliseconds, or 0L if no check has occurred.
+     * This metadata is stored separately from the update list. The value represents "Wall Clock
+     * Time" to ensure it remains meaningful across device reboots.
+     *
+     * @return The time of the last check in milliseconds since the epoch
+     *   ([System.currentTimeMillis]), or 0 if no check has ever occurred.
      */
     public fun getLastCheckTimeMillis(): Long {
-        val sharedPreferences = context.getSharedPreferences(metadataPrefs, Context.MODE_PRIVATE)
-        return sharedPreferences.getLong(KEY_LAST_CHECK_TIME, 0L)
+        val prefs = context.getSharedPreferences(metadataPrefs, Context.MODE_PRIVATE)
+        return prefs.getLong(KEY_LAST_CHECK_TIME, 0L)
     }
 
     /**
      * Updates the timestamp of the last successful update check.
      *
-     * This should be called by the [UpdateInfoService] immediately after a successful
-     * synchronization with the backend.
+     * **Usage Note for Hosts:** The [UpdateInfoService] base class automatically calls this method
+     * after a successful network fetch triggered by a client request. Host applications should only
+     * call this method manually if they are performing out-of-band synchronizations (e.g., via a
+     * background `JobService` or `WorkManager`).
      *
-     * @param timestampMillis The current epoch timestamp in milliseconds.
+     * @param timestampMillis The current time in milliseconds ([System.currentTimeMillis]).
      */
     public fun setLastCheckTimeMillis(timestampMillis: Long) {
         val sharedPreferences = context.getSharedPreferences(metadataPrefs, Context.MODE_PRIVATE)

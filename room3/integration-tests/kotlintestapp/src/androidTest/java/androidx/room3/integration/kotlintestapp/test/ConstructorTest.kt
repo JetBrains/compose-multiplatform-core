@@ -26,7 +26,6 @@ import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import org.junit.After
@@ -77,10 +76,7 @@ class ConstructorTest {
 
     @Before
     fun init() {
-        db =
-            Room.inMemoryDatabaseBuilder<MyDb>(ApplicationProvider.getApplicationContext())
-                .setDriver(AndroidSQLiteDriver())
-                .build()
+        db = Room.inMemoryDatabaseBuilder<MyDb>().setDriver(AndroidSQLiteDriver()).build()
         dao = db.dao()
     }
 

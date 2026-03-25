@@ -302,6 +302,9 @@ private val FTS_OPTIONS =
         "order=",
         "prefix=",
         "uncompress=",
+        "content_rowid=",
+        "columnsize=",
+        "detail=",
     )
 
 /**

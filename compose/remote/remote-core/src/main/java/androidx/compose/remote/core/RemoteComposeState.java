@@ -42,7 +42,6 @@ public class RemoteComposeState implements CollectionsAccess {
     /** Offset added to bitmap to cache bitmap textures */
     public static final int BITMAP_TEXTURE_ID_OFFSET = 2000;
 
-    private static final int MAX_DATA = 10000;
     private final IntMap<Object> mIntDataMap = new IntMap<>();
     private final IntMap<Boolean> mIntWrittenMap = new IntMap<>();
     private final HashMap<Object, Integer> mDataIntMap = new HashMap<>();
@@ -60,9 +59,9 @@ public class RemoteComposeState implements CollectionsAccess {
     private final IntIntMap mColorOverride = new IntIntMap();
     @NonNull private final IntMap<ArrayAccess> mCollectionMap = new IntMap<>();
 
-    private final boolean[] mDataOverride = new boolean[MAX_DATA];
-    private final boolean[] mIntegerOverride = new boolean[MAX_DATA];
-    private final boolean[] mFloatOverride = new boolean[MAX_DATA];
+    private final boolean[] mDataOverride = new boolean[Limits.MAX_STATE_DATA];
+    private final boolean[] mIntegerOverride = new boolean[Limits.MAX_STATE_DATA];
+    private final boolean[] mFloatOverride = new boolean[Limits.MAX_STATE_DATA];
 
     private int mNextId = START_ID;
     private final int @NonNull [] mIdMaps =

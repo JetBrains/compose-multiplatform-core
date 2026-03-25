@@ -2238,7 +2238,9 @@ package androidx.core.provider {
 
   public final class FontRequest {
     ctor public FontRequest(String, String, String, @ArrayRes int);
+    ctor public FontRequest(String, String, String, @ArrayRes int, String?);
     ctor public FontRequest(String, String, String, java.util.List<java.util.List<byte[]!>!>);
+    ctor public FontRequest(String, String, String, java.util.List<java.util.List<byte[]!>!>, String?);
     method public java.util.List<java.util.List<byte[]!>!>? getCertificates();
     method @ArrayRes public int getCertificatesArrayResId();
     method public String getProviderAuthority();

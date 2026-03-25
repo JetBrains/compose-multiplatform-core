@@ -16,8 +16,9 @@
 
 package androidx.webkit.internal;
 
+import androidx.webkit.Navigation;
 import androidx.webkit.NavigationListener;
-import androidx.webkit.WebNavigationClient;
+import androidx.webkit.Page;
 
 import org.chromium.support_lib_boundary.WebViewNavigationListenerBoundaryInterface;
 import org.chromium.support_lib_boundary.util.Features;
@@ -26,7 +27,11 @@ import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
 
-@WebNavigationClient.ExperimentalNavigationCallback
+/**
+ * Adapter between {@link NavigationListener} and
+ * {@link WebViewNavigationListenerBoundaryInterface}.
+ */
+@SuppressWarnings("MissingOverride")
 public class NavigationListenerAdapter implements WebViewNavigationListenerBoundaryInterface {
 
     private static final String[] SUPPORTED_FEATURES = {Features.WEB_VIEW_NAVIGATION_LISTENER_V1,
@@ -40,54 +45,55 @@ public class NavigationListenerAdapter implements WebViewNavigationListenerBound
 
     @Override
     public void onNavigationStarted(@NonNull InvocationHandler navigation) {
-        mImpl.onNavigationStarted(NavigationImpl.forInvocationHandler(navigation));
+        mImpl.onNavigationStarted(Navigation.forInvocationHandler(navigation));
     }
 
     @Override
     public void onNavigationRedirected(@NonNull InvocationHandler navigation) {
-        mImpl.onNavigationRedirected(NavigationImpl.forInvocationHandler(navigation));
+        mImpl.onNavigationRedirected(Navigation.forInvocationHandler(navigation));
     }
 
     @Override
     public void onNavigationCompleted(@NonNull InvocationHandler navigation) {
-        mImpl.onNavigationCompleted(NavigationImpl.forInvocationHandler(navigation));
+        mImpl.onNavigationCompleted(Navigation.forInvocationHandler(navigation));
     }
 
     @Override
     public void onPageDeleted(@NonNull InvocationHandler page) {
-        mImpl.onPageDeleted(PageImpl.forInvocationHandler(page));
+        mImpl.onPageDeleted(Page.forInvocationHandler(page));
     }
 
     @Override
     public void onPageLoadEventFired(@NonNull InvocationHandler page) {
-        mImpl.onPageLoadEvent(PageImpl.forInvocationHandler(page));
+        mImpl.onPageLoadEvent(Page.forInvocationHandler(page));
     }
 
     @Override
     public void onPageDOMContentLoadedEventFired(@NonNull InvocationHandler page) {
-        mImpl.onPageDomContentLoadedEvent(PageImpl.forInvocationHandler(page));
+        mImpl.onPageDomContentLoadedEvent(Page.forInvocationHandler(page));
     }
 
-    @Override
-    public void onFirstContentfulPaint(@NonNull InvocationHandler page, long loadTimeUs) {
-        mImpl.onFirstContentfulPaint(PageImpl.forInvocationHandler(page), loadTimeUs);
-    }
+    /**
+     * @deprecated Use {@link #onFirstContentfulPaintMillis} instead.
+     */
+    @Deprecated
+    public void onFirstContentfulPaint(@NonNull InvocationHandler page, long loadTimeUs) {}
 
     @Override
     public void onFirstContentfulPaintMillis(@NonNull InvocationHandler page, long durationMillis) {
-        mImpl.onFirstContentfulPaintMillis(PageImpl.forInvocationHandler(page), durationMillis);
+        mImpl.onFirstContentfulPaintMillis(Page.forInvocationHandler(page), durationMillis);
     }
 
     @Override
     public void onLargestContentfulPaintMillis(@NonNull InvocationHandler page,
             long durationMillis) {
-        mImpl.onLargestContentfulPaintMillis(PageImpl.forInvocationHandler(page), durationMillis);
+        mImpl.onLargestContentfulPaintMillis(Page.forInvocationHandler(page), durationMillis);
     }
 
     @Override
     public void onPerformanceMarkMillis(@NonNull InvocationHandler page,
             @NonNull String markName, long markTimeMillis) {
-        mImpl.onPerformanceMarkMillis(PageImpl.forInvocationHandler(page),
+        mImpl.onPerformanceMarkMillis(Page.forInvocationHandler(page),
                 markName, markTimeMillis);
     }
 

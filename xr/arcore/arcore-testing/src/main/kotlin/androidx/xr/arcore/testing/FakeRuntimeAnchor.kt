@@ -24,13 +24,18 @@ import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import java.util.UUID
 
-/** Test-only implementation of [androidx.xr.arcore.runtime.Anchor] */
+/**
+ * Fake implementation of [Anchor][RuntimeAnchor] for testing purposes.
+ *
+ * @property isTrackingAvailable a flag to represent available tracking state of the camera when
+ *   creating the anchor
+ * @property isAttached whether the anchor is attached to an [AnchorHolder]
+ */
 public class FakeRuntimeAnchor
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public constructor(
     override var pose: Pose,
     internal val anchorHolder: AnchorHolder? = null,
-    /** Flag to represent available tracking state of the camera when creating the anchor. */
     public val isTrackingAvailable: Boolean = true,
 ) : RuntimeAnchor {
     init {
@@ -50,17 +55,15 @@ public constructor(
 
     override var uuid: UUID? = null
 
-    /** Whether the anchor is attached to an [AnchorHolder] */
     public var isAttached: Boolean = anchorHolder != null
         private set
 
     /**
-     * Generates a random UUID for the anchor and adds it to
-     * [androidx.xr.runtime.testing.FakePerceptionManager.anchorUuids].
+     * Generates a random UUID for the anchor and adds it to [FakePerceptionManager.anchorUuids].
      *
      * This function will only be added to the list of anchors returned by
-     * [androidx.xr.runtime.testing.FakePerceptionManager.getPersistedAnchorUuids] if the
-     * [anchorHolder] is a [androidx.xr.runtime.testing.FakePerceptionManager].
+     * [FakePerceptionManager.getPersistedAnchorUuids] if the [anchorHolder] is a
+     * [FakePerceptionManager].
      */
     override fun persist() {
         uuid = UUID.randomUUID()

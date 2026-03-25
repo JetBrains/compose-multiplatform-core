@@ -18,19 +18,19 @@ package androidx.compose.remote.creation.compose.v2
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.LayoutDirection
 
 @Composable
 @RemoteComposable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteBoxV2(
     modifier: RemoteModifier = RemoteModifier,
-    horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
-    verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
+    contentAlignment: RemoteAlignment = RemoteAlignment.TopStart,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     content: @Composable RemoteBoxScopeV2.() -> Unit = {},
 ) {
     val scope = remember { RemoteBoxScopeV2() }
@@ -38,8 +38,15 @@ public fun RemoteBoxV2(
         factory = ::RemoteBoxNodeV2,
         update = {
             set(modifier) { nodeModifier -> this.modifier = nodeModifier }
-            set(horizontalAlignment) { hAlign -> this.horizontalAlignment = hAlign }
-            set(verticalArrangement) { vArr -> this.verticalArrangement = vArr }
+            set(contentAlignment.horizontal) { nodeHorizontalAlignment ->
+                this.horizontalAlignment = nodeHorizontalAlignment
+            }
+            set(contentAlignment.vertical) { nodeVerticalAlignment ->
+                this.verticalAlignment = nodeVerticalAlignment
+            }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
+            }
         },
         content = { scope.content() },
     )

@@ -50,6 +50,7 @@ import java.util.Collections
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -98,9 +99,12 @@ public class SandboxedPdfDocument(
     override val linearizationStatus: Int,
     override val formType: Int,
     override val renderParams: RenderParams,
-    @Deprecated("Deprecated in Java, Use getLinearizationStatus() instead")
+    @Deprecated(
+        "Deprecated, Use linearizationStatus instead",
+        replaceWith = ReplaceWith("linearizationStatus"),
+    )
     override val isLinearized: Boolean,
-) : EditablePdfDocument() {
+) : EditablePdfDocument {
 
     private val refCount = AtomicInteger(1)
 
@@ -123,7 +127,7 @@ public class SandboxedPdfDocument(
      *
      * Once closed, any further operations on the document are invalid.
      */
-    private var isDocumentClosedExplicitly = false
+    private val isDocumentClosedExplicitly = AtomicBoolean(false)
 
     @Suppress("WrongConstant")
     override suspend fun getPageInfo(pageNumber: Int): PdfDocument.PageInfo {
@@ -303,11 +307,16 @@ public class SandboxedPdfDocument(
     override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> =
         getKeyedAnnotationsForPage(pageNum)
 
-    override fun addOnEditsAppliedListener(executor: Executor, listener: OnEditsAppliedListener) {
+    override fun addOnEditsAppliedListener(
+        executor: Executor,
+        listener: EditablePdfDocument.OnEditsAppliedListener,
+    ) {
         onEditsAppliedListenerEntries.add(OnEditsAppliedListenerEntry(executor, listener))
     }
 
-    override fun removeOnEditsAppliedListener(listener: OnEditsAppliedListener) {
+    override fun removeOnEditsAppliedListener(
+        listener: EditablePdfDocument.OnEditsAppliedListener
+    ) {
         for (onEditsAppliedListener in onEditsAppliedListenerEntries) {
             if (onEditsAppliedListener.listener == listener) {
                 onEditsAppliedListenerEntries.remove(onEditsAppliedListener)
@@ -320,7 +329,7 @@ public class SandboxedPdfDocument(
     override fun close() {
         if (refCount.decrementAndGet() > 0) return
 
-        isDocumentClosedExplicitly = true
+        isDocumentClosedExplicitly.set(true)
 
         connection.disconnect()
 
@@ -409,7 +418,7 @@ public class SandboxedPdfDocument(
 
     private suspend fun <T> withDocumentWithoutRetry(block: (PdfDocumentRemote) -> T): T {
         // If document is already closed, cancel all the pending operations on this document
-        if (isDocumentClosedExplicitly) throw DocumentClosedException()
+        ensureDocumentNotClosed()
 
         // Create a new job in parent's context. Since with document can be called from any scope,
         // we need a handle to check coroutines actively working with document. Linking to parent's
@@ -444,12 +453,15 @@ public class SandboxedPdfDocument(
                     // document.close() could be triggered independently while current block is
                     // waiting to be resumed.
                     // Ensure cancelling any work on this document, if it's closed.
-                    throw if (isDocumentClosedExplicitly) DocumentClosedException(cause = e) else e
+                    ensureDocumentNotClosed(cause = e)
+                    throw e
                 }
 
                 connection.needsToReopenDocument = false
             }
 
+            // Guard: Verify the document is still open before proceeding
+            ensureDocumentNotClosed()
             val result = block(binder)
 
             // Manually completing taskJob because a Job created using Job() does not complete on
@@ -512,8 +524,17 @@ public class SandboxedPdfDocument(
 
     private data class OnEditsAppliedListenerEntry(
         val executor: Executor,
-        val listener: OnEditsAppliedListener,
+        val listener: EditablePdfDocument.OnEditsAppliedListener,
     )
+
+    /**
+     * Verifies that the document has not been explicitly closed.
+     *
+     * @throws DocumentClosedException if the document has been closed by a call to [close].
+     */
+    private fun ensureDocumentNotClosed(cause: Exception? = null) {
+        if (isDocumentClosedExplicitly.get()) throw DocumentClosedException(cause = cause)
+    }
 
     private companion object {
         private const val DEFAULT_PAGE = 400

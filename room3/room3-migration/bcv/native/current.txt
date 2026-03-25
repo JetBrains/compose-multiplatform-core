@@ -176,10 +176,16 @@ final class androidx.room3.migration.bundle/FtsEntityBundle : androidx.room3.mig
 }
 
 final class androidx.room3.migration.bundle/FtsOptionsBundle : androidx.room3.migration.bundle/SchemaEquality<androidx.room3.migration.bundle/FtsOptionsBundle> { // androidx.room3.migration.bundle/FtsOptionsBundle|null[0]
-    constructor <init>(kotlin/String, kotlin.collections/List<kotlin/String>, kotlin/String, kotlin/String, kotlin/String, kotlin.collections/List<kotlin/String>, kotlin.collections/List<kotlin/Int>, kotlin/String) // androidx.room3.migration.bundle/FtsOptionsBundle.<init>|<init>(kotlin.String;kotlin.collections.List<kotlin.String>;kotlin.String;kotlin.String;kotlin.String;kotlin.collections.List<kotlin.String>;kotlin.collections.List<kotlin.Int>;kotlin.String){}[0]
+    constructor <init>(kotlin/String, kotlin.collections/List<kotlin/String>, kotlin/String, kotlin/String, kotlin/String, kotlin.collections/List<kotlin/String>, kotlin.collections/List<kotlin/Int>, kotlin/String, kotlin/String? = ..., kotlin/Boolean? = ..., kotlin/String? = ...) // androidx.room3.migration.bundle/FtsOptionsBundle.<init>|<init>(kotlin.String;kotlin.collections.List<kotlin.String>;kotlin.String;kotlin.String;kotlin.String;kotlin.collections.List<kotlin.String>;kotlin.collections.List<kotlin.Int>;kotlin.String;kotlin.String?;kotlin.Boolean?;kotlin.String?){}[0]
 
+    final val columnSize // androidx.room3.migration.bundle/FtsOptionsBundle.columnSize|{}columnSize[0]
+        final fun <get-columnSize>(): kotlin/Boolean? // androidx.room3.migration.bundle/FtsOptionsBundle.columnSize.<get-columnSize>|<get-columnSize>(){}[0]
+    final val contentRowId // androidx.room3.migration.bundle/FtsOptionsBundle.contentRowId|{}contentRowId[0]
+        final fun <get-contentRowId>(): kotlin/String? // androidx.room3.migration.bundle/FtsOptionsBundle.contentRowId.<get-contentRowId>|<get-contentRowId>(){}[0]
     final val contentTable // androidx.room3.migration.bundle/FtsOptionsBundle.contentTable|{}contentTable[0]
         final fun <get-contentTable>(): kotlin/String // androidx.room3.migration.bundle/FtsOptionsBundle.contentTable.<get-contentTable>|<get-contentTable>(){}[0]
+    final val detail // androidx.room3.migration.bundle/FtsOptionsBundle.detail|{}detail[0]
+        final fun <get-detail>(): kotlin/String? // androidx.room3.migration.bundle/FtsOptionsBundle.detail.<get-detail>|<get-detail>(){}[0]
     final val languageIdColumnName // androidx.room3.migration.bundle/FtsOptionsBundle.languageIdColumnName|{}languageIdColumnName[0]
         final fun <get-languageIdColumnName>(): kotlin/String // androidx.room3.migration.bundle/FtsOptionsBundle.languageIdColumnName.<get-languageIdColumnName>|<get-languageIdColumnName>(){}[0]
     final val matchInfo // androidx.room3.migration.bundle/FtsOptionsBundle.matchInfo|{}matchInfo[0]

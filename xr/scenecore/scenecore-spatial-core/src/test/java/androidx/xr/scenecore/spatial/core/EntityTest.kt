@@ -54,7 +54,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Config.TARGET_SDK])
 class EntityTest {
     private var xrExtensions: XrExtensions? = XrExtensionsProvider.getXrExtensions()
-    private val entityManager = EntityManager()
+    private val sceneNodeRegistry = SceneNodeRegistry()
     private val fakeScheduledExecutorService = FakeScheduledExecutorService()
     private val testPose = Pose(Vector3(1f, 2f, 3f), Quaternion.Identity)
 
@@ -66,9 +66,9 @@ class EntityTest {
         context: Context,
         node: Node,
         extensions: XrExtensions,
-        entityManager: EntityManager,
+        sceneNodeRegistry: SceneNodeRegistry,
         executor: ScheduledExecutorService,
-    ) : AndroidXrEntity(context, node, extensions, entityManager, executor)
+    ) : AndroidXrEntity(context, node, extensions, sceneNodeRegistry, executor)
 
     @Before
     fun setUp() {
@@ -81,14 +81,14 @@ class EntityTest {
                 activity,
                 fakeScheduledExecutorService,
                 xrExtensions!!,
-                entityManager,
+                sceneNodeRegistry,
             )
         entity =
             TestEntity(
                 activity,
                 xrExtensions!!.createNode(),
                 xrExtensions!!,
-                entityManager,
+                sceneNodeRegistry,
                 fakeScheduledExecutorService,
             )
         entity.parent = spatialSceneRuntime.activitySpace
@@ -144,7 +144,7 @@ class EntityTest {
                 activity,
                 xrExtensions!!.createNode(),
                 xrExtensions!!,
-                entityManager,
+                sceneNodeRegistry,
                 fakeScheduledExecutorService,
             )
         child.parent = entity
@@ -213,7 +213,7 @@ class EntityTest {
                 activity,
                 xrExtensions!!.createNode(),
                 xrExtensions!!,
-                entityManager,
+                sceneNodeRegistry,
                 fakeScheduledExecutorService,
             )
         child.parent = entity
@@ -231,7 +231,7 @@ class EntityTest {
                 activity,
                 xrExtensions!!.createNode(),
                 xrExtensions!!,
-                entityManager,
+                sceneNodeRegistry,
                 fakeScheduledExecutorService,
             )
         child.parent = entity
@@ -250,7 +250,7 @@ class EntityTest {
                 activity,
                 xrExtensions!!.createNode(),
                 xrExtensions!!,
-                entityManager,
+                sceneNodeRegistry,
                 fakeScheduledExecutorService,
             )
         child.setPose(testPose, Space.PARENT)
@@ -261,7 +261,7 @@ class EntityTest {
                 activity,
                 xrExtensions!!.createNode(),
                 xrExtensions!!,
-                entityManager,
+                sceneNodeRegistry,
                 fakeScheduledExecutorService,
             )
         grandchild.setPose(testPose, Space.PARENT)
@@ -325,7 +325,7 @@ class EntityTest {
                 activity,
                 xrExtensions!!.createNode(),
                 xrExtensions!!,
-                entityManager,
+                sceneNodeRegistry,
                 fakeScheduledExecutorService,
             )
         child.parent = entity
@@ -343,7 +343,7 @@ class EntityTest {
                 activity,
                 xrExtensions!!.createNode(),
                 xrExtensions!!,
-                entityManager,
+                sceneNodeRegistry,
                 fakeScheduledExecutorService,
             )
         child.parent = entity

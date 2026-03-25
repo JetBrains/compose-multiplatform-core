@@ -88,7 +88,7 @@ internal class AndroidAutofillManager(
         current?.requireSemanticsInfo()?.let {
             if (it.semanticsConfiguration?.isAutofillable() == true) {
                 val semanticsId = it.semanticsId
-                rectManager.rects.withRect(semanticsId) { l, t, r, b ->
+                rectManager.withRect(semanticsId) { l, t, r, b ->
                     platformAutofillManager.notifyViewEntered(view, semanticsId, Rect(l, t, r, b))
                 }
             }
@@ -257,7 +257,7 @@ internal class AndroidAutofillManager(
     private var currentlyDisplayedIDs = MutableIntSet()
 
     internal fun requestAutofill(semanticsInfo: SemanticsInfo) {
-        rectManager.rects.withRect(semanticsInfo.semanticsId) { left, top, right, bottom ->
+        rectManager.withRect(semanticsInfo.semanticsId) { left, top, right, bottom ->
             reusableRect.set(left, top, right, bottom)
             platformAutofillManager.requestAutofill(view, semanticsInfo.semanticsId, reusableRect)
         }

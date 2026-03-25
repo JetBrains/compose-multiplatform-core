@@ -17,6 +17,8 @@
 package androidx.xr.glimmer.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -50,6 +52,37 @@ fun VerticalStackSample() {
                     "Item-${index + 1}",
                     style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
                 )
+            }
+        }
+    }
+}
+
+@Sampled
+@Composable
+fun VerticalStackWithMultipleShapesSample() {
+    VerticalStack(modifier = Modifier.fillMaxWidth().height(364.dp)) {
+        items(count = 10, key = { it }) { index ->
+            Column {
+                Card(modifier = Modifier.fillMaxWidth().itemDecoration(CardDefaults.shape)) {
+                    Text(
+                        "Item-$index",
+                        style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                    )
+                }
+                Row {
+                    Card(modifier = Modifier.weight(0.5f).itemDecoration(CardDefaults.shape)) {
+                        Text(
+                            "Card A",
+                            style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                        )
+                    }
+                    Card(modifier = Modifier.weight(0.5f).itemDecoration(CardDefaults.shape)) {
+                        Text(
+                            "Card B",
+                            style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                        )
+                    }
+                }
             }
         }
     }

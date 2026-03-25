@@ -52,7 +52,6 @@ package androidx.xr.arcore.openxr {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrAugmentedObject implements androidx.xr.arcore.runtime.AugmentedObject {
-    method public androidx.xr.arcore.runtime.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public androidx.xr.runtime.AugmentedObjectCategory getCategory();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getCenterPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize3d getExtents();
@@ -85,8 +84,10 @@ package androidx.xr.arcore.openxr {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrDevice implements androidx.xr.arcore.runtime.ArDevice {
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getDevicePose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     method public void update(long xrTime);
     property public androidx.xr.runtime.math.Pose devicePose;
+    property public androidx.xr.runtime.TrackingState trackingState;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrEye implements androidx.xr.arcore.runtime.Eye {
@@ -101,7 +102,6 @@ package androidx.xr.arcore.openxr {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrFace implements androidx.xr.arcore.runtime.Face {
     ctor public OpenXrFace();
-    method public androidx.xr.arcore.runtime.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public float[] getBlendShapeValues();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getCenterPose();
     method @InaccessibleFromKotlin public float[] getConfidenceValues();
@@ -147,6 +147,7 @@ package androidx.xr.arcore.openxr {
     method public void configure(androidx.xr.runtime.Config config);
     method public void create();
     method @InaccessibleFromKotlin public androidx.xr.runtime.Config getConfig();
+    method @InaccessibleFromKotlin public long getInstancePointer();
     method public void pause();
     method public void resume();
     method public void stop();
@@ -211,16 +212,19 @@ package androidx.xr.arcore.openxr {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrRenderViewpoint implements androidx.xr.arcore.runtime.RenderViewpoint {
-    method @InaccessibleFromKotlin public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method @InaccessibleFromKotlin @Deprecated public androidx.xr.runtime.FieldOfView getFieldOfView();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
-    property public androidx.xr.runtime.FieldOfView fieldOfView;
+    property @Deprecated public androidx.xr.runtime.FieldOfView fieldOfView;
     property public androidx.xr.runtime.math.Pose pose;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrRuntime implements androidx.xr.arcore.runtime.PerceptionRuntime {
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Config getConfig();
     method @InaccessibleFromKotlin public androidx.xr.arcore.openxr.OpenXrManager getLifecycleManager();
     method @InaccessibleFromKotlin public androidx.xr.arcore.openxr.OpenXrPerceptionManager getPerceptionManager();
+    method @InaccessibleFromKotlin public void setConfig(androidx.xr.runtime.Config);
     method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.time.ComparableTimeMark?>);
+    property public androidx.xr.runtime.Config config;
     property public androidx.xr.arcore.openxr.OpenXrManager lifecycleManager;
     property public androidx.xr.arcore.openxr.OpenXrPerceptionManager perceptionManager;
   }
@@ -238,18 +242,18 @@ package androidx.xr.arcore.openxr {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) internal final class ViewCameraState {
     ctor public ViewCameraState();
-    ctor public ViewCameraState(optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.runtime.FieldOfView fieldOfView);
-    ctor @BytecodeOnly public ViewCameraState(androidx.xr.runtime.math.Pose!, androidx.xr.runtime.FieldOfView!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public ViewCameraState(optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.runtime.math.FieldOfView fieldOfView);
+    ctor @BytecodeOnly public ViewCameraState(androidx.xr.runtime.math.Pose!, androidx.xr.runtime.math.FieldOfView!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public androidx.xr.runtime.math.Pose component1();
-    method public androidx.xr.runtime.FieldOfView component2();
-    method public androidx.xr.arcore.openxr.ViewCameraState copy(optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.runtime.FieldOfView fieldOfView);
-    method @BytecodeOnly public static androidx.xr.arcore.openxr.ViewCameraState! copy$default(androidx.xr.arcore.openxr.ViewCameraState!, androidx.xr.runtime.math.Pose!, androidx.xr.runtime.FieldOfView!, int, Object!);
+    method public androidx.xr.runtime.math.FieldOfView component2();
+    method public androidx.xr.arcore.openxr.ViewCameraState copy(optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.runtime.math.FieldOfView fieldOfView);
+    method @BytecodeOnly public static androidx.xr.arcore.openxr.ViewCameraState! copy$default(androidx.xr.arcore.openxr.ViewCameraState!, androidx.xr.runtime.math.Pose!, androidx.xr.runtime.math.FieldOfView!, int, Object!);
     method internal boolean equals(Object? other);
-    method @InaccessibleFromKotlin public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.FieldOfView getFieldOfView();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
     method internal int hashCode();
     method internal String toString();
-    property public androidx.xr.runtime.FieldOfView fieldOfView;
+    property public androidx.xr.runtime.math.FieldOfView fieldOfView;
     property public androidx.xr.runtime.math.Pose pose;
   }
 

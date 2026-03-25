@@ -34,6 +34,8 @@ public interface SubspaceMeasureResult {
     /**
      * Used for positioning children. [SubspacePlaceable.placeAt] should be called on children
      * inside [placeChildren]
+     *
+     * @param placementScope scope used to place the children of this layout.
      */
     public fun placeChildren(placementScope: SubspacePlaceable.SubspacePlacementScope)
 }

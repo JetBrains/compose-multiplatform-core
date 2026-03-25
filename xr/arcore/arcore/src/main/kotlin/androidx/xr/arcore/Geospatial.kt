@@ -40,10 +40,13 @@ import kotlinx.coroutines.flow.asStateFlow
  * [androidx.xr.runtime.GeospatialMode.VPS_AND_GPS].
  *
  * Not all devices support [androidx.xr.runtime.GeospatialMode.VPS_AND_GPS], use
- * [ConfigMode.isSupported] to check if the current device supports enabling this mode.
+ * [androidx.xr.runtime.Config.ConfigMode.isSupported] to check if the current device supports
+ * enabling this mode.
  *
- * The Geospatial object should only be used when its [State] is [State.Running], and otherwise
+ * The Geospatial object should only be used when its [State] is [State.RUNNING], and otherwise
  * should not be used. Use [Geospatial.state] to obtain the current [State].
+ *
+ * @property state the current [State] of [Geospatial]
  */
 public class Geospatial
 internal constructor(
@@ -54,7 +57,7 @@ internal constructor(
         /**
          * Returns the Geospatial object for the given [Session].
          *
-         * @param session the [Session] to get the [Geospatial] object from.
+         * @param session the [Session] to get the [Geospatial] object from
          */
         @JvmStatic
         public fun getInstance(session: Session): Geospatial {
@@ -137,23 +140,26 @@ internal constructor(
     }
 
     private val _state = MutableStateFlow(State.NOT_RUNNING)
-    /** The current [State] of [Geospatial]. */
+
     public val state: StateFlow<Geospatial.State> = _state.asStateFlow()
 
     /**
      * Gets the availability of the Visual Positioning System (VPS) at a specified horizontal
-     * position. The availability of VPS in a given location helps to improve the quality of
-     * Geospatial localization and tracking accuracy.
+     * position.
+     *
+     * The availability of VPS in a given location helps to improve the quality of Geospatial
+     * localization and tracking accuracy.
      *
      * This launches an asynchronous operation used to query the Google Cloud ARCore API. It may be
      * called without calling [Session.configure].
      *
      * Your app must be properly set up to communicate with the Google Cloud ARCore API in order to
-     * obtain a result from this call, otherwise the result will be [VpsAvailabilityNotAuthorized].
+     * obtain a result from this call, otherwise the result will be
+     * [androidx.xr.runtime.VpsAvailabilityNotAuthorized].
      *
-     * @param latitude The latitude in degrees.
-     * @param longitude The longitude in degrees.
-     * @return the result of the VPS availability check.
+     * @param latitude the latitude in degrees
+     * @param longitude the longitude in degrees
+     * @return the result of the VPS availability check
      */
     public suspend fun checkVpsAvailability(
         latitude: Double,
@@ -166,15 +172,17 @@ internal constructor(
      * Converts the input geospatial location and orientation relative to the Earth to a [Pose] in
      * the same position.
      *
-     * This method may return a [PoseNotTracking] result if Geospatial is not currently tracking.
+     * This method may return a [CreatePoseFromGeospatialPoseNotTracking] result if Geospatial is
+     * not currently tracking.
      *
      * Positions near the north pole or south pole is not supported. If the latitude is within 0.1
      * degrees of the north pole or south pole (90 degrees or -90 degrees), this function will throw
      * an [IllegalArgumentException].
      *
-     * @param geospatialPose the [GeospatialPose] to be converted into a [Pose].
+     * @param geospatialPose the [GeospatialPose] to be converted into a [Pose]
+     * @return a [CreatePoseFromGeospatialPoseResult] with the result of the conversion
      * @throws [IllegalArgumentException] if the latitude is within 0.1 degrees of the north pole or
-     *   south pole (90 degrees or -90 degrees).
+     *   south pole (90 degrees or -90 degrees)
      */
     public fun createPoseFromGeospatialPose(
         geospatialPose: GeospatialPose
@@ -192,10 +200,11 @@ internal constructor(
     /**
      * Converts the input [Pose] to a [GeospatialPose] in the same position as the original pose.
      *
-     * This method may return a [GeospatialPoseNotTracking] result if Geospatial is not currently
-     * tracking.
+     * This method may return a [GeospatialPoseNotTrackingException] result if Geospatial is not
+     * currently tracking.
      *
-     * @param pose the [Pose] to be converted into a [GeospatialPose].
+     * @param pose the [Pose] to be converted into a [GeospatialPose]
+     * @return a [CreateGeospatialPoseFromPoseResult] with the result of the conversion
      */
     public fun createGeospatialPoseFromPose(pose: Pose): CreateGeospatialPoseFromPoseResult {
         checkGeospatialModeEnabled()
@@ -236,19 +245,20 @@ internal constructor(
      * identity rotation will have the anchor oriented such that X+ points to the east, Y+ points up
      * away from the center of the earth, and Z+ points to the south.
      *
-     * The tracking state of an [Anchor] will permanently become [TrackingState.Stopped] if the
-     * [androidx.xr.runtime.GeospatialMode] is disabled, or if another full-space app uses
-     * Geospatial.
+     * The tracking state of an [Anchor] will permanently become
+     * [androidx.xr.runtime.TrackingState.STOPPED] if the [androidx.xr.runtime.GeospatialMode] is
+     * disabled, or if another full-space app uses Geospatial.
      *
      * Creating anchors near the north pole or south pole is not supported. If the latitude is
      * within 0.1 degrees of the north pole or south pole (90 degrees or -90 degrees), this function
      * will throw [IllegalArgumentException].
      *
-     * @param latitude the latitude of the anchor.
-     * @param longitude the longitude of the anchor.
-     * @param altitude the altitude of the anchor.
-     * @param eastUpSouthQuaternion the rotation quaternion of the anchor.
-     * @throws [IllegalArgumentException] if the latitude is outside the allowable range.
+     * @param latitude the latitude of the anchor
+     * @param longitude the longitude of the anchor
+     * @param altitude the altitude of the anchor
+     * @param eastUpSouthQuaternion the rotation quaternion of the anchor
+     * @return an [AnchorCreateResult] with the result of the anchor creation
+     * @throws [IllegalArgumentException] if the latitude is outside the allowable range
      */
     public fun createAnchor(
         latitude: Double,
@@ -293,10 +303,10 @@ internal constructor(
      * a working internet connection to communicate with the ARCore API on Google Cloud. ARCore will
      * continue to retry if it is unable to establish a connection to the ARCore service.
      *
-     * A Terrain anchor's tracking state will be [TrackingState.Paused] if the Earth is not actively
-     * tracking. Its tracking state will permanently become [TrackingState.Stopped] if
-     * [androidx.xr.runtime.GeospatialMode] is disabled, or if another full-space app uses
-     * Geospatial.
+     * A Terrain anchor's tracking state will be [androidx.xr.runtime.TrackingState.PAUSED] if the
+     * Earth is not actively tracking. Its tracking state will permanently become
+     * [androidx.xr.runtime.TrackingState.STOPPED] if [androidx.xr.runtime.GeospatialMode] is
+     * disabled, or if another full-space app uses Geospatial.
      *
      * Latitude and longitude are defined by the
      * [WGS84 specification](https://en.wikipedia.org/wiki/World_Geodetic_System), and the altitude
@@ -306,12 +316,13 @@ internal constructor(
      * identity rotation will have the anchor oriented such that X+ points to the east, Y+ points up
      * away from the center of the earth, and Z+ points to the south.
      *
-     * @param latitude the latitude of the anchor.
-     * @param longitude the longitude of the anchor.
-     * @param altitudeAboveSurface The altitude of the anchor above the given surface.
-     * @param eastUpSouthQuaternion the rotation quaternion of the anchor.
-     * @param surface the surface on which to create the anchor.
-     * @throws IllegalArgumentException if the latitude is outside the allowable range.
+     * @param latitude the latitude of the anchor
+     * @param longitude the longitude of the anchor
+     * @param altitudeAboveSurface the altitude of the anchor above the given surface
+     * @param eastUpSouthQuaternion the rotation quaternion of the anchor
+     * @param surface the [Surface] on which to create the anchor
+     * @return an [AnchorCreateResult] with the result of the anchor creation
+     * @throws IllegalArgumentException if the latitude is outside the allowable range
      */
     public suspend fun createAnchorOnSurface(
         latitude: Double,

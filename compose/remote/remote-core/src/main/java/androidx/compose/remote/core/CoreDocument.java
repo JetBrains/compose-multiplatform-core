@@ -76,6 +76,9 @@ public class CoreDocument implements Serializable {
 
     // Internal version level
     public static final int DOCUMENT_API_LEVEL = 8;
+    static final int PROFILE_WIDGETS = 0x100;
+    static final int PROFILE_ANDROIDX = 0x200; // REMOVE IN PLATFORM
+    public static final int PROFILE = PROFILE_ANDROIDX;
 
     // We also keep a more fine-grained BUILD number, exposed as
     // ID_API_LEVEL = DOCUMENT_API_LEVEL + BUILD
@@ -90,6 +93,7 @@ public class CoreDocument implements Serializable {
     private static final int DEFAULT_FEATURE_PAINT_MEASURE = 1;
     private static final int DEFAULT_FEATURE_PRIORITY_FIX = 1;
     private static final int DEFAULT_FEATURE_LT_RESIZE = 1;
+    private static final int DEFAULT_FEATURE_ARRAY_LISTENERS = 1;
     private static final int DEFAULT_FEATURE_MEASURE_VERSION = LayoutManager.DEFAULT_MEASURE_TYPE;
     private static final int DEFAULT_FEATURE_TOUCH_VERSION = LayoutManager.DEFAULT_TOUCH_VERSION;
 
@@ -151,6 +155,7 @@ public class CoreDocument implements Serializable {
     private @Nullable IntMap<Object> mDocProperties;
 
     boolean mFirstPaint = true;
+
     private boolean mIsUpdateDoc = false;
     private int mHostExceptionID = 0;
     private int mBitmapMemory = 0;
@@ -680,6 +685,9 @@ public class CoreDocument implements Serializable {
         if (featureId == Header.FEATURE_LT_RESIZE) {
             return useFeature(featureId, DEFAULT_FEATURE_LT_RESIZE);
         }
+        if (featureId == Header.FEATURE_ARRAY_LISTENERS) {
+            return useFeature(featureId, DEFAULT_FEATURE_ARRAY_LISTENERS);
+        }
         return useFeature(featureId, 0);
     }
 
@@ -968,6 +976,7 @@ public class CoreDocument implements Serializable {
         mUseFeaturePaintMeasure = useFeature(Header.FEATURE_PAINT_MEASURE);
         mUseFeaturePriorityFix = useFeature(Header.FEATURE_PRIORITY_FIX);
         mUseFeatureLTResize = useFeature(Header.FEATURE_LT_RESIZE);
+
         mMeasureVersion = featureIntValue(Header.FEATURE_MEASURE_VERSION);
         mTouchVersion = featureIntValue(Header.FEATURE_TOUCH_VERSION);
         mBitmapMemory = 0;
@@ -1692,6 +1701,18 @@ public class CoreDocument implements Serializable {
         }
         mTimeVariables.updateTime(context);
         mRepaintNext = context.updateOps();
+
+        // Ensure that variables that are dirty are updated before we do the layout pass
+        for (Operation operation : mOperations) {
+            if (operation.isDirty() && operation instanceof VariableSupport) {
+                ((VariableSupport) operation).updateVariables(context);
+                operation.apply(context);
+            }
+            if (operation == mRootLayoutComponent) {
+                break;
+            }
+        }
+
         if (mRootLayoutComponent != null) {
             if (context.mWidth != mRootLayoutComponent.getWidth()
                     || context.mHeight != mRootLayoutComponent.getHeight()) {

@@ -51,6 +51,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.ArDevice
+import androidx.xr.arcore.CreateGeospatialPoseFromPoseErrorInternal
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseNotTracking
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseResult
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
@@ -64,7 +65,6 @@ import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.GeospatialMode
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
@@ -75,6 +75,7 @@ import androidx.xr.runtime.VpsAvailabilityNotAuthorized
 import androidx.xr.runtime.VpsAvailabilityResourceExhausted
 import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.VpsAvailabilityUnavailable
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -126,7 +127,7 @@ class GeospatialActivity : ComponentActivity() {
             SessionLifecycleHelper(
                 this,
                 Config(
-                    deviceTracking = DeviceTrackingMode.LAST_KNOWN,
+                    deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
                     planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
                 ),
                 onSessionAvailable = { session ->
@@ -387,6 +388,10 @@ class GeospatialActivity : ComponentActivity() {
             is CreateGeospatialPoseFromPoseNotTracking -> {
                 logAndShowToast("Not tracking, cannot create anchor.")
             }
+
+            is CreateGeospatialPoseFromPoseErrorInternal -> {
+                logAndShowToast(geospatialPoseResult.error)
+            }
         }
     }
 
@@ -497,7 +502,7 @@ class GeospatialActivity : ComponentActivity() {
     }
 
     private fun logAndShowToast(message: String, throwable: Throwable? = null) {
-        Log.warn(throwable) { message }
+        XrLog.warn(throwable) { message }
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
@@ -527,6 +532,7 @@ class GeospatialActivity : ComponentActivity() {
                 """
                     .trimIndent()
             is CreateGeospatialPoseFromPoseNotTracking -> "Localization Status: Not tracking"
+            is CreateGeospatialPoseFromPoseErrorInternal -> "Localization Status: ${result.error}"
         }
     }
 }

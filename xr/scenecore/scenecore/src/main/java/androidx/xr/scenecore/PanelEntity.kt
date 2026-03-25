@@ -21,8 +21,9 @@ import android.content.Context
 import android.view.View
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.RenderViewpoint
-import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.XrLog
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -44,9 +45,9 @@ public open class PanelEntity
 internal constructor(
     private val perceptionSpace: PerceptionSpace,
     rtEntity: RtPanelEntity,
-    entityManager: EntityManager,
+    entityRegistry: EntityRegistry,
     @get:JvmName("isMainPanelEntity") public val isMainPanelEntity: Boolean = false,
-) : BaseEntity<RtPanelEntity>(rtEntity, entityManager) {
+) : BaseEntity<RtPanelEntity>(rtEntity, entityRegistry) {
 
     /** The corner radius of the PanelEntity, in meters. */
     public var cornerRadius: Float
@@ -105,14 +106,17 @@ internal constructor(
      *
      * @param renderViewpoint that provides the pose and field-of-view of the camera.
      * @return A [PerceivedResolutionResult] which encapsulates the outcome:
-     *     - [PerceivedResolutionResult.Success] containing the [PixelDimensions] if the calculation
-     *       is successful.
+     *     - [PerceivedResolutionResult.Success] containing the
+     *       [androidx.xr.scenecore.runtime.PixelDimensions] if the calculation is successful.
      *     - [PerceivedResolutionResult.EntityTooClose] if the Entity is too close to the camera.
-     *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
-     *       the calculation is invalid or unavailable.
+     *     - [PerceivedResolutionResult.InvalidRenderViewpoint] if the camera information required
+     *       for the calculation is invalid or unavailable.
      *
      * @see PerceivedResolutionResult
      */
+    // TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
+    // removed.
+    @Suppress("DEPRECATION")
     public fun getPerceivedResolution(renderViewpoint: RenderViewpoint): PerceivedResolutionResult {
         checkNotDisposed()
         val renderViewpointState = renderViewpoint.state.value
@@ -121,7 +125,12 @@ internal constructor(
                 (perceptionSpace.getScenePoseFromPerceptionPose(renderViewpointState.pose)
                         as PerceptionScenePose)
                     .rtScenePose,
-                renderViewpoint.state.value.fieldOfView,
+                FieldOfView(
+                    renderViewpointState.fieldOfView.angleLeft,
+                    renderViewpointState.fieldOfView.angleRight,
+                    renderViewpointState.fieldOfView.angleUp,
+                    renderViewpointState.fieldOfView.angleDown,
+                ),
             )
             .toPerceivedResolutionResult()
     }
@@ -180,12 +189,12 @@ internal constructor(
             context: Context,
             sceneRuntime: SceneRuntime,
             perceptionSpace: PerceptionSpace,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             view: View,
             dimensions: FloatSize2d,
             name: String,
             pose: Pose = Pose.Identity,
-            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): PanelEntity =
             PanelEntity(
                 perceptionSpace,
@@ -196,7 +205,7 @@ internal constructor(
                     dimensions.toRtDimensions(),
                     name,
                     if (parent != null && parent !is BaseEntity<*>) {
-                        Log.warn(
+                        XrLog.warn(
                             "The provided parent is not a BaseEntity. The PanelEntity will be " +
                                 "created without a parent."
                         )
@@ -205,19 +214,19 @@ internal constructor(
                         parent?.rtEntity
                     },
                 ),
-                entityManager,
+                entityRegistry,
             )
 
         internal fun create(
             context: Context,
             sceneRuntime: SceneRuntime,
             perceptionSpace: PerceptionSpace,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             view: View,
             pixelDimensions: IntSize2d,
             name: String,
             pose: Pose = Pose.Identity,
-            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): PanelEntity =
             PanelEntity(
                 perceptionSpace,
@@ -228,7 +237,7 @@ internal constructor(
                     pixelDimensions.toRtPixelDimensions(),
                     name,
                     if (parent != null && parent !is BaseEntity<*>) {
-                        Log.warn(
+                        XrLog.warn(
                             "The provided parent is not a BaseEntity. The PanelEntity will be " +
                                 "created without a parent."
                         )
@@ -237,7 +246,7 @@ internal constructor(
                         parent?.rtEntity
                     },
                 ),
-                entityManager,
+                entityRegistry,
             )
 
         /**
@@ -264,7 +273,7 @@ internal constructor(
                 session.context as Activity,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 view,
                 dimensions,
                 name,
@@ -295,7 +304,7 @@ internal constructor(
                 session.context as Activity,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 view,
                 pixelDimensions,
                 name,
@@ -332,7 +341,7 @@ internal constructor(
                 session.context as Activity,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 view,
                 dimensions,
                 name,
@@ -370,7 +379,7 @@ internal constructor(
                 session.context as Activity,
                 session.sceneRuntime,
                 session.scene.perceptionSpace,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 view,
                 pixelDimensions,
                 name,

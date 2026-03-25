@@ -21,7 +21,11 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.subspace.node.SubspaceSemanticsModifierNode
 
-/** Add semantics key/value pairs to the layout node, for use in testing, accessibility, etc. */
+/**
+ * Add semantics key/value pairs to the layout node, for use in testing, accessibility, etc.
+ *
+ * @param properties Builder block where the semantics properties are defined.
+ */
 public fun SubspaceModifier.semantics(
     properties: (SemanticsPropertyReceiver.() -> Unit)
 ): SubspaceModifier = this then AppendedSemanticsElement(properties = properties)
