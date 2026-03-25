@@ -107,6 +107,7 @@ import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSSelectorFromString
 import platform.QuartzCore.CACurrentMediaTime
 import platform.UIKit.NSStringFromCGRect
+import platform.UIKit.UIAccessibilityAnnouncementNotification
 import platform.UIKit.UIAccessibilityContainerType
 import platform.UIKit.UIAccessibilityContainerTypeNone
 import platform.UIKit.UIAccessibilityContainerTypeSemanticGroup
@@ -116,6 +117,7 @@ import platform.UIKit.UIAccessibilityElementFocusedNotification
 import platform.UIKit.UIAccessibilityFocusedElement
 import platform.UIKit.UIAccessibilityFocusedElementKey
 import platform.UIKit.UIAccessibilityLayoutChangedNotification
+import platform.UIKit.UIAccessibilityNotifications
 import platform.UIKit.UIAccessibilityPageScrolledNotification
 import platform.UIKit.UIAccessibilityPostNotification
 import platform.UIKit.UIAccessibilityScreenChangedNotification
@@ -314,7 +316,7 @@ private sealed interface AccessibilityNode {
 
         override fun accessibilityPerformEscape(): Boolean {
             if (mediator.performEscape()) {
-                AccessibilityNotification(newElementToFocus = null, isScreenChange = true).postNotification()
+                AccessibilityNotification(UIAccessibilityScreenChangedNotification).postNotification()
                 return true
             } else {
                 return false
@@ -981,20 +983,32 @@ private class AccessibilityElement(
     }
 }
 
-private class AccessibilityNotification(
-    val newElementToFocus: Any?,
-    val isScreenChange: Boolean
+internal class AccessibilityNotification private constructor(
+    val notification: UIAccessibilityNotifications,
+    val elementToFocus: WeakReference<Any>?,
+    val message: String?
 ) {
+    companion object {
+        // For testing purposes only
+        var lastPostedNotificationForTests: AccessibilityNotification? = null
+    }
+
+    constructor(
+        notification: UIAccessibilityNotifications,
+        elementToFocus: Any? = null,
+        message: String? = null
+    ) : this(notification, elementToFocus?.let { WeakReference(it) }, message)
+
     fun postNotification() {
-        val notificationName = if (isScreenChange) {
-            UIAccessibilityScreenChangedNotification
-        } else {
+        val focusNotification = notification in listOf(
+            UIAccessibilityScreenChangedNotification,
             UIAccessibilityLayoutChangedNotification
-        }
-        AccessibilityMediator.lastFocusedElementForTests = newElementToFocus?.let {
-            WeakReference(it)
-        }
-        UIAccessibilityPostNotification(notificationName, newElementToFocus)
+        )
+        lastPostedNotificationForTests = this
+        UIAccessibilityPostNotification(
+            notification,
+            argument = if (focusNotification) elementToFocus else message
+        )
     }
 }
 
@@ -1056,11 +1070,6 @@ internal class AccessibilityMediator(
     val performEscape: () -> Boolean,
     val onScreenReaderActive: (Boolean) -> Unit,
 ) {
-    companion object {
-        // For testing purposes only
-        var lastFocusedElementForTests: WeakReference<Any>? = null
-    }
-
     private var focusMode: AccessibilityElementFocusMode = AccessibilityElementFocusMode.None
 
     var focusedNodesScrollableParentsIds: Set<Int> = setOf()
@@ -1072,7 +1081,7 @@ internal class AccessibilityMediator(
                 if (value.isNotEmpty()) {
                     // Hack to fix an issue where iOS accessibility only reads the items visible
                     // at the moment of the beginning of the "Speak Screen" command.
-                    UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, null)
+                    AccessibilityNotification(UIAccessibilityPageScrolledNotification).postNotification()
                 }
             }
         }
@@ -1112,7 +1121,7 @@ internal class AccessibilityMediator(
                 field = value
                 onSemanticsChange()
 
-                AccessibilityNotification(newElementToFocus = null, isScreenChange = true).postNotification()
+                AccessibilityNotification(UIAccessibilityScreenChangedNotification).postNotification()
 
                 updateFocusOnAccessibilityElementsLoaded = value
             }
@@ -1245,7 +1254,7 @@ internal class AccessibilityMediator(
                 } else if (root.element != null) {
                     refocusKeyboardElementIfNeeded()
                     root.element = null
-                    AccessibilityNotification(newElementToFocus = null, isScreenChange = false).postNotification()
+                    AccessibilityNotification(UIAccessibilityLayoutChangedNotification).postNotification()
                 }
 
                 if (keyboardFocusedElementKey != null) {
@@ -1324,10 +1333,10 @@ internal class AccessibilityMediator(
         coroutineScope.launch {
             delay(delay)
 
-            UIAccessibilityPostNotification(
+            AccessibilityNotification(
                 UIAccessibilityPageScrolledNotification,
-                scrollResult.announceMessage()
-            )
+                message = scrollResult.announceMessage()
+            ).postNotification()
 
             accessibilityDebugLogger?.log("PageScrolled")
 
@@ -1339,7 +1348,7 @@ internal class AccessibilityMediator(
                     focusMode = AccessibilityElementFocusMode.KeepFocus(element.key)
                 }
 
-                AccessibilityNotification(element, isScreenChange = false).postNotification()
+                AccessibilityNotification(UIAccessibilityLayoutChangedNotification, elementToFocus = element).postNotification()
             }
         }
     }
@@ -1653,7 +1662,7 @@ internal class AccessibilityMediator(
     private fun updateFocusedElement(): AccessibilityNotification {
         return when (val mode = focusMode) {
             AccessibilityElementFocusMode.None -> {
-                AccessibilityNotification(newElementToFocus = null, isScreenChange = false)
+                AccessibilityNotification(UIAccessibilityLayoutChangedNotification)
             }
 
             is AccessibilityElementFocusMode.KeepFocus -> {
@@ -1662,7 +1671,10 @@ internal class AccessibilityMediator(
                     findAccessibilityElementInSemanticsHierarchy(it.node.semanticsNode)
                 }
                 if (element != null && !CGRectIsEmpty(element.accessibilityFrame())) {
-                    AccessibilityNotification(element.takeIf { it !== focusedElement }, isScreenChange = false)
+                    AccessibilityNotification(
+                        UIAccessibilityLayoutChangedNotification,
+                        elementToFocus = element.takeIf { it !== focusedElement }
+                    )
                 } else if (focusedElement is AccessibilityElement) {
                     val newFocusedElement = root.element?.let { findChildAccessibilityElement(it) }
 
@@ -1672,9 +1684,12 @@ internal class AccessibilityMediator(
                         AccessibilityElementFocusMode.None
                     }
 
-                    AccessibilityNotification(newFocusedElement, isScreenChange = true)
+                    AccessibilityNotification(
+                        UIAccessibilityScreenChangedNotification,
+                        elementToFocus = newFocusedElement
+                    )
                 } else {
-                    AccessibilityNotification(null, isScreenChange = false)
+                    AccessibilityNotification(UIAccessibilityLayoutChangedNotification)
                 }
             }
 
@@ -1684,10 +1699,13 @@ internal class AccessibilityMediator(
                 }
                 if (element != null && !CGRectIsEmpty(element.accessibilityFrame())) {
                     focusMode = AccessibilityElementFocusMode.KeepFocus(mode.key)
-                    AccessibilityNotification(element, isScreenChange = false)
+                    AccessibilityNotification(
+                        UIAccessibilityLayoutChangedNotification,
+                        elementToFocus = element
+                    )
                 } else {
                     focusMode = AccessibilityElementFocusMode.None
-                    AccessibilityNotification(null, isScreenChange = false)
+                    AccessibilityNotification(UIAccessibilityLayoutChangedNotification)
                 }
             }
         }

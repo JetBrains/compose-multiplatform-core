@@ -23,7 +23,7 @@ import androidx.compose.material.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.AccessibilityMediator
+import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.getAccessibilityTree
@@ -64,7 +64,7 @@ class AccessibilityFocusRequesterTest {
         val buttonBElement = findNodeWithLabel("Text B").element
         assertEquals(
             expected = buttonBElement,
-            actual = AccessibilityMediator.lastFocusedElementForTests?.value
+            actual = AccessibilityNotification.lastPostedNotificationForTests?.elementToFocus?.value
         )
 
         focusRequesterA.requestFocus()
@@ -73,7 +73,7 @@ class AccessibilityFocusRequesterTest {
         val buttonAElement = findNodeWithLabel("Text A").element
         assertEquals(
             expected = buttonAElement,
-            actual = AccessibilityMediator.lastFocusedElementForTests?.value
+            actual = AccessibilityNotification.lastPostedNotificationForTests?.elementToFocus?.value
         )
     }
 
@@ -105,7 +105,7 @@ class AccessibilityFocusRequesterTest {
         val content1Element = findNodeWithLabel("Content 1").element
         assertEquals(
             expected = content1Element,
-            actual = AccessibilityMediator.lastFocusedElementForTests?.value
+            actual = AccessibilityNotification.lastPostedNotificationForTests?.elementToFocus?.value
         )
     }
 }
