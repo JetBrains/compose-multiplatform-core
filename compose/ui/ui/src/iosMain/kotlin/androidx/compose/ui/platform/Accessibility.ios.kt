@@ -131,7 +131,6 @@ import platform.UIKit.UIFocusItemProtocol
 import platform.UIKit.UIFocusItemScrollableContainerProtocol
 import platform.UIKit.UIFocusSystem
 import platform.UIKit.UIFocusUpdateContext
-import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIView
 import platform.UIKit.accessibilityElementAtIndex
 import platform.UIKit.accessibilityElementCount
@@ -314,7 +313,7 @@ private sealed interface AccessibilityNode {
 
         override fun accessibilityPerformEscape(): Boolean {
             if (mediator.performEscape()) {
-                UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, null)
+                AccessibilityNotification(newElementToFocus = null, isScreenChange = true).postNotification()
                 return true
             } else {
                 return false
@@ -981,10 +980,20 @@ private class AccessibilityElement(
     }
 }
 
-private class NodesSyncResult(
+private class AccessibilityNotification(
     val newElementToFocus: Any?,
     val isScreenChange: Boolean
-)
+) {
+    fun postNotification() {
+        val notificationName = if (isScreenChange) {
+            UIAccessibilityScreenChangedNotification
+        } else {
+            UIAccessibilityLayoutChangedNotification
+        }
+        AccessibilityMediator.lastFocusedElementForTests = newElementToFocus
+        UIAccessibilityPostNotification(notificationName, newElementToFocus)
+    }
+}
 
 /**
  * An interface for logging accessibility debug messages.
@@ -1044,6 +1053,11 @@ internal class AccessibilityMediator(
     val performEscape: () -> Boolean,
     val onScreenReaderActive: (Boolean) -> Unit,
 ) {
+    companion object {
+        // For testing purposes only
+        var lastFocusedElementForTests: Any? = null
+    }
+
     private var focusMode: AccessibilityElementFocusMode = AccessibilityElementFocusMode.None
 
     var focusedNodesScrollableParentsIds: Set<Int> = setOf()
@@ -1095,7 +1109,7 @@ internal class AccessibilityMediator(
                 field = value
                 onSemanticsChange()
 
-                UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, null)
+                AccessibilityNotification(newElementToFocus = null, isScreenChange = true).postNotification()
 
                 updateFocusOnAccessibilityElementsLoaded = value
             }
@@ -1228,7 +1242,7 @@ internal class AccessibilityMediator(
                 } else if (root.element != null) {
                     refocusKeyboardElementIfNeeded()
                     root.element = null
-                    UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, null)
+                    AccessibilityNotification(newElementToFocus = null, isScreenChange = false).postNotification()
                 }
 
                 if (keyboardFocusedElementKey != null) {
@@ -1322,7 +1336,7 @@ internal class AccessibilityMediator(
                     focusMode = AccessibilityElementFocusMode.KeepFocus(element.key)
                 }
 
-                UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, element)
+                AccessibilityNotification(element, isScreenChange = false).postNotification()
             }
         }
     }
@@ -1489,7 +1503,7 @@ internal class AccessibilityMediator(
                         semanticsChildren,
                         beforeBeyondBoundsChildren,
                         afterBeyondBoundsChildren,
-                        collectOnlyAccessibilityElements || canBeAccessibilityElement,
+                        collectOnlyAccessibilityElements || child.unmergedConfig.isMergingSemanticsOfDescendants,
                         flatten
                     )
                 }
@@ -1598,7 +1612,7 @@ internal class AccessibilityMediator(
     /**
      * Performs a complete sync of the accessibility tree with the current semantics tree.
      */
-    private fun sync(): NodesSyncResult {
+    private fun sync(): AccessibilityNotification {
         val rootSemanticsNode = owner.unmergedRootSemanticsNode
 
         check(!view.isAccessibilityElement) {
@@ -1633,19 +1647,21 @@ internal class AccessibilityMediator(
         return updateFocusedElement()
     }
 
-    private fun updateFocusedElement(): NodesSyncResult {
+    private fun updateFocusedElement(): AccessibilityNotification {
         return when (val mode = focusMode) {
             AccessibilityElementFocusMode.None -> {
-                NodesSyncResult(newElementToFocus = null, isScreenChange = false)
+                AccessibilityNotification(newElementToFocus = null, isScreenChange = false)
             }
 
             is AccessibilityElementFocusMode.KeepFocus -> {
                 val focusedElement = UIAccessibilityFocusedElement(null)
-                val element = accessibilityElementsMap[mode.key]
+                val element = accessibilityElementsMap[mode.key]?.let {
+                    findAccessibilityElementInSemanticsHierarchy(it.node.semanticsNode)
+                }
                 if (element != null && !CGRectIsEmpty(element.accessibilityFrame())) {
-                    NodesSyncResult(element.takeIf { it !== focusedElement }, isScreenChange = false)
+                    AccessibilityNotification(element.takeIf { it !== focusedElement }, isScreenChange = false)
                 } else if (focusedElement is AccessibilityElement) {
-                    val newFocusedElement = root.element?.let { findFocusableElement(it) }
+                    val newFocusedElement = root.element?.let { findChildAccessibilityElement(it) }
 
                     focusMode = if (newFocusedElement is AccessibilityElement) {
                         AccessibilityElementFocusMode.KeepFocus(newFocusedElement.key)
@@ -1653,20 +1669,22 @@ internal class AccessibilityMediator(
                         AccessibilityElementFocusMode.None
                     }
 
-                    NodesSyncResult(newFocusedElement, isScreenChange = true)
+                    AccessibilityNotification(newFocusedElement, isScreenChange = true)
                 } else {
-                    NodesSyncResult(null, isScreenChange = false)
+                    AccessibilityNotification(null, isScreenChange = false)
                 }
             }
 
             is AccessibilityElementFocusMode.Focus -> {
-                val element = accessibilityElementsMap[mode.key]
+                val element = accessibilityElementsMap[mode.key]?.let {
+                    findAccessibilityElementInSemanticsHierarchy(it.node.semanticsNode)
+                }
                 if (element != null && !CGRectIsEmpty(element.accessibilityFrame())) {
                     focusMode = AccessibilityElementFocusMode.KeepFocus(mode.key)
-                    NodesSyncResult(element, isScreenChange = false)
+                    AccessibilityNotification(element, isScreenChange = false)
                 } else {
                     focusMode = AccessibilityElementFocusMode.None
-                    NodesSyncResult(null, isScreenChange = false)
+                    AccessibilityNotification(null, isScreenChange = false)
                 }
             }
         }
@@ -1736,28 +1754,42 @@ internal class AccessibilityMediator(
         }
     }
 
-    private fun findFocusableElement(node: Any): Any? {
+    /**
+     * Because the AccessibilityElement tree is mostly flattened, we need to traverse the original
+     * semantics nodes hierarchy to find the corresponding element to focus inside the focused
+     * semantics node.
+     */
+    private fun findAccessibilityElementInSemanticsHierarchy(semanticsNode: SemanticsNode): NSObject? {
+        accessibilityElementsMap[semanticsNode.semanticsKey]
+            ?.let { findChildAccessibilityElement(it) }
+            ?.let { return it }
+
+        semanticsNode.children.forEach { child ->
+            findAccessibilityElementInSemanticsHierarchy(semanticsNode = child)?.let { return it }
+        }
+
+        return null
+    }
+
+    private fun findChildAccessibilityElement(node: Any): NSObject? {
         val nsNode = node as NSObject
         if (nsNode.isAccessibilityElement) {
             return nsNode
         }
-        nsNode.accessibilityElements?.takeIf { it.isNotEmpty() }?.forEach {
-            findFocusableElement(it as Any)
-        } ?: repeat(node.accessibilityElementCount().toInt()) { index ->
+        nsNode.accessibilityElements?.takeIf { it.isNotEmpty() }?.firstNotNullOfOrNull {
+            findChildAccessibilityElement(it as Any)
+        }?.let {
+            return it
+        }
+
+        repeat(node.accessibilityElementCount().toInt()) { index ->
             node.accessibilityElementAtIndex(index.toLong())?.let {
-                findFocusableElement(it)
+                findChildAccessibilityElement(it)
+            }?.let {
+                return it
             }
         }
         return null
-    }
-
-    private fun NodesSyncResult.postNotification() {
-        val notificationName = if (isScreenChange) {
-            UIAccessibilityScreenChangedNotification
-        } else {
-            UIAccessibilityLayoutChangedNotification
-        }
-        UIAccessibilityPostNotification(notificationName, newElementToFocus)
     }
 
     private fun refocusKeyboardElementIfNeeded() {
