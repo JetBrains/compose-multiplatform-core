@@ -326,28 +326,46 @@ public class AndroidRemotePaint(internal val frameworkPaint: android.graphics.Pa
         }
 
     override var color: RemoteColor
-        get() = RemoteColor(frameworkPaint.color)
+        get() =
+            if (frameworkPaint is CompatAndroidRemotePaint) {
+                frameworkPaint.remoteColor ?: RemoteColor(frameworkPaint.color)
+            } else {
+                RemoteColor(frameworkPaint.color)
+            }
         set(value) {
-            // Can fail on non constant values
-            frameworkPaint.color = value.constantValue.toArgb()
+            if (frameworkPaint is CompatAndroidRemotePaint) {
+                frameworkPaint.remoteColor = value
+            } else {
+                // Can fail on non constant values
+                frameworkPaint.color = value.constantValue.toArgb()
+            }
         }
 
     override var colorFilter: RemoteColorFilter?
         get() =
-            (frameworkPaint.colorFilter as? AndroidBlendModeColorFilter)?.let {
-                RemoteBlendModeColorFilter(Color(it.color).rc, it.mode.toComposeBlendMode())
+            if (frameworkPaint is CompatAndroidRemotePaint) {
+                frameworkPaint.remoteColorFilter
+            } else {
+                (frameworkPaint.colorFilter as? AndroidBlendModeColorFilter)?.let {
+                    RemoteBlendModeColorFilter(Color(it.color).rc, it.mode.toComposeBlendMode())
+                }
             }
         set(value) {
-            frameworkPaint.colorFilter =
-                when (value) {
-                    is RemoteBlendModeColorFilter ->
-                        AndroidBlendModeColorFilter(
-                            value.color.constantValue.toArgb(),
-                            value.blendMode.toAndroidBlendMode(),
-                        )
-                    is ComposeRemoteColorFilter -> value.composeColorFilter.asAndroidColorFilter()
-                    null -> null
-                }
+            if (frameworkPaint is CompatAndroidRemotePaint) {
+                frameworkPaint.remoteColorFilter = value
+            } else {
+                frameworkPaint.colorFilter =
+                    when (value) {
+                        is RemoteBlendModeColorFilter ->
+                            AndroidBlendModeColorFilter(
+                                value.color.constantValue.toArgb(),
+                                value.blendMode.toAndroidBlendMode(),
+                            )
+                        is ComposeRemoteColorFilter ->
+                            value.composeColorFilter.asAndroidColorFilter()
+                        null -> null
+                    }
+            }
         }
 
     override var textSize: RemoteFloat

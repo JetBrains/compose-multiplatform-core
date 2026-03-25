@@ -97,7 +97,7 @@ public fun RemoteColumn(
     val composeModifiers =
         RemoteComposeColumnModifier(modifier, horizontalAlignment, verticalArrangement)
             .then(modifier.toComposeUiLayout())
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     androidx.compose.foundation.layout.Column(
         composeModifiers,
         horizontalAlignment = horizontalAlignment.toComposeUi(),

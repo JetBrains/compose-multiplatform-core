@@ -52,7 +52,7 @@ class BinaryCompatibilityCheckerTest {
                 StringBuilder().let { dump.print(it) }.toString()
             }
 
-        val parsedLibraryAbis = KlibDumpParser(dumpText).parse()
+        val parsedLibraryAbis = MergedKlibDumpParser(dumpText).parse()
 
         BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
             mapOf("linuxX64" to libraryAbi),
@@ -68,8 +68,8 @@ class BinaryCompatibilityCheckerTest {
         val e =
             assertFailsWith<ValidationException> {
                 BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
-                    KlibDumpParser(currentDump).parse(),
-                    KlibDumpParser(previousDump).parse(),
+                    MergedKlibDumpParser(currentDump).parse(),
+                    MergedKlibDumpParser(previousDump).parse(),
                     shouldFreeze = false,
                     dependencies = mapOf("linux" to emptySet(), "ios" to emptySet()),
                 )
@@ -81,11 +81,11 @@ class BinaryCompatibilityCheckerTest {
     fun allowsTargetAdditions() {
         val previousDump = createDumpText("", listOf("linux"))
         val currentDump = createDumpText("", listOf("linux", "ios"))
-        KlibDumpParser(previousDump).parse()
-        KlibDumpParser(currentDump).parse()
+        MergedKlibDumpParser(previousDump).parse()
+        MergedKlibDumpParser(currentDump).parse()
         BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
-            KlibDumpParser(currentDump).parse(),
-            KlibDumpParser(previousDump).parse(),
+            MergedKlibDumpParser(currentDump).parse(),
+            MergedKlibDumpParser(previousDump).parse(),
             shouldFreeze = false,
             dependencies = mapOf("linux" to emptySet(), "ios" to emptySet()),
         )
@@ -95,13 +95,13 @@ class BinaryCompatibilityCheckerTest {
     fun throwsOnAdditionalTargetsWhenAPIIsFrozen() {
         val previousDump = createDumpText("", listOf("linux"))
         val currentDump = createDumpText("", listOf("linux", "ios"))
-        KlibDumpParser(previousDump).parse()
-        KlibDumpParser(currentDump).parse()
+        MergedKlibDumpParser(previousDump).parse()
+        MergedKlibDumpParser(currentDump).parse()
         val e =
             assertFailsWith<ValidationException> {
                 BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
-                    KlibDumpParser(currentDump).parse(),
-                    KlibDumpParser(previousDump).parse(),
+                    MergedKlibDumpParser(currentDump).parse(),
+                    MergedKlibDumpParser(previousDump).parse(),
                     shouldFreeze = true,
                     dependencies = mapOf("linux" to emptySet(), "ios" to emptySet()),
                 )
@@ -1831,8 +1831,8 @@ class BinaryCompatibilityCheckerTest {
     fun removedTargets() {
         val beforeText = createDumpText("", listOf("iosX64", "linuxX64"))
         val afterText = createDumpText("", listOf("linuxX64"))
-        val beforeLibs = KlibDumpParser(beforeText).parse()
-        val afterLibs = KlibDumpParser(afterText).parse()
+        val beforeLibs = MergedKlibDumpParser(beforeText).parse()
+        val afterLibs = MergedKlibDumpParser(afterText).parse()
 
         val e =
             assertFailsWith<ValidationException> {
@@ -1849,8 +1849,8 @@ class BinaryCompatibilityCheckerTest {
     fun removedTargetsWhenBaselinedSucceeds() {
         val beforeText = createDumpText("", listOf("iosX64", "linuxX64"))
         val afterText = createDumpText("", listOf("linuxX64"))
-        val beforeLibs = KlibDumpParser(beforeText).parse()
-        val afterLibs = KlibDumpParser(afterText).parse()
+        val beforeLibs = MergedKlibDumpParser(beforeText).parse()
+        val afterLibs = MergedKlibDumpParser(afterText).parse()
 
         BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
             afterLibs,
@@ -1864,33 +1864,35 @@ class BinaryCompatibilityCheckerTest {
     fun removedDeclarationsAndTargetsAreBothReported() {
         val beforeText =
             """
-        // KLib ABI Dump
-        // Targets: [linuxX64, iosX64]
-        // Rendering settings:
-        // - Signature version: 2
-        // - Show manifest properties: true
-        // - Show declarations: true
-        // Library unique name: <androidx:library>
-        final class my.lib/MyClass { // my.lib/MyClass|null[0]
-            constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
-            final fun myFun(): kotlin/String // my.lib/MyClass.myFun|myFun(){}[0]
-        }
-        """
+            // KLib ABI Dump
+            // Targets: [linuxX64, iosX64]
+            // Rendering settings:
+            // - Signature version: 2
+            // - Show manifest properties: true
+            // - Show declarations: true
+            // Library unique name: <androidx:library>
+            final class my.lib/MyClass { // my.lib/MyClass|null[0]
+                constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
+                final fun myFun(): kotlin/String // my.lib/MyClass.myFun|myFun(){}[0]
+            }
+            """
+                .trimIndent()
         val afterText =
             """
-        // KLib ABI Dump
-        // Targets: [linuxX64]
-        // Rendering settings:
-        // - Signature version: 2
-        // - Show manifest properties: true
-        // - Show declarations: true
-        // Library unique name: <androidx:library>
-        final class my.lib/MyClass { // my.lib/MyClass|null[0]
-            constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
-        }
-        """
-        val beforeLibs = KlibDumpParser(beforeText).parse()
-        val afterLibs = KlibDumpParser(afterText).parse()
+            // KLib ABI Dump
+            // Targets: [linuxX64]
+            // Rendering settings:
+            // - Signature version: 2
+            // - Show manifest properties: true
+            // - Show declarations: true
+            // Library unique name: <androidx:library>
+            final class my.lib/MyClass { // my.lib/MyClass|null[0]
+                constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
+            }
+            """
+                .trimIndent()
+        val beforeLibs = MergedKlibDumpParser(beforeText).parse()
+        val afterLibs = MergedKlibDumpParser(afterText).parse()
         val errors =
             BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
                 afterLibs,
@@ -1922,8 +1924,8 @@ class BinaryCompatibilityCheckerTest {
 
         val errors =
             BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
-                KlibDumpParser(afterText).parse(),
-                KlibDumpParser(beforeText).parse(),
+                MergedKlibDumpParser(afterText).parse(),
+                MergedKlibDumpParser(beforeText).parse(),
                 baselines = emptySet(),
                 validate = false,
                 dependencies = mapOf("myTarget" to emptySet()),
@@ -1985,8 +1987,8 @@ class BinaryCompatibilityCheckerTest {
         """
             )
         val afterText = createDumpText("")
-        val beforeLibs = KlibDumpParser(beforeText).parse()
-        val afterLibs = KlibDumpParser(afterText).parse()
+        val beforeLibs = MergedKlibDumpParser(beforeText).parse()
+        val afterLibs = MergedKlibDumpParser(afterText).parse()
 
         BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
             afterLibs,
@@ -2056,8 +2058,8 @@ class BinaryCompatibilityCheckerTest {
     ) {
         val beforeText = createDumpText(before)
         val afterText = createDumpText(after)
-        val beforeLibs = KlibDumpParser(beforeText).parse()
-        val afterLibs = KlibDumpParser(afterText).parse()
+        val beforeLibs = MergedKlibDumpParser(beforeText).parse()
+        val afterLibs = MergedKlibDumpParser(afterText).parse()
 
         BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
             afterLibs,

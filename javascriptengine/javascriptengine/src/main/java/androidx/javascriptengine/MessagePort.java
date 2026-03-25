@@ -40,6 +40,10 @@ import javax.annotation.concurrent.ThreadSafe;
  * <p>
  * A reference to the MessagePort is maintained so long as the message channel remains alive.
  * <p>
+ * In some cases, a MessagePort may become (or be created) unentangled, meaning that it has no
+ * functioning channel or counterpart port. This can happen either due to a port or channel being
+ * closed or the process or isolate on the other end being terminated.
+ * <p>
  * This class is thread-safe. Messages can be posted from any thread.
  */
 @ThreadSafe

@@ -66,7 +66,7 @@ public fun RemoteBox(
         RemoteBoxV2(modifier, contentAlignment) { content() }
         return
     }
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     androidx.compose.foundation.layout.Box(
         RemoteComposeBoxModifier(modifier, contentAlignment).then(modifier.toComposeUiLayout())
     ) {

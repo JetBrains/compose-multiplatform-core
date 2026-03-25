@@ -28,7 +28,11 @@ import java.util.Base64;
 import java.util.Objects;
 
 /**
- * Represents a message that can be sent or received between two message ports.
+ * A variant type for data that can be sent and received between two message ports.
+ * <p>
+ * Messages can be used with a {@link MessagePort} to communicate with a JavaScript isolate.
+ * Messages can package either string or binary data and provide methods to inspect the underlying
+ * JavaScript type represented.
  */
 public final class Message {
     /**

@@ -212,7 +212,7 @@ public fun RemoteText(
         LocalRemoteComposeCreationState.current.profile.supportedOperations.contains(
             Operations.CORE_TEXT
         )
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     if (useCoreTextComponent) {
         androidx.compose.foundation.layout.Box(
             RemoteComposeCoreTextComponentModifier(

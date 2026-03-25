@@ -213,7 +213,7 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Composable
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     private fun FollowingSubspaceContent(session: Session, anchorPose: Pose) {
         var rootAnchor by remember { mutableStateOf<AnchorEntity?>(null) }
         var alternateAnchor by remember { mutableStateOf<AnchorEntity?>(null) }
@@ -286,7 +286,7 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
         modifier: SubspaceModifier = SubspaceModifier.Companion,
         content: @Composable () -> Unit,
     ) {
-        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
         (SpatialPanel(modifier.width(300.dp).height(200.dp)) {
             Box(
                 modifier = Modifier.background(Color.LightGray).fillMaxSize(),

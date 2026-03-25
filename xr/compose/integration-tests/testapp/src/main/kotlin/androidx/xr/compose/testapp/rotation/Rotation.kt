@@ -44,6 +44,7 @@ import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SpatialSpacer
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.R
@@ -85,7 +86,9 @@ class Rotation : ComponentActivity() {
                 }
 
                 SpatialColumn {
-                    SpatialRow(modifier = SubspaceModifier.rotate(axisAngle, rotation)) {
+                    SpatialRow(
+                        modifier = SubspaceModifier.rotate(axisAngle, rotation).offset(z = 1.dp)
+                    ) {
                         PanelWithClock("left")
                         PanelWithClock("middle")
                         PanelWithClock("right")

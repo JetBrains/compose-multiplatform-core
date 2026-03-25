@@ -104,7 +104,7 @@ public fun RemoteRow(
             )
             .then(modifier.toComposeUiLayout())
 
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     androidx.compose.foundation.layout.Row(
         composeModifiers,
         horizontalArrangement = horizontalArrangement.toComposeUi(),

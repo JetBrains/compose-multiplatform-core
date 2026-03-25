@@ -117,7 +117,7 @@ internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
  */
 @Composable
 @ComposableOpenTarget(index = -1)
-@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
 public fun Subspace(
     modifier: SubspaceModifier = SubspaceModifier,
     allowUnboundedSubspace: Boolean = false,
@@ -228,7 +228,7 @@ private fun Subspace(
  */
 @Composable
 @UiComposable
-@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
 public fun PlanarEmbeddedSubspace(
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit
 ) {

@@ -65,7 +65,7 @@ public fun FitBox(
         FitBoxV2(modifier, horizontalAlignment, verticalArrangement, content)
         return
     }
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     androidx.compose.foundation.layout.Box(
         RemoteComposeFitBoxModifier(modifier, horizontalAlignment, verticalArrangement)
             .then(modifier.toComposeUiLayout())

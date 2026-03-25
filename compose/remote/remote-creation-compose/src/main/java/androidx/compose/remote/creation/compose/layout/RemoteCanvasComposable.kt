@@ -51,7 +51,7 @@ public fun RemoteCanvas(
         return
     }
     val creationState = LocalRemoteComposeCreationState.current
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     Spacer(
         modifier =
             RemoteComposeCanvasModifier(creationState.toRecordingModifier(modifier))

@@ -22,7 +22,6 @@ import androidx.compose.remote.creation.profile.RcPlatformProfiles.ANDROIDX
 import androidx.compose.remote.creation.profile.RcPlatformProfiles.WEAR_WIDGETS
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 
-@Suppress("RestrictedApiAndroidX")
 class ProfilePreviewParameterProvider : PreviewParameterProvider<Profile> {
     @OptIn(ExperimentalRemoteCreationApi::class)
     override val values = sequenceOf(ANDROIDX, WEAR_WIDGETS)
