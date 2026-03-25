@@ -289,13 +289,12 @@ private fun LinkAnnotation.getTag(): String? =
 
 internal fun SemanticsNode.canBeAccessibilityElement(): Boolean {
     return !isHiddenFromAccessibility &&
-        (unmergedConfig.isMergingSemanticsOfDescendants ||
-            isUnmergedNode && unmergedConfig.isSpeakingNode)
+        (unmergedConfig.isMergingSemanticsOfDescendants || isUnmergedSpeakingNode)
 }
 
-internal val SemanticsNode.isUnmergedNode: Boolean get() {
-    if (unmergedConfig.isMergingSemanticsOfDescendants) return true
+internal val SemanticsNode.isUnmergedSpeakingNode: Boolean get() {
     if (isFake) return false
+    if (!unmergedConfig.isSpeakingNode) return false
     if (unmergedConfig.isActionableNode) return true
 
     val hasReplacedChildren = replacedChildren.isNotEmpty()
