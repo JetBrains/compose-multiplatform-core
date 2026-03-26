@@ -1074,7 +1074,12 @@ internal class UIKitTextInputService(
         }
 
         private fun isIncorrect(range: TextRange): Boolean {
-            return range.start < 0 || range.end > endOfDocument() || range.start > range.end
+            return range.start < 0 ||
+                range.end > endOfDocument() ||
+                range.start > range.end ||
+                // Layout in native text input mode may be outdated, so not checking this may cause OOB error
+                // This workaround should be deleted after https://youtrack.jetbrains.com/issue/CMP-9767/
+                range.end > (textLayoutResult?.multiParagraph?.intrinsics?.annotatedString?.length ?: 0)
         }
     }
 }
