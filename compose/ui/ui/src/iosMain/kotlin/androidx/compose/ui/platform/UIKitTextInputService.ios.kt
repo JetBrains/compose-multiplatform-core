@@ -69,7 +69,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRectMake
-import platform.UIKit.UIColor
 import platform.UIKit.UIPress
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAutoresizingFlexibleHeight
@@ -288,10 +287,12 @@ internal class UIKitTextInputService(
         this.clippingTextFrame = clippingTextFrame
         this.unclippedTextPosition = unclippedTextPosition
 
-        recalculateTextViewPosition()
+        updateTextViewPosition()
+
+        showMenuOrUpdatePosition()
     }
 
-    private fun recalculateTextViewPosition() {
+    private fun updateTextViewPosition() {
         val rect = textFieldFrameInRoot ?: return
 
         if (usingNativeTextInput) {
@@ -319,8 +320,6 @@ internal class UIKitTextInputService(
         } else {
             textUIView?.setFrame(rect.toDpRect(view.density).asCGRect())
         }
-
-        showMenuOrUpdatePosition()
     }
 
     fun updateTextLayoutResult(textLayoutResult: TextLayoutResult) {
