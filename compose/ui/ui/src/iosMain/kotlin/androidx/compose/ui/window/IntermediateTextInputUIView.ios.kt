@@ -507,8 +507,8 @@ internal class IntermediateTextInputUIView(
         farthestInDirection: UITextLayoutDirection
     ): UITextPosition = if (usingNativeTextInput) {
         val fallback = IntermediateTextPosition(0)
+        val textRange = range.toTextRange() ?: return fallback
         PlatformTextLayoutDirection(farthestInDirection)?.let { direction ->
-            val textRange = range.toTextRange() ?: return fallback
             input?.positionWithinRange(textRange, direction)?.let {
                 IntermediateTextPosition(it)
             }
@@ -872,6 +872,7 @@ private class IntermediateTextRange(
     }
 }
 
+// Despite UITextRange being declared as non-null, iOS can still pass null to methods that take a UITextRange parameter.
 private fun UITextRange.toTextRange(): TextRange? {
     val start = (start() as? IntermediateTextPosition)?.position ?: return null
     val end = (end() as? IntermediateTextPosition)?.position ?: return null
