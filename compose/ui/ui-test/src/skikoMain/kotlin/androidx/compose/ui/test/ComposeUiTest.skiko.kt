@@ -53,8 +53,10 @@ import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -232,7 +234,9 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     override val mainClock: MainTestClock
         get() = mainClockImpl
 
-    private val uncaughtExceptionHandler = UncaughtExceptionHandler()
+    private val uncaughtExceptionHandler = UncaughtExceptionHandler(
+        effectContext[CoroutineExceptionHandler]
+    )
     private val infiniteAnimationPolicy = object : InfiniteAnimationPolicy {
         override suspend fun <R> onInfiniteOperation(block: suspend () -> R): R {
             if (mainClock.autoAdvance) {
@@ -241,8 +245,14 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             return block()
         }
     }
-    private val coroutineContext =
-        compositionCoroutineDispatcher + uncaughtExceptionHandler + infiniteAnimationPolicy
+
+    private val recomposerCoroutineScope = CoroutineScope(
+        effectContext +
+            compositionCoroutineDispatcher +
+            infiniteAnimationPolicy +
+            uncaughtExceptionHandler +
+            Job()
+    )
 
     private val surface = Surface.makeRasterN32Premul(width, height)
     private val size = IntSize(width, height)
@@ -252,7 +262,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         @InternalTestApi
         set
 
-    private val architectureComponentsOwner = DefaultArchitectureComponentsOwner(enforceMainThread = false)
+    private val architectureComponentsOwner =
+        DefaultArchitectureComponentsOwner(enforceMainThread = false)
     private val testOwner = SkikoTestOwner()
     private val testContext = TestContext(testOwner)
 
@@ -267,10 +278,18 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         val testDispatcher: CoroutineDispatcher =
             runTestContext[CoroutineDispatcher] ?: StandardTestDispatcher()
 
+        val combinedRunTestCoroutineContext =
+            recomposerCoroutineScope.coroutineContext
+                .minusKey(CoroutineExceptionHandler.Key)
+                .minusKey(Job.Key)
+                .minusKey(TestCoroutineScheduler.Key)
+                .plus(runTestContext)
+                .plus(testDispatcher)
+
         // Note: on web this call returns immediately (it returns a Promise),
         return runTest(
             timeout = testTimeout,
-            context = runTestContext.plus(testDispatcher)
+            context = combinedRunTestCoroutineContext
         ) {
             composeRootRegistry.withRegistry {
                 withScene {
@@ -303,7 +322,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     private inline fun <R> withRenderLoop(block: () -> R): R {
-        val scope = CoroutineScope(coroutineContext)
+        val scope = recomposerCoroutineScope
         return try {
             scope.launch {
                 while (isActive) {
@@ -334,7 +353,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         scene = CanvasLayersComposeScene(
             density = density,
             size = size,
-            coroutineContext = coroutineContext,
+            coroutineContext = recomposerCoroutineScope.coroutineContext,
             platformContext = TestContext(),
             invalidate = { }
         )
@@ -369,9 +388,9 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
 
         return !Snapshot.current.hasPendingChanges()
-                && !Snapshot.isApplyObserverNotificationPending
-                && !scene.hasInvalidations()
-                && areAllResourcesIdle()
+            && !Snapshot.isApplyObserverNotificationPending
+            && !scene.hasInvalidations()
+            && areAllResourcesIdle()
     }
 
     override fun waitForIdle() {
@@ -476,10 +495,10 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     fun captureToImage(semanticsNode: SemanticsNode): ImageBitmap {
         val rect = semanticsNode.boundsInWindow
         val image = surface.makeImageSnapshot(
-                rect.left.toInt(),
-                rect.top.toInt(),
-                rect.right.toInt(),
-                rect.bottom.toInt()
+            rect.left.toInt(),
+            rect.top.toInt(),
+            rect.right.toInt(),
+            rect.bottom.toInt()
         )
         return image!!.toComposeImageBitmap()
     }
@@ -580,6 +599,7 @@ actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
         timeoutMillis: Long,
         condition: () -> Boolean
     )
+
     actual fun setContent(composable: @Composable () -> Unit)
 }
 
