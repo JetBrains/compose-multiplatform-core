@@ -135,7 +135,8 @@ fun runInternalSkikoComposeUiTest(
     testTimeout: Duration = Duration.INFINITE,
     semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? = null,
     windowInsets: PlatformWindowInsets? = null,
-    block: suspend SkikoComposeUiTest.() -> Unit
+    useStandardTestDispatcherForComposition: Boolean = false,
+    block: suspend SkikoComposeUiTest.() -> Unit,
 ): TestResult {
     return runTest {
         SkikoComposeUiTest(
@@ -147,7 +148,7 @@ fun runInternalSkikoComposeUiTest(
             density = density,
             semanticsOwnerListener = semanticsOwnerListener,
             windowInsets = windowInsets,
-            useStandardTestDispatcherForComposition = false,
+            useStandardTestDispatcherForComposition = useStandardTestDispatcherForComposition,
         ).runTest(block)
     }
 }

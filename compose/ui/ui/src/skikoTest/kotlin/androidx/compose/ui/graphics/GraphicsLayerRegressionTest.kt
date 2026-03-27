@@ -235,7 +235,7 @@ class GraphicsLayerRegressionTest {
     @OptIn(InternalTestApi::class)
     private fun runLayerTest(body: suspend SkikoComposeUiTest.() -> Unit) {
         runInternalSkikoComposeUiTest(
-            coroutineDispatcher = StandardTestDispatcher()
+            useStandardTestDispatcherForComposition = true
         ) {
             runOnUiThread {
                 runTest(timeout = 10.seconds) {

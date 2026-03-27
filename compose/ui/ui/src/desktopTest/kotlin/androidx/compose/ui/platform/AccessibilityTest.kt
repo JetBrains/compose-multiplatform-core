@@ -622,7 +622,7 @@ private fun runDesktopA11yTest(block: suspend ComposeA11yTestScope.() -> Unit) {
 
     runInternalSkikoComposeUiTest(
         semanticsOwnerListener = sceneAccessibility,
-        coroutineDispatcher = testDispatcher
+        effectContext = testDispatcher
     ) {
         block(
             ComposeA11yTestScope(
