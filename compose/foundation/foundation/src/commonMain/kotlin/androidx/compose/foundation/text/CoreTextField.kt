@@ -562,7 +562,6 @@ internal fun CoreTextField(
                         maxLines = maxLines,
                         softWrap = softWrap,
                     )
-                    .overscroll(overscrollEffect)
                     .textFieldScroll(
                         scrollerPosition = scrollerPosition,
                         textFieldValue = value,
