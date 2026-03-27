@@ -18,6 +18,7 @@ package androidx.compose.foundation.text.input.internal
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.internal.requirePrecondition
+import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.PlacedAnnotation
 import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldState
@@ -82,6 +83,12 @@ internal class DefaultImeEditCommandScope(
 ) : ImeEditCommandScope {
 
     /**
+     * Special TextFieldBuffer that's reused in batch edits when there is no [OutputTransformation]
+     * or [CodepointTransformation].
+     */
+    private var batchEditTextFieldBuffer: TextFieldBuffer? = null
+
+    /**
      * The depth of the batch session. 0 means no session.
      *
      * Sometimes InputConnection does not call begin/endBatchEdit functions before calling other
@@ -97,7 +104,13 @@ internal class DefaultImeEditCommandScope(
      * visible to this transform function yet.
      */
     override fun mapFromTransformed(range: TextRange) =
-        transformedTextFieldState.mapFromTransformed(range)
+        // this if check is not absolutely necessary, a non-transformed TextFieldState will evaluate
+        // [range] to [range] anyway. But we can be faster about it so why not?
+        if (transformedTextFieldState.isTransformed) {
+            transformedTextFieldState.mapFromTransformed(range)
+        } else {
+            range
+        }
 
     /**
      * Transforms given [range] from original space to transformed space. Please note that this
@@ -105,10 +118,16 @@ internal class DefaultImeEditCommandScope(
      * visible to this transform function yet.
      */
     override fun mapToTransformed(range: TextRange) =
-        transformedTextFieldState.mapToTransformed(range)
+        // this if check is not absolutely necessary, a non-transformed TextFieldState will evaluate
+        // [range] to [range] anyway. But we can be faster about it so why not?
+        if (transformedTextFieldState.isTransformed) {
+            transformedTextFieldState.mapToTransformed(range)
+        } else {
+            range
+        }
 
     override val transformedLength: Int
-        get() = transformedTextFieldState.visualText.length
+        get() = batchEditTextFieldBuffer?.length ?: transformedTextFieldState.visualText.length
 
     private val editCommands = mutableVectorOf<TextFieldBuffer.() -> Unit>()
 
@@ -130,6 +149,9 @@ internal class DefaultImeEditCommandScope(
             transformedTextFieldState.editUntransformedTextAsUser(
                 restartImeIfContentChanges = false
             ) {
+                if (!transformedTextFieldState.isTransformed) {
+                    batchEditTextFieldBuffer = this
+                }
                 editCommands.forEach { it.invoke(this) }
             }
             editCommands.clear()
