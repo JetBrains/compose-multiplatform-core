@@ -125,10 +125,10 @@ fun WindowState(
     initialBoundsProvider: WindowBoundsProvider = WindowBoundsProvider.Default,
     initiallyMinimized: Boolean = false,
 ): WindowState = WindowState().apply {
-    setScreen(initialScreenProvider)
-    setPlacement(initialPlacement)
-    setBounds(initialBoundsProvider)
-    setMinimized(initiallyMinimized)
+    requestScreen(initialScreenProvider)
+    requestPlacement(initialPlacement)
+    requestBounds(initialBoundsProvider)
+    requestMinimized(initiallyMinimized)
 }
 
 /**
@@ -180,7 +180,12 @@ class WindowState internal constructor(
 
     internal val screenRequests = Channel<WindowScreenProvider>(Channel.CONFLATED)
 
-    fun setScreen(screenProvider: WindowScreenProvider) {
+    /**
+     * Requests to position the window on the specified screen.
+     *
+     * Note that the actual positioning is done asynchronously.
+     */
+    fun requestScreen(screenProvider: WindowScreenProvider) {
         screenRequests.trySend(screenProvider)
     }
 
@@ -199,7 +204,13 @@ class WindowState internal constructor(
 
     internal val placementRequests = Channel<WindowPlacement>(Channel.CONFLATED)
 
-    fun setPlacement(placement: WindowPlacement) {
+
+    /**
+     * Requests to set the placement of the window.
+     *
+     * Note that the actual placement is set asynchronously.
+     */
+    fun requestPlacement(placement: WindowPlacement) {
         placementRequests.trySend(placement)
     }
 
@@ -218,7 +229,12 @@ class WindowState internal constructor(
 
     internal val isMinimizedRequests = Channel<Boolean>(Channel.CONFLATED)
 
-    fun setMinimized(value: Boolean) {
+    /**
+     * Requests to set the minimized state of the window.
+     *
+     * Note that the actual minimized state is set asynchronously.
+     */
+    fun requestMinimized(value: Boolean) {
         isMinimizedRequests.trySend(value)
     }
 
@@ -238,21 +254,30 @@ class WindowState internal constructor(
     internal val boundsRequests = Channel<WindowBoundsProvider>(Channel.CONFLATED)
 
     /**
-     * Set the bounds of the window.
+     * Requests to set the bounds of the window.
+     *
+     * Note that the actual bounds are set asynchronously and may be different from the requested
+     * ones (e.g., if the window manager can't position as requested).
+     *
+     * Setting the bounds when the window placement is not [WindowPlacement.Floating] will change
+     * the placement to floating.
      */
-    fun setBounds(boundsProvider: WindowBoundsProvider) {
+    fun requestBounds(boundsProvider: WindowBoundsProvider) {
         boundsRequests.trySend(boundsProvider)
     }
 
     /**
-     * Set the bounds of the window.
+     * Requests to set the bounds of the window.
+     *
+     * Note that the actual bounds are set asynchronously and may be different from the requested
+     * ones (e.g., if the window manager can't position as requested).
      *
      * Setting the bounds when the window placement is not [WindowPlacement.Floating] will change
      * the placement to floating.
      *
      * All the parameters of [bounds] must be specified and finite.
      */
-    fun setBounds(bounds: DpRect) {
+    fun requestBounds(bounds: DpRect) {
         boundsRequests.trySend(
             WindowBoundsProvider.Absolute(bounds)
         )
