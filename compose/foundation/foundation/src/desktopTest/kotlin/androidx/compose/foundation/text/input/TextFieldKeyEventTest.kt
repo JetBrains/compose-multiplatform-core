@@ -544,7 +544,7 @@ class TextFieldKeyEventTest {
     ) {
         keyMappingOverride = namedKeyMapping.keyMapping
         try {
-            runInternalSkikoComposeUiTest(coroutineDispatcher = StandardTestDispatcher()) {
+            runInternalSkikoComposeUiTest(useStandardTestDispatcherForComposition = true) {
                 val tag = "TextFieldTestTag"
                 val state = TextFieldState(initText, initSelection)
                 val clipboard = FakeClipboard(initClipboardText)

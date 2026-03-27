@@ -391,7 +391,7 @@ internal class TooltipAreaTest {
     @OptIn(InternalComposeUiApi::class, InternalTestApi::class)
     private fun runComposeUiTestWithStandardTestDispatcher(
         block: suspend ComposeUiTest.() -> Unit
-    ) = runInternalSkikoComposeUiTest(coroutineDispatcher = StandardTestDispatcher()) {
+    ) = runInternalSkikoComposeUiTest(useStandardTestDispatcherForComposition = true) {
         block()
     }
 
