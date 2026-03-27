@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
+import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
@@ -60,13 +61,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.jetbrains.skia.Color
-import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Surface
 import org.jetbrains.skiko.currentNanoTime
 
@@ -93,11 +94,18 @@ actual fun runComposeUiTest(
     }
 }
 
+@OptIn(InternalComposeUiApi::class, InternalTestApi::class)
+@Deprecated(
+    message =
+        "Use `androidx.compose.ui.test.v2.runSkikoComposeUiTest` instead. The v2 APIs use " +
+            "`StandardTestDispatcher` by default to better simulate production behavior where " +
+            "coroutines are queued rather than executed immediately.",
+    level = DeprecationLevel.WARNING,
+)
 @ExperimentalTestApi
 fun runSkikoComposeUiTest(
     size: Size = Size(1024.0f, 768.0f),
     density: Density = Density(1f),
-    // TODO(https://github.com/JetBrains/compose-multiplatform/issues/2960) Support effectContext
     effectContext: CoroutineContext = EmptyCoroutineContext,
     runTestContext: CoroutineContext = EmptyCoroutineContext,
     testTimeout: Duration = Duration.INFINITE,
@@ -109,12 +117,15 @@ fun runSkikoComposeUiTest(
         effectContext = effectContext,
         testTimeout = testTimeout,
         runTestContext = runTestContext,
-        density = density
+        density = density,
+        semanticsOwnerListener = null,
+        windowInsets = null,
+        useStandardTestDispatcherForComposition = false,
     ).runTest(block)
 }
 
 @InternalTestApi
-@OptIn(InternalComposeUiApi::class, ExperimentalTestApi::class)
+@OptIn(InternalComposeUiApi::class, ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 fun runInternalSkikoComposeUiTest(
     width: Int = 1024,
     height: Int = 768,
@@ -124,7 +135,6 @@ fun runInternalSkikoComposeUiTest(
     testTimeout: Duration = Duration.INFINITE,
     semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? = null,
     windowInsets: PlatformWindowInsets? = null,
-    coroutineDispatcher: TestDispatcher = defaultTestDispatcher(),
     block: suspend SkikoComposeUiTest.() -> Unit
 ): TestResult {
     return runTest {
@@ -137,7 +147,7 @@ fun runInternalSkikoComposeUiTest(
             density = density,
             semanticsOwnerListener = semanticsOwnerListener,
             windowInsets = windowInsets,
-            coroutineDispatcher = coroutineDispatcher,
+            useStandardTestDispatcherForComposition = false,
         ).runTest(block)
     }
 }
@@ -149,13 +159,6 @@ fun runInternalSkikoComposeUiTest(
 private const val IDLING_RESOURCES_CHECK_INTERVAL_MS = 20L
 
 /**
- * Returns the default [TestDispatcher] to use in tests.
- */
-@OptIn(ExperimentalCoroutinesApi::class)
-@InternalTestApi
-fun defaultTestDispatcher(): TestDispatcher = UnconfinedTestDispatcher()
-
-/**
  * @param effectContext The [CoroutineContext] used to run the composition. The context for
  * `LaunchedEffect`s and `rememberCoroutineScope` will be derived from this context.
  */
@@ -164,34 +167,27 @@ fun defaultTestDispatcher(): TestDispatcher = UnconfinedTestDispatcher()
 open class SkikoComposeUiTest @InternalTestApi constructor(
     width: Int = 1024,
     height: Int = 768,
-    // TODO(https://github.com/JetBrains/compose-multiplatform/issues/2960) Support effectContext
-    effectContext: CoroutineContext = EmptyCoroutineContext,
+    private val effectContext: CoroutineContext = EmptyCoroutineContext,
     private val runTestContext: CoroutineContext = EmptyCoroutineContext,
     private val testTimeout: Duration = Duration.INFINITE,
     override val density: Density = Density(1f),
     private val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?,
     private val windowInsets: PlatformWindowInsets?,
-    private val coroutineDispatcher: TestDispatcher = defaultTestDispatcher(),
+    private val useStandardTestDispatcherForComposition: Boolean,
 ) : ComposeUiTest {
-    init {
-        require(effectContext == EmptyCoroutineContext) {
-            "The argument effectContext isn't supported yet. " +
-                "Follow https://github.com/JetBrains/compose-multiplatform/issues/2960"
-        }
-    }
-
     constructor(
         width: Int = 1024,
         height: Int = 768,
         effectContext: CoroutineContext = EmptyCoroutineContext,
         density: Density = Density(1f),
-    ) : this (
+    ) : this(
         width = width,
         height = height,
         effectContext = effectContext,
         density = density,
         semanticsOwnerListener = null,
         windowInsets = null,
+        useStandardTestDispatcherForComposition = true,
     )
 
     constructor(
@@ -210,17 +206,27 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         density = density,
         semanticsOwnerListener = null,
         windowInsets = null,
+        useStandardTestDispatcherForComposition = true,
     )
 
     private val composeRootRegistry = ComposeRootRegistry()
 
+    private val customTestDispatcher: TestDispatcher? =
+        effectContext[ContinuationInterceptor] as? TestDispatcher
+
+    /**
+     * We can only accept a TestDispatcher here because we need to access its scheduler. Use the
+     * TestDispatcher if it is provided in the effectContext Otherwise, use the
+     * TestCoroutineScheduler if it is provided
+     */
+    private val compositionCoroutineDispatcher: TestDispatcher =
+        customTestDispatcher
+            ?: effectContext.createDefaultTestDispatcher(useStandardTestDispatcherForComposition)
+
     private val mainClockImpl = MainTestClockImpl(
-        scheduler = coroutineDispatcher.scheduler,
+        scheduler = compositionCoroutineDispatcher.scheduler,
         frameDelayMillis = FRAME_DELAY_MILLIS,
-        // TODO: https://youtrack.jetbrains.com/issue/CMP-9519/Implement-ComposeUiTest-v2-APIs-and-migrate-the-tests
-        // It used to be ComposeUiTestFlags.isStandardTestDispatcherSupportEnabled which was true by default
-        // Now it's removed.
-        isStandardTestDispatcherSupportEnabled = true
+        isStandardTestDispatcherSupportEnabled = useStandardTestDispatcherForComposition
     )
     override val mainClock: MainTestClock
         get() = mainClockImpl
@@ -235,7 +241,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
     }
     private val coroutineContext =
-        coroutineDispatcher + uncaughtExceptionHandler + infiniteAnimationPolicy
+        compositionCoroutineDispatcher + uncaughtExceptionHandler + infiniteAnimationPolicy
 
     private val surface = Surface.makeRasterN32Premul(width, height)
     private val size = IntSize(width, height)
@@ -290,7 +296,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             runOnUiThread(::closeScene)
             // After the scene is closed, run all left foreground TestDispatchEvent.
             // They might've been added outside the runTest call, using the provided coroutineDispatcher:
-            coroutineDispatcher.scheduler.advanceUntilIdle()
+            compositionCoroutineDispatcher.scheduler.advanceUntilIdle()
             uncaughtExceptionHandler.throwUncaught()
         }
     }
@@ -577,3 +583,13 @@ actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
 }
 
 private const val FRAME_DELAY_MILLIS = 16L
+
+@OptIn(ExperimentalCoroutinesApi::class)
+private fun CoroutineContext.createDefaultTestDispatcher(
+    useStandardTestDispatcher: Boolean
+): TestDispatcher {
+    if (useStandardTestDispatcher) {
+        return StandardTestDispatcher(this[TestCoroutineScheduler])
+    }
+    return UnconfinedTestDispatcher(this[TestCoroutineScheduler])
+}
