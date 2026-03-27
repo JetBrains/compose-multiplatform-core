@@ -640,6 +640,16 @@ internal class BatchEditTest : ImeEditCommandTest() {
     }
 
     @Test
+    fun batchWithNoNetChange2() {
+        initialize("ABC", TextRange(3))
+        imeScope.beginBatchEdit()
+        imeScope.commitText("D", 1)
+        imeScope.commitText("E", 1)
+        imeScope.endBatchEdit()
+        assertThat(state.text.toString()).isEqualTo("ABCDE")
+    }
+
+    @Test
     fun batchWithExtremelyLargeValues() {
         initialize("ABC", TextRange(3))
         imeScope.beginBatchEdit()
@@ -711,5 +721,122 @@ internal class BatchEditTest : ImeEditCommandTest() {
         imeScope.commitText(emoji2, 1)
         imeScope.endBatchEdit()
         assertThat(state.text.toString()).isEqualTo("A$emoji1$emoji2")
+    }
+
+    @Test
+    fun stressTest_randomEditsInBatch() {
+        val random = kotlin.random.Random(42)
+        repeat(200) { iteration ->
+            val initialLength = random.nextInt(0, 100)
+            val initialText = RandomString(initialLength, random)
+            val start = random.nextInt(0, initialLength + 1)
+            val end = random.nextInt(0, initialLength + 1)
+            val initialSelection = TextRange(start, end)
+
+            initialize(initialText, initialSelection)
+
+            val log = StringBuilder()
+            log.appendLine("Iteration $iteration")
+            log.appendLine("Initial text: \"$initialText\", selection: $initialSelection")
+
+            imeScope.beginBatchEdit()
+            log.appendLine("beginBatchEdit()")
+
+            val numEdits = random.nextInt(1, 20)
+            repeat(numEdits) {
+                when (random.nextInt(3)) {
+                    0 -> {
+                        val text = RandomString(random.nextInt(0, 10), random)
+                        val pos = random.nextInt(-5, 5)
+                        log.appendLine("commitText(\"$text\", $pos)")
+                        imeScope.commitText(text, pos)
+                    }
+                    1 -> {
+                        val before = random.nextInt(0, 20)
+                        val after = random.nextInt(0, 20)
+                        log.appendLine("deleteSurroundingText($before, $after)")
+                        imeScope.deleteSurroundingText(before, after)
+                    }
+                    2 -> {
+                        val s = random.nextInt(-10, 110)
+                        val e = random.nextInt(-10, 110)
+                        log.appendLine("setSelection($s, $e)")
+                        imeScope.setSelection(s, e)
+                    }
+                }
+            }
+
+            try {
+                log.appendLine("endBatchEdit()")
+                imeScope.endBatchEdit()
+            } catch (t: Throwable) {
+                println("CRASH DETECTED!\n$log")
+                throw t
+            }
+        }
+    }
+
+    @Test
+    fun stressTest_largeDeletesSmallText() {
+        val random = kotlin.random.Random(123)
+        repeat(100) { iteration ->
+            initialize("abc", TextRange(1))
+            val log = StringBuilder()
+            log.appendLine("largeDeletesSmallText Iteration $iteration")
+            log.appendLine("Initial text: \"abc\", selection: TextRange(1)")
+
+            imeScope.beginBatchEdit()
+            log.appendLine("beginBatchEdit()")
+            repeat(5) {
+                val before = random.nextInt(0, 1000)
+                val after = random.nextInt(0, 1000)
+                val text = RandomString(random.nextInt(0, 10), random)
+                val pos = random.nextInt(-5, 5)
+
+                log.appendLine("deleteSurroundingText($before, $after)")
+                imeScope.deleteSurroundingText(before, after)
+                log.appendLine("commitText(\"$text\", $pos)")
+                imeScope.commitText(text, pos)
+            }
+            try {
+                log.appendLine("endBatchEdit()")
+                imeScope.endBatchEdit()
+            } catch (t: Throwable) {
+                println("CRASH DETECTED!\n$log")
+                throw t
+            }
+        }
+    }
+
+    @Test
+    fun stressTest_manyCommitsThenDelete() {
+        val random = kotlin.random.Random(456)
+        repeat(100) { iteration ->
+            initialize("", TextRange(0))
+            val log = StringBuilder()
+            log.appendLine("manyCommitsThenDelete Iteration $iteration")
+            log.appendLine("Initial text: \"\", selection: TextRange(0)")
+
+            imeScope.beginBatchEdit()
+            log.appendLine("beginBatchEdit()")
+            repeat(20) {
+                log.appendLine("commitText(\"a\", 1)")
+                imeScope.commitText("a", 1)
+            }
+            log.appendLine("deleteSurroundingText(10, 10)")
+            imeScope.deleteSurroundingText(10, 10)
+            try {
+                log.appendLine("endBatchEdit()")
+                imeScope.endBatchEdit()
+            } catch (t: Throwable) {
+                println("CRASH DETECTED!\n$log")
+                throw t
+            }
+        }
+    }
+
+    private fun RandomString(length: Int, random: kotlin.random.Random): String {
+        val chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 "
+        return (1..length).map { chars[random.nextInt(chars.length)] }.joinToString("")
     }
 }
