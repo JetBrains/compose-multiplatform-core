@@ -38,6 +38,7 @@ private val isIdleCallbackSupported: Boolean by lazy {
     isIdleApiSupported()
 }
 
+@OptIn(ExperimentalWasmJsInterop::class)
 private fun isIdleApiSupported(): Boolean = js("Boolean('requestIdleCallback' in window)")
 
 @Suppress("DEPRECATION")
