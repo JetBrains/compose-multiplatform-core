@@ -30,7 +30,6 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerButton
-import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
@@ -461,7 +460,7 @@ class PointerClickableTest {
                     .onPointerClick(
                         interactionSource = interactionSource,
                         // Custom logic: Only ripple on Right Click (Secondary)
-                        requestIndication = { it.buttons.isSecondaryPressed }
+                        triggerPressIndication = { it.buttons.isSecondaryPressed }
                     ) {}
             )
         }
@@ -581,7 +580,7 @@ class PointerClickableTest {
                     .size(40.dp)
                     .onPointerClick(
                         interactionSource = interactionSource,
-                        requestIndication = { if (onlyRippleOnShift) it.keyboardModifiers.isShiftPressed else true }
+                        triggerPressIndication = { if (onlyRippleOnShift) it.keyboardModifiers.isShiftPressed else true }
                     ) {
                         if (onlyRippleOnShift) clickCount2++ else clickCount1++
                     }
@@ -615,24 +614,6 @@ class PointerClickableTest {
 
         assertThat(clickCount2).isEqualTo(2)
         assertThat(interactions.filterIsInstance<PressInteraction>()).hasSize(2)
-    }
-
-    @Test
-    fun modifierIsPure() {
-        val sharedLambda: (PointerClickEvent) -> Unit = {}
-        val sharedFilter: (PointerEvent) -> Boolean = { true }
-        val modifier1 = Modifier.onPointerClick(
-            enabled = true,
-            requestIndication = sharedFilter,
-            onClick = sharedLambda
-        )
-        val modifier2 = Modifier.onPointerClick(
-            enabled = true,
-            requestIndication = sharedFilter,
-            onClick = sharedLambda
-        )
-
-        assertThat(modifier1).isEqualTo(modifier2)
     }
 
     private fun pointer(

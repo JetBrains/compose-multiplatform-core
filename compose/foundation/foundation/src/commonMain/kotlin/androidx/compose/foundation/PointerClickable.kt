@@ -19,7 +19,9 @@ package androidx.compose.foundation
 import androidx.compose.foundation.gestures.ScrollableContainerNode
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequesterModifierNode
 import androidx.compose.ui.focus.requestFocus
 import androidx.compose.ui.geometry.Offset
@@ -43,9 +45,9 @@ import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.invalidateSemantics
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.traverseAncestors
-import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.disabled
@@ -61,13 +63,14 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+
 /**
  * A data structure representing a pointer click with hardware metadata.
  *
- * @property position The pointer position relative to the containing element.
- * @property buttons The pointer buttons that were active during the click (e.g., Primary, Secondary).
- * This is `null` if the click was synthesized by accessibility services or keyboard actions.
- * @property keyboardModifiers The keyboard modifiers that were active during the click (e.g., Shift, Ctrl).
+ * @property position The exact coordinate of the click relative to the component's bounds.
+ * @property buttons The pointer buttons active during the click (e.g., Primary/Left, Secondary/Right).
+ * This is `null` if the click was synthesized via keyboard or accessibility services.
+ * @property keyboardModifiers The keyboard modifiers active during the click (e.g., Shift, Ctrl, Alt).
  */
 @ExperimentalFoundationApi
 class PointerClickEvent(
@@ -79,24 +82,26 @@ class PointerClickEvent(
 /**
  * Configures a component to receive pointer clicks (mouse, touch, stylus) alongside hardware metadata.
  *
- * Unlike standard [clickable], this modifier exposes the specific [PointerButtons] and
- * [PointerKeyboardModifiers] present at the time of the click, making it suitable for complex
- * desktop-style interactions (e.g., Shift+Click to multi-select, Right-Click for context menus).
+ * Unlike the standard [clickable] modifier, `onPointerClick` routes raw [PointerButtons] and
+ * [PointerKeyboardModifiers] into the callback. This is essential for building complex, desktop-grade
+ * multiplatform interactions such as Shift+Clicking to multi-select, or Right-Clicking for context menus.
  *
- * ***Note:*** Any removal operations on Android Views from [onPointerClick] should wrap the
- * [onClick] lambda in a `post { }` block to guarantee the event dispatch completes before
- * executing the removal.
+ * By default, this modifier provides Material Design UX: it listens to all mouse buttons, but only
+ * emits visual ripples on Primary actions (Touch or Left-Click). This behavior can be overridden
+ * via the [triggerPressIndication] parameter.
  *
  * @param enabled Controls the enabled state. When `false`, [onClick] will not be invoked, and
- * this modifier will appear disabled to accessibility services.
- * @param onClickLabel Semantic / accessibility label for the [onClick] action.
- * @param role The type of user interface element. Accessibility services might use this to describe
- * the element or do customizations.
- * @param interactionSource [MutableInteractionSource] that will be used to dispatch
- * [PressInteraction.Press] when this element is pressed.
- * @param requestIndication A lambda that determines whether a given [PointerEvent] should trigger
- * visual feedback (like a ripple). By default, only Primary clicks (touch or left-click) trigger indication.
- * @param onClick Will be called when the user clicks on the element, providing hardware metadata.
+ * the element will appear disabled to accessibility services.
+ * @param onClickLabel Semantic/accessibility label for the click action.
+ * @param role The type of user interface element (e.g., [Role.Button]).
+ * @param interactionSource The [MutableInteractionSource] used to dispatch [PressInteraction]s.
+ * If `null`, a default source is remembered automatically.
+ * @param indication The visual effect to draw when the element is pressed. Defaults to [LocalIndication].
+ * Set this to `null` to entirely disable visual feedback.
+ * @param triggerPressIndication A lambda that evaluates a raw [PointerEvent] and returns `true` if
+ * the event should transition the component into a "Pressed" state (triggering ripples). By default,
+ * only Primary clicks trigger this state.
+ * @param onClick Invoked when the element is successfully clicked, providing hardware metadata.
  */
 @ExperimentalFoundationApi
 fun Modifier.onPointerClick(
@@ -104,26 +109,46 @@ fun Modifier.onPointerClick(
     onClickLabel: String? = null,
     role: Role? = null,
     interactionSource: MutableInteractionSource? = null,
-    requestIndication: (PointerEvent) -> Boolean = { it.buttons.isPrimaryPressed },
+    indication: Indication? = null,
+    triggerPressIndication: (PointerEvent) -> Boolean = { it.buttons.isPrimaryPressed },
     onClick: (PointerClickEvent) -> Unit
-): Modifier = this.then(
-    PointerClickElement(
-        enabled = enabled,
-        onClickLabel = onClickLabel,
-        role = role,
-        interactionSource = interactionSource,
-        requestIndication = requestIndication,
-        onClick = onClick
+): Modifier = composed(
+    inspectorInfo = debugInspectorInfo {
+        name = "onPointerClick"
+        properties["enabled"] = enabled
+        properties["onClickLabel"] = onClickLabel
+        properties["role"] = role
+        properties["interactionSource"] = interactionSource
+        properties["indication"] = indication
+        properties["triggerPressIndication"] = triggerPressIndication
+        properties["onClick"] = onClick
+    }
+) {
+    val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
+    val resolvedIndication = indication ?: LocalIndication.current
+
+    this.then(
+        PointerClickElement(
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            role = role,
+            interactionSource = resolvedInteractionSource,
+            triggerPressIndication = triggerPressIndication,
+            onClick = onClick
+        )
+    ).indication(
+        interactionSource = resolvedInteractionSource,
+        indication = resolvedIndication
     )
-)
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 private class PointerClickElement(
     private val enabled: Boolean,
     private val onClickLabel: String?,
     private val role: Role?,
-    private val interactionSource: MutableInteractionSource?,
-    private val requestIndication: (PointerEvent) -> Boolean,
+    private val interactionSource: MutableInteractionSource,
+    private val triggerPressIndication: (PointerEvent) -> Boolean,
     private val onClick: (PointerClickEvent) -> Unit
 ) : ModifierNodeElement<PointerClickNode>() {
 
@@ -132,7 +157,7 @@ private class PointerClickElement(
         onClickLabel = onClickLabel,
         role = role,
         interactionSource = interactionSource,
-        requestIndication = requestIndication,
+        triggerPressIndication = triggerPressIndication,
         onClick = onClick
     )
 
@@ -142,19 +167,9 @@ private class PointerClickElement(
             onClickLabel = onClickLabel,
             role = role,
             interactionSource = interactionSource,
-            requestIndication = requestIndication,
+            triggerPressIndication = triggerPressIndication,
             onClick = onClick
         )
-    }
-
-    override fun InspectorInfo.inspectableProperties() {
-        name = "onPointerClick"
-        properties["enabled"] = enabled
-        properties["onClickLabel"] = onClickLabel
-        properties["role"] = role
-        properties["interactionSource"] = interactionSource
-        properties["requestIndication"] = requestIndication
-        properties["onClick"] = onClick
     }
 
     override fun equals(other: Any?): Boolean {
@@ -164,7 +179,7 @@ private class PointerClickElement(
         if (onClickLabel != other.onClickLabel) return false
         if (role != other.role) return false
         if (interactionSource != other.interactionSource) return false
-        if (requestIndication !== other.requestIndication) return false
+        if (triggerPressIndication !== other.triggerPressIndication) return false
         if (onClick !== other.onClick) return false
         return true
     }
@@ -173,8 +188,8 @@ private class PointerClickElement(
         var result = enabled.hashCode()
         result = 31 * result + (onClickLabel?.hashCode() ?: 0)
         result = 31 * result + (role?.hashCode() ?: 0)
-        result = 31 * result + (interactionSource?.hashCode() ?: 0)
-        result = 31 * result + requestIndication.hashCode()
+        result = 31 * result + interactionSource.hashCode()
+        result = 31 * result + triggerPressIndication.hashCode()
         result = 31 * result + onClick.hashCode()
         return result
     }
@@ -185,8 +200,8 @@ private class PointerClickNode(
     private var enabled: Boolean,
     private var onClickLabel: String?,
     private var role: Role?,
-    private var interactionSource: MutableInteractionSource?,
-    private var requestIndication: (PointerEvent) -> Boolean,
+    private var interactionSource: MutableInteractionSource,
+    private var triggerPressIndication: (PointerEvent) -> Boolean,
     private var onClick: (PointerClickEvent) -> Unit
 ) : DelegatingNode(),
     PointerInputModifierNode,
@@ -195,19 +210,20 @@ private class PointerClickNode(
     LayoutAwareModifierNode,
     CompositionLocalConsumerModifierNode {
 
+    // Hardware State Caching
     private var downEvent: PointerInputChange? = null
     private var downButtons: PointerButtons? = null
     private var downKeyboardModifiers: PointerKeyboardModifiers? = null
 
+    // Interaction Lifecycle
     private var pressInteraction: PressInteraction.Press? = null
     private var delayJob: Job? = null
 
+    // Layout Metrics
     private var componentSize: IntSize = IntSize.Zero
     private var centerOffset: Offset = Offset.Zero
 
-    private val focusableNode = delegate(
-        FocusableNode(interactionSource)
-    )
+    private val focusableNode = delegate(FocusableNode(interactionSource))
 
     override fun onRemeasured(size: IntSize) {
         componentSize = size
@@ -221,15 +237,12 @@ private class PointerClickNode(
     ) {
         if (pass == PointerEventPass.Main) {
             if (downEvent == null) {
-                // Listen for ANY button pressing down, not just primary
-                val downChange =
-                    pointerEvent.changes.firstOrNull { it.changedToDown() && !it.isConsumed }
+                val downChange = pointerEvent.changes.firstOrNull { it.changedToDown() && !it.isConsumed }
                 if (downChange != null) {
                     handleDownEvent(downChange, pointerEvent)
                 }
             } else {
-                // To support multitouch accurately, a click is only resolved
-                // when all active pointers are lifted from the component.
+                // Multi-touch constraint: A click resolves only when ALL active pointers lift.
                 if (pointerEvent.changes.fastAll { it.changedToUp() }) {
                     handleUpEvent(pointerEvent)
                 } else {
@@ -244,21 +257,23 @@ private class PointerClickNode(
     private fun handleDownEvent(down: PointerInputChange, pointerEvent: PointerEvent) {
         down.consume()
         this.downEvent = down
+
+        // Cache the hardware state exactly as it was during the initial 'Down' frame
         this.downButtons = pointerEvent.buttons
         this.downKeyboardModifiers = pointerEvent.keyboardModifiers
 
         if (enabled) {
             requestFocusWhenInMouseInputMode()
 
-            // Allow the developer (or default logic) to decide if this event warrants a visual ripple
-            if (requestIndication(pointerEvent)) {
+            // Consult the developer's logic to see if this raw event warrants a visual ripple
+            if (triggerPressIndication(pointerEvent)) {
                 handlePressInteractionStart(down.position)
             }
         }
     }
 
     private fun handleUpEvent(pointerEvent: PointerEvent) {
-        // Ensure we retrieve the change corresponding to the original pointer if possible
+        // Map the up event back to the original pointer to handle multitouch displacement safely
         val upChange = pointerEvent.changes.firstOrNull { it.id == downEvent?.id }
             ?: pointerEvent.changes.first()
 
@@ -310,60 +325,56 @@ private class PointerClickNode(
     }
 
     private fun handlePressInteractionStart(offset: Offset) {
-        interactionSource?.let { source ->
-            val press = PressInteraction.Press(offset)
-            val shouldDelayPress = hasScrollableContainer()
+        val press = PressInteraction.Press(offset)
 
-            if (shouldDelayPress) {
-                delayJob = coroutineScope.launch {
-                    delay(TapIndicationDelay)
-                    source.emit(press)
-                    pressInteraction = press
-                }
-            } else {
+        // Parent scroll containers intercept touches. Delay the visual ripple
+        // to prevent UI flickering if the user is just scrolling past this component.
+        if (hasScrollableContainer()) {
+            delayJob = coroutineScope.launch {
+                delay(TapIndicationDelay)
+                interactionSource.emit(press)
                 pressInteraction = press
-                coroutineScope.launch { source.emit(press) }
             }
+        } else {
+            pressInteraction = press
+            coroutineScope.launch { interactionSource.emit(press) }
         }
     }
 
     private fun handlePressInteractionRelease(offset: Offset) {
-        interactionSource?.let { source ->
-            val job = delayJob
-            if (job?.isActive == true) {
-                job.cancel()
-                coroutineScope.launch {
-                    // Prevents interaction emission race conditions (b/414319919)
-                    // where rapid clicks resolve before the cancellation completes.
-                    job.join()
-                    val press = PressInteraction.Press(offset)
-                    val release = PressInteraction.Release(press)
-                    source.emit(press)
-                    source.emit(release)
-                }
-            } else {
-                pressInteraction?.let {
-                    coroutineScope.launch { source.emit(PressInteraction.Release(it)) }
-                }
+        val job = delayJob
+        if (job?.isActive == true) {
+            job.cancel()
+            coroutineScope.launch {
+                // Prevents interaction emission race conditions (b/414319919)
+                // Ensures a rapid "lightning click" still briefly flashes the ripple.
+                job.join()
+                val press = PressInteraction.Press(offset)
+                val release = PressInteraction.Release(press)
+                interactionSource.emit(press)
+                interactionSource.emit(release)
             }
-            pressInteraction = null
+        } else {
+            pressInteraction?.let {
+                coroutineScope.launch { interactionSource.emit(PressInteraction.Release(it)) }
+            }
         }
+        pressInteraction = null
     }
 
     private fun handlePressInteractionCancel() {
-        interactionSource?.let { source ->
-            if (delayJob?.isActive == true) {
-                delayJob?.cancel()
-            } else {
-                pressInteraction?.let {
-                    coroutineScope.launch { source.emit(PressInteraction.Cancel(it)) }
-                }
+        if (delayJob?.isActive == true) {
+            delayJob?.cancel()
+        } else {
+            pressInteraction?.let {
+                coroutineScope.launch { interactionSource.emit(PressInteraction.Cancel(it)) }
             }
-            pressInteraction = null
         }
+        pressInteraction = null
     }
 
     private fun requestFocusWhenInMouseInputMode() {
+        // Implementation delegates to Compose internals to avoid focusing on touch devices
         if (isRequestFocusOnClickEnabled()) {
             requestFocus()
         }
@@ -382,8 +393,8 @@ private class PointerClickNode(
         enabled: Boolean,
         onClickLabel: String?,
         role: Role?,
-        interactionSource: MutableInteractionSource?,
-        requestIndication: (PointerEvent) -> Boolean,
+        interactionSource: MutableInteractionSource,
+        triggerPressIndication: (PointerEvent) -> Boolean,
         onClick: (PointerClickEvent) -> Unit
     ) {
         if (this.enabled != enabled) {
@@ -401,7 +412,7 @@ private class PointerClickNode(
             this.interactionSource = interactionSource
             focusableNode.update(interactionSource)
         }
-        this.requestIndication = requestIndication
+        this.triggerPressIndication = triggerPressIndication
         this.onClick = onClick
     }
 
@@ -411,10 +422,12 @@ private class PointerClickNode(
         }
         onClick(
             action = {
+                // Fetch window modifiers dynamically to support screen-readers triggering
+                // clicks while the user holds a physical key (e.g. Switch Access).
                 val currentModifiers = currentValueOf(LocalWindowInfo).keyboardModifiers
                 val synthesizedEvent = PointerClickEvent(
                     position = centerOffset,
-                    buttons = null,
+                    buttons = null, // Synthesized clicks lack hardware pointers
                     keyboardModifiers = currentModifiers
                 )
                 onClick(synthesizedEvent)
