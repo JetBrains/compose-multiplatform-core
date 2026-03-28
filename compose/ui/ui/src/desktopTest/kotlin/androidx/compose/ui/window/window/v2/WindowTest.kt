@@ -45,6 +45,7 @@ import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import org.junit.Assume.assumeFalse
@@ -720,6 +721,50 @@ class WindowTest {
         showWindow = false
         awaitIdle()
         assertTrue(!windowState.isVisible)
+    }
+
+    @Test
+    fun windowStateIsPreservedWhenHidingAndShowing() = runApplicationTest {
+        var showWindow by mutableStateOf(true)
+        lateinit var windowState: WindowState
+        launchTestApplication {
+            val state = rememberWindowStateWithBounds()
+            windowState = state
+            if (showWindow) {
+                Window(state = state, onCloseRequest = { }) {
+                    Box(Modifier.size(32.dp))
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                delay(Duration.INFINITE)
+            }
+        }
+        awaitIdle()
+
+        windowState.requestBounds(
+            windowState.requireScreen.availableBounds.let { screenBounds ->
+                val size = DpSize(400.dp, 400.dp)
+                DpRect(
+                    origin = DpOffset(
+                        (screenBounds.width - size.width) / 2,
+                        (screenBounds.height - size.height) / 2
+                    ),
+                    size = size
+                )
+            }
+        )
+        awaitIdle()
+        val windowBounds = windowState.requireBounds
+
+        showWindow = false
+        awaitIdle()
+        assertTrue(!windowState.isVisible)
+
+        showWindow = true
+        awaitIdle()
+        assertTrue(windowState.isVisible)
+        assertEquals(windowBounds, windowState.requireBounds)
     }
 }
 
