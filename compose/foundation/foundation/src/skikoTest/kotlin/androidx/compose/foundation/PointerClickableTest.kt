@@ -30,6 +30,7 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
@@ -317,6 +318,57 @@ class PointerClickableTest {
     }
 
     @Test
+    fun multiPointer_clickResolvesWithOriginalPointerPosition() = runSkikoComposeUiTest {
+        var clickEvent: PointerClickEvent? = null
+
+        setContent {
+            Box(
+                Modifier
+                    .size(100.dp)
+                    .onPointerClick { clickEvent = it }
+            )
+        }
+
+        val p1 = PointerId(1)
+        val p2 = PointerId(2)
+
+        // Press P1
+        scene.sendPointerEvent(
+            eventType = PointerEventType.Press,
+            pointers = listOf(pointer(p1, 10f, 10f, pressed = true, type = PointerType.Touch))
+        )
+        // Press P2 elsewhere
+        scene.sendPointerEvent(
+            eventType = PointerEventType.Press,
+            pointers = listOf(
+                pointer(p1, 10f, 10f, pressed = true, type = PointerType.Touch),
+                pointer(p2, 50f, 50f, pressed = true, type = PointerType.Touch)
+            )
+        )
+        // Release P2
+        scene.sendPointerEvent(
+            eventType = PointerEventType.Release,
+            pointers = listOf(
+                pointer(p1, 10f, 10f, pressed = true, type = PointerType.Touch),
+                pointer(p2, 50f, 50f, pressed = false, type = PointerType.Touch)
+            )
+        )
+        // Release P1
+        scene.sendPointerEvent(
+            eventType = PointerEventType.Release,
+            pointers = listOf(
+                pointer(p1, 10f, 10f, pressed = false, type = PointerType.Touch)
+            )
+        )
+
+        waitForIdle()
+
+        // Ensure the click event corresponds to the original down event (P1)
+        assertNotNull(clickEvent)
+        assertThat(clickEvent.position).isEqualTo(Offset(10f, 10f))
+    }
+
+    @Test
     fun parentScrolling_cancelsClickAndEmitsPressCancel() = runSkikoComposeUiTest {
         val interactionSource = MutableInteractionSource()
         val interactions = mutableListOf<Interaction>()
@@ -338,7 +390,7 @@ class PointerClickableTest {
         }
 
         scene.sendPointerEvent(PointerEventType.Press, Offset(20f, 20f), type = PointerType.Touch)
-        this.mainClock.advanceTimeBy(TapIndicationDelay)
+        this.mainClock.advanceTimeBy(100L) // Advance past tap delay
         waitForIdle()
 
         scene.sendPointerEvent(PointerEventType.Move, Offset(20f, 100f), type = PointerType.Touch)
@@ -392,6 +444,41 @@ class PointerClickableTest {
         waitForIdle()
         val clickEvent = assertNotNull(event)
         assertNull(clickEvent.buttons)
+    }
+
+    @Test
+    fun requestIndication_controlsRippleEmission() = runSkikoComposeUiTest {
+        val interactions = mutableListOf<Interaction>()
+        val interactionSource = MutableInteractionSource()
+
+        setContent {
+            LaunchedEffect(interactionSource) {
+                interactionSource.interactions.collect { interactions += it }
+            }
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .onPointerClick(
+                        interactionSource = interactionSource,
+                        // Custom logic: Only ripple on Right Click (Secondary)
+                        requestIndication = { it.buttons.isSecondaryPressed }
+                    ) {}
+            )
+        }
+
+        // Left Click -> Should NOT ripple
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f), button = PointerButton.Primary)
+        scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f), button = PointerButton.Primary)
+
+        waitForIdle()
+        assertThat(interactions.filterIsInstance<PressInteraction>()).isEmpty()
+
+        // Right Click -> SHOULD ripple
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f), button = PointerButton.Secondary)
+        scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f), button = PointerButton.Secondary)
+
+        waitForIdle()
+        assertThat(interactions.filterIsInstance<PressInteraction>()).hasSize(2)
     }
 
     @Test
@@ -478,10 +565,72 @@ class PointerClickableTest {
     }
 
     @Test
+    fun nodeReuse_updatesRequestIndicationAndOnClickLambda() = runSkikoComposeUiTest {
+        var onlyRippleOnShift by mutableStateOf(false)
+        var clickCount1 = 0
+        var clickCount2 = 0
+        val interactionSource = MutableInteractionSource()
+        val interactions = mutableListOf<Interaction>()
+
+        setContent {
+            LaunchedEffect(interactionSource) {
+                interactionSource.interactions.collect { interactions += it }
+            }
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .onPointerClick(
+                        interactionSource = interactionSource,
+                        requestIndication = { if (onlyRippleOnShift) it.keyboardModifiers.isShiftPressed else true }
+                    ) {
+                        if (onlyRippleOnShift) clickCount2++ else clickCount1++
+                    }
+            )
+        }
+
+        // 1. Initial state: ripple on anything.
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f), button = PointerButton.Primary)
+        scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f), button = PointerButton.Primary)
+        waitForIdle()
+
+        assertThat(clickCount1).isEqualTo(1)
+        assertThat(interactions.filterIsInstance<PressInteraction>()).hasSize(2)
+        interactions.clear()
+
+        // 2. Recompose: swap the behavior logic
+        onlyRippleOnShift = true
+        waitForIdle()
+
+        // 3. Click WITHOUT shift -> Callback fires, NO ripple
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f), button = PointerButton.Primary)
+        scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f), button = PointerButton.Primary)
+        waitForIdle()
+
+        assertThat(clickCount2).isEqualTo(1)
+        assertThat(interactions.filterIsInstance<PressInteraction>()).isEmpty()
+
+        // 4. Click WITH shift -> Callback fires, YES ripple
+        clickWithModifiers(PointerKeyboardModifiers(isShiftPressed = true))
+        waitForIdle()
+
+        assertThat(clickCount2).isEqualTo(2)
+        assertThat(interactions.filterIsInstance<PressInteraction>()).hasSize(2)
+    }
+
+    @Test
     fun modifierIsPure() {
         val sharedLambda: (PointerClickEvent) -> Unit = {}
-        val modifier1 = Modifier.onPointerClick(enabled = true, onClick = sharedLambda)
-        val modifier2 = Modifier.onPointerClick(enabled = true, onClick = sharedLambda)
+        val sharedFilter: (PointerEvent) -> Boolean = { true }
+        val modifier1 = Modifier.onPointerClick(
+            enabled = true,
+            requestIndication = sharedFilter,
+            onClick = sharedLambda
+        )
+        val modifier2 = Modifier.onPointerClick(
+            enabled = true,
+            requestIndication = sharedFilter,
+            onClick = sharedLambda
+        )
 
         assertThat(modifier1).isEqualTo(modifier2)
     }

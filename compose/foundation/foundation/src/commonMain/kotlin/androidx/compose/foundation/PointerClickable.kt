@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,6 +32,7 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.isOutOfBounds
+import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.LayoutAwareModifierNode
@@ -93,6 +94,8 @@ class PointerClickEvent(
  * the element or do customizations.
  * @param interactionSource [MutableInteractionSource] that will be used to dispatch
  * [PressInteraction.Press] when this element is pressed.
+ * @param requestIndication A lambda that determines whether a given [PointerEvent] should trigger
+ * visual feedback (like a ripple). By default, only Primary clicks (touch or left-click) trigger indication.
  * @param onClick Will be called when the user clicks on the element, providing hardware metadata.
  */
 @ExperimentalFoundationApi
@@ -101,6 +104,7 @@ fun Modifier.onPointerClick(
     onClickLabel: String? = null,
     role: Role? = null,
     interactionSource: MutableInteractionSource? = null,
+    requestIndication: (PointerEvent) -> Boolean = { it.buttons.isPrimaryPressed },
     onClick: (PointerClickEvent) -> Unit
 ): Modifier = this.then(
     PointerClickElement(
@@ -108,6 +112,7 @@ fun Modifier.onPointerClick(
         onClickLabel = onClickLabel,
         role = role,
         interactionSource = interactionSource,
+        requestIndication = requestIndication,
         onClick = onClick
     )
 )
@@ -118,6 +123,7 @@ private class PointerClickElement(
     private val onClickLabel: String?,
     private val role: Role?,
     private val interactionSource: MutableInteractionSource?,
+    private val requestIndication: (PointerEvent) -> Boolean,
     private val onClick: (PointerClickEvent) -> Unit
 ) : ModifierNodeElement<PointerClickNode>() {
 
@@ -126,6 +132,7 @@ private class PointerClickElement(
         onClickLabel = onClickLabel,
         role = role,
         interactionSource = interactionSource,
+        requestIndication = requestIndication,
         onClick = onClick
     )
 
@@ -135,6 +142,7 @@ private class PointerClickElement(
             onClickLabel = onClickLabel,
             role = role,
             interactionSource = interactionSource,
+            requestIndication = requestIndication,
             onClick = onClick
         )
     }
@@ -145,6 +153,7 @@ private class PointerClickElement(
         properties["onClickLabel"] = onClickLabel
         properties["role"] = role
         properties["interactionSource"] = interactionSource
+        properties["requestIndication"] = requestIndication
         properties["onClick"] = onClick
     }
 
@@ -155,6 +164,7 @@ private class PointerClickElement(
         if (onClickLabel != other.onClickLabel) return false
         if (role != other.role) return false
         if (interactionSource != other.interactionSource) return false
+        if (requestIndication !== other.requestIndication) return false
         if (onClick !== other.onClick) return false
         return true
     }
@@ -164,6 +174,7 @@ private class PointerClickElement(
         result = 31 * result + (onClickLabel?.hashCode() ?: 0)
         result = 31 * result + (role?.hashCode() ?: 0)
         result = 31 * result + (interactionSource?.hashCode() ?: 0)
+        result = 31 * result + requestIndication.hashCode()
         result = 31 * result + onClick.hashCode()
         return result
     }
@@ -175,6 +186,7 @@ private class PointerClickNode(
     private var onClickLabel: String?,
     private var role: Role?,
     private var interactionSource: MutableInteractionSource?,
+    private var requestIndication: (PointerEvent) -> Boolean,
     private var onClick: (PointerClickEvent) -> Unit
 ) : DelegatingNode(),
     PointerInputModifierNode,
@@ -237,12 +249,19 @@ private class PointerClickNode(
 
         if (enabled) {
             requestFocusWhenInMouseInputMode()
-            handlePressInteractionStart(down.position)
+
+            // Allow the developer (or default logic) to decide if this event warrants a visual ripple
+            if (requestIndication(pointerEvent)) {
+                handlePressInteractionStart(down.position)
+            }
         }
     }
 
     private fun handleUpEvent(pointerEvent: PointerEvent) {
-        val upChange = pointerEvent.changes[0]
+        // Ensure we retrieve the change corresponding to the original pointer if possible
+        val upChange = pointerEvent.changes.firstOrNull { it.id == downEvent?.id }
+            ?: pointerEvent.changes.first()
+
         upChange.consume()
 
         if (enabled) {
@@ -364,6 +383,7 @@ private class PointerClickNode(
         onClickLabel: String?,
         role: Role?,
         interactionSource: MutableInteractionSource?,
+        requestIndication: (PointerEvent) -> Boolean,
         onClick: (PointerClickEvent) -> Unit
     ) {
         if (this.enabled != enabled) {
@@ -381,6 +401,7 @@ private class PointerClickNode(
             this.interactionSource = interactionSource
             focusableNode.update(interactionSource)
         }
+        this.requestIndication = requestIndication
         this.onClick = onClick
     }
 
