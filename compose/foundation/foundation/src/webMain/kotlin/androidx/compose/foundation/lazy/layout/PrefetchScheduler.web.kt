@@ -43,7 +43,20 @@ private fun isIdleApiSupported(): Boolean = js("Boolean('requestIdleCallback' in
 @Suppress("DEPRECATION")
 private class WebPrefetchScheduler : PrefetchScheduler, RememberObserver, PriorityPrefetchScheduler {
 
+    /**
+     * List of pending prefetch requests.
+     * High-priority requests are always at the beginning of the list, and low-priority requests are at the end of the list.
+     *
+     * When a high-priority request is added, it is inserted at the index of [highPriorityCount], and then [highPriorityCount] is incremented.
+     * This way, all high-priority requests are always before low-priority requests in the list.
+     */
     private val prefetchRequests = mutableObjectListOf<PrefetchRequest>()
+
+    /**
+     * Number of high-priority requests at the beginning of [prefetchRequests].
+     * This allows having requests with priority in a single list and executing them in the right order without needing to reorder the list when new high-priority requests are added.
+     */
+    private var highPriorityCount = 0
     private var prefetchScheduled = false
     private var isActive = false
     private var idleCallbackHandle: Int? = null
@@ -59,7 +72,8 @@ private class WebPrefetchScheduler : PrefetchScheduler, RememberObserver, Priori
     }
 
     override fun scheduleHighPriorityPrefetch(prefetchRequest: PrefetchRequest) {
-        prefetchRequests.add(0, prefetchRequest)
+        prefetchRequests.add(highPriorityCount, prefetchRequest)
+        highPriorityCount++
         startScheduling()
     }
 
@@ -93,11 +107,12 @@ private class WebPrefetchScheduler : PrefetchScheduler, RememberObserver, Priori
                 break
             }
 
-            val task = prefetchRequests.first { true }
+            val task = prefetchRequests.first()
             val hasMoreWorkToDo = with(task) { scope.execute() }
 
             if (!hasMoreWorkToDo) {
                 prefetchRequests.removeAt(0)
+                if (highPriorityCount > 0) highPriorityCount--
             } else break
         }
 
@@ -122,6 +137,7 @@ private class WebPrefetchScheduler : PrefetchScheduler, RememberObserver, Priori
             idleCallbackHandle = null
         }
         prefetchRequests.clear()
+        highPriorityCount = 0
     }
 
     override fun onAbandoned() = onForgotten()
