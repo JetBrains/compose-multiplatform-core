@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.lazy.layout
 
-import androidx.collection.mutableObjectListOf
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.RememberObserver
@@ -51,7 +50,7 @@ private class WebPrefetchScheduler : PrefetchScheduler, RememberObserver, Priori
      * When a high-priority request is added, it is inserted at the index of [highPriorityCount], and then [highPriorityCount] is incremented.
      * This way, all high-priority requests are always before low-priority requests in the list.
      */
-    private val prefetchRequests = mutableObjectListOf<PrefetchRequest>()
+    private val prefetchRequests = ArrayDeque<PrefetchRequest>()
 
     /**
      * Number of high-priority requests at the beginning of [prefetchRequests].
@@ -69,7 +68,7 @@ private class WebPrefetchScheduler : PrefetchScheduler, RememberObserver, Priori
     }
 
     override fun scheduleLowPriorityPrefetch(prefetchRequest: PrefetchRequest) {
-        prefetchRequests.add(prefetchRequest)
+        prefetchRequests.addLast(prefetchRequest)
         startScheduling()
     }
 
@@ -111,7 +110,7 @@ private class WebPrefetchScheduler : PrefetchScheduler, RememberObserver, Priori
             val hasMoreWorkToDo = with(task) { scope.execute() }
 
             if (!hasMoreWorkToDo) {
-                prefetchRequests.removeAt(0)
+                prefetchRequests.removeFirst()
                 if (highPriorityCount > 0) highPriorityCount--
             } else break
         }
