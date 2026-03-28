@@ -147,7 +147,8 @@ fun SwingWindow(
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
         create = {
-            val initialScreen = currentState.screen
+            val graphicsDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices
+            val initialScreen = currentState.screen?.takeIf { it.device in graphicsDevices }
                 ?: state.screenRequests.tryReceive().getOrNull()?.getInitialScreen()
                 ?: WindowScreenProvider.Default.getInitialScreen()
 
