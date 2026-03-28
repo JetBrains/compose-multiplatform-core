@@ -58,6 +58,7 @@ import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.platform.WebOutOfFrameExecutor
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WindowInfoImpl
@@ -231,6 +232,11 @@ internal class ComposeWindow(
 
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
+            override val isOutOfFrameExecutorSupported: Boolean
+                get() = true
+
+            override fun scheduleOutOfFrameTask(block: () -> Unit) = WebOutOfFrameExecutor.schedule(block)
+
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
             override val inputModeManager: InputModeManager = DefaultInputModeManager()

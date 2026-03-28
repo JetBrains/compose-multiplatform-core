@@ -31,6 +31,7 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.node.OutOfFrameExecutor
 import androidx.compose.ui.node.OwnedLayer
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.node.RootForTest
@@ -183,6 +184,24 @@ interface PlatformContext {
      * @see SemanticsOwnerListener
      */
     val semanticsOwnerListener: SemanticsOwnerListener? get() = null
+
+    /**
+     * Schedules a block of code to execute out of frame.
+     * **It has to follow the same rules as [OutOfFrameExecutor]**
+     * @see OutOfFrameExecutor
+     *
+     * @param block The block of code to be executed. This lambda is invoked outside the
+     * framework's normal scheduling mechanism.
+     */
+    fun scheduleOutOfFrameTask(block: () -> Unit)= Unit
+
+    /**
+     * Indicates whether the out-of-frame executor functionality is supported on the current platform.
+     *@see scheduleOutOfFrameTask
+     * @see OutOfFrameExecutor
+     */
+    val isOutOfFrameExecutorSupported: Boolean
+        get() = false
 
     /**
      * Returns whether mouse-down on an unfocusable element clears focus.
