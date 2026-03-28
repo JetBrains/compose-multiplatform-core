@@ -19,7 +19,7 @@
 package androidx.compose.foundation.lazy.layout
 
 // TODO: https://youtrack.jetbrains.com/issue/CMP-1265
-object NoOpPrefetchScheduler: PrefetchScheduler {
+internal object NoOpPrefetchScheduler: PrefetchScheduler {
     override fun schedulePrefetch(prefetchRequest: PrefetchRequest) {
     }
 }
