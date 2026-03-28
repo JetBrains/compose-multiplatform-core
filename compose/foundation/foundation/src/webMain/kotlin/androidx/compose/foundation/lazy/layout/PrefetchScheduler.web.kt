@@ -64,8 +64,9 @@ private class WebPrefetchScheduler : PrefetchScheduler, RememberObserver, Priori
 
     private var scope: WebPrefetchRequestScope? = null
 
-    override fun schedulePrefetch(prefetchRequest: PrefetchRequest) =
-        scheduleHighPriorityPrefetch(prefetchRequest)
+    private val onIdleCallback: (IdleDeadline) -> Unit = { deadline ->
+        processPrefetchRequests(deadline)
+    }
 
     override fun scheduleLowPriorityPrefetch(prefetchRequest: PrefetchRequest) {
         prefetchRequests.add(prefetchRequest)
@@ -87,9 +88,7 @@ private class WebPrefetchScheduler : PrefetchScheduler, RememberObserver, Priori
 
     private fun scheduleIdleCallback() {
         idleCallbackHandle?.let { cancelIdleCallback(it) }
-        idleCallbackHandle = requestIdleCallback { deadline ->
-            processPrefetchRequests(deadline)
-        }
+        idleCallbackHandle = requestIdleCallback(onIdleCallback)
     }
 
     private fun processPrefetchRequests(deadline: IdleDeadline) {
