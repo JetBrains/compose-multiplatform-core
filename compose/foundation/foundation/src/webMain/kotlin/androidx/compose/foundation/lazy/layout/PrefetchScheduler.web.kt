@@ -41,7 +41,7 @@ private val isIdleCallbackSupported: Boolean by lazy {
 private fun isIdleApiSupported(): Boolean = js("Boolean('requestIdleCallback' in window)")
 
 @Suppress("DEPRECATION")
-private class WebPrefetchScheduler : PrefetchScheduler, RememberObserver, PriorityPrefetchScheduler {
+private class WebPrefetchScheduler : RememberObserver, PriorityPrefetchScheduler {
 
     /**
      * List of pending prefetch requests.
