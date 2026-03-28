@@ -223,8 +223,27 @@ private class PointerClickNode(
     private var componentSize: IntSize = IntSize.Zero
     private var centerOffset: Offset = Offset.Zero
 
-    private val focusableNode = delegate(FocusableNode(interactionSource))
+    private var focusableNode: FocusableNode? = null
 
+    private fun updateFocusableNode() {
+        if (enabled && focusableNode == null) {
+            focusableNode = delegate(FocusableNode(interactionSource))
+        } else if (!enabled && focusableNode != null) {
+            focusableNode?.let { undelegate(it) }
+            focusableNode = null
+        }
+    }
+
+    override fun onAttach() {
+        super.onAttach()
+        updateFocusableNode()
+    }
+
+    override fun onDetach() {
+        focusableNode?.let { undelegate(it) }
+        focusableNode = null
+        super.onDetach()
+    }
     override fun onRemeasured(size: IntSize) {
         componentSize = size
         centerOffset = size.center.toOffset()
@@ -420,22 +439,28 @@ private class PointerClickNode(
         if (this@PointerClickNode.role != null) {
             role = this@PointerClickNode.role!!
         }
-        onClick(
-            action = {
-                // Fetch window modifiers dynamically to support screen-readers triggering
-                // clicks while the user holds a physical key (e.g. Switch Access).
-                val currentModifiers = currentValueOf(LocalWindowInfo).keyboardModifiers
-                val synthesizedEvent = PointerClickEvent(
-                    position = centerOffset,
-                    buttons = null, // Synthesized clicks lack hardware pointers
-                    keyboardModifiers = currentModifiers
-                )
-                onClick(synthesizedEvent)
-                true
-            },
-            label = onClickLabel
-        )
-        if (!enabled) {
+        if (enabled) {
+            // When enabled, expose focus semantics from the delegated focusableNode
+            with(focusableNode) {
+                applySemantics()
+            }
+            onClick(
+                action = {
+                    // Fetch window modifiers dynamically to support screen-readers triggering
+                    // clicks while the user holds a physical key (e.g. Switch Access).
+                    val currentModifiers = currentValueOf(LocalWindowInfo).keyboardModifiers
+                    val synthesizedEvent = PointerClickEvent(
+                        position = centerOffset,
+                        buttons = null, // Synthesized clicks lack hardware pointers
+                        keyboardModifiers = currentModifiers
+                    )
+                    onClick(synthesizedEvent)
+                    true
+                },
+                label = onClickLabel
+            )
+        } else {
+            // When disabled, suppress focus and click semantics and mark as disabled
             disabled()
         }
     }
