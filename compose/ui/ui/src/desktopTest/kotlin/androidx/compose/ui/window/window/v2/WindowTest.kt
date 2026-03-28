@@ -44,6 +44,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import org.junit.Assume.assumeFalse
@@ -698,6 +699,27 @@ class WindowTest {
         Window(onCloseRequest = ::exitApplication) {
             content()
         }
+    }
+
+    @Test
+    fun windowStateIsNotVisibleAfterWindowComposableIsRemoved() = runApplicationTest {
+        var showWindow by mutableStateOf(true)
+        lateinit var windowState: WindowState
+        launchTestApplication {
+            val state = rememberWindowStateWithBounds()
+            windowState = state
+            if (showWindow) {
+                Window(state = state, onCloseRequest = { }) {
+                    Box(Modifier.size(32.dp))
+                }
+            }
+        }
+        awaitIdle()
+        assertTrue(windowState.isVisible)
+
+        showWindow = false
+        awaitIdle()
+        assertTrue(!windowState.isVisible)
     }
 }
 

@@ -139,6 +139,14 @@ fun SwingWindow(
         }
     }
 
+    fun setWindowStateAsNonVisible() {
+        // Nullify all state properties
+        currentState.placement = null
+        currentState.isMinimized = null
+        currentState.screen = null
+        currentState.bounds = null
+    }
+
     val coroutineContext = rememberCoroutineScope().coroutineContext
 
     var window: ComposeWindow? by remember { mutableStateOf(null) }
@@ -179,19 +187,15 @@ fun SwingWindow(
                             }
                         }
 
-                        override fun componentShown(e: ComponentEvent?) {
+                        override fun componentShown(e: ComponentEvent) {
                             // Initialize all state properties
                             currentState.placement = placement
                             currentState.isMinimized = isMinimized
                             applyBoundsChanges()
                         }
 
-                        override fun componentHidden(e: ComponentEvent?) {
-                            // Nullify all state properties
-                            currentState.placement = null
-                            currentState.isMinimized = null
-                            currentState.screen = null
-                            currentState.bounds = null
+                        override fun componentHidden(e: ComponentEvent) {
+                            setWindowStateAsNonVisible()
                         }
 
                         override fun componentResized(e: ComponentEvent) {
@@ -216,6 +220,7 @@ fun SwingWindow(
         },
         dispose = {
             WindowLocationTracker.onWindowDisposed(it)
+            setWindowStateAsNonVisible()
             // We need to remove them because AWT can still call them after dispose()
             listeners.removeFromAndClear(it)
             it.dispose()
