@@ -18,30 +18,40 @@ package androidx.compose.ui.platform
 
 import androidx.compose.ui.node.OutOfFrameExecutor
 import kotlin.js.ExperimentalWasmJsInterop
-import kotlinx.browser.window
-import org.w3c.dom.MessageChannel
-import org.w3c.dom.MessageEvent
+import kotlin.js.js
 
 internal object WebOutOfFrameExecutor : OutOfFrameExecutor {
     private val queue = ArrayDeque<() -> Unit>()
-    private val outOfFrameCallback = { message: MessageEvent ->
-            while (queue.isNotEmpty()) {
-                queue.removeFirst().invoke()
-            }
+    private val outOfFrameCallback = {
+        while (queue.isNotEmpty()) {
+            queue.removeFirst().invoke()
+        }
     }
+
     @OptIn(ExperimentalWasmJsInterop::class)
     override fun schedule(block: () -> Unit) {
         val shouldSchedule = queue.isEmpty()
         queue.addLast(block)
 
         if (shouldSchedule) {
-            //Runs tasks after the current frame is rendered. Logic extracted from -> https://webperf.tips/tip/measuring-paint-time/#detecting-when-paint-occurs
-            window.requestAnimationFrame {
-                val channel = MessageChannel()
-                channel.port1.onmessage = outOfFrameCallback
-                channel.port2.postMessage(null)
-            }
-
+            schedulerPostTask(outOfFrameCallback)
         }
     }
 }
+
+@OptIn(ExperimentalWasmJsInterop::class)
+internal val isPostingTasksSupported: Boolean by lazy {
+    isSchedulerApiSupported()
+}
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun isSchedulerApiSupported(): Boolean = js("Boolean('scheduler' in window)")
+
+
+/**
+ * Better reflects [OutOfFrameExecutor] contract
+ */
+@OptIn(ExperimentalWasmJsInterop::class)
+//language=javascript
+private fun schedulerPostTask(block: () -> Unit): Unit =
+    js("scheduler.postTask(block, { priority: 'user-blocking',})")

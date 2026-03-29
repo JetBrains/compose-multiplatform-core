@@ -63,6 +63,7 @@ import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
+import androidx.compose.ui.platform.isPostingTasksSupported
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
@@ -233,7 +234,7 @@ internal class ComposeWindow(
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
             override val isOutOfFrameExecutorSupported: Boolean
-                get() = true
+                get() = isPostingTasksSupported
 
             override fun scheduleOutOfFrameTask(block: () -> Unit) = WebOutOfFrameExecutor.schedule(block)
 
