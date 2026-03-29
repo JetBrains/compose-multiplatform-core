@@ -138,6 +138,9 @@ private fun Insets.toDpInsets() = DpInsets(
 class Screen internal constructor(
     internal val device: GraphicsDevice
 ) {
+
+    val id: String = device.iDstring
+
     private val configuration
         get() = device.defaultConfiguration
 
@@ -158,7 +161,7 @@ class Screen internal constructor(
             )
         }
 
-    override fun toString(): String = device.iDstring
+    override fun toString(): String = id
 }
 
 class WindowGeometryProviderScope internal constructor(
@@ -285,19 +288,13 @@ class WindowScreenProviderScope internal constructor(
     devices: List<GraphicsDevice>,
     defaultDevice: GraphicsDevice,
 ) {
-
-    private val deviceById = devices.associateBy { it.iDstring }
-    val screenIds: List<String> = deviceById.keys.toList()
-    val defaultScreenId: String = defaultDevice.iDstring
-
-    fun getScreen(screenId: String): Screen {
-        return Screen(deviceById[screenId] ?: error("No screen with id $screenId"))
-    }
+    val screens: List<Screen> = devices.map { Screen(it) }
+    val defaultScreen: Screen = Screen(defaultDevice)
 }
 
 fun interface WindowScreenProvider {
-    fun WindowScreenProviderScope.getScreenId(): String
+    fun WindowScreenProviderScope.getScreen(): Screen
     companion object {
-        val Default = WindowScreenProvider { defaultScreenId }
+        val Default = WindowScreenProvider { defaultScreen }
     }
 }

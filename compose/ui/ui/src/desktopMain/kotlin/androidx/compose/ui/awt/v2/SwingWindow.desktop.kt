@@ -280,11 +280,9 @@ private fun WindowScreenProvider.getInitialScreenDevice(): GraphicsDevice {
     val defaultDevice =
         devices.firstOrNull { it.iDstring === lastActiveConfig?.device?.iDstring } ?:
         env.defaultScreenDevice
-    val selectedScreenId = with(WindowScreenProviderScope(devices.toList(), defaultDevice)) {
-        getScreenId()
+    return with(WindowScreenProviderScope(devices.toList(), defaultDevice)) {
+        getScreen().device
     }
-    return devices.firstOrNull { it.iDstring == selectedScreenId }
-        ?: error("No screen with id $selectedScreenId exists")
 }
 
 private fun ComposeWindow.initializePlacement(state: WindowState) {
