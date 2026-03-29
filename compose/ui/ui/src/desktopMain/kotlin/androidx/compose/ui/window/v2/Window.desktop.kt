@@ -135,6 +135,14 @@ private fun Insets.toDpInsets() = DpInsets(
     right = right.dp
 )
 
+/**
+ * Represents a user's screen.
+ *
+ * Note that a [Screen] holds a reference to an underlying native object representing it.
+ * Additionally, screens can come and go (the user may disconnect one, for example).
+ * Therefore, it is highly discouraged to keep long-term references to [Screen] objects, beyond
+ * their use in [WindowScreenProviderScope] or [WindowGeometryProviderScope].
+ */
 class Screen internal constructor(
     internal val device: GraphicsDevice
 ) {
