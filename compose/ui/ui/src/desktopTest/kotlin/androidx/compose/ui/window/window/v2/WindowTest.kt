@@ -45,6 +45,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration
@@ -820,6 +821,70 @@ class WindowTest {
         assertTrue(windowState!!.isVisible)
         assertEquals(windowBounds, windowState!!.requireBounds)
     }
+
+    @Test
+    fun windowIsShownCorrectlyIfStateSavedBeforeWindowIsShown() = runApplicationTest {
+        var createWindowState by mutableStateOf(true)
+        var showWindow by mutableStateOf(false)
+        var windowState: WindowState? = null
+        launchTestApplication {
+            val stateHolder = rememberSaveableStateHolder()
+            stateHolder.SaveableStateProvider(createWindowState) {
+                if (createWindowState) {
+                    val state = rememberWindowStateWithBounds(
+                        initialSize = DpSize(300.dp, 300.dp)
+                    )
+                    DisposableEffect(state) {
+                        windowState = state
+                        onDispose {
+                            windowState = null
+                        }
+                    }
+                    if (showWindow) {
+                        Window(state = state, onCloseRequest = { }) {
+                            Box(Modifier.size(32.dp))
+                        }
+                    }
+                }
+            }
+
+            // Prevent app from dying when nothing is shown
+            LaunchedEffect(Unit) {
+                delay(Duration.INFINITE)
+            }
+        }
+
+        awaitIdle()
+        assertNotNull(windowState)
+        assertNull(windowState?.bounds)
+        windowState!!.requestBounds {
+            val screenBounds = screen.availableBounds
+            val size = DpSize(400.dp, 400.dp)
+            DpRect(
+                origin = DpOffset(
+                    (screenBounds.width - size.width) / 2,
+                    (screenBounds.height - size.height) / 2
+                ),
+                size = size
+            )
+        }
+
+        createWindowState = false
+        awaitIdle()
+        assertNull(windowState)
+
+        createWindowState = true
+        showWindow = true
+        awaitIdle()
+
+        awaitIdle()
+        assertNotNull(windowState)
+        assertNotNull(windowState?.bounds)
+        // Size should be as the one requested in rememberWindowStateWithBounds, not the one in
+        // windowState!!.requestBounds above.
+        assertEquals(DpSize(300.dp, 300.dp), windowState?.requireBounds?.size)
+    }
+
 }
 
 private object CtxElement : CoroutineContext.Element, CoroutineContext.Key<CtxElement> {

@@ -302,33 +302,29 @@ class WindowState internal constructor(
          */
         val Saver: Saver<WindowState, Any> = listSaver(
             save = {
-                val bounds = it.bounds
+                val bounds = it.bounds ?: return@listSaver emptyList()
                 arrayListOf(
-                    it.screenId,
-                    it.placement?.ordinal ?: -1,
-                    it.isMinimized,
-                    bounds != null,
-                    bounds?.top?.value ?: 0f,
-                    bounds?.left?.value ?: 0f,
-                    bounds?.right?.value ?: 0f,
-                    bounds?.bottom?.value ?: 0f,
+                    it.requireScreenId,
+                    it.requirePlacement.ordinal,
+                    it.requireMinimized,
+                    bounds.top.value,
+                    bounds.left.value,
+                    bounds.right.value,
+                    bounds.bottom.value,
                 )
             },
             restore = { state ->
+                if (state.isEmpty()) return@listSaver null
                 WindowState(
-                    screenId = state[0] as String?,
-                    placement = (state[1] as Int).let { ordinal ->
-                        if (ordinal >= 0) WindowPlacement.entries[ordinal] else null
-                    },
-                    isMinimized = state[2] as Boolean?,
-                    bounds = if (state[3] as Boolean) {
-                        DpRect(
-                            top = Dp(state[4] as Float),
-                            left = Dp(state[5] as Float),
-                            right = Dp(state[6] as Float),
-                            bottom = Dp(state[7] as Float)
-                        )
-                    } else null,
+                    screenId = state[0] as String,
+                    placement = WindowPlacement.entries[(state[1] as Int)],
+                    isMinimized = state[2] as Boolean,
+                    bounds = DpRect(
+                        top = Dp(state[3] as Float),
+                        left = Dp(state[4] as Float),
+                        right = Dp(state[5] as Float),
+                        bottom = Dp(state[6] as Float)
+                    )
                 )
             }
         )
