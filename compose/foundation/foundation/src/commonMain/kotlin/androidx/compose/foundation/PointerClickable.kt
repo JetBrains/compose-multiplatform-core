@@ -223,8 +223,27 @@ private class PointerClickNode(
     private var componentSize: IntSize = IntSize.Zero
     private var centerOffset: Offset = Offset.Zero
 
-    private val focusableNode = delegate(FocusableNode(interactionSource))
+    private var focusableNode: FocusableNode? = null
 
+    private fun updateFocusableNode() {
+        if (enabled && focusableNode == null) {
+            focusableNode = delegate(FocusableNode(interactionSource))
+        } else if (!enabled && focusableNode != null) {
+            focusableNode?.let { undelegate(it) }
+            focusableNode = null
+        }
+    }
+
+    override fun onAttach() {
+        super.onAttach()
+        updateFocusableNode()
+    }
+
+    override fun onDetach() {
+        focusableNode?.let { undelegate(it) }
+        focusableNode = null
+        super.onDetach()
+    }
     override fun onRemeasured(size: IntSize) {
         componentSize = size
         centerOffset = size.center.toOffset()
