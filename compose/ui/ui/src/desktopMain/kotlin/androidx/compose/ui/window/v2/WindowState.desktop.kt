@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.requireReal
-import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
 import kotlinx.coroutines.channels.Channel
 
@@ -135,20 +134,20 @@ fun WindowState(
  * A state object that can be hoisted to control and observe window attributes
  * (size/position/state).
  *
- * @param screen the initial value for [WindowState.screen]
+ * @param screenId the initial value for [WindowState.screenId]
  * @param placement the initial value for [WindowState.placement]
  * @param isMinimized the initial value for [WindowState.isMinimized]
  * @param bounds the initial value for [WindowState.bounds]
  */
 @Stable
 class WindowState internal constructor(
-    screen: Screen?,
+    screenId: String?,
     placement: WindowPlacement?,
     isMinimized: Boolean?,
     bounds: DpRect?,
 ) {
     constructor() : this(
-        screen = null,
+        screenId = null,
         placement = null,
         isMinimized = null,
         bounds = null
@@ -166,18 +165,18 @@ class WindowState internal constructor(
 
 
     /**
-     * The screen with which the window is currently associated; `null` if the window is not yet
-     * visible.
+     * The id of the screen with which the window is currently associated; `null` if the window is
+     * not yet visible.
      */
-    var screen: Screen? by mutableStateOf(screen)
+    var screenId: String? by mutableStateOf(screenId)
         internal set
 
     /**
-     * The screen with which the window is currently associated; throws [IllegalStateException] if
-     * the window is not yet visible.
+     * The id of the screen with which the window is currently associated; throws
+     * [IllegalStateException] if the window is not yet visible.
      */
-    val requireScreen: Screen
-        get() = screen ?: windowNotVisibleError("requireScreen")
+    val requireScreenId: String
+        get() = screenId ?: windowNotVisibleError("requireScreenId")
 
     internal val screenRequests = Channel<WindowScreenProvider>(Channel.CONFLATED)
 
@@ -292,7 +291,7 @@ class WindowState internal constructor(
             save = {
                 val bounds = it.bounds
                 arrayListOf(
-                    it.screen?.device?.iDstring ?: "",
+                    it.screenId,
                     it.placement?.ordinal ?: -1,
                     it.isMinimized,
                     bounds != null,
@@ -304,14 +303,7 @@ class WindowState internal constructor(
             },
             restore = { state ->
                 WindowState(
-                    screen = (state[0] as String).let { idString ->
-                        if (idString.isEmpty()) return@let null
-                        val device = GraphicsEnvironment
-                            .getLocalGraphicsEnvironment()
-                            .screenDevices
-                            .firstOrNull { it.iDstring == idString }
-                        if (device != null) Screen(device) else null
-                    },
+                    screenId = state[0] as String?,
                     placement = (state[1] as Int).let { ordinal ->
                         if (ordinal >= 0) WindowPlacement.entries[ordinal] else null
                     },
@@ -336,4 +328,4 @@ class WindowState internal constructor(
 fun WindowState.awtBounds(): Rectangle? = bounds?.toAwtRectangleRounded()
 
 private fun windowNotVisibleError(propertyName: String): Nothing =
-    throw IllegalStateException("Can't read $propertyName when window is not visible")
+    throw IllegalStateException("Can't read $propertyName when window has not yet been made visible")

@@ -54,6 +54,7 @@ import androidx.compose.ui.window.v2.WindowScreenProvider
 import androidx.compose.ui.window.v2.WindowScreenProviderScope
 import androidx.compose.ui.window.v2.WindowState
 import androidx.compose.ui.window.v2.rememberWindowState
+import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 import java.awt.Window
 import java.awt.event.ComponentAdapter
@@ -148,12 +149,15 @@ fun SwingWindow(
         onKeyEvent = onKeyEvent,
         create = {
             val graphicsDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices
-            val initialScreen = currentState.screen?.takeIf { it.device in graphicsDevices }
-                ?: state.screenRequests.tryReceive().getOrNull()?.getInitialScreen()
-                ?: WindowScreenProvider.Default.getInitialScreen()
+            val currentDevice = currentState.screenId?.let { screenId ->
+                graphicsDevices.firstOrNull { it.iDstring == screenId }
+            }
+            val initialDevice = currentDevice
+                ?: state.screenRequests.tryReceive().getOrNull()?.getInitialScreenDevice()
+                ?: WindowScreenProvider.Default.getInitialScreenDevice()
 
             ComposeWindow(
-                graphicsConfiguration = initialScreen.device.defaultConfiguration,
+                graphicsConfiguration = initialDevice.defaultConfiguration,
                 coroutineContext = coroutineContext
             ).apply {
                 // close state is controlled by WindowState.isOpen
@@ -175,8 +179,8 @@ fun SwingWindow(
                     object : ComponentAdapter() {
                         fun applyBoundsChanges() {
                             currentState.bounds = DpRect(x.dp, y.dp, (x + width).dp, (y + height).dp)
-                            if (currentState.screen?.device != graphicsConfiguration.device) {
-                                currentState.screen = Screen(graphicsConfiguration.device)
+                            if (currentState.screenId != graphicsConfiguration.device.iDstring) {
+                                currentState.screenId = graphicsConfiguration.device.iDstring
                             }
                         }
 
@@ -269,19 +273,19 @@ fun SwingWindow(
     }
 }
 
-private fun WindowScreenProvider.getInitialScreen(): Screen {
+private fun WindowScreenProvider.getInitialScreenDevice(): GraphicsDevice {
     val lastActiveConfig = WindowLocationTracker.lastActiveGraphicsConfiguration
     val env = GraphicsEnvironment.getLocalGraphicsEnvironment()
-    val allScreens = env.screenDevices.map(::Screen)
-    val defaultScreen =
-        allScreens.firstOrNull { it.device === lastActiveConfig?.device } ?:
-        allScreens.firstOrNull { it.device == env.defaultScreenDevice } ?:
-        Screen(env.defaultScreenDevice)
-    return with(WindowScreenProviderScope(defaultScreen, allScreens)) {
-        getScreen()
+    val devices = env.screenDevices
+    val defaultDevice =
+        devices.firstOrNull { it.iDstring === lastActiveConfig?.device?.iDstring } ?:
+        env.defaultScreenDevice
+    val selectedScreenId = with(WindowScreenProviderScope(devices.toList(), defaultDevice)) {
+        getScreenId()
     }
+    return devices.firstOrNull { it.iDstring == selectedScreenId }
+        ?: error("No screen with id $selectedScreenId exists")
 }
-
 
 private fun ComposeWindow.initializePlacement(state: WindowState) {
     val placementRequest = state.placementRequests.tryReceive().getOrNull()

@@ -281,14 +281,23 @@ fun interface WindowSizeProvider {
     }
 }
 
-class WindowScreenProviderScope(
-    val defaultScreen: Screen,
-    val screens: List<Screen>,
-)
+class WindowScreenProviderScope internal constructor(
+    devices: List<GraphicsDevice>,
+    defaultDevice: GraphicsDevice,
+) {
+
+    private val deviceById = devices.associateBy { it.iDstring }
+    val screenIds: List<String> = deviceById.keys.toList()
+    val defaultScreenId: String = defaultDevice.iDstring
+
+    fun getScreen(screenId: String): Screen {
+        return Screen(deviceById[screenId] ?: error("No screen with id $screenId"))
+    }
+}
 
 fun interface WindowScreenProvider {
-    fun WindowScreenProviderScope.getScreen(): Screen
+    fun WindowScreenProviderScope.getScreenId(): String
     companion object {
-        val Default = WindowScreenProvider { defaultScreen }
+        val Default = WindowScreenProvider { defaultScreenId }
     }
 }
