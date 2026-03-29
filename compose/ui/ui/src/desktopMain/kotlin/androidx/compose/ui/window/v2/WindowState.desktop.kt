@@ -254,7 +254,7 @@ class WindowState internal constructor(
     internal val boundsRequests = Channel<WindowBoundsProvider>(Channel.CONFLATED)
 
     /**
-     * Requests to set the bounds of the window.
+     * Requests to set the bounds of the window via a [WindowBoundsProvider].
      *
      * Note that the actual bounds are set asynchronously and may be different from the requested
      * ones (e.g., if the window manager can't position as requested).
@@ -264,6 +264,19 @@ class WindowState internal constructor(
      */
     fun requestBounds(boundsProvider: WindowBoundsProvider) {
         boundsRequests.trySend(boundsProvider)
+    }
+
+    /**
+     * Requests to set the bounds of the window via a function that returns a [DpRect].
+     *
+     * Note that the actual bounds are set asynchronously and may be different from the requested
+     * ones (e.g., if the window manager can't position as requested).
+     *
+     * Setting the bounds when the window placement is not [WindowPlacement.Floating] will change
+     * the placement to floating.
+     */
+    fun requestBounds(boundsProvider: WindowGeometryProviderScope.() -> DpRect) {
+        boundsRequests.trySend(WindowBoundsProvider(boundsProvider))
     }
 
     /**

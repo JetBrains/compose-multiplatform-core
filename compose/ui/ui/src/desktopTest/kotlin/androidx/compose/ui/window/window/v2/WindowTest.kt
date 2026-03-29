@@ -32,7 +32,6 @@ import androidx.compose.ui.window.*
 import androidx.compose.ui.window.window.toSize
 import androidx.compose.ui.window.v2.Window
 import androidx.compose.ui.window.v2.WindowBoundsProvider
-import androidx.compose.ui.window.v2.WindowGeometryProviderScope
 import androidx.compose.ui.window.v2.WindowSizeProvider
 import androidx.compose.ui.window.v2.rememberWindowStateWithBounds
 import androidx.compose.ui.window.v2.WindowState
@@ -746,19 +745,17 @@ class WindowTest {
         }
         awaitIdle()
 
-        windowState.requestBounds(object : WindowBoundsProvider {
-            override fun WindowGeometryProviderScope.getBounds(): DpRect {
-                val screenBounds = screen.availableBounds
-                val size = DpSize(400.dp, 400.dp)
-                return DpRect(
-                    origin = DpOffset(
-                        (screenBounds.width - size.width) / 2,
-                        (screenBounds.height - size.height) / 2
-                    ),
-                    size = size
-                )
-            }
-        })
+        windowState.requestBounds {
+            val screenBounds = screen.availableBounds
+            val size = DpSize(400.dp, 400.dp)
+            DpRect(
+                origin = DpOffset(
+                    (screenBounds.width - size.width) / 2,
+                    (screenBounds.height - size.height) / 2
+                ),
+                size = size
+            )
+        }
         awaitIdle()
         val windowBounds = windowState.requireBounds
 
@@ -800,19 +797,17 @@ class WindowTest {
         }
         awaitIdle()
 
-        windowState!!.requestBounds(object : WindowBoundsProvider {
-            override fun WindowGeometryProviderScope.getBounds(): DpRect {
-                val screenBounds = screen.availableBounds
-                val size = DpSize(400.dp, 400.dp)
-                return DpRect(
-                    origin = DpOffset(
-                        (screenBounds.width - size.width) / 2,
-                        (screenBounds.height - size.height) / 2
-                    ),
-                    size = size
-                )
-            }
-        })
+        windowState!!.requestBounds {
+            val screenBounds = screen.availableBounds
+            val size = DpSize(400.dp, 400.dp)
+            DpRect(
+                origin = DpOffset(
+                    (screenBounds.width - size.width) / 2,
+                    (screenBounds.height - size.height) / 2
+                ),
+                size = size
+            )
+        }
         awaitIdle()
         val windowBounds = windowState!!.requireBounds
 
