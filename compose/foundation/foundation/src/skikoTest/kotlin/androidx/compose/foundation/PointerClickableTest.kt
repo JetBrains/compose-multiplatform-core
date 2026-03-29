@@ -460,7 +460,7 @@ class PointerClickableTest {
                     .onPointerClick(
                         interactionSource = interactionSource,
                         // Custom logic: Only ripple on Right Click (Secondary)
-                        triggerPressIndication = { it.buttons.isSecondaryPressed }
+                        triggerPressInteraction = { it.buttons.isSecondaryPressed }
                     ) {}
             )
         }
@@ -580,7 +580,7 @@ class PointerClickableTest {
                     .size(40.dp)
                     .onPointerClick(
                         interactionSource = interactionSource,
-                        triggerPressIndication = { if (onlyRippleOnShift) it.keyboardModifiers.isShiftPressed else true }
+                        triggerPressInteraction = { if (onlyRippleOnShift) it.keyboardModifiers.isShiftPressed else true }
                     ) {
                         if (onlyRippleOnShift) clickCount2++ else clickCount1++
                     }
