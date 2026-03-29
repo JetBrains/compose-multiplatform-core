@@ -19,6 +19,7 @@ package androidx.compose.ui.window.window.v2
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.*
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
@@ -44,6 +45,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -736,6 +738,7 @@ class WindowTest {
                 }
             }
 
+            // Prevent app from dying when nothing is shown
             LaunchedEffect(Unit) {
                 delay(Duration.INFINITE)
             }
@@ -765,6 +768,59 @@ class WindowTest {
         awaitIdle()
         assertTrue(windowState.isVisible)
         assertEquals(windowBounds, windowState.requireBounds)
+    }
+
+    @Test
+    fun windowStateIsPreservedWhenSavingAndRestoring() = runApplicationTest {
+        var showWindow by mutableStateOf(true)
+        var windowState: WindowState? = null
+        launchTestApplication {
+            val stateHolder = rememberSaveableStateHolder()
+            stateHolder.SaveableStateProvider(showWindow) {
+                if (showWindow) {
+                    val state = rememberWindowStateWithBounds()
+                    DisposableEffect(state) {
+                        windowState = state
+                        onDispose {
+                            windowState = null
+                        }
+                    }
+                    Window(state = state, onCloseRequest = { }) {
+                        Box(Modifier.size(32.dp))
+                    }
+                }
+            }
+
+            // Prevent app from dying when nothing is shown
+            LaunchedEffect(Unit) {
+                delay(Duration.INFINITE)
+            }
+        }
+        awaitIdle()
+
+        windowState!!.requestBounds(
+            windowState!!.requireScreen.availableBounds.let { screenBounds ->
+                val size = DpSize(400.dp, 400.dp)
+                DpRect(
+                    origin = DpOffset(
+                        (screenBounds.width - size.width) / 2,
+                        (screenBounds.height - size.height) / 2
+                    ),
+                    size = size
+                )
+            }
+        )
+        awaitIdle()
+        val windowBounds = windowState!!.requireBounds
+
+        showWindow = false
+        awaitIdle()
+        assertNull(windowState)
+
+        showWindow = true
+        awaitIdle()
+        assertTrue(windowState!!.isVisible)
+        assertEquals(windowBounds, windowState!!.requireBounds)
     }
 }
 
