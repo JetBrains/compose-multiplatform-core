@@ -65,12 +65,15 @@ import kotlinx.coroutines.launch
 
 
 /**
- * A data structure representing a pointer click with hardware metadata.
+ * Represents a pointer click event, encapsulating hardware-specific metadata.
  *
- * @property position The exact coordinate of the click relative to the component's bounds.
- * @property buttons The pointer buttons active during the click (e.g., Primary/Left, Secondary/Right).
- * This is `null` if the click was synthesized via keyboard or accessibility services.
- * @property keyboardModifiers The keyboard modifiers active during the click (e.g., Shift, Ctrl, Alt).
+ * This payload provides rich context about the interaction, enabling advanced multiplatform
+ * behaviors such as secondary clicks (context menus) or keyboard-modified clicks (shift-click selection).
+ *
+ * @property position The coordinate of the click, relative to the bounds of the component.
+ * @property buttons The state of the pointer buttons (e.g., Primary/Left, Secondary/Right) active during the click.
+ * This value is `null` if the click was synthesized via software (such as a keyboard action or accessibility service).
+ * @property keyboardModifiers The state of the keyboard modifiers (e.g., Shift, Ctrl, Alt) active during the click.
  */
 @ExperimentalFoundationApi
 class PointerClickEvent(
@@ -80,28 +83,26 @@ class PointerClickEvent(
 )
 
 /**
- * Configures a component to receive pointer clicks (mouse, touch, stylus) alongside hardware metadata.
+ * Configures a component to receive pointer click events alongside hardware-specific metadata.
  *
- * Unlike the standard [clickable] modifier, `onPointerClick` routes raw [PointerButtons] and
- * [PointerKeyboardModifiers] into the callback. This is essential for building complex, desktop-grade
- * multiplatform interactions such as Shift+Clicking to multi-select, or Right-Clicking for context menus.
+ * Unlike standard [clickable], `onPointerClick` exposes raw [PointerButtons] and [PointerKeyboardModifiers]
+ * to the callback. This is essential for supporting complex, multiplatform interactions, such as alternative
+ * button clicks or modifier-key chords.
  *
- * By default, this modifier provides Material Design UX: it listens to all mouse buttons, but only
- * emits visual ripples on Primary actions (Touch or Left-Click). This behavior can be overridden
- * via the [triggerPressIndication] parameter.
+ * By default, this modifier follows Material Design guidelines: it responds to all pointer interactions
+ * but only triggers visual ripple effects on primary actions (e.g., touch or left-click). This behavior
+ * can be customized via the [triggerPressInteraction] parameter.
  *
- * @param enabled Controls the enabled state. When `false`, [onClick] will not be invoked, and
- * the element will appear disabled to accessibility services.
- * @param onClickLabel Semantic/accessibility label for the click action.
- * @param role The type of user interface element (e.g., [Role.Button]).
+ * @param enabled Controls the enabled state of the component. When `false`, [onClick] will not be invoked,
+ * and the element will be exposed as disabled to accessibility services.
+ * @param onClickLabel Semantic label for the click action, used by accessibility services.
+ * @param role The semantic purpose of the user interface element (e.g., [Role.Button]).
  * @param interactionSource The [MutableInteractionSource] used to dispatch [PressInteraction]s.
- * If `null`, a default source is remembered automatically.
- * @param indication The visual effect to draw when the element is pressed. Defaults to [LocalIndication].
- * Set this to `null` to entirely disable visual feedback.
- * @param triggerPressIndication A lambda that evaluates a raw [PointerEvent] and returns `true` if
- * the event should transition the component into a "Pressed" state (triggering ripples). By default,
- * only Primary clicks trigger this state.
- * @param onClick Invoked when the element is successfully clicked, providing hardware metadata.
+ * If `null`, a default source is created and remembered internally.
+ * @param triggerPressInteraction A predicate evaluating a raw [PointerEvent] to determine if the interaction
+ * should transition the component into a pressed state (triggering visual indications). By default, this is
+ * restricted to primary clicks.
+ * @param onClick Invoked when a successful click is recognized, providing the [PointerClickEvent] metadata.
  */
 @ExperimentalFoundationApi
 fun Modifier.onPointerClick(
@@ -109,8 +110,59 @@ fun Modifier.onPointerClick(
     onClickLabel: String? = null,
     role: Role? = null,
     interactionSource: MutableInteractionSource? = null,
-    indication: Indication? = null,
-    triggerPressIndication: (PointerEvent) -> Boolean = { it.buttons.isPrimaryPressed },
+    triggerPressInteraction: (PointerEvent) -> Boolean = { it.buttons.isPrimaryPressed },
+    onClick: (PointerClickEvent) -> Unit
+): Modifier = composed(
+    inspectorInfo = debugInspectorInfo {
+        name = "onPointerClick"
+        properties["enabled"] = enabled
+        properties["onClickLabel"] = onClickLabel
+        properties["role"] = role
+        properties["interactionSource"] = interactionSource
+        properties["indication"] = "LocalIndication.current"
+        properties["triggerPressInteraction"] = triggerPressInteraction
+        properties["onClick"] = onClick
+    }
+) {
+    val defaultIndication = LocalIndication.current
+    onPointerClick(
+        interactionSource = interactionSource,
+        indication = defaultIndication,
+        enabled = enabled,
+        onClickLabel = onClickLabel,
+        role = role,
+        triggerPressInteraction = triggerPressInteraction,
+        onClick = onClick
+    )
+}
+
+/**
+ * Configures a component to receive pointer click events with precise control over visual indications.
+ *
+ * Use this overload when you need strict control over the [Indication] behavior:
+ * - Pass a custom [Indication] (such as `LocalIndication.current`) to enable visual feedback.
+ * - Pass `null` to disable press effects entirely.
+ *
+ * @param interactionSource The [MutableInteractionSource] used to dispatch [PressInteraction] events.
+ * If `null`, a default source is created and remembered internally.
+ * @param indication The visual effect applied when the element transitions to a pressed state.
+ * Pass `null` to disable standard visual indication.
+ * @param enabled Controls the enabled state of the component. When `false`, input is ignored,
+ * and the element is exposed as disabled to accessibility services.
+ * @param onClickLabel Semantic label for the click action, used by accessibility services.
+ * @param role The semantic purpose of the user interface element (e.g., [Role.Button]).
+ * @param triggerPressInteraction A predicate evaluating a raw [PointerEvent] to determine if the down event
+ * should trigger a pressed state.
+ * @param onClick Invoked when a successful click is recognized, providing the [PointerClickEvent] metadata.
+ */
+@ExperimentalFoundationApi
+fun Modifier.onPointerClick(
+    interactionSource: MutableInteractionSource?,
+    indication: Indication?,
+    enabled: Boolean = true,
+    onClickLabel: String? = null,
+    role: Role? = null,
+    triggerPressInteraction: (PointerEvent) -> Boolean = { it.buttons.isPrimaryPressed },
     onClick: (PointerClickEvent) -> Unit
 ): Modifier = composed(
     inspectorInfo = debugInspectorInfo {
@@ -120,12 +172,11 @@ fun Modifier.onPointerClick(
         properties["role"] = role
         properties["interactionSource"] = interactionSource
         properties["indication"] = indication
-        properties["triggerPressIndication"] = triggerPressIndication
+        properties["triggerPressInteraction"] = triggerPressInteraction
         properties["onClick"] = onClick
     }
 ) {
     val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
-    val resolvedIndication = indication ?: LocalIndication.current
 
     this.then(
         PointerClickElement(
@@ -133,12 +184,12 @@ fun Modifier.onPointerClick(
             onClickLabel = onClickLabel,
             role = role,
             interactionSource = resolvedInteractionSource,
-            triggerPressIndication = triggerPressIndication,
+            triggerPressInteraction = triggerPressInteraction,
             onClick = onClick
         )
     ).indication(
         interactionSource = resolvedInteractionSource,
-        indication = resolvedIndication
+        indication = indication
     )
 }
 
@@ -148,7 +199,7 @@ private class PointerClickElement(
     private val onClickLabel: String?,
     private val role: Role?,
     private val interactionSource: MutableInteractionSource,
-    private val triggerPressIndication: (PointerEvent) -> Boolean,
+    private val triggerPressInteraction: (PointerEvent) -> Boolean,
     private val onClick: (PointerClickEvent) -> Unit
 ) : ModifierNodeElement<PointerClickNode>() {
 
@@ -157,7 +208,7 @@ private class PointerClickElement(
         onClickLabel = onClickLabel,
         role = role,
         interactionSource = interactionSource,
-        triggerPressIndication = triggerPressIndication,
+        triggerPressInteraction = triggerPressInteraction,
         onClick = onClick
     )
 
@@ -167,7 +218,7 @@ private class PointerClickElement(
             onClickLabel = onClickLabel,
             role = role,
             interactionSource = interactionSource,
-            triggerPressIndication = triggerPressIndication,
+            triggerPressInteraction = triggerPressInteraction,
             onClick = onClick
         )
     }
@@ -179,7 +230,7 @@ private class PointerClickElement(
         if (onClickLabel != other.onClickLabel) return false
         if (role != other.role) return false
         if (interactionSource != other.interactionSource) return false
-        if (triggerPressIndication !== other.triggerPressIndication) return false
+        if (triggerPressInteraction !== other.triggerPressInteraction) return false
         if (onClick !== other.onClick) return false
         return true
     }
@@ -189,7 +240,7 @@ private class PointerClickElement(
         result = 31 * result + (onClickLabel?.hashCode() ?: 0)
         result = 31 * result + (role?.hashCode() ?: 0)
         result = 31 * result + interactionSource.hashCode()
-        result = 31 * result + triggerPressIndication.hashCode()
+        result = 31 * result + triggerPressInteraction.hashCode()
         result = 31 * result + onClick.hashCode()
         return result
     }
@@ -201,7 +252,7 @@ private class PointerClickNode(
     private var onClickLabel: String?,
     private var role: Role?,
     private var interactionSource: MutableInteractionSource,
-    private var triggerPressIndication: (PointerEvent) -> Boolean,
+    private var triggerPressInteraction: (PointerEvent) -> Boolean,
     private var onClick: (PointerClickEvent) -> Unit
 ) : DelegatingNode(),
     PointerInputModifierNode,
@@ -285,7 +336,7 @@ private class PointerClickNode(
             requestFocusWhenInMouseInputMode()
 
             // Consult the developer's logic to see if this raw event warrants a visual ripple
-            if (triggerPressIndication(pointerEvent)) {
+            if (triggerPressInteraction(pointerEvent)) {
                 handlePressInteractionStart(down.position)
             }
         }
@@ -413,7 +464,7 @@ private class PointerClickNode(
         onClickLabel: String?,
         role: Role?,
         interactionSource: MutableInteractionSource,
-        triggerPressIndication: (PointerEvent) -> Boolean,
+        triggerPressInteraction: (PointerEvent) -> Boolean,
         onClick: (PointerClickEvent) -> Unit
     ) {
         if (this.enabled != enabled) {
@@ -429,9 +480,9 @@ private class PointerClickNode(
         if (this.interactionSource != interactionSource) {
             cancelInput()
             this.interactionSource = interactionSource
-            focusableNode.update(interactionSource)
+            focusableNode?.update(interactionSource)
         }
-        this.triggerPressIndication = triggerPressIndication
+        this.triggerPressInteraction = triggerPressInteraction
         this.onClick = onClick
     }
 
@@ -439,26 +490,26 @@ private class PointerClickNode(
         if (this@PointerClickNode.role != null) {
             role = this@PointerClickNode.role!!
         }
+        onClick(
+            action = {
+                // Fetch window modifiers dynamically to support screen-readers triggering
+                // clicks while the user holds a physical key (e.g. Switch Access).
+                val currentModifiers = currentValueOf(LocalWindowInfo).keyboardModifiers
+                val synthesizedEvent = PointerClickEvent(
+                    position = centerOffset,
+                    buttons = null, // Synthesized clicks lack hardware pointers
+                    keyboardModifiers = currentModifiers
+                )
+                onClick(synthesizedEvent)
+                true
+            },
+            label = onClickLabel
+        )
         if (enabled) {
             // When enabled, expose focus semantics from the delegated focusableNode
-            with(focusableNode) {
+            focusableNode?.apply {
                 applySemantics()
             }
-            onClick(
-                action = {
-                    // Fetch window modifiers dynamically to support screen-readers triggering
-                    // clicks while the user holds a physical key (e.g. Switch Access).
-                    val currentModifiers = currentValueOf(LocalWindowInfo).keyboardModifiers
-                    val synthesizedEvent = PointerClickEvent(
-                        position = centerOffset,
-                        buttons = null, // Synthesized clicks lack hardware pointers
-                        keyboardModifiers = currentModifiers
-                    )
-                    onClick(synthesizedEvent)
-                    true
-                },
-                label = onClickLabel
-            )
         } else {
             // When disabled, suppress focus and click semantics and mark as disabled
             disabled()
