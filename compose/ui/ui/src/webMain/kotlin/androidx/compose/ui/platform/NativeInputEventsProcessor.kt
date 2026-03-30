@@ -182,7 +182,7 @@ internal abstract class NativeInputEventsProcessor(
                 if (lastProcessedKeydown?.isBackspace() != true) return@buildList
 
                 // This would mean event was triggered by long press on mobile device (iOS)
-                if (lastProcessedKeydown?.altKey == false) {
+                if (lastProcessedKeydown?.repeat == true) {
                     val layoutResult = composeSender.currentTextLayoutResult() ?: return@buildList
 
 

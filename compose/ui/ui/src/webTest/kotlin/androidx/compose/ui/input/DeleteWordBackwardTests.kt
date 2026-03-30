@@ -45,6 +45,7 @@ class DeleteWordBackwardTests : TextFieldTestSpec, BasicTextFieldWithValue {
                 key = "Backspace",
                 code = "Backspace",
                 type = "keydown",
+                repeat = true,
             ),
             beforeInput("deleteWordBackward", null)
         )
