@@ -21,6 +21,7 @@
 @interface CMPEditMenuView : CMPTextInputView
 
 @property (readonly) BOOL isEditMenuShown;
+@property (readonly) BOOL shouldUseNativeTextMenuActions;
 
 - (void)showEditMenuAtRect:(CGRect)targetRect
                       copy:(void (^)(void))copyBlock
@@ -47,6 +48,4 @@
 
 - (void)deactivateTextInputInteractionIfNeeded;
 
-- (BOOL)canPerformComposeAction:(SEL)action
-                     withSender:(id)sender;
 @end

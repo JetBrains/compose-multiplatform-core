@@ -681,6 +681,7 @@ internal class IntermediateTextInputUIView(
     fun hideTextMenu() = this.hideEditMenu()
 
     fun isTextMenuShown() = isEditMenuShown
+    override fun shouldUseNativeTextMenuActions() = usingNativeTextInput
 
     private var onCopy: (() -> Unit)? = null
     private var onPaste: (() -> Unit)? = null
@@ -732,7 +733,7 @@ internal class IntermediateTextInputUIView(
                 else -> super.canPerformAction(action, withSender)
             }
         } else {
-            return super.canPerformComposeAction(action,withSender)
+            return super.canPerformAction(action, withSender)
         }
     }
 

@@ -74,6 +74,7 @@
 
 @property (assign, nonatomic) CGRect targetRect;
 @property (assign, nonatomic) BOOL isEditMenuShown;
+@property (assign, nonatomic) BOOL shouldUseNativeTextMenuActions;
 
 @property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));
 
@@ -300,13 +301,6 @@ id _editInteraction;
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
-    if ([self canPerformComposeAction:action withSender:sender]) {
-        return YES;
-    }
-    return [super canPerformAction:action withSender:sender];
-}
-
-- (BOOL)canPerformComposeAction:(SEL)action withSender:(id)sender {
     if (@selector(copy:) == action) {
         return self.copyBlock != nil;
     }
@@ -331,7 +325,9 @@ id _editInteraction;
     if (@selector(customAction8:) == action) return self.customActions.count > 8;
     if (@selector(customAction9:) == action) return self.customActions.count > 9;
 
-    return NO;
+    if (self.shouldUseNativeTextMenuActions) {
+        return [super canPerformAction:action withSender:sender];
+    } else { return NO; }
 }
 
 - (void)copy:(id)sender {
