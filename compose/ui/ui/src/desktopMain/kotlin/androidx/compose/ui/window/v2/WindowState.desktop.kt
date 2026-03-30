@@ -348,9 +348,12 @@ class WindowState private constructor(
 }
 
 /**
- * Returns the bounds of the window, as an AWT [Rectangle].
+ * Returns the bounds of the window, as an AWT [Rectangle]; throws [IllegalStateException] if the
+ * window is not yet [isInitialized].
  */
-fun WindowState.awtBounds(): Rectangle = bounds.toAwtRectangleRounded()
+val WindowState.awtBounds: Rectangle
+    get() = bounds.toAwtRectangleRounded()
 
 private fun windowNotInitializedError(propertyName: String): Nothing =
-    throw IllegalStateException("Can't read $propertyName when window has not yet been made visible")
+    throw IllegalStateException("Can't read $propertyName before the window has been made visible;" +
+        " use isInitialized to check.")
