@@ -149,7 +149,7 @@ fun SwingWindow(
         onKeyEvent = onKeyEvent,
         create = {
             val graphicsDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices
-            val currentDevice = currentState.screenId?.let { screenId ->
+            val currentDevice = currentState._screenId?.let { screenId ->
                 graphicsDevices.firstOrNull { it.iDstring == screenId }
             }
             val initialDevice = currentDevice
@@ -171,36 +171,32 @@ fun SwingWindow(
                     }
                 )
                 listeners.windowStateListenerRef.registerWithAndSet(this) {
-                    currentState.placement = placement
-                    currentState.isMinimized = isMinimized
+                    currentState._placement = placement
+                    currentState._isMinimized = isMinimized
                 }
                 listeners.componentListenerRef.registerWithAndSet(
                     this,
                     object : ComponentAdapter() {
                         fun applyBoundsChanges() {
-                            currentState.bounds = DpRect(x.dp, y.dp, (x + width).dp, (y + height).dp)
-                            if (currentState.screenId != graphicsConfiguration.device.iDstring) {
-                                currentState.screenId = graphicsConfiguration.device.iDstring
+                            currentState._bounds = DpRect(x.dp, y.dp, (x + width).dp, (y + height).dp)
+                            if (currentState._screenId != graphicsConfiguration.device.iDstring) {
+                                currentState._screenId = graphicsConfiguration.device.iDstring
                             }
                         }
 
                         override fun componentShown(e: ComponentEvent) {
                             // Initialize all state properties
-                            currentState.placement = placement
-                            currentState.isMinimized = isMinimized
+                            currentState._placement = placement
+                            currentState._isMinimized = isMinimized
                             applyBoundsChanges()
-                            currentState.isVisible = true
-                        }
-
-                        override fun componentHidden(e: ComponentEvent) {
-                            currentState.isVisible = false
+                            currentState.isInitialized = true
                         }
 
                         override fun componentResized(e: ComponentEvent) {
                             // we check placement here and in windowStateChanged,
                             // because fullscreen changing doesn't
                             // fire windowStateChanged, only componentResized
-                            currentState.placement = placement
+                            currentState._placement = placement
                             applyBoundsChanges()
                         }
 
@@ -218,7 +214,6 @@ fun SwingWindow(
         },
         dispose = {
             WindowLocationTracker.onWindowDisposed(it)
-            currentState.isVisible = false
             // We need to remove them because AWT can still call them after dispose()
             listeners.removeFromAndClear(it)
             it.dispose()
@@ -287,14 +282,14 @@ private fun WindowScreenProvider.getInitialScreenDevice(): GraphicsDevice {
 
 private fun ComposeWindow.initializePlacement(state: WindowState) {
     val placementRequest = state.placementRequests.tryReceive().getOrNull()
-    val currentPlacement = state.placement
+    val currentPlacement = state._placement
 
     placement = placementRequest ?: currentPlacement ?: WindowPlacement.Floating
 }
 
 private fun ComposeWindow.initializeBounds(state: WindowState) {
     val boundsRequest = state.boundsRequests.tryReceive().getOrNull()
-    val currentBounds = state.bounds
+    val currentBounds = state._bounds
 
     // Prioritize requests, then currentBounds
     if ((boundsRequest == null) && (currentBounds != null)) {

@@ -45,6 +45,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -706,36 +707,22 @@ class WindowTest {
     }
 
     @Test
-    fun windowStateIsNotVisibleAfterWindowComposableIsRemoved() = runApplicationTest {
+    fun windowStateIsPreservedWhenRemovingAndAddingComposable() = runApplicationTest {
         var showWindow by mutableStateOf(true)
         lateinit var windowState: WindowState
+        var windowVisible = false
         launchTestApplication {
             val state = rememberWindowStateWithBounds()
             windowState = state
             if (showWindow) {
                 Window(state = state, onCloseRequest = { }) {
                     Box(Modifier.size(32.dp))
-                }
-            }
-        }
-        awaitIdle()
-        assertTrue(windowState.isVisible)
-
-        showWindow = false
-        awaitIdle()
-        assertTrue(!windowState.isVisible)
-    }
-
-    @Test
-    fun windowStateIsPreservedWhenHidingAndShowing() = runApplicationTest {
-        var showWindow by mutableStateOf(true)
-        lateinit var windowState: WindowState
-        launchTestApplication {
-            val state = rememberWindowStateWithBounds()
-            windowState = state
-            if (showWindow) {
-                Window(state = state, onCloseRequest = { }) {
-                    Box(Modifier.size(32.dp))
+                    DisposableEffect(Unit) {
+                        windowVisible = true
+                        onDispose {
+                            windowVisible = false
+                        }
+                    }
                 }
             }
 
@@ -758,16 +745,16 @@ class WindowTest {
             )
         }
         awaitIdle()
-        val windowBounds = windowState.requireBounds
+        val windowBounds = windowState.bounds
 
         showWindow = false
         awaitIdle()
-        assertTrue(!windowState.isVisible)
+        assertFalse(windowVisible)
 
         showWindow = true
         awaitIdle()
-        assertTrue(windowState.isVisible)
-        assertEquals(windowBounds, windowState.requireBounds)
+        assertTrue(windowState.isInitialized)
+        assertEquals(windowBounds, windowState.bounds)
     }
 
     @Test
@@ -810,7 +797,7 @@ class WindowTest {
             )
         }
         awaitIdle()
-        val windowBounds = windowState!!.requireBounds
+        val windowBounds = windowState!!.bounds
 
         showWindow = false
         awaitIdle()
@@ -818,8 +805,8 @@ class WindowTest {
 
         showWindow = true
         awaitIdle()
-        assertTrue(windowState!!.isVisible)
-        assertEquals(windowBounds, windowState!!.requireBounds)
+        assertTrue(windowState!!.isInitialized)
+        assertEquals(windowBounds, windowState!!.bounds)
     }
 
     @Test
@@ -856,7 +843,7 @@ class WindowTest {
 
         awaitIdle()
         assertNotNull(windowState)
-        assertNull(windowState?.bounds)
+        assertFalse(windowState!!.isInitialized)
         windowState!!.requestBounds {
             val screenBounds = screen.availableBounds
             val size = DpSize(400.dp, 400.dp)
@@ -879,10 +866,10 @@ class WindowTest {
 
         awaitIdle()
         assertNotNull(windowState)
-        assertNotNull(windowState?.bounds)
+        assertTrue(windowState!!.isInitialized)
         // Size should be as the one requested in rememberWindowStateWithBounds, not the one in
         // windowState!!.requestBounds above.
-        assertEquals(DpSize(300.dp, 300.dp), windowState?.requireBounds?.size)
+        assertEquals(DpSize(300.dp, 300.dp), windowState!!.bounds.size)
     }
 
 }

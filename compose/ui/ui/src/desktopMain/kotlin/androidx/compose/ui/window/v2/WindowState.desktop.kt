@@ -134,23 +134,39 @@ fun WindowState(
  * A state object that can be hoisted to control and observe window attributes
  * (size/position/state).
  *
- * @param screenId the initial value for [WindowState.screenId]
- * @param placement the initial value for [WindowState.placement]
- * @param isMinimized the initial value for [WindowState.isMinimized]
- * @param bounds the initial value for [WindowState.bounds]
+ * @param isInitialized the initial value for [WindowState.isInitialized]
+ * @param screenId the initial value for [WindowState._screenId]
+ * @param placement the initial value for [WindowState._placement]
+ * @param isMinimized the initial value for [WindowState._isMinimized]
+ * @param bounds the initial value for [WindowState._bounds]
  */
 @Stable
-class WindowState internal constructor(
+class WindowState private constructor(
+    isInitialized: Boolean,
     screenId: String?,
     placement: WindowPlacement?,
     isMinimized: Boolean?,
     bounds: DpRect?,
 ) {
     constructor() : this(
+        isInitialized = false,
         screenId = null,
         placement = null,
         isMinimized = null,
         bounds = null
+    )
+
+    constructor(
+        screenId: String,
+        placement: WindowPlacement,
+        isMinimized: Boolean,
+        bounds: DpRect,
+    ): this(
+        isInitialized = true,
+        screenId = screenId,
+        placement = placement,
+        isMinimized = isMinimized,
+        bounds = bounds,
     )
 
     init {
@@ -158,25 +174,24 @@ class WindowState internal constructor(
     }
 
     /**
-     * Whether the window is visible.
+     * Whether the window associated with this state has become visible at least once.
      */
-    var isVisible: Boolean by mutableStateOf(false)
+    var isInitialized: Boolean by mutableStateOf(isInitialized)
         internal set
-
 
     /**
      * The id of the screen with which the window is currently associated; `null` if the window is
-     * not yet visible.
+     * not yet [isInitialized].
      */
-    var screenId: String? by mutableStateOf(screenId)
-        internal set
+    @Suppress("PropertyName")
+    internal var _screenId: String? by mutableStateOf(screenId)
 
     /**
      * The id of the screen with which the window is currently associated; throws
-     * [IllegalStateException] if the window is not yet visible.
+     * [IllegalStateException] if the window is not yet [isInitialized].
      */
-    val requireScreenId: String
-        get() = screenId ?: windowNotVisibleError("requireScreenId")
+    val screenId: String
+        get() = _screenId ?: windowNotInitializedError("screenId")
 
     internal val screenRequests = Channel<WindowScreenProvider>(Channel.CONFLATED)
 
@@ -190,20 +205,19 @@ class WindowState internal constructor(
     }
 
     /**
-     * The placement of the window on the screen; `null` if the window is not yet visible.
+     * The placement of the window on the screen; `null` if the window is not yet [isInitialized].
      */
-    var placement: WindowPlacement? by mutableStateOf(placement)
-        internal set
+    @Suppress("PropertyName")
+    internal var _placement: WindowPlacement? by mutableStateOf(placement)
 
     /**
      * The placement of the window on the screen; throws [IllegalStateException] if the window is
-     * not yet visible.
+     * not yet [isInitialized].
      */
-    val requirePlacement: WindowPlacement
-        get() = placement ?: windowNotVisibleError("placement")
+    val placement: WindowPlacement
+        get() = _placement ?: windowNotInitializedError("placement")
 
     internal val placementRequests = Channel<WindowPlacement>(Channel.CONFLATED)
-
 
     /**
      * Requests to set the placement of the window.
@@ -215,17 +229,17 @@ class WindowState internal constructor(
     }
 
     /**
-     * Whether the window is minimized; `null` if the window is not yet visible.
+     * Whether the window is minimized; `null` if the window is not [isInitialized] yet.
      */
-    var isMinimized: Boolean? by mutableStateOf(isMinimized)
-        internal set
+    @Suppress("PropertyName")
+    internal var _isMinimized: Boolean? by mutableStateOf(isMinimized)
 
     /**
      * Whether the window is minimized; throws [IllegalStateException] if the window is not yet
-     * visible.
+     * [isInitialized].
      */
-    val requireMinimized: Boolean
-        get() = isMinimized ?: windowNotVisibleError("isMinimized")
+    val isMinimized: Boolean
+        get() = _isMinimized ?: windowNotInitializedError("isMinimized")
 
     internal val isMinimizedRequests = Channel<Boolean>(Channel.CONFLATED)
 
@@ -239,17 +253,17 @@ class WindowState internal constructor(
     }
 
     /**
-     * The current bounds of the window; `null` if the window is not yet visible.
+     * The current bounds of the window; `null` if the window is not yet [isInitialized].
      */
-    var bounds: DpRect? by mutableStateOf(bounds)
-        internal set
+    @Suppress("PropertyName")
+    internal var _bounds: DpRect? by mutableStateOf(bounds)
 
     /**
      * The current bounds of the window; throws [IllegalStateException] if the window is not yet
-     * visible.
+     * [isInitialized].
      */
-    val requireBounds: DpRect
-        get() = bounds ?: windowNotVisibleError("bounds")
+    val bounds: DpRect
+        get() = _bounds ?: windowNotInitializedError("bounds")
 
     internal val boundsRequests = Channel<WindowBoundsProvider>(Channel.CONFLATED)
 
@@ -302,11 +316,12 @@ class WindowState internal constructor(
          */
         val Saver: Saver<WindowState, Any> = listSaver(
             save = {
-                val bounds = it.bounds ?: return@listSaver emptyList()
+                if (!it.isInitialized) return@listSaver emptyList()
+                val bounds = it.bounds
                 arrayListOf(
-                    it.requireScreenId,
-                    it.requirePlacement.ordinal,
-                    it.requireMinimized,
+                    it.screenId,
+                    it.placement.ordinal,
+                    it.isMinimized,
                     bounds.top.value,
                     bounds.left.value,
                     bounds.right.value,
@@ -316,6 +331,7 @@ class WindowState internal constructor(
             restore = { state ->
                 if (state.isEmpty()) return@listSaver null
                 WindowState(
+                    isInitialized = true,
                     screenId = state[0] as String,
                     placement = WindowPlacement.entries[(state[1] as Int)],
                     isMinimized = state[2] as Boolean,
@@ -334,7 +350,7 @@ class WindowState internal constructor(
 /**
  * Returns the bounds of the window, as an AWT [Rectangle].
  */
-fun WindowState.awtBounds(): Rectangle? = bounds?.toAwtRectangleRounded()
+fun WindowState.awtBounds(): Rectangle = bounds.toAwtRectangleRounded()
 
-private fun windowNotVisibleError(propertyName: String): Nothing =
+private fun windowNotInitializedError(propertyName: String): Nothing =
     throw IllegalStateException("Can't read $propertyName when window has not yet been made visible")
