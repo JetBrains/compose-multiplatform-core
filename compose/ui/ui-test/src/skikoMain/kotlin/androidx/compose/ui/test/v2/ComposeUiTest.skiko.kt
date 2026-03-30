@@ -18,6 +18,8 @@ package androidx.compose.ui.test.v2
 
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
@@ -28,9 +30,11 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.roundToInt
 import kotlin.time.Duration
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestResult
+import kotlinx.coroutines.test.runTest
 
 /**
  * Sets up the test environment, runs the given [test][block] and then tears down the test

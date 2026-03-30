@@ -241,9 +241,7 @@ class DialogTest {
 
     @OptIn(InternalTestApi::class)
     @Test
-    fun dialogCompositionSubscribesToStateChangesImmediately() = runInternalSkikoComposeUiTest(
-        useStandardTestDispatcherForComposition = true
-    ) {
+    fun dialogCompositionSubscribesToStateChangesImmediately() = runInternalSkikoComposeUiTest {
         // https://github.com/JetBrains/compose-multiplatform/issues/4609
         var showDialog by mutableStateOf(false)
         var lastValueInComposition: Int? = null
