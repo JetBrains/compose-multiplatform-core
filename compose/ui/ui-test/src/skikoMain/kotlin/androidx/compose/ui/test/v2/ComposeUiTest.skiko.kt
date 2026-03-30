@@ -136,3 +136,31 @@ fun runSkikoComposeUiTest(
         useStandardTestDispatcherForComposition = true,
     ).runTest(block)
 }
+
+@InternalTestApi
+@OptIn(InternalComposeUiApi::class, ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+fun runInternalSkikoComposeUiTest(
+    width: Int = 1024,
+    height: Int = 768,
+    density: Density = Density(1f),
+    effectContext: CoroutineContext = EmptyCoroutineContext,
+    runTestContext: CoroutineContext = EmptyCoroutineContext,
+    testTimeout: Duration = Duration.INFINITE,
+    semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? = null,
+    windowInsets: PlatformWindowInsets? = null,
+    block: suspend SkikoComposeUiTest.() -> Unit,
+): TestResult {
+    return runTest {
+        SkikoComposeUiTest(
+            width = width,
+            height = height,
+            effectContext = effectContext,
+            runTestContext = runTestContext,
+            testTimeout = testTimeout,
+            density = density,
+            semanticsOwnerListener = semanticsOwnerListener,
+            windowInsets = windowInsets,
+            useStandardTestDispatcherForComposition = true,
+        ).runTest(block)
+    }
+}

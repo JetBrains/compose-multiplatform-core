@@ -55,7 +55,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
-import androidx.compose.ui.test.runInternalSkikoComposeUiTest
+import androidx.compose.ui.test.v2.runInternalSkikoComposeUiTest
 import androidx.compose.ui.touch
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
