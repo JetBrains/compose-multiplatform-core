@@ -26,6 +26,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.awt.toAwtRectangleRounded
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
@@ -41,8 +43,12 @@ import kotlinx.coroutines.channels.Channel
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
  *
- * @param initialPosition The initial position of the window; default if `null`.
- * @param initialSize The initial size of the window; default if `null`.
+ * @param initialPosition The initial position of the window; default if `null`. All the
+ * coordinates must be [Dp.isSpecified] and [Dp.isFinite], and the [DpOffset] object itself must be
+ * [DpOffset.isSpecified].
+ * @param initialSize The initial size of the window; default if `null`. All the
+ * coordinates must be [Dp.isSpecified] and [Dp.isFinite], and the [DpSize] object itself must be
+ * [DpOffset.isSpecified].
  * @param initiallyMinimized Whether the window is initially minimized.
  */
 @Composable
@@ -91,8 +97,12 @@ fun rememberWindowState(
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
  *
- * @param initialPosition The initial position of the window; default if `null`.
- * @param initialSize The initial size of the window; default if `null`.
+ * @param initialPosition The initial position of the window; default if `null`. All the
+ * coordinates must be [Dp.isSpecified] and [Dp.isFinite], and the [DpOffset] object itself must be
+ * [DpOffset.isSpecified].
+ * @param initialSize The initial size of the window; default if `null`. All the
+ * coordinates must be [Dp.isSpecified] and [Dp.isFinite], and the [DpSize] object itself must be
+ * [DpOffset.isSpecified].
  * @param initiallyMinimized Whether the window is initially minimized.
  */
 fun WindowStateWithBounds(
@@ -148,6 +158,9 @@ class WindowState private constructor(
     isMinimized: Boolean?,
     bounds: DpRect?,
 ) {
+    /**
+     * Creates a new [WindowState] that is not yet initialized.
+     */
     constructor() : this(
         isInitialized = false,
         screenId = null,
@@ -156,7 +169,10 @@ class WindowState private constructor(
         bounds = null
     )
 
-    constructor(
+    /**
+     * Creates a new [WindowState] that is initialized with the specified values.
+     */
+    internal constructor(
         screenId: String,
         placement: WindowPlacement,
         isMinimized: Boolean,
@@ -275,6 +291,8 @@ class WindowState private constructor(
      *
      * Setting the bounds when the window placement is not [WindowPlacement.Floating] will change
      * the placement to floating.
+     *
+     * @param boundsProvider Provides the bounds to apply to the window.
      */
     fun requestBounds(boundsProvider: WindowBoundsProvider) {
         boundsRequests.trySend(boundsProvider)
@@ -288,6 +306,8 @@ class WindowState private constructor(
      *
      * Setting the bounds when the window placement is not [WindowPlacement.Floating] will change
      * the placement to floating.
+     *
+     * @param boundsProvider Returns the bounds to apply to the window.
      */
     fun requestBounds(boundsProvider: WindowGeometryProviderScope.() -> DpRect) {
         boundsRequests.trySend(WindowBoundsProvider(boundsProvider))
@@ -302,7 +322,8 @@ class WindowState private constructor(
      * Setting the bounds when the window placement is not [WindowPlacement.Floating] will change
      * the placement to floating.
      *
-     * All the parameters of [bounds] must be specified and finite.
+     * @param bounds The bounds to apply to the window. All the coordinates must be [Dp.isSpecified]
+     * and [Dp.isFinite].
      */
     fun requestBounds(bounds: DpRect) {
         boundsRequests.trySend(
@@ -331,7 +352,6 @@ class WindowState private constructor(
             restore = { state ->
                 if (state.isEmpty()) return@listSaver null
                 WindowState(
-                    isInitialized = true,
                     screenId = state[0] as String,
                     placement = WindowPlacement.entries[(state[1] as Int)],
                     isMinimized = state[2] as Boolean,

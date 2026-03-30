@@ -45,8 +45,10 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.requireReal
 import androidx.compose.ui.window.resizerThickness
 import androidx.compose.ui.window.toDpSize
+import androidx.compose.ui.window.v2.Window
 import androidx.compose.ui.window.v2.Screen
 import androidx.compose.ui.window.v2.WindowBoundsProvider
 import androidx.compose.ui.window.v2.WindowGeometryProviderScope
@@ -67,8 +69,9 @@ import kotlinx.coroutines.launch
 
 
 /**
- * Similar to the corresponding [Window] function, but additionally allows configuring the
- * underlying AWT window before it has been made displayable by providing an [init] block.
+ * Similar to the corresponding [androidx.compose.ui.window.v2.Window] function, but additionally
+ * allows configuring the underlying AWT window before it has been made displayable by providing an
+ * [init] block.
  *
  * This is useful to:
  * - Set window properties which cannot be changed after it has been made displayable, such as
@@ -314,7 +317,7 @@ private fun ComposeWindow.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
         }
     )
     with(scope) {
-        bounds = boundsProvider.getBounds().toAwtRectangleRounded()
+        bounds = boundsProvider.getBounds().requireReal().toAwtRectangleRounded()
     }
 }
 

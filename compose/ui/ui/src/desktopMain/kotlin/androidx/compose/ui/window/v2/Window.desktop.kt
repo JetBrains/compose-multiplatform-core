@@ -18,32 +18,74 @@ package androidx.compose.ui.window.v2
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.v2.SwingWindow
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.size
+import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.SingleWindowApplicationScope
 import androidx.compose.ui.window.WindowDecoration
-import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.application
-import androidx.compose.ui.window.requireReal
-import androidx.compose.ui.window.roundToDimension
-import androidx.compose.ui.window.roundToIntSize
-import androidx.compose.ui.window.toDpOffset
-import androidx.compose.ui.window.toDpRect
-import java.awt.GraphicsDevice
-import java.awt.Insets
-import java.awt.Toolkit
 
+// TODO(demin): support focus management
+/**
+ * Composes a platform window in the current composition. When [Window] enters the composition,
+ * a new platform window will be created and receive focus. When [Window] leaves the composition,
+ * the window will be disposed and closed.
+ *
+ * The placement and positioning of the window is controlled via [WindowState].
+ *
+ * [onCloseRequest] is called when the user asks to close the window. To close all windows and shut
+ * down the application, use ([ApplicationScope.exitApplication]:
+ * ```
+ * fun main() = application {
+ *     Window(onCloseRequest = ::exitApplication) { ... }
+ * }
+ * ```
+ *
+ * To merely close the window, use:
+ * ```
+ * fun main() = application {
+ *     var isOpen by remember { mutableStateOf(true) }
+ *     if (isOpen) {
+ *         Window(onCloseRequest = { isOpen = false }) { ... }
+ *     }
+ * }
+ * ```
+ *
+ * @param onCloseRequest Callback that will be called when the user tries to clos the window.
+ * @param state The state object to be used to control or observe the window's state
+ * @param visible Whether the window is visible to the user.
+ * When `false`:
+ * - The internal state of the [Window] is preserved and will be restored the next time the window
+ *   will be made visible;
+ * - Native resources will not be released. They will be released only when [Window] leaves the
+ *   composition.
+ * @param title The title of the window.
+ * @param icon The icon of the window (for platforms that support this).
+ * On macOS individual windows can't have a separate icon. To change the icon in the Dock,
+ * set it via `iconFile` in build.gradle or via an `-Xdock:icon=...` parameter to the process
+ * (https://kotlinlang.org/docs/multiplatform/compose-native-distribution.html#platform-specific-options)
+ * @param decoration Specifies the decoration for this window.
+ * @param transparent Controls window transparency. Only an undecorated window may be transparent.
+ * Attempting to make a decorated window transparent will throw an exception.
+ * @param resizable Whether the user can resize the window (application can resize the window by
+ * changing [state] regardless of this parameter).
+ * @param enabled Whether the window reacts to input events.
+ * @param focusable Whether the window can receive focus.
+ * @param alwaysOnTop whether the window will always be on top of other windows and dialogs in the
+ * application.
+ * @param onPreviewKeyEvent Invoked when the window receives a key event, before it is sent to the
+ * [content]. The return value controls whether the key event will be sent to the [content]
+ * afterward. Return `true` to consume it, preventing further processing.
+ * @param onKeyEvent Invoked when the window receives a key event, after it has been sent to
+ * [content], only if nothing there had consumed it. The return value controls whether the key event
+ * will be processed further (e.g., by the system). Return `true` to consume it, preventing further
+ * processing.
+ * @param content Composable content of the window.
+ */
 @ExperimentalComposeUiApi
 @Composable
 @ComposableOpenTarget(-1)
@@ -82,6 +124,56 @@ fun Window(
     )
 }
 
+/**
+ * An entry point for Compose applications with a single top-level window.
+ *
+ * To show more than one top-level window, or to implement custom closing logic, use
+ * Composable [androidx.compose.ui.window.v2.Window] in [application] entry point instead:
+ * ```
+ * application {
+ *     Window(...) { }
+ *     Window(onCloseRequest = { ... } ) { }
+ * }
+ * ```
+ *
+ * Set [exitProcessOnExit] to `false` to execute code after the [singleWindowApplication] block,
+ * otherwise it won't be executed as [singleWindowApplication] will exit the process.
+ *
+ * @param state The state object to be used to control or observe the window's state
+ * @param visible Whether the window is visible to the user.
+ * When `false`:
+ * - The internal state of the [Window] is preserved and will be restored the next time the window
+ *   will be made visible;
+ * - Native resources will not be released. They will be released only when [Window] leaves the
+ *   composition.
+ * @param title The title of the window.
+ * @param icon The icon of the window (for platforms that support this).
+ * On macOS individual windows can't have a separate icon. To change the icon in the Dock,
+ * set it via `iconFile` in build.gradle or via an `-Xdock:icon=...` parameter to the process
+ * (https://kotlinlang.org/docs/multiplatform/compose-native-distribution.html#platform-specific-options)
+ * @param decoration Specifies the decoration for this window.
+ * @param transparent Controls window transparency. Only an undecorated window may be transparent.
+ * Attempting to make a decorated window transparent will throw an exception.
+ * @param resizable Whether the user can resize the window (application can resize the window by
+ * changing [state] regardless of this parameter).
+ * @param enabled Whether the window reacts to input events.
+ * @param focusable Whether the window can receive focus.
+ * @param alwaysOnTop whether the window will always be on top of other windows and dialogs in the
+ * application.
+ * @param onPreviewKeyEvent Invoked when the window receives a key event, before it is sent to the
+ * [content]. The return value controls whether the key event will be sent to the [content]
+ * afterward. Return `true` to consume it, preventing further processing.
+ * @param onKeyEvent Invoked when the window receives a key event, after it has been sent to
+ * [content], only if nothing there had consumed it. The return value controls whether the key event
+ * will be processed further (e.g., by the system). Return `true` to consume it, preventing further
+ * processing.
+ * @param content Composable content of the window.
+ * @param exitProcessOnExit Whether `exitProcess(0)` will be called after the window is closed.
+ * `exitProcess` speeds up process exit (instant instead of 1-4sec).
+ * If `false`, the execution of the function will be unblocked after application is exited
+ * (when the last window is closed, and all [LaunchedEffect]s are complete).
+ * @param content Composable content of the window.
+ */
 @ExperimentalComposeUiApi
 fun singleWindowApplication(
     state: WindowState = WindowState(),
@@ -119,190 +211,4 @@ fun singleWindowApplication(
             }
         }
     )
-}
-
-class DpInsets(
-    val top: Dp,
-    val left: Dp,
-    val bottom: Dp,
-    val right: Dp
-)
-
-private fun Insets.toDpInsets() = DpInsets(
-    top = top.dp,
-    left = left.dp,
-    bottom = bottom.dp,
-    right = right.dp
-)
-
-/**
- * Represents a user's screen.
- *
- * Note that a [Screen] holds a reference to an underlying native object representing it.
- * Additionally, screens can come and go (the user may disconnect one, for example).
- * Therefore, it is highly discouraged to keep long-term references to [Screen] objects, beyond
- * their use in [WindowScreenProviderScope] or [WindowGeometryProviderScope].
- */
-class Screen internal constructor(
-    internal val device: GraphicsDevice
-) {
-
-    val id: String = device.iDstring
-
-    private val configuration
-        get() = device.defaultConfiguration
-
-    val bounds: DpRect
-        get() = configuration.bounds.toDpRect()
-
-    val insets: DpInsets
-        get() = Toolkit.getDefaultToolkit().getScreenInsets(configuration).toDpInsets()
-
-    val availableBounds: DpRect
-        get() = run {
-            val insets = insets
-            DpRect(
-                left = bounds.left + insets.left,
-                top = bounds.top + insets.top,
-                right = bounds.right - insets.right,
-                bottom = bounds.bottom - insets.bottom
-            )
-        }
-
-    override fun toString(): String = id
-}
-
-class WindowGeometryProviderScope internal constructor(
-    val screen: Screen,
-    intrinsicWindowSize: () -> DpSize,
-) {
-    val intrinsicWindowSize: DpSize by lazy(intrinsicWindowSize)
-
-    fun WindowSizeProvider.getSize(): DpSize = with(this) {
-        this@WindowGeometryProviderScope.getSize()
-    }
-
-    fun WindowPositionProvider.getPosition(size: DpSize): DpOffset = with(this) {
-        this@WindowGeometryProviderScope.getPosition(size)
-    }
-
-    fun WindowBoundsProvider.getBounds(): DpRect = with(this) {
-        this@WindowGeometryProviderScope.getBounds()
-    }
-}
-
-interface WindowBoundsProvider {
-    fun WindowGeometryProviderScope.getBounds(): DpRect
-
-    companion object {
-        val Default = WindowBoundsProvider(
-            sizeProvider = WindowSizeProvider.Default,
-            positionProvider = WindowPositionProvider.Default
-        )
-
-        fun AlignedToScreen(
-            alignment: Alignment,
-            sizeProvider: WindowSizeProvider = WindowSizeProvider.Default
-        ): WindowBoundsProvider = WindowBoundsProvider {
-            val size = sizeProvider.getSize()
-            val availableBounds = screen.availableBounds
-
-            val offsetInAvailable = alignment.align(
-                size = size.roundToIntSize(),
-                space = availableBounds.size.roundToIntSize(),
-                layoutDirection = LayoutDirection.Ltr
-            )
-            DpRect(
-                left = availableBounds.left + offsetInAvailable.x.dp,
-                top = availableBounds.top + offsetInAvailable.y.dp,
-                right = availableBounds.left + offsetInAvailable.x.dp + size.width,
-                bottom = availableBounds.top + offsetInAvailable.y.dp + size.height
-            )
-        }
-
-        fun Absolute(bounds: DpRect): WindowBoundsProvider {
-            bounds.requireReal()
-            return WindowBoundsProvider { bounds }
-        }
-    }
-}
-
-fun WindowBoundsProvider(
-    bounds: WindowGeometryProviderScope.() -> DpRect,
-) = object : WindowBoundsProvider {
-    override fun WindowGeometryProviderScope.getBounds() = bounds()
-}
-
-/**
- * Combines a [WindowSizeProvider] and [WindowPositionProvider] into a [WindowBoundsProvider].
- */
-fun WindowBoundsProvider(
-    sizeProvider: WindowSizeProvider = WindowSizeProvider.Default,
-    positionProvider: WindowPositionProvider = WindowPositionProvider.Default,
-): WindowBoundsProvider = WindowBoundsProvider {
-    val size = sizeProvider.getSize()
-    val position = positionProvider.getPosition(size)
-    DpRect(position, size)
-}
-
-fun interface WindowPositionProvider {
-    fun WindowGeometryProviderScope.getPosition(size: DpSize): DpOffset
-    companion object {
-        val Default = WindowPositionProvider { size ->
-            WindowLocationTracker.getCascadeLocationFor(
-                graphicsDevice = screen.device,
-                windowSize = size.roundToDimension()
-            ).toDpOffset()
-        }
-
-        fun Absolute(position: DpOffset): WindowPositionProvider {
-            position.requireReal()
-            return WindowPositionProvider { position }
-        }
-    }
-}
-
-fun interface WindowSizeProvider {
-    fun WindowGeometryProviderScope.getSize(): DpSize
-    companion object {
-        val Default = Exact(DpSize(800.dp, 600.dp))
-
-        fun Exact(size: DpSize): WindowSizeProvider {
-            size.requireReal()
-            return WindowSizeProvider { size }
-        }
-
-        fun Exact(width: Dp, height: Dp) = Exact(DpSize(width, height))
-
-        val Intrinsic = WindowSizeProvider { intrinsicWindowSize }
-
-        fun IntrinsicWidth(height: Dp): WindowSizeProvider {
-            height.requireReal("height")
-            return WindowSizeProvider {
-                DpSize(intrinsicWindowSize.width, height)
-            }
-        }
-
-        fun IntrinsicHeight(width: Dp): WindowSizeProvider {
-            width.requireReal("width")
-            return WindowSizeProvider {
-                DpSize(width, intrinsicWindowSize.height)
-            }
-        }
-    }
-}
-
-class WindowScreenProviderScope internal constructor(
-    devices: List<GraphicsDevice>,
-    defaultDevice: GraphicsDevice,
-) {
-    val screens: List<Screen> = devices.map { Screen(it) }
-    val defaultScreen: Screen = Screen(defaultDevice)
-}
-
-fun interface WindowScreenProvider {
-    fun WindowScreenProviderScope.getScreen(): Screen
-    companion object {
-        val Default = WindowScreenProvider { defaultScreen }
-    }
 }

@@ -76,7 +76,7 @@ internal fun DpRect.requireReal(): DpRect {
 internal fun DpSize.requireReal(): DpSize {
     require(isSpecified) { "size must be specified" }
     width.requireReal("width")
-    height.requireReal("width")
+    height.requireReal("height")
     return this
 }
 
