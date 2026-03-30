@@ -300,12 +300,10 @@ id _editInteraction;
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
-    BOOL composeActionHandled = [self canPerformComposeAction:action withSender:sender];
-    if (composeActionHandled) {
-        return composeActionHandled;
-    } else {
-        return [super canPerformAction:action withSender:sender];
+    if ([self canPerformComposeAction:action withSender:sender]) {
+        return YES;
     }
+    return [super canPerformAction:action withSender:sender];
 }
 
 - (BOOL)canPerformComposeAction:(SEL)action withSender:(id)sender {
