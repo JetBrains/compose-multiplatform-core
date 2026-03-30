@@ -24,28 +24,17 @@ import androidx.compose.ui.unit.Dp
 /**
  * Constructs an [WindowPosition.Absolute] from [x] and [y] [Dp] values.
  */
-@Deprecated(
-    "Use androidx.compose.ui.window.v2.WindowPosition",
-    ReplaceWith("androidx.compose.ui.window.v2.WindowPosition(x, y)")
-)
-@Suppress("DEPRECATION")
 fun WindowPosition(x: Dp, y: Dp) = WindowPosition.Absolute(x, y)
 
 /**
  * Constructs an [WindowPosition.Aligned] from [alignment] value.
  */
-@Deprecated(
-    "Use androidx.compose.ui.window.v2.WindowPosition",
-    ReplaceWith("androidx.compose.ui.window.v2.WindowPosition(alignment)")
-)
 @Suppress("DEPRECATION")
 fun WindowPosition(alignment: Alignment) = WindowPosition.Aligned(alignment)
 
 /**
  * Position of the window or dialog on the screen in [Dp].
  */
-@Deprecated("Use androidx.compose.ui.window.v2.WindowPosition")
-@Suppress("DEPRECATION")
 @Immutable
 sealed class WindowPosition {
     /**
