@@ -47,4 +47,6 @@
 
 - (void)deactivateTextInputInteractionIfNeeded;
 
+- (BOOL)canPerformComposeAction:(SEL)action
+                     withSender:(id)sender;
 @end

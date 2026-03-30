@@ -732,7 +732,7 @@ internal class IntermediateTextInputUIView(
                 else -> super.canPerformAction(action, withSender)
             }
         } else {
-            return super.canPerformAction(action, withSender)
+            return super.canPerformComposeAction(action,withSender)
         }
     }
 

@@ -300,6 +300,15 @@ id _editInteraction;
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
+    BOOL composeActionHandled = [self canPerformComposeAction:action withSender:sender];
+    if (composeActionHandled) {
+        return composeActionHandled;
+    } else {
+        return [super canPerformAction:action withSender:sender];
+    }
+}
+
+- (BOOL)canPerformComposeAction:(SEL)action withSender:(id)sender {
     if (@selector(copy:) == action) {
         return self.copyBlock != nil;
     }
@@ -324,7 +333,7 @@ id _editInteraction;
     if (@selector(customAction8:) == action) return self.customActions.count > 8;
     if (@selector(customAction9:) == action) return self.customActions.count > 9;
 
-    return [super canPerformAction:action withSender:sender];
+    return NO;
 }
 
 - (void)copy:(id)sender {
