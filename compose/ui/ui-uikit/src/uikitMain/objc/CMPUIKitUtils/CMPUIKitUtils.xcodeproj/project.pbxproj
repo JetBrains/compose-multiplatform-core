@@ -33,6 +33,7 @@
 		EAC703E62B8C826E001ECDA6 /* CMPOSLoggerInterval.m in Sources */ = {isa = PBXBuildFile; fileRef = EA82F4FB2B86184F00465418 /* CMPOSLoggerInterval.m */; };
 		EADD02902C9846D9003F66E8 /* CMPDragInteractionProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = EADD028F2C9846D9003F66E8 /* CMPDragInteractionProxy.m */; };
 		EADD02932C98484F003F66E8 /* CMPDropInteractionProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = EADD02922C98484F003F66E8 /* CMPDropInteractionProxy.m */; };
+		AABB11112F5A0000000000A3 /* CMPUIWindowSceneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -77,6 +78,8 @@
 		9968C38A2D7892DF005E8DE4 /* CMPScreenEdgePanGestureRecognizer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPScreenEdgePanGestureRecognizer.m; sourceTree = "<group>"; };
 		996EFEEA2B02CE5D0000FE0F /* libCMPUIKitUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCMPUIKitUtils.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		996EFEF52B02CE8A0000FE0F /* CMPUIKitUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPUIKitUtils.h; sourceTree = "<group>"; };
+		AABB11112F5A0000000000A1 /* CMPUIWindowSceneExtensions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPUIWindowSceneExtensions.h; sourceTree = "<group>"; };
+		AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPUIWindowSceneExtensions.m; sourceTree = "<group>"; };
 		997DFCDC2B18D135000B56B5 /* CMPViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPViewController.h; sourceTree = "<group>"; };
 		997DFCDD2B18D135000B56B5 /* CMPViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPViewController.m; sourceTree = "<group>"; };
 		997DFCE32B18D99E000B56B5 /* CMPUIKitUtilsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CMPUIKitUtilsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -172,6 +175,8 @@
 				99DCAB0C2BD00F5C002E6AC7 /* CMPTextLoupeSession.h */,
 				99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */,
 				996EFEF52B02CE8A0000FE0F /* CMPUIKitUtils.h */,
+				AABB11112F5A0000000000A1 /* CMPUIWindowSceneExtensions.h */,
+				AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */,
 				997DFCDC2B18D135000B56B5 /* CMPViewController.h */,
 				997DFCDD2B18D135000B56B5 /* CMPViewController.m */,
 			);
@@ -357,6 +362,7 @@
 				EABD912B2BC02B5F00455279 /* CMPInteropWrappingView.m in Sources */,
 				EADD02902C9846D9003F66E8 /* CMPDragInteractionProxy.m in Sources */,
 				992EDDFB2E55EC8400FB44C5 /* CMPKeyValueObserver.m in Sources */,
+				AABB11112F5A0000000000A3 /* CMPUIWindowSceneExtensions.m in Sources */,
 				EA82F4F92B86144E00465418 /* CMPOSLogger.m in Sources */,
 				9968C3612D7746BD005E8DE4 /* CMPHoverGestureHandler.m in Sources */,
 				EA4B52962C2EDEF200FBB55C /* CMPGestureRecognizer.m in Sources */,

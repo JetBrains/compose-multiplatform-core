@@ -39,6 +39,7 @@ import androidx.compose.ui.uikit.PlistSanityCheck
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.uikit.utils.CMPKeyValueObserver
+import androidx.compose.ui.uikit.utils.CMPUIWindowSceneUtils
 import androidx.compose.ui.uikit.utils.CMPViewController
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -71,9 +72,6 @@ import kotlinx.cinterop.ExportObjCClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import org.jetbrains.skiko.OS
-import org.jetbrains.skiko.OSVersion
-import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGSize
 import platform.Foundation.NSKeyValueObservingOptionNew
 import platform.Foundation.addObserver
@@ -155,11 +153,7 @@ internal class ComposeHostingViewController(
     private val currentInterfaceOrientation: InterfaceOrientation?
         get() {
             return InterfaceOrientation.getByRawValue(
-                if (available(OS.Ios to OSVersion(16))) {
-                    windowScene?.effectiveGeometry?.interfaceOrientation
-                } else {
-                    windowScene?.interfaceOrientation
-                } ?: UIApplication.sharedApplication.statusBarOrientation
+                CMPUIWindowSceneUtils.interfaceOrientationForWindowScene(windowScene)
             )
         }
 
