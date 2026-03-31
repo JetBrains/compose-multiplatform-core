@@ -21,6 +21,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.kruth.assertThat
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
@@ -29,7 +30,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 /**
  * Tests for passing a custom CoroutineContext when [running a ComposeUiTest][runComposeUiTest].
@@ -113,53 +116,47 @@ class CustomEffectContextTest {
         }
     }
 
-//    @Test
-//    fun customDispatcher_StandardTestDispatcher() {
-//        val counter = TestCounter()
-//
-//        runAndroidComposeUiTest<ComponentActivity>(effectContext = StandardTestDispatcher()) {
-//            // b/328299124: sometimes the timing of window focus can change the order or execution
-//            waitForWindowFocus()
-//
-//            // With a StandardTestDispatcher, both launched effects and the launched coroutine are
-//            // dispatched, meaning they are added to the queue of tasks after all pending tasks.
-//            // Thus, the launched effects run first, and the launched coroutine comes last.
-//
-//            setContent {
-//                LaunchedEffect(Unit) {
-//                    counter.expect(1)
-//                    launch { counter.expect(3) }
-//                }
-//                LaunchedEffect(Unit) { counter.expect(2) }
-//            }
-//            runOnIdle { counter.expect(4) }
-//        }
-//    }
-//
-//    @Test
-//    @OptIn(ExperimentalCoroutinesApi::class)
-//    fun customDispatcher_UnconfinedTestDispatcher() {
-//        val counter = TestCounter()
-//
-//        runAndroidComposeUiTest<ComponentActivity>(effectContext = UnconfinedTestDispatcher()) {
-//            // b/328299124: sometimes the timing of window focus can change the order or execution
-//            waitForWindowFocus()
-//
-//            // With a UnconfinedTestDispatcher, both launched effects and the launched coroutine are
-//            // running unconfined, meaning they are executed immediately, regardless if there are
-//            // pending tasks.
-//            // Thus, the launched coroutine comes before the second launched effect.
-//
-//            setContent {
-//                LaunchedEffect(Unit) {
-//                    counter.expect(1)
-//                    launch { counter.expect(2) }
-//                }
-//                LaunchedEffect(Unit) { counter.expect(3) }
-//            }
-//            runOnIdle { counter.expect(4) }
-//        }
-//    }
+    @Test
+    fun customDispatcher_StandardTestDispatcher() {
+        val counter = TestCounter()
+
+        runSkikoComposeUiTest(effectContext = StandardTestDispatcher()) {
+            // With a StandardTestDispatcher, both launched effects and the launched coroutine are
+            // dispatched, meaning they are added to the queue of tasks after all pending tasks.
+            // Thus, the launched effects run first, and the launched coroutine comes last.
+
+            setContent {
+                LaunchedEffect(Unit) {
+                    counter.expect(1)
+                    launch { counter.expect(3) }
+                }
+                LaunchedEffect(Unit) { counter.expect(2) }
+            }
+            runOnIdle { counter.expect(4) }
+        }
+    }
+
+    @Test
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun customDispatcher_UnconfinedTestDispatcher() {
+        val counter = TestCounter()
+
+        runSkikoComposeUiTest(effectContext = UnconfinedTestDispatcher()) {
+            // With a UnconfinedTestDispatcher, both launched effects and the launched coroutine are
+            // running unconfined, meaning they are executed immediately, regardless if there are
+            // pending tasks.
+            // Thus, the launched coroutine comes before the second launched effect.
+
+            setContent {
+                LaunchedEffect(Unit) {
+                    counter.expect(1)
+                    launch { counter.expect(2) }
+                }
+                LaunchedEffect(Unit) { counter.expect(3) }
+            }
+            runOnIdle { counter.expect(4) }
+        }
+    }
 
     @Test
     @OptIn(ExperimentalCoroutinesApi::class)
