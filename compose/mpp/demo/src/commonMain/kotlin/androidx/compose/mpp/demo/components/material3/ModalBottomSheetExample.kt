@@ -52,7 +52,7 @@ internal val ModalBottomSheetExample = Screen.Selection(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ModalBottomSheet3Example() {
+private fun ModalBottomSheet3Example() {
     var openBottomSheet by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val bottomSheetState = rememberModalBottomSheetState()
@@ -83,7 +83,7 @@ fun ModalBottomSheet3Example() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ModalBottomSheetImeExample() {
+private fun ModalBottomSheetImeExample() {
     var openBottomSheet by rememberSaveable { mutableStateOf(false) }
     Button(onClick = { openBottomSheet = true }) {
         Text(text = "ModalBottomSheet+IME")
