@@ -74,7 +74,7 @@
 
 @property (assign, nonatomic) CGRect targetRect;
 @property (assign, nonatomic) BOOL isEditMenuShown;
-@property (assign, nonatomic) BOOL shouldUseNativeTextMenuActions;
+@property (assign, nonatomic) BOOL shouldUseNonComposeMenuActions;
 
 @property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));
 
@@ -325,7 +325,7 @@ id _editInteraction;
     if (@selector(customAction8:) == action) return self.customActions.count > 8;
     if (@selector(customAction9:) == action) return self.customActions.count > 9;
 
-    if (self.shouldUseNativeTextMenuActions) {
+    if (self.shouldUseNonComposeMenuActions) {
         return [super canPerformAction:action withSender:sender];
     } else { return NO; }
 }

@@ -21,7 +21,7 @@
 @interface CMPEditMenuView : CMPTextInputView
 
 @property (readonly) BOOL isEditMenuShown;
-@property (readonly) BOOL shouldUseNativeTextMenuActions;
+@property (readonly) BOOL shouldUseNonComposeMenuActions;
 
 - (void)showEditMenuAtRect:(CGRect)targetRect
                       copy:(void (^)(void))copyBlock
