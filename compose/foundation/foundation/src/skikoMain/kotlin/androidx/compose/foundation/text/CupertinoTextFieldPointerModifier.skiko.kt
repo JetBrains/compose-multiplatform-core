@@ -106,7 +106,7 @@ internal fun Modifier.cupertinoTextFieldPointer(
     this
 }
 
-private class CupertinoSelectionGesturesModifierElement(
+private data class CupertinoSelectionGesturesModifierElement(
     private val manager: TextFieldSelectionManager,
     private val state: LegacyTextFieldState,
     private val offsetMapping: OffsetMapping,
@@ -142,29 +142,7 @@ private class CupertinoSelectionGesturesModifierNode(
     private var state: LegacyTextFieldState,
     private var offsetMapping: OffsetMapping,
 ) : DelegatingNode() {
-    private val longPressDragObserver = createLongPressDragObserver()
-
-    private val pointerInputNode = delegate(
-        SuspendingPointerInputModifierNode {
-            awaitSelectionGestures(manager.mouseSelectionObserver, longPressDragObserver)
-        }
-    )
-
-    fun update(
-        manager: TextFieldSelectionManager,
-        state: LegacyTextFieldState,
-        offsetMapping: OffsetMapping,
-    ) {
-        if (this.manager !== manager) {
-            pointerInputNode.resetPointerInputHandler()
-        }
-        this.manager = manager
-        this.state = state
-        this.offsetMapping = offsetMapping
-    }
-
-    private fun createLongPressDragObserver(): TextDragObserver {
-        return object : TextDragObserver {
+    private val longPressDragObserver = object : TextDragObserver {
         var dragTotalDistance = Offset.Zero
         var dragBeginOffset = Offset.Zero
         var shouldUpdateMagnifierPosition = false
@@ -231,6 +209,24 @@ private class CupertinoSelectionGesturesModifierNode(
             manager.currentDragPosition = null
         }
     }
+
+    private val pointerInputNode = delegate(
+        SuspendingPointerInputModifierNode {
+            awaitSelectionGestures(manager.mouseSelectionObserver, longPressDragObserver)
+        }
+    )
+
+    fun update(
+        manager: TextFieldSelectionManager,
+        state: LegacyTextFieldState,
+        offsetMapping: OffsetMapping,
+    ) {
+        if (this.manager != manager) {
+            pointerInputNode.resetPointerInputHandler()
+        }
+        this.manager = manager
+        this.state = state
+        this.offsetMapping = offsetMapping
     }
 }
 

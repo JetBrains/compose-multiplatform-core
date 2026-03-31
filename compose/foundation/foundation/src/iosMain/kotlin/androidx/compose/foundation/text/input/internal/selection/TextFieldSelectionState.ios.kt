@@ -210,6 +210,27 @@ internal actual suspend fun TextFieldSelectionState.textFieldSelectionGestures(
     )
 }
 
+private fun doSinglePressSelection(
+    startPoint: Offset,
+    selectionState: TextFieldSelectionState,
+) {
+    selectionState.hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
+    // Long Press at the blank area, the cursor should show up at the end of the line.
+    if (!selectionState.textLayoutState.isPositionOnText(startPoint)) {
+        val offset = selectionState.textLayoutState.getOffsetForPosition(startPoint)
+        selectionState.textFieldState.placeCursorBeforeCharAt(offset)
+    } else {
+        if (selectionState.textFieldState.visualText.isEmpty()) return
+        val coercedOffset =
+            selectionState.textLayoutState.coercedInVisibleBoundsOfInputText(startPoint)
+        selectionState.placeCursorAtNearestOffset(
+            selectionState.textLayoutState.fromDecorationToTextLayout(coercedOffset)
+        )
+    }
+    selectionState.showCursorHandle = true
+    selectionState.updateHandleDragging(Handle.Cursor, startPoint)
+}
+
 private fun doRepeatingTapSelection(
     touchPointOffset: Offset,
     selectionState: TextFieldSelectionState,
@@ -254,7 +275,6 @@ private fun clearSelection(
 
 private class UIKitTextFieldTextDragObserver(
     private val textFieldSelectionState: TextFieldSelectionState,
-    private val requestFocus: () -> Unit = {}
 ) : TextDragObserver {
     private var dragBeginPosition: Offset = Offset.Unspecified
     private var dragTotalDistance: Offset = Offset.Zero
@@ -266,7 +286,6 @@ private class UIKitTextFieldTextDragObserver(
             dragBeginPosition = Offset.Unspecified
             dragTotalDistance = Offset.Zero
             textFieldSelectionState.directDragGestureInitiator = InputType.None
-            requestFocus()
             textFieldSelectionState.clearHandleDragging()
         }
     }
@@ -290,21 +309,7 @@ private class UIKitTextFieldTextDragObserver(
         if (selectionAdjustment != SelectionAdjustment.None) {
             doRepeatingTapSelection(startPoint, textFieldSelectionState, selectionAdjustment)
         } else {
-            textFieldSelectionState.hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
-            // Long Press at the blank area, the cursor should show up at the end of the line.
-            if (!textFieldSelectionState.textLayoutState.isPositionOnText(startPoint)) {
-                val offset = textFieldSelectionState.textLayoutState.getOffsetForPosition(startPoint)
-                textFieldSelectionState.textFieldState.placeCursorBeforeCharAt(offset)
-            } else {
-                if (textFieldSelectionState.textFieldState.visualText.isEmpty()) return
-                val coercedOffset =
-                    textFieldSelectionState.textLayoutState.coercedInVisibleBoundsOfInputText(startPoint)
-                textFieldSelectionState.placeCursorAtNearestOffset(
-                    textFieldSelectionState.textLayoutState.fromDecorationToTextLayout(coercedOffset)
-                )
-            }
-            textFieldSelectionState.showCursorHandle = true
-            textFieldSelectionState.updateHandleDragging(Handle.Cursor, startPoint)
+            doSinglePressSelection(startPoint, textFieldSelectionState)
         }
     }
 
