@@ -121,20 +121,6 @@ private data class CupertinoSelectionGesturesModifierElement(
     override fun InspectorInfo.inspectableProperties() {
         name = "cupertinoSelectionGestures"
     }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is CupertinoSelectionGesturesModifierElement) return false
-
-        return manager == other.manager && state == other.state && offsetMapping == other.offsetMapping
-    }
-
-    override fun hashCode(): Int {
-        var result = manager.hashCode()
-        result = 31 * result + state.hashCode()
-        result = 31 * result + offsetMapping.hashCode()
-        return result
-    }
 }
 
 private class CupertinoSelectionGesturesModifierNode(
