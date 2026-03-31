@@ -210,40 +210,38 @@ internal actual suspend fun TextFieldSelectionState.textFieldSelectionGestures(
     )
 }
 
-private fun doSinglePressSelection(
-    startPoint: Offset,
-    selectionState: TextFieldSelectionState,
+private fun TextFieldSelectionState.doSinglePressSelection(
+    touchPointOffset: Offset,
 ) {
-    selectionState.hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
+    hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
     // Long Press at the blank area, the cursor should show up at the end of the line.
-    if (!selectionState.textLayoutState.isPositionOnText(startPoint)) {
-        val offset = selectionState.textLayoutState.getOffsetForPosition(startPoint)
-        selectionState.textFieldState.placeCursorBeforeCharAt(offset)
+    if (!textLayoutState.isPositionOnText(touchPointOffset)) {
+        val offset = textLayoutState.getOffsetForPosition(touchPointOffset)
+        textFieldState.placeCursorBeforeCharAt(offset)
     } else {
-        if (selectionState.textFieldState.visualText.isEmpty()) return
+        if (textFieldState.visualText.isEmpty()) return
         val coercedOffset =
-            selectionState.textLayoutState.coercedInVisibleBoundsOfInputText(startPoint)
-        selectionState.placeCursorAtNearestOffset(
-            selectionState.textLayoutState.fromDecorationToTextLayout(coercedOffset)
+            textLayoutState.coercedInVisibleBoundsOfInputText(touchPointOffset)
+        placeCursorAtNearestOffset(
+            textLayoutState.fromDecorationToTextLayout(coercedOffset)
         )
     }
-    selectionState.showCursorHandle = true
-    selectionState.updateHandleDragging(Handle.Cursor, startPoint)
+    showCursorHandle = true
+    updateHandleDragging(Handle.Cursor, touchPointOffset)
 }
 
-private fun doRepeatingTapSelection(
+private fun TextFieldSelectionState.doRepeatingTapSelection(
     touchPointOffset: Offset,
-    selectionState: TextFieldSelectionState,
     selectionAdjustment: SelectionAdjustment
 ) {
-    clearSelection(touchPointOffset, selectionState) // otherwise it won't be changed by triple tap
+    clearSelection(touchPointOffset) // otherwise it won't be changed by triple tap
 
-    val selectionOffset = selectionState.textLayoutState.getOffsetForPosition(
+    val selectionOffset = textLayoutState.getOffsetForPosition(
         position = touchPointOffset
     )
 
-    val newSelection = selectionState.updateSelection(
-        selectionState.textFieldState.visualText,
+    val newSelection = updateSelection(
+        textFieldState.visualText,
         selectionOffset,
         selectionOffset,
         isStartHandle = false,
@@ -251,26 +249,25 @@ private fun doRepeatingTapSelection(
         hapticFeedbackType = HapticFeedbackType.TextHandleMove,
     )
 
-    selectionState.textFieldState.selectCharsIn(newSelection)
-    selectionState.updateTextToolbarState(Selection)
+    textFieldState.selectCharsIn(newSelection)
+    updateTextToolbarState(Selection)
 }
 
-private fun clearSelection(
+private fun TextFieldSelectionState.clearSelection(
     touchPointOffset: Offset,
-    selectionState: TextFieldSelectionState
 ) {
-    val selectionOffset = selectionState.textLayoutState.getOffsetForPosition(
+    val selectionOffset = textLayoutState.getOffsetForPosition(
         position = touchPointOffset
     )
-    val clearedSelection = selectionState.updateSelection(
-        TextFieldCharSequence(selectionState.textFieldState.visualText, TextRange.Zero),
+    val clearedSelection = updateSelection(
+        TextFieldCharSequence(textFieldState.visualText, TextRange.Zero),
         selectionOffset,
         selectionOffset,
         isStartHandle = false,
         adjustment = SelectionAdjustment.None,
         hapticFeedbackType = HapticFeedbackType.TextHandleMove,
     )
-    selectionState.textFieldState.selectCharsIn(clearedSelection)
+    textFieldState.selectCharsIn(clearedSelection)
 }
 
 private class UIKitTextFieldTextDragObserver(
@@ -307,9 +304,9 @@ private class UIKitTextFieldTextDragObserver(
         dragTotalDistance = Offset.Zero
 
         if (selectionAdjustment != SelectionAdjustment.None) {
-            doRepeatingTapSelection(startPoint, textFieldSelectionState, selectionAdjustment)
+            textFieldSelectionState.doRepeatingTapSelection(startPoint, selectionAdjustment)
         } else {
-            doSinglePressSelection(startPoint, textFieldSelectionState)
+            textFieldSelectionState.doSinglePressSelection(startPoint)
         }
     }
 
