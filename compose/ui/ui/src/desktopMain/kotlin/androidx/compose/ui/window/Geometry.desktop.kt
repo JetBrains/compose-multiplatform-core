@@ -49,15 +49,16 @@ internal fun DpSize.roundToDimension() = Dimension(
     width.value.roundToInt(),
     height.value.roundToInt()
 )
-internal val DpRect.topLeft: DpOffset get() = DpOffset(left, top)
-
-internal operator fun DpRect.plus(offset: DpOffset): DpRect =
-    DpRect(left + offset.x, top + offset.y, right + offset.x, bottom + offset.y)
-
+internal fun DpSize.roundToDimensionOrNull() =
+    if (isSpecified) roundToDimension() else null
 internal fun DpSize.roundToIntSize() = IntSize(
     width = width.value.roundToInt(),
     height = height.value.roundToInt()
 )
+
+internal val DpRect.topLeft: DpOffset get() = DpOffset(left, top)
+internal operator fun DpRect.plus(offset: DpOffset): DpRect =
+    DpRect(left + offset.x, top + offset.y, right + offset.x, bottom + offset.y)
 
 internal val Dp.isReal
     get() = isSpecified && isFinite

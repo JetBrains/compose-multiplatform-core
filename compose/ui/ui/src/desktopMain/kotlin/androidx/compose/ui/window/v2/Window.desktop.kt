@@ -77,6 +77,9 @@ import androidx.compose.ui.window.application
  * @param focusable Whether the window can receive focus.
  * @param alwaysOnTop whether the window will always be on top of other windows and dialogs in the
  * application.
+ * @param sizeLimits Limits on the window size. This will prevent the user from resizing the window
+ * beyond the specified values. Note that some window managers may not respect either one or both
+ * of the limits.
  * @param onPreviewKeyEvent Invoked when the window receives a key event, before it is sent to the
  * [content]. The return value controls whether the key event will be sent to the [content]
  * afterward. Return `true` to consume it, preventing further processing.
@@ -101,6 +104,7 @@ fun Window(
     enabled: Boolean = true,
     focusable: Boolean = true,
     alwaysOnTop: Boolean = false,
+    sizeLimits: WindowSizeLimits = WindowSizeLimits.Unlimited,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
     content: @Composable FrameWindowScope.() -> Unit
@@ -117,6 +121,7 @@ fun Window(
         enabled = enabled,
         focusable = focusable,
         alwaysOnTop = alwaysOnTop,
+        sizeLimits = sizeLimits,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
         init = { },
