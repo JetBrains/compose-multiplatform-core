@@ -28,7 +28,12 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.*
-import androidx.compose.ui.window.*
+import androidx.compose.ui.window.ApplicationScope
+import androidx.compose.ui.window.FrameWindowScope
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.density
+import androidx.compose.ui.window.runApplicationTest
 import androidx.compose.ui.window.window.toSize
 import androidx.compose.ui.window.v2.Window
 import androidx.compose.ui.window.v2.WindowBoundsProvider
@@ -36,6 +41,7 @@ import androidx.compose.ui.window.v2.WindowSizeProvider
 import androidx.compose.ui.window.v2.rememberWindowStateWithBounds
 import androidx.compose.ui.window.v2.WindowState
 import androidx.compose.ui.window.v2.WindowStateWithBounds
+import androidx.compose.ui.window.v2.rememberWindowState
 import com.google.common.truth.Truth.assertThat
 import java.awt.*
 import java.awt.event.WindowEvent
@@ -55,7 +61,7 @@ import kotlinx.coroutines.*
 import org.junit.Assume.assumeFalse
 import org.junit.Ignore
 
-class WindowTest {
+class WindowTestV2 {
 
     @Test
     fun `open and close window`() = runApplicationTest {
@@ -461,8 +467,10 @@ class WindowTest {
         launchTestApplication {
             Window(
                 onCloseRequest = { },
-                state = rememberWindowState(width = Dp.Unspecified, height = Dp.Unspecified),
-                undecorated = true,
+                state = rememberWindowState(
+                    initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Intrinsic)
+                ),
+                decoration = WindowDecoration.Undecorated(),
                 resizable = true,
             ) {
                 window = this.window
@@ -487,7 +495,9 @@ class WindowTest {
         launchTestApplication {
             Window(
                 onCloseRequest = { },
-                state = rememberWindowState(size = windowSize),
+                state = rememberWindowState(
+                    initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Exact(windowSize))
+                ),
             ) {
                 window = this.window
                 Layout(
@@ -642,15 +652,20 @@ class WindowTest {
         lateinit var innerWindow: Window
         var showInnerWindow by mutableStateOf(false)
         val windowSize = DpSize(800.dp, 800.dp)
-        launchTestWindowApplication(
-            state = WindowState(size = windowSize),
+        launchTestWindowV2Application(
+            state = WindowState(
+                initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Exact(windowSize))
+            ),
         ) {
             outerWindow = this.window
             Box(Modifier.fillMaxSize().background(Color.Black))
+
             if (showInnerWindow) {
                 Window(
                     onCloseRequest = {},
-                    state = rememberWindowState(size = windowSize),
+                    state = rememberWindowState(
+                        initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Exact(windowSize))
+                    ),
                 ) {
                     innerWindow = this.window
                     Box(Modifier.fillMaxSize().background(Color.Black))
