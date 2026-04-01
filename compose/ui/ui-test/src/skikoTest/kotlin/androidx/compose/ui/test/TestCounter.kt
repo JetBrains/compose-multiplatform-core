@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,20 @@
 
 package androidx.compose.ui.test
 
-import kotlin.jvm.JvmInline
+import kotlin.test.fail
 
-@JvmInline
-actual value class TrackpadButton actual constructor(actual val buttonId: Int) {
-    actual companion object {
-        actual val Primary: TrackpadButton
-            get() = TrackpadButton(0)
-        actual val Secondary: TrackpadButton
-            get() = TrackpadButton(1)
-        actual val Tertiary: TrackpadButton
-            get() = TrackpadButton(2)
+/**
+ * Asserts that [expect] calls occur in a specific order. Useful for coroutine dispatching tests.
+ */
+internal class TestCounter {
+    private var count = 0
+
+    fun expect(checkpoint: Int, message: String = "(no message)") {
+        // `checkpoint` is the "expected", but keeping the name for API clarity
+        val actual = count + 1
+        if (checkpoint != actual) {
+            fail("events out of order: expected=$checkpoint, actual=$actual, $message")
+        }
+        count = actual
     }
 }
