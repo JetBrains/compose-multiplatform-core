@@ -808,7 +808,10 @@ class SyntheticEventSenderTest {
     private fun SyntheticEventSenderConsumingAllMovements(send: (PointerInputEvent) -> Unit) =
         SyntheticEventSender {
             send(it)
-            PointerEventResult(anyMovementConsumed = true)
+            PointerEventResult(
+                dispatchedToAPointerInputModifier = true,
+                anyMovementConsumed = true
+            )
         }
 
     private fun eventsSentBy(
