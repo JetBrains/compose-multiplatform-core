@@ -17,6 +17,7 @@
 package androidx.compose.ui
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Enter
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Exit
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Move
@@ -769,6 +770,7 @@ class SyntheticEventSenderTest {
 
         // But it should be sent as an `Unknown` event
         assertEquals(4, received.count { it.nativeEvent != null }, "Missing native event")
+        assertEquals(PointerEventType.Unknown, received.last { it.nativeEvent != null }.eventType)
     }
 
     @Test
@@ -785,6 +787,7 @@ class SyntheticEventSenderTest {
 
         // But it should be sent as an `Unknown` event
         assertEquals(2, received.count { it.nativeEvent != null }, "Missing native event")
+        assertEquals(PointerEventType.Unknown, received.last { it.nativeEvent != null }.eventType)
     }
 
     @Test
@@ -803,6 +806,7 @@ class SyntheticEventSenderTest {
 
         // But it should be sent as an `Unknown` event
         assertEquals(3, received.count { it.nativeEvent != null }, "Missing native event")
+        assertEquals(PointerEventType.Unknown, received.last { it.nativeEvent != null }.eventType)
     }
 
     private fun SyntheticEventSenderConsumingAllMovements(send: (PointerInputEvent) -> Unit) =
