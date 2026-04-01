@@ -434,8 +434,13 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     private fun processUnknownEvent(event: PointerInputEvent): PointerEventResult {
-        gestureOwner?.let { return it.onPointerInput(event) }
-        return processHoveredEvent(event)
+        val gestureOwner = gestureOwner
+        @Suppress("IfThenToElvis")
+        return if (gestureOwner != null) {
+            gestureOwner.onPointerInput(event)
+        } else {
+            processHoveredEvent(event)
+        }
     }
 
     override fun createLayer(
