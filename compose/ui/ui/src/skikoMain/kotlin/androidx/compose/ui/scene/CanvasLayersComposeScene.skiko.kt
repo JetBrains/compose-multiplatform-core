@@ -247,6 +247,8 @@ private class CanvasLayersComposeSceneImpl(
             PointerEventType.ScaleStart,
             PointerEventType.ScaleChange,
             PointerEventType.ScaleEnd -> processHoveredEvent(event)
+            PointerEventType.Unknown ->
+                return processUnknownEvent(event)  // We don't want any side effects from it
             else -> PointerEventResult(anyMovementConsumed = false)
         }
 
@@ -429,6 +431,11 @@ private class CanvasLayersComposeSceneImpl(
         } else {
             PointerEventResult(anyMovementConsumed = false)
         }
+    }
+
+    private fun processUnknownEvent(event: PointerInputEvent): PointerEventResult {
+        gestureOwner?.let { return it.onPointerInput(event) }
+        return processHoveredEvent(event)
     }
 
     override fun createLayer(

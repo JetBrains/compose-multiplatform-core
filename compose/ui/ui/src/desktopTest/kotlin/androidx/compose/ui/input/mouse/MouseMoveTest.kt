@@ -45,6 +45,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -66,6 +67,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.Executors
 import kotlin.random.Random
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -768,6 +770,34 @@ class MouseMoveTest {
         scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f))
 
         assertEquals(1, clicksCount)
+    }
+
+    @Test
+    fun allNativeMouseEventsAreSent1() = ImageComposeScene(
+        width = 100,
+        height = 100,
+    ).useInUiThread { scene ->
+        val nativeEventsReceived = mutableListOf<Any>()
+        scene.setContent {
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Main)
+                            event.nativeEvent?.let { nativeEventsReceived.add(it) }
+                        }
+                    }
+                }
+            )
+        }
+
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f), buttons = PointerButtons(isPrimaryPressed = true), nativeEvent = 1)
+        scene.sendPointerEvent(PointerEventType.Move, Offset(10f, 10f), buttons = PointerButtons(isPrimaryPressed = true), nativeEvent = 2)
+        scene.sendPointerEvent(PointerEventType.Move, Offset(10f, 10f), buttons = PointerButtons(isPrimaryPressed = false), nativeEvent = 3)
+        scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f), nativeEvent = 4)
+
+        assertContentEquals(listOf(1, 2, 3, 4), nativeEventsReceived)
     }
 }
 

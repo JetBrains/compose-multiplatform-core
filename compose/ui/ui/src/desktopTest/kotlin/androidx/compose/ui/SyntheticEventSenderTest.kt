@@ -756,16 +756,19 @@ class SyntheticEventSenderTest {
             received.add(it)
         }
 
-        sender.send(mouseEvent(Press, 10f, 10f, pressed = true))
-        sender.send(mouseEvent(Move, 10f, 10f, pressed = true))
+        sender.send(mouseEvent(Press, 10f, 10f, pressed = true, nativeEvent = 1))
+        sender.send(mouseEvent(Move, 10f, 10f, pressed = true, nativeEvent = 2))
         assertEquals(0, received.count { it.eventType == Release })
 
-        sender.send(mouseEvent(Move, 10f, 10f, pressed = false))
+        sender.send(mouseEvent(Move, 10f, 10f, pressed = false, nativeEvent = 3))
         assertEquals(1, received.count { it.eventType == Release }, "Release event not sent")
 
         // Also, make sure we don't send an extra release event afterward
-        sender.send(mouseEvent(Release, 10f, 10f, pressed = false))
+        sender.send(mouseEvent(Release, 10f, 10f, pressed = false, nativeEvent = 4))
         assertEquals(1, received.count { it.eventType == Release }, "Extra release event sent")
+
+        // But it should be sent as an `Unknown` event
+        assertEquals(4, received.count { it.nativeEvent != null }, "Missing native event")
     }
 
     @Test
@@ -775,10 +778,13 @@ class SyntheticEventSenderTest {
             received.add(it)
         }
 
-        sender.send(mouseEvent(Press, 10f, 10f, pressed = true))
+        sender.send(mouseEvent(Press, 10f, 10f, pressed = true, nativeEvent = 1))
         assertEquals(1, received.count { it.eventType == Press }, "Press event not sent!?")
-        sender.send(mouseEvent(Press, 20f, 20f, pressed = true))
+        sender.send(mouseEvent(Press, 20f, 20f, pressed = true, nativeEvent = 2))
         assertEquals(1, received.count { it.eventType == Press }, "Extra press event sent")
+
+        // But it should be sent as an `Unknown` event
+        assertEquals(2, received.count { it.nativeEvent != null }, "Missing native event")
     }
 
     @Test
@@ -788,12 +794,15 @@ class SyntheticEventSenderTest {
             received.add(it)
         }
 
-        sender.send(mouseEvent(Press, 10f, 10f, pressed = true))
+        sender.send(mouseEvent(Press, 10f, 10f, pressed = true, nativeEvent = 1))
         assertEquals(1, received.count { it.eventType == Press }, "Press event not sent!?")
-        sender.send(mouseEvent(Release, 10f, 10f, pressed = false))
+        sender.send(mouseEvent(Release, 10f, 10f, pressed = false, nativeEvent = 2))
         assertEquals(1, received.count { it.eventType == Release }, "Release event not sent!?")
-        sender.send(mouseEvent(Release, 20f, 20f, pressed = false))
+        sender.send(mouseEvent(Release, 20f, 20f, pressed = false, nativeEvent = 3))
         assertEquals(1, received.count { it.eventType == Release }, "Extra release event sent")
+
+        // But it should be sent as an `Unknown` event
+        assertEquals(3, received.count { it.nativeEvent != null }, "Missing native event")
     }
 
     private fun SyntheticEventSenderConsumingAllMovements(send: (PointerInputEvent) -> Unit) =

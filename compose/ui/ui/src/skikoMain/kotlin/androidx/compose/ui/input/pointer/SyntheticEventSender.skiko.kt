@@ -92,7 +92,7 @@ internal class SyntheticEventSender(
         val syntheticScaleStartResult = sendMissingScaleStart(event)
         val syntheticPanEndResult = sendMissingPanEnd(event)
         val syntheticPanStartResult = sendMissingPanStart(event)
-        val eventResult = if (shouldSend(event)) sendInternal(event) else UnconsumedEventResult
+        val eventResult = if (shouldSend(event)) sendInternal(event) else sendNativeEventOnly(event)
         return syntheticMoveForHoverResult.merging(
             syntheticReleasesResult,
             syntheticPressesResult,
@@ -126,6 +126,11 @@ internal class SyntheticEventSender(
         }
     }
 
+    /**
+     * Returns whether the given event should be sent.
+     *
+     * An event could be filtered out if, for example, it is a duplicate of the previous event.
+     */
     private fun shouldSend(event: PointerInputEvent): Boolean {
         // Filter out press/release events with the same pressed pointers, buttons and keyboard
         // modifiers as the previous event.
@@ -146,6 +151,17 @@ internal class SyntheticEventSender(
         }
 
         return true
+    }
+
+    /**
+     * When an event generated as a result of a native event is filtered out (see [shouldSend]),
+     * we nevertheless want listeners to native events to receive them.
+     * This method sends an event with a type of [PointerEventType.Unknown] so that listeners can
+     * still receive it.
+     */
+    private fun sendNativeEventOnly(event: PointerInputEvent): PointerEventResult {
+        if (event.nativeEvent == null) return UnconsumedEventResult
+        return _send(event.copy(eventType = PointerEventType.Unknown))
     }
 
     fun updatePointerPosition(): PointerEventResult {
@@ -272,7 +288,15 @@ internal class SyntheticEventSender(
             PointerEventType.PanEnd -> isPanGestureInProgress = false
             else -> {}
         }
-        val anyMovementConsumed = _send(event)
+        val result = _send(event)
+        if (!result.dispatchedToAPointerInputModifier) {
+            // What we want to do here is to make sure to dispatch the native event if the Compose
+            // event has been filtered out by HitPathTracker. Unfortunately, there's no
+            // `PointerEventResult.eventIgnored` flag, but `dispatchedToAPointerInputModifier`
+            // seems adequate for now. It will be false also in the case of no `PointerInput` nodes,
+            // but that's ok because then our native event will also not be delivered to anyone.
+            sendNativeEventOnly(event)
+        }
         // We don't send nativeEvent for synthetic events.
         // Nullify to avoid memory leaks (native events can point to native views).
         // Copy the pointers list because the original list may be reused
@@ -280,7 +304,7 @@ internal class SyntheticEventSender(
             nativeEvent = null,
             pointers = event.pointers.toList()
         )
-        return anyMovementConsumed
+        return result
     }
 
     private fun sendMissingScaleStart(event: PointerInputEvent): PointerEventResult {
