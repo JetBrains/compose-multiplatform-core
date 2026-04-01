@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window.v2
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
@@ -29,6 +30,7 @@ import java.awt.Insets
  * @see Screen.insets
  */
 @ExperimentalComposeUiApi
+@Immutable
 class DpInsets(
     val top: Dp,
     val left: Dp,
