@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.toAwtRectangleRounded
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.isSpecified
@@ -51,6 +52,7 @@ import kotlinx.coroutines.channels.Channel
  * [DpOffset.isSpecified].
  * @param initiallyMinimized Whether the window is initially minimized.
  */
+@ExperimentalComposeUiApi
 @Composable
 fun rememberWindowStateWithBounds(
     initialPosition: DpOffset? = null,
@@ -75,6 +77,7 @@ fun rememberWindowStateWithBounds(
  * @param initialBoundsProvider Provides the initial bounds of the window.
  * @param initiallyMinimized Whether the window is initially minimized.
  */
+@ExperimentalComposeUiApi
 @Composable
 fun rememberWindowState(
     initialScreenProvider: WindowScreenProvider = WindowScreenProvider.Default,
@@ -105,6 +108,7 @@ fun rememberWindowState(
  * [DpOffset.isSpecified].
  * @param initiallyMinimized Whether the window is initially minimized.
  */
+@ExperimentalComposeUiApi
 fun WindowStateWithBounds(
     initialPosition: DpOffset? = null,
     initialSize: DpSize? = null,
@@ -128,6 +132,7 @@ fun WindowStateWithBounds(
  * @param initialBoundsProvider Provides the initial bounds of the window.
  * @param initiallyMinimized Whether the window is initially minimized.
  */
+@ExperimentalComposeUiApi
 fun WindowState(
     initialScreenProvider: WindowScreenProvider = WindowScreenProvider.Default,
     initialPlacement: WindowPlacement = WindowPlacement.Floating,
@@ -151,6 +156,7 @@ fun WindowState(
  * @param bounds the initial value for [WindowState._bounds]
  */
 @Stable
+@ExperimentalComposeUiApi
 class WindowState private constructor(
     isInitialized: Boolean,
     screenId: String?,
@@ -331,6 +337,7 @@ class WindowState private constructor(
         )
     }
 
+    @ExperimentalComposeUiApi
     companion object {
         /**
          * A [Saver] implementation for [WindowState].
@@ -371,6 +378,7 @@ class WindowState private constructor(
  * Returns the bounds of the window, as an AWT [Rectangle]; throws [IllegalStateException] if the
  * window is not yet [isInitialized].
  */
+@ExperimentalComposeUiApi
 val WindowState.awtBounds: Rectangle
     get() = bounds.toAwtRectangleRounded()
 

@@ -67,6 +67,7 @@ fun interface WindowScreenProvider {
      */
     fun WindowScreenProviderScope.getScreen(): Screen
 
+    @ExperimentalComposeUiApi
     companion object {
         /**
          * Returns the default screen for a new window.
@@ -130,6 +131,7 @@ interface WindowBoundsProvider {
      */
     fun WindowGeometryProviderScope.getBounds(): DpRect
 
+    @ExperimentalComposeUiApi
     companion object {
         /**
          * Returns the default position and size for a new window.
@@ -217,6 +219,7 @@ fun interface WindowPositionProvider {
      */
     fun WindowGeometryProviderScope.getPosition(size: DpSize): DpOffset
 
+    @ExperimentalComposeUiApi
     companion object {
         /**
          * Returns the default position for a new window.
@@ -258,6 +261,7 @@ fun interface WindowSizeProvider {
      */
     fun WindowGeometryProviderScope.getSize(): DpSize
 
+    @ExperimentalComposeUiApi
     companion object {
         /**
          * Returns the default size for a new window.

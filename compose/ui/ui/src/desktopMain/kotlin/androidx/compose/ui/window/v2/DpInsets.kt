@@ -72,6 +72,7 @@ class DpInsets(
 /**
  * Returns the rectangle remaining after applying the given insets.
  */
+@ExperimentalComposeUiApi
 fun DpRect.withInsets(insets: DpInsets): DpRect =
     DpRect(
         top = top + insets.top,

@@ -57,6 +57,7 @@ class WindowSizeLimits(
         return "WindowSizeLimits(min=$min, max=$max)"
     }
 
+    @ExperimentalComposeUiApi
     companion object {
         /**
          * A [WindowSizeLimits] that has no limits.
