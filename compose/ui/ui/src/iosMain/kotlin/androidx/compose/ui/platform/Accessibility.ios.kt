@@ -1540,10 +1540,12 @@ internal class AccessibilityMediator(
 
             fun makeSemanticsNode(children: List<AccessibilityElement>): AccessibilityElement {
                 val isLiveRegion = node.unmergedConfig.contains(SemanticsProperties.LiveRegion)
-                val (oldLabel, oldValue) = isLiveRegion.takeIf { it }
-                    ?.let { accessibilityElementsMap[node.semanticsKey] }
-                    ?.let { it.accessibilityLabel() to it.accessibilityValue() }
-                    ?: Pair(null, null)
+                val (oldLabel, oldValue) = if (isLiveRegion) {
+                    val element = accessibilityElementsMap[node.semanticsKey]
+                    element?.accessibilityLabel() to element?.accessibilityValue()
+                } else {
+                    Pair(null, null)
+                }
 
                 val element = createOrUpdateAccessibilityElement(
                     node = AccessibilityNode.Semantics(
@@ -1563,7 +1565,7 @@ internal class AccessibilityMediator(
                     if ((newLabel != null || newValue != null) &&
                         (oldLabel != newLabel || oldValue != newValue)
                     ) {
-                        val announcement = listOfNotNull(newValue, newLabel).joinToString(", ")
+                        val announcement = listOfNotNull(newLabel, newValue).joinToString(", ")
                         lastLiveRegionAnnouncement = AccessibilityNotification(
                             UIAccessibilityAnnouncementNotification,
                             message = announcement
