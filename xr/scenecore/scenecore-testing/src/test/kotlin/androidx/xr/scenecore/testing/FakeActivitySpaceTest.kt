@@ -18,17 +18,19 @@ package androidx.xr.scenecore.testing
 
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.ActivityPose
 import androidx.xr.scenecore.runtime.ActivitySpace
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.HitTestResult
+import androidx.xr.scenecore.runtime.ScenePose
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FakeActivitySpaceTest {
     lateinit var underTest: FakeActivitySpace
 
@@ -97,13 +99,17 @@ class FakeActivitySpaceTest {
         val hitPosition = Vector3(1.0f, 2.0f, 3.0f)
         val surfaceNormal = Vector3(4.0f, 5.0f, 6.0f)
         val extensionsHitTestResult = HitTestResult(hitPosition, surfaceNormal, 1, distance)
-        val hitTestFilter = ActivityPose.HitTestFilter.SELF_SCENE
+        val hitTestFilter = ScenePose.HitTestFilter.SELF_SCENE
 
         underTest.activitySpaceHitTestResult = extensionsHitTestResult
-        val hitTestResult =
-            underTest
-                .hitTestRelativeToActivityPose(Vector3.One, Vector3.One, hitTestFilter, underTest)
-                .get()
+        val hitTestResult = runBlocking {
+            underTest.hitTestRelativeToActivityPose(
+                Vector3.One,
+                Vector3.One,
+                hitTestFilter,
+                underTest,
+            )
+        }
 
         assertThat(hitTestResult.distance).isEqualTo(distance)
         assertThat(hitTestResult.hitPosition).isEqualTo(hitPosition)
@@ -116,7 +122,7 @@ class FakeActivitySpaceTest {
     fun getRecommendedContentBoxInFullSpace_returnsRecommendedContentBoxInFullSpace() {
         check(
             underTest.recommendedContentBoxInFullSpace ==
-                BoundingBox(
+                BoundingBox.fromMinMax(
                     min = Vector3(-1.73f / 2, -1.61f / 2, -0.5f / 2),
                     max = Vector3(1.73f / 2, 1.61f / 2, 0.5f / 2),
                 )

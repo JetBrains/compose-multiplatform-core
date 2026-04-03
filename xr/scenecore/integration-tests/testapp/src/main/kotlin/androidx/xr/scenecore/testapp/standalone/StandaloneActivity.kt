@@ -34,7 +34,7 @@ import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.nio.file.Paths
 import kotlin.math.cos
@@ -53,8 +53,9 @@ class StandaloneActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.common_test_panel)
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // Set toolbar
         val toolbar: Toolbar = findViewById(R.id.top_app_bar_activity_panel)
@@ -80,9 +81,10 @@ class StandaloneActivity : AppCompatActivity() {
                 panelEntityView,
                 IntSize2d(720, 480),
                 "panel_entity",
-                Pose(Vector3(0f, -0.25f, 0.5f)),
+                Pose(Vector3(0f, -0.25f, 0.2f)),
+                parent = session!!.scene.activitySpace,
             )
-        panelEntity.parent = session!!.scene.activitySpace
+        panelEntity.parent = session!!.scene.keyEntity
 
         lifecycleScope.launch {
             // load 3D Model
@@ -96,15 +98,33 @@ class StandaloneActivity : AppCompatActivity() {
     }
 
     private fun createModelSolarSystem(session: Session, model: GltfModel) {
-        val sunEntity = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 0.5f, -0.5f)))
-        sunEntity.parent = session.scene.activitySpace
+        val sunEntity =
+            GltfModelEntity.create(
+                session,
+                model,
+                Pose(Vector3(-0.5f, 0.5f, -1f)),
+                parent = session.scene.activitySpace,
+            )
+        sunEntity.parent = session.scene.keyEntity
         // Each child is scaled down relative to the parent to make it more visually clear which
         // entities are the "sun", "planet", and "moon".
         sunEntity.setScale(0.50f) // Scale down the sun entity so everything fits in the FOV better
-        val planetEntity = GltfModelEntity.create(session, model, Pose(Vector3(-1f, 2f, -0.5f)))
+        val planetEntity =
+            GltfModelEntity.create(
+                session,
+                model,
+                Pose(Vector3(-1f, 2f, -0.5f)),
+                parent = session.scene.activitySpace,
+            )
         planetEntity.parent = sunEntity
         planetEntity.setScale(0.5f)
-        val moonEntity = GltfModelEntity.create(session, model, Pose(Vector3(-1.5f, 2f, -0.5f)))
+        val moonEntity =
+            GltfModelEntity.create(
+                session,
+                model,
+                Pose(Vector3(-1.5f, 2f, -0.5f)),
+                parent = session.scene.activitySpace,
+            )
         moonEntity.parent = planetEntity
         moonEntity.setScale(0.5f)
 

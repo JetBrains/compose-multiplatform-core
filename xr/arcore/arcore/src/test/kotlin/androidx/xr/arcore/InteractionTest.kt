@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore
 
@@ -25,8 +26,8 @@ import androidx.xr.arcore.testing.FakeLifecycleManager
 import androidx.xr.arcore.testing.FakePerceptionManager
 import androidx.xr.arcore.testing.FakeRuntimePlane
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.CoreState
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose

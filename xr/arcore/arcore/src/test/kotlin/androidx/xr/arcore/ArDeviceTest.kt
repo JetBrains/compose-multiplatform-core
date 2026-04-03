@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore
 
@@ -23,6 +24,7 @@ import androidx.xr.arcore.testing.FakePerceptionManager
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.arcore.testing.FakeRuntimeArDevice
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateSuccess
@@ -72,7 +74,7 @@ class ArDeviceTest {
         activityController.create()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
-        session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
+        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN))
         xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
     }
 
@@ -95,9 +97,9 @@ class ArDeviceTest {
         }
 
     @Test
-    fun getInstance_headTrackingDisabled_throwsIllegalStateException() {
+    fun getInstance_deviceTrackingDisabled_throwsIllegalStateException() {
         val configureResult =
-            session.configure(Config(headTracking = Config.HeadTrackingMode.DISABLED))
+            session.configure(Config(deviceTracking = DeviceTrackingMode.DISABLED))
         check(configureResult is SessionConfigureSuccess)
 
         assertFailsWith<IllegalStateException> { ArDevice.getInstance(session) }

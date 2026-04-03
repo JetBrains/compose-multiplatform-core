@@ -82,7 +82,6 @@ import androidx.core.util.Preconditions
  * @see CameraSelector.of
  * @see CameraPresenceListener
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class CameraIdentifier
 private constructor(
     /**

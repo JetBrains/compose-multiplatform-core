@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -34,7 +33,6 @@ plugins {
 
 dependencies {
     api(libs.jspecify)
-    api(libs.kotlinStdlib)
     api(libs.kspApi)
     api(libs.javapoet)
     api("com.squareup:kotlinpoet:2.0.0")
@@ -55,13 +53,13 @@ dependencies {
     testImplementation(project(":kruth:kruth"))
 }
 
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        freeCompilerArgs += [
+tasks.withType(KotlinCompile).configureEach { task ->
+    task.compilerOptions {
+        it.freeCompilerArgs.addAll(
                 "-opt-in=kotlin.contracts.ExperimentalContracts",
                 "-opt-in=androidx.room3.compiler.processing.ExperimentalProcessingApi",
                 "-opt-in=com.squareup.kotlinpoet.javapoet.KotlinPoetJavaPoetPreview"
-        ]
+        )
     }
 }
 
@@ -78,5 +76,5 @@ androidx {
     type = SoftwareType.ANNOTATION_PROCESSOR_UTILS
     inceptionYear = "2020"
     description = "Processing Environment Abstraction for AndroidX Room"
-    kotlinTarget = KotlinTarget.KOTLIN_2_2
+    kotlinTarget = KotlinTarget.KOTLIN_2_3
 }

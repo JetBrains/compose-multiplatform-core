@@ -64,10 +64,10 @@ public class Threads(
             try {
                 withTimeout(timeoutMs) { result.await() }
             } catch (e: TimeoutCancellationException) {
-                Log.error(e) { "Timed out after ${timeoutMs}ms!" }
+                Log.error { "Timed out after ${timeoutMs}ms running $block!" }
                 // For some reason, if TimeoutCancellationException is thrown, runBlocking can
                 // suspend indefinitely. Catch it and rethrow IllegalStateException.
-                throw IllegalStateException("Timed out after ${timeoutMs}ms!")
+                throw IllegalStateException("Timed out after ${timeoutMs}ms running $block!")
             }
         }
     }

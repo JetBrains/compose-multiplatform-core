@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:JvmName("CameraStateExt")
 
 package androidx.xr.arcore.playservices
 
 import android.os.Build
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.StateExtender
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Matrix4
 import com.google.ar.core.Coordinates2d
@@ -84,7 +84,16 @@ internal class CameraStateExtender : StateExtender {
 
     private fun getCameraState(coreState: CoreState): CameraState {
         val camera = perceptionManager._latestFrame.camera
-        if (camera.trackingState == ARCoreTrackingState.TRACKING) {
+
+        /**
+         * When using the front-facing camera in ARCore 1.x, the Camera's TrackingState will always
+         * be PAUSED, so in that case we need to ignore trackingState and populate the rest of the
+         * values anyway, since an AR feature like FaceMesh tracking is likely being done.
+         */
+        if (
+            camera.trackingState == ARCoreTrackingState.TRACKING ||
+                perceptionManager.usingFrontFacingCamera
+        ) {
             val projectionMatrixData = FloatArray(16)
             camera.getProjectionMatrix(
                 projectionMatrixData,
@@ -126,7 +135,11 @@ internal class CameraStateExtender : StateExtender {
     }
 }
 
-/** The state of the ARCore 1.x Camera. */
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/**
+ * Provides the latest [CameraState], which contains the latest information about the device camera,
+ * such as pose, projection, and timestamp for the current frame.
+ */
+@ExperimentalCameraApi
+@Suppress("ExperimentalPropertyAnnotation")
 public val CoreState.cameraState: CameraState?
     get() = CameraStateExtender.cameraStateMap[this.timeMark]

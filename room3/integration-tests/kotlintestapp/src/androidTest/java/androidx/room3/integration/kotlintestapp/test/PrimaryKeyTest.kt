@@ -26,7 +26,6 @@ import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import kotlin.test.assertNotNull
@@ -103,9 +102,7 @@ class PrimaryKeyTest {
     @Before
     fun setup() {
         db =
-            Room.inMemoryDatabaseBuilder<PKeyTestDatabase>(
-                    ApplicationProvider.getApplicationContext()
-                )
+            Room.inMemoryDatabaseBuilder<PKeyTestDatabase>()
                 .setDriver(BundledSQLiteDriver())
                 .build()
     }

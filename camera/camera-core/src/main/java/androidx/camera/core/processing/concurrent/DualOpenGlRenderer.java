@@ -61,12 +61,25 @@ public final class DualOpenGlRenderer extends OpenGlRenderer {
     private int mPrimaryExternalTextureId = -1;
     private int mSecondaryExternalTextureId = -1;
 
-    private final @NonNull CompositionSettings mPrimaryCompositionSettings;
-    private final @NonNull CompositionSettings mSecondaryCompositionSettings;
+    private @NonNull CompositionSettings mPrimaryCompositionSettings;
+    private @NonNull CompositionSettings mSecondaryCompositionSettings;
 
     public DualOpenGlRenderer(
             @NonNull CompositionSettings primaryCompositionSettings,
             @NonNull CompositionSettings secondaryCompositionSettings) {
+        mPrimaryCompositionSettings = primaryCompositionSettings;
+        mSecondaryCompositionSettings = secondaryCompositionSettings;
+    }
+
+
+    /**
+     *
+     * Update the {@link CompositionSettings}.
+     */
+    public void updateCompositionSettings(
+            @NonNull CompositionSettings primaryCompositionSettings,
+            @NonNull CompositionSettings secondaryCompositionSettings) {
+        checkGlThreadOrThrow(mGlThread);
         mPrimaryCompositionSettings = primaryCompositionSettings;
         mSecondaryCompositionSettings = secondaryCompositionSettings;
     }
@@ -134,12 +147,22 @@ public final class DualOpenGlRenderer extends OpenGlRenderer {
 
         GLES30.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
-        // Primary Camera
-        renderInternal(outputSurface, surfaceOutput, primarySurfaceTexture,
-                mPrimaryCompositionSettings, mPrimaryExternalTextureId, true);
-        // Secondary Camera
-        renderInternal(outputSurface, surfaceOutput, secondarySurfaceTexture,
-                mSecondaryCompositionSettings, mSecondaryExternalTextureId, false);
+
+        if (mPrimaryCompositionSettings.getZOrder() <= mSecondaryCompositionSettings.getZOrder()) {
+            // Primary Camera rendered first
+            renderInternal(outputSurface, surfaceOutput, primarySurfaceTexture,
+                    mPrimaryCompositionSettings, mPrimaryExternalTextureId, true);
+            // Secondary Camera rendered second
+            renderInternal(outputSurface, surfaceOutput, secondarySurfaceTexture,
+                    mSecondaryCompositionSettings, mSecondaryExternalTextureId, false);
+        } else {
+            // Secondary Camera rendered first
+            renderInternal(outputSurface, surfaceOutput, secondarySurfaceTexture,
+                    mSecondaryCompositionSettings, mSecondaryExternalTextureId, false);
+            // Primary Camera rendered second
+            renderInternal(outputSurface, surfaceOutput, primarySurfaceTexture,
+                    mPrimaryCompositionSettings, mPrimaryExternalTextureId, true);
+        }
 
         EGLExt.eglPresentationTimeANDROID(mEglDisplay, outputSurface.getEglSurface(), timestampNs);
 

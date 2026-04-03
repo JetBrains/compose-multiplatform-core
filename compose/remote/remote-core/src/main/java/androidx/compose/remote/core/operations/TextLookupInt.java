@@ -34,15 +34,14 @@ import java.util.List;
 
 /** Operation convert int index of a list to text */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class TextLookupInt extends Operation implements VariableSupport, Serializable {
+public class TextLookupInt extends Operation implements VariableSupport, ComponentData,
+        Serializable {
     private static final int OP_CODE = Operations.TEXT_LOOKUP_INT;
-    private static final String CLASS_NAME = "TextFromINT";
+    private static final String CLASS_NAME = "TextLookupInt";
     public int mTextId;
     public int mDataSetId;
     public int mOutIndex;
     public int mIndex;
-
-    public static final int MAX_STRING_SIZE = 4000;
 
     public TextLookupInt(int textId, int dataSetId, int indexId) {
         this.mTextId = textId;
@@ -74,6 +73,7 @@ public class TextLookupInt extends Operation implements VariableSupport, Seriali
     @Override
     public void registerListening(@NonNull RemoteContext context) {
         context.listensTo(mIndex, this);
+        context.listensTo(mDataSetId, this);
     }
 
     /**
@@ -98,8 +98,8 @@ public class TextLookupInt extends Operation implements VariableSupport, Seriali
     /**
      * Writes out the operation to the buffer
      *
-     * @param buffer buffer to write to
-     * @param textId the id of the output text
+     * @param buffer  buffer to write to
+     * @param textId  the id of the output text
      * @param dataSet float pointer to the array/list to turn int a string
      * @param indexId index of element to return
      */
@@ -113,7 +113,7 @@ public class TextLookupInt extends Operation implements VariableSupport, Seriali
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer the buffer to read
+     * @param buffer     the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
@@ -129,11 +129,11 @@ public class TextLookupInt extends Operation implements VariableSupport, Seriali
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Expressions Operations", OP_CODE, CLASS_NAME)
-                .description("Look up an array and turn into a text object")
-                .field(DocumentedOperation.INT, "textId", "id of the text generated")
-                .field(INT, "dataSetId", "id to the array/list to turn int a string")
-                .field(INT, "index", "index of the element to return");
+        doc.operation("Text Operations", OP_CODE, CLASS_NAME)
+                .description("Look up a string from a collection via an integer index variable")
+                .field(DocumentedOperation.INT, "textId", "The ID of the resulting text")
+                .field(INT, "dataSetId", "The ID of the string collection")
+                .field(INT, "indexId", "The ID of the integer index variable");
     }
 
     @Override

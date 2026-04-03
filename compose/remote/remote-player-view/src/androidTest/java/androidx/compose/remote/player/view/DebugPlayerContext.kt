@@ -16,7 +16,7 @@
 package androidx.compose.remote.player.view
 
 import androidx.compose.remote.core.PaintContext
-import androidx.compose.remote.core.Platform
+import androidx.compose.remote.core.RcPlatformServices
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.VariableSupport
 import androidx.compose.remote.core.operations.FloatExpression
@@ -359,8 +359,17 @@ class DebugPlayerContext : RemoteContext() {
                     overflow: Int,
                     maxLines: Int,
                     maxWidth: Float,
+                    maxHeight: Float,
+                    letterSpacing: Float,
+                    lineHeightAdd: Float,
+                    lineHeightMultiplier: Float,
+                    lineBreakStrategy: Int,
+                    hyphenationFrequency: Int,
+                    justificationMode: Int,
+                    useUnderline: Boolean,
+                    strikethrough: Boolean,
                     flags: Int,
-                ): Platform.ComputedTextLayout? {
+                ): RcPlatformServices.ComputedTextLayout? {
                     stringBuilder.append("layoutComplexText($textId, $start, $end)\n")
                     return null
                 }
@@ -380,7 +389,9 @@ class DebugPlayerContext : RemoteContext() {
                     )
                 }
 
-                override fun drawComplexText(computedTextLayout: Platform.ComputedTextLayout?) {
+                override fun drawComplexText(
+                    computedTextLayout: RcPlatformServices.ComputedTextLayout?
+                ) {
                     TODO("Not yet implemented")
                 }
 

@@ -19,21 +19,40 @@ package androidx.xr.arcore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DisplayBlendMode
 import kotlin.time.ComparableTimeMark
 
-/** Test-only implementation of [androidx.xr.arcore.runtime.PerceptionRuntime] */
+/**
+ * Fake implementation of [PerceptionRuntime] for testing purposes.
+ *
+ * @property lifecycleManager the [FakeLifecycleManager] for this fake runtime
+ * @property perceptionManager the [FakePerceptionManager] for this fake runtime
+ * @property xrDevicePreferredDisplayBlendMode the value that will be returned by
+ *   [androidx.xr.runtime.XrDevice.getPreferredDisplayBlendMode]
+ */
 @Suppress("DataClassDefinition")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
 public data class FakePerceptionRuntime(
-    override val lifecycleManager: FakeLifecycleManager,
-    override val perceptionManager: FakePerceptionManager,
+    @Suppress("DEPRECATION") override val lifecycleManager: FakeLifecycleManager,
+    @Suppress("DEPRECATION") override val perceptionManager: FakePerceptionManager,
 ) : PerceptionRuntime {
+    override var config: Config = Config()
+
+    public var xrDevicePreferredDisplayBlendMode: DisplayBlendMode = DisplayBlendMode.NO_DISPLAY
+
     override fun initialize() {
         lifecycleManager.create()
     }
 
     override fun configure(config: Config) {
         lifecycleManager.configure(config)
+    }
+
+    override fun getPreferredDisplayBlendMode(): DisplayBlendMode {
+        return xrDevicePreferredDisplayBlendMode
     }
 
     override fun resume() {

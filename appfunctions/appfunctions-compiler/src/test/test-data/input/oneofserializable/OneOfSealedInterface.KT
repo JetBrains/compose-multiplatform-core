@@ -18,8 +18,13 @@ package com.testdata.oneofserializable
 
 import androidx.appfunctions.AppFunctionSerializable
 
-@AppFunctionSerializable sealed interface OneOfSealedInterface
+@AppFunctionSerializable
+sealed interface OneOfSealedInterface {
+    val interfaceProperty: String
+}
 
-@AppFunctionSerializable class ASubclass(val str: String) : OneOfSealedInterface
+@AppFunctionSerializable
+class ASubclass(override val interfaceProperty: String, val str: String) : OneOfSealedInterface
 
-@AppFunctionSerializable class BSubclass(val integer: Int) : OneOfSealedInterface
+@AppFunctionSerializable
+class BSubclass(override val interfaceProperty: String, val integer: Int) : OneOfSealedInterface

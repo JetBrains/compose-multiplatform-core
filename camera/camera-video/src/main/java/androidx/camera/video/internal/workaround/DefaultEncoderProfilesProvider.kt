@@ -221,7 +221,7 @@ public class DefaultEncoderProfilesProvider(
         internal const val DEFAULT_VIDEO_HDR_FORMAT = EncoderProfiles.VideoProfile.HDR_NONE
 
         internal const val DEFAULT_VIDEO_BITRATE_UHD =
-            40_000_000 // 40 Mbps, scaled by FHD. See VideoConfigUtil.scaleAndClampBitrate()
+            40_000_000 // 40 Mbps, scaled by FHD. See VideoConfigUtil.scaleBitrate()
         internal const val DEFAULT_VIDEO_BITRATE_FHD = 10_000_000 // 10 Mbps
         internal const val DEFAULT_VIDEO_BITRATE_HD = 4_000_000 // 4 Mbps
         internal const val DEFAULT_VIDEO_BITRATE_SD = 2_000_000 // 2 Mbps

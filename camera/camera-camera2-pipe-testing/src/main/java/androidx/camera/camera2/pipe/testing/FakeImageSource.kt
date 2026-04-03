@@ -41,8 +41,15 @@ private constructor(
     public val images: List<FakeImage>
         get() = fakeImageReader.images
 
+    public val isFlushed: Boolean
+        get() = fakeImageReader.isFlushed
+
     public fun simulateImage(timestamp: Long, outputId: OutputId? = null): FakeImage {
         return fakeImageReader.simulateImage(timestamp, outputId)
+    }
+
+    public fun simulateExpectedOutputs(timestamp: Long, outputIds: Set<OutputId>) {
+        fakeImageReader.simulateExpectedOutputs(timestamp, outputIds)
     }
 
     override fun close() {
@@ -52,6 +59,14 @@ private constructor(
     }
 
     override fun toString(): String = "FakeImageSource-$debugId"
+
+    override fun flush() {
+        fakeImageReader.flush()
+    }
+
+    override fun discardFreeBuffers() {
+        fakeImageReader.discardFreeBuffers()
+    }
 
     public companion object {
         private val debugIds = atomic(0)

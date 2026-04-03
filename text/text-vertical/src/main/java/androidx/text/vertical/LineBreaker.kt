@@ -122,8 +122,8 @@ internal object LineBreaker {
      * @param end The exclusive ending index of the range.
      * @param paint The TextPaint used for measuring and drawing text.
      * @param heightConstraint The height constraint in pixels.
-     * @param textOrientation The desired orientation for the text (MIXED, HORIZONTAL, VERTICAL).
-     *   Defaults to MIXED.
+     * @param textOrientation The desired orientation for the text (Mixed, Upright, Sideways).
+     *   Defaults to Mixed.
      * @return A Result object containing the broken text lines.
      */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -133,7 +133,7 @@ internal object LineBreaker {
         end: Int,
         paint: TextPaint,
         @Px heightConstraint: Float,
-        textOrientation: Int = TextOrientation.MIXED,
+        textOrientation: TextOrientation = TextOrientation.Mixed,
     ): Result {
         val ctx = Context(text, paint, heightConstraint)
         text.forEachParagraph(start, end) { paraStart, paraEnd ->
@@ -218,7 +218,7 @@ private data class WordBreaker(val text: CharSequence, val locale: Locale) {
 private data class Context(
     val text: CharSequence,
     val paint: TextPaint,
-    @Px val heightConstraint: Float,
+    @param:Px val heightConstraint: Float,
 ) {
     val breaker = WordBreaker(text, paint.textLocale)
     var currentLineHeight: Float = 0f
@@ -404,7 +404,7 @@ private data class Context(
      * @param orientation The text orientation mode.
      */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    fun processRubyRun(start: Int, end: Int, ruby: RubySpan, @OrientationMode orientation: Int) {
+    fun processRubyRun(start: Int, end: Int, ruby: RubySpan, orientation: TextOrientation) {
         val rubyLayout = RubyLayoutRun(text, start, end, orientation, paint, ruby)
         processNonBreakableLayout(rubyLayout)
     }

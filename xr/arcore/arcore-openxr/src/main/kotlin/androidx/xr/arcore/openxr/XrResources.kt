@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 /** Object that holds resources that are used in the XR session. */
-internal class XrResources {
+internal class XrResources(timeSource: OpenXrTimeSource) {
     /** Map of native trackable pointer to [androidx.xr.arcore.runtime.Trackable]. */
     private val _trackablesMap = ConcurrentHashMap<Long, Trackable>()
     val trackablesMap: Map<Long, Trackable> = _trackablesMap
@@ -49,8 +49,8 @@ internal class XrResources {
     /** The data of face */
     val userFace: OpenXrFace
 
-    /** The data of the Earth */
-    val earth: OpenXrEarth = OpenXrEarth(this)
+    /** The data of Geospatial */
+    val geospatial: OpenXrGeospatial = OpenXrGeospatial(this, timeSource)
 
     val leftDepthMap: OpenXrDepthMap
     val rightDepthMap: OpenXrDepthMap

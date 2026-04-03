@@ -16,12 +16,17 @@
 
 package androidx.xr.arcore.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Hand as RuntimeHand
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 
-/** Test-only implementation of [androidx.xr.arcore.runtime.Hand]. */
+/** Fake implementation of [Hand][RuntimeHand] for testing purposes. */
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class FakeRuntimeHand(
     override var trackingState: TrackingState = TrackingState.PAUSED,
     override var handJointsBuffer: FloatBuffer = ByteBuffer.allocate(0).asFloatBuffer(),

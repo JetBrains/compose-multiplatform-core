@@ -21,6 +21,8 @@ import androidx.activity.ExperimentalActivityApi
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
+import androidx.activity.compose.internal.BackHandlerCompat
+import androidx.activity.compose.internal.BackHandlerDispatcherCompat
 import androidx.activity.findViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -28,6 +30,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -35,9 +38,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.navigationevent.NavigationEventDispatcherOwner
-import androidx.navigationevent.NavigationEventHandler
 import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.NavigationEventInfo.None
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 
 /**
@@ -93,9 +94,9 @@ public object LocalOnBackPressedDispatcherOwner {
  *
  * ## Legacy Behavior
  * To restore the legacy add/remove behavior, set
- * [ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable] to `false`. In legacy mode, the
- * handler is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP], which
- * may change dispatch ordering across lifecycle transitions.
+ * [ActivityFlags.isOnBackPressedLifecycleOrderMaintained] to `false`. In legacy mode, the handler
+ * is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP], which may change
+ * dispatch ordering across lifecycle transitions.
  *
  * @sample androidx.activity.compose.samples.BackHandler
  * @param enabled If `true`, this handler will be enabled and eligible to handle the back press.
@@ -105,31 +106,46 @@ public object LocalOnBackPressedDispatcherOwner {
 @OptIn(ExperimentalActivityApi::class)
 @Composable
 public fun BackHandler(enabled: Boolean = true, onBack: () -> Unit) {
-    // Use NavigationEventDispatcher local composition if available,
-    // otherwise use the legacy dispatcher to maintain compatibility.
-    val mainOwner = LocalNavigationEventDispatcherOwner.current
-    val fallbackOwner = LocalOnBackPressedDispatcherOwner.current
-    val owner = mainOwner ?: fallbackOwner as? NavigationEventDispatcherOwner
-    checkNotNull(owner) {
-        "No NavigationEventDispatcher was provided via LocalNavigationEventDispatcherOwner"
-    }
+    // Short-circuit: Only read the legacy owner if the new one is missing.
+    val owner =
+        LocalNavigationEventDispatcherOwner.current
+            ?: LocalOnBackPressedDispatcherOwner.current
+            ?: error(
+                "No NavigationEventDispatcherOwner was provided via " +
+                    "LocalNavigationEventDispatcherOwner and no OnBackPressedDispatcherOwner was " +
+                    "provided via LocalOnBackPressedDispatcherOwner. Please provide one of the two."
+            )
 
-    val handler = remember { ComposeBackHandler() }
+    val dispatcher =
+        remember(owner) {
+            // Create a dispatcher compatibility layer that decides whether to use the new
+            // 'NavigationEventDispatcher' or the legacy 'OnBackPressedDispatcher'.
+            BackHandlerDispatcherCompat(
+                (owner as? NavigationEventDispatcherOwner)?.navigationEventDispatcher,
+                (owner as? OnBackPressedDispatcherOwner)?.onBackPressedDispatcher,
+            )
+        }
 
-    if (ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable) {
+    val compositeKey = currentCompositeKeyHashCode
+    val handler =
+        remember(dispatcher, compositeKey) {
+            ComposeBackHandler(BackHandlerInfo(owner, compositeKey))
+        }
+
+    if (ActivityFlags.isOnBackPressedLifecycleOrderMaintained) {
         // Keep the handler instance stable across recompositions, but update the active parameters.
         SideEffect { handler.currentOnBackCompleted = onBack }
 
         // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
         // avoiding the frame delay that happens with state-based APIs like collectAsState().
-        LifecycleStartEffect(enabled) {
+        LifecycleStartEffect(enabled, handler) {
             handler.isBackEnabled = enabled
             onStopOrDispose { handler.isBackEnabled = false }
         }
 
-        DisposableEffect(owner) {
-            owner.navigationEventDispatcher.addHandler(handler)
-            onDispose { handler.remove() }
+        DisposableEffect(dispatcher, handler) {
+            dispatcher.addHandler(handler)
+            onDispose { dispatcher.removeHandler(handler) }
         }
     } else {
         // Keep the handler instance stable across recompositions, but update the active parameters.
@@ -140,15 +156,14 @@ public fun BackHandler(enabled: Boolean = true, onBack: () -> Unit) {
 
         // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
         // avoiding the frame delay that happens with state-based APIs like collectAsState().
-        LifecycleStartEffect(owner) {
-            owner.navigationEventDispatcher.addHandler(handler)
-            onStopOrDispose { handler.remove() }
+        LifecycleStartEffect(dispatcher, handler) {
+            dispatcher.addHandler(handler)
+            onStopOrDispose { dispatcher.removeHandler(handler) }
         }
     }
 }
 
-private class ComposeBackHandler :
-    NavigationEventHandler<NavigationEventInfo>(initialInfo = None, isBackEnabled = false) {
+private class ComposeBackHandler(info: BackHandlerInfo) : BackHandlerCompat(info) {
 
     var currentOnBackCompleted: () -> Unit = {}
 
@@ -156,3 +171,5 @@ private class ComposeBackHandler :
         currentOnBackCompleted()
     }
 }
+
+private data class BackHandlerInfo(val owner: Any, val compositeKey: Long) : NavigationEventInfo()

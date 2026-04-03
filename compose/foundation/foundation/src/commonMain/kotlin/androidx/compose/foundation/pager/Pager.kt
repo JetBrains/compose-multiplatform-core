@@ -23,6 +23,8 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.foundation.ComposeFoundationFlags.isReverseLayoutNestedScrollConnectionInPagerFixEnabled
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
@@ -52,6 +54,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlinx.coroutines.CancellationException
@@ -480,14 +483,19 @@ private class DefaultPagerNestedScrollConnection(
         }
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
         return if (
             // rounding error and drag only
-            source == NestedScrollSource.UserInput && abs(state.currentPageOffsetFraction) > 1e-6
+            source == NestedScrollSource.UserInput &&
+                abs(state.currentPageOffsetFraction) > 1e-6 &&
+                // only need to treat deltas on this Pager's orientation
+                available.toFloat().absoluteValue > 0f
         ) {
             // find the current and next page (in the direction of dragging)
+            val layoutInfo = state.layoutInfo
             val currentPageOffset = state.currentPageOffsetFraction * state.pageSize
-            val pageAvailableSpace = state.layoutInfo.pageSize + state.layoutInfo.pageSpacing
+            val pageAvailableSpace = layoutInfo.pageSize + layoutInfo.pageSpacing
             val nextClosestPageOffset =
                 currentPageOffset + pageAvailableSpace * -sign(state.currentPageOffsetFraction)
 
@@ -502,10 +510,21 @@ private class DefaultPagerNestedScrollConnection(
                 maxBound = nextClosestPageOffset
             }
 
-            val delta = if (orientation == Orientation.Horizontal) available.x else available.y
+            val delta = available.toFloat()
             val coerced = delta.coerceIn(minBound, maxBound)
-            // dispatch and return reversed as usual
-            val consumed = -state.dispatchRawDelta(-coerced)
+            // dispatch and return reversed as usual.
+            // we need to be mindful of reverseLayout which flips the sign for horizontal layouts
+            // see [ScrollableDefaults.reverseDirection] for context.
+            val consumed =
+                if (
+                    orientation == Orientation.Horizontal &&
+                        layoutInfo.reverseLayout &&
+                        isReverseLayoutNestedScrollConnectionInPagerFixEnabled
+                ) {
+                    state.dispatchRawDelta(coerced)
+                } else {
+                    -state.dispatchRawDelta(-coerced)
+                }
             available.copy(
                 x = if (orientation == Orientation.Horizontal) consumed else available.x,
                 y = if (orientation == Orientation.Vertical) consumed else available.y,
@@ -514,6 +533,8 @@ private class DefaultPagerNestedScrollConnection(
             Offset.Zero
         }
     }
+
+    private fun Offset.toFloat() = if (orientation == Orientation.Horizontal) x else y
 
     override fun onPostScroll(
         consumed: Offset,

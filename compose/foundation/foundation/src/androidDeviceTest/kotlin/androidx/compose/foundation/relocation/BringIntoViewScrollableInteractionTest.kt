@@ -59,7 +59,7 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertPositionInRootIsEqualTo
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -1085,6 +1085,7 @@ class BringIntoViewScrollableInteractionTest(private val orientation: Orientatio
         val expectedContainerSize = with(rule.density) { containerSize.roundToPx() }
         val customBringIntoViewSpec =
             object : BringIntoViewSpec {
+                @Deprecated("override")
                 override val scrollAnimationSpec: AnimationSpec<Float>
                     get() = animationSpec
 
@@ -1181,6 +1182,7 @@ class BringIntoViewScrollableInteractionTest(private val orientation: Orientatio
             object : BringIntoViewSpec {
                 var index = 0
 
+                @Deprecated("override")
                 override val scrollAnimationSpec: AnimationSpec<Float>
                     get() = inspectSpringAnimationSpec
 

@@ -38,6 +38,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -92,7 +93,7 @@ import kotlinx.coroutines.launch
  * container.
  *
  * Creates a [ScrollIndicator] based on the values in a [ScrollState] object. e.g. a [Column]
- * implementing [Modifier.verticalScroll] provides a [ScrollState].
+ * implementing [androidx.compose.foundation.verticalScroll] provides a [ScrollState].
  *
  * To comply with Wear Material Design guidelines, this composable should be aligned to the center
  * end of the screen using `Alignment.CenterEnd`, such as by setting `modifier =
@@ -207,7 +208,7 @@ public fun ScrollIndicator(
  * container.
  *
  * Creates an [ScrollIndicator] based on the values in a [TransformingLazyColumnState] object that a
- * [TransformingLazyColumn] uses.
+ * [androidx.wear.compose.foundation.lazy.TransformingLazyColumn] uses.
  *
  * Typically used with the [ScreenScaffold] but can be used to decorate any full screen situation.
  *
@@ -440,6 +441,9 @@ internal interface IndicatorState {
 
     /** Size of the indicator in the range [0f,1f]. 1f means it takes the whole space. */
     @get:FloatRange(from = 0.0, to = 1.0) val sizeFraction: Float
+
+    /** Jiggle amount of the indicator in the range [0f, 1f]. */
+    @get:FloatRange(from = 0.0, to = 1.0) var jiggleAmount: Float
 }
 
 /**
@@ -542,7 +546,14 @@ internal fun IndicatorImpl(
         launch {
             // This snapshotFlow listens to changes in position, size and visibility
             // of ScrollIndicatorState and starts necessary animations if needed
-            snapshotFlow { DisplayState(state.positionFraction, state.sizeFraction, arcLengthPx) }
+            snapshotFlow {
+                    DisplayState(
+                        state.positionFraction,
+                        state.sizeFraction,
+                        arcLengthPx,
+                        state.jiggleAmount,
+                    )
+                }
                 .collectLatest {
                     // Workaround for b/315149417. When position and height are equal to 0,
                     // we consider that as non-initialized state.
@@ -564,7 +575,7 @@ internal fun IndicatorImpl(
                         }
                         launch {
                             positionFractionAnimatable.animateTo(
-                                it.position,
+                                it.position + it.jiggleAmount,
                                 animationSpec = updatedPositionAnimationSpec,
                             )
                         }
@@ -616,7 +627,12 @@ internal fun IndicatorImpl(
 }
 
 @Immutable
-internal class DisplayState(val position: Float, val size: Float, arcLengthPx: Float) {
+internal class DisplayState(
+    val position: Float,
+    val size: Float,
+    arcLengthPx: Float,
+    val jiggleAmount: Float,
+) {
     // throttled position is used in equals() to reduce amount of redraws while position is
     // used for the actual draw to get better visual result
     val throttledPosition = (position * arcLengthPx).toInt() / arcLengthPx
@@ -624,6 +640,7 @@ internal class DisplayState(val position: Float, val size: Float, arcLengthPx: F
     override fun hashCode(): Int {
         var result = throttledPosition.hashCode()
         result = 31 * result + size.hashCode()
+        result = 31 * result + jiggleAmount.hashCode()
         return result
     }
 
@@ -636,6 +653,7 @@ internal class DisplayState(val position: Float, val size: Float, arcLengthPx: F
 
         if (throttledPosition != other.throttledPosition) return false
         if (size != other.size) return false
+        if (jiggleAmount != other.jiggleAmount) return false
 
         return true
     }
@@ -643,7 +661,8 @@ internal class DisplayState(val position: Float, val size: Float, arcLengthPx: F
 
 /**
  * An implementation of [IndicatorState] to display the amount and position of a component
- * implementing the [ScrollState] class such as a [Column] implementing [Modifier.verticalScroll].
+ * implementing the [ScrollState] class such as a [Column] implementing
+ * [androidx.compose.foundation.verticalScroll].
  *
  * @param scrollState the [ScrollState] to adapt
  * @VisibleForTesting
@@ -663,6 +682,8 @@ internal class ScrollStateAdapter(
                 scrollState.value.toFloat() / scrollState.maxValue
             }
         }
+
+    override var jiggleAmount: Float = 0.0f
 
     override val sizeFraction: Float
         get() {
@@ -709,6 +730,8 @@ internal class ScalingLazyColumnStateAdapter(
 
     private var currentSizeFraction: Float = 0f
     private var previousItemsCount: Int = 0
+
+    override var jiggleAmount: Float = 0.0f
 
     // TODO: b/368270238 - Fix calculation on a small content size.
     override val positionFraction: Float
@@ -839,7 +862,8 @@ internal class ScalingLazyColumnStateAdapter(
 
 /**
  * An implementation of [IndicatorState] to display the amount and position of a
- * [TransformingLazyColumn] component via its [TransformingLazyColumnState].
+ * [androidx.wear.compose.foundation.lazy.TransformingLazyColumn] component via its
+ * [TransformingLazyColumnState].
  *
  * @param state the [TransformingLazyColumnState] to adapt.
  * @VisibleForTesting
@@ -898,6 +922,8 @@ internal class TransformingLazyColumnStateAdapter(
                 )
             }
 
+    override var jiggleAmount: Float by mutableFloatStateOf(0.0f)
+
     override fun hashCode(): Int {
         return state.hashCode()
     }
@@ -938,7 +964,7 @@ internal class TransformingLazyColumnStateAdapter(
 
             // Coerce item size to at least 1 to avoid divide by zero for zero height items
             val firstVisibleItemFraction =
-                firstVisibleItemSize.toFloat() /
+                firstVisibleItemSize /
                     (firstVisibleItem.transformedHeight + extraPadding).coerceAtLeast(1).toFloat()
             return firstVisibleItem.index.toFloat() - firstVisibleItemFraction
         } ?: 0f
@@ -958,6 +984,8 @@ internal class LazyColumnStateAdapter(
 ) : IndicatorState {
     private var latestSizeFraction: Float = 0f
     private var previousItemsCount: Int = 0
+
+    override var jiggleAmount: Float = 0.0f
 
     // TODO: b/368270238 - Fix calculation on a small content size.
     override val positionFraction: Float

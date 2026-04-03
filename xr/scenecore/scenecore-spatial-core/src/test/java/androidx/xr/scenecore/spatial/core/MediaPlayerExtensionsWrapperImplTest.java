@@ -40,8 +40,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class MediaPlayerExtensionsWrapperImplTest {
     XrExtensions mXrExtensions;
     XrSpatialAudioExtensions mSpatialAudioExtensions;
@@ -62,11 +64,11 @@ public class MediaPlayerExtensionsWrapperImplTest {
         AndroidXrEntity entity = mock(AndroidXrEntity.class);
         when(entity.getNode()).thenReturn(fakeNode);
 
-        PointSourceParams expectedRtParams = new PointSourceParams(entity);
+        PointSourceParams expectedRtParams = new PointSourceParams();
 
         MediaPlayerExtensionsWrapper wrapper =
                 new MediaPlayerExtensionsWrapperImpl(mMediaPlayerExtensions);
-        wrapper.setPointSourceParams(mediaPlayer, expectedRtParams);
+        wrapper.setPointSourceParams(mediaPlayer, expectedRtParams, entity);
 
         assertThat(
                         ShadowMediaPlayerExtensions.extract(mMediaPlayerExtensions)

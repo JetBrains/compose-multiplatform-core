@@ -24,14 +24,12 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.size
-import androidx.xr.compose.subspace.layout.testTag
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertPositionInRootIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.setContentWithCompatibilityForXr
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,13 +37,17 @@ import org.junit.runner.RunWith
 /** Tests for [SpatialBox]. */
 @RunWith(AndroidJUnit4::class)
 class SpatialBoxTest {
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
     @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun spatialBox_elementsAreCenteredByDefault() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialBox(SubspaceModifier.size(100.dp)) {
                     SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
@@ -73,7 +75,7 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsAreAlignedWithBoxSpatialAlignment_topLeft() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialBox(SubspaceModifier.size(100.dp), alignment = SpatialAlignment.TopStart) {
                     SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
@@ -101,7 +103,7 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsAreAlignedWithBoxSpatialAlignment_bottomRight() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialBox(SubspaceModifier.size(100.dp), alignment = SpatialAlignment.BottomEnd) {
                     SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
@@ -129,7 +131,7 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsAreAlignedWithModifier() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialBox(SubspaceModifier.size(100.dp)) {
                     SpatialPanel(
@@ -165,7 +167,7 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsHonorPropagatedMinConstraints() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialBox(SubspaceModifier.size(100.dp), propagateMinConstraints = true) {
                     SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
@@ -193,7 +195,7 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsHonorWithoutPropagatedMinConstraints() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialBox(SubspaceModifier.size(300.dp), propagateMinConstraints = false) {
                     SpatialPanel(SubspaceModifier.testTag("panel1").size(150.dp)) {

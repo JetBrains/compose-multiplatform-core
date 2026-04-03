@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -33,19 +34,26 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSceneRuntime
-import androidx.xr.compose.testing.createFakeSession
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.session
-import androidx.xr.compose.testing.setContentWithCompatibilityForXr
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Quaternion
+import androidx.xr.runtime.math.Ray
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.MovableComponent
+import androidx.xr.scenecore.Space
+import androidx.xr.scenecore.runtime.MoveEvent
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.testing.FakeSceneRuntime
 import com.google.common.truth.Truth.assertThat
+import com.google.errorprone.annotations.CanIgnoreReturnValue
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,13 +61,17 @@ import org.junit.runner.RunWith
 /** Tests for [SubspaceModifier.movable] modifier. */
 @RunWith(AndroidJUnit4::class)
 class MovableModifierTest {
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
     @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun movable_noComponentByDefault() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) { Text(text = "Panel") } }
         }
         assertTrue(
@@ -72,9 +84,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_componentIsNotNullAndOnlyContainsSingleMovable() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").movable()) { Text(text = "Panel") }
             }
@@ -83,9 +94,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_modifierIsDisabledAndComponentDoesNotExist() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").movable(false)) {
                     Text(text = "Panel")
@@ -96,9 +106,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_modifierDoesNotChangeAndOnlyOneComponentExist() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var panelWidth by remember { mutableStateOf(50.dp) }
                 SpatialPanel(
@@ -120,11 +129,11 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_scaleWithDistance_setTrue() {
-        val runtime = TestSceneRuntime.create(composeTestRule.activity)
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
-        composeTestRule.setContentWithCompatibilityForXr {
+        val scalesInZ = mutableListOf<Boolean>()
+        composeTestRule.configureFakeSessionWithWatch { _, scaleInZ, _ -> scalesInZ.add(scaleInZ) }
+
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
@@ -134,16 +143,15 @@ class MovableModifierTest {
             }
         }
 
-        assertThat(runtime.scalesInZ.size).isEqualTo(1)
-        assertThat(runtime.scalesInZ[0]).isTrue()
+        assertThat(scalesInZ.single()).isTrue()
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_scaleWithDistance_setFalse() {
-        val runtime = TestSceneRuntime.create(composeTestRule.activity)
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
-        composeTestRule.setContentWithCompatibilityForXr {
+        val scalesInZ = mutableListOf<Boolean>()
+        composeTestRule.configureFakeSessionWithWatch { _, scaleInZ, _ -> scalesInZ.add(scaleInZ) }
+
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
@@ -152,16 +160,16 @@ class MovableModifierTest {
                 ) {}
             }
         }
-        assertThat(runtime.scalesInZ.size).isEqualTo(1)
-        assertThat(runtime.scalesInZ[0]).isFalse()
+
+        assertThat(scalesInZ.single()).isFalse()
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_scaleWithDistance_scaleFlip() {
-        val runtime = TestSceneRuntime.create(composeTestRule.activity)
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
-        composeTestRule.setContentWithCompatibilityForXr {
+        val scalesInZ = mutableListOf<Boolean>()
+        composeTestRule.configureFakeSessionWithWatch { _, scaleInZ, _ -> scalesInZ.add(scaleInZ) }
+
+        composeTestRule.setContent {
             Subspace {
                 var scaleWithDistance by remember { mutableStateOf(true) }
                 SpatialPanel(
@@ -178,21 +186,20 @@ class MovableModifierTest {
                 }
             }
         }
-        assertThat(runtime.scalesInZ.size).isEqualTo(1)
-        assertThat(runtime.scalesInZ[0]).isTrue()
+
+        assertThat(scalesInZ.single()).isTrue()
 
         composeTestRule.onNodeWithTag("button").performClick()
         composeTestRule.waitForIdle()
 
-        assertThat(runtime.scalesInZ.size).isEqualTo(2)
-        assertThat(runtime.scalesInZ[0]).isTrue()
-        assertThat(runtime.scalesInZ[1]).isFalse()
+        assertThat(scalesInZ.size).isEqualTo(2)
+        assertThat(scalesInZ[0]).isTrue()
+        assertThat(scalesInZ[1]).isFalse()
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_modifierEnabledToDisabledAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(true) }
                 SpatialPanel(SubspaceModifier.testTag("panel").movable(enabled = movableEnabled)) {
@@ -212,9 +219,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_modifierOnPoseChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var onPoseReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
@@ -238,9 +244,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_modifierDisableWithOnPoseChangeUpdateAndComponentRemoved() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(true) }
                 var onPoseReturnValue by remember { mutableStateOf(true) }
@@ -267,9 +272,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_modifierEnabledWithOnPoseChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(false) }
                 var onPoseReturnValue by remember { mutableStateOf(true) }
@@ -296,9 +300,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_modifierDisabledThenEnabledAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(true) }
                 SpatialPanel(SubspaceModifier.testTag("panel").movable(enabled = movableEnabled)) {
@@ -321,9 +324,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_modifierOnPoseChangeTwiceUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var onPoseReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
@@ -351,9 +353,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_modifierDisabledThenEnabledWithOnPoseChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(true) }
                 var onPoseReturnValue by remember { mutableStateOf(true) }
@@ -385,9 +386,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_modifierEnabledThenDisabledWithOnPoseChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(false) }
                 var onPoseReturnValue by remember { mutableStateOf(true) }
@@ -419,9 +419,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_columnEntity_noComponentByDefault() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialColumn(SubspaceModifier.testTag("column")) {
                     SpatialPanel { Text(text = "Column") }
@@ -438,22 +437,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
-    fun movable_columnEntity_noComponentWhenMovableIsEnabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                SpatialColumn(SubspaceModifier.testTag("column").movable()) {
-                    SpatialPanel { Text(text = "Column") }
-                }
-            }
-        }
-        assertMovableComponentDoesNotExist("column")
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
     fun movable_columnEntity_noComponentWhenMovableIsDisabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialColumn(SubspaceModifier.testTag("column").movable(false)) {
                     SpatialPanel { Text(text = "Column") }
@@ -464,9 +449,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun movable_rowEntity_noComponentByDefault() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialRow(SubspaceModifier.testTag("row")) { SpatialPanel { Text(text = "Row") } }
             }
@@ -481,22 +465,8 @@ class MovableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
-    fun movable_rowEntity_noComponentWhenMovableIsEnabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                SpatialRow(SubspaceModifier.testTag("row").movable()) {
-                    SpatialPanel { Text(text = "Row") }
-                }
-            }
-        }
-        assertMovableComponentDoesNotExist("row")
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
     fun movable_rowEntity_noComponentWhenMovableIsDisabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialRow(SubspaceModifier.testTag("row").movable(false)) {
                     SpatialPanel { Text(text = "Row") }
@@ -506,12 +476,69 @@ class MovableModifierTest {
         assertMovableComponentDoesNotExist("row")
     }
 
-    private fun assertSingleMovableComponentExist(testTag: String = "panel") {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun movable_moveEvent_updatesEntityPose() {
+        val session = composeTestRule.configureFakeSession()
+        val sceneRuntime = session.runtimes.filterIsInstance<FakeSceneRuntime>().single()
+        val activitySpace = sceneRuntime.activitySpace
+
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(modifier = SubspaceModifier.testTag("panel").movable(enabled = true)) {
+                    Text(text = "Spatial Panel")
+                }
+            }
+        }
+        assertSingleMovableComponentExist()
+        assertThat(sceneRuntime.lastMovableComponent).isNotNull()
+        val rtMovableComponent = sceneRuntime.lastMovableComponent!!
+        val expectedPose =
+            Pose(Vector3(1f, 2f, 3f), Quaternion.fromAxisAngle(axis = Vector3.Forward, 45f))
+        rtMovableComponent.onMoveEvent(
+            MoveEvent(
+                MoveEvent.MOVE_STATE_START,
+                Ray(Vector3(0f, 0f, 0f), Vector3(1f, 1f, 1f)),
+                Ray(Vector3(1f, 1f, 1f), Vector3(2f, 2f, 2f)),
+                Pose.Identity,
+                expectedPose,
+                Vector3(1f, 1f, 1f),
+                Vector3(1f, 1f, 1f),
+                activitySpace,
+                updatedParent = null,
+                disposedEntity = null,
+            )
+        )
+
+        rtMovableComponent.onMoveEvent(
+            MoveEvent(
+                MoveEvent.MOVE_STATE_ONGOING,
+                Ray(Vector3(0f, 0f, 0f), Vector3(1f, 1f, 1f)),
+                Ray(Vector3(1f, 1f, 1f), Vector3(2f, 2f, 2f)),
+                Pose.Identity,
+                expectedPose,
+                Vector3(1f, 1f, 1f),
+                Vector3(1f, 1f, 1f),
+                activitySpace,
+                updatedParent = null,
+                disposedEntity = null,
+            )
+        )
+
+        val entity =
+            composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode().semanticsEntity
+        assertNotNull(entity)
+        assertThat(entity.getPose(Space.ACTIVITY)).isEqualTo(expectedPose)
+    }
+
+    @CanIgnoreReturnValue
+    private fun assertSingleMovableComponentExist(testTag: String = "panel"): MovableComponent {
         val components =
             composeTestRule.onSubspaceNodeWithTag(testTag).fetchSemanticsNode().components
         assertNotNull(components)
         assertEquals(1, components.size)
         assertIs<MovableComponent>(components[0])
+        return components[0] as MovableComponent
     }
 
     private fun assertMovableComponentDoesNotExist(testTag: String = "panel") {
@@ -519,5 +546,32 @@ class MovableModifierTest {
             composeTestRule.onSubspaceNodeWithTag(testTag).fetchSemanticsNode().components
         assertNotNull(components)
         assertEquals(0, components.size)
+    }
+
+    private fun AndroidComposeTestRule<*, *>.configureFakeSessionWithWatch(
+        createMovableComponent:
+            ((systemMovable: Boolean, scaleInZ: Boolean, userAnchorable: Boolean) -> Unit)? =
+            null
+    ) {
+        configureFakeSession(
+            sceneRuntime = { runtime ->
+                object : SceneRuntime by runtime {
+                    override fun createMovableComponent(
+                        systemMovable: Boolean,
+                        scaleInZ: Boolean,
+                        userAnchorable: Boolean,
+                    ): androidx.xr.scenecore.runtime.MovableComponent =
+                        runtime
+                            .createMovableComponent(systemMovable, scaleInZ, userAnchorable)
+                            .also {
+                                createMovableComponent?.invoke(
+                                    systemMovable,
+                                    scaleInZ,
+                                    userAnchorable,
+                                )
+                            }
+                }
+            }
+        )
     }
 }

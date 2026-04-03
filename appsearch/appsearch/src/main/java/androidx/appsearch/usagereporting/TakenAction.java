@@ -72,13 +72,12 @@ public abstract class TakenAction {
     @ActionType
     private final int mActionType;
 
-    TakenAction(@NonNull String namespace, @NonNull String id, long documentTtlMillis,
-            long actionTimestampMillis, @ActionType int actionType) {
-        mNamespace = Preconditions.checkNotNull(namespace);
-        mId = Preconditions.checkNotNull(id);
-        mDocumentTtlMillis = documentTtlMillis;
-        mActionTimestampMillis = actionTimestampMillis;
-        mActionType = actionType;
+    TakenAction(@NonNull BuilderImpl<? extends BuilderImpl<?>> builder) {
+        mNamespace = builder.mNamespace;
+        mId = builder.mId;
+        mDocumentTtlMillis = builder.mDocumentTtlMillis;
+        mActionTimestampMillis = builder.mActionTimestampMillis;
+        mActionType = builder.mActionType;
     }
 
     /** Returns the namespace of the {@link TakenAction}. */
@@ -157,12 +156,12 @@ public abstract class TakenAction {
     // builder instances.
     @SuppressWarnings("unchecked")
     static class BuilderImpl<T extends BuilderImpl<T>> {
-        protected final String mNamespace;
-        protected final String mId;
-        protected long mDocumentTtlMillis;
-        protected long mActionTimestampMillis;
+        private final String mNamespace;
+        private final String mId;
+        private long mDocumentTtlMillis;
+        private long mActionTimestampMillis;
         @ActionType
-        protected int mActionType;
+        private int mActionType;
 
         /**
          * Constructs {@link TakenAction.BuilderImpl} with given {@code namespace}, {@code id},

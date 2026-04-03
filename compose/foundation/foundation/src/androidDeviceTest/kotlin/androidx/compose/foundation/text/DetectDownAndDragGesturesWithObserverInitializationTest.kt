@@ -20,6 +20,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.selection.SelectionAdjustment
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.TestViewConfiguration
 import androidx.compose.ui.Alignment
@@ -29,7 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.DpSize
@@ -98,7 +99,8 @@ class DetectDownAndDragGesturesWithObserverInitializationTest {
 
         override fun onUp() = add("up")
 
-        override fun onStart(startPoint: Offset) = add("start")
+        override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) =
+            add("start")
 
         override fun onDrag(delta: Offset) = add("drag")
 

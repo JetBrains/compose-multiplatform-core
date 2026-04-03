@@ -19,13 +19,12 @@ package androidx.xr.scenecore.runtime
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Vector3
-import com.google.common.util.concurrent.ListenableFuture
 
 /**
  * Interface for a SceneCore activity space. There is one activity space and it is the ancestor for
  * all elements in the scene. The activity space does not have a parent.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface ActivitySpace : SystemSpaceEntity {
     /** Returns the bounds of this ActivitySpace. */
     public val bounds: Dimensions
@@ -63,21 +62,20 @@ public interface ActivitySpace : SystemSpaceEntity {
      * Creates a hit test at the from the specified origin in the specified direction into the
      * scene.
      *
-     * @param origin The translation of the origin of the hit test relative to this ActivityPose.
-     * @param direction The direction for the hit test ray from the ActivityPose.
+     * @param origin The translation of the origin of the hit test relative to this ScenePose.
+     * @param direction The direction for the hit test ray from the ScenePose.
      * @param hitTestFilter The scenes that will be in range for the hit test.
-     * @param activityPose The ActivityPose to hit test against.
-     * @return a {@code ListenableFuture<HitTestResult>}. The HitResult describes if it hit
-     *   something and where relative to the given ActivityPose. Listeners will be called on the
-     *   main thread if Runnable::run is supplied.
+     * @param scenePose The ScenePose to hit test against.
+     * @return a {@code HitTestResult}. The HitResult describes if it hit something and where
+     *   relative to the given ScenePose. Listeners will be called on the main thread if
+     *   Runnable::run is supplied.
      */
-    @Suppress("AsyncSuffixFuture")
-    public fun hitTestRelativeToActivityPose(
+    public suspend fun hitTestRelativeToActivityPose(
         origin: Vector3,
         direction: Vector3,
-        @ActivityPose.HitTestFilterValue hitTestFilter: Int,
-        activityPose: ActivityPose,
-    ): ListenableFuture<HitTestResult>
+        @ScenePose.HitTestFilterValue hitTestFilter: Int,
+        scenePose: ScenePose,
+    ): HitTestResult
 
     /**
      * A recommended box for content to be placed in when in Full Space Mode.

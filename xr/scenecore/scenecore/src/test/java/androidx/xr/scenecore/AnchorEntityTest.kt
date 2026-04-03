@@ -26,18 +26,15 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.runtime.Plane
-import androidx.xr.arcore.testing.FakeLifecycleManager
-import androidx.xr.arcore.testing.FakePerceptionManager
-import androidx.xr.arcore.testing.FakePerceptionRuntime
-import androidx.xr.arcore.testing.FakeRuntimePlane
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
+import androidx.xr.scenecore.testing.FakeAnchorEntity
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
@@ -59,24 +56,23 @@ import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
 class AnchorEntityTest {
-    private val mockAnchorEntityImpl = mock<RtAnchorEntity>()
-    private lateinit var entityManager: EntityManager
+    private val fakeAnchorEntity = FakeAnchorEntity()
+    private lateinit var entityRegistry: EntityRegistry
     private lateinit var session: Session
     private lateinit var anchor: Anchor
-    private lateinit var mFakeRuntime: FakePerceptionRuntime
-    private lateinit var mFakeLifecycleManager: FakeLifecycleManager
-    private lateinit var mFakePerceptionManager: FakePerceptionManager
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
+    @Suppress("DEPRECATION")
+    private lateinit var mFakeRuntime: androidx.xr.arcore.testing.FakePerceptionRuntime
+    @Suppress("DEPRECATION")
+    private lateinit var mFakeLifecycleManager: androidx.xr.arcore.testing.FakeLifecycleManager
+    @Suppress("DEPRECATION")
+    private lateinit var mFakePerceptionManager: androidx.xr.arcore.testing.FakePerceptionManager
     private lateinit var activityController: ActivityController<ComponentActivity>
     private lateinit var activity: ComponentActivity
     private lateinit var testDispatcher: TestDispatcher
@@ -84,12 +80,17 @@ class AnchorEntityTest {
     private var mCurrentTimeMillis: Long = 1000000000L
 
     @Before
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun setup() {
         testDispatcher = StandardTestDispatcher()
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
         activity = activityController.get()
         createSession()
-        mFakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+        mFakeRuntime =
+            session.runtimes
+                .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                .first()
         mFakeLifecycleManager = mFakeRuntime.lifecycleManager
         mFakePerceptionManager = mFakeRuntime.perceptionManager
         timeSource = mFakeLifecycleManager.timeSource
@@ -112,6 +113,13 @@ class AnchorEntityTest {
     }
 
     @Test
+    fun createViaAnchor_anchor_returnsProvidedAnchor() {
+        val anchorEntity = AnchorEntity.create(session, anchor)
+
+        assertThat(anchorEntity.anchor).isEqualTo(anchor)
+    }
+
+    @Test
     fun createViaSemantic_noPlanes_returnsUnanchoredEntity() {
         val anchorEntity =
             AnchorEntity.create(
@@ -126,8 +134,14 @@ class AnchorEntityTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createViaSemantic_noViablePlanes_returnsUnanchoredEntity() {
-        val plane = FakeRuntimePlane(type = Plane.Type.VERTICAL, label = Plane.Label.WALL)
+        val plane =
+            androidx.xr.arcore.testing.FakeRuntimePlane(
+                type = Plane.Type.VERTICAL,
+                label = Plane.Label.WALL,
+            )
         mFakePerceptionManager.addTrackable(plane)
         val anchorEntity =
             AnchorEntity.create(
@@ -143,11 +157,13 @@ class AnchorEntityTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createViaSemantic_withinTimeout_returnAnchoredEntity() {
         runTest(testDispatcher) {
             activityController.create().start().resume()
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     type = Plane.Type.HORIZONTAL_DOWNWARD_FACING,
                     label = Plane.Label.CEILING,
                     extents = FloatSize2d(1.0f, 1.0f),
@@ -169,11 +185,58 @@ class AnchorEntityTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
+    fun createViaSemantic_twice_doesNotReanchor() {
+        runTest(testDispatcher) {
+            activityController.create().start().resume()
+            val plane1 =
+                androidx.xr.arcore.testing.FakeRuntimePlane(
+                    type = Plane.Type.HORIZONTAL_DOWNWARD_FACING,
+                    label = Plane.Label.CEILING,
+                    extents = FloatSize2d(1.0f, 1.0f),
+                )
+            mFakePerceptionManager.addTrackable(plane1)
+
+            val anchorEntity =
+                AnchorEntity.create(
+                    session,
+                    FloatSize2d(1.0f, 1.0f),
+                    PlaneOrientation.HORIZONTAL,
+                    PlaneSemanticType.CEILING,
+                    timeout = 0.toDuration(DurationUnit.SECONDS).toJavaDuration(),
+                )
+            advanceUntilIdle()
+
+            assertThat(anchorEntity.state).isEqualTo(AnchorEntity.State.ANCHORED)
+            val anchor1 = anchorEntity.anchor
+            assertThat(anchor1).isNotNull()
+
+            // Add another matching plane
+            val plane2 =
+                androidx.xr.arcore.testing.FakeRuntimePlane(
+                    type = Plane.Type.HORIZONTAL_DOWNWARD_FACING,
+                    label = Plane.Label.CEILING,
+                    extents = FloatSize2d(1.0f, 1.0f),
+                )
+            mFakePerceptionManager.addTrackable(plane2)
+            advanceUntilIdle()
+
+            // Should still be anchored to the first one
+            assertThat(anchorEntity.state).isEqualTo(AnchorEntity.State.ANCHORED)
+            assertThat(anchorEntity.anchor).isEqualTo(anchor1)
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createViaSemantic_pastTimeout_returnsTimedOutAnchorEntity() {
         runTest(testDispatcher) {
             activityController.create().start().resume()
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     type = Plane.Type.HORIZONTAL_DOWNWARD_FACING,
                     label = Plane.Label.CEILING,
                     extents = FloatSize2d(1.0f, 1.0f),
@@ -202,6 +265,8 @@ class AnchorEntityTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createViaSemantic_zeroTimeout_keepsSearching() {
         runTest(testDispatcher) {
             val anchorAttempts = 100
@@ -230,7 +295,7 @@ class AnchorEntityTest {
     fun setOnStateChangedListener_receivesStateChangedCallback() {
         val anchorEntity = AnchorEntity.create(session, anchor)
         val stateChangedListener =
-            Consumer<Int> { newState ->
+            Consumer<AnchorEntity.State> { newState ->
                 assertThat(newState).isEqualTo(AnchorEntity.State.ANCHORED)
             }
 
@@ -238,22 +303,24 @@ class AnchorEntityTest {
     }
 
     @Test
-    fun setOnSpaceUpdatedListener_withNullParams_callsRuntimeSetOnSpaceUpdatedListener() {
-        val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
-        anchorEntity.setOnSpaceUpdatedListener(null)
-        verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(eq(null), eq(null))
+    fun setOnOriginChangedListener_withNullParams_callsRuntimeSetOnOriginChangedListener() {
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityRegistry)
+        anchorEntity.setOnOriginChangedListener(null)
+        assertThat(fakeAnchorEntity.onOriginChangedListener).isNull()
     }
 
     @Test
-    fun setOnSpaceUpdatedListener_receivesRuntimeSetOnSpaceUpdatedListenerCallbacks() {
+    fun setOnOriginChangedListener_receivesRuntimeSetOnOriginChangedListenerCallbacks() {
         var listenerCalled = false
-        val captor = argumentCaptor<Runnable>()
-        val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
-        anchorEntity.setOnSpaceUpdatedListener(directExecutor()) { listenerCalled = true }
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityRegistry)
+        anchorEntity.setOnOriginChangedListener(directExecutor()) { listenerCalled = true }
 
-        verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(captor.capture(), any())
+        assertThat(fakeAnchorEntity.onOriginChangedListener).isNotNull()
         assertThat(listenerCalled).isFalse()
-        captor.firstValue.run()
+
+        // Simulates a runtime callback.
+        fakeAnchorEntity.onOriginChanged()
+
         assertThat(listenerCalled).isTrue()
     }
 
@@ -288,6 +355,21 @@ class AnchorEntityTest {
     }
 
     @Test
+    fun getParentNonUniformSpaceScale_throwsIllegalArgumentException() {
+        val anchorEntity = AnchorEntity.create(session, anchor)
+        assertThrows(IllegalArgumentException::class.java) {
+            anchorEntity.getNonUniformScale(Space.PARENT)
+        }
+    }
+
+    @Test
+    fun getActivityNonUniformSpaceScale_returnsIdentity() {
+        val anchorEntity = AnchorEntity.create(session, anchor)
+        val scale = anchorEntity.getNonUniformScale(Space.ACTIVITY)
+        assertThat(scale).isEqualTo(Vector3.One)
+    }
+
+    @Test
     fun getParentSpaceScale_throwsIllegalArgumentException() {
         val anchorEntity = AnchorEntity.create(session, anchor)
         assertThrows(IllegalArgumentException::class.java) { anchorEntity.getScale(Space.PARENT) }
@@ -308,6 +390,13 @@ class AnchorEntityTest {
     }
 
     @Test
+    fun getRealWorldSpaceNonUniformScale_returnsIdentity() {
+        val anchorEntity = AnchorEntity.create(session, anchor)
+        val scale = anchorEntity.getNonUniformScale(Space.REAL_WORLD)
+        assertThat(scale).isEqualTo(Vector3.One)
+    }
+
+    @Test
     fun setScale_float_throwsUnsupportedOperationException() {
         val anchorEntity = AnchorEntity.create(session, anchor)
         assertThrows(UnsupportedOperationException::class.java) {
@@ -325,24 +414,24 @@ class AnchorEntityTest {
 
     @Test
     fun dispose_clearsListeners() {
-        val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityRegistry)
 
         anchorEntity.setOnStateChangedListener(directExecutor(), {})
-        anchorEntity.setOnSpaceUpdatedListener(directExecutor(), {})
+        anchorEntity.setOnOriginChangedListener(directExecutor(), {})
 
-        verify(mockAnchorEntityImpl).setOnStateChangedListener(any())
+        assertThat(fakeAnchorEntity.onOriginChangedListener).isNotNull()
         assertThat(anchorEntity.onStateChangedListener).isNotNull()
 
         anchorEntity.dispose()
         shadowOf(Looper.getMainLooper()).idle()
 
-        verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(null, null)
+        assertThat(fakeAnchorEntity.onOriginChangedListener).isNull()
         assertThat(anchorEntity.onStateChangedListener).isNull()
     }
 
     @Test
     fun dispose_callingTwiceDoesNotCrash() {
-        val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityRegistry)
         anchorEntity.dispose()
         anchorEntity.dispose()
     }
@@ -351,10 +440,10 @@ class AnchorEntityTest {
         val result = Session.create(activity, coroutineDispatcher)
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
         session = (result as SessionCreateSuccess).session
-        session.configure(Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         val anchorPose = Pose(Vector3(1.0f, 2.0f, 3.0f), Quaternion.Identity)
         anchor = (Anchor.create(session, anchorPose) as AnchorCreateSuccess).anchor
-        entityManager = session.scene.entityManager
+        entityRegistry = session.scene.entityRegistry
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

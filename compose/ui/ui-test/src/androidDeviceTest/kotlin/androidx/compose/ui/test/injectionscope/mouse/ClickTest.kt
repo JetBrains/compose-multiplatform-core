@@ -55,8 +55,8 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.rightClick
-import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.tripleClick
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4

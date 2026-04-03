@@ -27,10 +27,12 @@ import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContex
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
 import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDeprecationMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.validate
@@ -244,6 +246,7 @@ data class AnnotatedAppFunctions(
                     seenDataTypeQualifiers = seenDataTypeQualifiers,
                     functionAnnotations = functionDeclaration.annotations,
                 )
+            val deprecationMetadata = functionDeclaration.getDeprecationMetadata()
 
             CompileTimeAppFunctionMetadata(
                 id = getAppFunctionIdentifier(functionDeclaration),
@@ -258,6 +261,7 @@ data class AnnotatedAppFunctions(
                     ),
                 components = AppFunctionComponentsMetadata(dataTypes = sharedDataTypeMap),
                 description = sanitizeKDoc(functionDescription),
+                deprecation = deprecationMetadata,
             )
         }
     }
@@ -303,13 +307,18 @@ data class AnnotatedAppFunctions(
 
     private fun getAnnotatedAppFunctionSerializable(
         appFunctionTypeReference: AppFunctionTypeReference
-    ): AnnotatedAppFunctionSerializable {
-        val appFunctionSerializableClassDeclaration =
-            appFunctionTypeReference.selfOrItemTypeReference.resolve().declaration
-                as KSClassDeclaration
-        return AnnotatedAppFunctionSerializable(appFunctionSerializableClassDeclaration)
-            .parameterizedBy(appFunctionTypeReference.selfOrItemTypeReference.resolve().arguments)
-            .validate()
+    ): AppFunctionSerializableType {
+        val appFunctionSerializableKSType =
+            appFunctionTypeReference.selfOrItemTypeReference.resolve()
+        return AppFunctionSerializableType.create(
+            classDeclaration =
+                appFunctionSerializableKSType.declaration as? KSClassDeclaration
+                    ?: throw ProcessingException(
+                        "Only classes/interfaces should be annotated with @AppFunctionSerializable",
+                        appFunctionSerializableKSType.declaration,
+                    ),
+            typeArguments = appFunctionSerializableKSType.arguments,
+        )
     }
 
     private fun AppFunctionTypeReference.typeOrItemTypeIsAppFunctionSerializable(): Boolean {
@@ -321,7 +330,7 @@ data class AnnotatedAppFunctions(
         appFunctionAnnotationProperties:
             AppFunctionMetadataCreatorHelper.AppFunctionAnnotationProperties
     ): String {
-        return if (appFunctionAnnotationProperties.isDescribedByKdoc == true) {
+        return if (appFunctionAnnotationProperties.isDescribedByKDoc == true) {
             appFunctionNameToDocstringMap[ensureQualifiedName()] ?: ""
         } else {
             ""
@@ -332,9 +341,21 @@ data class AnnotatedAppFunctions(
      * Returns true if the developer opted for the given function's docString to be used as its
      * description.
      */
-    fun isDescribedByKdoc(functionDeclaration: KSFunctionDeclaration): Boolean {
+    fun isDescribedByKDoc(functionDeclaration: KSFunctionDeclaration): Boolean {
         return AppFunctionMetadataCreatorHelper()
             .computeAppFunctionAnnotationProperties(functionDeclaration)
-            .isDescribedByKdoc ?: false
+            .isDescribedByKDoc ?: false
+    }
+
+    private fun KSDeclaration.getDeprecationMetadata(): AppFunctionDeprecationMetadata? {
+        val annotation =
+            annotations.findAnnotation(IntrospectionHelper.DeprecatedAnnotation.CLASS_NAME)
+                ?: return null
+        val message =
+            annotation.requirePropertyValueOfType(
+                IntrospectionHelper.DeprecatedAnnotation.PROPERTY_MESSAGE,
+                String::class,
+            )
+        return AppFunctionDeprecationMetadata(message)
     }
 }

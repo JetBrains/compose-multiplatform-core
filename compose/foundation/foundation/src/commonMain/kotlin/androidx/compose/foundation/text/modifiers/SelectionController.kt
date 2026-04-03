@@ -167,7 +167,13 @@ internal class SelectionController(
 
 // this is not chained, but is a standalone factory
 @Suppress("ModifierFactoryExtensionFunction")
-private fun SelectionRegistrar.makeSelectionModifier(
+internal expect fun SelectionRegistrar.makeSelectionModifier(
+    selectableId: Long,
+    layoutCoordinates: () -> LayoutCoordinates?,
+): Modifier
+
+@Suppress("ModifierFactoryExtensionFunction")
+internal fun SelectionRegistrar.makeDefaultSelectionModifier(
     selectableId: Long,
     layoutCoordinates: () -> LayoutCoordinates?,
 ): Modifier {
@@ -185,6 +191,8 @@ private fun SelectionRegistrar.makeSelectionModifier(
              */
             var dragTotalDistance = Offset.Zero
 
+            var selectionAdjustmentMode = SelectionAdjustment.None
+
             override fun onDown(point: Offset) {
                 // Not supported for long-press-drag.
             }
@@ -193,14 +201,15 @@ private fun SelectionRegistrar.makeSelectionModifier(
                 // Nothing to do.
             }
 
-            override fun onStart(startPoint: Offset) {
+            override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) {
+                selectionAdjustmentMode = selectionAdjustment
                 layoutCoordinates()?.let {
                     if (!it.isAttached) return
 
                     notifySelectionUpdateStart(
                         layoutCoordinates = it,
                         startPosition = startPoint,
-                        adjustment = SelectionAdjustment.Word,
+                        adjustment = selectionAdjustmentMode,
                         isInTouchMode = true,
                     )
 
@@ -232,7 +241,7 @@ private fun SelectionRegistrar.makeSelectionModifier(
                             previousPosition = lastPosition,
                             newPosition = newPosition,
                             isStartHandle = false,
-                            adjustment = SelectionAdjustment.Word,
+                            adjustment = selectionAdjustmentMode,
                             isInTouchMode = true,
                         )
                     if (consumed) {

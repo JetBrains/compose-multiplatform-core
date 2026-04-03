@@ -17,11 +17,10 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     buildTypes {
         release {
             minifyEnabled = true
@@ -33,7 +32,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(libs.constraintLayout, { transitive = true })
     implementation("androidx.arch.core:core-runtime:2.2.0")
     implementation(project(":appcompat:appcompat"))

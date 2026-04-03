@@ -17,10 +17,10 @@
 package androidx.pdf
 
 import android.content.Context
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.annotation.RestrictTo
-import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor
 import androidx.pdf.service.PdfDocumentServiceImpl
 import androidx.pdf.service.connect.PdfSandboxHandleImpl
 import androidx.pdf.service.connect.PdfServiceConnection
@@ -81,11 +81,12 @@ public class SandboxedPdfLoader(
         uri: Uri,
         fileDescriptor: ParcelFileDescriptor,
         password: String?,
+        renderParams: RenderParams,
     ): PdfDocument {
         val connection = connect(uri)
 
         return withContext(resolveCoroutineContext(coroutineContext)) {
-            openDocumentInternal(uri, fileDescriptor, password, connection)
+            openDocumentInternal(uri, fileDescriptor, password, connection, renderParams)
         }
     }
 
@@ -103,6 +104,7 @@ public class SandboxedPdfLoader(
         pfd: ParcelFileDescriptor,
         password: String?,
         connection: PdfServiceConnection,
+        renderParams: RenderParams = RenderParams(RenderParams.RENDER_MODE_FOR_DISPLAY),
     ): PdfDocument {
         val binder =
             connection.documentBinder
@@ -115,6 +117,14 @@ public class SandboxedPdfLoader(
             handlePdfLoadingError(pfd, status)
         }
 
+        val linearizationStatus =
+            try {
+                binder.linearizationStatus
+            } catch (_: UnsupportedOperationException) {
+                PdfDocument.LINEARIZATION_STATUS_UNKNOWN
+            }
+        val isPdfLinearized = linearizationStatus == PdfRenderer.DOCUMENT_LINEARIZED_TYPE_LINEARIZED
+
         return SandboxedPdfDocument(
             uri,
             connection,
@@ -122,9 +132,10 @@ public class SandboxedPdfLoader(
             pfd,
             coroutineContext,
             binder.numPages(),
-            binder.isPdfLinearized(),
+            linearizationStatus,
             binder.getFormType(),
-            annotationsProcessor = BatchPdfAnnotationsProcessor(binder),
+            renderParams = renderParams,
+            isPdfLinearized,
         )
     }
 

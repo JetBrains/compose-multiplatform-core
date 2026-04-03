@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.projected.ProjectedContext
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 
@@ -42,6 +43,7 @@ import kotlinx.coroutines.flow.Flow
  * The ProjectedContextActivity will create a projected context and launch a projected activity, The
  * connected state of the projected context will be tracked.
  */
+@OptIn(ExperimentalProjectedApi::class)
 class ProjectedContextActivity : ComponentActivity() {
 
     var deviceName: String? = null

@@ -53,6 +53,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.shadows.ShadowLog
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class ComplicationDataEvaluatorTest {
     @get:Rule val expect = Expect.create()
 

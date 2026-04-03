@@ -30,13 +30,13 @@ import androidx.xr.scenecore.runtime.PlaneType
  * criteria for plane type and semantic labels.
  *
  * For plane-based anchoring to function, the [androidx.xr.runtime.Session] must be configured with
- * [androidx.xr.runtime.Config.PlaneTrackingMode.Companion.HORIZONTAL_AND_VERTICAL] to enable plane
+ * [androidx.xr.runtime.PlaneTrackingMode.Companion.HORIZONTAL_AND_VERTICAL] to enable plane
  * detection.
  *
  * When an entity is successfully anchored, its pose is adjusted so that its local Z-axis aligns
  * with the plane's normal vector (i.e., it sits flat against the surface).
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FakeAnchorPlacement
 internal constructor(
     internal val planeTypeFilter: Set<@JvmSuppressWildcards PlaneType> = setOf(PlaneType.ANY),

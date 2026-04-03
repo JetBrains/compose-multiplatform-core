@@ -18,9 +18,9 @@ package androidx.pdf.annotation.processor
 
 import android.os.Build
 import androidx.annotation.RequiresExtension
+import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.annotation.PageAnnotationsProvider
-import androidx.pdf.annotation.createPdfAnnotationDataList
-import androidx.pdf.annotation.models.PdfAnnotationData
+import androidx.pdf.annotation.createKeyedPdfAnnotationList
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,12 +28,14 @@ import org.robolectric.RobolectricTestRunner
 
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class PageAnnotationPaginatorTest {
     @Test
     fun test_getPageAnnotations_emptyResults_returnsNull() {
         val annotationsProvider =
             object : PageAnnotationsProvider {
-                override fun getPageAnnotations(pageNum: Int): List<PdfAnnotationData> = emptyList()
+                override fun getPageAnnotations(pageNum: Int): List<KeyedPdfAnnotation> =
+                    emptyList()
             }
         val pageAnnotationsPaginator = PageAnnotationsPaginator(pageNum = 0, annotationsProvider)
 
@@ -44,10 +46,10 @@ class PageAnnotationPaginatorTest {
 
     @Test
     fun test_getPageAnnotations_singleBatch_returnsSingleTotalBatchCount() {
-        val annotationDataList = createPdfAnnotationDataList(numAnnots = 1, pathLength = 10)
+        val annotationDataList = createKeyedPdfAnnotationList(numAnnots = 1, pathLength = 10)
         val annotationsProvider =
             object : PageAnnotationsProvider {
-                override fun getPageAnnotations(pageNum: Int): List<PdfAnnotationData> =
+                override fun getPageAnnotations(pageNum: Int): List<KeyedPdfAnnotation> =
                     annotationDataList
             }
         val pageAnnotationsPaginator = PageAnnotationsPaginator(pageNum = 0, annotationsProvider)
@@ -62,10 +64,10 @@ class PageAnnotationPaginatorTest {
 
     @Test
     fun test_getPageAnnotations_multipleBatches_returnsCorrectTotalBatchCount() {
-        val annotationDataList = createPdfAnnotationDataList(numAnnots = 2, pathLength = 10000)
+        val annotationDataList = createKeyedPdfAnnotationList(numAnnots = 2, pathLength = 5000)
         val annotationsProvider =
             object : PageAnnotationsProvider {
-                override fun getPageAnnotations(pageNum: Int): List<PdfAnnotationData> =
+                override fun getPageAnnotations(pageNum: Int): List<KeyedPdfAnnotation> =
                     annotationDataList
             }
         val pageAnnotationsPaginator = PageAnnotationsPaginator(pageNum = 0, annotationsProvider)

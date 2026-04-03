@@ -20,37 +20,40 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.ArDevice
 import androidx.xr.arcore.runtime.DepthMap
-import androidx.xr.arcore.runtime.Earth
 import androidx.xr.arcore.runtime.Eye
 import androidx.xr.arcore.runtime.Face
+import androidx.xr.arcore.runtime.Geospatial
 import androidx.xr.arcore.runtime.Hand
 import androidx.xr.arcore.runtime.HitResult
 import androidx.xr.arcore.runtime.PerceptionManager
 import androidx.xr.arcore.runtime.RenderViewpoint
 import androidx.xr.arcore.runtime.Trackable
-import androidx.xr.runtime.VpsAvailabilityAvailable
-import androidx.xr.runtime.VpsAvailabilityErrorInternal
-import androidx.xr.runtime.VpsAvailabilityNetworkError
-import androidx.xr.runtime.VpsAvailabilityNotAuthorized
-import androidx.xr.runtime.VpsAvailabilityResourceExhausted
-import androidx.xr.runtime.VpsAvailabilityResult
-import androidx.xr.runtime.VpsAvailabilityUnavailable
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import java.util.UUID
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * Implementation of the perception capabilities of a runtime using Projected.
  *
- * @property timeSource The time source to use for the perception manager.
+ * @property timeSource the time source to use for the perception manager
+ * @property trackables the collection of [Trackable] objects
+ * @property leftEye the left [Eye], or null if not available
+ * @property rightEye the right [Eye], or null if not available
+ * @property leftHand the left [Hand], or null if not available
+ * @property rightHand the right [Hand], or null if not available
+ * @property geospatial the [Geospatial] instance
+ * @property arDevice the [ArDevice] instance
+ * @property leftRenderViewpoint the left [RenderViewpoint], or null if not available
+ * @property rightRenderViewpoint the right [RenderViewpoint], or null if not available
+ * @property monoRenderViewpoint the mono [RenderViewpoint], or null if not available
+ * @property leftDepthMap the left [DepthMap], or null if not available
+ * @property rightDepthMap the right [DepthMap], or null if not available
+ * @property monoDepthMap the mono [DepthMap], or null if not available
+ * @property userFace the user's [Face], or null if not available
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class ProjectedPerceptionManager
+internal class ProjectedPerceptionManager
 internal constructor(private val timeSource: ProjectedTimeSource) : PerceptionManager {
     internal val xrResources = XrResources()
 
@@ -59,8 +62,8 @@ internal constructor(private val timeSource: ProjectedTimeSource) : PerceptionMa
      *
      * This method calls the [Session.createAnchor] method.
      *
-     * @param pose The pose of the anchor.
-     * @return The created anchor.
+     * @param pose the [Pose] of the anchor
+     * @return the created [Anchor]
      */
     override fun createAnchor(pose: Pose): Anchor {
         throw NotImplementedError("Create anchor is currently not supported by Projected.")
@@ -71,8 +74,8 @@ internal constructor(private val timeSource: ProjectedTimeSource) : PerceptionMa
      *
      * This method calls the [Frame.hitTest] method.
      *
-     * @param ray The ray to perform the hit test against.
-     * @return The list of hit results.
+     * @param ray the [Ray] to perform the hit test against
+     * @return the list of [HitResult] objects
      */
     override fun hitTest(ray: Ray): List<HitResult> {
         throw NotImplementedError("Hit test is currently not supported by Projected.")
@@ -108,109 +111,37 @@ internal constructor(private val timeSource: ProjectedTimeSource) : PerceptionMa
         throw NotImplementedError("Anchor persistence is currently not supported by Projected.")
     }
 
-    /** Gets the VPS availability at the given location. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override public suspend fun checkVpsAvailability(
-        latitude: Double,
-        longitude: Double,
-    ): VpsAvailabilityResult = suspendCancellableCoroutine { continuation ->
-        val callback =
-            object : IVpsAvailabilityCallback.Stub() {
-                override fun onVpsAvailabilityChanged(vpsState: Int) {
-                    val vpsResult =
-                        // vpsState is the enum VpsAvailability, see the code in
-                        // third_party/arcore/java/com/google/ar/core/VpsAvailability.java
-                        // and the onVpsAvailabilityChanged callback call in
-                        // java/com/google/android/projection/core/modules/perception/PerceptionManagerService.java.
-                        when (vpsState) {
-                            // VpsAvailability.AVAILABLE
-                            1 -> VpsAvailabilityAvailable()
-                            // VpsAvailability.UNAVAILABLE
-                            2 -> VpsAvailabilityUnavailable()
-                            // VpsAvailability.ERROR_NETWORK_CONNECTION
-                            -2 -> VpsAvailabilityNetworkError()
-                            // VpsAvailability.ERROR_NOT_AUTHORIZED
-                            -3 -> VpsAvailabilityNotAuthorized()
-                            // VpsAvailability.ERROR_RESOURCE_EXHAUSTED
-                            -4 -> VpsAvailabilityResourceExhausted()
-                            // VpsAvailability.UNKNOWN or VpsAvailability.ERROR_INTERNAL
-                            else -> VpsAvailabilityErrorInternal()
-                        }
-                    continuation.resume(vpsResult)
-                }
-            }
-        try {
-            xrResources.service.checkVpsAvailability(latitude, longitude, callback)
-        } catch (e: Exception) {
-            continuation.resumeWithException(e)
-        }
-    }
-
     override val trackables: Collection<Trackable> = emptyList()
 
-    /**
-     * Returns the left eye.
-     *
-     * Projected does not support eye tracking, so this property is always null.
-     */
     override val leftEye: Eye? = null
 
-    /**
-     * Returns the right eye.
-     *
-     * Projected does not supppot eye tracking, so this property is always null.
-     */
     override val rightEye: Eye? = null
 
-    /**
-     * Returns the left hand.
-     *
-     * Projected does not support hand tracking, so this property is always null.
-     */
     override val leftHand: Hand? = null
 
-    /**
-     * Returns the right hand.
-     *
-     * Projected does not support hand tracking, so this property is always null.
-     */
     override val rightHand: Hand? = null
 
-    /** Returns the [Earth] instance. */
-    // @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override val earth: Earth
-        get() = xrResources.earth
+    override val geospatial: Geospatial
+        get() = xrResources.geospatial
 
-    /** Returns the [ArDevice] instance. */
     override val arDevice: ArDevice
         get() = xrResources.arDevice
 
-    /** Returns the left [RenderViewpoint] object. */
     override val leftRenderViewpoint: ProjectedRuntimeRenderViewpoint? =
-        ProjectedRuntimeRenderViewpoint(Pose(Vector3(1f, 0f, 0f), Quaternion.Identity))
+        ProjectedRuntimeRenderViewpoint(Pose(Vector3(1f, 0f, 0f), Quaternion.Companion.Identity))
 
-    /** Returns the right [RenderViewpoint] object. */
     override val rightRenderViewpoint: ProjectedRuntimeRenderViewpoint? =
-        ProjectedRuntimeRenderViewpoint(Pose(Vector3(0f, 1f, 0f), Quaternion.Identity))
+        ProjectedRuntimeRenderViewpoint(Pose(Vector3(0f, 1f, 0f), Quaternion.Companion.Identity))
 
-    /** Returns the mono [RenderViewpoint] object. */
     override val monoRenderViewpoint: ProjectedRuntimeRenderViewpoint? =
-        ProjectedRuntimeRenderViewpoint(Pose(Vector3(0f, 0f, 1f), Quaternion.Identity))
+        ProjectedRuntimeRenderViewpoint(Pose(Vector3(0f, 0f, 1f), Quaternion.Companion.Identity))
 
-    /** Left [androidx.xr.arcore.internal.DepthMap]'s current frame information */
     override val leftDepthMap: DepthMap? = null
 
-    /** Right [androidx.xr.arcore.internal.DepthMap]'s current frame information */
     override val rightDepthMap: DepthMap? = null
 
-    /** Mono [androidx.xr.arcore.internal.DepthMap]'s current frame information */
     override val monoDepthMap: DepthMap? = null
 
-    /**
-     * Returns the face
-     *
-     * Projected does not support face tracking, so this property is always null.
-     */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val userFace: Face? = null
 
     /**
@@ -233,7 +164,7 @@ internal constructor(private val timeSource: ProjectedTimeSource) : PerceptionMa
         throw NotImplementedError("clear is currently not supported by Projected.")
     }
 
-    public fun setDisplayRotation(rotation: Int, width: Int, height: Int) {
+    override fun setDisplayRotation(rotation: Int, width: Int, height: Int) {
         throw NotImplementedError("setDisplayRotation is currently not supported by Projected.")
     }
 }

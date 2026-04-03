@@ -16,20 +16,23 @@
 
 package androidx.webkit.internal;
 
-import androidx.core.os.OutcomeReceiverCompat;
 import androidx.webkit.PrefetchException;
 import androidx.webkit.PrefetchNetworkException;
 import androidx.webkit.Profile;
+import androidx.webkit.WebViewOutcomeReceiver;
 
 import org.chromium.support_lib_boundary.PrefetchOperationCallbackBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.chromium.support_lib_boundary.util.Features;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
 
 public class PrefetchOperationCallbackAdapter {
-    private PrefetchOperationCallbackAdapter() {}
+    private PrefetchOperationCallbackAdapter() {
+    }
+
     /**
      * Builds the PrefetchOperationCallback to send to the prefetch request.
      *
@@ -38,12 +41,29 @@ public class PrefetchOperationCallbackAdapter {
      */
     @Profile.ExperimentalUrlPrefetch
     public static @NonNull /* PrefetchOperationCallback */ InvocationHandler buildInvocationHandler(
-            @NonNull OutcomeReceiverCompat<@Nullable Void, @NonNull PrefetchException> callback) {
+            @NonNull WebViewOutcomeReceiver<@Nullable Void, @NonNull PrefetchException> callback) {
         PrefetchOperationCallbackBoundaryInterface operationCallback =
                 new PrefetchOperationCallbackBoundaryInterface() {
-                    @Override
+                    @SuppressWarnings("deprecation")
                     public void onSuccess() {
                         callback.onResult(null);
+                    }
+
+                    @Override
+                    public void onResult(@PrefetchResultTypeBoundaryInterface int type) {
+                        switch (type) {
+                            case PrefetchResultTypeBoundaryInterface.SUCCESS:
+                            case PrefetchResultTypeBoundaryInterface.DUPLICATE:
+                                callback.onResult(null);
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Given type isn't defined.");
+                        }
+                    }
+
+                    @Override
+                    public String @NonNull [] getSupportedFeatures() {
+                        return new String[]{Features.PREFETCH_WITH_CALLBACK_RESULT_V1};
                     }
 
                     @Override

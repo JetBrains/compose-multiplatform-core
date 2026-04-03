@@ -55,7 +55,6 @@ import androidx.car.app.activity.renderer.surface.SurfaceWrapperProvider;
 import androidx.car.app.activity.renderer.surface.TemplateSurfaceView;
 import androidx.car.app.activity.ui.ErrorMessageView;
 import androidx.car.app.activity.ui.LoadingView;
-import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.automotive.R;
 import androidx.car.app.serialization.Bundleable;
 import androidx.car.app.serialization.BundlerException;
@@ -240,6 +239,11 @@ public abstract class BaseCarAppActivity extends FragmentActivity {
                 @Override
                 public void showAssist(Bundle args) {
                     BaseCarAppActivity.this.showAssist(args);
+                }
+
+                @Override
+                public int getInterfaceVersion() {
+                    return super.VERSION;
                 }
             };
 
@@ -484,7 +488,7 @@ public abstract class BaseCarAppActivity extends FragmentActivity {
     /**
      * @see #getServiceComponentName()
      */
-    @ExperimentalCarApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public @Nullable ComponentName retrieveServiceComponentName() {
         return getServiceComponentName();
     }

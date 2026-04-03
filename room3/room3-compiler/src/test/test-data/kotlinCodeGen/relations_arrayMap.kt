@@ -20,7 +20,7 @@ import kotlin.reflect.KClass
 import kotlin.text.StringBuilder
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
 internal class MyDao_Impl(
   __db: RoomDatabase,
 ) : MyDao {
@@ -144,7 +144,7 @@ internal class MyDao_Impl(
     }
   }
 
-  private fun __fetchRelationshipArtistAsArtist(_connection: SQLiteConnection, _map: ArrayMap<Long, Artist?>) {
+  private suspend fun __fetchRelationshipArtistAsArtist(_connection: SQLiteConnection, _map: ArrayMap<Long, Artist?>) {
     val __mapKeySet: Set<Long> = _map.keys
     if (__mapKeySet.isEmpty()) {
       return
@@ -189,7 +189,7 @@ internal class MyDao_Impl(
     }
   }
 
-  private fun __fetchRelationshipSongAsSong(_connection: SQLiteConnection, _map: ArrayMap<Long, MutableList<Song>>) {
+  private suspend fun __fetchRelationshipSongAsSong(_connection: SQLiteConnection, _map: ArrayMap<Long, MutableList<Song>>) {
     val __mapKeySet: Set<Long> = _map.keys
     if (__mapKeySet.isEmpty()) {
       return
@@ -238,7 +238,7 @@ internal class MyDao_Impl(
     }
   }
 
-  private fun __fetchRelationshipSongAsSong_1(_connection: SQLiteConnection, _map: ArrayMap<Long, MutableList<Song>>) {
+  private suspend fun __fetchRelationshipSongAsSong_1(_connection: SQLiteConnection, _map: ArrayMap<Long, MutableList<Song>>) {
     val __mapKeySet: Set<Long> = _map.keys
     if (__mapKeySet.isEmpty()) {
       return

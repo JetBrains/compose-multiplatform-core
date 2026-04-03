@@ -35,9 +35,9 @@ import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.ResizableComponent
@@ -45,7 +45,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,13 +52,17 @@ import org.junit.runner.RunWith
 /** Tests for [SubspaceModifier.resizable] modifier. */
 @RunWith(AndroidJUnit4::class)
 class ResizableModifierTest {
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
     @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun resizable_noComponentByDefault() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) { Text(text = "Panel") } }
         }
 
@@ -75,7 +78,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_componentIsNotNullAndOnlyContainsSingleResizable() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").resizable()) { Text(text = "Panel") }
             }
@@ -87,7 +90,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierIsDisabledAndComponentDoesNotExist() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").resizable(enabled = false)) {
                     Text(text = "Panel")
@@ -101,7 +104,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierDoesNotChangeAndComponentDoesNotUpdate() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var panelWidth by remember { mutableStateOf(50.dp) }
                 SpatialPanel(
@@ -128,7 +131,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierEnabledToDisabledAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(true) }
                 SpatialPanel(
@@ -155,12 +158,13 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = true, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = true) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -183,13 +187,14 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierDisableWithOnSizeChangeUpdateAndComponentRemoved() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(true) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = resizableEnabled) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -215,13 +220,14 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierEnabledWithOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(false) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = resizableEnabled) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -247,7 +253,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierDisabledThenEnabledAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(true) }
                 SpatialPanel(
@@ -279,12 +285,13 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierOnSizeChangeTwiceUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = true, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = true) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -312,13 +319,14 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierDisabledThenEnabledWithOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(true) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = resizableEnabled) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -349,13 +357,14 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierEnabledThenDisabledWithOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(false) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
+                    SubspaceModifier.testTag("panel").resizable(enabled = resizableEnabled) {
+                        onSizeReturnValue
+                    }
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -387,7 +396,7 @@ class ResizableModifierTest {
     @Suppress("DEPRECATION")
     fun resizable_modifierMaxSizeIsSet() {
         val maxSize = DpVolumeSize(500.dp, 500.dp, 500.dp)
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").resizable(maximumSize = maxSize)) {}
             }
@@ -398,7 +407,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierMaxSizeIsNotSet() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace { SpatialPanel(SubspaceModifier.testTag("panel").resizable()) {} }
         }
         assertResizableComponentMaxSizeIsNotSet()
@@ -408,7 +417,7 @@ class ResizableModifierTest {
     @Suppress("DEPRECATION")
     fun resizable_modifierMinSizeIsSet() {
         val minSize = DpVolumeSize(100.dp, 100.dp, 100.dp)
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").resizable(minimumSize = minSize)) {}
             }
@@ -419,7 +428,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_modifierMinSizeIsNotSet() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace { SpatialPanel(SubspaceModifier.testTag("panel").resizable()) {} }
         }
         assertResizableComponentMinSizeIsNotSet()
@@ -428,7 +437,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_columnEntity_noComponentByDefault() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialColumn(SubspaceModifier.testTag("column")) {
                     SpatialPanel { Text(text = "Column") }
@@ -447,7 +456,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_columnEntity_noComponentWhenResizableIsEnabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialColumn(SubspaceModifier.testTag("column").resizable()) {
                     SpatialPanel { Text(text = "Column") }
@@ -460,7 +469,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_columnEntity_noComponentWhenResizableIsDisabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialColumn(SubspaceModifier.testTag("column").resizable(false)) {
                     SpatialPanel { Text(text = "Column") }
@@ -473,7 +482,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_rowEntity_noComponentByDefault() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialRow(SubspaceModifier.testTag("row")) { SpatialPanel { Text(text = "Row") } }
             }
@@ -490,7 +499,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_rowEntity_noComponentWhenResizableIsEnabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialRow(SubspaceModifier.testTag("row").resizable()) {
                     SpatialPanel { Text(text = "Row") }
@@ -503,7 +512,7 @@ class ResizableModifierTest {
     @Test
     @Suppress("DEPRECATION")
     fun resizable_rowEntity_noComponentWhenResizableIsDisabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialRow(SubspaceModifier.testTag("row").resizable(false)) {
                     SpatialPanel { Text(text = "Row") }

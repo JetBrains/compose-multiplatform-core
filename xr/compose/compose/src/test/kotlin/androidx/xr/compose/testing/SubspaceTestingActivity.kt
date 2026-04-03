@@ -16,15 +16,32 @@
 
 package androidx.xr.compose.testing
 
-import android.view.Display
+import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
-import org.robolectric.shadows.ShadowDisplay
+import androidx.xr.runtime.manifest.FEATURE_XR_API_SPATIAL
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
+import com.android.extensions.xr.ShadowConfig
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 /**
  * Custom test class that should be used for testing
  * [androidx.xr.compose.subspace.SubspaceComposable] content.
  */
 class SubspaceTestingActivity : ComponentActivity() {
-    /** Throws an exception by default under test; return Robolectric Display impl instead. */
-    override fun getDisplay(): Display = ShadowDisplay.getDefaultDisplay()
+    private val _packageManager: PackageManager = mock<PackageManager>()
+
+    init {
+        // TODO(b/447211302) Remove once direct dependency on XrExtensions in Compose XR is removed.
+        ShadowConfig.extract(XrExtensionsProvider.getXrExtensions()!!.config!!)
+            .setDefaultDpPerMeter(1000f)
+
+        whenever(_packageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL)).thenReturn(true)
+    }
+
+    override fun getPackageManager() = _packageManager
+
+    fun disableXr() {
+        whenever(_packageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL)).thenReturn(false)
+    }
 }

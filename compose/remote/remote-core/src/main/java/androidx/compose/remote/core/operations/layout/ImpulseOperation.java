@@ -141,8 +141,12 @@ public class ImpulseOperation extends PaintOperation implements VariableSupport,
     @Override
     public void paint(@NonNull PaintContext context) {
         RemoteContext remoteContext = context.getContext();
-
-        if (remoteContext.getAnimationTime() <= mOutStartAt + mOutDuration) {
+        float currentTime = remoteContext.getAnimationTime();
+        if (currentTime < mOutStartAt) {
+            context.wakeIn(mOutStartAt - currentTime);
+            return;
+        }
+        if (currentTime >= mOutStartAt && currentTime <= mOutStartAt + mOutDuration) {
             if (mInitialPass) {
                 for (Operation op : mList) {
                     if (op instanceof VariableSupport && op.isDirty()) {
@@ -205,12 +209,11 @@ public class ImpulseOperation extends PaintOperation implements VariableSupport,
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Operations", OP_CODE, name())
+        doc.operation("Animation & Particles Operations", OP_CODE, CLASS_NAME)
                 .description(
-                        "Impulse Operation. This operation execute a list of action for a fixed"
-                                + " duration")
-                .field(DocumentedOperation.FLOAT, "duration", "How long to last")
-                .field(DocumentedOperation.FLOAT, "startAt", "value step");
+                        "Execute a list of actions once, and a process block for a fixed duration")
+                .field(DocumentedOperation.FLOAT, "duration", "Duration of the impulse")
+                .field(DocumentedOperation.FLOAT, "startAt", "The start time of the impulse");
     }
 
     /**

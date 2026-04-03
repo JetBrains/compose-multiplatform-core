@@ -20,14 +20,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -389,7 +389,7 @@ class ThreePaneScaffoldMotionScreenshotTest {
 internal fun SampleThreePaneScaffold(scaffoldState: ThreePaneScaffoldState) {
     ThreePaneScaffold(
         modifier = Modifier.fillMaxSize().testTag(ThreePaneScaffoldTestTag),
-        scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()),
+        scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2()),
         scaffoldState = scaffoldState,
         paneOrder = SupportingPaneScaffoldDefaults.PaneOrder,
         secondaryPane = {

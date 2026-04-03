@@ -19,10 +19,11 @@ package androidx.javascriptengine;
 import android.content.res.AssetFileDescriptor;
 import android.os.ParcelFileDescriptor;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.Consumer;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -80,7 +81,7 @@ final class IsolateClosedState implements IsolateState {
     }
 
     @Override
-    public void provideNamedData(@NonNull String name, @NonNull byte[] inputBytes) {
+    public void provideNamedData(@NonNull String name, byte @NonNull [] inputBytes) {
         throw new IllegalStateException(
                 "Calling provideNamedData() when " + mDescription);
     }

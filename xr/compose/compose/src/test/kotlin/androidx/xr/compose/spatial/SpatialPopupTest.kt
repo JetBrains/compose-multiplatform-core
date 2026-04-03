@@ -43,6 +43,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -81,39 +82,43 @@ import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.SpatialCapabilities
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.testTag
+import androidx.xr.compose.subspace.semantics.testTag
+import androidx.xr.compose.testing.ShadowActivityEmbeddingController
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.createFakeSession
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.session
-import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
 import kotlin.test.Ignore
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 /** Tests for [SpatialPopup]. */
 @RunWith(AndroidJUnit4::class)
+@Config(shadows = [ShadowActivityEmbeddingController::class])
 class SpatialPopupTest {
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
     @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     // TODO(b/431079857): Fix underline implementation first and un-ignore this.
     @Ignore("Fix underline implementation first")
     @Test
     fun spatialPopup_HSM_dismissOnBackPressTrue_invokesDismissRequest() {
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     var showPopup by remember { mutableStateOf(true) }
@@ -142,14 +147,13 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_FSM_dismissOnBackPressTrue_invokesDismissRequest() {
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestFullSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestFullSpaceMode()
 
-        composeTestRule.setContentWithCompatibilityForXr {
-            var showPopup by remember { mutableStateOf(true) }
-            if (showPopup) {
+        composeTestRule.setContent {
+            var showPopup1 by remember { mutableStateOf(true) }
+            if (showPopup1) {
                 SpatialPopup(
-                    onDismissRequest = { showPopup = false },
+                    onDismissRequest = { showPopup1 = false },
                     properties = PopupProperties(dismissOnBackPress = true),
                 ) {
                     Text("Spatial Popup")
@@ -168,10 +172,9 @@ class SpatialPopupTest {
     @Test
     fun spatialPopup_HSM_dismissOnBackPressFalse_doesNotInvokeDismissRequest() {
         var showPopup by mutableStateOf(true)
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             if (showPopup) {
                 SpatialPopup(
                     onDismissRequest = { showPopup = false },
@@ -193,10 +196,9 @@ class SpatialPopupTest {
     @Test
     fun spatialPopup_FSM_dismissOnBackPressFalse_doesNotInvokeDismissRequest() {
         var showPopup by mutableStateOf(true)
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestFullSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             if (showPopup) {
                 SpatialPopup(
                     onDismissRequest = { showPopup = false },
@@ -221,10 +223,9 @@ class SpatialPopupTest {
     fun spatialPopup_FSM_dismissOnClickOutsideTrue_dismissesOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestFullSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     Box(
@@ -265,10 +266,9 @@ class SpatialPopupTest {
     fun spatialPopup_HSM_dismissOnClickOutsideTrue_dismissesOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     Box(
@@ -307,10 +307,9 @@ class SpatialPopupTest {
     fun spatialPopup_HSM_dismissOnClickOutsideFalse_doesNotDismissOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     Box(
@@ -349,10 +348,9 @@ class SpatialPopupTest {
     fun spatialPopup_FSM_dismissOnClickOutsideFalse_doesNotDismissOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestFullSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     Box(
@@ -390,7 +388,7 @@ class SpatialPopupTest {
     // TODO(b/431096310): Test alignment not only the existence.
     @Test
     fun spatialPopup_allAlignmentOptions_exists() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     Box(modifier = Modifier.size(300.dp)) {
@@ -441,7 +439,7 @@ class SpatialPopupTest {
     // TODO(b/431085506): Test if elevation parameter is actually applied.
     @Test
     fun spatialPopup_allElevationLevels_exists() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     Column {
@@ -469,21 +467,21 @@ class SpatialPopupTest {
     @Test
     fun spatialPopup_withMovableContent_movesContentWithoutRecomposition() {
         var observedCompositionId: String? = null
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     var showInPopup by remember { mutableStateOf(true) }
 
-                    val movableContent = remember {
-                        movableContentOf {
-                            val compositionId = remember { UUID.randomUUID().toString() }
-                            observedCompositionId = compositionId
-                            Text("Movable Content")
+                    val movableContent =
+                        remember<@Composable (() -> Unit)> {
+                            movableContentOf {
+                                val compositionId = remember { UUID.randomUUID().toString() }
+                                observedCompositionId = compositionId
+                                Text("Movable Content")
+                            }
                         }
-                    }
 
                     Column {
                         Button(
@@ -542,7 +540,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_nestedPopups_bothExist() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     SpatialPopup {
@@ -563,7 +561,7 @@ class SpatialPopupTest {
     fun spatialPopup_contentSizeChanges_updatesCorrectly() {
         var contentSize by mutableStateOf(100.dp)
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     SpatialPopup {
@@ -587,7 +585,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_emptyContent_doesNotCrash() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     SpatialPopup {
@@ -602,7 +600,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_zeroSizeContent_handlesGracefully() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             SpatialPopup {
                 Box(modifier = Modifier.size(0.dp).testTag("zeroSizeBox")) {
                     // Content with zero size
@@ -615,7 +613,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_veryLargeContent_rendersCorrectly() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     SpatialPopup {
@@ -636,7 +634,7 @@ class SpatialPopupTest {
     fun spatialPopup_rapidToggle_handlesCorrectly() = runTest {
         var showPopup by mutableStateOf(false)
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Column {
                 Button(onClick = { showPopup = !showPopup }) { Text("Toggle") }
                 if (showPopup) {
@@ -660,7 +658,7 @@ class SpatialPopupTest {
     fun spatialPopup_withNullOnDismissRequest_doesNotCrash() {
         var showPopup by mutableStateOf(true)
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             if (showPopup) {
                 SpatialPopup(
                     onDismissRequest = null,
@@ -683,7 +681,7 @@ class SpatialPopupTest {
     fun spatialPopup_onDispose_called() {
         var popupDisposed = false
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             var showPopup by remember { mutableStateOf(true) }
 
             if (showPopup) {
@@ -703,7 +701,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_complexContent_rendersCorrectly() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     SpatialPopup {
@@ -737,7 +735,7 @@ class SpatialPopupTest {
     fun spatialPopup_withManyConcurrentPopups_areAllCreated() = runTest {
         val popupCount = 100
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     val popups = remember { mutableStateListOf<Int>() }
@@ -770,7 +768,7 @@ class SpatialPopupTest {
     fun spatialPopup_densityChange_adaptsCorrectly() {
         var currentDensity by mutableStateOf(Density(1f))
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             CompositionLocalProvider(LocalDensity provides currentDensity) {
                 SpatialPopup(offset = IntOffset(50, 50)) {
                     Box(modifier = Modifier.size(100.dp).testTag("densityPopup")) {
@@ -794,7 +792,7 @@ class SpatialPopupTest {
         var contentLoaded by mutableStateOf(false)
         composeTestRule.mainClock.autoAdvance = false
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             SpatialPopup {
                 if (!contentLoaded) {
                     CircularProgressIndicator(modifier = Modifier.testTag("loadingIndicator"))
@@ -821,7 +819,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_withSpatialDialog_coexistCorrectly() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     var showDialog by remember { mutableStateOf(false) }
@@ -871,7 +869,7 @@ class SpatialPopupTest {
     // TODO(b/431085506): Test if elevation parameter is applied.
     @Test
     fun spatialPopup_withMultiplePopups_layersCorrectly() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -908,7 +906,7 @@ class SpatialPopupTest {
     fun spatialPopup_withAnimatedContent_animatesCorrectly() {
         composeTestRule.mainClock.autoAdvance = false
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             var expanded by remember { mutableStateOf(false) }
 
             SpatialPopup {
@@ -948,7 +946,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_withDropdownMenu_behavesCorrectly() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             var showDropdown by remember { mutableStateOf(false) }
             var selectedItem by remember { mutableStateOf("None") }
 
@@ -992,7 +990,7 @@ class SpatialPopupTest {
     @Test
     fun spatialPopup_withModalBottomSheet_interactsCorrectly() {
         var popupTextString = "N/A"
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     val scope = rememberCoroutineScope()
@@ -1068,7 +1066,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_withLazyList_scrollsIndependently() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     val items = List(50) { "Item $it" }
@@ -1110,7 +1108,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_withAnimatedVisibility_transitionsCorrectly() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             var visible by remember { mutableStateOf(false) }
 
             Column {
@@ -1146,7 +1144,6 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_multipleWithDifferentProperties_maintainIndependence() {
-
         data class PopupConfig(
             val tag: String,
             val alignment: Alignment,
@@ -1182,7 +1179,7 @@ class SpatialPopupTest {
                 ),
             )
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -1239,7 +1236,7 @@ class SpatialPopupTest {
         var popupTapped = false
         var backgroundTapped = false
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Box(
                 modifier =
                     Modifier.fillMaxSize()
@@ -1282,7 +1279,7 @@ class SpatialPopupTest {
     // TODO(b/431085506): Test if the elevation param is applied.
     @Test
     fun spatialPopup_differentAlignmentsWithOffset_exist() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Box(modifier = Modifier.size(400.dp)) {
                 Box(modifier = Modifier.size(200.dp).align(Alignment.Center)) {
                     SpatialPopup(alignment = Alignment.TopStart, offset = IntOffset(10, 10)) {
@@ -1310,7 +1307,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_maxIntOffset_handlesGracefully() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Box(modifier = Modifier.fillMaxSize()) {
                 SpatialPopup(offset = IntOffset(Int.MAX_VALUE, Int.MAX_VALUE)) {
                     Text("Max Int Offset", modifier = Modifier.testTag("popup"))
@@ -1323,7 +1320,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_minIntOffset_handlesGracefully() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Box(modifier = Modifier.fillMaxSize()) {
                 SpatialPopup(
                     alignment = Alignment.Center,
@@ -1339,7 +1336,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_maxXMinYOffset_handlesGracefully() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Box(modifier = Modifier.fillMaxSize()) {
                 SpatialPopup(
                     alignment = Alignment.Center,
@@ -1355,7 +1352,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_minXMaxYOffset_handlesGracefully() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Box(modifier = Modifier.fillMaxSize()) {
                 SpatialPopup(
                     alignment = Alignment.Center,
@@ -1371,7 +1368,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_veryLargePositiveOffset_handlesGracefully() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Box(modifier = Modifier.fillMaxSize()) {
                 SpatialPopup(alignment = Alignment.Center, offset = IntOffset(10000, 10000)) {
                     Text("Very Large Positive", modifier = Modifier.testTag("popup"))
@@ -1383,7 +1380,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_veryLargeNegativeOffset_handlesGracefully() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Box(modifier = Modifier.fillMaxSize()) {
                 SpatialPopup(offset = IntOffset(-10000, -10000)) {
                     Text("Very Large Negative", modifier = Modifier.testTag("popup"))
@@ -1418,7 +1415,7 @@ class SpatialPopupTest {
     }
 
     private fun correctPositionTest(isHomeSpace: Boolean, layoutDirection: LayoutDirection) {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
+        composeTestRule.configureFakeSession()
         if (isHomeSpace) {
             composeTestRule.session?.scene?.requestHomeSpaceMode()
         } else {
@@ -1430,7 +1427,7 @@ class SpatialPopupTest {
         val popupSize = 100.dp
         val popupOffset = 20.dp
 
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                 Subspace {
                     SpatialPanel(SubspaceModifier.testTag("panel")) {
@@ -1489,5 +1486,15 @@ class SpatialPopupTest {
                 .fetchSemanticsNode()
                 .positionOnScreen
         assertThat(textPositionOnScreen.x).isEqualTo(popupOffset.value)
+    }
+
+    @Test
+    fun spatialPopup_whenActivityIsEmbedded_fallsBackToStandardPopup() {
+        ShadowActivityEmbeddingController.isEmbedded = true
+
+        composeTestRule.setContent { SpatialPopup { Text("Fallback Content") } }
+        composeTestRule.onNodeWithText("Fallback Content")
+
+        ShadowActivityEmbeddingController.isEmbedded = false
     }
 }

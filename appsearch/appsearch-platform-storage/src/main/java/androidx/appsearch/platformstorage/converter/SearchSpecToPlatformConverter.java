@@ -89,7 +89,8 @@ public final class SearchSpecToPlatformConverter {
         if (jetpackSearchSpec.getResultGroupingTypeFlags() != 0) {
             if ((jetpackSearchSpec.getResultGroupingTypeFlags()
                     & SearchSpec.GROUPING_TYPE_PER_SCHEMA) != 0
-                    && Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                    && BuildCompat.T_EXTENSION_INT
+                    < AppSearchVersionUtil.TExtensionVersions.V_BASE) {
                 throw new UnsupportedOperationException(
                         Features.SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA
                                 + " is not available on this AppSearch implementation.");
@@ -112,47 +113,54 @@ public final class SearchSpecToPlatformConverter {
         }
 
         if (!jetpackSearchSpec.getPropertyWeights().isEmpty()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                 throw new UnsupportedOperationException(
                         "Property weights are not supported with this backend/Android API level "
                                 + "combination.");
             }
-            ApiHelperForU.setPropertyWeights(platformBuilder,
+            ApiHelperForSdkExtensionUBase.setPropertyWeights(platformBuilder,
                     jetpackSearchSpec.getPropertyWeights());
         }
 
         if (!jetpackSearchSpec.getEnabledFeatures().isEmpty()) {
-            // Copy U features
+            // Copy U-base sdk extension features
             if (jetpackSearchSpec.isNumericSearchEnabled()
                     || jetpackSearchSpec.isVerbatimSearchEnabled()
                     || jetpackSearchSpec.isListFilterQueryLanguageEnabled()) {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                     throw new UnsupportedOperationException(
                             "Advanced query features (NUMERIC_SEARCH, VERBATIM_SEARCH and "
                                     + "LIST_FILTER_QUERY_LANGUAGE) are not supported with this "
                                     + "backend/Android API level combination.");
                 }
-                ApiHelperForU.copyEnabledFeatures(platformBuilder, jetpackSearchSpec);
+                ApiHelperForSdkExtensionUBase.copyEnabledFeatures(platformBuilder,
+                        jetpackSearchSpec);
             }
-            // Copy V features
+
+            // Copy V-base sdk extension features
             if (jetpackSearchSpec.isListFilterHasPropertyFunctionEnabled()) {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.V_BASE) {
                     throw new UnsupportedOperationException(
                             Features.LIST_FILTER_HAS_PROPERTY_FUNCTION
                                     + " is not available on this AppSearch implementation.");
                 }
-                ApiHelperForV.copyEnabledFeatures(platformBuilder, jetpackSearchSpec);
+                ApiHelperForSdkExtensionVBase.copyEnabledFeatures(platformBuilder,
+                        jetpackSearchSpec);
             }
 
+            // Copy B-base sdk extension features
             if (jetpackSearchSpec.isListFilterMatchScoreExpressionFunctionEnabled()) {
-                // TODO(b/377215223): Remove this once matchScoreExpression is supported.
-                throw new UnsupportedOperationException(
-                        Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION
-                                + " is not available on this AppSearch implementation.");
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                    throw new UnsupportedOperationException(
+                            Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION
+                                    + " is not available on this AppSearch implementation.");
+                }
+                ApiHelperForSdkExtensionBBase.copyEnabledFeatures(platformBuilder,
+                        jetpackSearchSpec);
             }
         }
         if (!jetpackSearchSpec.getEmbeddingParameters().isEmpty()) {
-            if (!AppSearchVersionUtil.isAtLeastB()) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
                 throw new UnsupportedOperationException(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
                         + " is not available on this AppSearch implementation.");
             }
@@ -177,39 +185,42 @@ public final class SearchSpecToPlatformConverter {
         }
 
         if (!jetpackSearchSpec.getFilterProperties().isEmpty()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.V_BASE) {
                 throw new UnsupportedOperationException(Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES
                         + " is not available on this AppSearch implementation.");
             }
-            ApiHelperForV.addFilterProperties(
+            ApiHelperForSdkExtensionVBase.addFilterProperties(
                     platformBuilder, jetpackSearchSpec.getFilterProperties());
         }
 
         if (jetpackSearchSpec.getSearchSourceLogTag() != null) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.V_BASE) {
                 throw new UnsupportedOperationException(
                         Features.SEARCH_SPEC_SET_SEARCH_SOURCE_LOG_TAG
                                 + " is not available on this AppSearch implementation.");
             }
-            ApiHelperForV.setSearchSourceLogTag(
+            ApiHelperForSdkExtensionVBase.setSearchSourceLogTag(
                     platformBuilder, jetpackSearchSpec.getSearchSourceLogTag());
         }
 
         if (!jetpackSearchSpec.getInformationalRankingExpressions().isEmpty()) {
-            if (!AppSearchVersionUtil.isAtLeastB()) {
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
                 throw new UnsupportedOperationException(
                         Features.SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS
                                 + " are not available on this AppSearch implementation.");
             }
-            ApiHelperForB.addInformationalRankingExpressions(platformBuilder,
+            ApiHelperForSdkExtensionBBase.addInformationalRankingExpressions(platformBuilder,
                     jetpackSearchSpec.getInformationalRankingExpressions());
         }
 
         if (!jetpackSearchSpec.getFilterDocumentIds().isEmpty()) {
-            // TODO(b/367464836): Remove this once document id filters are available.
-            throw new UnsupportedOperationException(
-                    Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS
-                            + " is not available on this AppSearch implementation.");
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                throw new UnsupportedOperationException(
+                        Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS
+                                + " is not available on this AppSearch implementation.");
+            }
+            ApiHelperForSdkExtensionBBase.addFilterDocumentIds(
+                    platformBuilder, jetpackSearchSpec.getFilterDocumentIds());
         }
 
         if (jetpackSearchSpec.isScorablePropertyRankingEnabled()) {
@@ -246,13 +257,6 @@ public final class SearchSpecToPlatformConverter {
             builder.setJoinSpec(JoinSpecToPlatformConverter.toPlatformJoinSpec(context,
                     jetpackJoinSpec));
         }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private static class ApiHelperForU {
-        private ApiHelperForU() {
-            // This class is not instantiable.
-        }
 
         @DoNotInline
         static void copyEnabledFeatures(android.app.appsearch.SearchSpec.@NonNull Builder builder,
@@ -277,17 +281,11 @@ public final class SearchSpecToPlatformConverter {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    private static class ApiHelperForV {
-        private ApiHelperForV() {}
-
-        @DoNotInline
-        static void addFilterProperties(
-                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
-                Map<String, List<String>> properties) {
-            for (Map.Entry<String, List<String>> entry : properties.entrySet()) {
-                platformBuilder.addFilterProperties(entry.getKey(), entry.getValue());
-            }
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.V_BASE)
+    private static class ApiHelperForSdkExtensionVBase {
+        private ApiHelperForSdkExtensionVBase() {
+            // This class is not instantiable.
         }
 
         @DoNotInline
@@ -296,6 +294,15 @@ public final class SearchSpecToPlatformConverter {
                 @NonNull SearchSpec jetpackSpec) {
             if (jetpackSpec.isListFilterHasPropertyFunctionEnabled()) {
                 platformBuilder.setListFilterHasPropertyFunctionEnabled(true);
+            }
+        }
+
+        @DoNotInline
+        static void addFilterProperties(
+                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
+                Map<String, List<String>> properties) {
+            for (Map.Entry<String, List<String>> entry : properties.entrySet()) {
+                platformBuilder.addFilterProperties(entry.getKey(), entry.getValue());
             }
         }
 
@@ -319,6 +326,30 @@ public final class SearchSpecToPlatformConverter {
                 android.app.appsearch.SearchSpec.Builder platformBuilder,
                 boolean isScorablePropertyRankingEnabled) {
             platformBuilder.setScorablePropertyRankingEnabled(isScorablePropertyRankingEnabled);
+        }
+
+        @DoNotInline
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
+        static void copyEnabledFeatures(
+                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
+                @NonNull SearchSpec jetpackSpec) {
+            if (jetpackSpec.isListFilterMatchScoreExpressionFunctionEnabled()) {
+                platformBuilder.setListFilterMatchScoreExpressionFunctionEnabled(true);
+            }
+        }
+
+        @DoNotInline
+        static void addInformationalRankingExpressions(
+                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
+                @NonNull List<String> informationalRankingExpressions) {
+            platformBuilder.addInformationalRankingExpressions(informationalRankingExpressions);
+        }
+
+        @DoNotInline
+        static void addFilterDocumentIds(
+                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
+                @NonNull List<String> documentIds) {
+            platformBuilder.addFilterDocumentIds(documentIds);
         }
     }
 
@@ -348,13 +379,6 @@ public final class SearchSpecToPlatformConverter {
                 android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
                 @SearchSpec.EmbeddingSearchMetricType int defaultEmbeddingSearchMetricType) {
             platformBuilder.setDefaultEmbeddingSearchMetricType(defaultEmbeddingSearchMetricType);
-        }
-
-        @DoNotInline
-        static void addInformationalRankingExpressions(
-                android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
-                @NonNull List<String> informationalRankingExpressions) {
-            platformBuilder.addInformationalRankingExpressions(informationalRankingExpressions);
         }
     }
 }

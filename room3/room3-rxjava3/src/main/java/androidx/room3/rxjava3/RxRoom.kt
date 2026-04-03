@@ -18,7 +18,6 @@
 package androidx.room3.rxjava3
 
 import androidx.annotation.RestrictTo
-import androidx.room3.InvalidationTracker
 import androidx.room3.RoomDatabase
 import androidx.room3.coroutines.createFlow
 import androidx.room3.util.performSuspending
@@ -26,25 +25,19 @@ import androidx.sqlite.SQLiteConnection
 import io.reactivex.rxjava3.core.BackpressureStrategy
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Flowable
-import io.reactivex.rxjava3.core.FlowableEmitter
 import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.core.ObservableEmitter
 import io.reactivex.rxjava3.core.Single
-import io.reactivex.rxjava3.disposables.Disposable
-import io.reactivex.rxjava3.schedulers.Schedulers
-import java.util.concurrent.Callable
-import java.util.concurrent.Executor
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.rx3.asObservable
 import kotlinx.coroutines.rx3.rxCompletable
 import kotlinx.coroutines.rx3.rxMaybe
 import kotlinx.coroutines.rx3.rxSingle
 
 /** Marker class used by annotation processor to identify dependency is in the classpath. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class Rx3RoomArtifactMarker private constructor()
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public class Rx3RoomArtifactMarker private constructor()
 
 /** Data dispatched by the publisher created by [createFlowable]. */
 @JvmField public val NOTHING: Any = Any()
@@ -55,7 +48,7 @@ public fun <T : Any> createFlowable(
     db: RoomDatabase,
     inTransaction: Boolean,
     tableNames: Array<String>,
-    block: (SQLiteConnection) -> T?,
+    block: suspend (SQLiteConnection) -> T?,
 ): Flowable<T> =
     createObservable(db, inTransaction, tableNames, block).toFlowable(BackpressureStrategy.LATEST)
 
@@ -65,7 +58,7 @@ public fun <T : Any> createObservable(
     db: RoomDatabase,
     inTransaction: Boolean,
     tableNames: Array<String>,
-    block: (SQLiteConnection) -> T?,
+    block: suspend (SQLiteConnection) -> T?,
 ): Observable<T> =
     createFlow(db, inTransaction, tableNames, block)
         .filterNotNull()
@@ -77,7 +70,7 @@ public fun <T : Any> createMaybe(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    block: (SQLiteConnection) -> T?,
+    block: suspend (SQLiteConnection) -> T?,
 ): Maybe<T> =
     rxMaybe(db.getQueryContext().minusKey(Job)) {
         performSuspending(db, isReadOnly, inTransaction, block)
@@ -89,7 +82,7 @@ public fun createCompletable(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    block: (SQLiteConnection) -> Unit,
+    block: suspend (SQLiteConnection) -> Unit,
 ): Completable =
     rxCompletable(db.getQueryContext().minusKey(Job)) {
         performSuspending(db, isReadOnly, inTransaction, block)
@@ -101,7 +94,7 @@ public fun <T : Any> createSingle(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
-    block: (SQLiteConnection) -> T?,
+    block: suspend (SQLiteConnection) -> T?,
 ): Single<T> =
     rxSingle(db.getQueryContext().minusKey(Job)) {
         performSuspending(db, isReadOnly, inTransaction, block)
@@ -124,51 +117,7 @@ public fun <T : Any> createSingle(
  *   when the invalidation tracker connection is established).
  */
 public fun createFlowable(database: RoomDatabase, vararg tableNames: String): Flowable<Any> {
-    return Flowable.create(
-        { emitter: FlowableEmitter<Any> ->
-            val observer =
-                object : InvalidationTracker.Observer(tableNames) {
-                    override fun onInvalidated(tables: Set<String>) {
-                        if (!emitter.isCancelled) {
-                            emitter.onNext(NOTHING)
-                        }
-                    }
-                }
-            if (!emitter.isCancelled) {
-                database.invalidationTracker.addObserver(observer)
-                emitter.setDisposable(
-                    Disposable.fromAction { database.invalidationTracker.removeObserver(observer) }
-                )
-            }
-
-            // emit once to avoid missing any data and also easy chaining
-            if (!emitter.isCancelled) {
-                emitter.onNext(NOTHING)
-            }
-        },
-        BackpressureStrategy.LATEST,
-    )
-}
-
-/**
- * Helper method used by generated code to bind a Callable such that it will be run in our disk io
- * thread and will automatically block null values since RxJava3 does not like null.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-@Deprecated("No longer used by generated code.")
-public fun <T : Any> createFlowable(
-    database: RoomDatabase,
-    inTransaction: Boolean,
-    tableNames: Array<String>,
-    callable: Callable<out T>,
-): Flowable<T> {
-    val scheduler = Schedulers.from(getExecutor(database, inTransaction))
-    val maybe = Maybe.fromCallable(callable)
-    return createFlowable(database, *tableNames)
-        .subscribeOn(scheduler)
-        .unsubscribeOn(scheduler)
-        .observeOn(scheduler)
-        .flatMapMaybe { maybe }
+    return createObservable(database, *tableNames).toFlowable(BackpressureStrategy.LATEST)
 }
 
 /**
@@ -187,68 +136,8 @@ public fun <T : Any> createFlowable(
  *   once when the invalidation tracker connection is established).
  */
 public fun createObservable(database: RoomDatabase, vararg tableNames: String): Observable<Any> {
-    return Observable.create { emitter: ObservableEmitter<Any> ->
-        val observer =
-            object : InvalidationTracker.Observer(tableNames) {
-                override fun onInvalidated(tables: Set<String>) {
-                    emitter.onNext(NOTHING)
-                }
-            }
-        database.invalidationTracker.addObserver(observer)
-        emitter.setDisposable(
-            Disposable.fromAction { database.invalidationTracker.removeObserver(observer) }
-        )
-
-        // emit once to avoid missing any data and also easy chaining
-        emitter.onNext(NOTHING)
-    }
-}
-
-/**
- * Helper method used by generated code to bind a Callable such that it will be run in our disk io
- * thread and will automatically block null values since RxJava3 does not like null.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-@Deprecated("No longer used by generated code.")
-public fun <T : Any> createObservable(
-    database: RoomDatabase,
-    inTransaction: Boolean,
-    tableNames: Array<String>,
-    callable: Callable<out T>,
-): Observable<T> {
-    val scheduler = Schedulers.from(getExecutor(database, inTransaction))
-    val maybe = Maybe.fromCallable(callable)
-    return createObservable(database, *tableNames)
-        .subscribeOn(scheduler)
-        .unsubscribeOn(scheduler)
-        .observeOn(scheduler)
-        .flatMapMaybe { maybe }
-}
-
-/**
- * Helper method used by generated code to create a Single from a Callable that will ignore the
- * EmptyResultSetException if the stream is already disposed.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun <T : Any> createSingle(callable: Callable<out T>): Single<T> {
-    return Single.create { emitter ->
-        try {
-            val result = callable.call()
-            if (result != null) {
-                emitter.onSuccess(result)
-            } else {
-                throw EmptyResultSetException("Query returned empty result set.")
-            }
-        } catch (e: EmptyResultSetException) {
-            emitter.tryOnError(e)
-        }
-    }
-}
-
-private fun getExecutor(database: RoomDatabase, inTransaction: Boolean): Executor {
-    return if (inTransaction) {
-        database.transactionExecutor
-    } else {
-        database.queryExecutor
-    }
+    return database.invalidationTracker
+        .createFlow(*tableNames)
+        .map { NOTHING }
+        .asObservable(database.getQueryContext())
 }

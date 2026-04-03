@@ -26,6 +26,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Correspondence
 import com.google.common.truth.Truth.assertThat
+import kotlin.math.PI
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -117,7 +118,7 @@ class StrokeInputPoolTest {
         MultiTouchInputBuilder(
                 pointerCount = 2,
                 toolTypes = intArrayOf(MotionEvent.TOOL_TYPE_STYLUS, MotionEvent.TOOL_TYPE_FINGER),
-                startOrientation = arrayOf(-Math.PI.toFloat() / 2, null),
+                startOrientation = arrayOf(-PI.toFloat() / 2, null),
                 // Tilt is not supported in Robolectric today, so omit it even for the stylus
                 // pointer. It
                 // will return as a value of 0.0F.
@@ -280,7 +281,7 @@ class StrokeInputPoolTest {
                 // pointer. It
                 // will return as a value of 0.0F.
                 startTilt = arrayOf(null, null),
-                startOrientation = arrayOf(-Math.PI.toFloat() / 2, null),
+                startOrientation = arrayOf(-PI.toFloat() / 2, null),
                 historyIncrements = 2,
                 downtime = gestureStartTime,
             )

@@ -21,7 +21,7 @@ import androidx.annotation.RestrictTo;
 import java.util.Objects;
 
 /** Implementation of the Impress nodes wrapper. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public final class ImpressNode {
     private static final String TAG = ImpressNode.class.getSimpleName();
     private final int mHandle;
@@ -52,5 +52,4 @@ public final class ImpressNode {
     public int hashCode() {
         return Objects.hash(mHandle);
     }
-
 }

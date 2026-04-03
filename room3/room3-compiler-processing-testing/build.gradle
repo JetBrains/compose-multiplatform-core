@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -45,49 +44,11 @@ dependencies {
     implementation(libs.kotlinAnnotationProcessingEmbeddable)
 }
 
-/**
- * Create a properties file with versions that can be read from the test helper to setup test projects.
- * see: b/178725084
- */
-def writeTestPropsTask = tasks.register("prepareTestConfiguration", WriteProperties.class) {
-    description = "Generates a properties file with the current environment for compilation tests"
-    destinationFile.set(project.layout.buildDirectory.dir("test-config").map {
-        it.file("androidx.room3.compiler.processing.util.CompilationTestCapabilities.Config" +
-                ".properties")
-    })
-    property("kotlinVersion", libs.versions.kotlin.get())
-    property("kspVersion", libs.versions.ksp.get())
-}
-
-java {
-    sourceSets {
-        main {
-            resources.srcDir(
-                    writeTestPropsTask.map {
-                        it.destinationFile.asFile.get().parentFile
-                    }
-            )
-        }
-    }
-}
-
 // enable opt in only for tests so that we don't create non experimental APIs by mistake
 // in the source.
-tasks.named("compileTestKotlin", KotlinCompile.class).configure {
-    it.kotlinOptions {
-        freeCompilerArgs += [
-                "-opt-in=androidx.room3.compiler.processing.ExperimentalProcessingApi"
-        ]
-    }
-}
-
-afterEvaluate {
-    lint {
-        lintOptions {
-            // Until fully switch to K2, existing FE1.0 usages are legitimate
-            // TODO(b/314151707)
-            disable("KotlincFE10")
-        }
+tasks.named("compileTestKotlin", KotlinCompile.class).configure { task ->
+    task.compilerOptions {
+        it.freeCompilerArgs.add("-opt-in=androidx.room3.compiler.processing.ExperimentalProcessingApi")
     }
 }
 
@@ -96,5 +57,5 @@ androidx {
     type = SoftwareType.ANNOTATION_PROCESSOR_UTILS
     inceptionYear = "2020"
     description = "Testing helpers for Room XProcessing APIs"
-    kotlinTarget = KotlinTarget.KOTLIN_2_2
+    kotlinTarget = KotlinTarget.KOTLIN_2_3
 }

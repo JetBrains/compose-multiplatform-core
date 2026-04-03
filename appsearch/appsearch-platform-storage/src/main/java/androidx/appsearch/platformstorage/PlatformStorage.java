@@ -22,7 +22,10 @@ import android.os.Build;
 
 import androidx.annotation.DoNotInline;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.RequiresExtension;
+import androidx.annotation.RequiresFeature;
 import androidx.appsearch.app.AppSearchEnvironmentFactory;
+import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.EnterpriseGlobalSearchSession;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
@@ -30,7 +33,9 @@ import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GlobalSearchSession;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.platformstorage.converter.SearchContextToPlatformConverter;
+import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.concurrent.futures.ResolvableFuture;
+import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -284,38 +289,30 @@ public final class PlatformStorage {
     /**
      * Opens a new {@link EnterpriseGlobalSearchSession} on this storage.
      */
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    @SuppressLint("WrongConstant")
+    @RequiresFeature(
+            enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+            name = Features.ENTERPRISE_GLOBAL_SEARCH_SESSION)
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @SuppressLint({"WrongConstant", "ObsoleteSdkInt"})
     public static @NonNull ListenableFuture<EnterpriseGlobalSearchSession>
             createEnterpriseGlobalSearchSessionAsync(@NonNull GlobalSearchContext context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.V_BASE) {
+            Preconditions.checkNotNull(context);
+            AppSearchManager appSearchManager =
+                    context.mContext.getSystemService(AppSearchManager.class);
+            ResolvableFuture<EnterpriseGlobalSearchSession> future = ResolvableFuture.create();
+            ApiHelperForSdkExtensionVBase.createEnterpriseGlobalSearchSession(
+                    appSearchManager,
+                    context.mExecutor,
+                    result -> ApiHelperForSdkExtensionVBase.setEnterpriseSearchSessionFuture(
+                            context,
+                            result, future));
+            return future;
+        } else {
             throw new UnsupportedOperationException(
                     Features.ENTERPRISE_GLOBAL_SEARCH_SESSION
                             + " is not supported on this AppSearch implementation");
         }
-        Preconditions.checkNotNull(context);
-        AppSearchManager appSearchManager =
-                context.mContext.getSystemService(AppSearchManager.class);
-        ResolvableFuture<EnterpriseGlobalSearchSession> future = ResolvableFuture.create();
-        ApiHelperForV.createEnterpriseGlobalSearchSession(
-                appSearchManager,
-                context.mExecutor,
-                result -> {
-                    if (result.isSuccess()) {
-                        future.set(new EnterpriseGlobalSearchSessionImpl(
-                                result.getResultValue(),
-                                context.mExecutor,
-                                context.mContext));
-                    } else {
-                        // Without the SuppressLint annotation on the method, this line causes a
-                        // lint error because getResultCode isn't defined as returning a value from
-                        // AppSearchResult.ResultCode
-                        future.setException(
-                                new AppSearchException(
-                                        result.getResultCode(), result.getErrorMessage()));
-                    }
-                });
-        return future;
     }
 
     /**
@@ -327,9 +324,11 @@ public final class PlatformStorage {
         return new FeaturesImpl(context);
     }
 
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    private static class ApiHelperForV {
-        private ApiHelperForV() {
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.V_BASE)
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private static class ApiHelperForSdkExtensionVBase {
+        private ApiHelperForSdkExtensionVBase() {
             // This class is not instantiable.
         }
 
@@ -339,6 +338,28 @@ public final class PlatformStorage {
                 @NonNull Consumer<android.app.appsearch.AppSearchResult<
                         android.app.appsearch.EnterpriseGlobalSearchSession>> callback) {
             appSearchManager.createEnterpriseGlobalSearchSession(executor, callback);
+        }
+
+        @SuppressLint("WrongConstant")
+        @DoNotInline
+        static void setEnterpriseSearchSessionFuture(
+                PlatformStorage.GlobalSearchContext context,
+                android.app.appsearch.AppSearchResult<
+                        android.app.appsearch.EnterpriseGlobalSearchSession> result,
+                ResolvableFuture<EnterpriseGlobalSearchSession> future) {
+            if (result.isSuccess()) {
+                future.set(new EnterpriseGlobalSearchSessionImpl(
+                        result.getResultValue(),
+                        context.mExecutor,
+                        context.mContext));
+            } else {
+                // Without the SuppressLint annotation on the method, this line causes a
+                // lint error because getResultCode isn't defined as returning a value from
+                // AppSearchResult.ResultCode
+                future.setException(
+                        new AppSearchException(
+                                result.getResultCode(), result.getErrorMessage()));
+            }
         }
     }
 }

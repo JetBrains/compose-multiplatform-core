@@ -38,6 +38,8 @@ public class DrawContent extends PaintOperation implements Serializable {
     private static final String CLASS_NAME = "DrawContent";
     private @Nullable LayoutComponent mComponent;
 
+    boolean mInProcessing = false;
+
     @Override
     public void write(@NonNull WireBuffer buffer) {
         apply(buffer);
@@ -103,14 +105,18 @@ public class DrawContent extends PaintOperation implements Serializable {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Layout Operations", OP_CODE, CLASS_NAME)
+        doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
                 .description("Draw the component content");
     }
 
     @Override
     public void paint(@NonNull PaintContext context) {
         if (mComponent != null) {
-            mComponent.drawContent(context);
+            if (!mInProcessing) {
+                mInProcessing = true;
+                mComponent.drawContent(context);
+                mInProcessing = false;
+            }
         }
     }
 

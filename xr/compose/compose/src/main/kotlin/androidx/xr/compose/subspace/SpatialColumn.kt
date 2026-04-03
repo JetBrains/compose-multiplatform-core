@@ -19,14 +19,14 @@ package androidx.xr.compose.subspace
 import androidx.annotation.FloatRange
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastRoundToInt
-import androidx.xr.compose.platform.LocalSession
-import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialArrangement
+import androidx.xr.compose.subspace.layout.SpatialBiasAbsoluteAlignment
+import androidx.xr.compose.subspace.layout.SpatialBiasAlignment
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceMeasurable
 import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
@@ -39,7 +39,64 @@ import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.GroupEntity
+
+/**
+ * A layout composable that arranges its children in a vertical sequence.
+ *
+ * For arranging children horizontally, see [SpatialRow].
+ *
+ * @param modifier Modifiers to apply to the layout.
+ * @param horizontalAlignment The default horizontal alignment for child elements within the column.
+ * @param depthAlignment The default depth alignment for child elements within the column.
+ * @param verticalArrangement The vertical arrangement of the children.
+ * @param content The composable content to be laid out vertically.
+ * @sample androidx.xr.compose.samples.SpatialColumnSample
+ */
+@Composable
+@SubspaceComposable
+public inline fun SpatialColumn(
+    modifier: SubspaceModifier = SubspaceModifier,
+    horizontalAlignment: SpatialAlignment.Horizontal = SpatialAlignment.CenterHorizontally,
+    depthAlignment: SpatialAlignment.Depth = SpatialAlignment.CenterDepthwise,
+    verticalArrangement: SpatialArrangement.Vertical = SpatialArrangement.Center,
+    crossinline content: @Composable @SubspaceComposable SpatialColumnScope.() -> Unit,
+) {
+    val measurePolicy =
+        spatialColumnMeasurePolicy(
+            horizontalAlignment = horizontalAlignment,
+            depthAlignment = depthAlignment,
+            verticalArrangement = verticalArrangement,
+        )
+
+    SubspaceLayout(
+        modifier = modifier,
+        content = { SpatialColumnScopeInstance.content() },
+        coreEntityName = "SpatialColumn",
+        measurePolicy = measurePolicy,
+    )
+}
+
+@PublishedApi
+@Composable
+internal fun spatialColumnMeasurePolicy(
+    horizontalAlignment: SpatialAlignment.Horizontal,
+    depthAlignment: SpatialAlignment.Depth,
+    verticalArrangement: SpatialArrangement.Vertical,
+): SubspaceMeasurePolicy =
+    if (
+        horizontalAlignment == SpatialAlignment.CenterHorizontally &&
+            depthAlignment == SpatialAlignment.CenterDepthwise &&
+            verticalArrangement == SpatialArrangement.Center
+    ) {
+        DefaultSpatialColumnMeasurePolicy
+    } else {
+        remember(horizontalAlignment, depthAlignment, verticalArrangement) {
+            SpatialColumnMeasurePolicy(
+                alignment = horizontalAlignment + depthAlignment,
+                verticalArrangement = verticalArrangement,
+            )
+        }
+    }
 
 /**
  * A layout composable that arranges its children in a vertical sequence.
@@ -53,24 +110,48 @@ import androidx.xr.scenecore.GroupEntity
  */
 @Composable
 @SubspaceComposable
-public fun SpatialColumn(
+@Deprecated("Use SpatialColumn with horizontalAlignment and depthAlignment instead.")
+public inline fun SpatialColumn(
     modifier: SubspaceModifier = SubspaceModifier,
-    alignment: SpatialAlignment = SpatialAlignment.Center,
+    alignment: SpatialAlignment,
     verticalArrangement: SpatialArrangement.Vertical = SpatialArrangement.Center,
-    content: @Composable @SubspaceComposable SpatialColumnScope.() -> Unit,
+    crossinline content: @Composable @SubspaceComposable SpatialColumnScope.() -> Unit,
 ) {
-    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val entityName = "SpatialColumn-${currentCompositeKeyHashCode}"
-    val coreGroupEntity = remember {
-        CoreGroupEntity(GroupEntity.create(session, name = entityName, pose = Pose.Identity))
-    }
+    @Suppress("DEPRECATION")
+    val measurePolicy =
+        spatialColumnMeasurePolicy(alignment = alignment, verticalArrangement = verticalArrangement)
+
     SubspaceLayout(
         modifier = modifier,
         content = { SpatialColumnScopeInstance.content() },
-        coreEntity = coreGroupEntity,
-        measurePolicy = SpatialColumnMeasurePolicy(alignment, verticalArrangement),
+        coreEntityName = "SpatialColumn",
+        measurePolicy = measurePolicy,
     )
 }
+
+internal val DefaultSpatialColumnMeasurePolicy: SubspaceMeasurePolicy =
+    SpatialColumnMeasurePolicy(
+        alignment = SpatialAlignment.CenterHorizontally + SpatialAlignment.CenterDepthwise,
+        verticalArrangement = SpatialArrangement.Center,
+    )
+
+@PublishedApi
+@Composable
+@Deprecated("Use SpatialColumn with horizontalAlignment and depthAlignment instead.")
+internal fun spatialColumnMeasurePolicy(
+    alignment: SpatialAlignment,
+    verticalArrangement: SpatialArrangement.Vertical,
+): SubspaceMeasurePolicy =
+    if (alignment == SpatialAlignment.Center && verticalArrangement == SpatialArrangement.Center) {
+        DefaultSpatialColumnMeasurePolicy
+    } else {
+        remember(alignment, verticalArrangement) {
+            SpatialColumnMeasurePolicy(
+                alignment = alignment,
+                verticalArrangement = verticalArrangement,
+            )
+        }
+    }
 
 /**
  * Measure policy for [SpatialColumn] layouts. Handles the measurement and placement of children in
@@ -95,10 +176,10 @@ internal class SpatialColumnMeasurePolicy(
     }
 
     override val SubspacePlaceable.mainAxisSize: Int
-        get() = measuredHeight
+        get() = height
 
     override val SubspacePlaceable.crossAxisSize: Int
-        get() = measuredWidth
+        get() = width
 
     override val VolumeConstraints.mainAxisTargetSpace: Int
         get() = if (maxHeight != VolumeConstraints.INFINITY) maxHeight else minHeight
@@ -127,7 +208,11 @@ internal class SpatialColumnMeasurePolicy(
         }
     }
 
-    override fun getMainAxisOffset(contentSize: IntVolumeSize, containerSize: IntVolumeSize): Int {
+    override fun getMainAxisOffset(
+        contentSize: IntVolumeSize,
+        containerSize: IntVolumeSize,
+        layoutDirection: LayoutDirection,
+    ): Int {
         // Each child will have its main-axis offset adjusted, based on extra space available and
         // the provided alignment. `mainAxisOffset` represents the top edge of the content in the
         // container space.
@@ -177,6 +262,7 @@ internal class SpatialColumnMeasurePolicy(
         resolvedMeasurable: ResolvedMeasurable,
         containerSize: IntVolumeSize,
         mainAxisOffset: Int,
+        layoutDirection: LayoutDirection,
     ): Pose {
         val mainAxisPosition = (resolvedMeasurable.mainAxisPosition ?: 0) + mainAxisOffset
 
@@ -193,11 +279,12 @@ internal class SpatialColumnMeasurePolicy(
                 width = crossAxisSize,
                 space = containerSize.width,
                 parentSpatialAlignment = alignment,
+                layoutDirection = layoutDirection,
             )
 
         val depthPosition =
             resolvedMeasurable.depthOffset(
-                depth = placeable.measuredDepth,
+                depth = placeable.depth,
                 space = containerSize.depth,
                 parentSpatialAlignment = alignment,
             )
@@ -257,6 +344,7 @@ public interface SpatialColumnScope {
 }
 
 /** Default implementation of the [SpatialColumnScope] interface. */
+@PublishedApi
 internal object SpatialColumnScopeInstance : SpatialColumnScope {
     override fun SubspaceModifier.weight(weight: Float, fill: Boolean): SubspaceModifier {
         require(weight > 0.0) { "invalid weight $weight; must be greater than zero" }
@@ -276,3 +364,32 @@ internal object SpatialColumnScopeInstance : SpatialColumnScope {
         return this then RowColumnAlignElement(depthSpatialAlignment = alignment)
     }
 }
+
+private operator fun SpatialAlignment.Horizontal.plus(
+    other: SpatialAlignment.Depth
+): SpatialAlignment =
+    when (this) {
+        is SpatialBiasAlignment.Horizontal ->
+            SpatialBiasAlignment(
+                horizontalBias = horizontalBias,
+                verticalBias = 0f,
+                depthBias =
+                    when (other) {
+                        is SpatialBiasAlignment.Depth -> other.depthBias
+                        else -> 0f
+                    },
+            )
+
+        is SpatialBiasAbsoluteAlignment.Horizontal ->
+            SpatialBiasAbsoluteAlignment(
+                horizontalBias = horizontalBias,
+                verticalBias = 0f,
+                depthBias =
+                    when (other) {
+                        is SpatialBiasAlignment.Depth -> other.depthBias
+                        else -> 0f
+                    },
+            )
+
+        else -> SpatialBiasAlignment(0f, 0f, 0f)
+    }

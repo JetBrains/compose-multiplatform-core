@@ -19,7 +19,7 @@ package androidx.lifecycle.compose
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.kruth.assertThat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.testing.TestLifecycleOwner
@@ -149,6 +149,8 @@ class CollectAsStateWithLifecycleTests {
         runOnIdle { assertThat(realValue).isEqualTo("0") }
 
         lifecycleOwner.currentState = Lifecycle.State.RESUMED
+        // To start the flow collector after the lifecycle change.
+        awaitIdle()
         assertThat(_sharedFlow.tryEmit("2"))
         runOnIdle { assertThat(realValue).isEqualTo("2") }
     }

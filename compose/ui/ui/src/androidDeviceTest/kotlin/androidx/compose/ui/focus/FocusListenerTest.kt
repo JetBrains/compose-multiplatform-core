@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ComposeUiFlags.isOptimizedFocusEventDispatchEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.InputMode
@@ -35,7 +35,7 @@ import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semanticsId
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.dp
@@ -44,8 +44,6 @@ import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.runner.RunWith
 
@@ -54,25 +52,10 @@ import org.junit.runner.RunWith
 class FocusListenerTest {
     @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
-    @OptIn(ExperimentalComposeUiApi::class)
-    private val previousFlagValue = ComposeUiFlags.isSemanticAutofillEnabled
-
     // When we clear focus on Pre P devices, request focus is called even when we are
     // in touch mode.
     // https://developer.android.com/about/versions/pie/android-9.0-changes-28#focus
     private val initialFocusAfterClearFocus = SDK_INT < Build.VERSION_CODES.P
-
-    @Before
-    fun enableAutofill() {
-        @OptIn(ExperimentalComposeUiApi::class)
-        ComposeUiFlags.isSemanticAutofillEnabled = true
-    }
-
-    @After
-    fun disableAutofill() {
-        @OptIn(ExperimentalComposeUiApi::class)
-        ComposeUiFlags.isSemanticAutofillEnabled = previousFlagValue
-    }
 
     @Test
     fun nothingFocused() {
@@ -155,12 +138,14 @@ class FocusListenerTest {
         rule.onNodeWithTag("item2").requestFocus()
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(listener)
-                .isEqualTo(
-                    TestFocusListener(mutableListOf(Pair(item1Id, null), Pair(null, item2Id)))
-                )
-        }
+        val expectedResults: MutableList<Pair<Int?, Int?>> =
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                mutableListOf(Pair(item1Id, item2Id))
+            } else {
+                mutableListOf(Pair(item1Id, null), Pair(null, item2Id))
+            }
+        rule.runOnIdle { assertThat(listener).isEqualTo(TestFocusListener(expectedResults)) }
     }
 
     @Test

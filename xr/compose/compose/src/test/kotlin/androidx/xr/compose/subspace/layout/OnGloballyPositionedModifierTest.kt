@@ -23,12 +23,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.compose.testing.toDp
 import androidx.xr.compose.unit.IntVolumeSize
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,14 +34,18 @@ import org.junit.runner.RunWith
 /** Tests for [onGloballyPositioned] modifier. */
 @RunWith(AndroidJUnit4::class)
 class OnGloballyPositionedModifierTest {
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
     @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun onGloballyPositioned_coordinates_positionIsSet() {
         var coordinates: SubspaceLayoutCoordinates? = null
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(
                     SubspaceModifier.offset(20.dp, 20.dp, 20.dp).onGloballyPositioned {
@@ -65,7 +67,7 @@ class OnGloballyPositionedModifierTest {
     @Test
     fun onGloballyPositioned_coordinates_sizeIsSet() {
         var coordinates: SubspaceLayoutCoordinates? = null
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(
                     SubspaceModifier.size(100.dp).onGloballyPositioned { coordinates = it }

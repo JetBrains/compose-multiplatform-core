@@ -47,7 +47,7 @@ public class WebPage extends Thing {
     private final @Nullable String mSource;
 
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public WebPage(@NonNull String namespace, @NonNull String id, int documentScore,
+    WebPage(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames,
             @Nullable String description,
@@ -93,9 +93,9 @@ public class WebPage extends Thing {
     @SuppressWarnings("unchecked")
     static class BuilderImpl<Self extends BuilderImpl<Self>> extends Thing.BuilderImpl<Self> {
 
-        private ImageObject mFavicon;
+        protected ImageObject mFavicon;
         @ExperimentalAppSearchApi
-        private String mSource;
+        protected String mSource;
 
         BuilderImpl(@NonNull String namespace, @NonNull String id) {
             super(namespace, id);

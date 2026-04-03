@@ -15,11 +15,11 @@
  */
 package androidx.compose.remote.core;
 
-import static androidx.compose.remote.core.Profiles.PROFILE_ANDROIDX;
-import static androidx.compose.remote.core.Profiles.PROFILE_ANDROID_NATIVE;
-import static androidx.compose.remote.core.Profiles.PROFILE_DEPRECATED;
-import static androidx.compose.remote.core.Profiles.PROFILE_EXPERIMENTAL;
-import static androidx.compose.remote.core.Profiles.PROFILE_WIDGETS;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_ANDROIDX;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_ANDROID_NATIVE;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_DEPRECATED;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_EXPERIMENTAL;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_WIDGETS;
 
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.BitmapData;
@@ -31,6 +31,7 @@ import androidx.compose.remote.core.operations.ClipRect;
 import androidx.compose.remote.core.operations.ColorAttribute;
 import androidx.compose.remote.core.operations.ColorConstant;
 import androidx.compose.remote.core.operations.ColorExpression;
+import androidx.compose.remote.core.operations.ColorTheme;
 import androidx.compose.remote.core.operations.ComponentValue;
 import androidx.compose.remote.core.operations.ConditionalOperations;
 import androidx.compose.remote.core.operations.DataDynamicListFloat;
@@ -91,6 +92,7 @@ import androidx.compose.remote.core.operations.Rem;
 import androidx.compose.remote.core.operations.RootContentBehavior;
 import androidx.compose.remote.core.operations.RootContentDescription;
 import androidx.compose.remote.core.operations.ShaderData;
+import androidx.compose.remote.core.operations.Skip;
 import androidx.compose.remote.core.operations.TextAttribute;
 import androidx.compose.remote.core.operations.TextData;
 import androidx.compose.remote.core.operations.TextFromFloat;
@@ -100,6 +102,7 @@ import androidx.compose.remote.core.operations.TextLookupInt;
 import androidx.compose.remote.core.operations.TextMeasure;
 import androidx.compose.remote.core.operations.TextMerge;
 import androidx.compose.remote.core.operations.TextSubtext;
+import androidx.compose.remote.core.operations.TextTransform;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.TimeAttribute;
 import androidx.compose.remote.core.operations.TouchExpression;
@@ -114,6 +117,7 @@ import androidx.compose.remote.core.operations.layout.ImpulseOperation;
 import androidx.compose.remote.core.operations.layout.ImpulseProcess;
 import androidx.compose.remote.core.operations.layout.LayoutComponentContent;
 import androidx.compose.remote.core.operations.layout.LoopOperation;
+import androidx.compose.remote.core.operations.layout.MultiClickModifier;
 import androidx.compose.remote.core.operations.layout.RootLayoutComponent;
 import androidx.compose.remote.core.operations.layout.TouchCancelModifierOperation;
 import androidx.compose.remote.core.operations.layout.TouchDownModifierOperation;
@@ -124,17 +128,21 @@ import androidx.compose.remote.core.operations.layout.managers.CanvasLayout;
 import androidx.compose.remote.core.operations.layout.managers.CollapsibleColumnLayout;
 import androidx.compose.remote.core.operations.layout.managers.CollapsibleRowLayout;
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout;
+import androidx.compose.remote.core.operations.layout.managers.CoreText;
 import androidx.compose.remote.core.operations.layout.managers.FitBoxLayout;
+import androidx.compose.remote.core.operations.layout.managers.FlowLayout;
 import androidx.compose.remote.core.operations.layout.managers.ImageLayout;
 import androidx.compose.remote.core.operations.layout.managers.RowLayout;
 import androidx.compose.remote.core.operations.layout.managers.StateLayout;
 import androidx.compose.remote.core.operations.layout.managers.TextLayout;
+import androidx.compose.remote.core.operations.layout.managers.TextStyle;
 import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BackgroundModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BorderModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ClipRectModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.CollapsiblePriorityModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ComponentVisibilityOperation;
+import androidx.compose.remote.core.operations.layout.modifiers.DimensionConstraintsModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.DrawContentOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.GraphicsLayerModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.HeightInModifierOperation;
@@ -142,6 +150,7 @@ import androidx.compose.remote.core.operations.layout.modifiers.HeightModifierOp
 import androidx.compose.remote.core.operations.layout.modifiers.HostActionMetadataOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.HostActionOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.HostNamedActionOperation;
+import androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.MarqueeModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.OffsetModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.PaddingModifierOperation;
@@ -176,11 +185,12 @@ import java.util.HashMap;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Operations {
 
-    private Operations() {}
+    private Operations() {
+    }
 
     ////////////////////////////////////////
     // Protocol
-    ////////////////////////////////////////
+    /// /////////////////////////////////////
     public static final int HEADER = 0;
     public static final int LOAD_BITMAP = 4;
     public static final int THEME = 63;
@@ -199,7 +209,7 @@ public class Operations {
 
     ////////////////////////////////////////
     // Draw commands
-    ////////////////////////////////////////
+    /// /////////////////////////////////////
     public static final int DRAW_BITMAP = 44;
     public static final int DRAW_BITMAP_INT = 66;
     public static final int DATA_BITMAP = 101;
@@ -207,7 +217,7 @@ public class Operations {
     public static final int DATA_TEXT = 102;
     public static final int DATA_BITMAP_FONT = 167;
 
-    ///////////////////////////// =====================
+    /// ////////////////////////// =====================
     public static final int CLIP_PATH = 38;
     public static final int CLIP_RECT = 39;
     public static final int PAINT_VALUES = 40;
@@ -220,6 +230,7 @@ public class Operations {
     public static final int DRAW_ROUND_RECT = 51;
     public static final int DRAW_SECTOR = 52;
     public static final int DRAW_TEXT_ON_PATH = 53;
+    public static final int DRAW_TEXT_ON_CIRCLE = 57;
     public static final int DRAW_OVAL = 56;
     public static final int DATA_PATH = 123;
     public static final int DRAW_PATH = 124;
@@ -291,12 +302,14 @@ public class Operations {
     public static final int ID_LOOKUP = 192;
     public static final int PATH_EXPRESSION = 193;
     public static final int PARTICLE_COMPARE = 194;
-
+    public static final int UPDATE = 195; // TODO
+    public static final int COLOR_THEME = 196;
+    public static final int TEXT_TRANSFORM = 199;
     ///////////////////////////////////////// ======================
 
     ////////////////////////////////////////
     // Layout commands
-    ////////////////////////////////////////
+    /// /////////////////////////////////////
 
     public static final int LAYOUT_ROOT = 200;
     public static final int LAYOUT_CONTENT = 201;
@@ -304,11 +317,15 @@ public class Operations {
     public static final int LAYOUT_FIT_BOX = 176;
     public static final int LAYOUT_ROW = 203;
     public static final int LAYOUT_COLLAPSIBLE_ROW = 230;
+    public static final int LAYOUT_FLOW = 240;
     public static final int LAYOUT_COLUMN = 204;
     public static final int LAYOUT_COLLAPSIBLE_COLUMN = 233;
     public static final int LAYOUT_CANVAS = 205;
     public static final int LAYOUT_CANVAS_CONTENT = 207;
     public static final int LAYOUT_TEXT = 208;
+    public static final int CORE_TEXT = 239;
+    public static final int TEXT_STYLE = 242;
+    public static final int MODIFIER_DIMENSION_CONSTRAINTS = 243;
     public static final int LAYOUT_STATE = 217;
     public static final int LAYOUT_IMAGE = 234;
 
@@ -326,6 +343,7 @@ public class Operations {
     public static final int MODIFIER_ROUNDED_CLIP_RECT = 54;
 
     public static final int MODIFIER_CLICK = 59;
+    public static final int MODIFIER_MULTI_CLICK = 83;
     public static final int MODIFIER_TOUCH_DOWN = 219;
     public static final int MODIFIER_TOUCH_UP = 220;
     public static final int MODIFIER_TOUCH_CANCEL = 225;
@@ -347,6 +365,7 @@ public class Operations {
     public static final int HOST_METADATA_ACTION = 216;
     public static final int HOST_NAMED_ACTION = 210;
     public static final int RUN_ACTION = 236;
+    public static final int LAYOUT_COMPUTE = 238;
 
     public static final int VALUE_INTEGER_CHANGE_ACTION = 212;
     public static final int VALUE_STRING_CHANGE_ACTION = 213;
@@ -357,10 +376,11 @@ public class Operations {
     public static final int ANIMATION_SPEC = 14;
 
     public static final int COMPONENT_VALUE = 150;
+    public static final int SKIP = 241;
 
     ////////////////////////////////////////
     // Profiles management
-    ////////////////////////////////////////
+    /// /////////////////////////////////////
 
     static UniqueIntMap<CompanionOperation> sMapV6;
     static HashMap<Integer, UniqueIntMap<CompanionOperation>> sMapV7;
@@ -375,15 +395,15 @@ public class Operations {
 
     /**
      * Returns true if the operation exists for the given api level
-     *
-     * @param opId
-     * @param apiLevel
-     * @param profiles
-     * @return
      */
     public static boolean valid(int opId, int apiLevel, int profiles) {
         switch (apiLevel) {
-            case 7:
+            case 6:
+                if (sMapV6 == null) {
+                    sMapV6 = createMapV6();
+                }
+                return sMapV6.get(opId) != null;
+            default: // 7 and above
                 if (sMapV7 == null) {
                     sMapV7 = createMapV7(sMapV7, profiles);
                 }
@@ -393,37 +413,26 @@ public class Operations {
                     map = sMapV7.get(profiles);
                 }
                 return map.get(opId) != null;
-            case 6:
-                if (sMapV6 == null) {
-                    sMapV6 = createMapV6();
-                }
-                return sMapV6.get(opId) != null;
         }
-        return false;
     }
 
     /**
      * Returns a map of operations for the given api level
-     *
-     * @param apiLevel
-     * @param profiles
-     * @return
      */
     public static @Nullable UniqueIntMap<CompanionOperation> getOperations(
             int apiLevel, int profiles) {
         switch (apiLevel) {
-            case 7:
-                if (sMapV7 == null || !sMapV7.containsKey(profiles)) {
-                    sMapV7 = createMapV7(sMapV7, profiles);
-                }
-                return sMapV7.get(profiles);
             case 6:
                 if (sMapV6 == null) {
                     sMapV6 = createMapV6();
                 }
                 return sMapV6;
+            default: // 7 and above
+                if (sMapV7 == null || !sMapV7.containsKey(profiles)) {
+                    sMapV7 = createMapV7(sMapV7, profiles);
+                }
+                return sMapV7.get(profiles);
         }
-        return null;
     }
 
     private static UniqueIntMap<CompanionOperation> createMapV6() {
@@ -451,6 +460,11 @@ public class Operations {
             sMapV7AndroidX.put(PARTICLE_COMPARE, ParticlesCompare::read);
             sMapV7AndroidX.put(DYNAMIC_FLOAT_LIST, DataDynamicListFloat::read);
             sMapV7AndroidX.put(UPDATE_DYNAMIC_FLOAT_LIST, UpdateDynamicFloatList::read);
+            sMapV7AndroidX.put(SKIP, Skip::read);
+            sMapV7AndroidX.put(CORE_TEXT, CoreText::read);
+            sMapV7AndroidX.put(TEXT_STYLE, TextStyle::read);
+            sMapV7AndroidX.put(TEXT_TRANSFORM, TextTransform::read);
+            sMapV7AndroidX.put(COLOR_THEME, ColorTheme::read);
         }
         return sMapV7AndroidX;
     }
@@ -460,6 +474,11 @@ public class Operations {
             sMapV7AndroidXExperimental = new UniqueIntMap<>();
             // add experimental operations for this profile here
             sMapV7AndroidXExperimental.put(MODIFIER_ALIGN_BY, AlignByModifierOperation::read);
+            sMapV7AndroidXExperimental.put(LAYOUT_COMPUTE, LayoutComputeOperation::read);
+            sMapV7AndroidXExperimental.put(LAYOUT_FLOW, FlowLayout::read);
+            sMapV7AndroidXExperimental.put(MODIFIER_MULTI_CLICK, MultiClickModifier::read);
+            sMapV7AndroidXExperimental.put(MODIFIER_DIMENSION_CONSTRAINTS,
+                    DimensionConstraintsModifierOperation::read);
         }
         return sMapV7AndroidXExperimental;
     }
@@ -487,6 +506,11 @@ public class Operations {
             sMapV7Widgets.put(PARTICLE_COMPARE, ParticlesCompare::read);
             sMapV7Widgets.put(DYNAMIC_FLOAT_LIST, DataDynamicListFloat::read);
             sMapV7Widgets.put(UPDATE_DYNAMIC_FLOAT_LIST, UpdateDynamicFloatList::read);
+            sMapV7Widgets.put(SKIP, Skip::read);
+            sMapV7Widgets.put(CORE_TEXT, CoreText::read);
+            sMapV7Widgets.put(TEXT_STYLE, TextStyle::read);
+            sMapV7Widgets.put(TEXT_TRANSFORM, TextTransform::read);
+            sMapV7Widgets.put(COLOR_THEME, ColorTheme::read);
         }
         return sMapV7Widgets;
     }
@@ -496,6 +520,11 @@ public class Operations {
             sMapV7WidgetsExperimental = new UniqueIntMap<>();
             // add experimental operations for this profile here
             sMapV7WidgetsExperimental.put(MODIFIER_ALIGN_BY, AlignByModifierOperation::read);
+            sMapV7WidgetsExperimental.put(LAYOUT_COMPUTE, LayoutComputeOperation::read);
+            sMapV7WidgetsExperimental.put(LAYOUT_FLOW, FlowLayout::read);
+            sMapV7WidgetsExperimental.put(MODIFIER_MULTI_CLICK, MultiClickModifier::read);
+            sMapV7WidgetsExperimental.put(MODIFIER_DIMENSION_CONSTRAINTS,
+                    DimensionConstraintsModifierOperation::read);
         }
         return sMapV7WidgetsExperimental;
     }
@@ -510,10 +539,6 @@ public class Operations {
 
     /**
      * Returns a list of operation for the v7 using the given profiles
-     *
-     * @param currentMapV7
-     * @param profiles
-     * @return
      */
     private static HashMap<Integer, UniqueIntMap<CompanionOperation>> createMapV7(
             HashMap<Integer, UniqueIntMap<CompanionOperation>> currentMapV7, int profiles) {

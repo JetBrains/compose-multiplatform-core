@@ -20,16 +20,16 @@ import androidx.kruth.assertThat
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
-import androidx.room3.InvalidationTracker
 import androidx.room3.Room
-import androidx.room3.RoomDatabase
+import androidx.room3.RoomRawQuery
 import androidx.room3.integration.kotlintestapp.testutil.ItemStore
+import androidx.room3.integration.kotlintestapp.testutil.MainThreadCheckSQLiteDriver
 import androidx.room3.integration.kotlintestapp.testutil.PagingDb
 import androidx.room3.integration.kotlintestapp.testutil.PagingEntity
 import androidx.room3.integration.kotlintestapp.testutil.PagingEntityDao
 import androidx.room3.paging.LimitOffsetPagingSource
-import androidx.sqlite.db.SimpleSQLiteQuery
-import androidx.test.core.app.ApplicationProvider
+import androidx.room3.useWriterConnection
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SmallTest
 import androidx.testutils.FilteringCoroutineContext
@@ -37,7 +37,6 @@ import androidx.testutils.FilteringExecutor
 import java.util.concurrent.Executors
 import kotlin.test.Ignore
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -81,7 +80,7 @@ class MultiTypedPagingSourceTest(
     fun init() {
         coroutineScope = CoroutineScope(Dispatchers.Main)
         itemStore = ItemStore(coroutineScope)
-        db = buildAndReturnDb(queryContext, mainThreadQueries)
+        db = buildAndReturnDb(queryContext)
     }
 
     @After
@@ -294,70 +293,6 @@ class MultiTypedPagingSourceTest(
         }
     }
 
-    // This test is no longer valid since LimitOffsetPagingSource now uses invalidation via Flow
-    // and slow observers don't block others.
-    @Test
-    @Ignore("b/329315924")
-    fun prependWithBlockingObserver() {
-        val items = createItems(startId = 0, count = 90)
-        db.getDao().insert(items)
-
-        val pager =
-            Pager(
-                config = CONFIG,
-                initialKey = 20,
-                pagingSourceFactory = { db.getDao().loadItems().also { pagingSources.add(it) } },
-            )
-
-        // to block the PagingSource's observer, this observer needs to be registered first
-        val blockingObserver =
-            object : InvalidationTracker.Observer("PagingEntity") {
-                // make sure observer blocks the time longer than the timeout of waiting for
-                // paging source invalidation, so that we can assert new generation failure later
-                override fun onInvalidated(tables: Set<String>) {
-                    Thread.sleep(3_500)
-                }
-            }
-        db.invalidationTracker.addObserver(blockingObserver)
-
-        runTest(pager) {
-            val initialLoad = itemStore.awaitInitialLoad()
-            val initialItems =
-                items.createExpected(fromIndex = 20, toIndex = 20 + CONFIG.initialLoadSize)
-            assertThat(initialLoad)
-                .containsExactlyElementsIn(
-                    // should load starting from initial Key = 20
-                    initialItems
-                )
-
-            db.getDao().deleteItems(items.subList(0, 60).map { it.id })
-
-            // Now get more items. The pagingSource's load() will check for invalidation.
-            // Normally the check would return "invalidation = true" but in this test case,
-            // room's invalidation flag has already been reset but observer notification is delayed.
-            // This means the paging source is not being invalidated.
-            itemStore.get(10)
-
-            val expectError = assertFailsWith<AssertionError> { itemStore.awaitGeneration(2) }
-            assertThat(expectError.message).isEqualTo("didn't complete in expected time")
-
-            // and stale PagingSource would return item 70 instead of item 10
-            withContext(Dispatchers.Main) {
-                assertThat(itemStore.awaitItem(10)).isEqualTo(items[70])
-            }
-            assertFalse(pagingSources[0].invalid)
-
-            // prepend again
-            itemStore.get(0)
-
-            // the blocking observer's callback should complete now and the PagingSource should be
-            // invalidated successfully
-            itemStore.awaitGeneration(2)
-            assertTrue(pagingSources[0].invalid)
-            assertFalse(pagingSources[1].invalid)
-        }
-    }
-
     @Ignore("Due to b/365183141")
     @Test
     fun appendWithDelayedInvalidation() {
@@ -447,12 +382,11 @@ class MultiTypedPagingSourceTest(
     }
 
     private fun simple_emptyStart_thenAddAnItem(preOpenDb: Boolean) {
-        if (preOpenDb) {
-            // trigger db open
-            db.openHelper.writableDatabase
-        }
-
         runTest {
+            if (preOpenDb) {
+                // trigger db open
+                db.useWriterConnection {}
+            }
             itemStore.awaitGeneration(1)
             itemStore.awaitInitialLoad()
             assertThat(itemStore.peekItems()).isEmpty()
@@ -486,7 +420,6 @@ class MultiTypedPagingSourceTest(
             listOf(
                 PagingEntityDao::loadItems,
                 PagingEntityDao::loadItemsListenableFuture,
-                PagingEntityDao::loadItemsRx2,
                 PagingEntityDao::loadItemsRx3,
             )
     }
@@ -497,7 +430,7 @@ class MultiTypedPagingSourceTest(
 @SmallTest
 class MultiTypedPagingSourceTestWithRawQuery(
     private val pagingSourceFactoryRaw:
-        (PagingEntityDao, SimpleSQLiteQuery) -> PagingSource<Int, PagingEntity>
+        (PagingEntityDao, RoomRawQuery) -> PagingSource<Int, PagingEntity>
 ) {
     private lateinit var coroutineScope: CoroutineScope
     private lateinit var db: PagingDb
@@ -515,7 +448,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
     fun init() {
         coroutineScope = CoroutineScope(Dispatchers.Main)
         itemStore = ItemStore(coroutineScope)
-        db = buildAndReturnDb(queryContext, mainThreadQueries)
+        db = buildAndReturnDb(queryContext)
     }
 
     @After
@@ -531,7 +464,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
         // open db
         val items = createItems(startId = 15, count = 50)
         db.getDao().insert(items)
-        val query = SimpleSQLiteQuery("SELECT * FROM PagingEntity ORDER BY id ASC")
+        val query = RoomRawQuery("SELECT * FROM PagingEntity ORDER BY id ASC")
         runTest(query) {
             val initialLoad = itemStore.awaitInitialLoad()
             assertThat(initialLoad)
@@ -558,7 +491,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
         // open db
         val items = createItems(startId = 0, count = 100)
         db.getDao().insert(items)
-        val query = SimpleSQLiteQuery("SELECT * FROM PagingEntity ORDER BY id ASC")
+        val query = RoomRawQuery("SELECT * FROM PagingEntity ORDER BY id ASC")
         val pager =
             Pager(config = CONFIG, initialKey = 98) { pagingSourceFactoryRaw(db.getDao(), query) }
         runTest(query, pager) {
@@ -592,8 +525,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
         val items = createItems(startId = 15, count = 70)
         db.getDao().insert(items)
 
-        val query =
-            SimpleSQLiteQuery("SELECT * FROM PagingEntity ORDER BY id ASC LIMIT 30 OFFSET 5")
+        val query = RoomRawQuery("SELECT * FROM PagingEntity ORDER BY id ASC LIMIT 30 OFFSET 5")
         runTest(query) {
             val initialLoad = itemStore.awaitInitialLoad()
             assertThat(initialLoad)
@@ -628,7 +560,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
         val items = createItems(startId = 0, count = 80)
         db.getDao().insert(items)
         val query =
-            SimpleSQLiteQuery(
+            RoomRawQuery(
                 "SELECT * " +
                     "FROM PagingEntity " +
                     "WHERE id > 49 AND id < 76 " +
@@ -664,7 +596,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
     }
 
     private fun runTest(
-        query: SimpleSQLiteQuery,
+        query: RoomRawQuery,
         pager: Pager<Int, PagingEntity> =
             Pager(
                 config = CONFIG,
@@ -683,33 +615,14 @@ class MultiTypedPagingSourceTestWithRawQuery(
             listOf(
                 PagingEntityDao::loadItemsRaw,
                 PagingEntityDao::loadItemsRawListenableFuture,
-                PagingEntityDao::loadItemsRawRx2,
                 PagingEntityDao::loadItemsRawRx3,
             )
     }
 }
 
-private fun buildAndReturnDb(
-    queryContext: FilteringCoroutineContext,
-    mainThreadQueries: MutableList<Pair<String, String>>,
-): PagingDb {
-    val mainThread: Thread = runBlocking(Dispatchers.Main) { Thread.currentThread() }
-    return Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            PagingDb::class.java,
-        )
-        .setQueryCallback(
-            object : RoomDatabase.QueryCallback {
-                override fun onQuery(sqlQuery: String, bindArgs: List<Any?>) {
-                    if (Thread.currentThread() === mainThread) {
-                        mainThreadQueries.add(sqlQuery to Throwable().stackTraceToString())
-                    }
-                }
-            }
-        ) {
-            // instantly execute the log callback so that we can check the thread.
-            it.run()
-        }
+private fun buildAndReturnDb(queryContext: FilteringCoroutineContext): PagingDb {
+    return Room.inMemoryDatabaseBuilder<PagingDb>()
+        .setDriver(MainThreadCheckSQLiteDriver(AndroidSQLiteDriver()))
         .setQueryCoroutineContext(queryContext)
         .build()
 }

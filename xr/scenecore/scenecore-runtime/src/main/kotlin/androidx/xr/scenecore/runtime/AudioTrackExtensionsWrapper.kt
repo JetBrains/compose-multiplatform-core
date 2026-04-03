@@ -20,7 +20,7 @@ import android.media.AudioTrack
 import androidx.annotation.RestrictTo
 
 /** Interface for a XR Runtime AudioTrackExtensionsWrapper */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface AudioTrackExtensionsWrapper {
     /**
      * Returns the [PointSourceParams] of the AudioTrack.
@@ -49,26 +49,31 @@ public interface AudioTrackExtensionsWrapper {
     /**
      * Sets the PointSourceParams of the AudioTrack.
      *
-     * <p>The new PointSourceParams will be applied if the [SpatializerConstants.SourceType] of the
-     * AudioTrack was either [SpatializerConstants.DEFAULT]0 or [SpatializerConstants.POINT_SOURCE].
-     * If the [SpatializerConstants.SourceType] was [SpatializerConstants.SOUND_FIELD], then this
-     * method will have no effect.
+     * The new PointSourceParams will be applied if the [SpatializerConstants.SourceType] of the
+     * AudioTrack was either [SpatializerConstants.SourceType.SOURCE_TYPE_BYPASS] or
+     * [SpatializerConstants.SourceType.SOURCE_TYPE_POINT_SOURCE]. If the
+     * [SpatializerConstants.SourceType] was
+     * [SpatializerConstants.SourceType.SOURCE_TYPE_SOUND_FIELD], then this method will have no
+     * effect.
      *
      * @param track The AudioTrack to set the PointSourceParams on.
      * @param params The PointSourceParams to set.
+     * @param entity The Entity from which the sound will be played.
      */
-    public fun setPointSourceParams(track: AudioTrack, params: PointSourceParams)
+    public fun setPointSourceParams(track: AudioTrack, params: PointSourceParams, entity: Entity?)
 
     /**
      * Sets the PointSourceParams of the AudioTrack.
      *
      * @param builder The AudioTrack.Builder to set the PointSourceParams on.
      * @param params The PointSourceParams to set.
+     * @param entity The Entity from which the sound will be played.
      * @return The AudioTrack.Builder with the PointSourceAttributes set.
      */
     public fun setPointSourceParams(
         builder: AudioTrack.Builder,
         params: PointSourceParams,
+        entity: Entity?,
     ): AudioTrack.Builder
 
     /**

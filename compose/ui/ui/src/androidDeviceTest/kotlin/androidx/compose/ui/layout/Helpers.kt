@@ -20,8 +20,8 @@ package androidx.compose.ui.layout
 
 import androidx.collection.IntObjectMap
 import androidx.collection.intObjectMapOf
-import androidx.compose.runtime.retain.ForgetfulRetainScope
-import androidx.compose.runtime.retain.RetainScope
+import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
+import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.autofill.Autofill
@@ -62,6 +62,7 @@ import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -143,6 +144,9 @@ private class FakeOwner(
     override val dragAndDropManager: DragAndDropManager
         get() = TODO("Not yet implemented")
 
+    override val localeList: LocaleList
+        get() = TODO("Not yet implemented")
+
     override fun registerOnEndApplyChangesListener(listener: () -> Unit) {
         TODO("Not yet implemented")
     }
@@ -204,8 +208,8 @@ private class FakeOwner(
     override val textToolbar: TextToolbar
         get() = TODO("Not yet implemented")
 
-    override val retainScope: RetainScope
-        get() = ForgetfulRetainScope
+    override val retainedValuesStore: RetainedValuesStore
+        get() = ForgetfulRetainedValuesStore
 
     override val density: Density
         get() = TODO("Not yet implemented")

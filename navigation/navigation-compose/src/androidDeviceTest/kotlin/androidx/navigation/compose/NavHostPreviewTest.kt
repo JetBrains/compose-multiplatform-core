@@ -28,17 +28,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.tooling.PreviewActivity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 class NavHostPreviewTest {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<PreviewActivity>()
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<PreviewActivity>(StandardTestDispatcher())
 
     @Test
     fun navHostPreviewTest() {

@@ -27,7 +27,6 @@ import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.Modifier
 
 /** The helper class to resolve AppFunction related symbols. */
 class AppFunctionSymbolResolver(private val resolver: Resolver) {
@@ -45,13 +44,23 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                         declaration,
                     )
                 }
-                AnnotatedAppFunctionSchemaDefinition(declaration)
+
+                declaration
             }
+            .sortedBy { checkNotNull(it.qualifiedName).asString() }
+            .map { declaration -> AnnotatedAppFunctionSchemaDefinition(declaration) }
             .toList()
     }
 
-    /** Resolves valid functions annotated with @AppFunction annotation. */
-    fun resolveAnnotatedAppFunctions(): List<AnnotatedAppFunctions> {
+    /**
+     * Resolves functions annotated with @AppFunction annotation ***that are not validated yet***.
+     *
+     * The caller should generally prefer using [resolveAnnotatedAppFunctions] to ensure that the
+     * processor is working on validated AppFunctions. This should only be used when the visibility
+     * to invalidated AppFunctions is required, such as for determining the symbols for next turn
+     * processing.
+     */
+    fun resolveUnvalidatedAnnotatedAppFunctions(): List<AnnotatedAppFunctions> {
         return resolver
             .getSymbolsWithAnnotation(AppFunctionAnnotation.CLASS_NAME.canonicalName)
             .map { declaration ->
@@ -63,6 +72,7 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                 }
                 declaration
             }
+            .sortedBy { checkNotNull(it.qualifiedName).asString() }
             .groupBy { declaration ->
                 declaration.parentDeclaration as? KSClassDeclaration
                     ?: throw ProcessingException(
@@ -70,9 +80,18 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                         declaration,
                     )
             }
+            .entries
+            .sortedBy { it.key.qualifiedName?.asString() }
             .map { (classDeclaration, appFunctionsDeclarations) ->
-                AnnotatedAppFunctions(classDeclaration, appFunctionsDeclarations).validate()
+                AnnotatedAppFunctions(classDeclaration, appFunctionsDeclarations)
             }
+    }
+
+    /** Resolves valid functions annotated with @AppFunction annotation. */
+    fun resolveAnnotatedAppFunctions(): List<AnnotatedAppFunctions> {
+        return resolveUnvalidatedAnnotatedAppFunctions().map { annotatedAppFunction ->
+            annotatedAppFunction.validate()
+        }
     }
 
     /**
@@ -90,12 +109,10 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                         declaration,
                     )
                 }
-                if (declaration.modifiers.contains(Modifier.SEALED)) {
-                    AnnotatedOneOfAppFunctionSerializable(declaration).validate()
-                } else {
-                    AnnotatedAppFunctionSerializable(declaration).validate()
-                }
+                declaration
             }
+            .sortedBy { checkNotNull(it.qualifiedName).asString() }
+            .map { declaration -> AppFunctionSerializableType.create(declaration).validate() }
             .toList()
     }
 
@@ -118,8 +135,11 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                         declaration,
                     )
                 }
-                AnnotatedAppFunctionSerializableProxy(declaration).validate()
+
+                declaration
             }
+            .sortedBy { checkNotNull(it.qualifiedName).asString() }
+            .map { declaration -> AnnotatedAppFunctionSerializableProxy(declaration).validate() }
             .toList()
     }
 
@@ -134,6 +154,7 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
         List<AnnotatedAppFunctionSerializableProxy> {
         return resolver
             .getDeclarationsFromPackage(SERIALIZABLE_PROXY_PACKAGE_NAME)
+            .sortedBy { it.qualifiedName?.asString() }
             .filter {
                 it.annotations.findAnnotation(AppFunctionSerializableProxyAnnotation.CLASS_NAME) !=
                     null
@@ -186,6 +207,8 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                         declaration,
                     )
             }
+            .entries
+            .sortedBy { it.key.qualifiedName?.asString() }
             .map { (classDeclaration, appFunctionsDeclarations) ->
                 AnnotatedAppFunctions(
                         classDeclaration,
@@ -313,6 +336,7 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                     )
                 }
             }
+            .sortedBy { it.qualifiedName }
             .toList()
     }
 }

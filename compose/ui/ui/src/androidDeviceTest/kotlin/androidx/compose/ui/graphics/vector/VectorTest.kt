@@ -35,6 +35,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -68,15 +70,17 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.GraphicsResourceCache
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalGraphicsResourceCache
 import androidx.compose.ui.platform.LocalImageVectorCache
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.ImageVectorCache
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -84,13 +88,14 @@ import androidx.compose.ui.tests.R
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.packFloats
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertSame
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Assert
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -103,7 +108,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class VectorTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<RotationActivity>(StandardTestDispatcher())
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
@@ -278,6 +283,50 @@ class VectorTest {
         rule.onNodeWithTag(testTag).captureToImage().toPixelMap().apply {
             assertEquals(1, drawCount)
         }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun testVectorDrawsOnEveryInvalidation() {
+        var drawCount = 0
+        val testTag = "TestTag"
+        var vectorPainter: VectorPainter? = null
+        rule.setContent {
+            vectorPainter =
+                rememberVectorPainter(
+                    defaultWidth = 10.dp,
+                    defaultHeight = 10.dp,
+                    autoMirror = false,
+                ) { viewportWidth, viewportHeight ->
+                    Group {
+                        Path(
+                            fill = SolidColor(Color.Blue),
+                            pathData =
+                                PathData {
+                                    lineTo(viewportWidth, 0f)
+                                    lineTo(viewportWidth, viewportHeight)
+                                    lineTo(0f, viewportHeight)
+                                    close()
+                                },
+                        )
+                    }
+                }
+            Box(
+                modifier =
+                    Modifier.wrapContentSize()
+                        .drawBehind { drawCount++ }
+                        .paint(vectorPainter)
+                        .testTag(testTag)
+            )
+        }
+
+        vectorPainter?.vector?.invalidateCallback?.invoke()
+        rule.waitForIdle()
+        assertEquals(2, drawCount)
+
+        vectorPainter?.vector?.invalidateCallback?.invoke()
+        rule.waitForIdle()
+        assertEquals(3, drawCount)
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -1195,11 +1244,9 @@ class VectorTest {
     @Test
     fun testImageVectorCacheCleared() {
         var vectorInCache = false
-        var application: Application? = null
         var theme: Resources.Theme? = null
         var vectorCache: ImageVectorCache? = null
         rule.setContent {
-            application = LocalContext.current.applicationContext as Application
             theme = LocalContext.current.theme
             val imageVectorCache = LocalImageVectorCache.current
             imageVectorCache.clear()
@@ -1211,7 +1258,10 @@ class VectorTest {
             vectorCache = imageVectorCache
         }
 
-        application?.onTrimMemory(0)
+        rule.runOnUiThread {
+            (rule.activity.applicationContext as Application).onTrimMemory(0)
+            rule.activity.onTrimMemory(0)
+        }
 
         val cacheCleared =
             vectorCache?.let { it[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle)] == null }
@@ -1223,42 +1273,29 @@ class VectorTest {
 
     @Test
     fun testImageVectorCacheMissOnConfigChange() {
-        val tag = "testTag"
-        var vectorCache: ImageVectorCache? = null
         var vectorInCache = false
         var theme: Resources.Theme? = null
-        try {
-            rule.setContent {
-                val imageVectorCache = LocalImageVectorCache.current
-                theme = LocalContext.current.theme
-                Image(
-                    painter = painterResource(R.drawable.ic_triangle_config),
-                    contentDescription = null,
-                    modifier = Modifier.testTag(tag),
-                )
+        var vectorCache: ImageVectorCache? = null
 
-                vectorInCache =
-                    imageVectorCache[
-                        ImageVectorCache.Key(theme!!, R.drawable.ic_triangle_config)] != null
-                vectorCache = imageVectorCache
-            }
+        rule.setContent {
+            val imageVectorCache = LocalImageVectorCache.current
+            theme = LocalContext.current.theme
+            Image(
+                painter = painterResource(R.drawable.ic_triangle_config),
+                contentDescription = null,
+            )
+            vectorInCache =
+                imageVectorCache[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle_config)] !=
+                    null
+            vectorCache = imageVectorCache
+        }
 
-            if (!rule.activity.rotate(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)) {
-                Log.w(TAG, "device rotation unsuccessful")
-                return
-            }
-
+        rule.runOnIdle {
+            assertTrue("Vector was not inserted in cache", vectorInCache)
+            vectorCache!!.prune(ActivityInfo.CONFIG_ORIENTATION)
             val cacheMiss =
-                vectorCache?.let {
-                    it[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle_config)] == null
-                } ?: false
-
-            assertTrue("Vector was not inserted in cache after initial creation", vectorInCache)
+                vectorCache[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle_config)] == null
             assertTrue("Vector object was not pruned on configuration change", cacheMiss)
-        } catch (e: InterruptedException) {
-            fail("Unable to verify the image vector cache on configuration (orientation) change")
-        } finally {
-            rule.activity.rotate(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         }
     }
 
@@ -1586,14 +1623,135 @@ class VectorTest {
         }
     }
 
+    @Test
+    fun testVectorPainterCacheHit() {
+        val imageVector = Icons.Default.Add
+        var drawCacheHit = false
+        rule.setContent {
+            val cache = LocalGraphicsResourceCache.current
+            val density = LocalDensity.current
+            cache?.clear()
+            val cacheKey = packFloats(imageVector.genId.toFloat(), density.density)
+            Image(
+                painter = rememberVectorPainter(image = imageVector),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+            )
+            drawCacheHit = cache?.contains(cacheKey) ?: false
+        }
+
+        rule.waitForIdle()
+        assertTrue(drawCacheHit)
+    }
+
+    @Test
+    fun testVectorPainterCacheCleared() {
+
+        val icon = Icons.Default.Add
+        var resourceInCache = false
+
+        var cache: GraphicsResourceCache? = null
+        var cacheKey: Long = 0
+        rule.setContent {
+            cache = LocalGraphicsResourceCache.current
+            val density = LocalDensity.current.density
+            cacheKey = packFloats(icon.genId.toFloat(), density)
+            Image(
+                painter = rememberVectorPainter(image = icon),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+            )
+
+            resourceInCache = cache?.contains(cacheKey) ?: false
+        }
+
+        rule.runOnUiThread {
+            (rule.activity.applicationContext as Application).onTrimMemory(0)
+            rule.activity.onTrimMemory(0)
+        }
+
+        val cacheCleared = cache?.contains(cacheKey)?.not() ?: true
+
+        assertTrue("Vector was not inserted in cache after initial creation", resourceInCache)
+        assertTrue("Cache was not cleared after trim memory call", cacheCleared)
+    }
+
+    @Test
+    fun testVectorCacheSharedAcrossRecyclerViewItems() {
+
+        val capturedPainters =
+            java.util.Collections.synchronizedList(mutableListOf<VectorPainter>())
+
+        rule.runOnUiThread {
+            val activity = rule.activity
+            val recyclerView =
+                androidx.recyclerview.widget.RecyclerView(activity).apply {
+                    layoutManager = androidx.recyclerview.widget.LinearLayoutManager(activity)
+
+                    adapter =
+                        object :
+                            androidx.recyclerview.widget.RecyclerView.Adapter<
+                                androidx.recyclerview.widget.RecyclerView.ViewHolder
+                            >() {
+                            override fun onCreateViewHolder(
+                                parent: android.view.ViewGroup,
+                                viewType: Int,
+                            ): androidx.recyclerview.widget.RecyclerView.ViewHolder {
+                                return object :
+                                    androidx.recyclerview.widget.RecyclerView.ViewHolder(
+                                        androidx.compose.ui.platform.ComposeView(parent.context)
+                                    ) {}
+                            }
+
+                            override fun onBindViewHolder(
+                                holder: androidx.recyclerview.widget.RecyclerView.ViewHolder,
+                                position: Int,
+                            ) {
+                                (holder.itemView as androidx.compose.ui.platform.ComposeView)
+                                    .setContent {
+                                        val painter = painterResource(R.drawable.ic_triangle)
+
+                                        androidx.compose.runtime.SideEffect {
+                                            capturedPainters.add(painter as VectorPainter)
+                                        }
+
+                                        Image(painter, contentDescription = null)
+                                    }
+                            }
+
+                            override fun getItemCount(): Int = 2
+                        }
+                }
+            activity.setContentView(recyclerView)
+        }
+
+        rule.waitForIdle()
+
+        assertEquals("Should have bound 2 items", 2, capturedPainters.size)
+
+        val painter1 = capturedPainters[0]
+        val painter2 = capturedPainters[1]
+
+        val cache1 = painter1.vector.cacheDrawScope
+        val cache2 = painter2.vector.cacheDrawScope
+
+        assertSame(
+            cache1,
+            cache2,
+            "Different ComposeViews in RecyclerView should share the same GraphicsResourceCache",
+        )
+    }
+
     // captureToImage() requires API level 26
     @RequiresApi(Build.VERSION_CODES.O)
     private fun takeScreenShot(width: Int, height: Int = width): Bitmap {
         val bitmap = rule.onRoot().captureToImage().asAndroidBitmap()
-        Assert.assertEquals(width, bitmap.width)
-        Assert.assertEquals(height, bitmap.height)
+        assertEquals(width, bitmap.width)
+        assertEquals(height, bitmap.height)
         return bitmap
     }
 
     private val TAG = "VectorTest"
 }
+
+class RotationActivity() : ComponentActivity()

@@ -119,7 +119,7 @@ internal class CameraSelectionOptimizer {
                 return null
             }
             try {
-                if (lensFacingInteger.toInt() == CameraSelector.LENS_FACING_BACK) {
+                if (lensFacingInteger == CameraSelector.LENS_FACING_BACK) {
                     val camera0Metadata = cameraDevices.awaitCameraMetadata(CameraId("0"))
                     checkNotNull(camera0Metadata)
                     if (
@@ -130,7 +130,7 @@ internal class CameraSelectionOptimizer {
                         // We can safely ignore "1" as a optimization for initialization latency
                         skippedCameraId = "1"
                     }
-                } else if (lensFacingInteger.toInt() == CameraSelector.LENS_FACING_FRONT) {
+                } else if (lensFacingInteger == CameraSelector.LENS_FACING_FRONT) {
                     val camera1Metadata = cameraDevices.awaitCameraMetadata(CameraId("1"))
                     checkNotNull(camera1Metadata)
                     if (

@@ -17,8 +17,8 @@
 package androidx.appfunctions.metadata
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import androidx.annotation.IntDef
-import androidx.annotation.RestrictTo
 import androidx.appsearch.annotation.Document
 import java.util.Objects
 
@@ -35,8 +35,8 @@ import java.util.Objects
     AppFunctionDataTypeMetadata.TYPE_ARRAY,
     AppFunctionDataTypeMetadata.TYPE_REFERENCE,
     AppFunctionDataTypeMetadata.TYPE_ALL_OF,
-    AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT,
     AppFunctionDataTypeMetadata.TYPE_ONE_OF,
+    AppFunctionDataTypeMetadata.TYPE_PARCELABLE,
 )
 @Retention(AnnotationRetention.SOURCE)
 internal annotation class AppFunctionDataType
@@ -85,8 +85,9 @@ internal constructor(
          * All of type. The schema of the all of type is defined in a [AppFunctionAllOfTypeMetadata]
          */
         internal const val TYPE_ALL_OF: Int = 12
-        /** Pending Intent type. */
-        internal const val TYPE_PENDING_INTENT: Int = 13
+
+        /** Parcelable type. */
+        internal const val TYPE_PARCELABLE: Int = 13
 
         /**
          * One of type. The schema of the one of type is defined in a [AppFunctionOneOfTypeMetadata]
@@ -172,6 +173,8 @@ constructor(
  *
  * For example, consider the following objects:
  * ```
+ * package com.example.myapp
+ *
  * open class Address (
  *     open val street: String,
  *     open val city: String,
@@ -194,7 +197,7 @@ constructor(
  *
  * ```
  * val personWithAddressType = AppFunctionAllOfTypeMetadata(
- *     qualifiedName = "androidx.appfunctions.metadata.PersonWithAddress",
+ *     qualifiedName = "com.example.myapp.PersonWithAddress",
  *     matchAll = listOf(
  *         AppFunctionObjectTypeMetadata(
  *             properties = mapOf(
@@ -204,7 +207,7 @@ constructor(
  *                 "zipCode" to AppFunctionStringTypeMetadata(...),
  *             ),
  *             required = listOf("street", "city", "state", "zipCode"),
- *             qualifiedName = "androidx.appfunctions.metadata.Address",
+ *             qualifiedName = "com.example.myapp.Address",
  *             isNullable = false,
  *         ),
  *         AppFunctionObjectTypeMetadata(
@@ -213,7 +216,7 @@ constructor(
  *                 "age" to AppFunctionIntTypeMetadata(...),
  *             ),
  *             required = listOf("name", "age"),
- *             qualifiedName = "androidx.appfunctions.metadata.PersonWithAddress",
+ *             qualifiedName = "com.example.myapp.PersonWithAddress",
  *             isNullable = false,
  *         ),
  *     ),
@@ -308,7 +311,7 @@ constructor(
         return AppFunctionObjectTypeMetadata(
             properties = allProperties,
             required = allRequired.toList(),
-            qualifiedName = null,
+            qualifiedName = qualifiedName,
             isNullable = false,
             description = "",
         )
@@ -340,6 +343,8 @@ constructor(
  *
  * For example, consider the following sealed interface and its implementations:
  * ```
+ * package com.example.myapp
+ *
  * sealed interface Animal {
  *     val name: String
  * }
@@ -361,10 +366,10 @@ constructor(
  *
  * ```
  * val animalType = AppFunctionOneOfTypeMetadata(
- *     qualifiedName = "androidx.appfunctions.metadata.Animal",
+ *     qualifiedName = "com.example.myapp.Animal",
  *     matchOneOf = listOf(
  *         AppFunctionObjectTypeMetadata(
- *             qualifiedName = "androidx.appfunctions.metadata.Dog",
+ *             qualifiedName = "com.example.myapp.Dog",
  *             properties = mapOf(
  *                 "name" to AppFunctionStringTypeMetadata(...),
  *                 "breed" to AppFunctionStringTypeMetadata(...),
@@ -373,7 +378,7 @@ constructor(
  *             isNullable = false,
  *         ),
  *         AppFunctionObjectTypeMetadata(
- *             qualifiedName = "androidx.appfunctions.metadata.Cat",
+ *             qualifiedName = "com.example.myapp.Cat",
  *             properties = mapOf(
  *                 "name" to AppFunctionStringTypeMetadata(...),
  *                 "livesLeft" to AppFunctionIntTypeMetadata(...),
@@ -388,21 +393,18 @@ constructor(
  *
  * This data type can be used to define the schema of an input or output type.
  */
-@RestrictTo(
-    // TODO: b/449915612 - Make it public
-    RestrictTo.Scope.LIBRARY_GROUP
-)
-public class AppFunctionOneOfTypeMetadata(
+public class AppFunctionOneOfTypeMetadata
+@JvmOverloads
+constructor(
     /** The list of possible data types that an object can match. */
     public val matchOneOf: List<AppFunctionDataTypeMetadata>,
     /**
-     * The parent object's qualified name if available. For example,
-     * "androidx.appfunctions.metadata.Animal".
+     * The parent object's qualified name if available. For example, "com.example.myapp.Animal".
      *
      * Use this value to set [androidx.appfunctions.AppFunctionData.qualifiedName] when trying to
      * build the parameters for [androidx.appfunctions.ExecuteAppFunctionRequest].
      */
-    public val qualifiedName: String?,
+    public val qualifiedName: String,
     /** Whether this data type is nullable. */
     isNullable: Boolean,
     /** A description of the data type and its intended use. */
@@ -427,14 +429,23 @@ public class AppFunctionOneOfTypeMetadata(
     override fun hashCode(): Int {
         var result = super.hashCode()
         result = 31 * result + matchOneOf.hashCode()
-        if (qualifiedName != null) {
-            result = 31 * result + qualifiedName.hashCode()
-        }
+        result = 31 * result + qualifiedName.hashCode()
         return result
     }
 
     override fun toString(): String {
         return "AppFunctionOneOfTypeMetadata(matchOneOf=$matchOneOf, isNullable=$isNullable, description=$description)"
+    }
+
+    internal fun getObjectMetadataForOneOfType(qualifiedName: String): AppFunctionDataTypeMetadata {
+        return matchOneOf.singleOrNull {
+            when (it) {
+                is AppFunctionObjectTypeMetadata -> it.qualifiedName == qualifiedName
+                is AppFunctionReferenceTypeMetadata -> it.referenceDataType == qualifiedName
+                is AppFunctionAllOfTypeMetadata -> it.qualifiedName == qualifiedName
+                else -> throw IllegalArgumentException("Unexpected data type $it for one of type")
+            }
+        } ?: throw IllegalArgumentException("$qualifiedName does not match any of the oneOf types")
     }
 
     public companion object {
@@ -923,43 +934,44 @@ constructor(
 }
 
 /**
- * Defines the schema of a PendingIntent data type.
+ * Defines the schema of a Parcelable data type.
  *
- * Corresponds to [android.app.PendingIntent].
+ * Corresponds to [android.os.Parcelable].
  */
-public class AppFunctionPendingIntentTypeMetadata
+public class AppFunctionParcelableTypeMetadata
 @JvmOverloads
 constructor(
+    /** The qualified name of the [android.os.Parcelable] represented by this metadata. */
+    public val qualifiedName: String,
     /** Whether the data type is nullable. */
     isNullable: Boolean,
     /** A description of the data type and its intended use. */
     description: String = "",
 ) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
-
-    /**
-     * Converts this [AppFunctionPendingIntentTypeMetadata] to an
-     * [AppFunctionDataTypeMetadataDocument].
-     */
-    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
-        return AppFunctionDataTypeMetadataDocument(
-            type = TYPE_PENDING_INTENT,
+    override fun toAppFunctionDataTypeMetadataDocument() =
+        AppFunctionDataTypeMetadataDocument(
+            type = TYPE_PARCELABLE,
             isNullable = isNullable,
             description = description.ifEmpty { null },
+            objectQualifiedName = qualifiedName,
         )
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is AppFunctionPendingIntentTypeMetadata) return false
-        return super.equals(other)
+        if (other !is AppFunctionParcelableTypeMetadata) return false
+        if (!super.equals(other)) return false
+
+        return qualifiedName == other.qualifiedName
     }
 
     override fun hashCode(): Int {
-        return super.hashCode()
+        var result = super.hashCode()
+        result = 31 * result + qualifiedName.hashCode()
+        return result
     }
 
     override fun toString(): String {
-        return "AppFunctionPendingIntentTypeMetadata(isNullable=$isNullable, description=$description)"
+        return "AppFunctionParcelableTypeMetadata(qualifiedName=$qualifiedName, isNullable=$isNullable, description=$description)"
     }
 }
 
@@ -1078,7 +1090,7 @@ internal data class AppFunctionDataTypeMetadataDocument(
             AppFunctionDataTypeMetadata.TYPE_ONE_OF ->
                 AppFunctionOneOfTypeMetadata(
                     matchOneOf = oneOf.map { it.toAppFunctionDataTypeMetadata() },
-                    qualifiedName = objectQualifiedName,
+                    qualifiedName = checkNotNull(objectQualifiedName),
                     isNullable = isNullable,
                     description = description ?: "",
                 )
@@ -1124,8 +1136,14 @@ internal data class AppFunctionDataTypeMetadataDocument(
                     description = description ?: "",
                     enumValues = enumValues.toSet().ifEmpty { null },
                 )
-            AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT ->
-                AppFunctionPendingIntentTypeMetadata(
+            AppFunctionDataTypeMetadata.TYPE_PARCELABLE ->
+                AppFunctionParcelableTypeMetadata(
+                    // In library versions alpha01 through alpha07, PendingIntent was represented
+                    // by AppFunctionPendingIntentTypeMetadata. To maintain runtime backward
+                    // compatibility, we use the same type constant for all parcelables and
+                    // default to "android.app.PendingIntent" if the indexed AppFunctionMetadata
+                    // does not contain a qualified name.
+                    qualifiedName = objectQualifiedName ?: PendingIntent::class.java.name,
                     isNullable = isNullable,
                     description = description ?: "",
                 )

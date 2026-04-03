@@ -19,7 +19,7 @@ package androidx.pdf.selection
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
-import android.os.DeadObjectException
+import android.os.RemoteException
 import android.util.SparseArray
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
@@ -28,6 +28,9 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.util.forEach
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
+import androidx.pdf.annotation.models.ImagePdfObject
+import androidx.pdf.annotation.models.toImageSelection
+import androidx.pdf.centerPoint
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageContent
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -37,11 +40,12 @@ import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
 import androidx.pdf.selection.model.GoToLinkSelection
 import androidx.pdf.selection.model.HyperLinkSelection
+import androidx.pdf.selection.model.ImageSelection
 import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.util.CONTENT_SELECTION_REQUEST_NAME
+import androidx.pdf.util.ExceptionUtils.isHandledRemoteException
 import androidx.pdf.view.PageManager
-import androidx.pdf.view.layout.PageMetadataLoader
-import kotlin.collections.firstOrNull
+import androidx.pdf.view.layout.PageLayoutManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -52,28 +56,63 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** Owns and updates all mutable state related to content selection in [PdfView] */
+/**
+ * Owns and updates all mutable state related to content selection in [androidx.pdf.view.PdfView]
+ */
 internal class SelectionStateManager(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
     private val handleTouchTargetSizePx: Int,
     private val errorFlow: MutableSharedFlow<Throwable>,
-    private val pageMetadataLoader: PageMetadataLoader?,
+    private val pageLayoutManager: PageLayoutManager?,
     private val pageManager: PageManager?,
+    internal var isImageSelectionEnabled: Boolean = false,
     initialSelection: SelectionModel? = null,
 ) {
     /** The current [Selection] */
-    @VisibleForTesting val _selectionModel = MutableStateFlow<SelectionModel?>(initialSelection)
+    @VisibleForTesting
+    val _selectionModel = MutableStateFlow(processInitialSelection(initialSelection))
 
     val selectionModel: StateFlow<SelectionModel?>
         get() = _selectionModel
 
-    /** Replay at few values in case of an UI signal issued while [PdfView] is not collecting */
+    /**
+     * Processes the initial selection.
+     *
+     * Placeholder [ImageSelection]s are filtered out and returned as null to initiate an
+     * asynchronous re-fetch of the actual bitmap data. All other selection types are returned
+     * as-is.
+     *
+     * @param initialSelection The selection to process.
+     * @return The sanitized [SelectionModel], or null if it requires a re-fetch.
+     */
+    private fun processInitialSelection(initialSelection: SelectionModel?): SelectionModel? {
+        if (initialSelection == null) return null
+
+        val selection = initialSelection.documentSelection.selection
+        if (selection is ImageSelection && selection.isPlaceholder) {
+            // This is a placeholder from a restored state.
+            // We need to re-fetch the image content asynchronously.
+            val bounds = selection.bounds.first()
+            backgroundScope.launch { maybeSelectImageAtPoint(bounds.pageNum, bounds.centerPoint) }
+
+            // Return null for the initial state, as the real selection will be set later.
+            return null
+        }
+
+        // For all other selection types, accept the initial value.
+        return initialSelection
+    }
+
+    /**
+     * Replay at few values in case of an UI signal issued while [androidx.pdf.view.PdfView] is not
+     * collecting
+     */
     private val _selectionUiSignalBus = MutableSharedFlow<SelectionUiSignal>(replay = 3)
 
     /**
-     * This [SharedFlow] serves as an event bus of sorts to signal our host [PdfView] to update its
-     * UI in a decoupled way
+     * This [SharedFlow] serves as an event bus of sorts to signal our host
+     * [androidx.pdf.view.PdfView] to update its UI in a decoupled way
      */
     val selectionUiSignalBus: SharedFlow<SelectionUiSignal>
         get() = _selectionUiSignalBus
@@ -117,13 +156,57 @@ internal class SelectionStateManager(
         _selectionUiSignalBus.tryEmit(
             SelectionUiSignal.PlayHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         )
-        // Check for a link at this point.
-        pageManager?.getPageLinks(pdfPoint.pageNum)?.let { links ->
-            if (selectGoToLinkAtPoint(links.gotoLinks, pdfPoint)) return
-            if (selectExternalLinkAtPoint(links.externalLinks, pdfPoint)) return
+
+        val prevJob = setSelectionJob
+        setSelectionJob =
+            backgroundScope.launch {
+                prevJob?.cancelAndJoin()
+
+                // Check for an image at this point.
+                if (maybeSelectImageAtPoint(pdfPoint.pageNum, pdfPoint)) {
+                    return@launch
+                }
+
+                // Check for a link at this point.
+                pageManager?.getPageLinks(pdfPoint.pageNum)?.let { links ->
+                    if (selectGoToLinkAtPoint(links.gotoLinks, pdfPoint)) return@launch
+                    if (selectExternalLinkAtPoint(links.externalLinks, pdfPoint)) return@launch
+                }
+
+                // Check for a text at this point.
+                updateRangeSelectionAsync(pdfPoint, pdfPoint)
+            }
+    }
+
+    suspend fun maybeSelectImageAtPoint(pageNum: Int, point: PdfPoint): Boolean {
+        if (!isImageSelectionEnabled) return false
+        try {
+            val imageObject =
+                pdfDocument.getTopPageObjectAtPosition(pageNum, PointF(point.x, point.y))
+
+            if (imageObject != null && imageObject is ImagePdfObject) {
+                val imageSelection = imageObject.toImageSelection(pageNum)
+                updateImageSelection(pageNum = pageNum, imageSelection = imageSelection)
+                return true
+            }
+        } catch (e: RemoteException) {
+            if (!e.isHandledRemoteException) throw e
+
+            val exception =
+                RequestFailedException(
+                    requestMetadata =
+                        RequestMetadata(
+                            requestName = CONTENT_SELECTION_REQUEST_NAME,
+                            pageRange = pageNum..pageNum,
+                        ),
+                    throwable = e,
+                    // Non-critical failure, user can retry the operation.
+                    showError = false,
+                )
+            errorFlow.emit(exception)
         }
-        // Check for a text at this point.
-        updateRangeSelectionAsync(pdfPoint, pdfPoint)
+
+        return false
     }
 
     /**
@@ -215,7 +298,7 @@ internal class SelectionStateManager(
     }
 
     /** Synchronously resets all state of this manager */
-    fun clearSelection() {
+    fun clearCurrentSelection() {
         draggingState = null
         setSelectionJob?.cancel()
         setSelectionJob = null
@@ -305,7 +388,7 @@ internal class SelectionStateManager(
             return maybeHandleActionDown(location, currentZoom)
         }
         // A new drag starts, clear previous selection and hide action mode.
-        clearSelection()
+        clearCurrentSelection()
         val boundary = UiSelectionBoundary(location, isRtl = false)
         draggingState =
             DraggingState(
@@ -395,6 +478,23 @@ internal class SelectionStateManager(
         }
     }
 
+    private fun updateImageSelection(pageNum: Int, imageSelection: ImageSelection) {
+
+        val selectedContents =
+            SparseArray<List<Selection>>().apply { put(pageNum, listOf(imageSelection)) }
+        val documentSelection = DocumentSelection(selectedContents = selectedContents)
+
+        val bounds = imageSelection.bounds.first()
+        _selectionModel.update {
+            SelectionModel(
+                documentSelection,
+                UiSelectionBoundary(PdfPoint(pageNum, bounds.left, bounds.top), isRtl = false),
+                UiSelectionBoundary(PdfPoint(pageNum, bounds.right, bounds.bottom), isRtl = false),
+            )
+        }
+        _selectionUiSignalBus.tryEmit(SelectionUiSignal.Invalidate)
+    }
+
     private fun updateRangeSelectionAsync(fixedPoint: PdfPoint, draggedPoint: PdfPoint) {
         val oldSelectionModel = selectionModel.value
         if (oldSelectionModel == null || fixedPoint.pageNum == draggedPoint.pageNum) {
@@ -434,7 +534,7 @@ internal class SelectionStateManager(
         prevEnd: PdfPoint,
     ): List<PageSelection?> {
 
-        val newPageSize = pageMetadataLoader?.getPageSize(draggedPoint.pageNum) ?: Point(0, 0)
+        val newPageSize = pageLayoutManager?.getPageSize(draggedPoint.pageNum) ?: Point(0, 0)
         // Find selection bounds for all the skipped pages
         val intermediateSelection =
             getPageSelectionsForRange(draggedPoint.pageNum + 1, prevStart.pageNum - 1)
@@ -497,7 +597,7 @@ internal class SelectionStateManager(
         draggedPoint: PdfPoint,
     ): PageSelection? {
         return if (prevStart.pageNum == prevEnd.pageNum) {
-            val prevPageSize = pageMetadataLoader?.getPageSize(prevEnd.pageNum) ?: Point(0, 0)
+            val prevPageSize = pageLayoutManager?.getPageSize(prevEnd.pageNum) ?: Point(0, 0)
             pdfDocument.getSelectionBounds(
                 prevEnd.pageNum,
                 PointF(prevStart.x, prevStart.y),
@@ -573,7 +673,9 @@ internal class SelectionStateManager(
                                 SelectionUiSignal.ToggleActionMode(show = true)
                             )
                         }
-                    } catch (e: DeadObjectException) {
+                    } catch (e: RemoteException) {
+                        if (!e.isHandledRemoteException) throw e
+
                         val exception =
                             RequestFailedException(
                                 requestMetadata =

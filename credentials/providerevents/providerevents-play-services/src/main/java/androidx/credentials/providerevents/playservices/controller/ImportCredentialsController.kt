@@ -81,7 +81,7 @@ internal class ImportCredentialsController(
         if (tryCreateFile == null) {
             callback.onError(
                 ImportCredentialsSystemErrorException(
-                    "Import failed because of residual import flow from previous session. Cleared the previous import flow. Try again."
+                    "Import failed because the file transfer medium failed to be set-up."
                 )
             )
             return
@@ -128,6 +128,7 @@ internal class ImportCredentialsController(
                 { s, f -> cancelOrCallbackExceptionOrResult(s, f) },
                 { e -> cleanUpAndReportError(e) },
                 cancellationSignal,
+                data,
             )
         ) {
             return
@@ -138,28 +139,25 @@ internal class ImportCredentialsController(
                     ImportCredentialsUnknownErrorException("No provider data returned.")
                 )
             }
-        } else {
-            val providerException = IntentHandler.retrieveImportCredentialsException(data)
-            if (providerException != null) {
-                cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                    cleanUpAndReportError(providerException)
-                }
-                return
-            }
-            val response =
-                IntentHandler.retrieveProviderImportCredentialsResponse(context, data, uri)
-            if (response != null) {
-                cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                    cleanUpAndReportResponse(response)
-                }
-            } else {
-                cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                    cleanUpAndReportError(
-                        ImportCredentialsUnknownErrorException("No provider data returned")
-                    )
-                }
-            }
+            return
         }
+        val providerException = IntentHandler.retrieveImportCredentialsException(data)
+        if (providerException != null) {
+            cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                cleanUpAndReportError(providerException)
+            }
+            return
+        }
+        val response = IntentHandler.retrieveProviderImportCredentialsResponse(context, data, uri)
+        if (response == null) {
+            cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                cleanUpAndReportError(
+                    ImportCredentialsUnknownErrorException("No provider data returned")
+                )
+            }
+            return
+        }
+        cancelOrCallbackExceptionOrResult(cancellationSignal) { cleanUpAndReportResponse(response) }
     }
 
     private fun maybeReportErrorFromResultReceiver(resultData: Bundle): Boolean {
@@ -238,13 +236,24 @@ internal class ImportCredentialsController(
             cancelOnError: (CancellationSignal?, () -> Unit) -> Unit,
             onError: (ImportCredentialsException) -> Unit,
             cancellationSignal: CancellationSignal?,
+            data: Intent?,
         ): Boolean {
             if (resultCode != Activity.RESULT_OK) {
                 var exception: ImportCredentialsException =
-                    ImportCredentialsUnknownErrorException(generateErrorStringUnknown(resultCode))
-                if (resultCode == Activity.RESULT_CANCELED) {
-                    exception =
-                        ImportCredentialsCancellationException("activity is cancelled by the user.")
+                    when (resultCode) {
+                        Activity.RESULT_CANCELED ->
+                            ImportCredentialsCancellationException(
+                                "activity is cancelled by the user."
+                            )
+                        else ->
+                            ImportCredentialsUnknownErrorException(
+                                generateErrorStringUnknown(resultCode)
+                            )
+                    }
+                data?.let {
+                    IntentHandler.retrieveImportCredentialsException(it)?.let { intentException ->
+                        exception = intentException
+                    }
                 }
                 cancelOnError(cancellationSignal) { onError(exception) }
                 return true

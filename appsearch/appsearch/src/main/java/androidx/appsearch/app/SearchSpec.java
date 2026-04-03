@@ -57,7 +57,8 @@ import java.util.Set;
  * search, like prefix or exact only or apply filters to search for a specific schema type only etc.
  */
 @SafeParcelable.Class(creator = "SearchSpecCreator")
-// TODO(b/384721898): Switch to JSpecify annotations
+// TODO(b/384721898): Switching to JSpecify annotations changes APIs once synced to platform.
+//  Do not switch unless you've checked that no APIs are affected.
 @SuppressWarnings({"HiddenSuperclass", "JSpecifyNullness"})
 public final class SearchSpec extends AbstractSafeParcelable {
 
@@ -149,7 +150,8 @@ public final class SearchSpec extends AbstractSafeParcelable {
     @Field(id = 20, getter = "getEmbeddingParameters")
     private final @NonNull List<EmbeddingVector> mEmbeddingParameters;
 
-    @Field(id = 21, getter = "getDefaultEmbeddingSearchMetricType")
+    @Field(id = 21, getter = "getDefaultEmbeddingSearchMetricType",
+            defaultValue = "1") // EMBEDDING_SEARCH_METRIC_TYPE_COSINE
     private final int mDefaultEmbeddingSearchMetricType;
 
     @Field(id = 22, getter = "getInformationalRankingExpressions")

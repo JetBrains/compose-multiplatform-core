@@ -31,11 +31,11 @@ import kotlinx.coroutines.test.TestResult
  * environment. Use the methods on [ComposeUiTest] in the test to find Compose content and make
  * assertions on it. If you need access to platform specific elements (such as the Activity on
  * Android), use one of the platform specific variants of this method, e.g.
- * [runAndroidComposeUiTest] on Android.
+ * `runAndroidComposeUiTest` on Android.
  *
  * Implementations of this method will launch a Compose host (such as an Activity on Android) for
  * you. If your test needs to launch its own host, use a platform specific variant that doesn't
- * launch anything for you (if available), e.g. [runEmptyComposeUiTest] on Android. Always make sure
+ * launch anything for you (if available), e.g. `runEmptyComposeUiTest` on Android. Always make sure
  * that the Compose content is set during execution of the [test lambda][block] so the test
  * framework is aware of the content. Whether you need to launch the host from within the test
  * lambda as well depends on the platform.
@@ -54,6 +54,14 @@ import kotlinx.coroutines.test.TestResult
  *   platform specific timeout exception will be thrown.
  * @param block The test function.
  */
+@Deprecated(
+    message =
+        "Use `androidx.compose.ui.test.v2.runComposeUiTest` instead. The v2 APIs align with " +
+            "standard coroutine behavior by queuing tasks rather than executing them " +
+            "immediately. Tests relying on immediate execution may require explicit " +
+            "synchronization. Please refer to the migration guide for more details.",
+    level = DeprecationLevel.WARNING,
+)
 @ExperimentalTestApi
 expect fun runComposeUiTest(
     effectContext: CoroutineContext = EmptyCoroutineContext,
@@ -113,12 +121,54 @@ expect sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
 
     /**
      * Executes the given [action] in the same way as [runOnUiThread] but [waits][waitForIdle] until
-     * the app is idle before executing the action. This is the recommended way of doing your
-     * assertions on shared variables.
+     * the app is idle before executing the action. T
+     *
+     * Prefer using [runWhenIdle] as it optimizes performance by suppressing redundant
+     * synchronization during node queries.
      *
      * This method blocks until the action is complete.
      */
     fun <T> runOnIdle(action: () -> T): T
+
+    /**
+     * Executes the given [action] on the UI thread. It first [waits][waitForIdle] until the app is
+     * idle before executing the action.
+     *
+     * This method skips unnecessary synchronization inside the provided [action] block. Standard
+     * node queries (like `fetchSemanticsNode()`) normally trigger a redundant `waitForIdle()` under
+     * the hood, which can impose a significant performance toll in tests that manually step through
+     * frames. Bypassing this implicit wait makes this the highly optimized and preferred API for
+     * state inspection.
+     *
+     * This block is intended primarily for inspecting the UI state, making assertions, or capturing
+     * properties without the performance overhead of repeated synchronization. You should avoid
+     * mutating UI state (e.g., performing clicks, text input, or advancing the clock) inside this
+     * block. If your test requires driving the UI to a new state, perform those interactions
+     * outside of this block to ensure the framework can properly synchronize.
+     *
+     * @sample androidx.compose.ui.test.samples.runWhenIdleSample
+     */
+    fun <T> runWhenIdle(action: () -> T): T
+
+    /**
+     * Executes the given [action] on the UI thread. It first [suspends][awaitIdle] until the app is
+     * idle before executing the action.
+     *
+     * This method skips unnecessary synchronization inside the provided [action] block. Standard
+     * node queries (like `fetchSemanticsNode()`) normally trigger a redundant `waitForIdle()` under
+     * the hood, which can impose a significant performance toll in tests that manually step through
+     * frames. Bypassing this implicit wait makes this the highly optimized and preferred API for
+     * state inspection.
+     *
+     * This block is intended primarily for inspecting the UI state, making assertions, or capturing
+     * properties without the performance overhead of repeated synchronization. You should avoid
+     * mutating UI state (e.g., performing clicks, text input, or advancing the clock) inside this
+     * block. If your test requires driving the UI to a new state, perform those interactions
+     * outside of this block to ensure the framework can properly synchronize.
+     *
+     * @sample androidx.compose.ui.test.samples.awaitAndRunWhenIdleSample
+     */
+    suspend fun <T> awaitAndRunWhenIdle(action: () -> T): T
 
     /**
      * Waits for the UI to become idle. Quiescence is reached when there are no more pending changes
@@ -190,6 +240,24 @@ expect sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
      *   doesn't have access to a host to set content in.
      */
     fun setContent(composable: @Composable () -> Unit)
+
+    /**
+     * Returns whether the Compose UI has any pending work.
+     *
+     * This performs a passive check of the [mainClock], snapshot state, and recomposer to determine
+     * if there is any pending work. Unlike [waitForIdle], calling this method does not advance the
+     * clock or drain the main message queue.
+     *
+     * This is particularly useful when `autoAdvance` is disabled, allowing you to inspect the state
+     * of the UI while an animation or other work is still active. If `autoAdvance` is `true`, the
+     * testing framework continuously processes pending work. In that scenario, calling this method
+     * acts as a momentary snapshot and will generally return `false`. It may briefly return `true`
+     * if work is queued but the framework hasn't auto-advanced yet, making the result fleeting and
+     * unreliable for driving test logic.
+     *
+     * @sample androidx.compose.ui.test.samples.hasPendingWorkSample
+     */
+    fun hasPendingWork(): Boolean
 }
 
 /**

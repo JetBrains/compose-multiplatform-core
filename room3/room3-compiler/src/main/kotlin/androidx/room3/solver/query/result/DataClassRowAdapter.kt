@@ -47,25 +47,25 @@ class DataClassRowAdapter(
     private val indexAdapter: DataClassIndexAdapter
 
     // Set when statement is ready.
-    private lateinit var fieldsWithIndices: List<PropertyWithIndex>
+    private lateinit var propertiesWithIndices: List<PropertyWithIndex>
 
     init {
-        val remainingFields = dataClass.properties.toMutableList()
+        val remainingProperties = dataClass.properties.toMutableList()
         val unusedColumns = arrayListOf<String>()
-        val matchedFields: List<Property>
+        val matchedProperties: List<Property>
         if (info != null) {
-            matchedFields =
+            matchedProperties =
                 info.columns.mapNotNull { column ->
-                    val field = remainingFields.firstOrNull { it.columnName == column.name }
-                    if (field == null) {
+                    val property = remainingProperties.firstOrNull { it.columnName == column.name }
+                    if (property == null) {
                         unusedColumns.add(column.name)
                         null
                     } else {
-                        remainingFields.remove(field)
-                        field
+                        remainingProperties.remove(property)
+                        property
                     }
                 }
-            val nonNulls = remainingFields.filter { it.nonNull }
+            val nonNulls = remainingProperties.filter { it.nonNull }
             if (nonNulls.isNotEmpty()) {
                 context.logger.e(
                     ProcessorErrors.dataClassMissingNonNull(
@@ -75,7 +75,7 @@ class DataClassRowAdapter(
                     )
                 )
             }
-            if (matchedFields.isEmpty()) {
+            if (matchedProperties.isEmpty()) {
                 context.logger.e(
                     ProcessorErrors.cannotFindQueryResultAdapter(
                         out.asTypeName().toString(context.codeLanguage)
@@ -83,17 +83,17 @@ class DataClassRowAdapter(
                 )
             }
         } else {
-            matchedFields = remainingFields.map { it }
-            remainingFields.clear()
+            matchedProperties = remainingProperties.map { it }
+            remainingProperties.clear()
         }
         relationCollectors = RelationCollector.createCollectors(context, dataClass.relations)
 
         mapping =
             DataClassMapping(
                 dataClass = dataClass,
-                matchedFields = matchedFields,
+                matchedProperties = matchedProperties,
                 unusedColumns = unusedColumns,
-                unusedFields = remainingFields,
+                unusedProperties = remainingProperties,
             )
 
         indexAdapter = DataClassIndexAdapter(mapping, info, query)
@@ -117,11 +117,11 @@ class DataClassRowAdapter(
         scope: CodeGenScope,
         indices: List<ColumnIndexVar>,
     ) {
-        fieldsWithIndices =
+        propertiesWithIndices =
             indices.map { (column, indexVar) ->
-                val field = mapping.matchedFields.first { it.columnName == column }
+                val property = mapping.matchedProperties.first { it.columnName == column }
                 PropertyWithIndex(
-                    property = field,
+                    property = property,
                     indexVar = indexVar,
                     alwaysExists = info != null,
                 )
@@ -135,7 +135,7 @@ class DataClassRowAdapter(
             scope.builder.apply {
                 beginControlFlow("while (%L.step())", stmtVarName).apply {
                     relationCollectors.forEach {
-                        it.writeReadParentKeyCode(stmtVarName, fieldsWithIndices, scope)
+                        it.writeReadParentKeyCode(stmtVarName, propertiesWithIndices, scope)
                     }
                 }
                 endControlFlow()
@@ -150,7 +150,7 @@ class DataClassRowAdapter(
             outVar = outVarName,
             outDataClass = dataClass,
             stmtVar = stmtVarName,
-            propertiesWithIndices = fieldsWithIndices,
+            propertiesWithIndices = propertiesWithIndices,
             relationCollectors = relationCollectors,
             scope = scope,
         )
@@ -160,10 +160,10 @@ class DataClassRowAdapter(
 
     data class DataClassMapping(
         val dataClass: DataClass,
-        val matchedFields: List<Property>,
+        val matchedProperties: List<Property>,
         val unusedColumns: List<String>,
-        val unusedFields: List<Property>,
+        val unusedProperties: List<Property>,
     ) : Mapping() {
-        override val usedColumns = matchedFields.map { it.columnName }
+        override val usedColumns = matchedProperties.map { it.columnName }
     }
 }

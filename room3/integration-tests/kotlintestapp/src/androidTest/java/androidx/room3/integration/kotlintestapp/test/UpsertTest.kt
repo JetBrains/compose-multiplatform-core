@@ -20,7 +20,7 @@ import androidx.kruth.assertThat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.testing.TestLifecycleOwner
-import androidx.room3.execSQL
+import androidx.room3.executeSQL
 import androidx.room3.integration.kotlintestapp.vo.Book
 import androidx.room3.integration.kotlintestapp.vo.Lang
 import androidx.room3.integration.kotlintestapp.vo.MiniBook
@@ -28,8 +28,8 @@ import androidx.room3.integration.kotlintestapp.vo.Publisher
 import androidx.room3.useWriterConnection
 import androidx.sqlite.SQLiteException
 import androidx.test.filters.MediumTest
-import io.reactivex.observers.TestObserver
-import io.reactivex.subscribers.TestSubscriber
+import io.reactivex.rxjava3.observers.TestObserver
+import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.util.concurrent.CountDownLatch
 import kotlin.test.assertFails
 import kotlinx.coroutines.Dispatchers
@@ -164,9 +164,9 @@ class UpsertTest(driver: UseDriver) : TestDatabaseTest(driver) {
         booksDao.addAuthors(TestUtil.AUTHOR_1)
         booksDao.addPublishers(TestUtil.PUBLISHER)
 
-        val bookLiveData: LiveData<Book> = booksDao.getBookLiveData(TestUtil.BOOK_1.bookId)
+        val bookLiveData: LiveData<Book?> = booksDao.getBookLiveData(TestUtil.BOOK_1.bookId)
         val testOwner = TestLifecycleOwner(Lifecycle.State.CREATED)
-        val observer = LiveDataTestObserver<Book>()
+        val observer = LiveDataTestObserver<Book?>()
 
         TestUtil.observeOnMainThread(bookLiveData, testOwner, observer)
 
@@ -211,7 +211,7 @@ class UpsertTest(driver: UseDriver) : TestDatabaseTest(driver) {
             booksDao.upsertBookSingle(TestUtil.BOOK_1).subscribeWith(TestObserver<Long>())
         drain()
         testObserver.assertError(SQLiteException::class.java)
-        assertThat(testObserver.errors().get(0).message).ignoringCase().contains("foreign key")
+        testObserver.assertError { it.message?.contains("foreign key", ignoreCase = true) == true }
     }
 
     @Test
@@ -255,7 +255,7 @@ class UpsertTest(driver: UseDriver) : TestDatabaseTest(driver) {
             booksDao.upsertBookMaybe(TestUtil.BOOK_1).subscribeWith(TestObserver<Long>())
         drain()
         testObserver.assertError(SQLiteException::class.java)
-        assertThat(testObserver.errors().get(0).message).ignoringCase().contains("foreign key")
+        testObserver.assertError { it.message?.contains("foreign key", ignoreCase = true) == true }
     }
 
     @Test
@@ -301,7 +301,7 @@ class UpsertTest(driver: UseDriver) : TestDatabaseTest(driver) {
             booksDao.upsertBookCompletable(TestUtil.BOOK_1).subscribeWith(TestObserver<Long>())
         drain()
         testObserver.assertError(SQLiteException::class.java)
-        assertThat(testObserver.errors().get(0).message).ignoringCase().contains("foreign key")
+        testObserver.assertError { it.message?.contains("foreign key", ignoreCase = true) == true }
     }
 
     @Test
@@ -471,13 +471,13 @@ class UpsertTest(driver: UseDriver) : TestDatabaseTest(driver) {
     @Test
     fun upsertConditional() = runTest {
         database.useWriterConnection { connection ->
-            connection.execSQL("INSERT INTO Counter (id, value) VALUES (1, 10)")
-            connection.execSQL(
+            connection.executeSQL("INSERT INTO Counter (id, value) VALUES (1, 10)")
+            connection.executeSQL(
                 "CREATE TEMP TABLE ModifiedCounter " +
                     "(id INTEGER NOT NULL, value INTEGER NOT NULL, PRIMARY KEY(id))"
             )
-            connection.execSQL("INSERT INTO ModifiedCounter (id, value) VALUES (1, 10)")
-            connection.execSQL("INSERT INTO ModifiedCounter (id, value) VALUES (2, 20)")
+            connection.executeSQL("INSERT INTO ModifiedCounter (id, value) VALUES (1, 10)")
+            connection.executeSQL("INSERT INTO ModifiedCounter (id, value) VALUES (2, 20)")
         }
 
         val counterDao = database.counterDao()

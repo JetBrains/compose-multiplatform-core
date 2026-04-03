@@ -35,6 +35,7 @@ import androidx.xr.scenecore.testapp.common.EventType
 import androidx.xr.scenecore.testapp.common.SpatialEventLog
 import androidx.xr.scenecore.testapp.common.SpatialMode
 import androidx.xr.scenecore.testapp.common.currentTimestamp
+import androidx.xr.scenecore.testapp.common.format
 import androidx.xr.scenecore.testapp.common.logCapabilities
 import androidx.xr.scenecore.testapp.ui.EventLogRecyclerViewAdapter
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -60,6 +61,8 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        renderingSession.scene.keyEntity = renderingSession.scene.mainPanelEntity
 
         // toolbar
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {
@@ -114,7 +117,9 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
                 SpatialEventLog(
                     currentTimestamp(),
                     EventType.BOUNDS_CHANGED.text,
-                    "w=${bounds.width}, h=${bounds.height}, d=${bounds.depth}",
+                    "w=${bounds.width.format(2)}, " +
+                        "h=${bounds.height.format(2)}, " +
+                        "d=${bounds.depth.format(2)}",
                 )
             )
         }
@@ -144,6 +149,7 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
                 )
                 return getString(R.string.switch_to_fsm_button_text)
             }
+
             SpatialMode.HSM -> {
                 session.scene.requestFullSpaceMode()
                 spatialMode = SpatialMode.FSM

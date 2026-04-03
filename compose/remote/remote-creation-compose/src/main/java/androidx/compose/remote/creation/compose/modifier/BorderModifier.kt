@@ -13,46 +13,70 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.border
+import androidx.compose.remote.core.operations.layout.modifiers.ShapeType
+import androidx.compose.remote.creation.compose.layout.RemoteFloatContext
+import androidx.compose.remote.creation.compose.layout.RemoteSize
+import androidx.compose.remote.creation.compose.shapes.RemoteCircleShape
+import androidx.compose.remote.creation.compose.shapes.RemoteRectangleShape
+import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
+import androidx.compose.remote.creation.compose.shapes.RemoteShape
+import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
+import androidx.compose.remote.creation.modifiers.BorderModifier as CreationBorderModifier
+import androidx.compose.remote.creation.modifiers.DynamicBorderModifier
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class BorderModifier(public val width: RemoteFloat, public val color: Color) :
-    RemoteModifier.Element {
-    override fun toRemoteComposeElement(): RecordingModifier.Element {
-        return androidx.compose.remote.creation.modifiers.BorderModifier(
-            width.internalAsFloat(),
-            0f,
-            color.toArgb(),
-            0,
-        )
-    }
+internal class BorderModifier(
+    public val width: RemoteFloat,
+    public val color: RemoteColor,
+    public val shape: RemoteShape = RemoteRectangleShape,
+) : RemoteModifier.Element {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
+        var shapeType = ShapeType.RECTANGLE
+        var roundedCorner = 0f
 
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        // TODO how to get the value of a RemoteFloat in preview mode
-        return border(width = width.toFloat().dp, color = color)
+        if (shape === RemoteCircleShape) {
+            shapeType = ShapeType.CIRCLE
+        } else if (shape == RemoteRectangleShape) {
+            shapeType = ShapeType.RECTANGLE
+        } else if (shape is RemoteRoundedCornerShape) {
+            val context = RemoteFloatContext(this)
+            shapeType = ShapeType.ROUNDED_RECTANGLE
+
+            val remoteSize = RemoteSize(context.componentWidth(), context.componentHeight())
+            roundedCorner = shape.topStart.toPx(remoteSize, remoteDensity).floatId
+        }
+
+        val constantColor = color.constantValueOrNull
+        return if (constantColor != null) {
+            CreationBorderModifier(width.floatId, roundedCorner, constantColor.toArgb(), shapeType)
+        } else {
+            DynamicBorderModifier(width.floatId, roundedCorner, color.id.toShort(), shapeType)
+        }
     }
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun RemoteModifier.border(width: RemoteFloat, color: Color): RemoteModifier =
-    then(BorderModifier(width, color))
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Composable
-public fun RemoteModifier.border(value: Dp, color: Color): RemoteModifier {
-    return border(RemoteFloat(value.value), color)
+/**
+ * Draws a border around the element.
+ *
+ * @param width The width of the border.
+ * @param color The color of the border.
+ * @param shape The shape of the border. When [RemoteRoundedCornerShape] is used, only the
+ *   [RemoteRoundedCornerShape.topStart] corner size is currently taken into consideration for all
+ *   corners.
+ */
+public fun RemoteModifier.border(
+    width: RemoteDp,
+    color: RemoteColor,
+    shape: RemoteShape = RemoteRectangleShape,
+): RemoteModifier {
+    return then(BorderModifier(width.toPx(), color, shape))
 }
