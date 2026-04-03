@@ -19,6 +19,7 @@ package androidx.compose.ui.focus
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ComposeUiFlags.isOptimizedFocusEventDispatchEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.focus.CustomDestinationResult.Cancelled
@@ -85,10 +86,17 @@ internal fun FocusTargetNode.performRequestFocus(): Boolean {
     // We also check if the previous active node is an ancestor of the new active node, in which
     // case we don't need to clear focus from it.
     var shouldClearFocusFromPreviousActiveNode = true
+
+    val commonAncestorTargetNodes = mutableVectorOf<FocusTargetNode>()
     val ancestorTargetNodes = mutableVectorOf<FocusTargetNode>()
     visitAncestors(Nodes.FocusTarget) {
         val removed = previousAncestorTargetNodes?.remove(it)
-        if (removed == null || !removed) {
+        // If the currently visited node was in the previousAncestorTargetNodes, then it is a
+        // common ancestor of both the new focus and the previous focus. Otherwise, it is newly
+        // an active parent
+        if (removed == true) {
+            commonAncestorTargetNodes.add(it)
+        } else {
             ancestorTargetNodes.add(it)
         }
         if (it === previousActiveNode) shouldClearFocusFromPreviousActiveNode = false
@@ -101,6 +109,11 @@ internal fun FocusTargetNode.performRequestFocus(): Boolean {
     }
 
     grantFocus()
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    if (isOptimizedFocusEventDispatchEnabled && shouldClearFocusFromPreviousActiveNode) {
+        previousActiveNode?.dispatchFocusCallbacks(Active, Inactive)
+    }
 
     // Notify ancestor target nodes of the previous active node that are no longer ActiveParent
     // The ancestors are traversed in the reversed order to dispatch events top->down
@@ -140,6 +153,18 @@ internal fun FocusTargetNode.performRequestFocus(): Boolean {
     if (focusOwner.activeFocusTargetNode !== this) {
         // The focus request was redirected or cancelled in a previous focus change callback
         return false
+    }
+
+    // Now that we are sure that the focus request succeeded, we save the focused path.
+    @OptIn(ExperimentalComposeUiApi::class)
+    if (ComposeUiFlags.isFocusRestorationEnabled) {
+        run saveFocus@{
+            val closestCommonAncestor = commonAncestorTargetNodes.lastOrNull()
+            visitAncestors(Nodes.FocusTarget) {
+                it.saveFocusedChild()
+                if (it === closestCommonAncestor) return@saveFocus
+            }
+        }
     }
 
     @OptIn(ExperimentalComposeUiApi::class, InternalComposeUiApi::class)
@@ -203,9 +228,14 @@ internal fun FocusTargetNode.clearFocus(
 ): Boolean =
     when (focusState) {
         Active -> {
-            requireOwner().focusOwner.activeFocusTargetNode = null
-            if (refreshFocusEvents) {
-                dispatchFocusCallbacks(previousState = Active, newState = Inactive)
+            // TODO: Once this flag is removed, this is no longer clearing focus, so this function
+            //  should be renamed to something else.
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (!isOptimizedFocusEventDispatchEnabled) {
+                requireOwner().focusOwner.activeFocusTargetNode = null
+                if (refreshFocusEvents) {
+                    dispatchFocusCallbacks(previousState = Active, newState = Inactive)
+                }
             }
             true
         }
@@ -226,9 +256,12 @@ internal fun FocusTargetNode.clearFocus(
         /** If the node is [Captured], deny requests to clear focus, except for a forced clear. */
         Captured -> {
             if (forced) {
-                requireOwner().focusOwner.activeFocusTargetNode = null
-                if (refreshFocusEvents) {
-                    dispatchFocusCallbacks(previousState = Captured, newState = Inactive)
+                @OptIn(ExperimentalComposeUiApi::class)
+                if (!isOptimizedFocusEventDispatchEnabled) {
+                    requireOwner().focusOwner.activeFocusTargetNode = null
+                    if (refreshFocusEvents) {
+                        dispatchFocusCallbacks(previousState = Captured, newState = Inactive)
+                    }
                 }
             }
             forced

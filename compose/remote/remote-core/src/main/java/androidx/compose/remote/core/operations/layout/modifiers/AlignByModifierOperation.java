@@ -37,12 +37,25 @@ import java.util.List;
 /** Represents an align by modifier. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AlignByModifierOperation extends DecoratorModifierOperation {
+
+    /** First baseline (for alignment) */
+    public static final int ID_FIRST_BASELINE = 1;
+
+    /** last baseline (for alignment) */
+    public static final int ID_LAST_BASELINE = 2;
+
+    /** Last Baseline */
+    public static final float LAST_BASELINE = Utils.asNan(ID_LAST_BASELINE);
+
+    /** First Baseline */
+    public static final float FIRST_BASELINE = Utils.asNan(ID_FIRST_BASELINE);
+
     private static final int OP_CODE = Operations.MODIFIER_ALIGN_BY;
     public static final String CLASS_NAME = "AlignByModifierOperation";
 
     private @Nullable Component mParent;
 
-    private float mLine = RemoteContext.FIRST_BASELINE;
+    private float mLine = FIRST_BASELINE;
     private int mFlags = 0;
 
     public void setParent(@NonNull Component component) {
@@ -62,7 +75,7 @@ public class AlignByModifierOperation extends DecoratorModifierOperation {
     /**
      * Serialize the string
      *
-     * @param indent padding to display
+     * @param indent     padding to display
      * @param serializer append the string
      */
     @Override
@@ -118,7 +131,7 @@ public class AlignByModifierOperation extends DecoratorModifierOperation {
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer the buffer to read
+     * @param buffer     the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
@@ -134,8 +147,12 @@ public class AlignByModifierOperation extends DecoratorModifierOperation {
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Modifier Operations", OP_CODE, CLASS_NAME)
-                .description("align by Modifier")
-                .field(DocumentedOperation.FLOAT, "line", "line value");
+                .addedVersion(7)
+                .experimental(true)
+                .description("Align a component based on a specific baseline or anchor")
+                .field(DocumentedOperation.FLOAT, "line",
+                        "The ID of the float variable or baseline ID to align by")
+                .field(DocumentedOperation.INT, "flags", "Alignment flags");
     }
 
     @Override
@@ -152,10 +169,10 @@ public class AlignByModifierOperation extends DecoratorModifierOperation {
         if (Float.isNaN(mLine)) {
             int id = Utils.idFromNan(mLine);
             switch (id) {
-                case RemoteContext.ID_FIRST_BASELINE:
+                case ID_FIRST_BASELINE:
                     value = "FirstBaseline";
                     break;
-                case RemoteContext.ID_LAST_BASELINE:
+                case ID_LAST_BASELINE:
                     value = "LastBaseline";
                     break;
                 default:
@@ -170,8 +187,6 @@ public class AlignByModifierOperation extends DecoratorModifierOperation {
 
     /**
      * Returns the offset
-     * @param context
-     * @return
      */
     public float getValue(@NonNull PaintContext context) {
         if (mParent == null) {

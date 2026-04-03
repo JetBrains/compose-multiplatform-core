@@ -22,7 +22,7 @@ import androidx.appfunctions.AppFunctionAppUnknownException
 import androidx.appfunctions.AppFunctionException
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
-import androidx.appfunctions.ExtensionsAppFunctionCompatService
+import androidx.appfunctions.ExtensionsAppFunctionService
 import androidx.appfunctions.internal.Dependencies
 import androidx.appfunctions.internal.Dispatchers
 import androidx.appfunctions.service.internal.ServiceDependencies
@@ -31,7 +31,7 @@ import com.android.extensions.appfunctions.AppFunctionService
 /** The implementation of [AppFunctionService] from extension library. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @SuppressLint("NewApi")
-public class ExtensionAppFunctionService : ExtensionsAppFunctionCompatService() {
+public class ExtensionAppFunctionService : ExtensionsAppFunctionService() {
 
     private lateinit var delegate: AppFunctionServiceDelegate
 

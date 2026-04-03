@@ -20,6 +20,8 @@ import android.content.res.Resources
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathNode
 import androidx.compose.ui.graphics.vector.VectorGroup
@@ -241,6 +243,18 @@ class XmlVectorParserTest {
         val asset = loadVector(R.drawable.ic_triangle_color_theme_tint, theme)
         assertEquals(Color.Unspecified, asset.tintColor)
         assertEquals(BlendMode.SrcIn, asset.tintBlendMode)
+    }
+
+    @Test
+    fun testPathDefaults() {
+        val asset = loadVector(R.drawable.ic_triangle_plus)
+        val path = asset.root[0].assertType<VectorPath>()
+
+        assertEquals(StrokeJoin.Miter, path.strokeLineJoin)
+        assertEquals(4.0f, path.strokeLineMiter, 0.0f)
+        assertEquals(1.0f, path.strokeAlpha, 0.0f)
+        assertEquals(1.0f, path.fillAlpha, 0.0f)
+        assertEquals(StrokeCap.Butt, path.strokeLineCap)
     }
 
     private fun loadVector(id: Int, theme: Resources.Theme? = null): ImageVector {

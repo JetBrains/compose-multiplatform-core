@@ -30,6 +30,8 @@ public class ComponentMeasure {
     float mH;
     int mVisibility = Component.Visibility.VISIBLE;
 
+    private boolean mAllowsAnimation = true;
+
     public void setX(float value) {
         mX = value;
     }
@@ -68,6 +70,10 @@ public class ComponentMeasure {
 
     public void setVisibility(int visibility) {
         mVisibility = visibility;
+    }
+
+    public void setAllowsAnimation(boolean allowsAnimation) {
+        mAllowsAnimation = allowsAnimation;
     }
 
     public ComponentMeasure(int id, float x, float y, float w, float h, int visibility) {
@@ -113,7 +119,11 @@ public class ComponentMeasure {
      * @return true if the passed ComponentMeasure is identical to ourself
      */
     public boolean same(@NonNull ComponentMeasure m) {
-        return mX == m.mX && mY == m.mY && mW == m.mW && mH == m.mH && mVisibility == m.mVisibility;
+        return mX == m.mX
+                && mY == m.mY
+                && mW == m.mW
+                && mH == m.mH
+                && mVisibility == m.mVisibility;
     }
 
     /**
@@ -152,5 +162,11 @@ public class ComponentMeasure {
     public void addVisibilityOverride(int value) {
         mVisibility = Component.Visibility.clearOverride(mVisibility);
         mVisibility = Component.Visibility.add(mVisibility, value);
+    }
+
+    /** If true, measures applied to a component will result into an animation, if false the
+     * measure will be applied immediately */
+    public boolean getAllowsAnimation() {
+        return mAllowsAnimation;
     }
 }

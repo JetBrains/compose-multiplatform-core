@@ -16,17 +16,19 @@
 
 package androidx.xr.runtime
 
-import androidx.annotation.RestrictTo
-
 /**
- * Represents the field of view of a camera.
+ * Represents the field of view of a virtual (or rendering) camera.
  *
  * @property angleLeft The angle in radians of the left edge of the field of view.
  * @property angleRight The angle in radians of the right edge of the field of view.
  * @property angleUp The angle in radians of the top edge of the field of view.
  * @property angleDown The angle in radians of the bottom edge of the field of view.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@Deprecated(
+    message = "Use androidx.xr.runtime.math.FieldOfView instead",
+    replaceWith =
+        ReplaceWith(expression = "FieldOfView", imports = ["androidx.xr.runtime.math.FieldOfView"]),
+)
 public class FieldOfView
 constructor(
     public val angleLeft: Float,
@@ -34,6 +36,7 @@ constructor(
     public val angleUp: Float,
     public val angleDown: Float,
 ) {
+    @Suppress("DEPRECATION")
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is FieldOfView) return false
@@ -58,6 +61,7 @@ constructor(
         "Fov{\n\tangleLeft=$angleLeft\n\tangleRight=$angleRight\n\tangleUp=$angleUp\n\tangleDown=$angleDown\n}"
 
     @JvmOverloads
+    @Suppress("DEPRECATION")
     public fun copy(
         angleLeft: Float = this.angleLeft,
         angleRight: Float = this.angleRight,

@@ -74,7 +74,7 @@ class LineBreakerTest {
                 jpEnd,
                 PAINT,
                 heightConstraint,
-                TextOrientation.MIXED,
+                TextOrientation.Mixed,
             )
         }
 
@@ -194,7 +194,7 @@ class LineBreakerTest {
                 enEnd,
                 PAINT,
                 heightConstraint,
-                TextOrientation.MIXED,
+                TextOrientation.Mixed,
             )
         }
 
@@ -286,7 +286,7 @@ class LineBreakerTest {
                 enEnd,
                 PAINT,
                 heightConstraint,
-                TextOrientation.UPRIGHT,
+                TextOrientation.Upright,
             )
         }
 
@@ -392,7 +392,7 @@ class LineBreakerTest {
                 jpEnd,
                 PAINT,
                 heightConstraint,
-                TextOrientation.MIXED,
+                TextOrientation.Mixed,
             )
         }
 
@@ -468,7 +468,7 @@ class LineBreakerTest {
         // Set "わがはい" ruby to "吾輩".
         val spanned =
             SpannableString(PREFIX + jpText + SUFFIX).apply {
-                setSpan(RubySpan.Builder("わがはい").build(), jpStart, jpStart + 2, SPAN_FLAG) // 吾輩
+                setSpan(RubySpan("わがはい"), jpStart, jpStart + 2, SPAN_FLAG) // 吾輩
             }
         val breakText: (Float) -> LineBreaker.Result = { heightConstraint ->
             LineBreaker.breakTextIntoLines(
@@ -477,7 +477,7 @@ class LineBreakerTest {
                 jpEnd,
                 PAINT,
                 heightConstraint,
-                TextOrientation.MIXED,
+                TextOrientation.Mixed,
             )
         }
 

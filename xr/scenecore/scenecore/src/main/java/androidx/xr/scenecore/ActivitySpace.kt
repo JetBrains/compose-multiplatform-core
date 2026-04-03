@@ -39,24 +39,24 @@ import java.util.function.Consumer
 // TODO: b/440429756 - Define dispose policy for SceneCore singletons like main panel and system
 // spaces.
 public class ActivitySpace
-private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManager) :
-    BaseEntity<RtActivitySpace>(rtActivitySpace, entityManager) {
+private constructor(rtActivitySpace: RtActivitySpace, entityRegistry: EntityRegistry) :
+    BaseEntity<RtActivitySpace>(rtActivitySpace, entityRegistry) {
 
     internal companion object {
         internal fun create(
             sceneRuntime: SceneRuntime,
-            entityManager: EntityManager,
-        ): ActivitySpace = ActivitySpace(sceneRuntime.activitySpace, entityManager)
+            entityRegistry: EntityRegistry,
+        ): ActivitySpace = ActivitySpace(sceneRuntime.activitySpace, entityRegistry)
     }
 
     private val boundsListeners:
         ConcurrentMap<Consumer<FloatSize3d>, RtActivitySpace.OnBoundsChangedListener> =
         ConcurrentHashMap()
 
-    private val spaceUpdatedListeners: ConcurrentMap<Runnable, Executor?> = ConcurrentHashMap()
+    private val originChangedListeners: ConcurrentMap<Runnable, Executor?> = ConcurrentHashMap()
 
-    private val rtSpaceUpdatedListener = {
-        for ((listener, executor) in spaceUpdatedListeners.entries) {
+    private val rtOriginChangedListener = {
+        for ((listener, executor) in originChangedListeners.entries) {
             if (executor == null) {
                 // The rtListener requested the default executor, so we can directly invoke.
                 listener.run()
@@ -140,12 +140,12 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * @param listener The listener to register.
      * @param executor The [Executor] on which to run the listener.
      */
-    public fun addOnSpaceUpdatedListener(executor: Executor, listener: Runnable) {
+    public fun addOnOriginChangedListener(executor: Executor, listener: Runnable) {
         checkNotDisposed()
-        val addRtListener = spaceUpdatedListeners.isEmpty()
-        spaceUpdatedListeners.put(listener, executor)
+        val addRtListener = originChangedListeners.isEmpty()
+        originChangedListeners[listener] = executor
         if (addRtListener) {
-            rtEntity!!.setOnSpaceUpdatedListener(rtSpaceUpdatedListener, null)
+            rtEntity!!.setOnOriginChangedListener(rtOriginChangedListener, null)
         }
     }
 
@@ -163,8 +163,24 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      *
      * @param listener The listener to register.
      */
-    public fun addOnSpaceUpdatedListener(listener: Runnable): Unit =
-        addOnSpaceUpdatedListener(DirectExecutor, listener)
+    public fun addOnOriginChangedListener(listener: Runnable): Unit =
+        addOnOriginChangedListener(DirectExecutor, listener)
+
+    @Deprecated(
+        "Use addOnOriginChangedListener",
+        replaceWith = ReplaceWith("addOnOriginChangedListener()"),
+    )
+    public fun addOnSpaceUpdatedListener(executor: Executor, listener: Runnable) {
+        addOnOriginChangedListener(executor, listener)
+    }
+
+    @Deprecated(
+        "Use addOnOriginChangedListener",
+        replaceWith = ReplaceWith("addOnOriginChangedListener()"),
+    )
+    public fun addOnSpaceUpdatedListener(listener: Runnable) {
+        addOnOriginChangedListener(listener)
+    }
 
     /**
      * Removes the previously-added listener.
@@ -172,12 +188,20 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * All listeners are automatically removed when the ActivitySpace is disposed even if this
      * method is not explicitly called.
      */
-    public fun removeOnSpaceUpdatedListener(listener: Runnable) {
+    public fun removeOnOriginChangedListener(listener: Runnable) {
         checkNotDisposed()
-        spaceUpdatedListeners.remove(listener)
-        if (spaceUpdatedListeners.isEmpty()) {
-            rtEntity!!.setOnSpaceUpdatedListener(null, null)
+        originChangedListeners.remove(listener)
+        if (originChangedListeners.isEmpty()) {
+            rtEntity!!.setOnOriginChangedListener(null, null)
         }
+    }
+
+    @Deprecated(
+        "Use removeOnOriginChangedListener",
+        replaceWith = ReplaceWith("removeOnOriginChangedListener()"),
+    )
+    public fun removeOnSpaceUpdatedListener(listener: Runnable) {
+        removeOnOriginChangedListener(listener)
     }
 
     /**
@@ -204,7 +228,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * @throws UnsupportedOperationException if called.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun setPose(pose: Pose, @SpaceValue relativeTo: Int) {
+    override fun setPose(pose: Pose, relativeTo: Space) {
         checkNotDisposed()
         throw UnsupportedOperationException("Cannot set 'pose' on an ActivitySpace.")
     }
@@ -218,7 +242,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * @throws IllegalArgumentException if called with Space.PARENT since ActivitySpace has no
      *   parents.
      */
-    override fun getPose(@SpaceValue relativeTo: Int): Pose {
+    override fun getPose(relativeTo: Space): Pose {
         checkNotDisposed()
         return when (relativeTo) {
             Space.PARENT ->
@@ -242,7 +266,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * @throws UnsupportedOperationException if called.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun setScale(scale: Float, @SpaceValue relativeTo: Int) {
+    override fun setScale(scale: Float, relativeTo: Space) {
         checkNotDisposed()
         throw UnsupportedOperationException("Cannot set 'scale' on an ActivitySpace.")
     }
@@ -258,8 +282,32 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * @throws UnsupportedOperationException if called.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun setScale(scale: Vector3, @SpaceValue relativeTo: Int) {
+    override fun setScale(scale: Vector3, relativeTo: Space) {
         throw UnsupportedOperationException("Cannot set 'scale' on an ActivitySpace.")
+    }
+
+    /**
+     * Returns the scale of the `ActivitySpace` along each axis, relative to the specified
+     * coordinate space.
+     *
+     * @param relativeTo The coordinate space to get the scale relative to. Defaults to
+     *   [Space.PARENT].
+     * @return The current scale of the `ActivitySpace` along each axis.
+     * @throws IllegalArgumentException if called with Space.PARENT since ActivitySpace has no
+     *   parents.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun getNonUniformScale(relativeTo: Space): Vector3 {
+        checkNotDisposed()
+        return when (relativeTo) {
+            Space.PARENT ->
+                throw IllegalArgumentException(
+                    "ActivitySpace is a root space and it does not have a parent."
+                )
+            Space.ACTIVITY,
+            Space.REAL_WORLD -> super.getNonUniformScale(relativeTo)
+            else -> throw IllegalArgumentException("Unsupported relativeTo value: $relativeTo")
+        }
     }
 
     /**
@@ -271,7 +319,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * @throws IllegalArgumentException if called with Space.PARENT since ActivitySpace has no
      *   parents.
      */
-    override fun getScale(@SpaceValue relativeTo: Int): Float {
+    override fun getScale(relativeTo: Space): Float {
         checkNotDisposed()
         return when (relativeTo) {
             Space.PARENT ->
@@ -286,7 +334,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
 
     override fun dispose() {
         boundsListeners.keys.forEach { removeOnBoundsChangedListener(it) }
-        spaceUpdatedListeners.keys.forEach { removeOnSpaceUpdatedListener(it) }
+        originChangedListeners.keys.forEach { removeOnOriginChangedListener(it) }
         super.dispose()
     }
 }

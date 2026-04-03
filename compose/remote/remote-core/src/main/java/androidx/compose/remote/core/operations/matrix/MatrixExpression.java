@@ -15,8 +15,6 @@
  */
 package androidx.compose.remote.core.operations.matrix;
 
-import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
-
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.MatrixAccess;
 import androidx.compose.remote.core.Operation;
@@ -95,13 +93,15 @@ public class MatrixExpression extends Operation
 
     @Override
     public void write(@NonNull WireBuffer buffer) {
-        apply(buffer, mMatrixId, mType, mValues);
+        apply(buffer, mMatrixId, mType, mExpression);
     }
 
     @NonNull
     @Override
     public String toString() {
-        return "FloatConstant[" + mMatrixId + "] = " + Arrays.toString(mValues);
+        return "MatrixExpression[" + mMatrixId + "] = "
+                + MatrixOperations.toString(mExpression, null) + "-> "
+                + Arrays.toString(mValues);
     }
 
     /**
@@ -126,26 +126,26 @@ public class MatrixExpression extends Operation
     /**
      * Writes out the operation to the buffer
      *
-     * @param buffer write command to this buffer
-     * @param matrixId the id
-     * @param type the type of matrix it is
-     * @param values the value of the float
+     * @param buffer     write command to this buffer
+     * @param matrixId   the id
+     * @param type       the type of matrix it is
+     * @param expression the value of the float
      */
     public static void apply(
-            @NonNull WireBuffer buffer, int matrixId, int type, float @NonNull [] values) {
+            @NonNull WireBuffer buffer, int matrixId, int type, float @NonNull [] expression) {
         buffer.start(OP_CODE);
         buffer.writeInt(matrixId);
         buffer.writeInt(type);
-        buffer.writeInt(values.length);
-        for (int i = 0; i < values.length; i++) {
-            buffer.writeFloat(values[i]);
+        buffer.writeInt(expression.length);
+        for (int i = 0; i < expression.length; i++) {
+            buffer.writeFloat(expression[i]);
         }
     }
 
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer the buffer to read
+     * @param buffer     the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
@@ -169,10 +169,12 @@ public class MatrixExpression extends Operation
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Expressions Operations", OP_CODE, CLASS_NAME)
-                .description("A float and its associated id")
-                .field(DocumentedOperation.INT, "id", "id of float")
-                .field(FLOAT, "value", "32-bit float value");
+        doc.operation("Matrix Operations", OP_CODE, CLASS_NAME)
+                .addedVersion(7)
+                .description("A matrix defined by an expression")
+                .field(DocumentedOperation.INT, "matrixId", "The ID of the matrix")
+                .field(DocumentedOperation.INT, "type", "The type of matrix")
+                .field(DocumentedOperation.FLOAT_ARRAY, "expression", "The matrix expression");
     }
 
     @Override

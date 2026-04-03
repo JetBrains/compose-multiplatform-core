@@ -17,7 +17,7 @@
 package androidx.compose.remote.core.layout;
 
 import androidx.compose.remote.core.PaintContext;
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.operations.FloatExpression;
@@ -31,6 +31,7 @@ import androidx.compose.remote.core.operations.utilities.IntFloatMap;
 import androidx.compose.remote.core.operations.utilities.IntIntMap;
 import androidx.compose.remote.core.operations.utilities.IntMap;
 import androidx.compose.remote.core.types.LongConstant;
+
 
 import org.jspecify.annotations.NonNull;
 
@@ -166,12 +167,48 @@ public class MockRemoteContext extends RemoteContext {
                         start).append(", ").append(end).append(")\n");
             }
 
+            class MockComputedTextLayout implements
+                    RcPlatformServices.ComputedTextLayout {
+                private int mWidth;
+                private int mHeight;
+                MockComputedTextLayout(int width, int height) {
+                    mWidth = width;
+                    mHeight = height;
+                }
+                @Override
+                public float getWidth() {
+                    return mWidth;
+                }
+
+                @Override
+                public float getHeight() {
+                    return mHeight;
+                }
+
+                @Override
+                public int getVisibleLineCount() {
+                    return 1;
+                }
+
+                @Override
+                public boolean isHyphenatedText() {
+                    return false;
+                }
+            }
+
             @Override
-            public Platform.ComputedTextLayout layoutComplexText(int textId, int start, int end,
-                    int alignment, int overflow, int maxLines, float maxWidth, int flags) {
+            public RcPlatformServices.ComputedTextLayout layoutComplexText(int textId, int start,
+                    int end, int alignment, int overflow, int maxLines,
+                    float maxWidth, float maxHeight,
+                    float letterSpacing, float lineHeightAdd, float lineHeightMultiplier,
+                    int lineBreakStrategy, int hyphenationFrequency, int justificationMode,
+                    boolean useUnderline, boolean strikethrough, int flags) {
                 stringBuilder.append("layoutComplexText(").append(textId).append(", ").append(
                         start).append(", ").append(end).append(")\n");
-                return null;
+                String text = getText(textId);
+                int width = text.length() * 30;
+                int height = 40;
+                return new MockComputedTextLayout(width, height);
             }
 
             @Override
@@ -184,8 +221,8 @@ public class MockRemoteContext extends RemoteContext {
             }
 
             @Override
-            public void drawComplexText(Platform.ComputedTextLayout computedTextLayout) {
-                throw new UnsupportedOperationException("Not yet implemented");
+            public void drawComplexText(RcPlatformServices.ComputedTextLayout computedTextLayout) {
+                stringBuilder.append("drawComplexText");
             }
 
             @Override
@@ -333,11 +370,6 @@ public class MockRemoteContext extends RemoteContext {
      */
     public String getTestResults() {
         return stringBuilder.toString();
-    }
-
-    @Override
-    public float getAnimationTime() {
-        return 1f;
     }
 
     public void setHideString(boolean h) {
@@ -612,6 +644,7 @@ public class MockRemoteContext extends RemoteContext {
 
     @Override
     public void overrideFloat(int id, float value) {
+        floatCache.put(id, value);
         stringBuilder.append("overrideFloat(").append(id).append(")").append(value).append("\n");
     }
 
@@ -644,6 +677,7 @@ public class MockRemoteContext extends RemoteContext {
 
     @Override
     public void overrideText(int id, int valueId) {
+        stringCache.put(id, getText(valueId));
         stringBuilder.append("overrideText(").append(id).append(")").append(valueId).append("\n");
     }
 
@@ -697,17 +731,8 @@ public class MockRemoteContext extends RemoteContext {
 
     @Override
     public int updateOps() {
-        if (true) { // FIXME -- we don't update ops here in the real player
-            return 0;
-        }
-        for (int c = 0; c < listenerCount; c++) {
-            ArrayList<Object> list = mVariableSupport[listeners[c]];
-            if (list != null) {
-                for (Object v : list) {
-                    VariableSupport vs = (VariableSupport) v;
-                    vs.updateVariables(this);
-                }
-            }
+        if (mDocument != null) {
+            mDocument.mTimeVariables.updateTime(this);
         }
         return 0; // TODO map out when to update
     }

@@ -22,14 +22,21 @@ import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.internal.LifecycleManager
 import kotlin.time.ComparableTimeMark
 
-/** Set of behaviors that collectively define a runtime. */
+/**
+ * Describes a type of [JxrRuntime] that performs perception operations based on the real world
+ * using device cameras and sensors.
+ *
+ * @property lifecycleManager the [LifecycleManager] for this runtime
+ * @property perceptionManager the [PerceptionManager] for this runtime
+ * @property config the [Config] for this runtime
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface PerceptionRuntime : JxrRuntime {
-    /** Mandatory lifecycle runtime behavior. */
     public val lifecycleManager: LifecycleManager
 
-    /** Mandatory perception runtime behavior. */
     public val perceptionManager: PerceptionManager
+
+    public val config: Config
 
     override fun initialize() {
         lifecycleManager.create()
@@ -54,4 +61,7 @@ public interface PerceptionRuntime : JxrRuntime {
     override fun destroy() {
         lifecycleManager.stop()
     }
+
+    override val sessionPointer: Long?
+        get() = lifecycleManager.sessionPointer
 }

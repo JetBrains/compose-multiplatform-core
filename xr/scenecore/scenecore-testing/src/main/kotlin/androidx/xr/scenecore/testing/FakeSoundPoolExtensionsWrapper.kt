@@ -18,13 +18,14 @@ package androidx.xr.scenecore.testing
 
 import android.media.SoundPool
 import androidx.annotation.RestrictTo
+import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.PointSourceParams
 import androidx.xr.scenecore.runtime.SoundFieldAttributes
 import androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper
 import androidx.xr.scenecore.runtime.SpatializerConstants
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FakeSoundPoolExtensionsWrapper : SoundPoolExtensionsWrapper {
 
     private var playAsPointSourceResult: Int = 0
@@ -59,6 +60,7 @@ public class FakeSoundPoolExtensionsWrapper : SoundPoolExtensionsWrapper {
         soundPool: SoundPool,
         soundId: Int,
         params: PointSourceParams,
+        entity: Entity?,
         volume: Float,
         priority: Int,
         loop: Int,

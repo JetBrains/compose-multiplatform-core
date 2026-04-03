@@ -16,25 +16,34 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.xr.arcore.runtime.PerceptionRuntime
+import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.ConfigMode
+import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.DisplayBlendMode
+import androidx.xr.runtime.EyeTrackingMode
+import androidx.xr.runtime.FaceTrackingMode
+import androidx.xr.runtime.GeospatialMode
+import androidx.xr.runtime.HandTrackingMode
+import androidx.xr.runtime.PlaneTrackingMode
 import kotlin.time.ComparableTimeMark
 
 /**
- * Implementation of the [androidx.xr.arcore.runtime.PerceptionRuntime] interface using OpenXR.
+ * Implementation of the [PerceptionRuntime] interface using OpenXR.
  *
- * @property lifecycleManager that manages the lifecycle of the OpenXR session.
- * @property perceptionManager that manages the perception capabilities of a runtime using OpenXR.
+ * @property lifecycleManager that manages the lifecycle of the OpenXR session
+ * @property perceptionManager that manages the perception capabilities of a runtime using OpenXR
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrRuntime
+internal class OpenXrRuntime
 internal constructor(
     override val lifecycleManager: OpenXrManager,
     override val perceptionManager: OpenXrPerceptionManager,
 ) : PerceptionRuntime {
+    override var config: Config = Config()
+
     override fun initialize() {
         lifecycleManager.create()
     }
@@ -56,7 +65,15 @@ internal constructor(
     }
 
     override fun isSupported(configMode: ConfigMode): Boolean {
+        if (configMode == GeospatialMode.VPS_AND_GPS) {
+            return nativeIsGeospatialSupported()
+        }
         return SUPPORTED_CONFIG_MODES.contains(configMode)
+    }
+
+    override fun getPreferredDisplayBlendMode(): DisplayBlendMode {
+        val blendMode = nativeGetPreferredBlendMode()
+        return blendMode ?: DisplayBlendMode.NO_DISPLAY
     }
 
     override fun destroy() {
@@ -67,26 +84,39 @@ internal constructor(
         @VisibleForTesting
         internal val SUPPORTED_CONFIG_MODES: Set<ConfigMode> =
             setOf(
-                Config.PlaneTrackingMode.DISABLED,
-                Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                Config.HandTrackingMode.DISABLED,
-                Config.HandTrackingMode.BOTH,
-                Config.DeviceTrackingMode.DISABLED,
-                Config.DeviceTrackingMode.LAST_KNOWN,
-                Config.HeadTrackingMode.DISABLED,
-                Config.HeadTrackingMode.LAST_KNOWN,
-                Config.DepthEstimationMode.DISABLED,
-                Config.DepthEstimationMode.RAW_ONLY,
-                Config.DepthEstimationMode.SMOOTH_ONLY,
-                Config.AnchorPersistenceMode.DISABLED,
-                Config.AnchorPersistenceMode.LOCAL,
-                Config.FaceTrackingMode.DISABLED,
-                Config.FaceTrackingMode.USER,
-                Config.GeospatialMode.DISABLED,
-                Config.EyeTrackingMode.DISABLED,
-                Config.EyeTrackingMode.COARSE_TRACKING,
-                Config.EyeTrackingMode.FINE_TRACKING,
-                Config.EyeTrackingMode.COARSE_AND_FINE_TRACKING,
+                PlaneTrackingMode.DISABLED,
+                PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                HandTrackingMode.DISABLED,
+                HandTrackingMode.BOTH,
+                DeviceTrackingMode.DISABLED,
+                DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+                DepthEstimationMode.DISABLED,
+                DepthEstimationMode.RAW_ONLY,
+                DepthEstimationMode.SMOOTH_ONLY,
+                AnchorPersistenceMode.DISABLED,
+                AnchorPersistenceMode.LOCAL,
+                FaceTrackingMode.DISABLED,
+                FaceTrackingMode.BLEND_SHAPES,
+                GeospatialMode.DISABLED,
+                EyeTrackingMode.DISABLED,
+                EyeTrackingMode.COARSE_TRACKING,
+                EyeTrackingMode.FINE_TRACKING,
             )
     }
+
+    private external fun nativeGetPreferredBlendMode(): DisplayBlendMode?
+
+    private external fun nativeIsGeospatialSupported(): Boolean
 }
+
+internal fun DisplayBlendMode.Companion.fromOpenXrEnvironmentBlendMode(
+    type: Int
+): DisplayBlendMode =
+    when (type) {
+        1 -> NO_DISPLAY // XR_ENVIRONMENT_BLEND_MODE_OPAQUE
+        2 -> ADDITIVE // XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
+        3 -> ALPHA_BLEND // XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND
+        else -> {
+            throw IllegalStateException("Invalid environment blend mode.")
+        }
+    }

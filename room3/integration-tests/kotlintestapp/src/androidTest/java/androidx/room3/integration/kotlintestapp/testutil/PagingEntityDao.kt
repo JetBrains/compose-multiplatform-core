@@ -22,7 +22,7 @@ import androidx.room3.Dao
 import androidx.room3.Insert
 import androidx.room3.Query
 import androidx.room3.RawQuery
-import androidx.sqlite.db.SupportSQLiteQuery
+import androidx.room3.RoomRawQuery
 
 @Dao
 interface PagingEntityDao {
@@ -36,29 +36,21 @@ interface PagingEntityDao {
     fun loadItems(): PagingSource<Int, PagingEntity>
 
     @RawQuery(observedEntities = [PagingEntity::class])
-    fun loadItemsRaw(query: SupportSQLiteQuery): PagingSource<Int, PagingEntity>
+    fun loadItemsRaw(query: RoomRawQuery): PagingSource<Int, PagingEntity>
 
     @Query("SELECT * FROM PagingEntity ORDER BY id ASC")
     fun loadItemsListenableFuture(): ListenableFuturePagingSource<Int, PagingEntity>
 
     @RawQuery(observedEntities = [PagingEntity::class])
     fun loadItemsRawListenableFuture(
-        query: SupportSQLiteQuery
+        query: RoomRawQuery
     ): ListenableFuturePagingSource<Int, PagingEntity>
-
-    @Query("SELECT * FROM PagingEntity ORDER BY id ASC")
-    fun loadItemsRx2(): androidx.paging.rxjava2.RxPagingSource<Int, PagingEntity>
-
-    @RawQuery(observedEntities = [PagingEntity::class])
-    fun loadItemsRawRx2(
-        query: SupportSQLiteQuery
-    ): androidx.paging.rxjava2.RxPagingSource<Int, PagingEntity>
 
     @Query("SELECT * FROM PagingEntity ORDER BY id ASC")
     fun loadItemsRx3(): androidx.paging.rxjava3.RxPagingSource<Int, PagingEntity>
 
     @RawQuery(observedEntities = [PagingEntity::class])
     fun loadItemsRawRx3(
-        query: SupportSQLiteQuery
+        query: RoomRawQuery
     ): androidx.paging.rxjava3.RxPagingSource<Int, PagingEntity>
 }

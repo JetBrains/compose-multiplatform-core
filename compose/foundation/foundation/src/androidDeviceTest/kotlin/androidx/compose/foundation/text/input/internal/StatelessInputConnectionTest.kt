@@ -46,7 +46,7 @@ import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.firstUriOrNull
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -97,6 +97,9 @@ class StatelessInputConnectionTest {
                 return state.mapToTransformed(range)
             }
 
+            override val transformedLength: Int
+                get() = value.length
+
             override fun beginBatchEdit(): Boolean {
                 beginBatchEditCalls++
                 batchDepth++
@@ -121,6 +124,10 @@ class StatelessInputConnectionTest {
 
             override fun sendKeyEvent(keyEvent: KeyEvent) {
                 onSendKeyEvent?.invoke(keyEvent)
+            }
+
+            override fun updateTouchMode(isInTouchMode: Boolean) {
+                lastTouchModeUpdate = isInTouchMode
             }
 
             override fun requestCursorUpdates(cursorUpdateMode: Int) {}
@@ -162,6 +169,8 @@ class StatelessInputConnectionTest {
     private var mapToTransformedCalled: TextRange? = null
 
     private var batchDepth = 0
+
+    private var lastTouchModeUpdate: Boolean? = null
 
     @Before
     fun setup() {
@@ -582,6 +591,22 @@ class StatelessInputConnectionTest {
         // Everything is internal and there is nothing to expect.
         // Just make sure it is not crashed by calling method.
         ic.closeConnection()
+    }
+
+    @Test
+    fun setSelection_updatesTouchMode() {
+        assertThat(lastTouchModeUpdate).isNull()
+        value = TextFieldCharSequence("Hello, World")
+        ic.setSelection(0, 5)
+        assertThat(lastTouchModeUpdate).isFalse()
+    }
+
+    @Test
+    fun setSelection_collapsed_updatesTouchMode() {
+        assertThat(lastTouchModeUpdate).isNull()
+        value = TextFieldCharSequence("Hello, World")
+        ic.setSelection(0, 0)
+        assertThat(lastTouchModeUpdate).isFalse()
     }
 
     @Test

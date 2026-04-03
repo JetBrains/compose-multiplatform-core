@@ -245,7 +245,12 @@ object XConverters {
 
     @JvmStatic
     fun KSValueArgument.toXProcessing(env: XProcessingEnv): XAnnotationValue =
-        (env as KspProcessingEnv).wrapAnnotationValue(this)
+        (env as KspProcessingEnv).wrapAnnotationValue(
+            // TODO: Remove this parameter once https://github.com/google/ksp/issues/2637 is fixed.
+            //  In the meantime, this method could return an incorrect value due to this bug.
+            annotation = this.parent as KSAnnotation,
+            value = this,
+        )
 
     @JvmStatic
     fun KSType.toXProcessing(env: XProcessingEnv): XType =

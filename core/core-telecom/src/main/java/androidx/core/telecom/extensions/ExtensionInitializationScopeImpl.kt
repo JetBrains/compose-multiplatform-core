@@ -78,14 +78,15 @@ internal class ExtensionInitializationScopeImpl(
 
     override fun addLocalCallSilenceExtension(
         initialCallSilenceState: Boolean,
-        onLocalSilenceUpdate: (suspend (Boolean) -> Unit),
+        initialCanUserUpdateSilenceState: Boolean,
+        onLocalSilenceUpdate: suspend (Boolean) -> Unit,
     ): LocalCallSilenceExtension {
         val localSilenceExtension =
             LocalCallSilenceExtensionImpl(
                 context,
-                coroutineContext,
                 callStateFlow,
                 initialCallSilenceState,
+                initialCanUserUpdateSilenceState,
                 onLocalSilenceUpdate,
             )
         registerExtension(onExchangeStarted = localSilenceExtension::onExchangeStarted)

@@ -18,14 +18,16 @@ package androidx.xr.scenecore.testing
 
 import android.media.MediaPlayer
 import androidx.annotation.RestrictTo
+import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper
 import androidx.xr.scenecore.runtime.PointSourceParams
 import androidx.xr.scenecore.runtime.SoundFieldAttributes
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FakeMediaPlayerExtensionsWrapper : MediaPlayerExtensionsWrapper {
-    private var _pointSourceParams: MutableMap<MediaPlayer, PointSourceParams> = mutableMapOf()
+    private var _paramsWithEntity: MutableMap<MediaPlayer, Pair<PointSourceParams, Entity>> =
+        mutableMapOf()
 
     /**
      * For test purposes only.
@@ -36,8 +38,8 @@ public class FakeMediaPlayerExtensionsWrapper : MediaPlayerExtensionsWrapper {
      * Tests can inspect this map to verify that the code under test correctly applies the intended
      * `PointSourceParams` to the `MediaPlayer`.
      */
-    public val pointSourceParams: Map<MediaPlayer, PointSourceParams>
-        get() = _pointSourceParams
+    public val paramsWithEntity: Map<MediaPlayer, Pair<PointSourceParams, Entity>>
+        get() = _paramsWithEntity
 
     /**
      * Sets the PointSourceParams of the MediaPlayer.
@@ -45,8 +47,12 @@ public class FakeMediaPlayerExtensionsWrapper : MediaPlayerExtensionsWrapper {
      * @param mediaPlayer The MediaPlayer to set the PointSourceParams on.
      * @param params The PointSourceParams to set.
      */
-    override fun setPointSourceParams(mediaPlayer: MediaPlayer, params: PointSourceParams) {
-        _pointSourceParams[mediaPlayer] = params
+    override fun setPointSourceParams(
+        mediaPlayer: MediaPlayer,
+        params: PointSourceParams,
+        entity: Entity,
+    ) {
+        _paramsWithEntity[mediaPlayer] = params to entity
     }
 
     private var _soundFieldAttributes: MutableMap<MediaPlayer, SoundFieldAttributes> =

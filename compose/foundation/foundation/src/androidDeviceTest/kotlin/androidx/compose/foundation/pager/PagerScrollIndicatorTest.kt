@@ -266,9 +266,7 @@ class PagerScrollIndicatorTest(val config: ParamConfig) : BasePagerTest(config) 
             pageSize = { PageSize.Fixed(fixedPageSize) },
         )
 
-        rule.waitForIdle()
-
-        runBlocking { pagerState.scrollBy(scrollAmountPx.toFloat()) }
+        rule.runOnIdle { runBlocking { pagerState.scrollBy(scrollAmountPx.toFloat()) } }
 
         rule.runOnIdle {
             assertNotNull(pagerState.scrollIndicatorState)

@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore
 
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.runtime.EyeStatus
 import androidx.xr.arcore.testing.FakeLifecycleManager
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.arcore.testing.FakeRuntimeAnchor
 import androidx.xr.arcore.testing.FakeRuntimeEye
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
@@ -47,7 +49,6 @@ class EyeTest {
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var testScope: TestScope
     private lateinit var session: Session
-    private lateinit var xrResourcesManager: XrResourcesManager
 
     @Before
     fun setUp() {
@@ -55,75 +56,47 @@ class EyeTest {
         testScope = TestScope(testDispatcher)
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
         activity = activityController.get()
-        xrResourcesManager = XrResourcesManager()
+        val xrResourcesManager = XrResourcesManager()
 
         val shadowApplication = shadowOf(activity.application)
         FakeLifecycleManager.TestPermissions.forEach { permission ->
             shadowApplication.grantPermissions(permission)
         }
         FakePerceptionRuntimeFactory.hasCreatePermission = true
+        FakeRuntimeAnchor.anchorsCreatedCount = 0
         activityController.create()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
-        session.configure(Config(eyeTracking = Config.EyeTrackingMode.COARSE_AND_FINE_TRACKING))
+        session.configure(Config(eyeTracking = EyeTrackingMode.COARSE_TRACKING))
         xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
     }
 
     @Test
-    fun update_coarseTrackingStateMatchesRuntime() = runBlocking {
+    fun update_trackingStateMatchesRuntime() = runBlocking {
         val runtimeEye = FakeRuntimeEye()
-        runtimeEye.coarseStatus = EyeStatus.SHUT
+        runtimeEye.isOpen = false
+        runtimeEye.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
         val underTest = Eye(runtimeEye)
-        check(underTest.state.value.coarseEyeStatus == EyeStatus.SHUT)
+        check(!underTest.state.value.isOpen)
 
-        runtimeEye.coarseStatus = EyeStatus.GAZING
+        runtimeEye.isOpen = true
         underTest.update()
 
-        assertThat(underTest.state.value.coarseEyeStatus).isEqualTo(EyeStatus.GAZING)
+        assertThat(underTest.state.value.isOpen).isTrue()
     }
 
     @Test
-    fun update_coarsePoseMatchesRuntime() = runBlocking {
+    fun update_poseMatchesRuntime() = runBlocking {
         val runtimeEye = FakeRuntimeEye()
         val underTest = Eye(runtimeEye)
         check(
-            (underTest.state.value.coarseEyePose ==
-                Pose(Vector3(0f, 0f, 0f), Quaternion(0f, 0f, 0f, 1.0f)))
+            (underTest.state.value.pose == Pose(Vector3(0f, 0f, 0f), Quaternion(0f, 0f, 0f, 1.0f)))
         )
 
         val newPose = Pose(Vector3(1.0f, 2.0f, 3.0f), Quaternion(1.0f, 2.0f, 3.0f, 4.0f))
-        runtimeEye.coarsePose = newPose
+        runtimeEye.pose = newPose
         underTest.update()
 
-        assertThat(underTest.state.value.coarseEyePose).isEqualTo(newPose)
-    }
-
-    @Test
-    fun update_fineTrackingStateMatchesRuntime() = runBlocking {
-        val runtimeEye = FakeRuntimeEye()
-        runtimeEye.fineStatus = EyeStatus.SHUT
-        val underTest = Eye(runtimeEye)
-        check(underTest.state.value.fineEyeStatus == EyeStatus.SHUT)
-
-        runtimeEye.fineStatus = EyeStatus.GAZING
-        underTest.update()
-
-        assertThat(underTest.state.value.fineEyeStatus).isEqualTo(EyeStatus.GAZING)
-    }
-
-    @Test
-    fun update_finePoseMatchesRuntime() = runBlocking {
-        val runtimeEye = FakeRuntimeEye()
-        val underTest = Eye(runtimeEye)
-        check(
-            (underTest.state.value.fineEyePose ==
-                Pose(Vector3(0f, 0f, 0f), Quaternion(0f, 0f, 0f, 1.0f)))
-        )
-
-        val newPose = Pose(Vector3(1.0f, 2.0f, 3.0f), Quaternion(1.0f, 2.0f, 3.0f, 4.0f))
-        runtimeEye.finePose = newPose
-        underTest.update()
-
-        assertThat(underTest.state.value.fineEyePose).isEqualTo(newPose)
+        assertThat(underTest.state.value.pose).isEqualTo(newPose)
     }
 }

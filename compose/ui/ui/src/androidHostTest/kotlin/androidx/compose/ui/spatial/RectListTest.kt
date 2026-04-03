@@ -30,6 +30,47 @@ import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class RectListTest {
+    private fun RectList.remove(value: Int) {
+        val index = indexOf(value)
+        if (index != NotFound) removeAt(index)
+    }
+
+    private fun RectList.update(value: Int, l: Int, t: Int, r: Int, b: Int) {
+        val index = indexOf(value)
+        if (index != NotFound) updateAt(index, l, t, r, b)
+    }
+
+    private fun RectList.updateFlagsFor(value: Int, focusable: Boolean, gesturable: Boolean) {
+        val index = indexOf(value)
+        if (index != NotFound) updateFlagsAt(index, focusable, gesturable)
+    }
+
+    private fun RectList.metaFor(value: Int): Long {
+        val index = indexOf(value)
+        return if (index != NotFound) metaAt(index) else TombStone
+    }
+
+    private fun RectList.withRect(value: Int, block: (Int, Int, Int, Int) -> Unit): Boolean {
+        val index = indexOf(value)
+        if (index != -1) {
+            withRectAt(index, block)
+            return true
+        }
+        return false
+    }
+
+    private fun RectList.insert(
+        value: Int,
+        l: Int,
+        t: Int,
+        r: Int,
+        b: Int,
+        parentId: Int = -1,
+        parentIndex: Int = NotFound,
+        gesturable: Boolean = false,
+        focusable: Boolean = false,
+        hasCallbacks: Boolean = false,
+    ) = insert(value, l, t, r, b, parentId, parentIndex, focusable, gesturable, hasCallbacks)
 
     @Test
     fun testInsert() {
@@ -306,7 +347,16 @@ class RectListTest {
     private fun insertRecursive(qt: RectList, item: Item, scrollableId: Int) {
         val bounds = item.bounds
 
-        qt.insert(item.id, bounds[0], bounds[1], bounds[2], bounds[3], parentId = scrollableId)
+        val parentIndex = if (scrollableId != -1) qt.indexOf(scrollableId) else -1
+        qt.insert(
+            item.id,
+            bounds[0],
+            bounds[1],
+            bounds[2],
+            bounds[3],
+            parentId = scrollableId,
+            parentIndex = parentIndex,
+        )
         item.children.fastForEach {
             insertRecursive(qt, it, if (item.scrollable) item.id else scrollableId)
         }
@@ -501,6 +551,7 @@ class RectListTest {
                 updated = true,
                 focusable = false,
                 gesturable = true,
+                hasCallbacks = false,
             )
         assertEquals(1, unpackMetaValue(meta))
         assertEquals(2, unpackMetaParentId(meta))
@@ -508,6 +559,7 @@ class RectListTest {
         assertEquals(1, unpackMetaUpdated(meta))
         assertEquals(0, unpackMetaFocusable(meta))
         assertEquals(1, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
     }
 
     @Test
@@ -520,6 +572,7 @@ class RectListTest {
                 updated = false,
                 focusable = false,
                 gesturable = false,
+                hasCallbacks = false,
             )
         assertEquals(1, unpackMetaValue(meta))
         assertEquals(2, unpackMetaParentId(meta))
@@ -527,6 +580,7 @@ class RectListTest {
         assertEquals(0, unpackMetaUpdated(meta))
         assertEquals(0, unpackMetaFocusable(meta))
         assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
 
         // Check updated
         meta = metaMarkUpdated(meta)
@@ -536,6 +590,7 @@ class RectListTest {
         assertEquals(1, unpackMetaUpdated(meta))
         assertEquals(0, unpackMetaFocusable(meta))
         assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
 
         meta = metaUnMarkUpdated(meta)
         assertEquals(1, unpackMetaValue(meta))
@@ -544,6 +599,7 @@ class RectListTest {
         assertEquals(0, unpackMetaUpdated(meta))
         assertEquals(0, unpackMetaFocusable(meta))
         assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
 
         // Check focusable
         meta = metaMarkFlags(meta = meta, focusable = true, gesturable = false)
@@ -553,6 +609,7 @@ class RectListTest {
         assertEquals(0, unpackMetaUpdated(meta))
         assertEquals(1, unpackMetaFocusable(meta))
         assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
 
         meta = metaMarkFlags(meta = meta, focusable = false, gesturable = false)
         assertEquals(1, unpackMetaValue(meta))
@@ -561,6 +618,7 @@ class RectListTest {
         assertEquals(0, unpackMetaUpdated(meta))
         assertEquals(0, unpackMetaFocusable(meta))
         assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
 
         // Check gesturable
         meta = metaMarkFlags(meta = meta, focusable = false, gesturable = true)
@@ -570,6 +628,7 @@ class RectListTest {
         assertEquals(0, unpackMetaUpdated(meta))
         assertEquals(0, unpackMetaFocusable(meta))
         assertEquals(1, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
 
         meta = metaMarkFlags(meta = meta, focusable = false, gesturable = false)
         assertEquals(1, unpackMetaValue(meta))
@@ -578,6 +637,7 @@ class RectListTest {
         assertEquals(0, unpackMetaUpdated(meta))
         assertEquals(0, unpackMetaFocusable(meta))
         assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
 
         // Check both focusable and gesturable
         meta = metaMarkFlags(meta = meta, focusable = true, gesturable = true)
@@ -587,6 +647,7 @@ class RectListTest {
         assertEquals(0, unpackMetaUpdated(meta))
         assertEquals(1, unpackMetaFocusable(meta))
         assertEquals(1, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
 
         meta = metaMarkFlags(meta = meta, focusable = false, gesturable = false)
         assertEquals(1, unpackMetaValue(meta))
@@ -595,6 +656,7 @@ class RectListTest {
         assertEquals(0, unpackMetaUpdated(meta))
         assertEquals(0, unpackMetaFocusable(meta))
         assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
 
         // Check too large child offset
         meta = metaWithLastChildOffset(meta, Int.MAX_VALUE)
@@ -604,6 +666,43 @@ class RectListTest {
         assertEquals(0, unpackMetaUpdated(meta))
         assertEquals(0, unpackMetaFocusable(meta))
         assertEquals(0, unpackMetaGesturable(meta))
+
+        // Check hasCallbacks
+        meta = metaMarkUpdatedAndHasCallbacks(meta = meta, updated = true, hasCallbacks = true)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(MaxSupportedLastChildOffset, unpackMetaLastChildOffset(meta))
+        assertEquals(1, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(1, unpackMetaHasCallbacks(meta))
+
+        meta = metaUnMarkUpdated(meta)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(MaxSupportedLastChildOffset, unpackMetaLastChildOffset(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(1, unpackMetaHasCallbacks(meta))
+
+        meta = metaMarkUpdatedIfHasCallbacks(meta)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(MaxSupportedLastChildOffset, unpackMetaLastChildOffset(meta))
+        assertEquals(1, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(1, unpackMetaHasCallbacks(meta))
+
+        meta = metaMarkUpdatedAndHasCallbacks(meta = meta, updated = false, hasCallbacks = false)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(MaxSupportedLastChildOffset, unpackMetaLastChildOffset(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
     }
 
     @Test
@@ -616,6 +715,7 @@ class RectListTest {
                 updated = true,
                 focusable = true,
                 gesturable = false,
+                hasCallbacks = true,
             )
         assertEquals(1, unpackMetaValue(meta))
         assertEquals(2, unpackMetaParentId(meta))
@@ -623,6 +723,7 @@ class RectListTest {
         assertEquals(1, unpackMetaUpdated(meta))
         assertEquals(1, unpackMetaFocusable(meta))
         assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(1, unpackMetaHasCallbacks(meta))
     }
 
     @Test
@@ -635,6 +736,7 @@ class RectListTest {
                 updated = true,
                 focusable = true,
                 gesturable = false,
+                hasCallbacks = false,
             )
         assertEquals(10, unpackMetaValue(meta))
         // TODO: this actually returns 268,435,455. Not sure if we need to change this or not.
@@ -642,6 +744,7 @@ class RectListTest {
         assertEquals(1, unpackMetaUpdated(meta))
         assertEquals(1, unpackMetaFocusable(meta))
         assertEquals(0, unpackMetaGesturable(meta))
+        assertEquals(0, unpackMetaHasCallbacks(meta))
     }
 
     private fun rectIntersectsRect(src: Rect, l: Int, t: Int, r: Int, b: Int): Boolean {
@@ -865,26 +968,32 @@ class RectListTest {
     }
 
     @Test
-    fun testUpdateScrollable2() {
-        val r = RectList()
+    fun testCallingExecuteDelayed() {
+        var executeDelayedCalled = false
+        var removeDelayedExecutionCalled = false
 
-        // insert scrollable container
-        r.insert(1, 10, 10, 20, 20)
+        val executeDelayed =
+            object : ExecuteDelayed {
+                override fun executeDelayed(delayMillis: Long, block: () -> Unit): Any {
+                    executeDelayedCalled = true
+                    return Any()
+                }
 
-        // insert child container
-        r.insert(2, 10, 10, 20, 20, parentId = 1)
+                override fun removeDelayedExecution(token: Any) {
+                    removeDelayedExecutionCalled = true
+                }
+            }
 
-        assertRectWithIdEquals(r, 2, 10, 10, 20, 20)
+        val rectManager = RectManager(executeDelayed = executeDelayed)
 
-        // move child items up by 1
-        r.updateSubhierarchy(id = 1, deltaX = 0, deltaY = -1)
+        rectManager.scheduleDebounceCallback(true)
+        assertTrue(executeDelayedCalled)
 
-        assertRectWithIdEquals(r, 2, 10, 9, 20, 19)
+        // The removal won't be called if minDebounceDeadline remains as -1
+        rectManager.throttledCallbacks.minDebounceDeadline = 10
+        rectManager.scheduleDebounceCallback(true)
 
-        // move child items up by 10 more
-        r.updateSubhierarchy(id = 1, deltaX = 0, deltaY = -10)
-
-        assertRectWithIdEquals(r, 2, 10, -1, 20, 9)
+        assertTrue(removeDelayedExecutionCalled)
     }
 
     // TODO: test update scrollable behavior
@@ -932,7 +1041,12 @@ internal fun rectContainsPoint(x: Int, y: Int, l: Int, t: Int, r: Int, b: Int): 
 }
 
 internal fun assertRectWithIdEquals(rectList: RectList, id: Int, l: Int, t: Int, r: Int, b: Int) {
-    rectList.withRect(id) { w, x, y, z -> assertRectEquals(l, t, r, b, w, x, y, z) }
+    val index = rectList.indexOf(id)
+    if (index != NotFound) {
+        rectList.withRectAt(index) { w, x, y, z -> assertRectEquals(l, t, r, b, w, x, y, z) }
+    } else {
+        throw AssertionError("Element with id $id not found")
+    }
 }
 
 fun assertRectEquals(l1: Int, t1: Int, r1: Int, b1: Int, l2: Int, t2: Int, r2: Int, b2: Int) {

@@ -41,11 +41,6 @@ private val wrapperCache = WeakHashMap<RoomDatabase, RoomSupportSQLiteDatabase>(
  * compatibility with existing usages of [SupportSQLiteDatabase].
  */
 public fun RoomDatabase.getSupportWrapper(): SupportSQLiteDatabase {
-    // If Room is in compatibility mode, it has no driver configured and SupportSQLite APIs
-    // are available.
-    if (inCompatibilityMode()) {
-        return openHelper.writableDatabase
-    }
     return synchronized(wrapperCache) {
         wrapperCache.getOrPut(this) { RoomSupportSQLiteDatabase(this) }
     }

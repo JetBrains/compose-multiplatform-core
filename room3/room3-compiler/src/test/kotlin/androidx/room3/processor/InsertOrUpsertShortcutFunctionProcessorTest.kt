@@ -34,7 +34,6 @@ import androidx.room3.ext.GuavaUtilConcurrentTypeNames
 import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LifecyclesTypeNames
 import androidx.room3.ext.ReactiveStreamsTypeNames
-import androidx.room3.ext.RxJava2TypeNames
 import androidx.room3.ext.RxJava3TypeNames
 import androidx.room3.solver.shortcut.result.InsertOrUpsertFunctionAdapter
 import androidx.room3.testing.context
@@ -52,7 +51,10 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 package foo.bar;
                 import androidx.room3.*;
                 import java.util.*;
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter;
+                import androidx.room3.rxjava3.RxDaoReturnTypeConverters;
                 @Dao
+                @DaoReturnTypeConverters({GuavaDaoReturnTypeConverter.class, RxDaoReturnTypeConverters.class})
                 abstract class MyClass {
                 """
         const val DAO_PREFIX_KT =
@@ -66,8 +68,11 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 import com.google.common.util.concurrent.*
                 import org.reactivestreams.*
                 import kotlinx.coroutines.flow.*
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter
+                import androidx.room3.rxjava3.RxDaoReturnTypeConverters
 
                 @Dao
+                @DaoReturnTypeConverters(GuavaDaoReturnTypeConverter::class, RxDaoReturnTypeConverters::class)
                 abstract class MyClass {
                 """
         const val DAO_SUFFIX = "}"
@@ -125,7 +130,8 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
             val param = insertionUpsertion.parameters.first()
             assertThat(param.type.asTypeName()).isEqualTo(USER_TYPE_NAME.copy(nullable = true))
 
-            assertThat(param.pojoType?.asTypeName()).isEqualTo(USER_TYPE_NAME.copy(nullable = true))
+            assertThat(param.dataClassType?.asTypeName())
+                .isEqualTo(USER_TYPE_NAME.copy(nullable = true))
 
             assertThat(insertionUpsertion.entities["user"]?.isPartialEntity).isEqualTo(false)
 
@@ -164,7 +170,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
             assertThat(insertionUpsertion.parameters.size).isEqualTo(2)
             insertionUpsertion.parameters.forEach {
                 assertThat(it.type.asTypeName()).isEqualTo(USER_TYPE_NAME.copy(nullable = true))
-                assertThat(it.pojoType?.asTypeName())
+                assertThat(it.dataClassType?.asTypeName())
                     .isEqualTo(USER_TYPE_NAME.copy(nullable = true))
             }
             assertThat(insertionUpsertion.entities.size).isEqualTo(2)
@@ -215,7 +221,8 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                         .copy(nullable = true)
                 )
 
-            assertThat(param.pojoType?.asTypeName()).isEqualTo(USER_TYPE_NAME.copy(nullable = true))
+            assertThat(param.dataClassType?.asTypeName())
+                .isEqualTo(USER_TYPE_NAME.copy(nullable = true))
 
             assertThat(insertionUpsertion.entities.size).isEqualTo(1)
 
@@ -484,20 +491,16 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
 
     @Test
     fun multipleParamCompletable() {
-        listOf(
-                RxJava2TypeNames.COMPLETABLE.canonicalName,
-                RxJava3TypeNames.COMPLETABLE.canonicalName,
-            )
-            .forEach { type ->
-                singleInsertUpsertShortcutFunction(
-                    """
+        listOf(RxJava3TypeNames.COMPLETABLE.canonicalName).forEach { type ->
+            singleInsertUpsertShortcutFunction(
+                """
                 @${annotation.java.canonicalName}
                 abstract fun bookUserCompletable(user: User, book: Book): $type
                 """
-                ) { insertionUpsertion, _ ->
-                    assertThat(insertionUpsertion.parameters.size).isEqualTo(2)
-                }
+            ) { insertionUpsertion, _ ->
+                assertThat(insertionUpsertion.parameters.size).isEqualTo(2)
             }
+        }
     }
 
     @Test
@@ -520,12 +523,12 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
     fun invalidReturnType() {
         listOf(
                 "int",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Int>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<String>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<String>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<User>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<User>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<Int>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<String>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<String>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<User>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<User>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -547,8 +550,8 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 "long[]",
                 "Long[]",
                 "List<Long>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<List<Long>>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<List<Long>>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<List<Long>>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<List<Long>>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -571,8 +574,8 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
         listOf(
                 "long",
                 "Long",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Long>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Long>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<Long>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<Long>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -595,8 +598,8 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
         listOf(
                 "long",
                 "Long",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Long>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Long>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<Long>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<Long>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -620,26 +623,6 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 Pair("long[]", InsertOrUpsertFunctionAdapter.ReturnInfo.ID_ARRAY),
                 Pair("Long[]", InsertOrUpsertFunctionAdapter.ReturnInfo.ID_ARRAY_BOX),
                 Pair("List<Long>", InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST),
-                Pair(
-                    RxJava2TypeNames.COMPLETABLE.canonicalName,
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.VOID_OBJECT,
-                ),
-                Pair(
-                    "${RxJava2TypeNames.SINGLE.canonicalName}<Long>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID,
-                ),
-                Pair(
-                    "${RxJava2TypeNames.SINGLE.canonicalName}<List<Long>>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST,
-                ),
-                Pair(
-                    "${RxJava2TypeNames.MAYBE.canonicalName}<Long>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID,
-                ),
-                Pair(
-                    "${RxJava2TypeNames.MAYBE.canonicalName}<List<Long>>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST,
-                ),
                 Pair(
                     RxJava3TypeNames.COMPLETABLE.canonicalName,
                     InsertOrUpsertFunctionAdapter.ReturnInfo.VOID_OBJECT,
@@ -723,7 +706,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
 
             assertThat(param.type.asTypeName()).isEqualTo(USERNAME_TYPE_NAME.copy(nullable = true))
 
-            assertThat(param.pojoType?.asTypeName())
+            assertThat(param.dataClassType?.asTypeName())
                 .isEqualTo(USERNAME_TYPE_NAME.copy(nullable = true))
 
             assertThat(insertionUpsertion.entities.size).isEqualTo(1)
@@ -1084,11 +1067,6 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
     @Test
     fun suspendReturnsDeferredType() {
         listOf(
-                "${RxJava2TypeNames.FLOWABLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.OBSERVABLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Int>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.COMPLETABLE.canonicalName}",
                 "${RxJava3TypeNames.FLOWABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.OBSERVABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
@@ -1145,12 +1123,17 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 COMMON.USER,
                 COMMON.BOOK,
                 COMMON.NOT_AN_ENTITY,
-                COMMON.RX2_COMPLETABLE,
-                COMMON.RX2_MAYBE,
-                COMMON.RX2_SINGLE,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_MAYBE,
                 COMMON.RX3_SINGLE,
+                COMMON.RX3_FLOWABLE,
+                COMMON.RX3_OBSERVABLE,
+                COMMON.LISTENABLE_FUTURE,
+                COMMON.LIVE_DATA,
+                COMMON.COMPUTABLE_LIVE_DATA,
+                COMMON.PUBLISHER,
+                COMMON.FLOW,
+                COMMON.GUAVA_ROOM,
             )
 
         runKspTest(sources = commonSources + additionalSources + inputSource) { invocation ->
@@ -1167,7 +1150,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                     .first { it.second.isNotEmpty() }
             val processed =
                 process(
-                    baseContext = invocation.context,
+                    baseContext = invocation.context.fork(owner),
                     containing = owner.type,
                     executableElement = methods.first(),
                 )
@@ -1187,11 +1170,6 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 COMMON.USER,
                 COMMON.BOOK,
                 COMMON.NOT_AN_ENTITY,
-                COMMON.RX2_COMPLETABLE,
-                COMMON.RX2_MAYBE,
-                COMMON.RX2_SINGLE,
-                COMMON.RX2_FLOWABLE,
-                COMMON.RX2_OBSERVABLE,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_MAYBE,
                 COMMON.RX3_SINGLE,
@@ -1219,7 +1197,7 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                     .first { it.second.isNotEmpty() }
             val processed =
                 process(
-                    baseContext = invocation.context,
+                    baseContext = invocation.context.fork(owner),
                     containing = owner.type,
                     executableElement = functions.first(),
                 )

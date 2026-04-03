@@ -24,8 +24,10 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class FakeImageReaderTest {
     private val imageReader =
         FakeImageReader.create(StreamFormat.PRIVATE, StreamId(32), OutputId(42), Size(640, 480), 10)
@@ -80,7 +82,7 @@ class FakeImageReaderTest {
         val fakeListener = FakeOnImageListener()
 
         imageReader.simulateImage(100)
-        imageReader.setOnImageListener(fakeListener)
+        imageReader.onImageListener = fakeListener
         val image2 = imageReader.simulateImage(200)
         val image3 = imageReader.simulateImage(300)
 

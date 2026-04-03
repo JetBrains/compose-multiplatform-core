@@ -64,4 +64,8 @@ public interface LifecycleManager {
      * after calling [stop]. The runtime must not be resumed when this method is called.
      */
     public fun stop()
+
+    /** Gets the pointer to the underlying native session if applicable. */
+    public val sessionPointer: Long?
+        get() = null
 }

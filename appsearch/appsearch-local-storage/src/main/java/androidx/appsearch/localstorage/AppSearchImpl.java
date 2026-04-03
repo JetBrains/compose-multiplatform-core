@@ -29,6 +29,7 @@ import static androidx.appsearch.localstorage.util.PrefixUtil.removePrefix;
 import static androidx.appsearch.localstorage.util.PrefixUtil.removePrefixesFromDocument;
 import static androidx.appsearch.localstorage.util.PrefixUtil.removePrefixesFromSchemaType;
 
+import android.accounts.Account;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.util.Log;
@@ -47,10 +48,12 @@ import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.GetByDocumentIdRequest;
 import androidx.appsearch.app.GetSchemaResponse;
+import androidx.appsearch.app.InternalPutDocumentResponse;
 import androidx.appsearch.app.InternalSetSchemaResponse;
 import androidx.appsearch.app.InternalVisibilityConfig;
 import androidx.appsearch.app.JoinSpec;
 import androidx.appsearch.app.PackageIdentifier;
+import androidx.appsearch.app.PropertyPath;
 import androidx.appsearch.app.SchemaVisibilityConfig;
 import androidx.appsearch.app.SearchResult;
 import androidx.appsearch.app.SearchResultPage;
@@ -78,6 +81,7 @@ import androidx.appsearch.localstorage.stats.PutDocumentStats;
 import androidx.appsearch.localstorage.stats.QueryStats;
 import androidx.appsearch.localstorage.stats.RemoveStats;
 import androidx.appsearch.localstorage.stats.SetSchemaStats;
+import androidx.appsearch.localstorage.util.PrefixUtil;
 import androidx.appsearch.localstorage.visibilitystore.CallerAccess;
 import androidx.appsearch.localstorage.visibilitystore.VisibilityChecker;
 import androidx.appsearch.localstorage.visibilitystore.VisibilityStore;
@@ -92,6 +96,7 @@ import androidx.collection.ArraySet;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
 
+import com.google.android.appsearch.proto.AccountProto;
 import com.google.android.icing.IcingSearchEngine;
 import com.google.android.icing.IcingSearchEngineInterface;
 import com.google.android.icing.proto.BatchGetResultProto;
@@ -110,6 +115,7 @@ import com.google.android.icing.proto.GetOptimizeInfoResultProto;
 import com.google.android.icing.proto.GetResultProto;
 import com.google.android.icing.proto.GetResultSpecProto;
 import com.google.android.icing.proto.GetSchemaResultProto;
+import com.google.android.icing.proto.HandleExpiredDocumentsResultProto;
 import com.google.android.icing.proto.IcingSearchEngineOptions;
 import com.google.android.icing.proto.InitializeResultProto;
 import com.google.android.icing.proto.InitializeStatsProto;
@@ -222,9 +228,9 @@ public final class AppSearchImpl implements Closeable {
     @VisibleForTesting
     IcingSearchEngineInterface mIcingSearchEngineLocked;
 
-    private boolean mIsVMEnabled;
-
     private boolean mResetVisibilityStore;
+
+    @NonNull private final LaunchVmFeatures mLaunchVmFeatures;
 
     private boolean mIsIcingSchemaDatabaseEnabled;
 
@@ -268,6 +274,10 @@ public final class AppSearchImpl implements Closeable {
     @VisibleForTesting
     @GuardedBy("mReadWriteLock")
     final @Nullable VisibilityStore mBlobVisibilityStoreLocked;
+
+    @GuardedBy("mReadWriteLock")
+    @ExperimentalAppSearchApi
+    @Nullable AccountStore mAccountStoreLocked;
 
     @GuardedBy("mReadWriteLock")
     private final @Nullable VisibilityChecker mVisibilityCheckerLocked;
@@ -339,41 +349,32 @@ public final class AppSearchImpl implements Closeable {
      * <p>Instead, logger instance needs to be passed to each individual method, like create, query
      * and putDocument.
      *
-     * @param initStatsBuilder  collects stats for initialization if provided.
-     * @param visibilityChecker The {@link VisibilityChecker} that check whether the caller has
-     *                          access to aa specific schema. Pass null will lost that ability and
-     *                          global querier could only get their own data.
-     * @param icingSearchEngine the underlying icing instance to use. If not provided, a new {@link
-     *     IcingSearchEngine} instance will be created and used.
+     * @param icingDir The directory where AppSearch data should be stored.
+     * @param config The configuration for AppSearch.
+     * @param appSearchUserPlugins Optional plugins and instrumentation builders (such as stats
+     *                             collectors, visibility checkers, or a mock search engine) to
+     *                             enhance or monitor the engine's behavior. If no extensions are
+     *                             needed, pass {@link AppSearchUserPlugins#EMPTY}.
+     * @param optimizeStrategy The strategy to use for deciding when to trigger database
+     * optimization.
+     * @throws AppSearchException if error occurs during initialization.
      */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    // Functional interface parameters should be last to improve Kotlin interoperability;
     public static @NonNull AppSearchImpl create(
             @NonNull File icingDir,
             @NonNull AppSearchConfig config,
-            InitializeStats.@Nullable Builder initStatsBuilder,
-            CallStats.@Nullable Builder callStatsBuilder,
-            @Nullable VisibilityChecker visibilityChecker,
-            @Nullable RevocableFileDescriptorStore revocableFileDescriptorStore,
-            @Nullable IcingSearchEngineInterface icingSearchEngine,
+            @NonNull AppSearchUserPlugins appSearchUserPlugins,
             @NonNull OptimizeStrategy optimizeStrategy)
             throws AppSearchException {
-        return new AppSearchImpl(icingDir, config, initStatsBuilder, callStatsBuilder,
-                visibilityChecker, revocableFileDescriptorStore, icingSearchEngine,
-                optimizeStrategy);
+        return new AppSearchImpl(icingDir, config, appSearchUserPlugins, optimizeStrategy);
     }
 
-    /**
-     * @param initStatsBuilder collects stats for initialization if provided.
-     */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private AppSearchImpl(
             @NonNull File icingDir,
             @NonNull AppSearchConfig config,
-            InitializeStats.@Nullable Builder initStatsBuilder,
-            CallStats.@Nullable Builder callStatsBuilder,
-            @Nullable VisibilityChecker visibilityChecker,
-            @Nullable RevocableFileDescriptorStore revocableFileDescriptorStore,
-            @Nullable IcingSearchEngineInterface icingSearchEngine,
+            @NonNull AppSearchUserPlugins appSearchUserPlugins,
             @NonNull OptimizeStrategy optimizeStrategy)
             throws AppSearchException {
         Preconditions.checkNotNull(icingDir);
@@ -385,8 +386,11 @@ public final class AppSearchImpl implements Closeable {
         mBlobFilesDir = new File(icingDir, "blob_dir/blob_files");
         mConfig = Preconditions.checkNotNull(config);
         mOptimizeStrategy = Preconditions.checkNotNull(optimizeStrategy);
-        mVisibilityCheckerLocked = visibilityChecker;
-        mRevocableFileDescriptorStore = revocableFileDescriptorStore;
+        Preconditions.checkNotNull(appSearchUserPlugins);
+        mVisibilityCheckerLocked = appSearchUserPlugins.getVisibilityChecker();
+        mRevocableFileDescriptorStore = appSearchUserPlugins.getRevocableFileDescriptorStore();
+        CallStats.Builder callStatsBuilder = appSearchUserPlugins.getCallStatsBuilder();
+        InitializeStats.Builder initStatsBuilder = appSearchUserPlugins.getInitStatsBuilder();
         mNeedsPersistToDisk.set(false);
 
         // By default, we don't perform any retries.
@@ -396,16 +400,16 @@ public final class AppSearchImpl implements Closeable {
         long javaLockAcquisitionEndTimeMillis = 0;
         mReadWriteLock.writeLock().lock();
         try {
+            mLaunchVmFeatures = appSearchUserPlugins.getLaunchVmFeatures();
             javaLockAcquisitionEndTimeMillis = SystemClock.elapsedRealtime();
             // We synchronize here because we don't want to call IcingSearchEngine.initialize() more
             // than once. It's unnecessary and can be a costly operation.
-            if (icingSearchEngine == null) {
-                mIsVMEnabled = false;
+            if (appSearchUserPlugins.getIcingSearchEngine() == null) {
                 if (Flags.enableInitializationRetriesBeforeReset()) {
                     maxInitRetries = 2;
                 }
                 IcingSearchEngineOptions options = mConfig.toIcingSearchEngineOptions(
-                        icingDir.getAbsolutePath(), mIsVMEnabled);
+                        icingDir.getAbsolutePath(), mLaunchVmFeatures.isVmEnabled());
                 LogUtil.piiTrace(TAG, "Constructing IcingSearchEngine, request", options);
                 mIcingSearchEngineLocked = new IcingSearchEngine(options);
                 mIsIcingSchemaDatabaseEnabled = options.getEnableSchemaDatabase();
@@ -414,12 +418,12 @@ public final class AppSearchImpl implements Closeable {
                         "Constructing IcingSearchEngine, response",
                         ObjectsCompat.hashCode(mIcingSearchEngineLocked));
             } else {
-                mIcingSearchEngineLocked = icingSearchEngine;
-                mIsVMEnabled = true;
+                mIcingSearchEngineLocked = appSearchUserPlugins.getIcingSearchEngine();
                 mIsIcingSchemaDatabaseEnabled = true;
                 maxInitRetries = 2;
             }
-            mResetVisibilityStore = Flags.enableResetVisibilityStore() || mIsVMEnabled;
+            mResetVisibilityStore =
+                    Flags.enableResetVisibilityStore() || mLaunchVmFeatures.isVmEnabled();
 
             // The core initialization procedure. If any part of this fails, we bail into
             // resetLocked(), deleting all data (but hopefully allowing AppSearchImpl to come up).
@@ -457,11 +461,12 @@ public final class AppSearchImpl implements Closeable {
                                     statusProtoToResultCode(initializeResultProto.getStatus()))
                             // TODO(b/173532925) how to get DeSyncs value
                             .setHasDeSync(false)
-                            .setLaunchVMEnabled(mIsVMEnabled)
+                            .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                            .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                             .addGetVmLatencyMillis(initializeResultProto.getGetVmLatencyMs());
                     AppSearchLoggerHelper.copyNativeStats(
                             initializeResultProto.getInitializeStats(), initStatsBuilder);
-                    if (isVMEnabled()) {
+                    if (isVmEnabled()) {
                         // TODO(b/415387509): Add an actual atom field to capture this value.
                         // Hack to propagate the failure cause early
                         // Store value in IcuDataStatus because that field doesn't matter in
@@ -556,6 +561,11 @@ public final class AppSearchImpl implements Closeable {
                     SchemaTypeConfigProto schema = schemaProtoTypesList.get(i);
                     String prefixedSchemaType = schema.getSchemaType();
                     mSchemaCacheLocked.addToSchemaMap(getPrefix(prefixedSchemaType), schema);
+                    if (Flags.enableSchemasWipeoutAccountPropertyPaths()) {
+                        mSchemaCacheLocked.addToSchemasWipeoutAccountPropertyPaths(
+                                prefixedSchemaType,
+                                new ArraySet<>(schema.getAccountPropertiesList()));
+                    }
                 }
 
                 // Populate schema parent-to-children map
@@ -602,6 +612,10 @@ public final class AppSearchImpl implements Closeable {
                     // trigger reset if we cannot create Visibility Store properly.
                     visibilityStoreMap = initializeVisibilityStore(mRevocableFileDescriptorStore,
                             initStatsBuilder, callStatsBuilder);
+                }
+
+                if (Flags.enableSchemasWipeoutAccountPropertyPaths()) {
+                    mAccountStoreLocked = AccountStore.create(icingDir);
                 }
 
                 LogUtil.piiTrace(TAG, "Init completed successfully");
@@ -707,8 +721,8 @@ public final class AppSearchImpl implements Closeable {
     }
 
     /** Returns whether pVM is enabled in this AppSearchImpl instance. */
-    public boolean isVMEnabled() {
-        return mIsVMEnabled;
+    public boolean isVmEnabled() {
+        return mLaunchVmFeatures.isVmEnabled();
     }
 
     /** Returns whether this AppSearchImpl instance should use database-scoped set and get schema */
@@ -717,22 +731,24 @@ public final class AppSearchImpl implements Closeable {
     }
 
     public boolean enableEarlySetSchemaExit() {
-        return Flags.enableEarlySetSchemaExit() || isVMEnabled();
+        // isAiSealEnabled will only be true if isVmEnabled is true, only verify isVmEnabled should
+        // be sufficient.
+        return Flags.enableEarlySetSchemaExit() || isVmEnabled();
     }
 
     /** Atomic method to set a new icing search engine and return the previous engine. */
     @GuardedBy("mReadWriteLock")
     public @NonNull IcingSearchEngineInterface swapIcingSearchEngineLocked(
-            @NonNull IcingSearchEngineInterface icingSearchEngineLocked, boolean isVmEnabled) {
+            @NonNull IcingSearchEngineInterface icingSearchEngineLocked, boolean isVm1Enabled) {
         Objects.requireNonNull(icingSearchEngineLocked);
         mReadWriteLock.writeLock().lock();
         try {
             IcingSearchEngineInterface previousIcingSearchEngine = mIcingSearchEngineLocked;
             mIcingSearchEngineLocked = icingSearchEngineLocked;
-            mIsVMEnabled = isVmEnabled;
+            mLaunchVmFeatures.setVmEnabled(isVm1Enabled);
             mIsIcingSchemaDatabaseEnabled =
-                    Flags.enableDatabaseScopedSchemaOperations() || isVmEnabled;
-            mResetVisibilityStore = Flags.enableResetVisibilityStore() || isVmEnabled;
+                    Flags.enableDatabaseScopedSchemaOperations() || isVm1Enabled;
+            mResetVisibilityStore = Flags.enableResetVisibilityStore() || isVm1Enabled;
             return previousIcingSearchEngine;
         } finally {
             mReadWriteLock.writeLock().unlock();
@@ -768,7 +784,7 @@ public final class AppSearchImpl implements Closeable {
             if (mRevocableFileDescriptorStore != null) {
                 mRevocableFileDescriptorStore.revokeAll();
             }
-            mIcingSearchEngineLocked.clearAndDestroy();
+            ResetResultProto unused = mIcingSearchEngineLocked.clearAndDestroy();
             mNeedsPersistToDisk.set(false);
             mClosedLocked = true;
         } catch (IOException e) {
@@ -792,6 +808,10 @@ public final class AppSearchImpl implements Closeable {
      *                                    that don't has a {@link InternalVisibilityConfig}
      *                                    will be treated as having the default visibility,
      *                                    which is accessible by the system and no other packages.
+     * @param accountPropertyPaths        A map from Schema Type names to a Set of  property paths
+     *                                    within that schema. The property paths must refer to
+     *                                    properties that are of the
+     *                                    {@link androidx.appsearch.app.AppSearchAccount}.
      * @param forceOverride               Whether to force-apply the schema even if it is
      *                                    incompatible. Documents
      *                                    which do not comply with the new schema will be deleted.
@@ -808,11 +828,14 @@ public final class AppSearchImpl implements Closeable {
      *                            FAILED_PRECONDITION for the incompatible change, the
      *                            exception will be converted to the SetSchemaResponse.
      */
+    // TODO(b/413089233) refactor this method to take SetSchemaRequest to reduce the number of input
+    //  params.
     public @NonNull InternalSetSchemaResponse setSchema(
             @NonNull String packageName,
             @NonNull String databaseName,
             @NonNull List<AppSearchSchema> schemas,
             @NonNull List<InternalVisibilityConfig> visibilityConfigs,
+            @NonNull Map<String, Set<String>> accountPropertyPaths,
             boolean forceOverride,
             int version,
             SetSchemaStats.@Nullable Builder setSchemaStatsBuilder,
@@ -835,7 +858,8 @@ public final class AppSearchImpl implements Closeable {
                         .setLastBlockingOperation(mLastReadOrWriteOperationLocked)
                         .setLastBlockingOperationLatencyMillis(
                                 mLastReadOrWriteOperationLatencyMillisLocked)
-                        .setLaunchVMEnabled(mIsVMEnabled);
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled());
             }
             if (mObserverManager.isPackageObserved(packageName)) {
                 if (useDatabaseScopedSchemaOperations()) {
@@ -844,6 +868,7 @@ public final class AppSearchImpl implements Closeable {
                             databaseName,
                             schemas,
                             visibilityConfigs,
+                            accountPropertyPaths,
                             forceOverride,
                             version,
                             setSchemaStatsBuilder,
@@ -854,6 +879,7 @@ public final class AppSearchImpl implements Closeable {
                             databaseName,
                             schemas,
                             visibilityConfigs,
+                            accountPropertyPaths,
                             forceOverride,
                             version,
                             setSchemaStatsBuilder,
@@ -865,6 +891,7 @@ public final class AppSearchImpl implements Closeable {
                         databaseName,
                         schemas,
                         visibilityConfigs,
+                        accountPropertyPaths,
                         forceOverride,
                         version,
                         setSchemaStatsBuilder,
@@ -893,6 +920,7 @@ public final class AppSearchImpl implements Closeable {
             @NonNull String databaseName,
             @NonNull List<AppSearchSchema> schemas,
             @NonNull List<InternalVisibilityConfig> visibilityConfigs,
+            @NonNull Map<String, Set<String>> accountPropertyPaths,
             boolean forceOverride,
             int version,
             SetSchemaStats.@Nullable Builder setSchemaStatsBuilder,
@@ -944,6 +972,7 @@ public final class AppSearchImpl implements Closeable {
                 databaseName,
                 schemas,
                 visibilityConfigs,
+                accountPropertyPaths,
                 forceOverride,
                 version,
                 setSchemaStatsBuilder,
@@ -1072,6 +1101,7 @@ public final class AppSearchImpl implements Closeable {
             @NonNull String databaseName,
             @NonNull List<AppSearchSchema> schemas,
             @NonNull List<InternalVisibilityConfig> visibilityConfigs,
+            @NonNull Map<String, Set<String>> accountPropertyPaths,
             boolean forceOverride,
             int version,
             SetSchemaStats.@Nullable Builder setSchemaStatsBuilder,
@@ -1103,6 +1133,7 @@ public final class AppSearchImpl implements Closeable {
                         databaseName,
                         schemas,
                         visibilityConfigs,
+                        accountPropertyPaths,
                         forceOverride,
                         version,
                         setSchemaStatsBuilder,
@@ -1286,12 +1317,14 @@ public final class AppSearchImpl implements Closeable {
      * @see #doSetSchemaWithChangeNotificationLocked
      */
     @GuardedBy("mReadWriteLock")
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private @NonNull Pair<InternalSetSchemaResponse, SetSchemaResultProto>
     doSetSchemaNoChangeNotificationLocked(
             @NonNull String packageName,
             @NonNull String databaseName,
             @NonNull List<AppSearchSchema> schemas,
             @NonNull List<InternalVisibilityConfig> visibilityConfigs,
+            @NonNull Map<String, Set<String>> accountPropertyPaths,
             boolean forceOverride,
             int version,
             SetSchemaStats.@Nullable Builder setSchemaStatsBuilder,
@@ -1301,9 +1334,16 @@ public final class AppSearchImpl implements Closeable {
         SchemaProto.Builder newSchemaBuilder = SchemaProto.newBuilder();
         for (int i = 0; i < schemas.size(); i++) {
             AppSearchSchema schema = schemas.get(i);
-            SchemaTypeConfigProto schemaTypeProto =
-                    SchemaToProtoConverter.toSchemaTypeConfigProto(schema, version);
+            SchemaTypeConfigProto schemaTypeProto = SchemaToProtoConverter
+                    .toSchemaTypeConfigProto(schema,
+                            accountPropertyPaths.get(schema.getSchemaType()), version);
             newSchemaBuilder.addTypes(schemaTypeProto);
+        }
+        if (mAccountStoreLocked != null) {
+            for (Map.Entry<String, Set<String>> entry : accountPropertyPaths.entrySet()) {
+                mSchemaCacheLocked.addToSchemasWipeoutAccountPropertyPaths(
+                        prefix + entry.getKey(), entry.getValue());
+            }
         }
 
         Set<String> deletedPrefixedTypes;
@@ -1508,6 +1548,7 @@ public final class AppSearchImpl implements Closeable {
      * @param callerAccess Visibility access info of the calling app
      * @throws AppSearchException on IcingSearchEngine error.
      */
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public @NonNull GetSchemaResponse getSchema(
             @NonNull String packageName,
             @NonNull String databaseName,
@@ -1569,6 +1610,20 @@ public final class AppSearchImpl implements Closeable {
 
                 responseBuilder.setVersion(typeConfig.getVersion());
                 responseBuilder.addSchema(schema);
+
+                // Populate account property paths map.
+                if (Flags.enableSchemasWipeoutAccountPropertyPaths()
+                        && typeConfigBuilder.getAccountPropertiesCount() > 0) {
+                    Set<PropertyPath> accountPropertyPaths = new ArraySet<>(
+                            typeConfigBuilder.getAccountPropertiesCount());
+                    for (String accountPropertyPath :
+                            typeConfigBuilder.getAccountPropertiesList()) {
+                        accountPropertyPaths.add(new PropertyPath(accountPropertyPath));
+                    }
+                    responseBuilder.setSchemaTypeWipeoutAccountPropertyPaths(
+                            typeConfig.getSchemaType().substring(typePrefix.length()),
+                            accountPropertyPaths);
+                }
 
                 // Populate visibility info. Since the constructor of VisibilityStore will get
                 // schema. Avoid call visibility store before we have already created it.
@@ -1745,11 +1800,13 @@ public final class AppSearchImpl implements Closeable {
      *                                be called. See also {@link #persistToDisk(PersistType.Code)}.
      * @throws AppSearchException on IcingSearchEngine error.
      */
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public void batchPutDocuments(
             @NonNull String packageName,
             @NonNull String databaseName,
             @NonNull List<GenericDocument> documents,
-            AppSearchBatchResult.@Nullable Builder<String, Void> batchResultBuilder,
+            AppSearchBatchResult.@NonNull Builder<String, InternalPutDocumentResponse>
+                    batchResultBuilder,
             boolean sendChangeNotifications,
             @Nullable AppSearchLogger logger,
             PersistType.@NonNull Code persistType,
@@ -1758,8 +1815,37 @@ public final class AppSearchImpl implements Closeable {
         List<DocumentProto> docProtos = new ArrayList<>();
         List<PutDocumentStats.Builder> statsBuilders = new ArrayList<>();
         int currentTotalBytes = 0;
-
+        String prefix = PrefixUtil.createPrefix(packageName, databaseName);
+        Set<AccountProto> newlyAddedAccounts = null;
+        Set<Account> allExistingAccounts = null;
+        Map<String, Set<String>> prefixedAccountPropertyPaths = null;
+        if (mAccountStoreLocked != null) {
+            mReadWriteLock.readLock().lock();
+            try {
+                allExistingAccounts = mAccountStoreLocked.getAllExistingAccounts();
+                prefixedAccountPropertyPaths = mSchemaCacheLocked.getPrefixedAccountPropertyPaths();
+            } finally {
+                mReadWriteLock.readLock().unlock();
+            }
+        }
         for (int i = 0; i < documents.size(); ++i) {
+            if (mAccountStoreLocked != null && allExistingAccounts != null) {
+                try {
+                    Set<AccountProto> accounts = AccountStore.verifyAccountExists(
+                            allExistingAccounts,
+                            prefixedAccountPropertyPaths,
+                            prefix, documents.get(i));
+                    if (accounts != null) {
+                        if (newlyAddedAccounts == null) {
+                            newlyAddedAccounts = new ArraySet<>();
+                        }
+                        newlyAddedAccounts.addAll(accounts);
+                    }
+                } catch (AppSearchException e) {
+                    batchResultBuilder.setResult(documents.get(i).getId(), e.toAppSearchResult());
+                    continue;
+                }
+            }
             PutDocumentStats.Builder pStatsBuilder =
                     new PutDocumentStats.Builder(packageName, databaseName);
             DocumentProto docProto = createDocumentProto(packageName, databaseName,
@@ -1802,6 +1888,9 @@ public final class AppSearchImpl implements Closeable {
                 logger,
                 persistType,
                 callStatsBuilder);
+        if (mAccountStoreLocked != null && newlyAddedAccounts != null) {
+            mAccountStoreLocked.putAccounts(newlyAddedAccounts);
+        }
     }
 
     /**
@@ -1828,7 +1917,8 @@ public final class AppSearchImpl implements Closeable {
             @NonNull String databaseName,
             @NonNull List<DocumentProto> documents,
             @NonNull List<PutDocumentStats.Builder> statsBuilders,
-            AppSearchBatchResult.@Nullable Builder<String, Void> batchResultBuilder,
+            AppSearchBatchResult.@NonNull Builder<String, InternalPutDocumentResponse>
+                    batchResultBuilder,
             boolean sendChangeNotifications,
             @Nullable AppSearchLogger logger,
             PersistType.@NonNull Code persistType,
@@ -1858,7 +1948,8 @@ public final class AppSearchImpl implements Closeable {
                 String docId = finalDocument.getUri();
                 PutDocumentStats.Builder pStatsBuilder =
                         statsBuilders.get(i)
-                                .setLaunchVMEnabled(mIsVMEnabled)
+                                .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                                .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                                 .setJavaLockAcquisitionLatencyMillis(
                                         (int)
                                                 (javaLockAcquisitionEndTimeMillis
@@ -1874,9 +1965,7 @@ public final class AppSearchImpl implements Closeable {
                     putRequestBuilder.addDocuments(finalDocument);
                     statsNotFilteredOut.add(pStatsBuilder);
                 } catch (Throwable t) {
-                    if (batchResultBuilder != null) {
-                        batchResultBuilder.setResult(docId, throwableToFailedResult(t));
-                    }
+                    batchResultBuilder.setResult(docId, throwableToFailedResult(t));
                 }
             }
 
@@ -1929,9 +2018,10 @@ public final class AppSearchImpl implements Closeable {
                     // If it is a failure, it will throw and the catch section will
                     // set generated result
                     checkSuccess(putResultProto.getStatus());
-                    if (batchResultBuilder != null) {
-                        batchResultBuilder.setSuccess(docId, /* value= */ null);
-                    }
+                    batchResultBuilder.setSuccess(
+                            docId,
+                            new InternalPutDocumentResponse(
+                                    putResultProto.getDocumentExpirationTimestampMs()));
 
                     // Don't need to check the index here, as request doc list size should
                     // definitely be bigger than response doc list size.
@@ -1975,11 +2065,7 @@ public final class AppSearchImpl implements Closeable {
                                 mVisibilityCheckerLocked);
                     }
                 } catch (Throwable t) {
-                    if (batchResultBuilder != null) {
-                        batchResultBuilder.setResult(docId, throwableToFailedResult(t));
-                    } else {
-                        throw t;
-                    }
+                    batchResultBuilder.setResult(docId, throwableToFailedResult(t));
                 }
             }
 
@@ -2020,6 +2106,7 @@ public final class AppSearchImpl implements Closeable {
      * @param sendChangeNotifications Whether to dispatch
      *                                {@link DocumentChangeInfo}
      *                                messages to observers for this change.
+     * @return {@link InternalPutDocumentResponse}
      * @throws AppSearchException on IcingSearchEngine error.
      *
      * @deprecated use {@link #batchPutDocuments(String, String, List,
@@ -2027,7 +2114,8 @@ public final class AppSearchImpl implements Closeable {
      */
     // TODO(b/394875109) keep this for now to make code sync easier.
     @Deprecated
-    public void putDocument(
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    public @NonNull InternalPutDocumentResponse putDocument(
             @NonNull String packageName,
             @NonNull String databaseName,
             @NonNull GenericDocument document,
@@ -2038,7 +2126,8 @@ public final class AppSearchImpl implements Closeable {
         PutDocumentStats.Builder pStatsBuilder = null;
         if (logger != null) {
             pStatsBuilder = new PutDocumentStats.Builder(packageName, databaseName)
-                    .setLaunchVMEnabled(mIsVMEnabled);
+                    .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                    .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled());
         }
         long totalLatencyStartMillis = SystemClock.elapsedRealtime();
         long javaLockAcquisitionEndTimeMillis = 0;
@@ -2053,6 +2142,14 @@ public final class AppSearchImpl implements Closeable {
             }
             throwIfClosedLocked();
 
+            String prefix = createPrefix(packageName, databaseName);
+            Set<AccountProto> newAddingAccounts = null;
+            if (mAccountStoreLocked != null) {
+                newAddingAccounts = AccountStore.verifyAccountExists(
+                        mAccountStoreLocked.getAllExistingAccounts(),
+                        mSchemaCacheLocked.getPrefixedAccountPropertyPaths(), prefix, document);
+            }
+
             // Generate Document Proto
             long generateDocumentProtoStartTimeMillis = SystemClock.elapsedRealtime();
             DocumentProto.Builder documentBuilder = GenericDocumentToProtoConverter.toDocumentProto(
@@ -2061,7 +2158,6 @@ public final class AppSearchImpl implements Closeable {
 
             // Rewrite Document Type
             long rewriteDocumentTypeStartTimeMillis = SystemClock.elapsedRealtime();
-            String prefix = createPrefix(packageName, databaseName);
             addPrefixToDocument(documentBuilder, prefix);
             long rewriteDocumentTypeEndTimeMillis = SystemClock.elapsedRealtime();
             DocumentProto finalDocument = documentBuilder.build();
@@ -2123,6 +2219,10 @@ public final class AppSearchImpl implements Closeable {
                                 .getNamespaceStorageInfoList());
             }
 
+            if (mAccountStoreLocked != null && newAddingAccounts != null) {
+                mAccountStoreLocked.putAccounts(newAddingAccounts);
+            }
+
             // Prepare notifications
             if (sendChangeNotifications) {
                 mObserverManager.onDocumentChange(
@@ -2134,6 +2234,8 @@ public final class AppSearchImpl implements Closeable {
                         mDocumentVisibilityStoreLocked,
                         mVisibilityCheckerLocked);
             }
+            return new InternalPutDocumentResponse(
+                    putResultProto.getDocumentExpirationTimestampMs());
         } finally {
             logWriteOperationLatencyLocked(totalLatencyStartMillis,
                     javaLockAcquisitionEndTimeMillis,
@@ -2148,6 +2250,37 @@ public final class AppSearchImpl implements Closeable {
                         (int) (totalEndTimeMillis - totalLatencyStartMillis));
                 logger.logStats(pStatsBuilder.build());
             }
+        }
+    }
+
+    /**
+     * Updates the internal account store to reflect the current set of device accounts,
+     * handling additions, renames, and removals.
+     *
+     * <p>This method synchronizes the internal cache with {@code allExistingAccounts} and processes
+     * any {@code renamedAccounts}. Identifies accounts that have been removed and purges any
+     * associated documents from the index to ensure data privacy and consistency.
+     *
+     * @param allExistingAccounts The complete set of current system {@link Account}s.
+     * @param renamedAccounts A map of {@code <OldAccount, NewAccount>} for accounts that were
+     * renamed.
+     * @throws AppSearchException If an error occurs while updating the store or removing documents.
+     */
+    @ExperimentalAppSearchApi
+    public void updateAccountStore(@NonNull Set<Account> allExistingAccounts,
+            @NonNull Map<Account, Account> renamedAccounts) throws AppSearchException {
+        if (mAccountStoreLocked == null) {
+            return;
+        }
+
+        mReadWriteLock.writeLock().lock();
+        try {
+            Set<AccountProto> deletedAccounts = mAccountStoreLocked.updateAccounts(
+                    allExistingAccounts, renamedAccounts);
+            mAccountStoreLocked.removeAccountDocuments(
+                    mSchemaCacheLocked.getPrefixedAccountPropertyPaths(), this, deletedAccounts);
+        } finally {
+            mReadWriteLock.writeLock().unlock();
         }
     }
 
@@ -3029,7 +3162,8 @@ public final class AppSearchImpl implements Closeable {
                         new QueryStats.Builder(QueryStats.VISIBILITY_SCOPE_LOCAL, packageName)
                                 .setDatabase(databaseName)
                                 .setSearchSourceLogTag(searchSpec.getSearchSourceLogTag())
-                                .setLaunchVMEnabled(mIsVMEnabled)
+                                .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                                .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                                 .setLastBlockingOperation(mLastWriteOperationLocked)
                                 .setLastBlockingOperationLatencyMillis(
                                         mLastWriteOperationLatencyMillisLocked)
@@ -3120,7 +3254,8 @@ public final class AppSearchImpl implements Closeable {
                                 QueryStats.VISIBILITY_SCOPE_GLOBAL,
                                 callerAccess.getCallingPackageName())
                                 .setSearchSourceLogTag(searchSpec.getSearchSourceLogTag())
-                                .setLaunchVMEnabled(mIsVMEnabled)
+                                .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                                .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                                 .setLastBlockingOperation(mLastWriteOperationLocked)
                                 .setLastBlockingOperationLatencyMillis(
                                         mLastWriteOperationLatencyMillisLocked)
@@ -3220,9 +3355,9 @@ public final class AppSearchImpl implements Closeable {
         // All processes are counted in rewriteSearchSpecLatencyMillis
         long rewriteSearchSpecLatencyStartMillis = SystemClock.elapsedRealtime();
         SearchSpecProto finalSearchSpec = searchSpecToProtoConverter.toSearchSpecProto(
-                mIsVMEnabled);
+                mLaunchVmFeatures.isVmEnabled());
         ResultSpecProto finalResultSpec = searchSpecToProtoConverter.toResultSpecProto(
-                mNamespaceCacheLocked, mSchemaCacheLocked, mIsVMEnabled);
+                mNamespaceCacheLocked, mSchemaCacheLocked, mLaunchVmFeatures.isVmEnabled());
         ScoringSpecProto scoringSpec = searchSpecToProtoConverter.toScoringSpecProto();
         if (sStatsBuilder != null) {
             sStatsBuilder.setRewriteSearchSpecLatencyMillis((int)
@@ -3542,7 +3677,8 @@ public final class AppSearchImpl implements Closeable {
                 queryStatsBuilder.setJavaLockAcquisitionLatencyMillis(
                                 (int) (javaLockAcquisitionEndTimeMillis
                                         - totalLatencyStartMillis))
-                        .setLaunchVMEnabled(mIsVMEnabled)
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                         .setLastBlockingOperation(mLastWriteOperationLocked)
                         .setLastBlockingOperationLatencyMillis(
                                 mLastWriteOperationLatencyMillisLocked);
@@ -3697,6 +3833,37 @@ public final class AppSearchImpl implements Closeable {
         }
     }
 
+    /**
+     * Handles expired documents.
+     *
+     * <p>The job will purge expired documents and propagate deletion to child documents with delete
+     * propagation enabled.
+     *
+     * @return a {@link HandleExpiredDocumentsResultProto} object with success code
+     * @throws AppSearchException if Icing failed to handle expired documents
+     */
+    public @NonNull HandleExpiredDocumentsResultProto handleExpiredDocuments()
+            throws AppSearchException {
+        mReadWriteLock.writeLock().lock();
+        try {
+            throwIfClosedLocked();
+
+            HandleExpiredDocumentsResultProto resultProto =
+                    mIcingSearchEngineLocked.handleExpiredDocuments();
+            checkSuccess(resultProto.getStatus());
+
+            // PersistToDisk is needed if any document was purged.
+            if (resultProto.getNumExpiredDocuments() > 0
+                    || resultProto.getNumPropagatedDeletedDocuments() > 0) {
+                mNeedsPersistToDisk.set(true);
+            }
+
+            return resultProto;
+        } finally {
+            mReadWriteLock.writeLock().unlock();
+        }
+    }
+
     /** Reports a usage of the given document at the given timestamp. */
     public void reportUsage(
             @NonNull String packageName,
@@ -3814,7 +3981,8 @@ public final class AppSearchImpl implements Closeable {
             if (removeStatsBuilder != null) {
                 removeStatsBuilder.setStatusCode(statusProtoToResultCode(
                                 deleteResultProto.getStatus()))
-                        .setLaunchVMEnabled(mIsVMEnabled)
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                         .setJavaLockAcquisitionLatencyMillis(
                                 (int) (javaLockAcquisitionEndTimeMillis - totalLatencyStartMillis))
                         .setLastBlockingOperation(mLastReadOrWriteOperationLocked)
@@ -3927,7 +4095,7 @@ public final class AppSearchImpl implements Closeable {
             }
 
             SearchSpecProto finalSearchSpec = searchSpecToProtoConverter.toSearchSpecProto(
-                    mIsVMEnabled);
+                    mLaunchVmFeatures.isVmEnabled());
 
             Set<String> prefixedObservedSchemas = null;
             if (mObserverManager.isPackageObserved(packageName)) {
@@ -3956,7 +4124,8 @@ public final class AppSearchImpl implements Closeable {
             if (removeStatsBuilder != null) {
                 removeStatsBuilder.setTotalLatencyMillis(
                                 (int) (SystemClock.elapsedRealtime() - totalLatencyStartMillis))
-                        .setLaunchVMEnabled(mIsVMEnabled);
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled());
             }
 
         }
@@ -4033,7 +4202,12 @@ public final class AppSearchImpl implements Closeable {
             String namespace = null;
             if (deletedIds != null) {
                 namespace = removePrefix(group.getNamespace());
-                deletedIds.put(namespace, new ArraySet<>(group.getUrisList()));
+                Set<String> deletedIdSet = deletedIds.get(namespace);
+                if (deletedIdSet == null) {
+                    deletedIds.put(namespace, new ArraySet<>(group.getUrisList()));
+                } else {
+                    deletedIdSet.addAll(group.getUrisList());
+                }
             }
             // 2. If this schema type is observed, then notify the observer
             if (prefixedObservedSchemas != null
@@ -4398,6 +4572,7 @@ public final class AppSearchImpl implements Closeable {
      *                    prevent data loss without needing data recovery.
      * @throws AppSearchException on any error that AppSearch persist data to disk.
      */
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public void persistToDisk(@Nullable String callingPackageName,
             @BaseStats.CallType int triggerCallType,
             PersistType.@NonNull Code persistType,
@@ -4423,12 +4598,16 @@ public final class AppSearchImpl implements Closeable {
                         .setLastBlockingOperation(mLastReadOrWriteOperationLocked)
                         .setLastBlockingOperationLatencyMillis(
                                 mLastReadOrWriteOperationLatencyMillisLocked)
-                                .setLaunchVMEnabled(mIsVMEnabled);
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled());
             }
 
             LogUtil.piiTrace(TAG, "persistToDisk, request", persistType);
             PersistToDiskResultProto persistToDiskResultProto =
                     mIcingSearchEngineLocked.persistToDisk(persistType);
+            if (mAccountStoreLocked != null) {
+                mAccountStoreLocked.persistToDisk();
+            }
             if (callStatsBuilder != null) {
                 callStatsBuilder.addGetVmLatencyMillis(
                         persistToDiskResultProto.getGetVmLatencyMs());
@@ -4683,6 +4862,7 @@ public final class AppSearchImpl implements Closeable {
      * @throws AppSearchException on IcingSearchEngine error.
      */
     @GuardedBy("mReadWriteLock")
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private void resetLocked(InitializeStats.@Nullable Builder initStatsBuilder,
             CallStats.@Nullable Builder callStatsBuilder)
             throws AppSearchException {
@@ -4723,6 +4903,9 @@ public final class AppSearchImpl implements Closeable {
 
         // Delete all blob files if AppSearch manages them.
         deleteBlobFilesLocked();
+        if (mAccountStoreLocked != null) {
+            mAccountStoreLocked.reset();
+        }
     }
 
     /** Wrapper around schema changes */
@@ -4798,7 +4981,7 @@ public final class AppSearchImpl implements Closeable {
      * protos.
      */
     static Map<String, SchemaTypeConfigProto> getRewrittenPrefixedTypes(@NonNull String prefix,
-            @NonNull SchemaProto newSchema, boolean populateDatabase) throws AppSearchException {
+            @NonNull SchemaProto newSchema, boolean populateDatabase) {
         Map<String, SchemaTypeConfigProto> newTypesToProto = new ArrayMap<>();
         // Rewrite the schema type to include the typePrefix.
         for (int typeIdx = 0; typeIdx < newSchema.getTypesCount(); typeIdx++) {
@@ -5177,7 +5360,8 @@ public final class AppSearchImpl implements Closeable {
                         .setLastBlockingOperation(mLastReadOrWriteOperationLocked)
                         .setLastBlockingOperationLatencyMillis(
                                 mLastReadOrWriteOperationLatencyMillisLocked)
-                        .setLaunchVMEnabled(mIsVMEnabled)
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                         .addGetVmLatencyMillis(optimizeResultProto.getGetVmLatencyMs());
                 AppSearchLoggerHelper.copyNativeStats(optimizeResultProto.getOptimizeStats(),
                         optimizeStatsBuilder);
@@ -5262,20 +5446,6 @@ public final class AppSearchImpl implements Closeable {
         mReadWriteLock.readLock().lock();
         try {
             return mSchemaCacheLocked.getAllPrefixedSchemaTypes();
-        } finally {
-            mReadWriteLock.readLock().unlock();
-        }
-    }
-
-    /**
-     * Returns all prefixed blob namespaces saved in AppSearch.
-     *
-     * <p>This method is inefficient to call repeatedly.
-     */
-    public @NonNull List<String> getAllPrefixedBlobNamespaces() {
-        mReadWriteLock.readLock().lock();
-        try {
-            return mNamespaceCacheLocked.getAllPrefixedBlobNamespaces();
         } finally {
             mReadWriteLock.readLock().unlock();
         }

@@ -28,7 +28,7 @@ import androidx.room3.integration.kotlintestapp.vo.PetWithToyIds
 import androidx.room3.integration.kotlintestapp.vo.PetWithUser
 import com.google.common.base.Optional
 import com.google.common.util.concurrent.ListenableFuture
-import io.reactivex.Flowable
+import io.reactivex.rxjava3.core.Flowable
 
 @Dao
 interface PetDao {

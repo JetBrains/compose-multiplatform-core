@@ -21,11 +21,13 @@ import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator
 import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator.AppFunctionComponent
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
+import androidx.appfunctions.compiler.core.IntrospectionHelper
 import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTION_FUNCTION_NOT_FOUND_EXCEPTION_CLASS
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionComponentRegistryAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContextClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionInvokerClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.ConfigurableAppFunctionFactoryClass
+import androidx.appfunctions.compiler.core.findAnnotation
 import androidx.appfunctions.compiler.core.isOfType
 import androidx.appfunctions.compiler.core.toTypeName
 import com.google.devtools.ksp.KspExperimental
@@ -269,6 +271,7 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         contextSpec: ParameterSpec,
         functionParametersSpec: ParameterSpec,
     ) {
+        val isDeprecated = appFunction.isDeprecated()
         val functionParameterStatement =
             appFunction.getAppFunctionParametersStatement(contextSpec, functionParametersSpec)
         val formatStringMap =
@@ -285,6 +288,9 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
             )
         addNamed("\"%function_id:L\" -> {\n", formatStringMap)
         indent()
+        if (isDeprecated) {
+            add("@Suppress(\"DEPRECATION\")\n")
+        }
         addNamed("%factory_class:T<%enclosing_class:T>(\n", formatStringMap)
         indent()
         addNamed("%context_param:L.%context_property:L\n", formatStringMap)
@@ -304,6 +310,11 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         return classDeclaration.getConstructors().firstOrNull { constructor ->
             constructor.modifiers.contains(Modifier.PUBLIC) && constructor.parameters.isEmpty()
         } != null
+    }
+
+    private fun KSFunctionDeclaration.isDeprecated(): Boolean {
+        return annotations.findAnnotation(IntrospectionHelper.DeprecatedAnnotation.CLASS_NAME) !=
+            null
     }
 
     private fun KSFunctionDeclaration.getAppFunctionParametersStatement(

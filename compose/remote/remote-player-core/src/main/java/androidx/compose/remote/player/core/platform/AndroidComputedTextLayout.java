@@ -20,21 +20,25 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 import android.text.StaticLayout;
 
 import androidx.annotation.RestrictTo;
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.RcPlatformServices;
 
 import org.jspecify.annotations.NonNull;
 
 @RestrictTo(LIBRARY_GROUP)
-public class AndroidComputedTextLayout implements Platform.ComputedTextLayout {
+public class AndroidComputedTextLayout implements RcPlatformServices.ComputedTextLayout {
     StaticLayout mStaticLayout;
     float mWidth;
     float mHeight;
+    int mLineCount;
+    boolean mIsHyphenatedText;
 
     public AndroidComputedTextLayout(@NonNull StaticLayout staticLayout, float width,
-            float height) {
+            float height, int lineCount, boolean isHyphenatedText) {
         mStaticLayout = staticLayout;
         mWidth = width;
         mHeight = height;
+        mLineCount = lineCount;
+        mIsHyphenatedText = isHyphenatedText;
     }
 
     /**
@@ -60,5 +64,15 @@ public class AndroidComputedTextLayout implements Platform.ComputedTextLayout {
     @Override
     public float getHeight() {
         return mHeight;
+    }
+
+    @Override
+    public int getVisibleLineCount() {
+        return mLineCount;
+    }
+
+    @Override
+    public boolean isHyphenatedText() {
+        return mIsHyphenatedText;
     }
 }

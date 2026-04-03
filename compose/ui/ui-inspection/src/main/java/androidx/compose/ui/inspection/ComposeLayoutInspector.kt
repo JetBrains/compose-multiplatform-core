@@ -428,7 +428,7 @@ class ComposeLayoutInspector(
                 getRecompositionStateReadCommand.anchorHash,
                 getRecompositionStateReadCommand.recompositionNumberStart,
                 getRecompositionStateReadCommand.recompositionNumberEnd,
-                includeExtra = getRecompositionStateReadCommand.includeExtra,
+                getRecompositionStateReadCommand.includeExtra,
             )
 
         val stringTable = StringTable()
@@ -441,6 +441,7 @@ class ComposeLayoutInspector(
                             addRead(read.convert(stringTable, layoutInspectorTree))
                         }
                         addAllStrings(stringTable.toStringEntries())
+                        purgedStateReads = recompositionHandler.getPurgedStateReadCount()
                     }
                     .build()
         }

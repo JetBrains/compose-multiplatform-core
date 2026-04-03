@@ -16,9 +16,27 @@
 
 package androidx.xr.arcore.projected
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class ProjectedArDevice(override var devicePose: Pose = Pose()) : RuntimeArDevice {}
+/**
+ * @property devicePose the [Pose] of the device
+ * @property trackingState the [TrackingState] of the device
+ */
+internal class ProjectedArDevice : RuntimeArDevice {
+
+    override var devicePose: Pose = Pose()
+        private set
+
+    override var trackingState: TrackingState = TrackingState.STOPPED
+        private set
+
+    internal fun update(trackingState: TrackingState, pose: Pose?) {
+        this.trackingState = trackingState
+
+        if (pose != null) {
+            devicePose = pose
+        }
+    }
+}

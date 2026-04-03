@@ -43,7 +43,8 @@ dependencies {
     implementation(libs.androidToolsSdkCommon) // com.android.ide.common for Stable AIDL plugin
     implementation(libs.spdxGradlePluginz)
     runtimeOnly(libs.androidKotlinMultiplatform)
-    implementation(libs.binaryCompatibilityValidator)
+    runtimeOnly(libs.androidLegacyKaptPlugin)
+    compileOnly(libs.kotlinAbiTools)
 
     // For Room Gradle Plugin
     implementation(libs.kspGradlePlugin) {

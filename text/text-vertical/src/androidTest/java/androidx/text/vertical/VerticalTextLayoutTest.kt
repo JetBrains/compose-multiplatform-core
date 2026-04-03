@@ -48,7 +48,7 @@ class VerticalTextLayoutTest {
             assertThat(end).isEqualTo(JP_TEXT.length)
             assertThat(paint).isSameInstanceAs(PAINT)
             assertThat(height).isEqualTo(100f)
-            assertThat(orientation).isEqualTo(TextOrientation.MIXED)
+            assertThat(orientation).isEqualTo(TextOrientation.Mixed)
         }
     }
 

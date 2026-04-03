@@ -22,10 +22,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onParent
@@ -36,7 +37,6 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -62,7 +62,7 @@ class ButtonGroupScreenshotTest {
     fun buttonGroup_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}) {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Top) {
                     clickableItem(onClick = {}, label = "A")
                     clickableItem(onClick = {}, label = "B")
                     clickableItem(onClick = {}, label = "C")
@@ -79,7 +79,7 @@ class ButtonGroupScreenshotTest {
     fun buttonGroup_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}) {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Top) {
                     clickableItem(onClick = {}, label = "A")
                     clickableItem(onClick = {}, label = "B")
                     clickableItem(onClick = {}, label = "C")
@@ -308,12 +308,11 @@ class ButtonGroupScreenshotTest {
         assertAgainstGolden("connectedButtonGroup_allSelected_lightTheme")
     }
 
-    @Ignore
     @Test
     fun buttonGroup_firstPressed_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}) {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Top) {
                     clickableItem(onClick = {}, label = "A")
                     clickableItem(onClick = {}, label = "B")
                     clickableItem(onClick = {}, label = "C")
@@ -337,12 +336,11 @@ class ButtonGroupScreenshotTest {
         assertAgainstGolden("buttonGroup_firstPressed_lightTheme")
     }
 
-    @Ignore("b/355413615")
     @Test
     fun buttonGroup_secondPressed_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}) {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Top) {
                     clickableItem(onClick = {}, label = "A")
                     clickableItem(onClick = {}, label = "B")
                     clickableItem(onClick = {}, label = "C")
@@ -366,12 +364,11 @@ class ButtonGroupScreenshotTest {
         assertAgainstGolden("buttonGroup_secondPressed_lightTheme")
     }
 
-    @Ignore("b/355413615")
     @Test
     fun buttonGroup_thirdPressed_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}) {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Top) {
                     clickableItem(onClick = {}, label = "A")
                     clickableItem(onClick = {}, label = "B")
                     clickableItem(onClick = {}, label = "C")
@@ -395,12 +392,11 @@ class ButtonGroupScreenshotTest {
         assertAgainstGolden("buttonGroup_thirdPressed_lightTheme")
     }
 
-    @Ignore("b/355413615")
     @Test
     fun buttonGroup_fourthPressed_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}) {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Top) {
                     clickableItem(onClick = {}, label = "A")
                     clickableItem(onClick = {}, label = "B")
                     clickableItem(onClick = {}, label = "C")
@@ -424,12 +420,11 @@ class ButtonGroupScreenshotTest {
         assertAgainstGolden("buttonGroup_fourthPressed_lightTheme")
     }
 
-    @Ignore("b/355413615")
     @Test
     fun buttonGroup_fifthPressed_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}) {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Top) {
                     clickableItem(onClick = {}, label = "A")
                     clickableItem(onClick = {}, label = "B")
                     clickableItem(onClick = {}, label = "C")
@@ -466,7 +461,8 @@ class ButtonGroupScreenshotTest {
                                 contentDescription = "Localized description",
                             )
                         }
-                    }
+                    },
+                    verticalAlignment = Alignment.Top,
                 ) {
                     for (i in 0 until numButtons) {
                         clickableItem(onClick = {}, label = "$i")
@@ -491,7 +487,8 @@ class ButtonGroupScreenshotTest {
                                 contentDescription = "Localized description",
                             )
                         }
-                    }
+                    },
+                    verticalAlignment = Alignment.Top,
                 ) {
                     for (i in 0 until numButtons) {
                         clickableItem(onClick = {}, label = "$i")
@@ -525,7 +522,8 @@ class ButtonGroupScreenshotTest {
                                 contentDescription = "Localized description",
                             )
                         }
-                    }
+                    },
+                    verticalAlignment = Alignment.Top,
                 ) {
                     for (i in 0 until numButtons) {
                         customItem(
@@ -571,7 +569,8 @@ class ButtonGroupScreenshotTest {
                                 contentDescription = "Localized description",
                             )
                         }
-                    }
+                    },
+                    verticalAlignment = Alignment.Top,
                 ) {
                     for (i in 0 until numButtons) {
                         customItem(

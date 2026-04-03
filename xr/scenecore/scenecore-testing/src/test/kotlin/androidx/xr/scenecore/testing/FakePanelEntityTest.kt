@@ -18,8 +18,9 @@ package androidx.xr.scenecore.testing
 
 import android.app.Activity
 import android.view.View
+import androidx.xr.runtime.math.Vector2
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.Dimensions
-import androidx.xr.scenecore.runtime.PerceivedResolutionResult
 import androidx.xr.scenecore.runtime.PixelDimensions
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
@@ -31,6 +32,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FakePanelEntityTest {
     private var view: View =
         View(Robolectric.buildActivity(Activity::class.java).create().start().get())
@@ -39,6 +41,18 @@ class FakePanelEntityTest {
     @Before
     fun setUp() {
         underTest = FakePanelEntity(view)
+    }
+
+    @Test
+    fun name_isNotSetByDefault() {
+        assertThat(underTest.name).isEqualTo("")
+    }
+
+    @Test
+    fun name_isSet() {
+        // Dispose underTest so we can reuse view.
+        underTest.dispose()
+        assertThat(FakePanelEntity(view, "test").name).isEqualTo("test")
     }
 
     @Test
@@ -92,25 +106,30 @@ class FakePanelEntityTest {
     }
 
     @Test
-    fun getPerceivedResolutionResult_withDifferentResults() {
-        // Default value
-        assertThat(underTest.getPerceivedResolution())
-            .isInstanceOf(PerceivedResolutionResult.InvalidCameraView::class.java)
+    fun transformPixelCoordinatesToLocalPosition_center_returnsZero() {
+        underTest.sizeInPixels = PixelDimensions(640, 480)
+        val position = underTest.transformPixelCoordinatesToLocalPosition(Vector2(320f, 240f))
+        assertThat(position).isEqualTo(Vector3.Zero)
+    }
 
-        // Set the EntityTooClose result.
-        underTest.setPerceivedResolution(PerceivedResolutionResult.EntityTooClose())
+    @Test
+    fun transformPixelCoordinatesToLocalPosition_topLeft_returnsCorrectPosition() {
+        val position = underTest.transformPixelCoordinatesToLocalPosition(Vector2(0f, 0f))
+        val expected = Vector3(underTest.size.width * -0.5f, underTest.size.height * 0.5f, 0.0f)
+        assertThat(position).isEqualTo(expected)
+    }
 
-        assertThat(underTest.getPerceivedResolution())
-            .isInstanceOf(PerceivedResolutionResult.EntityTooClose::class.java)
+    @Test
+    fun transformNormalizedCoordinatesToLocalPosition_center_returnsZero() {
+        val position = underTest.transformNormalizedCoordinatesToLocalPosition(Vector2(0f, 0f))
+        assertThat(position).isEqualTo(Vector3.Zero)
+    }
 
-        // Set the Success result.
-        underTest.setPerceivedResolution(
-            PerceivedResolutionResult.Success(PixelDimensions(640, 480))
-        )
-        val successResult = underTest.getPerceivedResolution() as PerceivedResolutionResult.Success
-
-        assertThat(successResult).isInstanceOf(PerceivedResolutionResult.Success::class.java)
-        assertThat(successResult.perceivedResolution).isEqualTo(PixelDimensions(640, 480))
+    @Test
+    fun transformNormalizedCoordinatesToLocalPosition_topLeft_returnsCorrectPosition() {
+        val position = underTest.transformNormalizedCoordinatesToLocalPosition(Vector2(-1f, 1f))
+        val expected = Vector3(underTest.size.width * -0.5f, underTest.size.height * 0.5f, 0.0f)
+        assertThat(position).isEqualTo(expected)
     }
 
     @Test

@@ -37,10 +37,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.arcore.apps.whitebox.mobile.anchors.AnchorsActivity
+import androidx.xr.arcore.apps.whitebox.mobile.anchorsplaneshittest.AnchorsPlanesHitTestActivity
+import androidx.xr.arcore.apps.whitebox.mobile.depthmaps.DepthMapsActivity
+import androidx.xr.arcore.apps.whitebox.mobile.facemeshing.FaceMeshActivity
 import androidx.xr.arcore.apps.whitebox.mobile.geospatial.GeospatialActivity
-import androidx.xr.arcore.apps.whitebox.mobile.hittest.HitTestActivity
-import androidx.xr.arcore.apps.whitebox.mobile.planes.PlanesActivity
+import androidx.xr.runtime.XrLog
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -49,6 +50,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        XrLog.isEnabled = true
+        XrLog.level = XrLog.Level.VERBOSE
 
         setContent { WhiteboxHomeScreen() }
     }
@@ -96,24 +100,26 @@ fun WhiteboxSessionMenu() {
         )
         HorizontalDivider()
         TextButton(
-            onClick = { context.startActivity(Intent(context, AnchorsActivity::class.java)) }
+            onClick = {
+                context.startActivity(Intent(context, AnchorsPlanesHitTestActivity::class.java))
+            }
         ) {
-            Text("Anchors")
-        }
-        TextButton(
-            onClick = { context.startActivity(Intent(context, PlanesActivity::class.java)) }
-        ) {
-            Text("Planes")
-        }
-        TextButton(
-            onClick = { context.startActivity(Intent(context, HitTestActivity::class.java)) }
-        ) {
-            Text("Hit Test")
+            Text("Anchors, Planes, HitTest")
         }
         TextButton(
             onClick = { context.startActivity(Intent(context, GeospatialActivity::class.java)) }
         ) {
             Text("Geospatial")
+        }
+        TextButton(
+            onClick = { context.startActivity(Intent(context, DepthMapsActivity::class.java)) }
+        ) {
+            Text("Depth Maps")
+        }
+        TextButton(
+            onClick = { context.startActivity(Intent(context, FaceMeshActivity::class.java)) }
+        ) {
+            Text("Face Meshes")
         }
     }
 }

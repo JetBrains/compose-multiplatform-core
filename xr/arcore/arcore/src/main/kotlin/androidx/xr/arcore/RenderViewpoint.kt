@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
+// removed.
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
@@ -29,8 +33,10 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * Represents a single viewpoint used for rendering, such as a left eye, right eye, or a mono view.
  *
- * This class provides access to the [State] of a specific render viewpoint, including its [pose],
- * [localPose], and [fieldOfView].
+ * This class provides access to the [State] of a specific render viewpoint, including its
+ * [pose][State.pose], [localPose][State.localPose], and [fieldOfView][State.fieldOfView].
+ *
+ * @property state the current [State] of the render viewpoint
  */
 public class RenderViewpoint
 internal constructor(
@@ -42,7 +48,7 @@ internal constructor(
         /**
          * Returns the RenderViewpoint associated with the left display.
          *
-         * @param session the currently active [Session].
+         * @param session the currently active [Session]
          * @note Supported only on devices that use stereo displays for rendering.
          */
         @JvmStatic
@@ -54,7 +60,7 @@ internal constructor(
         /**
          * Returns the RenderViewpoint associated with the right display.
          *
-         * @param session the currently active [Session].
+         * @param session the currently active [Session]
          * @note Supported only on devices that use stereo displays for rendering.
          */
         @JvmStatic
@@ -66,7 +72,7 @@ internal constructor(
         /**
          * Returns the RenderViewpoint associated with the single device display.
          *
-         * @param session the currently active [Session].
+         * @param session the currently active [Session]
          * @note When the device uses a single display, this will return the render viewpoint for
          *   that display. When the device uses stereo displays, this will return the render
          *   viewpoint for the center of the two displays.
@@ -89,23 +95,25 @@ internal constructor(
     /**
      * Class that contains the current state of the render viewpoint.
      *
-     * @property pose The render viewpoint's pose in perception space, the global coordinate system
-     *   of the [Session]. This value is the underlying AR Device's pose plus the localPose offset.
-     *   Its update behavior is determined by [Config.deviceTracking]:
-     * - **LAST_KNOWN:** The device pose is updated each frame with the latest valid tracking data,
-     *   reflecting physical movement.
-     * - **DISABLED:** The device pose is not updated. It remains at the origin (an identity pose)
-     *   unless this mode is switched from LAST_KNOWN to DISABLED mid-session, which freezes the
-     *   pose at its last known state.
+     * @property pose the render viewpoint's pose in perception space
      *
-     * @property localPose A local offset from the device's central tracking point, used for
-     *   scenarios like stereo rendering (left/right eye views).
-     * @property fieldOfView Contains the camera's field of view in radians.
+     * This value is the underlying [ArDevice]'s pose in the global coordinate system of the
+     * [Session], plus the [localPose] offset. Its update behavior is determined by the current
+     * [androidx.xr.runtime.DeviceTrackingMode]:
+     * - **SPATIAL_LAST_KNOWN:** The device pose is updated each frame with the latest valid
+     *   tracking data, reflecting physical movement.
+     * - **DISABLED:** The device pose is not updated. It remains at the origin (an identity pose)
+     *   unless this mode is switched from SPATIAL_LAST_KNOWN to DISABLED mid-session, which freezes
+     *   the pose at its last known state.
+     *
+     * @property localPose a local offset from the device's central tracking point
+     * @property fieldOfView the camera's [FieldOfView] in radians
      */
     public class State
     internal constructor(
         public val pose: Pose,
         public val localPose: Pose,
+        @Deprecated(message = "Convert to androidx.xr.runtime.math.FieldOfView")
         public val fieldOfView: FieldOfView,
     ) {
         override fun equals(other: Any?): Boolean {
@@ -122,14 +130,10 @@ internal constructor(
             result = 31 * result + fieldOfView.hashCode()
             return result
         }
-
-        override fun toString(): String {
-            return "State(pose=$pose, localPose=$localPose, fieldOfView=$fieldOfView)"
-        }
     }
 
     private val _state = MutableStateFlow<State>(State(Pose(), Pose(), FieldOfView(0f, 0f, 0f, 0f)))
-    /** The current [State] of the render viewpoint. */
+
     public val state: StateFlow<State> = _state.asStateFlow()
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)

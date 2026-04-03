@@ -16,76 +16,84 @@
 
 package androidx.ink.authoring.internal
 
-import androidx.ink.authoring.InkInProgressShape
+import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalCustomShapeWorkflowApi::class)
 @RunWith(AndroidJUnit4::class)
 class InProgressStrokePoolTest {
 
     @Test
-    fun obtain_whenCalledTwice_returnsDifferentInstances() {
-        val pool = InProgressStrokePool.create()
+    fun obtain_whenCalledTwiceWithSameShapeType_returnsDifferentInstances() {
+        val pool = InProgressStrokePoolImpl(FakeShapeWorkflow())
 
-        val first = pool.obtain()
-        val second = pool.obtain()
+        val first = pool.obtain(FakeShapeSpec())
+        val second = pool.obtain(FakeShapeSpec())
 
         assertThat(second).isNotSameInstanceAs(first)
     }
 
     @Test
-    fun obtain_whenCalledAfterRecycle_returnsSameInstance() {
-        val pool = InProgressStrokePool.create()
+    fun obtain_whenCalledTwiceWithDifferentShapeType_returnsDifferentInstances() {
+        val pool = InProgressStrokePoolImpl(FakeShapeWorkflow())
 
-        val first = pool.obtain()
+        val first = pool.obtain(FakeShapeSpec(updatesAfterCompletion = false))
+        val second = pool.obtain(FakeShapeSpec(updatesAfterCompletion = true))
+
+        assertThat(second).isNotSameInstanceAs(first)
+    }
+
+    @Test
+    fun obtain_whenCalledAfterRecycleWithSameShapeType_returnsSameInstance() {
+        val pool = InProgressStrokePoolImpl(FakeShapeWorkflow())
+
+        val first = pool.obtain(FakeShapeSpec())
         pool.recycle(first)
-        val second = pool.obtain()
+        val second = pool.obtain(FakeShapeSpec())
 
         assertThat(second).isSameInstanceAs(first)
     }
 
     @Test
-    fun trimToSize_whenNegative_throws() {
-        assertFailsWith<IllegalArgumentException> { InProgressStrokePool.create().trimToSize(-1) }
+    fun obtain_whenCalledAfterRecycleWithDifferentShapeType_returnsDifferentInstance() {
+        val pool = InProgressStrokePoolImpl(FakeShapeWorkflow())
+
+        val first = pool.obtain(FakeShapeSpec(updatesAfterCompletion = false))
+        pool.recycle(first)
+        val second = pool.obtain(FakeShapeSpec(updatesAfterCompletion = true))
+
+        assertThat(second).isNotSameInstanceAs(first)
     }
 
     @Test
-    fun trimToSize_whenZero_obtainReturnsNewInstance() {
-        val pool = InProgressStrokePool.create()
-        val obtainedBeforeTrim = mutableSetOf<InkInProgressShape>()
-        repeat(10) {
-            val instance = pool.obtain()
-            obtainedBeforeTrim.add(instance)
-            pool.recycle(instance)
+    fun onHandoff_afterMultipleHandoffs_shouldTrimInProgressStrokePoolToMaxCohortSize() {
+        val shapeAdapter = FakeShapeWorkflow()
+        val inProgressStrokePool = InProgressStrokePoolImpl(shapeAdapter)
+        val shapeSpec = FakeShapeSpec()
+        val shapeType = shapeAdapter.getShapeType(shapeSpec)
+
+        val cohortSizesForHandoffs = listOf(2, 9, 3, 8, 4, 7, 5, 6, 1, 1, 1, 1, 1, 1)
+        val maxOfLast10CohortSizes = listOf(2, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 8, 7)
+        check(maxOfLast10CohortSizes.size == cohortSizesForHandoffs.size)
+
+        for (handoffIndex in cohortSizesForHandoffs.indices) {
+            val cohortSize = cohortSizesForHandoffs[handoffIndex]
+            val cohortInstances = mutableSetOf<FakeInProgressShape>()
+            repeat(cohortSize) { cohortInstances.add(inProgressStrokePool.obtain(shapeSpec)) }
+            assertThat(cohortInstances).hasSize(cohortSize)
+            val recyclingData =
+                assertNotNull(inProgressStrokePool.recyclingDataForShapeType(shapeType))
+            assertThat(recyclingData.currentlyObtainedShapeCount).isEqualTo(cohortSize)
+
+            // Recycle all the instances, which at the end can potentially trim down the pool size.
+            for (cohortInstance in cohortInstances) {
+                inProgressStrokePool.recycle(cohortInstance)
+            }
+            assertThat(recyclingData.poolSize).isEqualTo(maxOfLast10CohortSizes[handoffIndex])
         }
-
-        pool.trimToSize(0)
-
-        assertThat(pool.obtain()).isNotIn(obtainedBeforeTrim)
-    }
-
-    @Test
-    fun trimToSize_whenLessThanCurrentPoolSize_obtainReturnsSameInstancesThenNewInstances() {
-        val pool = InProgressStrokePool.create()
-        val obtainedBeforeTrim = mutableSetOf<InkInProgressShape>()
-        repeat(10) {
-            val instance = pool.obtain()
-            obtainedBeforeTrim.add(instance)
-        }
-        for (instance in obtainedBeforeTrim) {
-            pool.recycle(instance)
-        }
-
-        pool.trimToSize(3)
-
-        repeat(3) {
-            val shouldBeOld = pool.obtain()
-            assertThat(shouldBeOld).isIn(obtainedBeforeTrim)
-        }
-        val shouldBeNew = pool.obtain()
-        assertThat(shouldBeNew).isNotIn(obtainedBeforeTrim)
     }
 }

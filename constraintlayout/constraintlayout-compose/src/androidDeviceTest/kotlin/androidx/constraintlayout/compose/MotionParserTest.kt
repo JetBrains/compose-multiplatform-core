@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.core.parser.CLParser
@@ -32,6 +32,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import kotlin.test.assertFailsWith
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -41,7 +42,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 internal class MotionParserTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     var displaySize: IntSize = IntSize.Zero
 
@@ -79,7 +80,7 @@ internal class MotionParserTest {
                 }],
               }
             }
-        """
+            """
                 .trimIndent()
         // Parsing transition throws an exception but the Composable should not crash the app
         assertFailsWith<CLParsingException> {
@@ -93,25 +94,25 @@ internal class MotionParserTest {
                 start =
                     ConstraintSet(
                         """
-                    {
-                      id1: {
-                        width: 10, height: 10,
-                        centerVertically: 'parent', start: ['parent', 'start', 0]
-                      }
-                    }
-                """
+                        {
+                          id1: {
+                            width: 10, height: 10,
+                            centerVertically: 'parent', start: ['parent', 'start', 0]
+                          }
+                        }
+                        """
                             .trimIndent()
                     ),
                 end =
                     ConstraintSet(
                         """
-                    {
-                      id1: {
-                        width: 10, height: 10,
-                        centerVertically: 'parent', end: ['parent', 'end', 0]
-                      }
-                    }
-                """
+                        {
+                          id1: {
+                            width: 10, height: 10,
+                            centerVertically: 'parent', end: ['parent', 'end', 0]
+                          }
+                        }
+                        """
                             .trimIndent()
                     ),
                 transition = transition,

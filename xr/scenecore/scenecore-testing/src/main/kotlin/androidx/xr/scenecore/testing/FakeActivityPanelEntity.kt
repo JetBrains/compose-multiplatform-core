@@ -23,8 +23,9 @@ import androidx.annotation.RestrictTo
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.ActivityPanelEntity] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeActivityPanelEntity : FakePanelEntity(), ActivityPanelEntity {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class FakeActivityPanelEntity(name: String = "") :
+    FakePanelEntity(name = name), ActivityPanelEntity {
 
     /** The intent that was last used to launch an activity. */
     public var launchIntent: Intent = Intent()

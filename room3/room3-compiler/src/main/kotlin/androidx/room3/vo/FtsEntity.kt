@@ -58,21 +58,9 @@ class FtsEntity(
         }
     }
 
-    val contentSyncTriggerNames by lazy {
-        if (ftsOptions.contentEntity != null) {
-            arrayOf("UPDATE", "DELETE").map { operation ->
-                createTriggerName(tableName, "BEFORE_$operation")
-            } +
-                arrayOf("UPDATE", "INSERT").map { operation ->
-                    createTriggerName(tableName, "AFTER_$operation")
-                }
-        } else {
-            emptyList()
-        }
-    }
-
-    // Create trigger queries to keep fts table up to date with the content table as suggested in
-    // https://www.sqlite.org/fts3.html#_external_content_fts4_tables_
+    // Create trigger queries to keep FTS table up to date with the content table as suggested in
+    // https://www.sqlite.org/fts3.html#_external_content_fts4_tables_ and
+    // https://www.sqlite.org/fts5.html#external_content_tables
     val contentSyncTriggerCreateQueries by lazy {
         if (ftsOptions.contentEntity != null) {
             createSyncTriggers(ftsOptions.contentEntity.tableName)
@@ -80,6 +68,13 @@ class FtsEntity(
             emptyList()
         }
     }
+
+    private val contentRowId =
+        if (!ftsOptions.contentRowId.isNullOrEmpty()) {
+            ftsOptions.contentRowId
+        } else {
+            "rowid"
+        }
 
     override fun getIdKey(): String {
         val identityKey = SchemaIdentityKey()
@@ -94,8 +89,22 @@ class FtsEntity(
 
     private fun createTableQuery(tableName: String, includeTokenizer: Boolean = true): String {
         val definitions =
-            nonHiddenProperties.map { it.databaseDefinition(false) } +
-                ftsOptions.databaseDefinition(includeTokenizer)
+            nonHiddenProperties.map {
+                val columnDefinition =
+                    if (ftsVersion == FtsVersion.FTS5) {
+                        "`${it.columnName}`"
+                    } else {
+                        it.databaseDefinition(false)
+                    }
+                val isUnindexed =
+                    ftsVersion == FtsVersion.FTS5 &&
+                        ftsOptions.notIndexedColumns.contains(it.columnName)
+                if (isUnindexed) {
+                    "$columnDefinition UNINDEXED"
+                } else {
+                    columnDefinition
+                }
+            } + ftsOptions.databaseDefinition(includeTokenizer, ftsVersion)
         return "CREATE VIRTUAL TABLE IF NOT EXISTS `$tableName` " +
             "USING ${ftsVersion.name}(${definitions.joinToString(", ")})"
     }
@@ -114,27 +123,31 @@ class FtsEntity(
         triggerOp: String,
         tableName: String,
         contentTableName: String,
-    ) =
-        "CREATE TRIGGER IF NOT EXISTS ${createTriggerName(tableName, "BEFORE_$triggerOp")} " +
+    ): String {
+        val rowId = if (ftsVersion == FtsVersion.FTS5) "rowid" else "docid"
+        return "CREATE TRIGGER IF NOT EXISTS ${createTriggerName(tableName, "BEFORE_$triggerOp")} " +
             "BEFORE $triggerOp ON `$contentTableName` BEGIN " +
-            "DELETE FROM `$tableName` WHERE `docid`=OLD.`rowid`; " +
+            "DELETE FROM `$tableName` WHERE `$rowId`=OLD.`$contentRowId`; " +
             "END"
+    }
 
     private fun createAfterTrigger(
         triggerOp: String,
         tableName: String,
         contentTableName: String,
         columnNames: List<String>,
-    ) =
-        "CREATE TRIGGER IF NOT EXISTS ${createTriggerName(tableName, "AFTER_$triggerOp")} " +
+    ): String {
+        val rowId = if (ftsVersion == FtsVersion.FTS5) "rowid" else "docid"
+        return "CREATE TRIGGER IF NOT EXISTS ${createTriggerName(tableName, "AFTER_$triggerOp")} " +
             "AFTER $triggerOp ON `$contentTableName` BEGIN " +
             "INSERT INTO `$tableName`(" +
-            (listOf("docid") + columnNames).joinToString(separator = ", ") { "`$it`" } +
+            (listOf(rowId) + columnNames).joinToString(separator = ", ") { "`$it`" } +
             ") " +
             "VALUES (" +
-            (listOf("rowid") + columnNames).joinToString(separator = ", ") { "NEW.`$it`" } +
+            (listOf(contentRowId) + columnNames).joinToString(separator = ", ") { "NEW.`$it`" } +
             "); " +
             "END"
+    }
 
     // If trigger name prefix is changed be sure to update DBUtil#dropFtsSyncTriggers
     private fun createTriggerName(tableName: String, triggerOp: String) =

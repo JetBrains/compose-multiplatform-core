@@ -16,7 +16,7 @@
 
 package androidx.compose.remote.integration.view.demos.examples;
 
-import static androidx.compose.remote.core.Profiles.PROFILE_ANDROIDX;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_ANDROIDX;
 import static androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.ADD;
 import static androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.A_DEREF;
 import static androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.A_LEN;
@@ -46,7 +46,7 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.Shader;
 
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.TouchExpression;
 import androidx.compose.remote.core.operations.Utils;
@@ -62,7 +62,7 @@ import androidx.compose.remote.creation.RemotePath;
 import androidx.compose.remote.creation.actions.ValueFloatExpressionChange;
 import androidx.compose.remote.creation.modifiers.RecordingModifier;
 import androidx.compose.remote.creation.modifiers.ScrollModifier;
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices;
 
 import org.jspecify.annotations.NonNull;
 
@@ -83,7 +83,7 @@ import java.util.Random;
 @SuppressLint("RestrictedApiAndroidX")
 public class DemoPaths {
     @SuppressLint("RestrictedApiAndroidX")
-    static Platform sPlatform = new AndroidxPlatformServices();
+    static RcPlatformServices sPlatform = new AndroidxRcPlatformServices();
 
     private DemoPaths() {
     }
@@ -96,13 +96,13 @@ public class DemoPaths {
         RemoteComposeWriterAndroid rc = new RemoteComposeWriterAndroid(500, 500, "sd", 7,
                 PROFILE_ANDROIDX, sPlatform);
         float touchPosition = rc.addFloatConstant(0f);
-        float computedHeight = rc.addFloatConstant(780f);
+        float computedHeight = rc.addFloatConstant(1080);
         float scrollSize = rc.floatExpression(computedHeight, 6, MUL);
         float visFloat = rc.addFloatConstant(1f);
         int vis = Utils.idFromNan(visFloat);
         float notVisFloat = rc.addFloatConstant(0f);
         int notVis = Utils.idFromNan(notVisFloat);
-        float scrollPosition = rc.floatExpression(touchPosition, computedHeight, MUL);
+        float scrollPosition = rc.floatExpression(touchPosition, computedHeight, 20, ADD, MUL);
 
         rc.root(
                 () -> {
@@ -114,7 +114,7 @@ public class DemoPaths {
                                     ScrollModifier.VERTICAL,
                                     touchPosition,
                                     scrollPosition,
-                                    7,
+                                    6,
                                     scrollSize
                             )
 
@@ -139,13 +139,14 @@ public class DemoPaths {
 
                         rc.drawComponentContent();
                         rc.endCanvasOperations();
+                        graph2(rc, computedHeight);
+
                         pathEffects1(rc, computedHeight);
                         pathEffects2(rc, computedHeight);
                         effect1(rc, computedHeight);
                         effect2(rc, computedHeight);
                         effect3(rc, computedHeight);
                         graph1(rc, computedHeight);
-                        graph2(rc, computedHeight);
                     });
                     rc.endCanvas();
                     rc.startCanvas(new RecordingModifier().visibility(vis).width(12).height(0));
@@ -939,7 +940,7 @@ public class DemoPaths {
         }
 
         @SuppressLint("RestrictedApiAndroidX")
-        CustomScroller(int mode, int direction, float touchPosition, float scrollPosition,
+        private CustomScroller(int mode, int direction, float touchPosition, float scrollPosition,
                 int notches, float max) {
             this.mDirection = direction;
             mMode = mode;

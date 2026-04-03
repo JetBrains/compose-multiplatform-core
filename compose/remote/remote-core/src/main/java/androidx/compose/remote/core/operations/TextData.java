@@ -18,6 +18,7 @@ package androidx.compose.remote.core.operations;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.UTF8;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -39,8 +40,8 @@ public class TextData extends Operation implements SerializableToString, Seriali
     private static final int OP_CODE = Operations.DATA_TEXT;
     private static final String CLASS_NAME = "TextData";
     public final int mTextId;
-    @NonNull public String mText;
-    public static final int MAX_STRING_SIZE = 4000;
+    @NonNull
+    public String mText;
 
     public TextData(int textId, @NonNull String text) {
         this.mTextId = textId;
@@ -91,7 +92,7 @@ public class TextData extends Operation implements SerializableToString, Seriali
      *
      * @param buffer buffer to add to
      * @param textId the id for the text
-     * @param text the data to encode
+     * @param text   the data to encode
      */
     public static void apply(@NonNull WireBuffer buffer, int textId, @NonNull String text) {
         buffer.start(OP_CODE);
@@ -102,13 +103,13 @@ public class TextData extends Operation implements SerializableToString, Seriali
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer the buffer to read
+     * @param buffer     the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
         int textId = buffer.readInt();
 
-        String text = buffer.readUTF8(MAX_STRING_SIZE);
+        String text = buffer.readUTF8(Limits.MAX_STRING_SIZE);
         operations.add(new TextData(textId, text));
     }
 
@@ -118,10 +119,10 @@ public class TextData extends Operation implements SerializableToString, Seriali
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Data Operations", OP_CODE, CLASS_NAME)
-                .description("Encode a string ")
-                .field(DocumentedOperation.INT, "id", "id string")
-                .field(UTF8, "text", "encode text as a string");
+        doc.operation("Text Operations", OP_CODE, CLASS_NAME)
+                .description("Define a static string and associate it with an ID")
+                .field(DocumentedOperation.INT, "textId", "The ID of the text")
+                .field(UTF8, "text", "The string value");
     }
 
     @Override

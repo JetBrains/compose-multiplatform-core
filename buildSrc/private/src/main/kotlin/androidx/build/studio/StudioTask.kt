@@ -60,7 +60,7 @@ abstract class StudioTask : DefaultTask() {
     // TODO: support -y and --update-only options? Can use @Option for this
     @TaskAction
     fun studiow() {
-        validateEnvironment()
+        validateEnvironment("Studio")
         install()
         installKtfmtPlugin()
         writeAndroidSdkPath()
@@ -87,13 +87,14 @@ abstract class StudioTask : DefaultTask() {
 
     @get:Internal protected open val installParentDir: File = project.rootDir
 
-    private val studioVersion by lazy { project.getVersionByName("androidStudio") }
+    private val studioVersion by lazy { project.getVersionByName("androidStudioIj") }
+    private val studioNameVersion by lazy { project.getVersionByName("androidStudioName") }
 
     /** Directory name (not path) that Studio will be unzipped into. */
     private val studioDirectoryName: String
         get() {
             val osName = StudioPlatformUtilities.osName
-            return "android-studio-$studioVersion-$osName"
+            return "android-studio-$studioNameVersion-$osName"
         }
 
     /** Filename (not path) of the Studio archive */
@@ -130,7 +131,7 @@ abstract class StudioTask : DefaultTask() {
      * https://plugins.jetbrains.com/plugin/14912-ktfmt/versions/stable and you'll see the number in
      * the redirection URL when hovering over the [studioKtfmtPluginVersion] you want downloaded
      */
-    private val studioKtfmtPluginId = "666004"
+    private val studioKtfmtPluginId = "923152"
 
     private val studioKtfmtPluginDownloadUrl =
         "https://downloads.marketplace.jetbrains.com/files/14912/$studioKtfmtPluginId/ktfmt_idea_plugin-$studioKtfmtPluginVersion.zip"
@@ -140,7 +141,7 @@ abstract class StudioTask : DefaultTask() {
 
     /** Download ktfmt plugin zip file and run `shasum -a 256 ./path/to/zip` to get checksum */
     private val studioKtfmtPluginChecksum =
-        "869ceba41f78adc27bd6afed1bf6ba51cbd286f97ac0f6b7b5cf0058417ed242"
+        "3280c1d7b6311f697f768ca80bd1c241ce0570fa76d43cd50055fee0808ac8fe"
 
     /** The idea.properties file that we want to tell Studio to use */
     @get:Internal protected abstract val ideaProperties: File
@@ -158,21 +159,6 @@ abstract class StudioTask : DefaultTask() {
 
     private val licenseAcceptedFile: File by lazy {
         File("$studioInstallationDir/STUDIOW_LICENSE_ACCEPTED")
-    }
-
-    /** Ensure that we can launch Studio without issue. */
-    private fun validateEnvironment() {
-        if (System.getenv().containsKey("SSH_CLIENT") && !System.getenv().containsKey("DISPLAY")) {
-            throw GradleException(
-                """
-                Studio must be run from a graphical session.
-
-                Could not read DISPLAY environment variable.  If you are using SSH into a remote
-                machine, consider using either ssh -X or switching to Chrome Remote Desktop.
-                """
-                    .trimIndent()
-            )
-        }
     }
 
     /** Install Studio and removes any old installation files if they exist. */
@@ -228,43 +214,6 @@ abstract class StudioTask : DefaultTask() {
         println("ktfmt plugin installed successfully.")
     }
 
-    /** Attempts to symlink the system-images and emulator SDK directories to a canonical SDK. */
-    private fun setupSymlinksIfNeeded() {
-        val paths = listOf("system-images", "emulator")
-        if (!localSdkPath.canonicalFile.exists()) {
-            // We probably got the support root folder wrong. Fail gracefully.
-            return
-        }
-
-        val relativeSdkPath =
-            when (val osType = getOperatingSystem()) {
-                OperatingSystem.MAC -> "Library/Android/sdk"
-                OperatingSystem.LINUX -> "Android/Sdk"
-                else -> {
-                    println("Failed to locate canonical SDK, unsupported operating system: $osType")
-                    return
-                }
-            }
-
-        val canonicalSdkPath = File(System.getenv("HOME"), relativeSdkPath)
-        if (!canonicalSdkPath.exists()) {
-            // In the future, we might want to try a little harder to locate a canonical SDK path.
-            println("Failed to locate canonical SDK, not found at: $canonicalSdkPath")
-            return
-        }
-
-        paths.forEach { path ->
-            val link = File(localSdkPath.canonicalFile, path)
-            val target = File(canonicalSdkPath, path)
-            if (!target.exists()) {
-                println("Skipping canonical SDK symlink creation, not found at: $target")
-            } else if (!link.exists()) {
-                println("Creating canonical SDK symlink for $target...")
-                Files.createSymbolicLink(link.toPath(), target.toPath())
-            }
-        }
-    }
-
     /** Launches Studio if the user accepts / has accepted the license agreement. */
     private fun launch() {
         if (checkLicenseAgreement(services)) {
@@ -286,7 +235,7 @@ abstract class StudioTask : DefaultTask() {
             }
 
             // This seems like as good a time as any to set up SDK symlinks...
-            setupSymlinksIfNeeded()
+            setupSymlinksIfNeeded(localSdkPath)
 
             println("Launching studio...")
             launchStudio()
@@ -339,15 +288,6 @@ abstract class StudioTask : DefaultTask() {
         println("Studio log at $logFile")
     }
 
-    private fun platformSpecificEnvironmentProperties(): Map<String, String> {
-        return if (System.getenv("QT_QPA_PLATFORM") == "wayland") {
-            // Emulators don't work on Wayland natively, make them go through XWayland
-            mapOf("QT_QPA_PLATFORM" to "xcb")
-        } else {
-            emptyMap()
-        }
-    }
-
     private fun checkLicenseAgreement(services: ServiceRegistry): Boolean {
         if (!licenseAcceptedFile.exists()) {
             val licensePath = with(platformUtilities) { licensePath }
@@ -376,9 +316,9 @@ abstract class StudioTask : DefaultTask() {
     ) {
         val url =
             if (filename.contains("-mac")) {
-                "https://redirector.gvt1.com/edgedl/android/studio/install/$studioVersion/$filename"
+                "https://edgedl.me.gvt1.com/android/studio/install/$studioVersion/$filename"
             } else {
-                "https://redirector.gvt1.com/edgedl/android/studio/ide-zips/$studioVersion/$filename"
+                "https://edgedl.me.gvt1.com/android/studio/ide-zips/$studioVersion/$filename"
             }
         val tmpDownloadPath = File("$destinationPath.tmp").absolutePath
         println("Downloading $url to $tmpDownloadPath")
@@ -447,6 +387,74 @@ abstract class StudioTask : DefaultTask() {
                     ProjectLayoutType.PLAYGROUND -> PlaygroundStudioTask::class.java
                 }
             tasks.register(STUDIO_TASK, studioTask)
+        }
+
+        /** Ensure that we can launch IDE without issue. */
+        fun validateEnvironment(ide: String) {
+            if (
+                System.getenv().containsKey("SSH_CLIENT") && !System.getenv().containsKey("DISPLAY")
+            ) {
+                throw GradleException(
+                    """
+                $ide must be run from a graphical session.
+
+                Could not read DISPLAY environment variable.  If you are using SSH into a remote
+                machine, consider using either ssh -X or switching to Chrome Remote Desktop.
+                """
+                        .trimIndent()
+                )
+            }
+        }
+
+        fun platformSpecificEnvironmentProperties(): Map<String, String> {
+            return if (System.getenv("QT_QPA_PLATFORM") == "wayland") {
+                // Emulators don't work on Wayland natively, make them go through XWayland
+                mapOf("QT_QPA_PLATFORM" to "xcb")
+            } else {
+                emptyMap()
+            }
+        }
+
+        /**
+         * Attempts to symlink the system-images and emulator SDK directories to a canonical SDK.
+         */
+        fun setupSymlinksIfNeeded(localSdkPath: File) {
+            val paths = listOf("system-images", "emulator")
+            if (!localSdkPath.canonicalFile.exists()) {
+                // We probably got the support root folder wrong. Fail gracefully.
+                return
+            }
+
+            val relativeSdkPath =
+                when (val osType = getOperatingSystem()) {
+                    OperatingSystem.MAC -> "Library/Android/sdk"
+                    OperatingSystem.LINUX -> "Android/Sdk"
+                    else -> {
+                        println(
+                            "Failed to locate canonical SDK, unsupported operating system: $osType"
+                        )
+                        return
+                    }
+                }
+
+            val canonicalSdkPath = File(System.getenv("HOME"), relativeSdkPath)
+            if (!canonicalSdkPath.exists()) {
+                // In the future, we might want to try a little harder to locate a canonical SDK
+                // path.
+                println("Failed to locate canonical SDK, not found at: $canonicalSdkPath")
+                return
+            }
+
+            paths.forEach { path ->
+                val link = File(localSdkPath.canonicalFile, path)
+                val target = File(canonicalSdkPath, path)
+                if (!target.exists()) {
+                    println("Skipping canonical SDK symlink creation, not found at: $target")
+                } else if (!link.exists()) {
+                    println("Creating canonical SDK symlink for $target...")
+                    Files.createSymbolicLink(link.toPath(), target.toPath())
+                }
+            }
         }
     }
 }

@@ -27,7 +27,6 @@ import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.parser.SQLTypeAffinity
 import androidx.room3.processor.ProcessorErrors.CANNOT_FIND_GETTER_FOR_PROPERTY
-import androidx.room3.processor.ProcessorErrors.DATA_CLASS_PROPERTY_HAS_DUPLICATE_COLUMN_NAME
 import androidx.room3.processor.ProcessorErrors.MISSING_DATA_CLASS_CONSTRUCTOR
 import androidx.room3.processor.ProcessorErrors.junctionColumnWithoutIndex
 import androidx.room3.processor.ProcessorErrors.relationCannotFindEntityProperty
@@ -347,8 +346,7 @@ class DataClassProcessorTest {
                 hasErrorContaining(
                     ProcessorErrors.dataClassDuplicatePropertyNames("id", listOf("id", "another"))
                 )
-                hasErrorContaining(DATA_CLASS_PROPERTY_HAS_DUPLICATE_COLUMN_NAME)
-                hasErrorCount(3)
+                hasErrorCount(1)
             }
         }
     }
@@ -370,8 +368,7 @@ class DataClassProcessorTest {
                 hasErrorContaining(
                     ProcessorErrors.dataClassDuplicatePropertyNames("id", listOf("id", "foo > x"))
                 )
-                hasErrorContaining(DATA_CLASS_PROPERTY_HAS_DUPLICATE_COLUMN_NAME)
-                hasErrorCount(3)
+                hasErrorCount(1)
             }
         }
     }
@@ -2151,7 +2148,7 @@ class DataClassProcessorTest {
                 .isEqualTo(
                     PropertyGetter(
                         propertyName = "isbn",
-                        jvmName = if (invocation.isKsp2) "isbn" else "getIsbn",
+                        jvmName = "getIsbn",
                         type = stringType,
                         callType = CallType.SYNTHETIC_FUNCTION,
                     )
@@ -2170,7 +2167,7 @@ class DataClassProcessorTest {
                 .isEqualTo(
                     PropertyGetter(
                         propertyName = "isbn2",
-                        jvmName = if (invocation.isKsp2) "isbn2" else "getIsbn2",
+                        jvmName = "getIsbn2",
                         type = stringType.makeNullable(),
                         callType = CallType.SYNTHETIC_FUNCTION,
                     )
@@ -2179,7 +2176,7 @@ class DataClassProcessorTest {
                 .isEqualTo(
                     PropertySetter(
                         propertyName = "isbn2",
-                        jvmName = if (invocation.isKsp2) "setbn2" else "setIsbn2",
+                        jvmName = "setIsbn2",
                         type = stringType.makeNullable(),
                         callType = CallType.SYNTHETIC_FUNCTION,
                     )

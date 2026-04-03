@@ -45,7 +45,8 @@ import androidx.xr.scenecore.createBundleForFullSpaceModeLaunch
 import androidx.xr.scenecore.createBundleForFullSpaceModeLaunchWithEnvironmentInherited
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.format
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import java.nio.file.Paths
@@ -64,10 +65,11 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
     private var skybox: ExrImage? = null
     private var spatialEnvironmentPreference: SpatialEnvironment.SpatialEnvironmentPreference? =
         null
+    private lateinit var defaultPanelSize: IntSize2d
 
     private fun mainPanelPixelDimensionsString(): String {
-        val width = session!!.scene.mainPanelEntity.size.width
-        val height = session!!.scene.mainPanelEntity.size.height
+        val width = session!!.scene.mainPanelEntity.size.width.format(2)
+        val height = session!!.scene.mainPanelEntity.size.height.format(2)
         return "{w:$width, h:$height}"
     }
 
@@ -75,8 +77,25 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_fsm_hsm_transition)
 
-        session = createSession(this)
-        if (session == null) this.finish()
+        session = SessionManager(this).createSession()
+        if (session == null) {
+            this.finish()
+        } else {
+            if (savedInstanceState != null) {
+                val width = savedInstanceState.getInt("defaultPanelSizeWidth")
+                val height = savedInstanceState.getInt("defaultPanelSizeHeight")
+                defaultPanelSize = IntSize2d(width, height)
+            } else {
+                defaultPanelSize = session!!.scene.mainPanelEntity.sizeInPixels
+            }
+            Log.d(
+                TAG,
+                "defaultPanelSize: " +
+                    "w ${defaultPanelSize.width} x " +
+                    "h ${defaultPanelSize.height}",
+            )
+        }
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // Set visibility of components per mode
         componentVisibility()
@@ -93,7 +112,14 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         // Toolbar action
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {
             setSupportActionBar(it)
-            it.setNavigationOnClickListener { this.finish() }
+            it.setNavigationOnClickListener {
+                val resultIntent = Intent()
+                resultIntent.putExtra("defaultPanelSizeWidth", defaultPanelSize.width)
+                resultIntent.putExtra("defaultPanelSizeHeight", defaultPanelSize.height)
+                setResult(RESULT_OK, resultIntent)
+
+                this.finish()
+            }
         }
 
         // Recreate button
@@ -129,6 +155,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
                     true ->
                         movableActive =
                             session!!.scene.mainPanelEntity.addComponent(movableComponent)
+
                     false ->
                         movableActive.let {
                             session!!.scene.mainPanelEntity.removeComponent(movableComponent)
@@ -145,9 +172,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
                     executor = Executors.newSingleThreadExecutor(),
                     resizeEventListener =
                         Consumer<ResizeEvent> { resizeEvent: ResizeEvent ->
-                            if (
-                                resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_END
-                            ) {
+                            if (resizeEvent.resizeState == ResizeEvent.ResizeState.END) {
                                 Log.i(TAG, "resize event ${resizeEvent.newSize}")
                                 (resizeEvent.entity as PanelEntity).size =
                                     resizeEvent.newSize.to2d()
@@ -162,6 +187,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
                     true ->
                         resizableActive =
                             session!!.scene.mainPanelEntity.addComponent(resizableComponent)
+
                     false -> {
                         if (resizableActive) {
                             session!!.scene.mainPanelEntity.removeComponent(resizableComponent)
@@ -256,7 +282,9 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         // Add bounds check listener for activity space bounds
         session!!.scene.activitySpace.addOnBoundsChangedListener { dimensions ->
             val dimsString =
-                "{w:${dimensions.width}, h:${dimensions.height}, d:${dimensions.depth}}"
+                "{w:${dimensions.width.format(2)}, " +
+                    "h:${dimensions.height.format(2)}, " +
+                    "d:${dimensions.depth.format(2)}"
             // Set activity space dimensions
             findViewById<TextView>(R.id.text_activity_space_dimensions_value).text = dimsString
             // Set main panel dimensions
@@ -277,6 +305,12 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("defaultPanelSizeWidth", defaultPanelSize.width)
+        outState.putInt("defaultPanelSizeHeight", defaultPanelSize.height)
     }
 
     private fun componentVisibility() {

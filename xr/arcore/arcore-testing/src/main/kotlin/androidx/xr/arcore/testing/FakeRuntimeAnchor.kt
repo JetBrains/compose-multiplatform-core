@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore.testing
 
@@ -20,19 +21,33 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
 import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import java.util.UUID
 
-/** Test-only implementation of [androidx.xr.arcore.runtime.Anchor] */
+/**
+ * Fake implementation of [Anchor][RuntimeAnchor] for testing purposes.
+ *
+ * @property isTrackingAvailable a flag to represent available tracking state of the camera when
+ *   creating the anchor
+ * @property isAttached whether the anchor is attached to an [AnchorHolder]
+ */
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class FakeRuntimeAnchor
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public constructor(
-    override var pose: Pose,
-    internal val anchorHolder: AnchorHolder? = null,
-    /** Flag to represent available tracking state of the camera when creating the anchor. */
-    public val isTrackingAvailable: Boolean = true,
-) : RuntimeAnchor {
+public constructor(override var pose: Pose, public val isTrackingAvailable: Boolean = true) :
+    RuntimeAnchor {
+
+    internal constructor(
+        pose: Pose,
+        anchorHolder: AnchorHolder? = null,
+        isTrackingAvailable: Boolean = true,
+    ) : this(pose, isTrackingAvailable) {
+        this.anchorHolder = anchorHolder
+    }
+
     init {
         if (!isTrackingAvailable) {
             throw AnchorNotTrackingException()
@@ -43,6 +58,8 @@ public constructor(
         }
     }
 
+    internal var anchorHolder: AnchorHolder? = null
+
     override var trackingState: TrackingState = TrackingState.TRACKING
 
     override var persistenceState: RuntimeAnchor.PersistenceState =
@@ -50,17 +67,15 @@ public constructor(
 
     override var uuid: UUID? = null
 
-    /** Whether the anchor is attached to an [AnchorHolder] */
-    public var isAttached: Boolean = anchorHolder != null
-        private set
+    public val isAttached: Boolean
+        get() = anchorHolder != null
 
     /**
-     * Generates a random UUID for the anchor and adds it to
-     * [androidx.xr.runtime.testing.FakePerceptionManager.anchorUuids].
+     * Generates a random UUID for the anchor and adds it to [FakePerceptionManager.anchorUuids].
      *
      * This function will only be added to the list of anchors returned by
-     * [androidx.xr.runtime.testing.FakePerceptionManager.getPersistedAnchorUuids] if the
-     * [anchorHolder] is a [androidx.xr.runtime.testing.FakePerceptionManager].
+     * [FakePerceptionManager.getPersistedAnchorUuids] if the [anchorHolder] is a
+     * [FakePerceptionManager].
      */
     override fun persist() {
         uuid = UUID.randomUUID()
@@ -70,15 +85,19 @@ public constructor(
 
     override fun detach() {
         if (anchorHolder != null) {
-            anchorHolder.detachAnchor(this)
-            isAttached = false
+            anchorHolder?.detachAnchor(this)
+            anchorHolder = null
             --anchorsCreatedCount
         }
     }
 
     public companion object {
         /** Limit for the number of anchors that can be created. */
-        public const val ANCHOR_RESOURCE_LIMIT: Int = 6
+        @JvmStatic
+        public val anchorResourceLimit: Int
+            get() = ANCHOR_RESOURCE_LIMIT
+
+        private const val ANCHOR_RESOURCE_LIMIT: Int = 6
         /** The current number of anchors created. */
         @JvmStatic public var anchorsCreatedCount: Int = 0
     }

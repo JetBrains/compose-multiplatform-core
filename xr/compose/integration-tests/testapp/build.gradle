@@ -21,14 +21,13 @@ plugins {
     id("com.android.application")
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "androidx.xr.compose.testapp"
-    compileSdk = 35
+    compileSdk {version = release(36) }
     defaultConfig {
-        minSdk = 34
+        minSdk { version = release(34) }
     }
     buildTypes {
         release {
@@ -66,12 +65,11 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.8.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinSerializationCore)
     implementation(libs.kotlinSerializationJson)
     implementation(libs.kotlinCoroutinesGuava)
 
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    compileOnly(libs.androidExtensionsXr)
 }
 
 // Making this APK available via Android Build so the QA team can

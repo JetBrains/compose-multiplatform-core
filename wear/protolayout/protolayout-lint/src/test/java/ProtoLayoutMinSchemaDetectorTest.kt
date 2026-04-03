@@ -19,7 +19,6 @@
 package androidx.wear.protolayout.lint
 
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -41,7 +40,7 @@ class ProtoLayoutMinSchemaDetectorTest : LintDetectorTest() {
                 int major();
                 int minor();
             }
-        """
+            """
                 .trimIndent()
         )
     private val requiresApiAnnotationStub =
@@ -160,17 +159,17 @@ class ProtoLayoutMinSchemaDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-src/foo/Bar.kt:6: Error: This API is not guaranteed to be available on the device (requires schema 1.200). [ProtoLayoutMinSchema]
-  private val fieldAssignment = withAnnotation.annotatedMethod()
-                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/Bar.kt:12: Error: This API is not guaranteed to be available on the device (requires schema 1.200). [ProtoLayoutMinSchema]
-    bar()
-    ~~~~~
-src/foo/Bar.kt:14: Error: This API is not guaranteed to be available on the device (requires schema 1.200). [ProtoLayoutMinSchema]
-    withAnnotation.annotatedMethod()
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-3 errors, 0 warnings
-            """
+                src/foo/Bar.kt:6: Error: This API is not guaranteed to be available on the device (requires schema 1.200). [ProtoLayoutMinSchema]
+                  private val fieldAssignment = withAnnotation.annotatedMethod()
+                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                src/foo/Bar.kt:12: Error: This API is not guaranteed to be available on the device (requires schema 1.200). [ProtoLayoutMinSchema]
+                    bar()
+                    ~~~~~
+                src/foo/Bar.kt:14: Error: This API is not guaranteed to be available on the device (requires schema 1.200). [ProtoLayoutMinSchema]
+                    withAnnotation.annotatedMethod()
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                3 errors, 0 warnings
+                """
                     .trimIndent()
             )
 
@@ -255,11 +254,11 @@ src/foo/Bar.kt:14: Error: This API is not guaranteed to be available on the devi
             .run()
             .expect(
                 """
-src/foo/Bar.java:12: Error: This API is not guaranteed to be available on the device (requires schema 1.200). [ProtoLayoutMinSchema]
-    bar();
-    ~~~~~
-1 errors, 0 warnings
-            """
+                src/foo/Bar.java:12: Error: This API is not guaranteed to be available on the device (requires schema 1.200). [ProtoLayoutMinSchema]
+                    bar();
+                    ~~~~~
+                1 errors, 0 warnings
+                """
                     .trimIndent()
             )
 
@@ -291,7 +290,6 @@ src/foo/Bar.java:12: Error: This API is not guaranteed to be available on the de
             .expectClean()
     }
 
-    @Ignore // b/449009812
     @Test
     fun `annotated call-site doesn't requires SDK version check`() {
         lint()
@@ -368,7 +366,6 @@ src/foo/Bar.java:12: Error: This API is not guaranteed to be available on the de
             .expectClean()
     }
 
-    @Ignore // b/449009812
     @Test
     fun `project with proper minSdk doesn't requires SDK version check`() {
         lint()

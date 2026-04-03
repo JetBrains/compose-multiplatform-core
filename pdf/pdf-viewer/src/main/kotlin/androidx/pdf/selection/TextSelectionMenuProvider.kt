@@ -53,7 +53,7 @@ internal class TextSelectionMenuProvider(private val context: Context) :
             val textLength = text.length
             // This is the char limit for the textClassifier library to produce
             // any meaningful action item.
-            if (textLength > MAX_CHAR_LIMIT) {
+            if (textLength <= 0 || textLength > MAX_CHAR_LIMIT) {
                 return@coroutineScope smartMenuItems
             }
             // Make sure that the backgroundScope is active before starting classifyText operation.
@@ -79,7 +79,7 @@ internal class TextSelectionMenuProvider(private val context: Context) :
                                 // TODO(b/431669141): Propagate Exception to Host App.
                             } finally {
                                 close()
-                                pdfView.clearSelection()
+                                pdfView.clearCurrentSelection()
                             }
                         },
                     )

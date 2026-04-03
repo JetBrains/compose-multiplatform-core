@@ -46,7 +46,7 @@ constructor(
     end: Int = text.length,
     paint: TextPaint = TextPaint(),
     @Px height: Float = 0f,
-    orientation: Int = TextOrientation.MIXED,
+    orientation: TextOrientation = TextOrientation.Mixed,
 ) {
     /** The width constraint of the vertical text in pixels. */
     @get:Px

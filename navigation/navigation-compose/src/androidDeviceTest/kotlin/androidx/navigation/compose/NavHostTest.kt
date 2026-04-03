@@ -46,7 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
@@ -76,14 +76,16 @@ import androidx.testutils.TestNavigator
 import androidx.testutils.test
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@Suppress("ComposableDestinationInComposeScope")
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class NavHostTest {
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun testSingleDestinationSet() {

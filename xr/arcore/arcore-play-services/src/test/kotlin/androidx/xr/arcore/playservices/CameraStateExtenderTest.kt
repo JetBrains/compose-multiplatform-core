@@ -20,8 +20,8 @@ import android.app.Activity
 import android.hardware.HardwareBuffer
 import android.view.Surface
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.runtime.TrackingState as JXRCoreTrackingState
 import androidx.xr.runtime.CoreState
-import androidx.xr.runtime.TrackingState as JXRCoreTrackingState
 import androidx.xr.runtime.math.Matrix4
 import com.google.ar.core.Camera
 import com.google.ar.core.Coordinates2d
@@ -46,6 +46,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
+@OptIn(ExperimentalCameraApi::class)
 @RunWith(AndroidJUnit4::class)
 class CameraStateExtenderTest {
 

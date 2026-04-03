@@ -71,7 +71,8 @@ class AppFunctionCompiler(
      */
     private fun shouldDeferAllProcessing(resolver: Resolver): List<KSAnnotated> {
         val appFunctionSymbolResolver = AppFunctionSymbolResolver(resolver)
-        val annotatedAppFunctions = appFunctionSymbolResolver.resolveAnnotatedAppFunctions()
+        val annotatedAppFunctions =
+            appFunctionSymbolResolver.resolveUnvalidatedAnnotatedAppFunctions()
         for (annotatedAppFunction in annotatedAppFunctions) {
             try {
                 annotatedAppFunction.validate()
@@ -96,7 +97,11 @@ class AppFunctionCompiler(
             val entityProcessor =
                 AppFunctionSerializableProcessor(environment.codeGenerator, environment.logger)
             val aggregateProcessor =
-                AppFunctionAggregateProcessor(options, environment.codeGenerator)
+                AppFunctionAggregateProcessor(
+                    options,
+                    environment.codeGenerator,
+                    environment.logger,
+                )
             val schemaInventoryProcessor =
                 AppFunctionSchemaInventoryProcessor(environment.codeGenerator, options)
             return AppFunctionCompiler(

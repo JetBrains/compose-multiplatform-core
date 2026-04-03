@@ -18,13 +18,15 @@
 
 package androidx.xr.scenecore
 
-import android.util.Log
 import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.ActivityPose as RtActivityPose
 import androidx.xr.scenecore.runtime.Entity as RtEntity
+import androidx.xr.scenecore.runtime.ScenePose as RtScenePose
+import androidx.xr.scenecore.runtime.SceneRuntime
 
 /**
  * Interface for a spatial Entity. An Entity's [Pose]s are represented as being relative to their
@@ -52,7 +54,8 @@ public interface Entity : ScenePose {
      */
     public fun addChild(child: Entity)
 
-    /* TODO b/362296608: Add a getChildren() method. */
+    /** Provides the list of all children of this entity. */
+    public val children: List<Entity>
 
     /**
      * Sets the [Pose] for this Entity. The Pose given is set relative to the [Space] provided.
@@ -60,7 +63,7 @@ public interface Entity : ScenePose {
      * @param pose The [Pose] offset from the parent.
      * @param relativeTo Set the pose relative to given Space. Default value is the parent space.
      */
-    public fun setPose(pose: Pose, @SpaceValue relativeTo: Int = Space.PARENT)
+    public fun setPose(pose: Pose, relativeTo: Space = Space.PARENT)
 
     /** Sets the [Pose] for this Entity, relative to its parent. */
     public fun setPose(pose: Pose): Unit = setPose(pose, Space.PARENT)
@@ -71,7 +74,7 @@ public interface Entity : ScenePose {
      * @param relativeTo Get the Pose relative to given Space. Default value is the parent space.
      * @return Current [Pose] of the Entity relative to the given space.
      */
-    public fun getPose(@SpaceValue relativeTo: Int = Space.PARENT): Pose
+    public fun getPose(relativeTo: Space = Space.PARENT): Pose
 
     /**
      * Returns the [Pose] for this Entity, relative to its parent.
@@ -88,10 +91,7 @@ public interface Entity : ScenePose {
      * @param scale The uniform scale factor.
      * @param relativeTo Set the scale relative to given Space. Default value is the parent Space.
      */
-    public fun setScale(
-        @FloatRange(from = 0.0) scale: Float,
-        @SpaceValue relativeTo: Int = Space.PARENT,
-    )
+    public fun setScale(@FloatRange(from = 0.0) scale: Float, relativeTo: Space = Space.PARENT)
 
     /**
      * Sets the scale of this Entity relative to the given Space. This value will affect the
@@ -101,9 +101,8 @@ public interface Entity : ScenePose {
      * @param scale The scale factor for each axis.
      * @param relativeTo Set the scale relative to given Space. Default value is the parent Space.
      */
-    // TODO - b/440157781: Add a getter method for non uniform scale
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun setScale(scale: Vector3, @SpaceValue relativeTo: Int = Space.PARENT)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun setScale(scale: Vector3, relativeTo: Space = Space.PARENT)
 
     /**
      * Sets the scale of this Entity relative to its parent. This value will affect the rendering of
@@ -115,12 +114,21 @@ public interface Entity : ScenePose {
     public fun setScale(@FloatRange(from = 0.0) scale: Float): Unit = setScale(scale, Space.PARENT)
 
     /**
+     * Returns the scale of this entity along each axis, relative to given space.
+     *
+     * @param relativeTo Get the scale relative to given Space. Default value is the parent space.
+     * @return Current non-uniform scale applied to self and children.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun getNonUniformScale(relativeTo: Space = Space.PARENT): Vector3
+
+    /**
      * Returns the scale of this entity, relative to given space.
      *
      * @param relativeTo Get the scale relative to given Space. Default value is the parent space.
      * @return Current uniform scale applied to self and children.
      */
-    @FloatRange(from = 0.0) public fun getScale(@SpaceValue relativeTo: Int = Space.PARENT): Float
+    @FloatRange(from = 0.0) public fun getScale(relativeTo: Space = Space.PARENT): Float
 
     /**
      * Returns the local scale of this Entity, not inclusive of the parent's scale.
@@ -130,38 +138,27 @@ public interface Entity : ScenePose {
     @FloatRange(from = 0.0) public fun getScale(): Float = getScale(Space.PARENT)
 
     /**
-     * Sets the alpha transparency of the Entity relative to given Space. Values are in the range
-     * [0, 1] with 0 being fully transparent and 1 being fully opaque.
+     * Sets the alpha transparency of the Entity relative to the parent Space. Values are in the
+     * range [0, 1] with 0 being fully transparent and 1 being fully opaque.
      *
      * This value will affect the rendering of this Entity's children. Children of this node will
-     * have their alpha levels multiplied by this value and any alpha of this entity's ancestors.
+     * have their alpha levels multiplied by this value and any alpha of this Entity's ancestors. As
+     * a result, the effective alpha of a child cannot exceed the effective alpha of its parent.
+     *
+     * Usage restrictions:
+     * - If the provided `alpha` is outside the [0, 1] range, it will be clamped automatically to
+     *   [0, 1].
      *
      * @param alpha Alpha transparency level for the Entity.
-     * @param relativeTo Sets alpha relative to given Space. Default value is the parent Space.
      */
-    // TODO - b/421456320: Can a child have an alpha greater than its parent?
-    public fun setAlpha(
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float,
-        @SpaceValue relativeTo: Int = Space.PARENT,
-    )
-
-    /**
-     * Sets the alpha transparency of the Entity and its children. Values are in the range [0, 1]
-     * with 0 being fully transparent and 1 being fully opaque.
-     *
-     * This value will affect the rendering of this Entity's children. Children of this node will
-     * have their alpha levels multiplied by this value and any alpha of this Entity's ancestors.
-     */
-    public fun setAlpha(@FloatRange(from = 0.0, to = 1.0) alpha: Float): Unit =
-        setAlpha(alpha, Space.PARENT)
+    public fun setAlpha(@FloatRange(from = 0.0, to = 1.0) alpha: Float): Unit
 
     /**
      * Returns the alpha transparency set for this Entity, relative to given Space.
      *
      * @param relativeTo Gets alpha relative to given Space. Default value is the parent space.
      */
-    @FloatRange(from = 0.0, to = 1.0)
-    public fun getAlpha(@SpaceValue relativeTo: Int = Space.PARENT): Float
+    @FloatRange(from = 0.0, to = 1.0) public fun getAlpha(relativeTo: Space = Space.PARENT): Float
 
     /**
      * Returns the alpha transparency set for this Entity.
@@ -180,7 +177,7 @@ public interface Entity : ScenePose {
      *
      * @param enabled The new local enabled state of this Entity.
      */
-    public fun setEnabled(enabled: Boolean): Unit
+    public fun setEnabled(enabled: Boolean)
 
     /**
      * Returns the enabled status of this Entity.
@@ -192,6 +189,16 @@ public interface Entity : ScenePose {
      *   any of its ancestors are disabled.
      */
     public fun isEnabled(includeParents: Boolean = true): Boolean
+
+    /** True if this entity is disposed. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val isDisposed: Boolean
+
+    /**
+     * Exception type that is thrown if client is invoking any of the APIs after the entity instance
+     * is already disposed.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public class DisposedException(message: String) : IllegalStateException(message)
 
     /**
      * Disposes of any system resources held by this Entity, and transitively calls dispose() on all
@@ -232,22 +239,46 @@ public interface Entity : ScenePose {
 
     /** Remove all components from this Entity. */
     public fun removeAllComponents()
+
+    public companion object {
+        /**
+         * Public factory method for creating a [Entity].
+         *
+         * @param session Session to create the Entity in.
+         * @param name Name of the entity. This is unset by default.
+         * @param pose Initial pose of the entity. The default value is [Pose.Identity].
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
+         */
+        @JvmOverloads
+        @JvmStatic
+        public fun create(
+            session: Session,
+            name: String? = null,
+            pose: Pose = Pose.Identity,
+            parent: Entity? = session.scene.activitySpace,
+        ): Entity =
+            EntityImpl.create(
+                session.sceneRuntime,
+                session.scene.entityRegistry,
+                name,
+                pose,
+                parent,
+            )
+    }
 }
 
 /** The BaseEntity is an implementation of Entity interface that wraps a platform entity. */
 public abstract class BaseEntity<RtEntityType : RtEntity>
-internal constructor(rtEntity: RtEntityType, private val entityManager: EntityManager) :
-    Entity, BaseScenePose<RtActivityPose>(rtEntity) {
+internal constructor(rtEntity: RtEntityType, private val entityRegistry: EntityRegistry) :
+    Entity, BaseScenePose<RtScenePose>(rtEntity) {
 
     internal var rtEntity: RtEntityType?
 
     init {
         this.rtEntity = rtEntity
-        entityManager.setEntityForRtEntity(rtEntity, this)
-    }
-
-    private companion object {
-        private const val TAG = "BaseEntity"
+        entityRegistry.setEntityForRtEntity(rtEntity, this)
     }
 
     private val componentList = mutableListOf<Component>()
@@ -255,10 +286,11 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
     /*
      * Throws an [IllegalStateException] if the entity is disposed.
      */
+    @Throws(Entity.DisposedException::class)
     internal fun checkNotDisposed() {
-        checkNotNull(rtEntity) {
+        if (isDisposed) {
             // TODO: b/434266829 - Use name or content description for better error message.
-            "Entity $this is already disposed."
+            throw Entity.DisposedException("Entity $this is already disposed.")
         }
     }
 
@@ -275,64 +307,70 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
     override var parent: Entity?
         get() {
             checkNotDisposed()
-            return rtEntity!!.parent?.let { entityManager.getEntityForRtEntity(it) }
+            return rtEntity!!.parent?.let { entityRegistry.getEntityForRtEntity(it) }
         }
         set(value) {
             checkNotDisposed()
-            if (value == null) {
-                rtEntity!!.parent = null
-                return
+            require(value == null || value is BaseEntity<*>) {
+                "Parent must be a subtype of BaseEntity or null."
             }
-
-            if (value !is BaseEntity<*>) {
-                Log.e(TAG, "Parent must be a subclass of BaseEntity")
-                return
-            }
-            rtEntity!!.parent = value.rtEntity
+            rtEntity!!.parent = value?.rtEntity
         }
 
     override fun addChild(child: Entity) {
         checkNotDisposed()
-        if (child !is BaseEntity<*>) {
-            Log.e(TAG, "Child must be a subclass of BaseEntity!")
-            return
-        }
+        require(child is BaseEntity<*>) { "Child must be a subtype of BaseEntity." }
         child.checkNotDisposed()
         rtEntity!!.addChild(child.rtEntity!!)
     }
 
-    override fun setPose(pose: Pose, @SpaceValue relativeTo: Int) {
+    private fun getChildrenInternal() =
+        rtEntity?.children?.mapNotNull { entityRegistry.getEntityForRtEntity(it) } ?: emptyList()
+
+    override val children: List<Entity>
+        get() {
+            checkNotDisposed()
+            return getChildrenInternal()
+        }
+
+    override fun setPose(pose: Pose, relativeTo: Space) {
         checkNotDisposed()
         rtEntity!!.setPose(pose, relativeTo.toRtSpace())
     }
 
-    override fun getPose(@SpaceValue relativeTo: Int): Pose {
+    override fun getPose(relativeTo: Space): Pose {
         checkNotDisposed()
         return rtEntity!!.getPose(relativeTo.toRtSpace())
     }
 
-    override fun setScale(scale: Float, relativeTo: Int) {
+    override fun setScale(scale: Float, relativeTo: Space) {
         checkNotDisposed()
-        setScale(Vector3(scale, scale, scale), relativeTo.toRtSpace())
+        setScale(Vector3(scale, scale, scale), relativeTo)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override fun setScale(scale: Vector3, relativeTo: Int) {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun setScale(scale: Vector3, relativeTo: Space) {
         checkNotDisposed()
         rtEntity!!.setScale(scale, relativeTo.toRtSpace())
     }
 
-    override fun getScale(@SpaceValue relativeTo: Int): Float {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun getNonUniformScale(relativeTo: Space): Vector3 {
+        checkNotDisposed()
+        return rtEntity!!.getScale(relativeTo.toRtSpace())
+    }
+
+    override fun getScale(relativeTo: Space): Float {
         checkNotDisposed()
         return rtEntity!!.getScale(relativeTo.toRtSpace()).x
     }
 
-    override fun setAlpha(alpha: Float, @SpaceValue relativeTo: Int) {
+    override fun setAlpha(alpha: Float) {
         checkNotDisposed()
-        rtEntity!!.setAlpha(alpha, relativeTo.toRtSpace())
+        rtEntity!!.setAlpha(alpha)
     }
 
-    override fun getAlpha(@SpaceValue relativeTo: Int): Float {
+    override fun getAlpha(relativeTo: Space): Float {
         checkNotDisposed()
         return rtEntity!!.getAlpha(relativeTo.toRtSpace())
     }
@@ -347,10 +385,29 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
         return !(rtEntity!!.isHidden(includeParents))
     }
 
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val isDisposed: Boolean
+        get() = rtEntity == null
+
     override fun dispose() {
+        if (isDisposed) return
+        // Make a copy for avoiding concurrent access when disposing children.
+        // Main panel is disposed when session is destroyed. Disconnect it from scene if it's
+        // parented to entity being disposed.
+        val childrenToDispose = getChildrenInternal()
+        childrenToDispose.forEach { child ->
+            when (child) {
+                is MainPanelEntity -> {
+                    child.parent = null
+                    // Dispose children of main panel.
+                    child.children.forEach { it.dispose() }
+                }
+                else -> child.dispose()
+            }
+        }
         rtEntity?.let {
             removeAllComponents()
-            entityManager.removeEntity(this)
+            entityRegistry.removeEntity(this)
             it.dispose()
             rtEntity = null
         }
@@ -387,5 +444,35 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
         checkNotDisposed()
         componentList.forEach { it.onDetach(this) }
         componentList.clear()
+    }
+}
+
+internal class EntityImpl private constructor(rtEntity: RtEntity, entityRegistry: EntityRegistry) :
+    BaseEntity<RtEntity>(rtEntity, entityRegistry) {
+    public companion object {
+        /** Factory method to create EntityImpl entities. */
+        internal fun create(
+            sceneRuntime: SceneRuntime,
+            entityRegistry: EntityRegistry,
+            name: String? = null,
+            pose: Pose = Pose.Identity,
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
+        ): EntityImpl =
+            EntityImpl(
+                sceneRuntime.createEntity(
+                    pose,
+                    name,
+                    if (parent != null && parent !is BaseEntity<*>) {
+                        XrLog.warn(
+                            "The provided parent is not a BaseEntity. The Entity will " +
+                                "be created without a parent."
+                        )
+                        null
+                    } else {
+                        parent?.rtEntity
+                    },
+                ),
+                entityRegistry,
+            )
     }
 }

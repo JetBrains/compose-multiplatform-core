@@ -425,10 +425,11 @@ internal class OverflowMeasurePolicy(
  * @param colors [IconButtonColors] that will be used to resolve the colors used for this icon
  *   button in different states. See [IconButtonDefaults.iconButtonColors].
  * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
- *   emitting [Interaction]s for this icon button. You can use this to change the icon button's
- *   appearance or preview the icon button in different states. Note that if `null` is provided,
- *   interactions will still happen internally.
+ *   emitting [androidx.compose.foundation.interaction.Interaction]s for this icon button. You can
+ *   use this to change the icon button's appearance or preview the icon button in different states.
+ *   Note that if `null` is provided, interactions will still happen internally.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppBarOverflowIndicator(
     menuState: AppBarMenuState,
@@ -440,21 +441,28 @@ fun AppBarOverflowIndicator(
 ) {
     val contentDescription = getString(Strings.FloatingToolbarMoreOptions)
 
-    IconButton(
-        onClick = {
-            if (menuState.isShowing) {
-                menuState.dismiss()
-            } else {
-                menuState.show()
-            }
-        },
-        modifier = modifier,
-        enabled = enabled,
-        shape = shape,
-        colors = colors,
-        interactionSource = interactionSource,
-        content = {
-            Icon(imageVector = Icons.Filled.MoreVert, contentDescription = contentDescription)
-        },
-    )
+    TooltipBox(
+        positionProvider =
+            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = { PlainTooltip { Text(contentDescription) } },
+        state = rememberTooltipState(),
+    ) {
+        IconButton(
+            onClick = {
+                if (menuState.isShowing) {
+                    menuState.dismiss()
+                } else {
+                    menuState.show()
+                }
+            },
+            modifier = modifier,
+            enabled = enabled,
+            shape = shape,
+            colors = colors,
+            interactionSource = interactionSource,
+            content = {
+                Icon(imageVector = Icons.Filled.MoreVert, contentDescription = contentDescription)
+            },
+        )
+    }
 }

@@ -18,17 +18,19 @@ package androidx.xr.arcore.playservices
 
 import android.app.Activity
 import android.util.Range
+import androidx.kruth.assertThrows
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.AnchorPersistenceMode
-import androidx.xr.runtime.Config.DepthEstimationMode
-import androidx.xr.runtime.Config.HandTrackingMode
-import androidx.xr.runtime.Config.PlaneTrackingMode
+import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.FaceTrackingMode
+import androidx.xr.runtime.HandTrackingMode
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
-import androidx.xr.runtime.internal.GooglePlayServicesLocationLibraryNotLinkedException
+import androidx.xr.runtime.internal.LibraryNotLinkedException
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
@@ -89,7 +91,7 @@ class ArCoreManagerTest {
         activityRule.scenario.onActivity {
             val perceptionManager = ArCorePerceptionManager(timeSource)
             mockArCoreApk = mock<ArCoreApk>()
-            underTest = ArCoreManager(activity = it, perceptionManager, timeSource, mockArCoreApk)
+            underTest = ArCoreManager(it, perceptionManager, timeSource, mockArCoreApk)
         }
 
         mockSession = mock<Session>()
@@ -136,6 +138,47 @@ class ArCoreManagerTest {
         val argumentCaptor = argumentCaptor<TextureUpdateMode>()
         verify(mockArConfig).setTextureUpdateMode(argumentCaptor.capture())
         assert(argumentCaptor.firstValue == TextureUpdateMode.EXPOSE_HARDWARE_BUFFER)
+    }
+
+    @Test
+    fun configure_faceTracking_setsAugmentedFaceMode_toValue_Disabled() {
+        val mockArConfig = mock<ArConfig>()
+        underTest._session = mockSession
+        whenever(mockSession.config).thenReturn(mockArConfig)
+
+        val config = Config(faceTracking = FaceTrackingMode.DISABLED)
+        underTest.configure(config)
+
+        val argumentCaptor = argumentCaptor<ArConfig.AugmentedFaceMode>()
+        verify(mockArConfig).augmentedFaceMode = argumentCaptor.capture()
+        assert(argumentCaptor.firstValue == ArConfig.AugmentedFaceMode.DISABLED)
+        assertThat(underTest.config.faceTracking).isEqualTo(FaceTrackingMode.DISABLED)
+    }
+
+    @Test
+    fun configure_faceTracking_setsAugmentedFaceMode_toValue_Mesh3D() {
+        val mockArConfig = mock<ArConfig>()
+        underTest._session = mockSession
+        whenever(mockSession.config).thenReturn(mockArConfig)
+
+        val config = Config(faceTracking = FaceTrackingMode.MESHES)
+        underTest.configure(config)
+
+        val argumentCaptor = argumentCaptor<ArConfig.AugmentedFaceMode>()
+        verify(mockArConfig).augmentedFaceMode = argumentCaptor.capture()
+        assert(argumentCaptor.firstValue == ArConfig.AugmentedFaceMode.MESH3D)
+        assertThat(underTest.config.faceTracking).isEqualTo(FaceTrackingMode.MESHES)
+    }
+
+    @Test
+    fun configure_faceTracking_setsAugmentedFaceMode_toValue_User_throwsUnsupportedOperationException() {
+        val mockArConfig = mock<ArConfig>()
+        underTest._session = mockSession
+        whenever(mockSession.config).thenReturn(mockArConfig)
+
+        val config = Config(faceTracking = FaceTrackingMode.BLEND_SHAPES)
+
+        assertThrows<UnsupportedOperationException> { underTest.configure(config) }
     }
 
     @Test
@@ -186,7 +229,9 @@ class ArCoreManagerTest {
         whenever(mockSession.config).thenReturn(mockArConfig)
 
         val config = Config(depthEstimation = DepthEstimationMode.SMOOTH_AND_RAW)
-        assertFailsWith<UnsupportedOperationException> { underTest.configure(config) }
+        underTest.configure(config)
+
+        assertThat(underTest.config.depthEstimation).isEqualTo(DepthEstimationMode.SMOOTH_AND_RAW)
     }
 
     @Test
@@ -222,9 +267,7 @@ class ArCoreManagerTest {
             .doThrow(ARCore1xGooglePlayServicesLocationLibraryNotLinkedException("Test Exception"))
 
         val config = Config()
-        assertFailsWith<GooglePlayServicesLocationLibraryNotLinkedException> {
-            underTest.configure(config)
-        }
+        assertFailsWith<LibraryNotLinkedException> { underTest.configure(config) }
         verify(mockSession).configure(mockArConfig)
     }
 
@@ -247,7 +290,6 @@ class ArCoreManagerTest {
 
         underTest.resume()
 
-        assertThat(underTest.running).isTrue()
         verify(mockSession).resume()
     }
 
@@ -343,7 +385,6 @@ class ArCoreManagerTest {
         underTest.resume()
         underTest.pause()
 
-        assertThat(underTest.running).isFalse()
         verify(mockSession).pause()
     }
 

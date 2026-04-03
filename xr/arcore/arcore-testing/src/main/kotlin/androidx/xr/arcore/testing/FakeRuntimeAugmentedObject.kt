@@ -19,39 +19,25 @@ package androidx.xr.arcore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
 import androidx.xr.arcore.runtime.AugmentedObject as RuntimeObject
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.AugmentedObjectCategory
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 
 /**
- * Fake implementation of [androidx.xr.arcore.runtime.AugmentedObject] for testing purposes.
+ * Fake implementation of [AugmentedObject][RuntimeObject] for testing purposes.
  *
- * @property centerPose The pose of the center of the augmented object.
- * @property extents The extents of the augmented object.
- * @property category The category of the augmented object.
- * @property trackingState The tracking state of the augmented object.
- * @property anchors The anchors attached to this object.
+ * @property anchors a [MutableCollection] of [Anchors][RuntimeAnchor] attached to this object
  */
 @SuppressWarnings("HiddenSuperclass")
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class FakeRuntimeAugmentedObject(
     override var centerPose: Pose = Pose(),
     override var extents: FloatSize3d = FloatSize3d(),
     override var category: AugmentedObjectCategory = AugmentedObjectCategory.KEYBOARD,
     override var trackingState: TrackingState = TrackingState.TRACKING,
     public val anchors: MutableCollection<RuntimeAnchor> = mutableListOf(),
-) : RuntimeObject, AnchorHolder {
-
-    override fun createAnchor(pose: Pose): RuntimeAnchor {
-        val anchor = FakeRuntimeAnchor(pose, this)
-        anchors.add(anchor)
-        return anchor
-    }
-
-    override fun detachAnchor(anchor: RuntimeAnchor) {
-        anchors.remove(anchor)
-    }
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override fun onAnchorPersisted(anchor: RuntimeAnchor) {}
-}
+) : RuntimeObject {}

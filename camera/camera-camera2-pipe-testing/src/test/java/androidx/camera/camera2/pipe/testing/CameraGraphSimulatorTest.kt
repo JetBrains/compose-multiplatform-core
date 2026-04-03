@@ -52,6 +52,7 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraGraphSimulatorTest {
     private val testScope = TestScope()
     private val metadata =
@@ -174,6 +175,7 @@ class CameraGraphSimulatorTest {
     fun simulatorCanIssueBufferLoss() =
         testScope.runTest {
             val stream = simulator.streams[streamConfig]!!
+            val outputId = stream.outputs.single().id
             val listener = FakeRequestListener()
             val request = Request(streams = listOf(stream.id), listeners = listOf(listener))
 
@@ -187,11 +189,12 @@ class CameraGraphSimulatorTest {
             val frame = simulator.simulateNextFrame()
             assertThat(frame.request).isSameInstanceAs(request)
 
-            frame.simulateBufferLoss(stream.id)
+            frame.simulateBufferLoss(stream.id, outputId)
             val lossEvent = listener.onBufferLostFlow.first()
             assertThat(lossEvent.frameNumber).isEqualTo(frame.frameNumber)
             assertThat(lossEvent.requestMetadata.request).isSameInstanceAs(request)
             assertThat(lossEvent.streamId).isEqualTo(stream.id)
+            assertThat(lossEvent.outputId).isEqualTo(outputId)
         }
 
     @Test

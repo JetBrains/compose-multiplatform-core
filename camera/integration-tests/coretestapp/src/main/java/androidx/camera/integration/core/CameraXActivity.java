@@ -35,7 +35,6 @@ import static androidx.camera.core.ImageCapture.OUTPUT_FORMAT_RAW;
 import static androidx.camera.core.ImageCapture.OUTPUT_FORMAT_RAW_JPEG;
 import static androidx.camera.core.ImageCapture.getImageCaptureCapabilities;
 import static androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY;
-import static androidx.camera.integration.core.CameraXViewModel.getConfiguredCameraXCameraImplementation;
 import static androidx.camera.testing.impl.FileUtil.canDeviceWriteToMediaStore;
 import static androidx.camera.testing.impl.FileUtil.createFolder;
 import static androidx.camera.testing.impl.FileUtil.createParentFolder;
@@ -44,9 +43,14 @@ import static androidx.camera.testing.impl.FileUtil.generateVideoMediaStoreOptio
 import static androidx.camera.testing.impl.FileUtil.getAbsolutePathFromUri;
 import static androidx.camera.testing.impl.FileUtil.writeTextToExternalFile;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_FILE_SIZE_LIMIT_REACHED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_INSUFFICIENT_STORAGE;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_INVALID_OUTPUT_OPTIONS;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_RECORDING_GARBAGE_COLLECTED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE;
 
 import static java.util.Objects.requireNonNull;
@@ -60,7 +64,10 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Rect;
+import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.display.DisplayManager;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -103,11 +110,12 @@ import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.camera2.compat.quirk.CrashWhenTakingPhotoWithAutoFlashAEModeQuirk;
+import androidx.camera.camera2.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.compat.quirk.ImageCaptureFailWithAutoFlashQuirk;
 import androidx.camera.camera2.compat.quirk.ImageCaptureFlashNotFireQuirk;
 import androidx.camera.camera2.interop.Camera2CameraInfo;
+import androidx.camera.camera2.interop.Camera2Interop;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
-import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
@@ -118,7 +126,6 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.DisplayOrientedMeteringPointFactory;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExperimentalLensFacing;
-import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
@@ -158,7 +165,7 @@ import androidx.camera.video.VideoCapabilities;
 import androidx.camera.video.VideoCapture;
 import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.ScreenFlashView;
-import androidx.camera.view.impl.ZoomGestureDetector;
+import androidx.camera.viewfinder.core.ZoomGestureDetector;
 import androidx.core.content.ContextCompat;
 import androidx.core.math.MathUtils;
 import androidx.core.util.Consumer;
@@ -191,6 +198,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -273,9 +281,6 @@ public class CameraXActivity extends AppCompatActivity {
         ID_TO_ASPECT_RATIO_MAP.put(R.id.aspect_ratio_16_9, AspectRatio.RATIO_16_9);
     }
 
-    //Use this activity title when Camera Pipe configuration is used by core test app
-    private static final String APP_TITLE_FOR_CAMERA_PIPE = "CameraPipe Core Test App";
-
     // Possible values for this intent key: "backward" or "forward".
     private static final String INTENT_EXTRA_CAMERA_DIRECTION = "camera_direction";
     // Possible values for this intent key: "switch_test_case", "preview_test_case" or
@@ -287,9 +292,6 @@ public class CameraXActivity extends AppCompatActivity {
     private static final String INTENT_EXTRA_LOG_VIEWFINDER_POSITION = "log_view_finder_position";
     // Launch the activity with the specified video mirror mode.
     private static final String INTENT_EXTRA_VIDEO_MIRROR_MODE = "video_mirror_mode";
-    public static final String INTENT_EXTRA_CAMERA_IMPLEMENTATION = "camera_implementation";
-    public static final String INTENT_EXTRA_CAMERA_IMPLEMENTATION_NO_HISTORY =
-            "camera_implementation_no_history";
 
     // Launch the activity with the specified target aspect ratio.
     public static final String INTENT_EXTRA_TARGET_ASPECT_RATIO = "target_aspect_ratio";
@@ -324,11 +326,77 @@ public class CameraXActivity extends AppCompatActivity {
             "force_enable_stream_sharing";
 
     private final AtomicLong mImageAnalysisFrameCount = new AtomicLong(0);
+    private final AtomicInteger mCaptureFrameCount = new AtomicInteger(0);
+    private final AtomicLong mLastFrameNumber = new AtomicLong(-1);
+    private long mLastFpsTime = 0;
+    private int mLastCaptureFrameCount = 0;
+
+    private final CameraCaptureSession.CaptureCallback mCaptureCallback =
+            new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureCompleted(
+                        @NonNull CameraCaptureSession session,
+                        @NonNull CaptureRequest request,
+                        @NonNull TotalCaptureResult result) {
+                    long currentFrame = result.getFrameNumber();
+                    if (mLastFrameNumber.getAndSet(currentFrame) != currentFrame) {
+                        mCaptureFrameCount.incrementAndGet();
+                    }
+                }
+            };
+
     private final AtomicLong mPreviewFrameCount = new AtomicLong(0);
     // Automatically stops the video recording when this length value is set to be non-zero and
     // video length reaches the length in ms.
     private long mVideoCaptureAutoStopLength = 0;
     final MutableLiveData<String> mImageAnalysisResult = new MutableLiveData<>();
+    private String mLastImageAnalysisText = "";
+    private String mLastVideoStatsText = "";
+    private double mLastCaptureFps = 0.0;
+    private final Handler mFpsHandler = new Handler(Looper.getMainLooper());
+    private final Runnable mFpsRunnable = new Runnable() {
+        @Override
+        public void run() {
+            long currentTime = SystemClock.elapsedRealtime();
+            int currentFrameCount = mCaptureFrameCount.get();
+            if (mLastFpsTime > 0) {
+                long timeDiff = currentTime - mLastFpsTime;
+                int frameDiff = currentFrameCount - mLastCaptureFrameCount;
+                mLastCaptureFps = frameDiff * 1000.0 / timeDiff;
+            }
+            mLastFpsTime = currentTime;
+            mLastCaptureFrameCount = currentFrameCount;
+
+            updateTextView();
+            mFpsHandler.postDelayed(this, 1000);
+        }
+    };
+
+    private void updateTextView() {
+        String fpsText = String.format(java.util.Locale.US, "Capture FPS: %.2f", mLastCaptureFps);
+
+        // Update the main textView
+        String text = "";
+        if (mAnalysisToggle != null && mAnalysisToggle.isChecked()
+                && !mLastImageAnalysisText.isEmpty()) {
+            text += mLastImageAnalysisText + "\n";
+        }
+        text += fpsText;
+        if (mTextView != null) {
+            mTextView.setText(text);
+            mTextView.setVisibility(View.VISIBLE);
+        }
+
+        // Update the video stats textView if video is active (since it overlaps mTextView)
+        if (mVideoToggle != null && mVideoToggle.isChecked() && mRecordUi != null) {
+            String videoText = mLastVideoStatsText;
+            if (!videoText.isEmpty()) {
+                videoText += "\n";
+            }
+            videoText += fpsText;
+            mRecordUi.getTextStats().setText(videoText);
+        }
+    }
     private static final String BACKWARD = "BACKWARD";
     private static final String SWITCH_TEST_CASE = "switch_test_case";
     private static final String PREVIEW_TEST_CASE = "preview_test_case";
@@ -407,8 +475,10 @@ public class CameraXActivity extends AppCompatActivity {
     private boolean mIsLowLightBoostOn = false;
     private Range<Integer> mFpsRange = FPS_UNSPECIFIED;
     private boolean mForceEnableStreamSharing;
-    private boolean mDisableViewPort;
+    private boolean mDisableViewPort = true;
     private boolean mEnableTorchAsFlash;
+    private boolean mAutoRotationEnabled = true;
+    private boolean mTapToFocusAeAwbLockEnabled = false;
 
     SessionMediaUriSet mSessionImagesUriSet = new SessionMediaUriSet();
     SessionMediaUriSet mSessionVideosUriSet = new SessionMediaUriSet();
@@ -472,6 +542,8 @@ public class CameraXActivity extends AppCompatActivity {
             } catch (IllegalStateException e) {
                 Log.e(TAG, "Unexpected decrement. Continuing");
             }
+        } else {
+            Log.d(TAG, mPreviewFrameCount.get() + " frames counted on preview.");
         }
     };
 
@@ -494,6 +566,12 @@ public class CameraXActivity extends AppCompatActivity {
      * null which means no error occurs.
      */
     private @Nullable String mLastTakePictureErrorMessage = null;
+
+    /**
+     * Saves the error message of the last video recording action if any error occurs. This will be
+     * null which means no error occurs.
+     */
+    private @Nullable String mLastVideoRecordingErrorMessage = null;
 
     /**
      * Retrieve idling resource that waits for image received by analyzer).
@@ -637,23 +715,12 @@ public class CameraXActivity extends AppCompatActivity {
                 CameraInfo cameraInfo = getCameraInfo();
                 if (cameraInfo instanceof CameraInfoInternal) {
 
-                    Quirks deviceQuirks = CameraXViewModel.CAMERA_PIPE_IMPLEMENTATION_OPTION.equals(
-                            getConfiguredCameraXCameraImplementation()) ? DeviceQuirks.all
-                            : androidx.camera.camera2.compat.quirk.DeviceQuirks.getAll();
+                    Quirks deviceQuirks = DeviceQuirks.getAll();
                     Quirks cameraQuirks = ((CameraInfoInternal) cameraInfo).getCameraQuirks();
 
                     if (deviceQuirks.contains(CrashWhenTakingPhotoWithAutoFlashAEModeQuirk.class)
                             || cameraQuirks.contains(ImageCaptureFailWithAutoFlashQuirk.class)
-                            || cameraQuirks.contains(ImageCaptureFlashNotFireQuirk.class)
-                            || deviceQuirks.contains(
-                            androidx.camera.camera2.pipe.integration.compat.quirk
-                                    .CrashWhenTakingPhotoWithAutoFlashAEModeQuirk.class)
-                            || cameraQuirks.contains(
-                            androidx.camera.camera2.pipe.integration.compat.quirk
-                                    .ImageCaptureFailWithAutoFlashQuirk.class)
-                            || cameraQuirks.contains(
-                            androidx.camera.camera2.pipe.integration.compat.quirk
-                                    .ImageCaptureFlashNotFireQuirk.class)) {
+                            || cameraQuirks.contains(ImageCaptureFlashNotFireQuirk.class)) {
 
                         Toast.makeText(this, DESCRIPTION_FLASH_MODE_NOT_SUPPORTED,
                                 Toast.LENGTH_SHORT).show();
@@ -946,7 +1013,10 @@ public class CameraXActivity extends AppCompatActivity {
         if (event instanceof VideoRecordEvent.Finalize) {
             VideoRecordEvent.Finalize finalize = (VideoRecordEvent.Finalize) event;
 
-            switch (finalize.getError()) {
+            int errorCode = finalize.getError();
+            mLastVideoRecordingErrorMessage = getVideoRecordingErrorMessage(errorCode);
+
+            switch (errorCode) {
                 case ERROR_NONE:
                 case ERROR_FILE_SIZE_LIMIT_REACHED:
                 case ERROR_DURATION_LIMIT_REACHED:
@@ -954,6 +1024,26 @@ public class CameraXActivity extends AppCompatActivity {
                 case ERROR_SOURCE_INACTIVE:
                     Uri uri = finalize.getOutputResults().getOutputUri();
                     OutputOptions outputOptions = finalize.getOutputOptions();
+                    if (!(outputOptions instanceof MediaStoreOutputOptions
+                            || outputOptions instanceof FileOutputOptions)) {
+                        throw new AssertionError("Unknown or unsupported OutputOptions type: "
+                                + outputOptions.getClass().getSimpleName());
+                    }
+
+                    if (uri.equals(Uri.EMPTY)) {
+                        if (errorCode == ERROR_NONE) {
+                            throw new AssertionError("Uri is EMPTY but Error Code is ERROR_NONE");
+                        }
+                        // Decrement mVideoSavedIdlingResource to make the tests be terminated
+                        // ASAP. The tests should check whether the video recording message is
+                        // null to determine whether the video is recorded successfully or saved
+                        // under some specific conditions.
+                        if (!mVideoSavedIdlingResource.isIdleNow()) {
+                            mVideoSavedIdlingResource.decrement();
+                        }
+                        break;
+                    }
+
                     String msg;
                     String videoFilePath;
                     if (outputOptions instanceof MediaStoreOutputOptions) {
@@ -963,30 +1053,28 @@ public class CameraXActivity extends AppCompatActivity {
                                 uri
                         );
                         updateVideoSavedSessionData(uri);
-                    } else if (outputOptions instanceof FileOutputOptions) {
+                    } else {
                         videoFilePath = ((FileOutputOptions) outputOptions).getFile().getPath();
                         MediaScannerConnection.scanFile(this,
                                 new String[]{videoFilePath}, null,
                                 (path, uri1) -> {
                                     Log.i(TAG, "Scanned " + path + " -> uri= " + uri1);
-                                    updateVideoSavedSessionData(uri1);
+                                    updateVideoSavedSessionData(Objects.requireNonNull(uri1));
                                 });
                         msg = "Saved file " + videoFilePath;
-                    } else {
-                        throw new AssertionError("Unknown or unsupported OutputOptions type: "
-                                + outputOptions.getClass().getSimpleName());
                     }
+
                     // The video file path is used in tracing e2e test log. Don't remove it.
                     Log.d(TAG, "Saved video file: " + videoFilePath);
 
                     if (finalize.getError() != ERROR_NONE) {
-                        msg += " with code (" + finalize.getError() + ")";
+                        msg += " with code (" + errorCode + ")";
                     }
                     Log.d(TAG, msg, finalize.getCause());
                     Toast.makeText(CameraXActivity.this, msg, Toast.LENGTH_LONG).show();
                     break;
                 default:
-                    String errMsg = "Video capture failed by (" + finalize.getError() + "): "
+                    String errMsg = "Video capture failed by (" + errorCode + "): "
                             + finalize.getCause();
                     Log.e(TAG, errMsg, finalize.getCause());
                     Toast.makeText(CameraXActivity.this, errMsg, Toast.LENGTH_LONG).show();
@@ -1009,8 +1097,9 @@ public class CameraXActivity extends AppCompatActivity {
         double durationMs = TimeUnit.NANOSECONDS.toMillis(stats.getRecordedDurationNanos());
         // Show megabytes in International System of Units (SI)
         double sizeMb = stats.getNumBytesRecorded() / (1000d * 1000d);
-        String msg = String.format("%.2f sec\n%.2f MB", durationMs / 1000d, sizeMb);
-        mRecordUi.getTextStats().setText(msg);
+        mLastVideoStatsText = String.format(java.util.Locale.US, "%.2f sec\n%.2f MB",
+                durationMs / 1000d, sizeMb);
+        updateTextView();
 
         if (mVideoCaptureAutoStopLength > 0 && durationMs >= mVideoCaptureAutoStopLength
                 && mRecordUi.getState() == RecordUi.State.RECORDING) {
@@ -1543,10 +1632,6 @@ public class CameraXActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //if different Camera Provider (CameraPipe vs Camera2 was initialized in previous session,
-        //then close this application.
-        closeAppIfCameraProviderMismatch(this.getIntent());
-
         setContentView(R.layout.activity_camera_xmain);
 
         EdgeToEdgeUtil.enableEdgeToEdge(this, R.id.constraintLayout,
@@ -1634,14 +1719,15 @@ public class CameraXActivity extends AppCompatActivity {
 
         setUpButtonEvents();
         setupViewFinderGestureControls();
+        mFpsHandler.post(mFpsRunnable);
 
         mImageAnalysisResult.observe(
                 this,
                 text -> {
                     if (mImageAnalysisFrameCount.getAndIncrement() % 30 == 0) {
-                        mTextView.setText(
-                                "ImgCount: " + mImageAnalysisFrameCount.get() + " @ts: "
-                                        + text);
+                        mLastImageAnalysisText = "ImgCount: " + mImageAnalysisFrameCount.get()
+                                + " @ts: " + text;
+                        updateTextView();
                     }
                 });
 
@@ -1686,25 +1772,6 @@ public class CameraXActivity extends AppCompatActivity {
             } else {
                 String newCameraDirection = bundle.getString(INTENT_EXTRA_CAMERA_DIRECTION, null);
                 mCameraSwitcher.onLaunchDirectionUpdated(newCameraDirection);
-            }
-
-            String cameraImplementation = bundle.getString(INTENT_EXTRA_CAMERA_IMPLEMENTATION);
-            boolean cameraImplementationNoHistory =
-                    bundle.getBoolean(INTENT_EXTRA_CAMERA_IMPLEMENTATION_NO_HISTORY, false);
-            if (cameraImplementationNoHistory) {
-                Intent newIntent = new Intent(getIntent());
-                newIntent.removeExtra(INTENT_EXTRA_CAMERA_IMPLEMENTATION);
-                newIntent.removeExtra(INTENT_EXTRA_CAMERA_IMPLEMENTATION_NO_HISTORY);
-                setIntent(newIntent);
-            }
-
-            if (cameraImplementation != null) {
-                if (cameraImplementation.equalsIgnoreCase(
-                        CameraXViewModel.CAMERA_PIPE_IMPLEMENTATION_OPTION)) {
-                    setTitle(APP_TITLE_FOR_CAMERA_PIPE);
-                }
-                CameraXViewModel.configureCameraProvider(
-                        cameraImplementation, cameraImplementationNoHistory);
             }
 
             // Update the app UI according to the e2e test case.
@@ -1823,8 +1890,10 @@ public class CameraXActivity extends AppCompatActivity {
         menu.findItem(R.id.stream_sharing).setEnabled(
                 mPreviewToggle.isChecked() && mVideoToggle.isChecked());
 
+        menu.findItem(R.id.auto_rotation).setChecked(mAutoRotationEnabled);
         menu.findItem(R.id.view_port).setChecked(mDisableViewPort);
         menu.findItem(R.id.torch_as_flash).setChecked(mEnableTorchAsFlash);
+        menu.findItem(R.id.tap_to_focus_ae_awb_lock).setChecked(mTapToFocusAeAwbLockEnabled);
     }
 
     private static <T, E> T getKeyByValue(Map<T, E> map, E value) {
@@ -1860,10 +1929,14 @@ public class CameraXActivity extends AppCompatActivity {
             }
         } else if (itemId == R.id.stream_sharing) {
             mForceEnableStreamSharing = !mForceEnableStreamSharing;
+        } else if (itemId == R.id.auto_rotation) {
+            mAutoRotationEnabled = !mAutoRotationEnabled;
         } else if (itemId == R.id.view_port) {
             mDisableViewPort = !mDisableViewPort;
         } else if (itemId == R.id.torch_as_flash) {
             mEnableTorchAsFlash = !mEnableTorchAsFlash;
+        } else if (itemId == R.id.tap_to_focus_ae_awb_lock) {
+            mTapToFocusAeAwbLockEnabled = !mTapToFocusAeAwbLockEnabled;
         } else {
             Log.d(TAG, "Not handling item " + item.getTitle());
             return super.onOptionsItemSelected(item);
@@ -1887,37 +1960,10 @@ public class CameraXActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Close current app if CameraProvider from intent of current activity doesn't match with
-     * CameraProvider stored in the CameraXViewModel, because CameraProvider can't be changed
-     * between Camera2 and Camera Pipe while app is running.
-     */
-    private void closeAppIfCameraProviderMismatch(Intent mIntent) {
-        String cameraImplementation = null;
-        boolean cameraImplementationNoHistory = false;
-        Bundle bundle = mIntent.getExtras();
-        if (bundle != null) {
-            cameraImplementation = bundle.getString(INTENT_EXTRA_CAMERA_IMPLEMENTATION);
-            cameraImplementationNoHistory =
-                    bundle.getBoolean(INTENT_EXTRA_CAMERA_IMPLEMENTATION_NO_HISTORY, false);
-        }
-
-        if (!cameraImplementationNoHistory) {
-            if (!CameraXViewModel.isCameraProviderUnInitializedOrSameAsParameter(
-                    cameraImplementation)) {
-                Toast.makeText(CameraXActivity.this, "Please relaunch "
-                                + "the app to apply new CameraX configuration.",
-                        Toast.LENGTH_LONG).show();
-                finish();
-                System.exit(0);
-            }
-        }
-    }
-
-
     @Override
     public void onDestroy() {
         super.onDestroy();
+        mFpsHandler.removeCallbacks(mFpsRunnable);
         DisplayManager dpyMgr =
                 requireNonNull(ContextCompat.getSystemService(this, DisplayManager.class));
         dpyMgr.unregisterDisplayListener(mDisplayListener);
@@ -1936,6 +1982,8 @@ public class CameraXActivity extends AppCompatActivity {
      * @param calledBySelf flag indicates if this is a recursive call.
      */
     void tryBindUseCases(boolean calledBySelf) {
+        mLastImageAnalysisText = "";
+        mLastVideoStatsText = "";
         boolean isViewFinderReady = mViewFinder.getWidth() != 0 && mViewFinder.getHeight() != 0;
         boolean isCameraReady = mCameraProvider != null;
         if (isPermissionMissing() || !isCameraReady || !isViewFinderReady) {
@@ -2052,6 +2100,11 @@ public class CameraXActivity extends AppCompatActivity {
         }
     }
 
+    @OptIn(markerClass = ExperimentalCamera2Interop.class)
+    private <T> void setCaptureCallback(androidx.camera.core.ExtendableBuilder<T> builder) {
+        new Camera2Interop.Extender<>(builder).setSessionCaptureCallback(mCaptureCallback);
+    }
+
     /**
      * Builds all use cases based on current settings and return as an array.
      */
@@ -2064,7 +2117,7 @@ public class CameraXActivity extends AppCompatActivity {
         }
 
         if (mPreviewToggle.isChecked()) {
-            Preview preview = new Preview.Builder()
+            Preview.Builder builder = new Preview.Builder()
                     .setTargetName("Preview")
                     .setResolutionSelector(
                             new ResolutionSelector.Builder()
@@ -2074,8 +2127,9 @@ public class CameraXActivity extends AppCompatActivity {
                     .setPreviewStabilizationEnabled(mIsPreviewStabilizationOn)
                     .setDynamicRange(
                             mVideoToggle.isChecked() ? DynamicRange.UNSPECIFIED : mDynamicRange)
-                    .setTargetFrameRate(mFpsRange)
-                    .build();
+                    .setTargetFrameRate(mFpsRange);
+            setCaptureCallback(builder);
+            Preview preview = builder.build();
             resetViewIdlingResource();
             // Use the listener of the future to make sure the Preview setup the new surface.
             mPreviewRenderer.attachInputPreview(preview).addListener(() -> {
@@ -2094,7 +2148,7 @@ public class CameraXActivity extends AppCompatActivity {
                 flashType = FLASH_TYPE_USE_TORCH_AS_FLASH;
             }
 
-            ImageCapture imageCapture = new ImageCapture.Builder()
+            ImageCapture.Builder builder = new ImageCapture.Builder()
                     .setFlashType(flashType)
                     .setCaptureMode(getCaptureMode())
                     .setResolutionSelector(
@@ -2103,20 +2157,22 @@ public class CameraXActivity extends AppCompatActivity {
                                     .build()
                     )
                     .setOutputFormat(mImageOutputFormat)
-                    .setTargetName("ImageCapture")
-                    .build();
+                    .setTargetName("ImageCapture");
+            setCaptureCallback(builder);
+            ImageCapture imageCapture = builder.build();
             useCases.add(imageCapture);
         }
 
         if (mAnalysisToggle.isChecked()) {
-            ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+            ImageAnalysis.Builder builder = new ImageAnalysis.Builder()
                     .setTargetName("ImageAnalysis")
                     .setResolutionSelector(
                             new ResolutionSelector.Builder()
                                     .setAspectRatioStrategy(getTargetAspectRatioStrategy())
                                     .build()
-                    )
-                    .build();
+                    );
+            setCaptureCallback(builder);
+            ImageAnalysis imageAnalysis = builder.build();
             useCases.add(imageAnalysis);
             // Make the analysis idling resource non-idle, until the required frames received.
             resetAnalysisIdlingResource();
@@ -2135,11 +2191,13 @@ public class CameraXActivity extends AppCompatActivity {
                     builder.setQualitySelector(QualitySelector.from(mVideoQuality));
                 }
                 mRecorder = builder.setAspectRatio(mTargetAspectRatio).build();
-                mVideoCapture = new VideoCapture.Builder<>(mRecorder)
-                        .setMirrorMode(mVideoMirrorMode)
-                        .setDynamicRange(mDynamicRange)
-                        .setTargetFrameRate(mFpsRange)
-                        .build();
+                VideoCapture.Builder<Recorder> videoCaptureBuilder =
+                        new VideoCapture.Builder<>(mRecorder)
+                                .setMirrorMode(mVideoMirrorMode)
+                                .setDynamicRange(mDynamicRange)
+                                .setTargetFrameRate(mFpsRange);
+                setCaptureCallback(videoCaptureBuilder);
+                mVideoCapture = videoCaptureBuilder.build();
             }
             useCases.add(mVideoCapture);
         }
@@ -2250,7 +2308,7 @@ public class CameraXActivity extends AppCompatActivity {
     /**
      * Binds use cases to the current lifecycle.
      */
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
+    @SuppressLint("RestrictedApiAndroidX")
     private Camera bindToLifecycleSafely(List<UseCase> useCases) {
         Log.d(TAG, "bindToLifecycleSafely: mDisableViewPort = " + mDisableViewPort
                 + ", mForceEnableStreamSharing = " + mForceEnableStreamSharing);
@@ -2267,10 +2325,11 @@ public class CameraXActivity extends AppCompatActivity {
 
         // Force-enable stream sharing
         if (mForceEnableStreamSharing) {
-            @SuppressLint("RestrictedApiAndroidX")
             StreamSharingForceEnabledEffect effect = new StreamSharingForceEnabledEffect();
             sessionConfigBuilder.addEffect(effect);
         }
+
+        sessionConfigBuilder.setAutoRotationEnabled(mAutoRotationEnabled);
 
         mCamera = mCameraProvider.bindToLifecycle(this, mCurrentCameraSelector,
                 sessionConfigBuilder.build());
@@ -2319,9 +2378,14 @@ public class CameraXActivity extends AppCompatActivity {
                                     mCamera.getCameraInfo(),
                                     mViewFinder.getWidth(),
                                     mViewFinder.getHeight());
-                    FocusMeteringAction action = new FocusMeteringAction.Builder(
+                    FocusMeteringAction.Builder actionBuilder = new FocusMeteringAction.Builder(
                             factory.createPoint(e.getX(), e.getY())
-                    ).build();
+                    );
+                    if (mTapToFocusAeAwbLockEnabled) {
+                        actionBuilder.setLockingMode(FocusMeteringAction.FLAG_AF
+                                | FocusMeteringAction.FLAG_AE | FocusMeteringAction.FLAG_AWB);
+                    }
+                    FocusMeteringAction action = actionBuilder.build();
                     Futures.addCallback(
                             mCamera.getCameraControl().startFocusAndMetering(action),
                             new FutureCallback<FocusMeteringResult>() {
@@ -2795,6 +2859,51 @@ public class CameraXActivity extends AppCompatActivity {
         mLastTakePictureErrorMessage = null;
     }
 
+    /**
+     * Returns the error message of the last video recording action if any error occurs. Returns
+     * null if no error occurs.
+     */
+    @VisibleForTesting
+    @Nullable String getLastVideoRecordingErrorMessage() {
+        return mLastVideoRecordingErrorMessage;
+    }
+
+    @VisibleForTesting
+    void cleanVideoRecordingErrorMessage() {
+        mLastVideoRecordingErrorMessage = null;
+    }
+
+    private @Nullable String getVideoRecordingErrorMessage(
+            @VideoRecordEvent.Finalize.VideoRecordError int error) {
+        switch (error) {
+            case ERROR_NONE:
+                return null;
+            case VideoRecordEvent.Finalize.ERROR_UNKNOWN:
+                return "ERROR_UNKNOWN";
+            case ERROR_FILE_SIZE_LIMIT_REACHED:
+                return "ERROR_FILE_SIZE_LIMIT_REACHED";
+            case ERROR_INSUFFICIENT_STORAGE:
+                return "ERROR_INSUFFICIENT_STORAGE";
+            case ERROR_INVALID_OUTPUT_OPTIONS:
+                return "ERROR_INVALID_OUTPUT_OPTIONS";
+            case ERROR_ENCODING_FAILED:
+                return "ERROR_ENCODING_FAILED";
+            case ERROR_RECORDER_ERROR:
+                return "ERROR_RECORDER_ERROR";
+            case ERROR_NO_VALID_DATA:
+                return "ERROR_NO_VALID_DATA";
+            case ERROR_SOURCE_INACTIVE:
+                return "ERROR_SOURCE_INACTIVE";
+            case ERROR_DURATION_LIMIT_REACHED:
+                return "ERROR_DURATION_LIMIT_REACHED";
+            case ERROR_RECORDING_GARBAGE_COLLECTED:
+                return "ERROR_RECORDING_GARBAGE_COLLECTED";
+        }
+
+        // Should never reach here, but just in case...
+        return "Unknown(" + error + ")";
+    }
+
     @SuppressWarnings("unchecked")
     VideoCapture<Recorder> getVideoCapture() {
         return findUseCase(VideoCapture.class);
@@ -2998,10 +3107,6 @@ public class CameraXActivity extends AppCompatActivity {
     }
 
     private static boolean isLegacyDevice(@NonNull CameraInfo cameraInfo) {
-        if (CameraXViewModel.CAMERA_PIPE_IMPLEMENTATION_OPTION.equals(
-                getConfiguredCameraXCameraImplementation())) {
-            return isCameraPipeLegacyDevice(cameraInfo);
-        }
         return isCamera2LegacyDevice(cameraInfo);
     }
 
@@ -3012,33 +3117,13 @@ public class CameraXActivity extends AppCompatActivity {
         ) == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY;
     }
 
-    @OptIn(markerClass =
-            androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop.class)
-    private static boolean isCameraPipeLegacyDevice(@NonNull CameraInfo cameraInfo) {
-        return androidx.camera.camera2.pipe.integration.interop.Camera2CameraInfo.from(cameraInfo)
-                .getCameraCharacteristic(
-                        CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
-                ) == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY;
-    }
-
     private static @NonNull String getCameraId(@NonNull CameraInfo cameraInfo) {
-        try {
-            return getCamera2CameraId(cameraInfo);
-        } catch (IllegalArgumentException e) {
-            return getCameraPipeCameraId(cameraInfo);
-        }
+        return getCamera2CameraId(cameraInfo);
     }
 
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
     private static @NonNull String getCamera2CameraId(@NonNull CameraInfo cameraInfo) {
         return Camera2CameraInfo.from(cameraInfo).getCameraId();
-    }
-
-    @OptIn(markerClass =
-            androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop.class)
-    private static @NonNull String getCameraPipeCameraId(@NonNull CameraInfo cameraInfo) {
-        return androidx.camera.camera2.pipe.integration.interop.Camera2CameraInfo.from(
-                cameraInfo).getCameraId();
     }
 
     private static final class DynamicRangeUiData {

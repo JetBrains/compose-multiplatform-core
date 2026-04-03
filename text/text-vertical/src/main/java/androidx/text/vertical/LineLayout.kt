@@ -38,7 +38,7 @@ internal fun createLineLayout(
     start: Int,
     end: Int,
     paint: TextPaint,
-    @OrientationMode textOrientation: Int,
+    textOrientation: TextOrientation,
 ) =
     LineLayout(
         mutableListOf<LayoutRun>().apply {

@@ -16,6 +16,7 @@
 
 package androidx.aab.cli
 
+import androidx.aab.analysis.PackagePrefixKey
 import androidx.aab.analysis.PackageStats
 import java.io.File
 import java.nio.file.Files
@@ -27,12 +28,7 @@ class OutputContext(
     outputPath: String?,
     /** Pass true to generate an output csv file with optimization stats */
     csv: Boolean,
-    /**
-     * Produces an additional obf.txt and unobf.txt for debugging what is counted as obfuscated as
-     * an indicator of overall program optimizations
-     */
-    val dumpMappingDebug: Boolean,
-    /** Lists of patterns that will detect presence of .so file names in bundles/apks. */
+    /** List of patterns that will detect presence of .so file names in bundles/apks. */
     val soMatchPatterns: List<String>,
 ) {
     /**
@@ -49,19 +45,17 @@ class OutputContext(
             outputDir: File?
         ) : this(
             outputDir = outputDir,
-            obfuscatedClasses =
-                if (dumpMappingDebug) outputDir?.run { File(this, "obf.txt") } else null,
-            unobfuscatedClasses =
-                if (dumpMappingDebug) outputDir?.run { File(this, "unobf.txt") } else null,
-        )
+            obfuscatedClasses = outputDir?.run { File(this, "obf.csv") },
+            unobfuscatedClasses = outputDir?.run { File(this, "unobf.csv") },
+        ) {
+            val header = "size, fullName, originalName, mappingFileLine,\n"
+            obfuscatedClasses?.appendText(header)
+            unobfuscatedClasses?.appendText(header)
+        }
 
         init {
             if (outputDir != null) {
                 Files.createDirectory(outputDir.toPath())
-            } else {
-                require(!dumpMappingDebug) {
-                    "must specify an output directory to support mapping debug"
-                }
             }
         }
     }
@@ -98,48 +92,103 @@ class OutputContext(
         }
     }
 
-    val packageStats = mutableListOf<Map<String, PackageStats>>()
+    private val packageStats = mutableListOf<Map<PackagePrefixKey, PackageStats>>()
 
-    fun registerPackagePrefixInfo(stats: Map<String, PackageStats>) {
+    fun registerPackagePrefixInfo(stats: Map<PackagePrefixKey, PackageStats>) {
         synchronized(packageStats) { packageStats.add(stats) }
+    }
+
+    private fun File.append(packageStats: PackageStats) {
+        packageStats.apply {
+            appendText(
+                "${identifierCount}, ${packagePrefix}, ${lowObfAppCount}, ${appCount}," +
+                    " ${obfuscationRatioMedian()}, ${obfuscationRatio()}, ${bytesSeen}, ${obfBytesSeen}, ${xmlBytesSeen}\n"
+            )
+        }
     }
 
     fun dumpPackagePrefixInfoToFile(
         directory: File?,
-        packagePrefixInfo: Map<String, PackageStats>,
+        packagePrefixInfo: Map<PackagePrefixKey, PackageStats>,
+        minAppCount: Int = 1,
     ) {
         if (directory == null) return
         File(directory, "packages.csv").apply {
-            writeText("packagePrefix, obfuscationRatio, obfClassesSeen, classesSeen\n")
+            writeText(
+                "identifierCount, packagePrefix, lowObfAppCount, appCount," +
+                    " obfRatioMedian, obfRatioClassSize, classSize, obfClassSize, xmlClassSize\n"
+            )
             packagePrefixInfo.values
-                .filter { it.classesSeen > 100 } // note this filtration is just for dumping
+                .filter {
+                    it.classesSeen > 50 && it.appCount >= minAppCount
+                } // note this filtration is just for dumping
                 .sortedByDescending { it.classesSeen }
-                .forEach {
-                    appendText(
-                        "${it.packagePrefix}, ${it.obfClassesSeen * 1.0 / it.classesSeen}, ${it.obfClassesSeen}, ${it.classesSeen}\n"
-                    )
-                }
+                .forEach { append(it) }
+        }
+    }
+
+    fun dumpPerCategoryStatsToFile(
+        directory: File?,
+        packagePrefixInfo: Map<PackagePrefixKey, PackageStats>,
+        appCountThreshold: Int,
+    ) {
+        if (directory == null) return
+
+        // only look at deepest depth, to avoid double-counting
+
+        val google = PackageStats("com.google", identifierCount = 0, appCount = 0)
+        val androidx = PackageStats("androidx", identifierCount = 0, appCount = 0)
+        val kotlin = PackageStats("kotlin", identifierCount = 0, appCount = 0)
+        val other = PackageStats("library", identifierCount = 0, appCount = 0)
+        val appCustom = PackageStats("app", identifierCount = 0, appCount = 0)
+
+        packagePrefixInfo.values
+            .filter { it.identifierCount == PackagePrefixDepths.max() }
+            .forEach { packageStats ->
+                when {
+                    packageStats.appCount <= appCountThreshold -> appCustom
+                    packageStats.packagePrefix.startsWith("androidx") -> androidx
+                    packageStats.packagePrefix.startsWith("com.google") -> google
+                    packageStats.packagePrefix.startsWith("kotlin") -> kotlin
+                    else -> other
+                }.apply { accumulate(packageStats) }
+            }
+
+        File(directory, "categories.csv").apply {
+            append(google)
+            append(androidx)
+            append(kotlin)
+            append(other)
+            append(appCustom)
         }
     }
 
     fun dumpPackagePrefixInfo() {
         if (outputDir == null) return
 
-        val result = mutableMapOf<String, PackageStats>()
+        val result = mutableMapOf<PackagePrefixKey, PackageStats>()
         synchronized(packageStats) {
             println("Dumping package stats for ${packageStats.size} apps")
             packageStats.forEach { appPackagePrefixInfo ->
                 appPackagePrefixInfo.forEach { (prefix, packageStats) ->
                     result
-                        .computeIfAbsent(prefix) { PackageStats(prefix, 0, 0) }
-                        .apply {
-                            classesSeen += packageStats.classesSeen
-                            obfClassesSeen += packageStats.obfClassesSeen
+                        .computeIfAbsent(prefix) {
+                            PackageStats(
+                                packagePrefix = prefix.packagePrefix,
+                                identifierCount = prefix.identifierCount,
+                                appCount = 0,
+                            )
                         }
+                        .apply { accumulate(packageStats) }
                 }
             }
         }
 
-        dumpPackagePrefixInfoToFile(outputDir, result)
+        dumpPackagePrefixInfoToFile(outputDir, result, minAppCount = 4 /* arbitrary! */)
+        dumpPerCategoryStatsToFile(outputDir, result, appCountThreshold = 4)
+    }
+
+    companion object {
+        val PackagePrefixDepths = listOf(2, 3, 4, 5, 6)
     }
 }

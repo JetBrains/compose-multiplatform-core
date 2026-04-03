@@ -18,7 +18,7 @@ package androidx.lifecycle.compose
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.kruth.assertThat
 import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.testing.TestLifecycleOwner

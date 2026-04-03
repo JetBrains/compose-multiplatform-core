@@ -23,7 +23,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.createSavedStateHandle
@@ -45,6 +45,7 @@ import androidx.testutils.test
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.reflect.typeOf
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.serialization.Serializable
 import org.junit.Rule
 import org.junit.Test
@@ -53,7 +54,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class NavHostControllerTest {
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun testRememberNavController() {
@@ -148,6 +149,8 @@ class NavHostControllerTest {
 
         composeTestRule.runOnUiThread { navController.navigate(SECOND_DESTINATION) }
 
+        composeTestRule.waitForIdle()
+
         assertWithMessage("the currentBackStackEntry should be after navigate")
             .that(currentBackStackEntry.value?.destination?.route)
             .isEqualTo(SECOND_DESTINATION)
@@ -205,6 +208,8 @@ class NavHostControllerTest {
         composeTestRule.runOnUiThread {
             navController.navigate(SECOND_DESTINATION) { popUpTo("first") { inclusive = true } }
         }
+
+        composeTestRule.waitForIdle()
 
         assertWithMessage("the currentBackStackEntry should be after navigate")
             .that(currentBackStackEntry.value?.destination?.route)

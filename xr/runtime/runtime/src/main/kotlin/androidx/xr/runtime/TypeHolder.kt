@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,3 +82,10 @@ public class NodeHolder<T>(node: T, type: Class<*>) : TypeHolder<T>(node, type)
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialStateHolder<T>(state: T, type: Class<*>) : TypeHolder<T>(state, type)
+
+/**
+ * Decouple the dependency to XrExtensions. The XrExtensions can be retrieved from this holder when
+ * necessary.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class XrExtensionsHolder<T>(extensions: T, type: Class<*>) : TypeHolder<T>(extensions, type)

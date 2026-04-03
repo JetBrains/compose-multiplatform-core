@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations.layout.modifiers;
 
+import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
 import androidx.annotation.RestrictTo;
@@ -23,6 +24,7 @@ import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.ScrollingEdgeEffect;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
@@ -34,6 +36,7 @@ import androidx.compose.remote.core.operations.layout.LayoutComponent;
 import androidx.compose.remote.core.operations.layout.ListActionsOperation;
 import androidx.compose.remote.core.operations.layout.ScrollDelegate;
 import androidx.compose.remote.core.operations.layout.TouchHandler;
+import androidx.compose.remote.core.operations.layout.managers.LayoutManager;
 import androidx.compose.remote.core.operations.utilities.StringSerializer;
 import androidx.compose.remote.core.semantics.ScrollableComponent;
 import androidx.compose.remote.core.serialize.MapSerializer;
@@ -61,8 +64,12 @@ public class ScrollModifierOperation extends ListActionsOperation
 
     int mDirection;
 
+    boolean mTouchDown;
     float mTouchDownX;
     float mTouchDownY;
+
+    float mLastTouchX;
+    float mLastTouchY;
 
     float mInitialScrollX;
     float mInitialScrollY;
@@ -77,6 +84,8 @@ public class ScrollModifierOperation extends ListActionsOperation
     float mContentDimension;
 
     private TouchExpression mTouchExpression;
+    private ScrollingEdgeEffect mEdgeEffectA;
+    private ScrollingEdgeEffect mEdgeEffectB;
 
     public ScrollModifierOperation(int direction, float position, float max, float notchMax) {
         super("SCROLL_MODIFIER");
@@ -102,9 +111,8 @@ public class ScrollModifierOperation extends ListActionsOperation
 
     @Override
     public void registerListening(@NonNull RemoteContext context) {
-        if (mTouchExpression != null) {
-            mTouchExpression.registerListening(context);
-        }
+        // We do not need to call mTouchExpression.registerListening here,
+        // as it's already in the component's mList and will be registered there.
     }
 
     @Override
@@ -162,13 +170,12 @@ public class ScrollModifierOperation extends ListActionsOperation
         }
         float position =
                 context.getContext()
-                        .mRemoteComposeState
                         .getFloat(Utils.idFromNan(mPositionExpression));
 
         if (mDirection == 0) {
-            mScrollY = -position;
+            mScrollY = -Math.min(mMaxScrollY, position);
         } else {
-            mScrollX = -position;
+            mScrollX = -Math.min(mMaxScrollX, position);
         }
     }
 
@@ -235,8 +242,12 @@ public class ScrollModifierOperation extends ListActionsOperation
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Modifier Operations", OP_CODE, CLASS_NAME)
-                .description("define a Scroll Modifier")
-                .field(INT, "direction", "");
+                .additionalDocumentation("modifier_scroll")
+                .description("Define a scrolling behavior for a component")
+                .field(INT, "direction", "Direction of the scroll (0=VERTICAL, 1=HORIZONTAL)")
+                .field(FLOAT, "position", "The current scroll position (expression)")
+                .field(FLOAT, "max", "The maximum scroll position")
+                .field(FLOAT, "notchMax", "The maximum notch position");
     }
 
     private float getMaxScrollPosition(@NonNull Component component, int direction) {
@@ -270,33 +281,53 @@ public class ScrollModifierOperation extends ListActionsOperation
         if (mTouchExpression != null) {
             float maxScrollPosition = getMaxScrollPosition(component, mDirection);
             if (maxScrollPosition > 0) {
-                max = maxScrollPosition;
+                max = Math.min(maxScrollPosition, max);
             }
         }
         context.loadFloat(Utils.idFromNan(mMax), max);
         context.loadFloat(Utils.idFromNan(mNotchMax), mContentDimension);
+        if (mEdgeEffectA != null) {
+            mEdgeEffectA.setSize(mWidth, mHeight);
+        }
+        if (mEdgeEffectB != null) {
+            mEdgeEffectB.setSize(mWidth, mHeight);
+        }
     }
 
     @Override
-    public void onTouchDown(
+    public boolean onTouchDown(
             @NonNull RemoteContext context,
             @NonNull CoreDocument document,
             @NonNull Component component,
             float x,
             float y) {
+        mTouchDown = true;
         mTouchDownX = x;
         mTouchDownY = y;
         mInitialScrollX = mScrollX;
         mInitialScrollY = mScrollY;
         if (mTouchExpression != null) {
             mTouchExpression.updateVariables(context);
-            mTouchExpression.touchDown(context, x + mScrollX, y + mScrollY);
+            if (context.getTouchVersion() == LayoutManager.FIX_TOUCH_EVENT) {
+                mTouchExpression.touchDown(context, x, y);
+            } else {
+                mTouchExpression.touchDown(context, x + mScrollX, y + mScrollY);
+            }
         }
+        mLastTouchX = x;
+        mLastTouchY = y;
         document.appliedTouchOperation(component);
+        if (mEdgeEffectA != null) {
+            mEdgeEffectA.reset();
+        }
+        if (mEdgeEffectB != null) {
+            mEdgeEffectB.reset();
+        }
+        return true;
     }
 
     @Override
-    public void onTouchUp(
+    public boolean onTouchUp(
             @NonNull RemoteContext context,
             @NonNull CoreDocument document,
             @NonNull Component component,
@@ -304,26 +335,50 @@ public class ScrollModifierOperation extends ListActionsOperation
             float y,
             float dx,
             float dy) {
+        boolean handled = mTouchDown;
+        mTouchDown = false;
         if (mTouchExpression != null) {
             mTouchExpression.updateVariables(context);
-            mTouchExpression.touchUp(context, x + mScrollX, y + mScrollY, dx, dy);
+            if (context.getTouchVersion() == LayoutManager.FIX_TOUCH_EVENT) {
+                mTouchExpression.touchUp(context, x, y, dx, dy);
+            } else {
+                mTouchExpression.touchUp(context, x + mScrollX, y + mScrollY, dx, dy);
+            }
         }
-        // If not using touch expression, should add velocity decay here
+        if (mEdgeEffectA != null) {
+            mEdgeEffectA.release();
+        }
+        if (mEdgeEffectB != null) {
+            mEdgeEffectB.release();
+        }
+        component.invalidateMeasure();
+        return handled;
     }
 
     @Override
-    public void onTouchDrag(
+    public boolean onTouchDrag(
             @NonNull RemoteContext context,
             @NonNull CoreDocument document,
             @NonNull Component component,
             float x,
             float y) {
+        mTouchDown = true;
         if (mTouchExpression != null) {
             mTouchExpression.updateVariables(context);
-            mTouchExpression.touchDrag(context, x + mScrollX, y + mScrollY);
+            if (context.getTouchVersion() == LayoutManager.FIX_TOUCH_EVENT) {
+                mTouchExpression.touchDrag(context, x, y);
+            } else {
+                mTouchExpression.touchDrag(context, x + mScrollX, y + mScrollY);
+            }
         }
         float dx = x - mTouchDownX;
         float dy = y - mTouchDownY;
+
+        float edx = x - mLastTouchX;
+        float edy = y - mLastTouchY;
+
+        mLastTouchX = x;
+        mLastTouchY = y;
 
         if (!Utils.isVariable(mPositionExpression)) {
             if (mDirection == 0) {
@@ -332,16 +387,45 @@ public class ScrollModifierOperation extends ListActionsOperation
                 mScrollX = Math.max(-mMaxScrollX, Math.min(0, mInitialScrollX + dx));
             }
         }
+
+        if (mDirection == 0) {
+            if (mEdgeEffectA != null && mScrollY == 0 && edy > 0) {
+                mEdgeEffectA.pull(edy, component.getHeight());
+            }
+            if (mEdgeEffectB != null && mScrollY == -mMaxScrollY && edy < 0) {
+                mEdgeEffectB.pull(edy, component.getHeight());
+            }
+        } else {
+            if (mEdgeEffectA != null && mScrollX == 0 && edx > 0) {
+                mEdgeEffectA.pull(edx, component.getWidth());
+            }
+            if (mEdgeEffectB != null && mScrollX == -mMaxScrollX && edx < 0) {
+                mEdgeEffectB.pull(edx, component.getWidth());
+            }
+        }
+        component.invalidateMeasure();
+        return true;
     }
 
     @Override
-    public void onTouchCancel(
+    public boolean onTouchCancel(
             @NonNull RemoteContext context,
             @NonNull CoreDocument document,
             @NonNull Component component,
             float x,
-            float y) {}
-
+            float y) {
+        boolean handled = mTouchDown;
+        mTouchDown = false;
+        if (mEdgeEffectA != null) {
+            mEdgeEffectA.release();
+            context.needsRepaint();
+        }
+        if (mEdgeEffectB != null) {
+            mEdgeEffectB.release();
+            context.needsRepaint();
+        }
+        return handled;
+    }
     /**
      * Set the horizontal scroll dimension
      *
@@ -351,7 +435,7 @@ public class ScrollModifierOperation extends ListActionsOperation
     public void setHorizontalScrollDimension(float hostDimension, float contentDimension) {
         mHostDimension = hostDimension;
         mContentDimension = contentDimension;
-        mMaxScrollX = contentDimension - hostDimension;
+        mMaxScrollX = Math.max(0, contentDimension - hostDimension);
     }
 
     /**
@@ -363,7 +447,7 @@ public class ScrollModifierOperation extends ListActionsOperation
     public void setVerticalScrollDimension(float hostDimension, float contentDimension) {
         mHostDimension = hostDimension;
         mContentDimension = contentDimension;
-        mMaxScrollY = contentDimension - hostDimension;
+        mMaxScrollY = Math.max(0, contentDimension - hostDimension);
     }
 
     public float getContentDimension() {
@@ -399,6 +483,59 @@ public class ScrollModifierOperation extends ListActionsOperation
     @Override
     public void reset() {
         // nothing here for now
+    }
+
+    @Override
+    public void applyEdgeEffect(@NonNull PaintContext context,
+            @NonNull Component component, int phase) {
+        if (mEdgeEffectA == null) {
+            if (mDirection == 0) {
+                mEdgeEffectA = context.getContext().createEdgeEffect(ScrollingEdgeEffect.TOP);
+                if (mEdgeEffectA != null) {
+                    mEdgeEffectA.setSize(mWidth, mContentDimension);
+                }
+            } else {
+                mEdgeEffectA = context.getContext().createEdgeEffect(ScrollingEdgeEffect.LEFT);
+                if (mEdgeEffectB != null) {
+                    mEdgeEffectA.setSize(mContentDimension, mHeight);
+                }
+            }
+        }
+        if (mEdgeEffectB == null) {
+            if (mDirection == 0) {
+                mEdgeEffectB = context.getContext().createEdgeEffect(ScrollingEdgeEffect.BOTTOM);
+                if (mEdgeEffectB != null) {
+                    mEdgeEffectB.setSize(mWidth, mContentDimension);
+                }
+            } else {
+                mEdgeEffectB = context.getContext().createEdgeEffect(ScrollingEdgeEffect.RIGHT);
+                if (mEdgeEffectB != null) {
+                    mEdgeEffectB.setSize(mContentDimension, mHeight);
+                }
+            }
+        }
+        if (mEdgeEffectA != null) {
+            mEdgeEffectA.apply(context, component, mContentDimension, phase);
+        }
+        if (mEdgeEffectB != null) {
+            mEdgeEffectB.apply(context, component, mContentDimension, phase);
+        }
+    }
+
+    @Override
+    public float contentWidth() {
+        if (mDirection == 1) {
+            return mContentDimension;
+        }
+        return mWidth;
+    }
+
+    @Override
+    public float contentHeight() {
+        if (mDirection == 0) {
+            return mContentDimension;
+        }
+        return mHeight;
     }
 
     @Override
@@ -454,7 +591,7 @@ public class ScrollModifierOperation extends ListActionsOperation
     @Override
     public boolean showOnScreen(@NonNull RemoteContext context, @NonNull Component child) {
         float[] locationInWindow = new float[2];
-        child.getLocationInWindow(locationInWindow);
+        child.getLocationInWindow(context, locationInWindow);
 
         int offset = 0;
         if (handlesVerticalScroll()) {

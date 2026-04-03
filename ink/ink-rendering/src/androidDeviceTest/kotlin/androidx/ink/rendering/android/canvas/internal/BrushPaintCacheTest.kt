@@ -30,7 +30,13 @@ import androidx.ink.brush.color.Color as ComposeColor
 import androidx.ink.strokes.StrokeInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -57,12 +63,14 @@ class BrushPaintCacheTest {
         // Android Q and all starting at Android Q. Note that in addition to FILTER_BITMAP_FLAG,
         // Paint(), but not Paint(flags), also sets ANTI_ALIAS_FLAG implicitly starting at Android
         // S.
-        assertThat(paint.isAntiAlias).isFalse()
-        assertThat(paint.isFilterBitmap).isTrue()
+        assertFalse(paint.isAntiAlias)
+        assertTrue(paint.isFilterBitmap)
         // Flag bitvs are the same, ignoring the flags that may be set by the boolean settings above
         // instead.
-        assertThat(paint.flags or Paint.FILTER_BITMAP_FLAG)
-            .isEqualTo(Paint(0).flags or Paint.FILTER_BITMAP_FLAG)
+        assertEquals(
+            paint.flags or Paint.FILTER_BITMAP_FLAG,
+            Paint(0).flags or Paint.FILTER_BITMAP_FLAG,
+        )
     }
 
     @Test
@@ -85,12 +93,14 @@ class BrushPaintCacheTest {
         // Android Q and all starting at Android Q. Note that in addition to FILTER_BITMAP_FLAG,
         // Paint(), but not Paint(flags), also sets ANTI_ALIAS_FLAG implicitly starting at Android
         // S.
-        assertThat(paint.isAntiAlias).isTrue()
-        assertThat(paint.isFilterBitmap).isTrue()
+        assertTrue(paint.isAntiAlias)
+        assertTrue(paint.isFilterBitmap)
         // Flag bitvs are the same, ignoring the flags that may be set by the boolean settings above
         // instead.
-        assertThat(paint.flags or Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
-            .isEqualTo(Paint(0).flags or Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        assertEquals(
+            paint.flags or Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG,
+            Paint(0).flags or Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG,
+        )
     }
 
     @Test
@@ -126,37 +136,37 @@ class BrushPaintCacheTest {
                 StrokeInput(),
             )
 
-        assertThat(textureIdLoaded).isEqualTo(fakeTextureId)
-        assertThat(paint.color).isEqualTo(Color.RED)
-        assertThat(paint.shader).isInstanceOf(BitmapShader::class.java)
+        assertEquals(textureIdLoaded, fakeTextureId)
+        assertEquals(paint.color, Color.RED)
+        assertIs<BitmapShader>(paint.shader)
         val expectedLocalMatrix =
             nestedArrayToMatrix(
                 arrayOf(arrayOf(3F, 0F, 5F), arrayOf(0F, 2F, 7F), arrayOf(0F, 0F, 1.0F))
             )
         with(Matrix()) {
-            assertThat(paint.shader.getLocalMatrix(this)).isTrue()
-            assertThat(this).isEqualTo(expectedLocalMatrix)
+            assertTrue(paint.shader.getLocalMatrix(this))
+            assertEquals(this, expectedLocalMatrix)
         }
 
         val expectedUpdatedMatrix =
             nestedArrayToMatrix(
                 arrayOf(arrayOf(3F, 0F, 0F), arrayOf(0F, 2F, 0F), arrayOf(0F, 0F, 1.0F))
             )
-        assertThat(
-                cache.obtain(brushPaint, ComposeColor.Red, brushSize, StrokeInput(), StrokeInput())
-            )
-            .isSameInstanceAs(paint)
+        assertSame(
+            cache.obtain(brushPaint, ComposeColor.Red, brushSize, StrokeInput(), StrokeInput()),
+            paint,
+        )
         with(Matrix()) {
-            assertThat(paint.shader.getLocalMatrix(this)).isTrue()
-            assertThat(expectedUpdatedMatrix).isNotEqualTo(expectedLocalMatrix)
-            assertThat(this).isEqualTo(expectedUpdatedMatrix)
+            assertTrue(paint.shader.getLocalMatrix(this))
+            assertNotEquals(expectedUpdatedMatrix, expectedLocalMatrix)
+            assertEquals(this, expectedUpdatedMatrix)
         }
 
-        assertThat(
-                cache.obtain(brushPaint, ComposeColor.Blue, brushSize, StrokeInput(), StrokeInput())
-            )
-            .isSameInstanceAs(paint)
-        assertThat(paint.color).isEqualTo(Color.BLUE)
+        assertSame(
+            cache.obtain(brushPaint, ComposeColor.Blue, brushSize, StrokeInput(), StrokeInput()),
+            paint,
+        )
+        assertEquals(paint.color, Color.BLUE)
     }
 
     @Test
@@ -193,47 +203,47 @@ class BrushPaintCacheTest {
                 Matrix().apply { setScale(5F, 5F) },
             )
 
-        assertThat(textureIdLoaded).isEqualTo(fakeTextureId)
-        assertThat(paint.color).isEqualTo(Color.RED)
-        assertThat(paint.shader).isInstanceOf(BitmapShader::class.java)
+        assertEquals(textureIdLoaded, fakeTextureId)
+        assertEquals(paint.color, Color.RED)
+        assertIs<BitmapShader>(paint.shader)
         val expectedLocalMatrix =
             nestedArrayToMatrix(
                 arrayOf(arrayOf(15F, 0F, 0F), arrayOf(0F, 10F, 0F), arrayOf(0F, 0F, 1F))
             )
         with(Matrix()) {
-            assertThat(paint.shader.getLocalMatrix(this)).isTrue()
-            assertThat(this).isEqualTo(expectedLocalMatrix)
+            assertTrue(paint.shader.getLocalMatrix(this))
+            assertEquals(this, expectedLocalMatrix)
         }
 
         val expectedUpdatedMatrix =
             nestedArrayToMatrix(
                 arrayOf(arrayOf(21F, 0F, 11F), arrayOf(0F, 14F, 13F), arrayOf(0F, 0F, 1F))
             )
-        assertThat(
-                cache.obtain(
-                    brushPaint,
-                    ComposeColor.Red,
-                    brushSize,
-                    StrokeInput(),
-                    StrokeInput(),
-                    Matrix().apply {
-                        postScale(7F, 7F)
-                        postTranslate(11F, 13F)
-                    },
-                )
-            )
-            .isSameInstanceAs(paint)
+        assertSame(
+            cache.obtain(
+                brushPaint,
+                ComposeColor.Red,
+                brushSize,
+                StrokeInput(),
+                StrokeInput(),
+                Matrix().apply {
+                    postScale(7F, 7F)
+                    postTranslate(11F, 13F)
+                },
+            ),
+            paint,
+        )
         with(Matrix()) {
-            assertThat(paint.shader.getLocalMatrix(this)).isTrue()
-            assertThat(expectedUpdatedMatrix).isNotEqualTo(expectedLocalMatrix)
-            assertThat(this).isEqualTo(expectedUpdatedMatrix)
+            assertTrue(paint.shader.getLocalMatrix(this))
+            assertNotEquals(expectedUpdatedMatrix, expectedLocalMatrix)
+            assertEquals(this, expectedUpdatedMatrix)
         }
 
-        assertThat(
-                cache.obtain(brushPaint, ComposeColor.Blue, brushSize, StrokeInput(), StrokeInput())
-            )
-            .isSameInstanceAs(paint)
-        assertThat(paint.color).isEqualTo(Color.BLUE)
+        assertSame(
+            cache.obtain(brushPaint, ComposeColor.Blue, brushSize, StrokeInput(), StrokeInput()),
+            paint,
+        )
+        assertEquals(paint.color, Color.BLUE)
     }
 
     @Test
@@ -267,28 +277,28 @@ class BrushPaintCacheTest {
                 arrayOf(arrayOf(20F, 0F, 0F), arrayOf(0F, 30F, 0F), arrayOf(0F, 0F, 1F))
             )
         with(Matrix()) {
-            assertThat(paint.shader.getLocalMatrix(this)).isTrue()
-            assertThat(this).isEqualTo(expectedLocalMatrix)
+            assertTrue(paint.shader.getLocalMatrix(this))
+            assertEquals(this, expectedLocalMatrix)
         }
 
         val expectedUpdatedMatrix =
             nestedArrayToMatrix(
                 arrayOf(arrayOf(40F, 0F, 0F), arrayOf(0F, 60F, 0F), arrayOf(0F, 0F, 1F))
             )
-        assertThat(
-                cache.obtain(
-                    brushPaint,
-                    ComposeColor.Red,
-                    brushSize = 20f,
-                    StrokeInput(),
-                    StrokeInput(),
-                )
-            )
-            .isSameInstanceAs(paint)
+        assertSame(
+            cache.obtain(
+                brushPaint,
+                ComposeColor.Red,
+                brushSize = 20f,
+                StrokeInput(),
+                StrokeInput(),
+            ),
+            paint,
+        )
         with(Matrix()) {
-            assertThat(paint.shader.getLocalMatrix(this)).isTrue()
-            assertThat(expectedUpdatedMatrix).isNotEqualTo(expectedLocalMatrix)
-            assertThat(this).isEqualTo(expectedUpdatedMatrix)
+            assertTrue(paint.shader.getLocalMatrix(this))
+            assertNotEquals(expectedUpdatedMatrix, expectedLocalMatrix)
+            assertEquals(this, expectedUpdatedMatrix)
         }
     }
 
@@ -315,9 +325,9 @@ class BrushPaintCacheTest {
         val paint =
             cache.obtain(brushPaint, ComposeColor.Red, brushSize = 1f, StrokeInput(), StrokeInput())
 
-        assertThat(textureIdsLoaded).containsExactly(fakeTextureId1, fakeTextureId2).inOrder()
-        assertThat(paint.color).isEqualTo(Color.RED)
-        assertThat(paint.shader).isInstanceOf(ComposeShader::class.java)
+        assertEquals(textureIdsLoaded, mutableListOf(fakeTextureId1, fakeTextureId2))
+        assertEquals(paint.color, Color.RED)
+        assertIs<ComposeShader>(paint.shader)
         // Can't really assert in more detail because ComposeShader's fields are not readable.
     }
 
@@ -350,11 +360,12 @@ class BrushPaintCacheTest {
         val paint =
             cache.obtain(brushPaint, ComposeColor.Red, brushSize = 1f, StrokeInput(), StrokeInput())
 
-        assertThat(textureIdsLoaded)
-            .containsExactly(fakeUnmappedTextureId1, fakeWorkingTextureId, fakeUnmappedTextureId2)
-            .inOrder()
-        assertThat(paint.color).isEqualTo(Color.RED)
-        assertThat(paint.shader).isInstanceOf(BitmapShader::class.java)
+        assertEquals(
+            textureIdsLoaded,
+            mutableListOf(fakeUnmappedTextureId1, fakeWorkingTextureId, fakeUnmappedTextureId2),
+        )
+        assertEquals(paint.color, Color.RED)
+        assertIs<BitmapShader>(paint.shader)
     }
 
     @Test
@@ -375,15 +386,15 @@ class BrushPaintCacheTest {
         val paint =
             cache.obtain(brushPaint, ComposeColor.Red, brushSize, StrokeInput(), StrokeInput())
 
-        assertThat(textureIdLoaded).isEqualTo(fakeTextureId)
-        assertThat(paint.color).isEqualTo(Color.RED)
-        assertThat(paint.shader).isNull()
+        assertEquals(textureIdLoaded, fakeTextureId)
+        assertEquals(paint.color, Color.RED)
+        assertNull(paint.shader)
 
-        assertThat(
-                cache.obtain(brushPaint, ComposeColor.Blue, brushSize, StrokeInput(), StrokeInput())
-            )
-            .isSameInstanceAs(paint)
-        assertThat(paint.color).isEqualTo(Color.BLUE)
+        assertSame(
+            cache.obtain(brushPaint, ComposeColor.Blue, brushSize, StrokeInput(), StrokeInput()),
+            paint,
+        )
+        assertEquals(paint.color, Color.BLUE)
     }
 
     @Test
@@ -411,9 +422,9 @@ class BrushPaintCacheTest {
         val paint =
             cache.obtain(brushPaint, ComposeColor.Red, brushSize = 1f, StrokeInput(), StrokeInput())
 
-        assertThat(textureIdsLoaded).containsExactly(fakeTextureId1, fakeTextureId2).inOrder()
-        assertThat(paint.color).isEqualTo(Color.RED)
-        assertThat(paint.shader).isNull()
+        assertEquals(textureIdsLoaded, mutableListOf(fakeTextureId1, fakeTextureId2))
+        assertEquals(paint.color, Color.RED)
+        assertNull(paint.shader)
     }
 
     @Test
@@ -424,21 +435,15 @@ class BrushPaintCacheTest {
         val paint =
             cache.obtain(BrushPaint(), ComposeColor.Red, brushSize, StrokeInput(), StrokeInput())
 
-        assertThat(paint.color).isEqualTo(Color.RED)
-        assertThat(paint.shader).isNull()
+        assertEquals(paint.color, Color.RED)
+        assertNull(paint.shader)
 
         // BrushPaint() is a different instance, but is equal.
-        assertThat(
-                cache.obtain(
-                    BrushPaint(),
-                    ComposeColor.Blue,
-                    brushSize,
-                    StrokeInput(),
-                    StrokeInput(),
-                )
-            )
-            .isSameInstanceAs(paint)
-        assertThat(paint.color).isEqualTo(Color.BLUE)
+        assertSame(
+            cache.obtain(BrushPaint(), ComposeColor.Blue, brushSize, StrokeInput(), StrokeInput()),
+            paint,
+        )
+        assertEquals(paint.color, Color.BLUE)
     }
 
     @Test
@@ -461,9 +466,9 @@ class BrushPaintCacheTest {
         val paint =
             cache.obtain(brushPaint, ComposeColor.Red, brushSize = 1f, StrokeInput(), StrokeInput())
 
-        assertThat(textureIdLoaded).isEqualTo(fakeTextureId)
-        assertThat(paint.color).isEqualTo(Color.RED)
-        assertThat(paint.shader).isInstanceOf(BitmapShader::class.java)
+        assertEquals(textureIdLoaded, fakeTextureId)
+        assertEquals(paint.color, Color.RED)
+        assertIs<BitmapShader>(paint.shader)
         Matrix().let {
             // Set the matrix to garbage data to make sure it gets overwritten.
             it.preScale(55555F, 7777777F)
@@ -476,7 +481,7 @@ class BrushPaintCacheTest {
             // setLocalMatrix matches what we expect.
             val result = paint.shader.getLocalMatrix(it)
             // Don't check it.isIdentity, that seems to be incorrect on earlier API levels.
-            assertThat(!result || it == Matrix()).isTrue()
+            assertTrue(!result || it == Matrix())
         }
     }
 }

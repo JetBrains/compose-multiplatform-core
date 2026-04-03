@@ -18,50 +18,15 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.remote.core.operations.layout.managers.CollapsiblePriority
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation.Type
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.modifier.CollapsiblePriorityModifier
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.WidthModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUi
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
 import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.remote.creation.modifiers.RecordingModifier
+import androidx.compose.remote.creation.compose.v2.RemoteCollapsibleRowV2
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-
-/** Utility modifier to record the layout information */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteComposeCollapsibleRowModifier(
-    public val modifier: RecordingModifier,
-    public val horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    public val verticalAlignment: Alignment.Vertical = Alignment.Top,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoCanvas {
-            if (it.nativeCanvas is RecordingCanvas) {
-                (it.nativeCanvas as RecordingCanvas).let {
-                    it.document.startCollapsibleRow(
-                        modifier,
-                        horizontalArrangement.toRemoteCompose(),
-                        verticalAlignment.toRemoteCompose(),
-                    )
-                    drawContent()
-                    it.document.endCollapsibleRow()
-                }
-            }
-        }
-    }
-}
+import androidx.compose.ui.platform.LocalLayoutDirection
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteCollapsibleRowScope {
@@ -80,42 +45,20 @@ public class RemoteCollapsibleRowScope {
  * RemoteRow to both work as a normal Row when called within a normal Compose tree, and capture the
  * layout information when called within a capture pass for RemoteCompose.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
 public fun RemoteCollapsibleRow(
     modifier: RemoteModifier = RemoteModifier,
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    verticalAlignment: Alignment.Vertical = Alignment.Top,
+    horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start,
+    verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.Top,
     content: @Composable RemoteCollapsibleRowScope.() -> Unit,
 ) {
-    val captureMode = LocalRemoteComposeCreationState.current
-    val scope = remember { RemoteCollapsibleRowScope() }
-
-    if (captureMode is NoRemoteCompose) {
-        androidx.compose.foundation.layout.Row(
-            modifier.toComposeUi(),
-            horizontalArrangement = horizontalArrangement.toComposeUi(),
-            verticalAlignment = verticalAlignment.toComposeUi(),
-        ) {
-            content(scope)
-        }
-    } else {
-        var composeModifiers =
-            RemoteComposeCollapsibleRowModifier(
-                    modifier.toRemoteCompose(),
-                    horizontalArrangement,
-                    verticalAlignment,
-                )
-                .then(modifier.toComposeUiLayout())
-
-        composeModifiers = composeModifiers.then(Modifier.wrapContentSize(unbounded = true))
-
-        androidx.compose.foundation.layout.Row(
-            composeModifiers,
-            horizontalArrangement = horizontalArrangement.toComposeUi(),
-            verticalAlignment = verticalAlignment.toComposeUi(),
-        ) {
-            content(scope)
-        }
-    }
+    RemoteCollapsibleRowV2(
+        modifier,
+        horizontalArrangement,
+        verticalAlignment,
+        LocalLayoutDirection.current,
+        content,
+    )
 }

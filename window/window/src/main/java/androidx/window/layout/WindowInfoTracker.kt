@@ -23,12 +23,15 @@ import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 import androidx.annotation.UiContext
+import androidx.core.util.Consumer
 import androidx.window.RequiresWindowSdkExtension
 import androidx.window.WindowSdkExtensions
 import androidx.window.core.ConsumerAdapter
+import androidx.window.layout.adapter.EngagementModeBackendApi0
 import androidx.window.layout.adapter.WindowBackend
 import androidx.window.layout.adapter.extensions.ExtensionWindowBackend
 import androidx.window.layout.adapter.sidecar.SidecarWindowBackend
+import java.util.concurrent.Executor
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -96,6 +99,33 @@ public interface WindowInfoTracker {
      * @see DisplayFeature
      */
     public fun windowLayoutInfo(activity: Activity): Flow<WindowLayoutInfo>
+
+    /**
+     * Registers a [UiContext] listener to consume [WindowLayoutInfo] values. If the same listener
+     * is registered twice then this method is a no-op.
+     *
+     * @param context a [UiContext] such as an [Activity].
+     * @param executor that the listener will invoke on.
+     * @param listener for [WindowLayoutInfo] values.
+     * @see WindowInfoTracker.windowLayoutInfo
+     */
+    public fun registerWindowLayoutInfoListener(
+        @UiContext context: Context,
+        executor: Executor,
+        listener: Consumer<WindowLayoutInfo>,
+    ) {
+        throw NotImplementedError("Method was not implemented.")
+    }
+
+    /**
+     * Unregister a listener to stop consuming [WindowLayoutInfo] values. If the listener has
+     * already been removed then this is a no-op.
+     *
+     * @see WindowInfoTracker.windowLayoutInfo
+     */
+    public fun unregisterWindowLayoutInfoListener(listener: Consumer<WindowLayoutInfo>) {
+        throw NotImplementedError("Method was not implemented.")
+    }
 
     /**
      * Returns the [List] of [SupportedPosture] values. This value will not change during runtime.
@@ -176,11 +206,13 @@ public interface WindowInfoTracker {
         @JvmStatic
         public fun getOrCreate(context: Context): WindowInfoTracker {
             val backend = extensionBackend ?: SidecarWindowBackend.getInstance(context)
+            val engagementStateTracker = EngagementModeBackendApi0.getInstance(context)
             val repo =
                 WindowInfoTrackerImpl(
                     WindowMetricsCalculatorCompat(),
                     backend,
                     WindowSdkExtensions.getInstance(),
+                    engagementStateTracker,
                 )
             return decorator.decorate(repo)
         }

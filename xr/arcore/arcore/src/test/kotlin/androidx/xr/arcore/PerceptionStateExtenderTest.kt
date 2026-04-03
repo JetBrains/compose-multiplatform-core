@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
+// removed.
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.arcore
 
 import android.app.Activity
@@ -28,7 +32,6 @@ import androidx.xr.arcore.testing.FakeRuntimeHand
 import androidx.xr.arcore.testing.FakeRuntimePlane
 import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.FieldOfView
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -56,7 +59,8 @@ class PerceptionStateExtenderTest {
 
     @Before
     fun setUp() {
-        fakePerceptionRuntime = FakePerceptionRuntimeFactory().createRuntime(Activity())
+        fakePerceptionRuntime =
+            FakePerceptionRuntimeFactory().createRuntime(Activity()) as FakePerceptionRuntime
         timeSource = fakePerceptionRuntime.lifecycleManager.timeSource
         underTest = PerceptionStateExtender()
     }
@@ -130,7 +134,7 @@ class PerceptionStateExtenderTest {
 
         // act
         timeSource += 10.milliseconds
-        runtimeTrackable.trackingState = TrackingState.STOPPED
+        runtimeTrackable.trackingState = TrackingState.STOPPED.toRuntimeTrackingState()
         val coreState2 = CoreState(timeSource.markNow())
         underTest.extend(coreState2)
 
@@ -161,21 +165,20 @@ class PerceptionStateExtenderTest {
         // act
         timeSource += 10.milliseconds
         val handJoints: Map<HandJointType, Pose> =
-            HandJointType.values().associate { joint ->
+            HandJointType.entries.associateWith { joint ->
                 val i = joint.ordinal.toFloat()
-                joint to
-                    Pose(
-                        Vector3(i + 0.5f, i + 0.6f, i + 0.7f),
-                        Quaternion(i + 0.1f, i + 0.2f, i + 0.3f, i + 0.4f),
-                    )
+                Pose(
+                    Vector3(i + 0.5f, i + 0.6f, i + 0.7f),
+                    Quaternion(i + 0.1f, i + 0.2f, i + 0.3f, i + 0.4f),
+                )
             }
 
         val leftRuntimeHand = fakePerceptionRuntime.perceptionManager.leftHand!! as FakeRuntimeHand
         val rightRuntimeHand =
             fakePerceptionRuntime.perceptionManager.rightHand!! as FakeRuntimeHand
-        leftRuntimeHand.trackingState = TrackingState.TRACKING
+        leftRuntimeHand.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
         leftRuntimeHand.handJointsBuffer = generateTestBuffer(handJoints)
-        rightRuntimeHand.trackingState = TrackingState.TRACKING
+        rightRuntimeHand.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
         rightRuntimeHand.handJointsBuffer = generateTestBuffer(handJoints)
         val coreState2 = CoreState(timeSource.markNow())
         underTest.extend(coreState2)
@@ -185,7 +188,7 @@ class PerceptionStateExtenderTest {
             .isEqualTo(TrackingState.TRACKING)
         assertThat(coreState2.perceptionState!!.rightHand!!.state.value.trackingState)
             .isEqualTo(TrackingState.TRACKING)
-        for (jointType in HandJointType.values()) {
+        for (jointType in HandJointType.entries) {
             val leftHandJoints = coreState2.perceptionState!!.leftHand!!.state.value.handJoints
             val rightHandJoints = coreState2.perceptionState!!.rightHand!!.state.value.handJoints
             assertThat(leftHandJoints[jointType]!!.translation)
@@ -345,13 +348,13 @@ class PerceptionStateExtenderTest {
             coreState.perceptionState!!.userFace!!.state.value.trackingState !=
                 TrackingState.TRACKING
         )
-        check(coreState.perceptionState!!.userFace!!.state.value.blendShapeValues.isEmpty())
-        check(coreState.perceptionState!!.userFace!!.state.value.confidenceValues.isEmpty())
+        check(coreState.perceptionState!!.userFace!!.state.value.blendShapeValues!!.isEmpty())
+        check(coreState.perceptionState!!.userFace!!.state.value.confidenceValues!!.isEmpty())
 
         // act
         timeSource += 10.milliseconds
         val runtimeFace = fakePerceptionRuntime.perceptionManager.userFace!! as FakeRuntimeFace
-        runtimeFace.trackingState = TrackingState.TRACKING
+        runtimeFace.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
         val expectedBlendShapeValues = floatArrayOf(0.1f, 0.2f, 0.3f)
         val expectedConfidenceValues = floatArrayOf(0.4f, 0.5f, 0.6f)
         runtimeFace.blendShapeValues = expectedBlendShapeValues

@@ -22,7 +22,7 @@ import androidx.xr.scenecore.runtime.TextureSampler;
 import org.jspecify.annotations.NonNull;
 
 /** A Material which renders water effects using the built-in Impress water material. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class WaterMaterial extends Material {
     private final ImpressApi mImpressApi;
 

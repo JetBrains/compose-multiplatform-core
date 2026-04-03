@@ -16,25 +16,26 @@
 
 package androidx.xr.scenecore.spatial.core;
 
+import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.PointSourceParams;
 import androidx.xr.scenecore.runtime.SoundFieldAttributes;
 import androidx.xr.scenecore.runtime.SpatializerConstants;
 
 import com.android.extensions.xr.media.SpatializerExtensions;
-import com.android.extensions.xr.node.Node;
 
 /** Utils for the runtime media class conversions. */
 class MediaUtils {
     private MediaUtils() {}
 
     static com.android.extensions.xr.media.PointSourceParams convertPointSourceParamsToExtensions(
-            PointSourceParams params) {
+            PointSourceParams params, Entity entity) {
 
-        Node node = ((AndroidXrEntity) params.getEntity()).getNode();
-
-        return new com.android.extensions.xr.media.PointSourceParams.Builder()
-                .setNode(node)
-                .build();
+        com.android.extensions.xr.media.PointSourceParams.Builder builder =
+                new com.android.extensions.xr.media.PointSourceParams.Builder();
+        if (entity != null) {
+            builder.setNode(((AndroidXrEntity) entity).getNode());
+        }
+        return builder.build();
     }
 
     static com.android.extensions.xr.media.SoundFieldAttributes

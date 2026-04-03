@@ -17,13 +17,15 @@
 package androidx.compose.remote.creation.compose.capture
 
 import android.content.Context
-import androidx.annotation.RestrictTo
+import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.profile.PlatformProfile
+import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.v2.captureSingleRemoteDocumentV2
 import androidx.compose.remote.creation.profile.Profile
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.runtime.Composable
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import androidx.tracing.traceAsync
+import java.util.concurrent.ThreadLocalRandom
 
 /**
  * Capture a RemoteCompose document by rendering the specified [content] Composable in a virtual
@@ -32,33 +34,46 @@ import kotlin.coroutines.suspendCoroutine
  * This can be used for testing, or for generating documents on the fly to be sent to a remote
  * client.
  *
+ * This API is experimental and is likely to change in the future before becoming API stable.
+ *
  * @param context the Android [Context] to use for the capture.
  * @param creationDisplayInfo details about the virtual display to create.
  * @param profile the [Profile] to use for the capture, determining which operations are supported.
  * @param content the Composable content to render and capture.
  * @return a [ByteArray] containing the RemoteCompose document.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public suspend fun captureRemoteDocument(
+public suspend fun captureSingleRemoteDocument(
     context: Context,
-    creationDisplayInfo: CreationDisplayInfo = CreationDisplayInfo(),
-    profile: Profile = PlatformProfile.ANDROIDX,
+    creationDisplayInfo: CreationDisplayInfo =
+        createCreationDisplayInfo(context).toCreationDisplayInfo(),
+    profile: Profile = RcPlatformProfiles.ANDROIDX,
     content: @Composable @RemoteComposable () -> Unit,
-): ByteArray = suspendCoroutine { continuation ->
-    var completed = false
-    RemoteComposeCapture(
-        context = context,
-        creationDisplayInfo = creationDisplayInfo,
-        immediateCapture = true,
-        onPaint = { view, writer ->
-            if (!completed) {
-                completed = true
-                continuation.resume(writer.encodeToByteArray())
-            }
-            true
-        },
-        onCaptureReady = @Composable {},
-        profile = profile,
-        content = content,
-    )
+): CapturedDocument {
+    val layoutDirection = toLayoutDirection(context.resources.configuration.layoutDirection)
+
+    val remoteCreationDisplayInfo = creationDisplayInfo.toRemote()
+    // Make part of the API above when v1 path removed
+    val remoteDensity =
+        RemoteDensity(creationDisplayInfo.density.rf, context.resources.configuration.fontScale.rf)
+
+    return traceAsync(
+        "CaptureRemoteDocument:captureSingleRemoteDocument",
+        ThreadLocalRandom.current().nextInt(),
+    ) {
+        captureSingleRemoteDocumentV2(
+            creationDisplayInfo = remoteCreationDisplayInfo,
+            remoteDensity = remoteDensity,
+            layoutDirection = layoutDirection,
+            profile = profile,
+            content = content,
+            context = context,
+        )
+    }
 }
+
+private fun CreationDisplayInfo.toRemote(): RemoteCreationDisplayInfo =
+    RemoteCreationDisplayInfo(
+        width = this.width,
+        height = this.height,
+        densityDpi = this.densityDpi,
+    )

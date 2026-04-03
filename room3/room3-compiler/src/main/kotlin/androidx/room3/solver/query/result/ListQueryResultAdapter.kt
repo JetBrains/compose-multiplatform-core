@@ -16,12 +16,8 @@
 
 package androidx.room3.solver.query.result
 
-import androidx.room3.compiler.codegen.CodeLanguage
-import androidx.room3.compiler.codegen.XCodeBlock
-import androidx.room3.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room3.compiler.processing.XType
 import androidx.room3.ext.CommonTypeNames
-import androidx.room3.ext.CommonTypeNames.ARRAY_LIST
 import androidx.room3.ext.KotlinCollectionMemberNames
 import androidx.room3.solver.CodeGenScope
 
@@ -29,36 +25,21 @@ class ListQueryResultAdapter(private val typeArg: XType, private val rowAdapter:
     QueryResultAdapter(listOf(rowAdapter)) {
     override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
         rowAdapter.onStatementReady(stmtVarName = stmtVarName, scope = scope)
-        scope.builder
-            .applyTo { language ->
-                val listTypeName = CommonTypeNames.MUTABLE_LIST.parametrizedBy(typeArg.asTypeName())
-                when (language) {
-                    CodeLanguage.JAVA ->
-                        addLocalVariable(
-                            name = outVarName,
-                            typeName = listTypeName,
-                            assignExpr =
-                                XCodeBlock.ofNewInstance(
-                                    ARRAY_LIST.parametrizedBy(typeArg.asTypeName())
-                                ),
-                        )
-                    CodeLanguage.KOTLIN ->
-                        addLocalVal(
-                            outVarName,
-                            listTypeName,
-                            "%M()",
-                            KotlinCollectionMemberNames.MUTABLE_LIST_OF,
-                        )
-                }
+        scope.builder.apply {
+            val listTypeName = CommonTypeNames.MUTABLE_LIST.parametrizedBy(typeArg.asTypeName())
+            addLocalVal(
+                outVarName,
+                listTypeName,
+                "%M()",
+                KotlinCollectionMemberNames.MUTABLE_LIST_OF,
+            )
+            val tmpVarName = scope.getTmpVar("_item")
+            beginControlFlow("while (%L.step())", stmtVarName).apply {
+                addLocalVariable(name = tmpVarName, typeName = typeArg.asTypeName())
+                rowAdapter.convert(tmpVarName, stmtVarName, scope)
+                addStatement("%L.add(%L)", outVarName, tmpVarName)
             }
-            .apply {
-                val tmpVarName = scope.getTmpVar("_item")
-                beginControlFlow("while (%L.step())", stmtVarName).apply {
-                    addLocalVariable(name = tmpVarName, typeName = typeArg.asTypeName())
-                    rowAdapter.convert(tmpVarName, stmtVarName, scope)
-                    addStatement("%L.add(%L)", outVarName, tmpVarName)
-                }
-                endControlFlow()
-            }
+            endControlFlow()
+        }
     }
 }

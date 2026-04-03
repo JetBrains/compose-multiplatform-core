@@ -26,6 +26,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FakeAudioTrackExtensionsWrapperTest {
 
     private val fakeWrapper = FakeAudioTrackExtensionsWrapper()
@@ -41,9 +42,10 @@ class FakeAudioTrackExtensionsWrapperTest {
         val track = AudioTrack.Builder().build()
         check(fakeWrapper.getPointSourceParams(track) == null)
 
-        val params = PointSourceParams(FakeEntity())
+        val entity = FakeEntity()
+        val params = PointSourceParams()
         // Uses default spatial source type SOURCE_TYPE_BYPASS.
-        fakeWrapper.setPointSourceParams(track, params)
+        fakeWrapper.setPointSourceParams(track, params, entity)
 
         assertThat(fakeWrapper.getPointSourceParams(track)).isEqualTo(params)
     }
@@ -55,9 +57,10 @@ class FakeAudioTrackExtensionsWrapperTest {
 
         fakeWrapper.spatialSourceTypeMap =
             mutableMapOf(track to SpatializerConstants.SOURCE_TYPE_POINT_SOURCE)
-        val params = PointSourceParams(FakeEntity())
+        val entity = FakeEntity()
+        val params = PointSourceParams()
         // Uses spatial source type SOURCE_TYPE_POINT_SOURCE.
-        fakeWrapper.setPointSourceParams(track, params)
+        fakeWrapper.setPointSourceParams(track, params, entity)
 
         assertThat(fakeWrapper.getPointSourceParams(track)).isEqualTo(params)
     }
@@ -69,9 +72,9 @@ class FakeAudioTrackExtensionsWrapperTest {
 
         fakeWrapper.spatialSourceTypeMap =
             mutableMapOf(track to SpatializerConstants.SOURCE_TYPE_SOUND_FIELD)
-        val params = PointSourceParams(FakeEntity())
+        val params = PointSourceParams()
         // Uses spatial source type SOURCE_TYPE_SOUND_FIELD.
-        fakeWrapper.setPointSourceParams(track, params)
+        fakeWrapper.setPointSourceParams(track, params, null)
 
         assertThat(fakeWrapper.getPointSourceParams(track)).isNull()
     }
@@ -82,7 +85,7 @@ class FakeAudioTrackExtensionsWrapperTest {
         check(fakeWrapper.getSoundFieldAttributes(track) == null)
 
         val attributes = SoundFieldAttributes(SpatializerConstants.AMBISONICS_ORDER_FIRST_ORDER)
-        fakeWrapper.soundFieldAttributesMap = mutableMapOf(track to attributes)
+        fakeWrapper.setSoundFieldAttributes(track, attributes)
 
         assertThat(fakeWrapper.getSoundFieldAttributes(track)).isEqualTo(attributes)
     }

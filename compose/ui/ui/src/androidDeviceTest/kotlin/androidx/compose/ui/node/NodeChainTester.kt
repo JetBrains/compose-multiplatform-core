@@ -20,8 +20,8 @@ package androidx.compose.ui.node
 
 import androidx.collection.IntObjectMap
 import androidx.collection.intObjectMapOf
-import androidx.compose.runtime.retain.ForgetfulRetainScope
-import androidx.compose.runtime.retain.RetainScope
+import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
+import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.Autofill
@@ -56,6 +56,7 @@ import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -397,8 +398,8 @@ private class MockOwner(
     override val semanticsOwner: SemanticsOwner =
         SemanticsOwner(root, EmptySemanticsModifier(), intObjectMapOf())
 
-    override val retainScope: RetainScope
-        get() = ForgetfulRetainScope
+    override val retainedValuesStore: RetainedValuesStore
+        get() = ForgetfulRetainedValuesStore
 
     override val viewConfiguration: ViewConfiguration
         get() = TODO("Not yet implemented")
@@ -458,6 +459,9 @@ private class MockOwner(
         get() = TODO("Not yet implemented")
 
     override val softwareKeyboardController: SoftwareKeyboardController
+        get() = TODO("Not yet implemented")
+
+    override val localeList: LocaleList
         get() = TODO("Not yet implemented")
 
     override suspend fun textInputSession(

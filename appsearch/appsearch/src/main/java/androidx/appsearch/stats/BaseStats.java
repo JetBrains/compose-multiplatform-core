@@ -207,8 +207,12 @@ public class BaseStats {
 
     // Enabled features bitmask with all features disabled.
     public static final long NO_FEATURES_ENABLED_BITMASK = 0;
-    // Bit representing whether icing is running in a VM or not within the enabled features bitmask.
+    // Bit representing whether icing is running in a VM or not within the enabled features'
+    // bitmask.
     public static final int LAUNCH_VM = 0;
+    // Bit representing whether the Ai seal is enabled or not within the enabled features'
+    // bitmask.
+    public static final int LAUNCH_AI_SEAL = 1;
     private final long mEnabledFeatures;
     /** Time passed while waiting to acquire the lock during Java function calls. */
     protected final int mJavaLockAcquisitionLatencyMillis;
@@ -278,6 +282,26 @@ public class BaseStats {
         return mNumIcingCalls;
     }
 
+    @NonNull
+    @Override
+    public String toString() {
+        return String.format(
+                "  enabledFeatures=%s,\n"
+                        + "  javaLockAcquisitionLatencyMillis=%d,\n"
+                        + "  lastBlockingOperation=%d,\n"
+                        + "  lastBlockingOperationLatencyMillis=%d,\n"
+                        + "  getVmLatencyMillis=%d,\n"
+                        + "  unblockedAppSearchLatencyMillis=%d,\n"
+                        + "  numIcingCalls=%d\n",
+                Long.toBinaryString(mEnabledFeatures),
+                mJavaLockAcquisitionLatencyMillis,
+                mLastBlockingOperation,
+                mLastBlockingOperationLatencyMillis,
+                mGetVmLatencyMillis,
+                mUnblockedAppSearchLatencyMillis,
+                mNumIcingCalls);
+    }
+
     /**
      * Builder for {@link BaseStats}.
      *
@@ -317,10 +341,17 @@ public class BaseStats {
             mBuilderTypeInstance = (BuilderType) this;
         }
 
-        /** Sets bitmask for all enabled features . */
+        /** Sets bitmask for enable the vm features . */
         @CanIgnoreReturnValue
-        public @NonNull BuilderType setLaunchVMEnabled(boolean enabled) {
+        public @NonNull BuilderType setLaunchVmEnabled(boolean enabled) {
             modifyEnabledFeature(LAUNCH_VM, enabled);
+            return mBuilderTypeInstance;
+        }
+
+        /** Sets bitmask for enable the Ai seal features . */
+        @CanIgnoreReturnValue
+        public @NonNull BuilderType setLaunchAiSealEnabled(boolean enabled) {
+            modifyEnabledFeature(LAUNCH_AI_SEAL, enabled);
             return mBuilderTypeInstance;
         }
 

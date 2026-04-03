@@ -14,25 +14,39 @@
  * limitations under the License.
  */
 
+// TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
+// removed.
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.RenderViewpoint
 import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.math.Pose
 
-/** Wraps the device tracking data. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrRenderViewpoint internal constructor() : RenderViewpoint {
+/**
+ * Wraps the device tracking data.
+ *
+ * @property pose the [Pose] of the render viewpoint
+ * @property fieldOfView the [FieldOfView] of the render viewpoint
+ */
+internal class OpenXrRenderViewpoint internal constructor() : RenderViewpoint {
 
     override var pose: Pose = Pose()
         private set
 
+    @Deprecated(message = "Convert to androidx.xr.runtime.math.FieldOfView")
     override var fieldOfView: FieldOfView = FieldOfView(0f, 0f, 0f, 0f)
         private set
 
     internal fun update(state: ViewCameraState) {
         pose = state.pose
-        fieldOfView = state.fieldOfView
+        fieldOfView =
+            FieldOfView(
+                state.fieldOfView.angleLeft,
+                state.fieldOfView.angleRight,
+                state.fieldOfView.angleUp,
+                state.fieldOfView.angleDown,
+            )
     }
 }

@@ -24,7 +24,7 @@ import androidx.annotation.RestrictTo
  * sealed class encapsulates the different states: success with the calculated dimensions, or
  * specific failure reasons.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public sealed class PerceivedResolutionResult {
 
     /**
@@ -72,15 +72,14 @@ public sealed class PerceivedResolutionResult {
     }
 
     /**
-     * Indicates that the perceived resolution could not be calculated because the required camera
-     * view information was invalid or insufficient for the calculation. This could be due to the
-     * spatial user's camera view not being initialized yet. Consider falling back to a predefined
-     * resolution.
+     * Indicates that the perceived resolution could not be calculated because the required render
+     * view information was invalid or insufficient for the calculation. Consider falling back to a
+     * predefined resolution.
      */
-    public class InvalidCameraView : PerceivedResolutionResult() {
+    public class InvalidRenderViewpoint : PerceivedResolutionResult() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
-            if (other !is InvalidCameraView) return false
+            if (other !is InvalidRenderViewpoint) return false
 
             return true
         }

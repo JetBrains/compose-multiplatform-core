@@ -16,6 +16,7 @@
 
 package androidx.pdf.annotation.drawer
 
+import androidx.pdf.annotation.models.HighlightAnnotation
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.StampAnnotation
 
@@ -26,6 +27,7 @@ internal class PdfAnnotationDrawerFactoryImpl(
     override fun create(pdfAnnotation: PdfAnnotation): PdfAnnotationDrawer<out PdfAnnotation> {
         return when (pdfAnnotation) {
             is StampAnnotation -> StampPdfAnnotationDrawer(pdfObjectDrawerFactory)
+            is HighlightAnnotation -> HighlightAnnotationDrawer()
             else ->
                 throw IllegalArgumentException("Unsupported PdfAnnotation type: ${pdfAnnotation}")
         }

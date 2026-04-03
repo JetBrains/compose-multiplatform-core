@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore
 
@@ -25,10 +26,9 @@ import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.arcore.testing.FakeRuntimeAnchor
 import androidx.xr.arcore.testing.FakeRuntimePlane
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.PlaneTrackingMode
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -85,6 +85,7 @@ class PlaneTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun constructor_convertsRuntimePlaneType() {
         val plane1 =
             Plane(
@@ -98,12 +99,13 @@ class PlaneTest {
             )
         val plane3 = Plane(FakeRuntimePlane(type = RuntimePlane.Type.VERTICAL), xrResourcesManager)
 
-        assertThat(plane1.type).isEqualTo(Plane.Type.HORIZONTAL_UPWARD_FACING)
-        assertThat(plane2.type).isEqualTo(Plane.Type.HORIZONTAL_DOWNWARD_FACING)
-        assertThat(plane3.type).isEqualTo(Plane.Type.VERTICAL)
+        assertThat(plane1.type).isEqualTo(PlaneType.HORIZONTAL_UPWARD_FACING)
+        assertThat(plane2.type).isEqualTo(PlaneType.HORIZONTAL_DOWNWARD_FACING)
+        assertThat(plane3.type).isEqualTo(PlaneType.VERTICAL)
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun constructor_convertsRuntimePlaneLabel() {
         val plane1 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.UNKNOWN), xrResourcesManager)
         val plane2 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.WALL), xrResourcesManager)
@@ -111,11 +113,11 @@ class PlaneTest {
         val plane4 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.CEILING), xrResourcesManager)
         val plane5 = Plane(FakeRuntimePlane(label = RuntimePlane.Label.TABLE), xrResourcesManager)
 
-        assertThat(plane1.state.value.label).isEqualTo(Plane.Label.UNKNOWN)
-        assertThat(plane2.state.value.label).isEqualTo(Plane.Label.WALL)
-        assertThat(plane3.state.value.label).isEqualTo(Plane.Label.FLOOR)
-        assertThat(plane4.state.value.label).isEqualTo(Plane.Label.CEILING)
-        assertThat(plane5.state.value.label).isEqualTo(Plane.Label.TABLE)
+        assertThat(plane1.state.value.label).isEqualTo(PlaneLabel.UNKNOWN)
+        assertThat(plane2.state.value.label).isEqualTo(PlaneLabel.WALL)
+        assertThat(plane3.state.value.label).isEqualTo(PlaneLabel.FLOOR)
+        assertThat(plane4.state.value.label).isEqualTo(PlaneLabel.CEILING)
+        assertThat(plane5.state.value.label).isEqualTo(PlaneLabel.TABLE)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -160,7 +162,13 @@ class PlaneTest {
 
         assertThat(anchorResult).isInstanceOf(AnchorCreateSuccess::class.java)
         val anchor = (anchorResult as AnchorCreateSuccess).anchor
-        assertThat(anchor.state.value.pose).isEqualTo(pose)
+        assertThat(anchor.state.value.pose.translation.x).isWithin(0.001f).of(pose.translation.x)
+        assertThat(anchor.state.value.pose.translation.y).isWithin(0.001f).of(pose.translation.y)
+        assertThat(anchor.state.value.pose.translation.z).isWithin(0.001f).of(pose.translation.z)
+        assertThat(anchor.state.value.pose.rotation.x).isWithin(0.001f).of(pose.rotation.x)
+        assertThat(anchor.state.value.pose.rotation.y).isWithin(0.001f).of(pose.rotation.y)
+        assertThat(anchor.state.value.pose.rotation.z).isWithin(0.001f).of(pose.rotation.z)
+        assertThat(anchor.state.value.pose.rotation.w).isWithin(0.001f).of(pose.rotation.w)
     }
 
     @Test
@@ -170,7 +178,7 @@ class PlaneTest {
         xrResourcesManager.syncTrackables(listOf(runtimePlane))
         val underTest = xrResourcesManager.trackablesMap.values.first() as Plane
 
-        repeat(FakeRuntimeAnchor.ANCHOR_RESOURCE_LIMIT) {
+        repeat(FakeRuntimeAnchor.anchorResourceLimit) {
             val result = underTest.createAnchor(Pose())
         }
 
@@ -192,12 +200,12 @@ class PlaneTest {
     @Test
     fun update_trackingStateMatchesRuntime() = runBlocking {
         val runtimePlane = FakeRuntimePlane()
-        runtimePlane.trackingState = TrackingState.STOPPED
+        runtimePlane.trackingState = TrackingState.STOPPED.toRuntimeTrackingState()
         xrResourcesManager.syncTrackables(listOf(runtimePlane))
         val underTest = xrResourcesManager.trackablesMap[runtimePlane] as Plane
         check(underTest.state.value.trackingState == TrackingState.STOPPED)
 
-        runtimePlane.trackingState = TrackingState.TRACKING
+        runtimePlane.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
         underTest.update()
 
         assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.TRACKING)
@@ -274,24 +282,6 @@ class PlaneTest {
         assertThat(underTest.state.value.subsumedBy).isEqualTo(subsumingPlaneWrapper)
         assertThat(underTest.state.value.subsumedBy!!.runtimePlane)
             .isEqualTo(subsumedByRuntimePlane)
-    }
-
-    @Test
-    fun labelToString_returnsCorrectString() {
-        assertThat(Plane.Label.WALL.toString()).isEqualTo("WALL")
-        assertThat(Plane.Label.FLOOR.toString()).isEqualTo("FLOOR")
-        assertThat(Plane.Label.CEILING.toString()).isEqualTo("CEILING")
-        assertThat(Plane.Label.TABLE.toString()).isEqualTo("TABLE")
-        assertThat(Plane.Label.UNKNOWN.toString()).isEqualTo("UNKNOWN")
-    }
-
-    @Test
-    fun typeToString_returnsCorrectString() {
-        assertThat(Plane.Type.HORIZONTAL_UPWARD_FACING.toString())
-            .isEqualTo("HORIZONTAL_UPWARD_FACING")
-        assertThat(Plane.Type.HORIZONTAL_DOWNWARD_FACING.toString())
-            .isEqualTo("HORIZONTAL_DOWNWARD_FACING")
-        assertThat(Plane.Type.VERTICAL.toString()).isEqualTo("VERTICAL")
     }
 
     private fun getFakePerceptionManager(): FakePerceptionManager {
