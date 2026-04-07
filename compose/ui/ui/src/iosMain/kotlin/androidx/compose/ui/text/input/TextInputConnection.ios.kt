@@ -1,0 +1,778 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.compose.ui.text.input
+
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.PlatformTextLayoutDirection
+import androidx.compose.ui.platform.TextInputDelegate
+import androidx.compose.ui.platform.TextSelectionRect
+import androidx.compose.ui.scene.ComposeSceneFocusManager
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.uikit.density
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.window.BackgroundInputView
+import androidx.compose.ui.window.FocusedViewsList
+import androidx.compose.ui.window.ComposeTextInputView
+import androidx.compose.ui.window.OverlayInputView
+import kotlin.apply
+import kotlin.math.absoluteValue
+import kotlin.math.max
+import kotlin.math.min
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.jetbrains.skia.BreakIterator
+import platform.UIKit.UIPress
+import platform.UIKit.UIView
+
+internal interface TextInputConnection {
+    fun open(
+        value: TextFieldValue,
+        imeOptions: ImeOptions,
+        onEditCommand: (List<EditCommand>) -> Unit,
+        onImeActionPerformed: (ImeAction) -> Unit
+    )
+
+    fun close()
+    fun showKeyboard()
+    fun dismissKeyboard()
+
+    fun updateState(newValue: TextFieldValue)
+    fun updateTextLayoutResult(textLayoutResult: TextLayoutResult)
+    fun updateViewGeometry(
+        textFieldFrame: Rect,
+        clippingTextFrame: Rect,
+        unclippedTextPosition: Offset
+    )
+    fun updateFocusedRect(rect: Rect)
+
+    fun onPreviewKeyEvent(event: KeyEvent): Boolean
+
+    fun flushEditCommandsIfNeeded(force: Boolean = false)
+
+    val hasInvalidations: Boolean
+}
+
+internal abstract class BaseTextInputConnection(
+    protected val updateView: () -> Unit,
+    protected val view: UIView,
+    protected val coroutineScope: CoroutineScope,
+    protected val focusedViewsList: FocusedViewsList?,
+    /**
+     * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
+     * Erasure happens due to K/N not supporting Obj-C lightweight generics.
+     */
+    @Suppress("UNUSED")
+    protected var onKeyboardPresses: (Set<*>) -> Unit,
+    private var focusManager: () -> ComposeSceneFocusManager?,
+): TextInputConnection, TextInputDelegate {
+    override fun open(
+        value: TextFieldValue,
+        imeOptions: ImeOptions,
+        onEditCommand: (List<EditCommand>) -> Unit,
+        onImeActionPerformed: (ImeAction) -> Unit
+    ) {
+        sessionEditProcessor = EditProcessor().apply {
+            reset(value, null)
+        }
+        currentOnEditCommand = onEditCommand
+        currentImeOptions = imeOptions
+        currentImeActionHandler = onImeActionPerformed
+
+        showKeyboard()
+    }
+
+    override fun close() {
+        flushEditCommandsIfNeeded(force = true)
+        sessionEditProcessor = null
+        currentImeOptions = null
+        currentImeActionHandler = null
+        textLayoutResult = null
+
+        dismissKeyboard()
+
+        detachView()
+    }
+
+    protected abstract fun detachView()
+
+    override fun showKeyboard() {
+        textUIView?.let {
+            focusedViewsList?.addAndFocus(it)
+        }
+    }
+
+    override fun dismissKeyboard() {
+        textUIView?.let {
+            focusedViewsList?.remove(it, delayMillis = CLEAR_FOCUS_DELAY)
+        }
+    }
+
+    override fun updateState(newValue: TextFieldValue) {
+        val internalOldValue = sessionEditProcessor?.toTextFieldValue()
+        val textChanged = internalOldValue == null || internalOldValue.text != newValue.text
+        val selectionChanged = textChanged || internalOldValue.selection != newValue.selection
+
+        stateWillChange(textChanged, selectionChanged)
+
+        sessionEditProcessor?.let {
+            it.reset(newValue, null)
+            _tempCursorPos = null
+        }
+
+        stateDidChange(textChanged, selectionChanged)
+    }
+
+    protected abstract fun stateWillChange(textChanged: Boolean, selectionChanged: Boolean)
+    protected abstract fun stateDidChange(textChanged: Boolean, selectionChanged: Boolean)
+
+    override fun updateTextLayoutResult(textLayoutResult: TextLayoutResult) {
+        this.textLayoutResult = textLayoutResult
+    }
+
+    override fun updateFocusedRect(rect: Rect) {
+        currentFocusedRect = rect
+    }
+
+    override fun updateViewGeometry(
+        textFieldFrame: Rect,
+        clippingTextFrame: Rect,
+        unclippedTextPosition: Offset
+    ) {
+        textFieldFrameInRoot = textFieldFrame
+        this.clippingTextFrame = clippingTextFrame
+        this.unclippedTextPosition = unclippedTextPosition
+
+        updateTextViewPosition()
+    }
+    protected abstract fun updateTextViewPosition()
+
+    override fun onPreviewKeyEvent(event: KeyEvent): Boolean {
+        return when (event.key) {
+            Key.Enter -> handleEnterKey(event)
+            Key.Backspace -> handleBackspace(event)
+            Key.Escape -> handleEscape(event)
+            else -> false
+        }
+    }
+
+    override fun flushEditCommandsIfNeeded(force: Boolean) {
+        if ((force || editBatchDepth == 0) && editCommandsBatch.isNotEmpty()) {
+            val commandList = editCommandsBatch.toList()
+            editCommandsBatch.clear()
+
+            currentOnEditCommand?.invoke(commandList)
+        }
+    }
+
+    override val hasInvalidations: Boolean
+        get() = textInputServiceInvalidationsCount > 0
+
+    protected var textInputServiceInvalidationsCount = 0
+
+    protected abstract val textUIView: UIView?
+    protected var currentOnEditCommand: ((List<EditCommand>) -> Unit)? = null
+    protected var currentImeOptions: ImeOptions? = null
+    protected var currentImeActionHandler: ((ImeAction) -> Unit)? = null
+    protected var currentFocusedRect: Rect? = null
+
+    protected var textFieldFrameInRoot: Rect? = null
+    protected var clippingTextFrame: Rect? = null
+    protected var currentContentBounds: Rect? = null
+    protected var currentContentInsets: DpInsets? = null
+    protected var unclippedTextPosition: Offset? = null
+
+    protected var textLayoutResult: TextLayoutResult? = null
+
+    /**
+     * Workaround to prevent calling textWillChange, textDidChange, selectionWillChange, and
+     * selectionDidChange when the value of the current input is changed by the system (i.e., by the user
+     * input) not by the state change of the Compose side. These 4 functions call methods of
+     * UITextInputDelegateProtocol, which notifies the system that the text or the selection of the
+     * current input has changed.
+     *
+     * This is to properly handle multi-stage input methods that depend on text selection, required by
+     * languages such as Korean (Chinese and Japanese input methods depend on text marking). The writing
+     * system of these languages contains letters that can be broken into multiple parts, and each keyboard
+     * key corresponds to those parts. Therefore, the input system holds an internal state to combine these
+     * parts correctly. However, the methods of UITextInputDelegateProtocol reset this state, resulting in
+     * incorrect input. (e.g., 컴포즈 becomes ㅋㅓㅁㅍㅗㅈㅡ when not handled properly)
+     *
+     * @see sessionEditProcessor holds the same text and selection of the current input. It is used
+     * instead of the old value passed to updateState. When the current value change is due to the
+     * user input, updateState is not effective because _tempCurrentInputSession holds the same value.
+     * However, when the current value change is due to the change of the user selection or to the
+     * state change in the Compose side, updateState calls the 4 methods because the new value holds
+     * these changes.
+     */
+    protected var sessionEditProcessor: EditProcessor? = null
+
+    /**
+     * Workaround to fix voice dictation.
+     * UIKit call insertText(text) and replaceRange(range,text) immediately,
+     * but Compose recomposition happen on next draw frame.
+     * So the value of getSelectedTextRange is in the old state when the replaceRange function is called.
+     * @see _tempCursorPos helps to fix this behaviour. Permanently update _tempCursorPos in function insertText.
+     * And after clear in updateState function.
+     */
+    private var _tempCursorPos: Int? = null
+
+    protected var floatingCursorTranslation : Offset? = null
+
+    /**
+     * Workaround to prevent IME action from being called multiple times with hardware keyboards.
+     * When the hardware return key is held down, iOS sends multiple newline characters to the application,
+     * which makes UIKitTextInputService call the current IME action multiple times without an additional
+     * debouncing logic.
+     *
+     * @see _tempHardwareReturnKeyPressed is set to true when the return key is pressed with a
+     * hardware keyboard.
+     * @see _tempImeActionIsCalledWithHardwareReturnKey is set to true when the
+     * current IME action has been called within the current hardware return key press.
+     */
+    private var _tempHardwareReturnKeyPressed: Boolean = false
+    private var _tempImeActionIsCalledWithHardwareReturnKey: Boolean = false
+    private fun handleEnterKey(event: KeyEvent): Boolean {
+        _tempImeActionIsCalledWithHardwareReturnKey = false
+        return when (event.type) {
+            KeyEventType.KeyUp -> {
+                _tempHardwareReturnKeyPressed = false
+                false
+            }
+
+            KeyEventType.KeyDown -> {
+                _tempHardwareReturnKeyPressed = true
+                // This prevents two new line characters from being added for one hardware return key press.
+                true
+            }
+
+            else -> false
+        }
+    }
+
+    private fun handleBackspace(event: KeyEvent): Boolean {
+        // This prevents two characters from being removed for one hardware backspace key press.
+        return event.type == KeyEventType.KeyDown
+    }
+
+    private fun handleEscape(event: KeyEvent): Boolean {
+        return if (sessionEditProcessor != null) {
+            if (event.type == KeyEventType.KeyDown) {
+                focusManager()?.releaseFocus()
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    private val editCommandsBatch = mutableListOf<EditCommand>()
+    private var editBatchDepth: Int = 0
+        set(value) {
+            field = value
+            flushEditCommandsIfNeeded()
+        }
+
+    protected open fun sendEditCommand(vararg commands: EditCommand) {
+        sessionEditProcessor?.apply(commands.toList())
+
+        editCommandsBatch.addAll(commands)
+        flushEditCommandsIfNeeded()
+    }
+
+    protected fun getState(): TextFieldValue? = sessionEditProcessor?.toTextFieldValue()
+
+    protected fun getCursorPos(): Int? {
+        if (_tempCursorPos != null) {
+            return _tempCursorPos
+        }
+        val selection = getState()?.selection
+        if (selection != null && selection.start == selection.end) {
+            return selection.start
+        }
+        return null
+    }
+
+    private fun imeActionRequired(): Boolean =
+        currentImeOptions?.run {
+            singleLine || (
+                imeAction != ImeAction.None
+                    && imeAction != ImeAction.Default
+                    && !(imeAction == ImeAction.Search && _tempHardwareReturnKeyPressed)
+                )
+        } ?: false
+
+    private fun runImeActionIfRequired(): Boolean {
+        val imeAction = currentImeOptions?.imeAction ?: return false
+        val imeActionHandler = currentImeActionHandler ?: return false
+        if (!imeActionRequired()) {
+            return false
+        }
+        if (!_tempImeActionIsCalledWithHardwareReturnKey) {
+            if (imeAction == ImeAction.Default) {
+                imeActionHandler(ImeAction.Done)
+            } else {
+                imeActionHandler(imeAction)
+            }
+        }
+        if (_tempHardwareReturnKeyPressed) {
+            _tempImeActionIsCalledWithHardwareReturnKey = true
+        }
+        return true
+    }
+
+    private fun hasFocusedNonComposeInputViewInWindowHierarchy(): Boolean {
+        fun hasFocusedNonComposeInputView(view: UIView): Boolean {
+            if (view.isFirstResponder) {
+                return view !is ComposeTextInputView &&
+                    view !is OverlayInputView &&
+                    view !is BackgroundInputView
+            }
+            return view.subviews.any { it is UIView && hasFocusedNonComposeInputView(it) }
+        }
+        return view.window?.let { hasFocusedNonComposeInputView(it) } ?: false
+    }
+
+    override fun onResignFocus() {
+        textInputServiceInvalidationsCount++
+        coroutineScope.launch {
+            if (hasFocusedNonComposeInputViewInWindowHierarchy()) {
+                focusManager()?.releaseFocus()
+            }
+            textInputServiceInvalidationsCount--
+        }
+    }
+
+    override fun updateFloatingCursor(offset: DpOffset) {
+        val translation = floatingCursorTranslation ?: return
+        val offsetPx = offset.toOffset(view.density)
+        val pos = textLayoutResult
+            ?.getOffsetForPosition(offsetPx + translation) ?: return
+
+        sendEditCommand(SetSelectionCommand(pos, pos))
+    }
+
+    override fun endFloatingCursor() {
+        floatingCursorTranslation = null
+    }
+
+    override fun beginEditBatch() {
+        editBatchDepth++
+    }
+
+    override fun endEditBatch() {
+        editBatchDepth--
+    }
+
+    /**
+     * A Boolean value that indicates whether the text-entry object has any text.
+     * https://developer.apple.com/documentation/uikit/uikeyinput/1614457-hastext
+     */
+    override fun hasText(): Boolean = getState()?.text?.isNotEmpty() ?: false
+
+    /**
+     * Inserts a character into the displayed text.
+     * Add the character text to your class’s backing store at the index corresponding to the cursor and redisplay the text.
+     * https://developer.apple.com/documentation/uikit/uikeyinput/1614543-inserttext
+     * @param text A string object representing the character typed on the system keyboard.
+     */
+    override fun insertText(text: String) {
+        if (text == "\n") {
+            if (runImeActionIfRequired()) {
+                return
+            }
+        }
+        getCursorPos()?.let {
+            _tempCursorPos = it + text.length
+        }
+        sendEditCommand(CommitTextCommand(text, 1))
+    }
+
+    /**
+     * Deletes a character from the displayed text.
+     * Remove the character just before the cursor from your class’s backing store and redisplay the text.
+     * https://developer.apple.com/documentation/uikit/uikeyinput/1614572-deletebackward
+     */
+    override fun deleteBackward() {
+        val deleteCommand = if (getState()?.selection?.collapsed == true) {
+            DeleteSurroundingTextCommand(lengthBeforeCursor = 1, lengthAfterCursor = 0)
+        } else {
+            CommitTextCommand("", 0)
+        }
+        sendEditCommand(deleteCommand)
+    }
+
+    /**
+     * The text position for the end of a document.
+     * https://developer.apple.com/documentation/uikit/uitextinput/1614555-endofdocument
+     */
+    override fun endOfDocument(): Int = getState()?.text?.length ?: 0
+
+    /**
+     * The range of selected text in a document.
+     * If the text range has a length, it indicates the currently selected text.
+     * If it has zero length, it indicates the caret (insertion point).
+     * If the text-range object is nil, it indicates that there is no current selection.
+     * https://developer.apple.com/documentation/uikit/uitextinput/1614541-selectedtextrange
+     */
+    override fun getSelectedTextRange(): TextRange? = getState()?.selection
+
+    override fun setSelectedTextRange(range: TextRange?) {
+        if (range != null) {
+            sendEditCommand(
+                SetSelectionCommand(range.start, range.end)
+            )
+        } else {
+            sendEditCommand(
+                SetSelectionCommand(endOfDocument(), endOfDocument())
+            )
+        }
+    }
+
+    override fun selectAll() {
+        sendEditCommand(
+            SetSelectionCommand(0, endOfDocument())
+        )
+    }
+
+    /**
+     * Returns the text in the specified range.
+     * https://developer.apple.com/documentation/uikit/uitextinput/1614527-text
+     * @param range A range of text in a document.
+     * @return A substring of a document that falls within the specified range.
+     */
+    override fun textInRange(range: TextRange): String? {
+        if (isIncorrect(range)) {
+            return null
+        }
+        val text = getState()?.text ?: return null
+        return text.substring(range.start, range.end)
+    }
+
+    /**
+     * Replaces the text in a document that is in the specified range.
+     * https://developer.apple.com/documentation/uikit/uitextinput/1614558-replace
+     * @param range A range of text in a document.
+     * @param text A string to replace the text in range.
+     */
+    override fun replaceRange(range: TextRange, text: String) {
+        sendEditCommand(
+            SetComposingRegionCommand(range.start, range.end),
+            SetComposingTextCommand(text, 1),
+            FinishComposingTextCommand(),
+        )
+    }
+
+    /**
+     * Inserts the provided text and marks it to indicate that it is part of an active input session.
+     * Setting marked text either replaces the existing marked text or,
+     * if none is present, inserts it in place of the current selection.
+     * https://developer.apple.com/documentation/uikit/uitextinput/1614465-setmarkedtext
+     * @param markedText The text to be marked.
+     * @param selectedRange A range within markedText that indicates the current selection.
+     * This range is always relative to markedText.
+     */
+    override fun setMarkedText(markedText: String?, selectedRange: TextRange) {
+        if (markedText != null) {
+            sendEditCommand(
+                SetComposingTextCommand(markedText, 1)
+            )
+        }
+    }
+
+    /**
+     * The range of currently marked text in a document.
+     * If there is no marked text, the value of the property is nil.
+     * Marked text is provisionally inserted text that requires user confirmation;
+     * it occurs in multistage text input.
+     * The current selection, which can be a caret or an extended range, always occurs within the marked text.
+     * https://developer.apple.com/documentation/uikit/uitextinput/1614489-markedtextrange
+     */
+    override fun markedTextRange(): TextRange? {
+        return getState()?.composition
+    }
+
+    /**
+     * Unmarks the currently marked text.
+     * After this method is called, the value of markedTextRange is nil.
+     * https://developer.apple.com/documentation/uikit/uitextinput/1614512-unmarktext
+     */
+    override fun unmarkText() {
+        sendEditCommand(FinishComposingTextCommand())
+    }
+
+    /**
+     * Returns the text position at a specified offset from another text position.
+     * Returned value must be in range between 0 and length of text (inclusive).
+     */
+    override fun positionFromPosition(position: Int, offset: Int): Int? {
+        val text = getState()?.text ?: return null
+
+        val newPosition = position + offset
+        if (newPosition == text.length || newPosition == 0) {
+            return newPosition
+        }
+        if (newPosition < 0 || newPosition > text.length) {
+            return null
+        }
+        var resultPosition = position
+        val iterator = BreakIterator.makeCharacterInstance()
+        iterator.setText(text)
+
+        repeat(offset.absoluteValue) {
+            val iteratorResult = if (offset > 0) {
+                iterator.following(resultPosition)
+            } else {
+                iterator.preceding(resultPosition)
+            }
+
+            if (iteratorResult == BreakIterator.DONE) {
+                return resultPosition
+            } else {
+                resultPosition = iteratorResult
+            }
+        }
+
+        return resultPosition
+    }
+
+    /**
+     * Returns the text position at a specified offset from another text position.
+     * Returned value must be in range between 0 and length of text (inclusive).
+     */
+    override fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int? {
+        val text = getState()?.text ?: return null
+        val layoutResult = textLayoutResult ?: return null
+
+        val line = layoutResult.getLineForOffset(position)
+        val lineStartOffset = layoutResult.getLineStart(line)
+        val offsetInLine = position - lineStartOffset
+        val targetLine = line + verticalOffset
+        return when {
+            targetLine < 0 -> 0
+            targetLine >= layoutResult.lineCount -> text.length
+            else -> {
+                val targetLineEnd = layoutResult.getLineEnd(targetLine)
+                val lineStart = layoutResult.getLineStart(targetLine)
+                positionFromPosition(
+                    lineStart, min(offsetInLine, targetLineEnd - lineStart)
+                )
+            }
+        }
+    }
+
+    override fun selectionDpRectsForRange(range: TextRange): List<TextSelectionRect> {
+        // Native selection rects are required for correct work of the text editing menu
+        // Without them, it will be impossible to call the text editing menu by tapping on the selected area
+        if (range.collapsed || isIncorrect(range)) {
+            return emptyList()
+        }
+        val currentTextLayoutResult = textLayoutResult ?: return emptyList()
+
+        // Layout in native text input mode may be outdated, so not checking this may cause OOB error
+        // This workaround should be deleted after https://youtrack.jetbrains.com/issue/CMP-9767/
+        if (range.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) return emptyList()
+
+        val startSelectionHandleRect = currentTextLayoutResult.getCursorRect(range.start)
+        val endSelectionHandleRect = currentTextLayoutResult.getCursorRect(range.end)
+
+        val firstLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
+        val lastLineNumber = currentTextLayoutResult.getLineForOffset(range.end)
+
+        return if (firstLineNumber == lastLineNumber) {
+            listOf(
+                TextSelectionRect(
+                    dpRect = Rect(
+                        topLeft = startSelectionHandleRect.topLeft,
+                        bottomRight = endSelectionHandleRect.bottomRight
+                    ).toDpRect(view.density),
+                    writingDirection = TextDirection.Content,
+                    containsStart = true,
+                    containsEnd = true,
+                    isVertical = false
+                )
+            )
+        } else {
+            // TODO Consider RTL Layout
+            // We require separate rects for start line, end line and everything in between them
+            val contentInsets = currentContentInsets ?: return emptyList()
+            val contentRect = currentContentBounds?.let {
+                with(view.density) {
+                    Rect(
+                        top = it.top + contentInsets.top.toPx(),
+                        left = it.left + contentInsets.left.toPx(),
+                        right = it.right + contentInsets.right.toPx(),
+                        bottom = it.bottom + contentInsets.bottom.toPx()
+                    )
+                }
+            } ?: return emptyList()
+
+            val firstLineSelectionRect = TextSelectionRect(
+                dpRect = Rect(
+                    top = startSelectionHandleRect.top,
+                    left = startSelectionHandleRect.left,
+                    right = contentRect.right,
+                    bottom = startSelectionHandleRect.bottom
+                ).toDpRect(view.density),
+                writingDirection = TextDirection.Content,
+                containsStart = true,
+                containsEnd = false,
+                isVertical = false
+            )
+
+            val middleAreaSelectionRect = TextSelectionRect(
+                dpRect = Rect(
+                    top = startSelectionHandleRect.bottom,
+                    left = contentRect.left,
+                    right = contentRect.right,
+                    bottom = endSelectionHandleRect.top
+                ).toDpRect(view.density),
+                writingDirection = TextDirection.Content,
+                containsStart = false,
+                containsEnd = false,
+                isVertical = false
+            )
+
+            val lastLineStartRect = currentTextLayoutResult.getCursorRect(
+                currentTextLayoutResult.getLineStart(lastLineNumber)
+            )
+            val lastLineRect = TextSelectionRect(
+                dpRect = Rect(
+                    topLeft = lastLineStartRect.topLeft,
+                    bottomRight = endSelectionHandleRect.bottomRight
+                ).toDpRect(view.density),
+                writingDirection = TextDirection.Content,
+                containsStart = false,
+                containsEnd = true,
+                isVertical = false
+            )
+
+            listOf(
+                firstLineSelectionRect,
+                middleAreaSelectionRect,
+                lastLineRect
+            )
+        }
+    }
+
+    override fun firstSelectionRectForRange(range: TextRange): DpRect? {
+        if (range.collapsed || isIncorrect(range)) {
+            return null
+        }
+        val currentTextLayoutResult = textLayoutResult ?: return null
+
+        // Layout in native text input mode may be outdated, so not checking this may cause OOB error
+        // This workaround should be deleted after https://youtrack.jetbrains.com/issue/CMP-9767/
+        if (range.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) return null
+
+        val startHandleLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
+        val endHandleLineNumber = currentTextLayoutResult.getLineForOffset(range.end)
+
+        val startHandleRect = currentTextLayoutResult.getCursorRect(range.start)
+
+        return if (startHandleLineNumber == endHandleLineNumber) {
+            Rect(
+                topLeft = startHandleRect.topLeft,
+                bottomRight = currentTextLayoutResult.getCursorRect(range.end).bottomRight
+            ).toDpRect(view.density)
+        } else {
+            val startLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
+            val startLineRight = currentTextLayoutResult.getLineRight(startLineNumber)
+            Rect(
+                startHandleRect.left,
+                startHandleRect.top,
+                startLineRight,
+                startHandleRect.bottom
+            ).toDpRect(view.density)
+        }
+    }
+
+    override fun closestPositionToPoint(point: DpOffset): Int? {
+        return textLayoutResult?.getOffsetForPosition(point.toOffset(view.density))
+    }
+
+    override fun closestPositionToPoint(point: DpOffset, withinRange: TextRange): Int? {
+        val pointOffset =
+            textLayoutResult?.getOffsetForPosition(point.toOffset(view.density))
+                ?: return null
+        return pointOffset.coerceIn(withinRange.start, withinRange.end)
+    }
+
+    override fun characterRangeAtPoint(point: DpOffset): TextRange? {
+        val pointOffset =
+            textLayoutResult?.getOffsetForPosition(point.toOffset(view.density))
+                ?: return null
+        return textLayoutResult?.getWordBoundary(pointOffset)
+    }
+
+    override fun positionWithinRange(
+        range: TextRange,
+        farthestInDirection: PlatformTextLayoutDirection
+    ): Int? {
+        if (isIncorrect(range)) return null
+        return when (farthestInDirection) {
+            PlatformTextLayoutDirection.Up -> range.start
+            PlatformTextLayoutDirection.Down -> range.end
+            else -> {
+                val layout = textLayoutResult ?: return null
+                val startLine = layout.getLineForOffset(range.start)
+                val endLine = layout.getLineForOffset(range.end)
+
+                val candidateOffsets = buildSet {
+                    add(range.start)
+                    add(range.end)
+
+                    for (line in startLine..endLine) {
+                        add(max(range.start, layout.getLineStart(line)))
+                        add(min(range.end, layout.getLineEnd(line)))
+                    }
+                }
+
+                when (farthestInDirection) {
+                    PlatformTextLayoutDirection.Left ->
+                        candidateOffsets.minByOrNull { layout.getHorizontalPosition(it, true) }
+                    PlatformTextLayoutDirection.Right ->
+                        candidateOffsets.maxByOrNull { layout.getHorizontalPosition(it, true) }
+                    else -> null
+                }
+            }
+        }
+    }
+
+    private fun isIncorrect(range: TextRange): Boolean {
+        return range.start < 0 || range.end > endOfDocument() || range.start > range.end
+    }
+
+    companion object {
+        // Due to unexpected delays between the commands to show/hide the keyboard,
+        // it may jump when switching between text fields.
+        // Adding a delay to the 'resignFirstResponder' function call to eliminate this issue.
+        protected const val CLEAR_FOCUS_DELAY: Long = 10L
+
+        protected val NoOpOnKeyboardPresses: (Set<*>) -> Unit = {}
+    }
+}

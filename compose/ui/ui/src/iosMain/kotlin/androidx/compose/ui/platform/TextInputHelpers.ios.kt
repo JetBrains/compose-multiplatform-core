@@ -17,11 +17,33 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.uikit.utils.CMPTextInputStringTokenizer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.window.PlatformTextLayoutDirection
+import androidx.compose.ui.unit.asCGRect
+import kotlinx.cinterop.CValue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.jetbrains.skia.BreakIterator
+import platform.CoreGraphics.CGRect
+import platform.UIKit.NSWritingDirection
+import platform.UIKit.NSWritingDirectionNatural
+import platform.UIKit.UIResponder
+import platform.UIKit.UITextDirection
+import platform.UIKit.UITextGranularity
+import platform.UIKit.UITextLayoutDirection
+import platform.UIKit.UITextLayoutDirectionDown
+import platform.UIKit.UITextLayoutDirectionLeft
+import platform.UIKit.UITextLayoutDirectionRight
+import platform.UIKit.UITextLayoutDirectionUp
+import platform.UIKit.UITextPosition
+import platform.UIKit.UITextRange
+import platform.UIKit.UITextSelectionRect
+import platform.UIKit.UITextStorageDirectionForward
+import platform.UIKit.UITextWritingDirection
 
-internal interface IOSSkikoInput {
+internal interface TextInputDelegate {
 
     fun onResignFocus()
 
@@ -195,4 +217,199 @@ internal interface IOSSkikoInput {
      * @return The farthest position within the range in the given direction, or `null` if none.
      */
     fun positionWithinRange(range: TextRange, farthestInDirection: PlatformTextLayoutDirection): Int?
+}
+
+internal fun TextInputDelegate.withDeferredEditBatch(
+    withScope: CoroutineScope,
+    update: TextInputDelegate.() -> Unit
+) {
+    beginEditBatch()
+    update()
+    withScope.launch {
+        endEditBatch()
+    }
+}
+
+internal class IntermediateTextPosition(val position: Int = 0) : UITextPosition() {
+    override fun description(): String {
+        return "IntermediateTextPosition($position)"
+    }
+
+    init {
+        assert(position >= 0) { "position should be >= 0" }
+    }
+}
+
+internal fun IntermediateTextRange(start: Int, end: Int) =
+    IntermediateTextRange(
+        _start = IntermediateTextPosition(start),
+        _end = IntermediateTextPosition(end)
+    )
+
+internal class IntermediateTextRange(
+    val _start: IntermediateTextPosition,
+    val _end: IntermediateTextPosition
+) : UITextRange() {
+    override fun isEmpty() = (_end.position - _start.position) <= 0
+    override fun start(): UITextPosition = _start
+    override fun end(): UITextPosition = _end
+
+    override fun description(): String {
+        return "IntermediateTextRange(start=$_start, end=$_end)"
+    }
+}
+
+// Despite UITextRange being declared as non-null, iOS can still pass null to methods that take a UITextRange parameter.
+internal fun UITextRange.toTextRange(): TextRange? {
+    val start = (start() as? IntermediateTextPosition)?.position ?: return null
+    val end = (end() as? IntermediateTextPosition)?.position ?: return null
+    return TextRange(start, end)
+}
+
+internal fun TextRange.toUITextRange(): UITextRange =
+    IntermediateTextRange(start = start, end = end)
+
+internal class IntermediateTextSelectionRect(
+    private var _rect: CValue<CGRect>,
+    private val _writingDirection: UITextWritingDirection,
+    private val _containsStart: Boolean,
+    private val _containsEnd: Boolean,
+    private val _isVertical: Boolean
+
+) : UITextSelectionRect() {
+    constructor(textSelectionRect: TextSelectionRect) : this(
+        textSelectionRect.dpRect.asCGRect(),
+        NSWritingDirectionNatural,
+        textSelectionRect.containsStart,
+        textSelectionRect.containsEnd,
+        textSelectionRect.isVertical
+    )
+
+    override fun rect(): CValue<CGRect> = _rect
+    override fun writingDirection(): NSWritingDirection = _writingDirection
+    override fun containsStart(): Boolean = _containsStart
+    override fun containsEnd(): Boolean = _containsEnd
+    override fun isVertical(): Boolean = _isVertical
+}
+
+internal class IntermediateTextTokenizer(
+    textInput: UIResponder,
+    val getString: () -> String?
+): CMPTextInputStringTokenizer(textInput) {
+    private val newLineCharacters = setOf('\n', '\r', '\u2029')
+
+    override fun positionFromPosition(
+        position: UITextPosition,
+        toBoundary: UITextGranularity,
+        inDirection: UITextDirection
+    ): UITextPosition? {
+        val textPosition = position as? IntermediateTextPosition ?: return null
+        val isForward = inDirection == UITextStorageDirectionForward ||
+            inDirection == UITextLayoutDirectionRight ||
+            inDirection == UITextLayoutDirectionDown
+
+        val iterator = when (toBoundary) {
+            UITextGranularity.UITextGranularityCharacter -> BreakIterator.makeCharacterInstance()
+            UITextGranularity.UITextGranularityWord -> BreakIterator.makeWordInstance()
+            UITextGranularity.UITextGranularitySentence -> BreakIterator.makeSentenceInstance()
+            UITextGranularity.UITextGranularityLine -> BreakIterator.makeLineInstance()
+            UITextGranularity.UITextGranularityParagraph ->
+                return positionFromPositionToParagraphBoundary(position, isForward)
+
+            else -> return super.positionFromPosition(position, toBoundary, inDirection)
+        }
+
+        val string = getString() ?: ""
+        iterator.setText(string)
+
+        val iteratorResult = if (isForward) {
+            if (textPosition.position >= string.length - 1) {
+                string.length
+            } else {
+                iterator.following(textPosition.position)
+            }
+        } else {
+            if (textPosition.position <= 0) {
+                0
+            } else {
+                iterator.preceding(textPosition.position)
+            }
+        }
+
+        return IntermediateTextPosition(iteratorResult)
+    }
+
+    override fun isPositionAtBoundary(
+        position: UITextPosition,
+        atBoundary: UITextGranularity,
+        inDirection: UITextDirection
+    ): Boolean {
+        val textPosition = position as? IntermediateTextPosition ?: return false
+
+        val iterator = when (atBoundary) {
+            UITextGranularity.UITextGranularityCharacter -> BreakIterator.makeCharacterInstance()
+            UITextGranularity.UITextGranularityWord -> BreakIterator.makeWordInstance()
+            UITextGranularity.UITextGranularitySentence -> BreakIterator.makeSentenceInstance()
+            UITextGranularity.UITextGranularityLine -> BreakIterator.makeLineInstance()
+            UITextGranularity.UITextGranularityParagraph -> {
+                return isAtParagraphBoundary(getString() ?: "", textPosition.position)
+            }
+            else -> return super.isPositionAtBoundary(position, atBoundary, inDirection)
+        }
+
+        iterator.setText(getString() ?: "")
+        return iterator.isBoundary(textPosition.position)
+    }
+
+    private fun positionFromPositionToParagraphBoundary(
+        position: UITextPosition,
+        isForward: Boolean
+    ): UITextPosition? {
+        val textPosition = position as? IntermediateTextPosition ?: return null
+
+        val string = getString() ?: ""
+        var location = textPosition.position
+        while (isForward && location < string.length || !isForward && location > 0) {
+            if (isForward) {
+                if (string[location] in newLineCharacters) {
+                    break
+                }
+                location++
+            } else {
+                if (string[location] in newLineCharacters) {
+                    location++
+                    break
+                }
+                location--
+            }
+        }
+        return IntermediateTextPosition(location)
+    }
+
+    private fun isAtParagraphBoundary(text: String, position: Int): Boolean {
+        if (position == 0 || position == text.length) return true
+        return text[position] in newLineCharacters || text[position - 1] in newLineCharacters
+    }
+}
+
+internal data class TextSelectionRect(
+    val dpRect: DpRect,
+    val writingDirection: TextDirection,
+    val containsStart: Boolean,
+    val containsEnd: Boolean,
+    val isVertical: Boolean
+)
+
+// Kotlin wrapper for UITextLayoutDirection
+internal enum class PlatformTextLayoutDirection(val platform: UITextLayoutDirection) {
+    Left(UITextLayoutDirectionLeft),
+    Right(UITextLayoutDirectionRight),
+    Up(UITextLayoutDirectionUp),
+    Down(UITextLayoutDirectionDown);
+
+    companion object {
+        operator fun invoke(platform: UITextLayoutDirection): PlatformTextLayoutDirection? {
+            return entries.find { it.platform == platform }
+        }
+    }
 }

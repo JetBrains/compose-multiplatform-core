@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,33 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.EmptyInputTraits
-import androidx.compose.ui.platform.IOSSkikoInput
+import androidx.compose.ui.platform.IntermediateTextPosition
+import androidx.compose.ui.platform.IntermediateTextRange
+import androidx.compose.ui.platform.IntermediateTextSelectionRect
+import androidx.compose.ui.platform.IntermediateTextTokenizer
+import androidx.compose.ui.platform.PlatformTextLayoutDirection
 import androidx.compose.ui.platform.SkikoUITextInputTraits
-import androidx.compose.ui.platform.TextSelectionRect
+import androidx.compose.ui.platform.TextInputDelegate
+import androidx.compose.ui.platform.toTextRange
+import androidx.compose.ui.platform.toUITextRange
+import androidx.compose.ui.platform.withDeferredEditBatch
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.DpInsets
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
 import androidx.compose.ui.uikit.utils.CMPEditMenuView
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer
-import androidx.compose.ui.uikit.utils.CMPTextInputStringTokenizer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.asCGRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.DurationUnit
 import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import org.jetbrains.skia.BreakIterator
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -53,7 +55,6 @@ import platform.CoreGraphics.CGRectGetHeight
 import platform.CoreGraphics.CGRectGetWidth
 import platform.CoreGraphics.CGRectInset
 import platform.CoreGraphics.CGRectMake
-import platform.CoreGraphics.CGRectNull
 import platform.CoreGraphics.CGRectZero
 import platform.CoreGraphics.CGSizeEqualToSize
 import platform.Foundation.NSComparisonResult
@@ -79,14 +80,11 @@ import platform.UIKit.UIMenu
 import platform.UIKit.UIMenuElement
 import platform.UIKit.UIPress
 import platform.UIKit.UIPressesEvent
-import platform.UIKit.UIResponder
 import platform.UIKit.UIReturnKeyType
 import platform.UIKit.UIScrollView
 import platform.UIKit.UITextAutocapitalizationType
 import platform.UIKit.UITextAutocorrectionType
 import platform.UIKit.UITextContentType
-import platform.UIKit.UITextDirection
-import platform.UIKit.UITextGranularity
 import platform.UIKit.UITextInputDelegateProtocol
 import platform.UIKit.UITextInputProtocol
 import platform.UIKit.UITextInputTokenizerProtocol
@@ -101,8 +99,6 @@ import platform.UIKit.UITextPosition
 import platform.UIKit.UITextRange
 import platform.UIKit.UITextSelectionRect
 import platform.UIKit.UITextStorageDirection
-import platform.UIKit.UITextStorageDirectionForward
-import platform.UIKit.UITextWritingDirection
 import platform.UIKit.UITouch
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
@@ -110,38 +106,25 @@ import platform.UIKit.addInteraction
 import platform.UIKit.systemBlueColor
 import platform.darwin.NSInteger
 
-private val NoOpOnKeyboardPresses: (Set<*>) -> Unit = {}
-/**
- * Hidden UIView to interact with iOS Keyboard and TextInput system.
- */
-internal class IntermediateTextInputUIView(
-    private val doubleTapTimeoutMillis: Long,
-    private val usingNativeTextInput: Boolean,
-    private val coroutineScope: CoroutineScope
-) : CMPEditMenuView(frame = CGRectZero.readValue()),
-    UIKeyInputProtocol, UITextInputProtocol {
-    private var _inputDelegate: UITextInputDelegateProtocol? = null
-    var input: IOSSkikoInput? = null
-        set(value) {
-            field = value
-            if (value == null) {
-                hideTextMenu()
-            }
-        }
+internal class NativeTextInputView(
+    private val coroutineScope: CoroutineScope,
+): CMPEditMenuView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
 
-    private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
-        if (usingNativeTextInput) {
-            addGestureRecognizer(it)
-        }
-    }
+    var input: TextInputDelegate? = null // TODO: Rename?
+
+    var inputTraits: SkikoUITextInputTraits = EmptyInputTraits
+
+    private var _inputDelegate: UITextInputDelegateProtocol? = null
 
     /**
      * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
      * Erasure happens due to K/N not supporting Obj-C lightweight generics.
      */
-    var onKeyboardPresses: (Set<*>) -> Unit = NoOpOnKeyboardPresses
+    var onKeyboardPresses: (Set<*>) -> Unit = {}
 
-    var inputTraits: SkikoUITextInputTraits = EmptyInputTraits
+    private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
+        addGestureRecognizer(it)
+    }
 
     override fun inputView(): UIView? = inputTraits.inputView()
     override fun inputAccessoryView(): UIView? = inputTraits.inputAccessoryView()
@@ -153,18 +136,15 @@ internal class IntermediateTextInputUIView(
             .also {
                 it.setTextInput(this)
             }
-
     private var selectionInteractionAttached: Boolean = false
 
     override fun didMoveToWindow() {
         super.didMoveToWindow()
-        if (usingNativeTextInput) {
-            if (window != null && !selectionInteractionAttached) {
-                // Ensure UIKit text interaction is attached early so that cursor and selection
-                // handles can be created and shown when needed.
-                this.addInteraction(selectionInteraction)
-                selectionInteractionAttached = true
-            }
+        if (window != null && !selectionInteractionAttached) {
+            // Ensure UIKit text interaction is attached early so that cursor and selection
+            // handles can be created and shown when needed.
+            this.addInteraction(selectionInteraction)
+            selectionInteractionAttached = true
         }
     }
 
@@ -172,11 +152,9 @@ internal class IntermediateTextInputUIView(
         val isFirstResponder = this.isFirstResponder()
         val result = super.becomeFirstResponder()
 
-        if (usingNativeTextInput) {
-            if (!isFirstResponder && this.isFirstResponder()) {
-                this.addInteraction(selectionInteraction)
-                this.activateTextInputInteractionIfNeeded()
-            }
+        if (!isFirstResponder && this.isFirstResponder()) {
+            this.addInteraction(selectionInteraction)
+            this.activateTextInputInteractionIfNeeded()
         }
 
         return result
@@ -191,12 +169,6 @@ internal class IntermediateTextInputUIView(
             }
             super.setTintColor(colorToSet)
         }
-    }
-
-    override fun resignFirstResponder(): Boolean {
-        input?.onResignFocus()
-        hideTextMenu()
-        return super.resignFirstResponder()
     }
 
     override fun beginFloatingCursorAtPoint(point: CValue<CGPoint>) {
@@ -222,14 +194,10 @@ internal class IntermediateTextInputUIView(
     }
 
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
-        if (usingNativeTextInput) {
-            return if (input == null) {
-                null
-            } else {
-                super.hitTest(point, withEvent)
-            }
+        return if (input == null) {
+            null
         } else {
-            return super.hitTest(point, withEvent)
+            super.hitTest(point, withEvent)
         }
     }
 
@@ -287,33 +255,27 @@ internal class IntermediateTextInputUIView(
      */
     override fun replaceRange(range: UITextRange, withText: String) {
         val textRange = range.toTextRange() ?: return
-        input?.withBatch {
-            input?.replaceRange(textRange, withText)
+        input?.withDeferredEditBatch(coroutineScope) {
+            replaceRange(textRange, withText)
         }
     }
 
     override fun setSelectedTextRange(selectedTextRange: UITextRange?) {
         val range = selectedTextRange?.toTextRange()
-        if (usingNativeTextInput) {
-            if (input?.getSelectedTextRange() != range) {
-                // iOS <= 16 does not update selection handles when selection changes from the keyboard
-                // Posting an extra notification solves this issue
-                val notifySelectionChanges = !available(OS.Ios to OSVersion(major = 17)) &&
-                    !touchesTrackerGestureRecognizer.isTrackingTouches
-                if (notifySelectionChanges) {
-                    selectionWillChange()
-                }
-                input?.withBatch {
-                    input?.setSelectedTextRange(range)
-                }
-                if (notifySelectionChanges) {
-                    selectionDidChange()
-                }
-            }
-        } else {
-            input?.withBatch {
-                input?.setSelectedTextRange(range)
-            }
+        if (input?.getSelectedTextRange() == range) { return }
+
+        // iOS <= 16 does not update selection handles when selection changes from the keyboard
+        // Posting an extra notification solves this issue
+        val notifySelectionChanges = !available(OS.Ios to OSVersion(major = 17)) &&
+            !touchesTrackerGestureRecognizer.isTrackingTouches
+        if (notifySelectionChanges) {
+            selectionWillChange()
+        }
+        input?.withDeferredEditBatch(coroutineScope) {
+            setSelectedTextRange(range)
+        }
+        if (notifySelectionChanges) {
+            selectionDidChange()
         }
     }
 
@@ -371,8 +333,8 @@ internal class IntermediateTextInputUIView(
         // 3. setMarkedText "1" -> Equal to TextField(text = "1") -> State remains "12"
         // scene.render() - Recomposes TextField
         // 4. State "12" -> TextField(text = "12") - Invalid state. Should be TextField(text = "1")
-        input?.withBatch {
-            input?.setMarkedText(markedText, relativeTextRange)
+        input?.withDeferredEditBatch(coroutineScope) {
+            setMarkedText(markedText, relativeTextRange)
         }
     }
 
@@ -483,38 +445,32 @@ internal class IntermediateTextInputUIView(
         position: UITextPosition,
         withinRange: UITextRange
     ): NSInteger {
-        return if (usingNativeTextInput) {
-            val withinTextRange = withinRange.toTextRange() ?: return 0L
-            val intermediatePosition = (position as? IntermediateTextPosition)?.position ?: 0
-            (intermediatePosition - withinTextRange.start).toLong()
-        } else 0L
+        val withinTextRange = withinRange.toTextRange() ?: return 0L
+        val intermediatePosition = (position as? IntermediateTextPosition)?.position ?: 0
+        return (intermediatePosition - withinTextRange.start).toLong()
     }
 
     override fun positionWithinRangeAtCharacterOffset(
         range: UITextRange,
         atCharacterOffset: NSInteger
-    ): UITextPosition = if (usingNativeTextInput) {
+    ): UITextPosition {
         val fallback = IntermediateTextPosition(0)
         val textRange = range.toTextRange() ?: return fallback
-        (textRange.start + atCharacterOffset.toInt()).takeIf { range.isValid() && it in textRange }
+        return (textRange.start + atCharacterOffset.toInt()).takeIf { range.isValid() && it in textRange }
             ?.let { IntermediateTextPosition(it) } ?: fallback
-    } else {
-        IntermediateTextPosition(0)
     }
 
     override fun positionWithinRangeFarthestInDirection(
         range: UITextRange,
         farthestInDirection: UITextLayoutDirection
-    ): UITextPosition = if (usingNativeTextInput) {
+    ): UITextPosition {
         val fallback = IntermediateTextPosition(0)
         val textRange = range.toTextRange() ?: return fallback
-        PlatformTextLayoutDirection(farthestInDirection)?.let { direction ->
+        return PlatformTextLayoutDirection(farthestInDirection)?.let { direction ->
             input?.positionWithinRange(textRange, direction)?.let {
                 IntermediateTextPosition(it)
             }
         } ?: fallback
-    } else {
-        IntermediateTextPosition(0)
     }
 
     override fun characterRangeByExtendingPosition(
@@ -544,77 +500,51 @@ internal class IntermediateTextInputUIView(
     ) {}
 
     override fun firstRectForRange(range: UITextRange): CValue<CGRect> {
-        if (usingNativeTextInput) {
-            val fallback = CGRectZero.readValue()
-            val textRange = range.toTextRange() ?: return fallback
-            return input?.firstSelectionRectForRange(textRange)?.asCGRect()
-                ?: fallback
-        } else {
-            return CGRectNull.readValue()
-        }
-
+        val fallback = CGRectZero.readValue()
+        val textRange = range.toTextRange() ?: return fallback
+        return input?.firstSelectionRectForRange(textRange)?.asCGRect()
+            ?: fallback
     }
 
     override fun caretRectForPosition(position: UITextPosition): CValue<CGRect> {
         val fallbackRect = CGRectMake(x = 1.0, y = 1.0, width = 0.0, height = 1.0)
-        if (usingNativeTextInput) {
-            val position = (position as? IntermediateTextPosition)?.position ?: return fallbackRect
-            val caretDpRect = input?.caretDpRectForPosition(position)
-            return caretDpRect?.asCGRect() ?: fallbackRect
-        } else {
-            return fallbackRect
-        }
+        val position = (position as? IntermediateTextPosition)?.position ?: return fallbackRect
+        val caretDpRect = input?.caretDpRectForPosition(position)
+        return caretDpRect?.asCGRect() ?: fallbackRect
     }
 
     override fun selectionRectsForRange(range: UITextRange): List<*> {
-        if (usingNativeTextInput) {
-            val fallbackList = listOf<UITextSelectionRect>()
-            val textRange = TextRange(
-                start = (range.start as? IntermediateTextPosition)?.position ?: return fallbackList,
-                end = (range.end as? IntermediateTextPosition)?.position ?: return fallbackList
-            )
-            val rects = input?.selectionDpRectsForRange(textRange) ?: return fallbackList
-
-            return rects.fastMap { IntermediateTextSelectionRect(it) }
-        } else {
-            return listOf<UITextSelectionRect>()
-        }
+        val fallbackList = listOf<UITextSelectionRect>()
+        val textRange = TextRange(
+            start = (range.start as? IntermediateTextPosition)?.position ?: return fallbackList,
+            end = (range.end as? IntermediateTextPosition)?.position ?: return fallbackList
+        )
+        val rects = input?.selectionDpRectsForRange(textRange) ?: return fallbackList
+        return rects.fastMap { IntermediateTextSelectionRect(it) }
     }
 
     override fun closestPositionToPoint(point: CValue<CGPoint>): UITextPosition? {
-        if (usingNativeTextInput) {
-            val closestPosition =
-                input?.closestPositionToPoint(point.useContents { DpOffset(x.dp, y.dp) }) ?: return null
-            return IntermediateTextPosition(closestPosition)
-        } else {
-            return null
-        }
+        val closestPosition =
+            input?.closestPositionToPoint(point.useContents { DpOffset(x.dp, y.dp) }) ?: return null
+        return IntermediateTextPosition(closestPosition)
     }
 
     override fun closestPositionToPoint(
         point: CValue<CGPoint>,
         withinRange: UITextRange
     ): UITextPosition? {
-        if (usingNativeTextInput) {
-            val textRange = (withinRange as? IntermediateTextRange)?.toTextRange() ?: return null
-            val closestPosition = input?.closestPositionToPoint(
-                point.useContents { DpOffset(x.dp, y.dp) },
-                textRange
-            ) ?: return null
-            return IntermediateTextPosition(closestPosition)
-        } else {
-            return null
-        }
+        val textRange = (withinRange as? IntermediateTextRange)?.toTextRange() ?: return null
+        val closestPosition = input?.closestPositionToPoint(
+            point.useContents { DpOffset(x.dp, y.dp) },
+            textRange
+        ) ?: return null
+        return IntermediateTextPosition(closestPosition)
     }
 
     override fun characterRangeAtPoint(point: CValue<CGPoint>): UITextRange? {
-        if (usingNativeTextInput) {
-            val characterRange =
-                input?.characterRangeAtPoint(point.useContents { DpOffset(x.dp, y.dp) }) ?: return null
-            return IntermediateTextRange(characterRange.start, characterRange.end)
-        } else {
-            return null
-        }
+        val characterRange =
+            input?.characterRangeAtPoint(point.useContents { DpOffset(x.dp, y.dp) }) ?: return null
+        return IntermediateTextRange(characterRange.start, characterRange.end)
     }
 
     override fun textStylingAtPosition(
@@ -673,16 +603,7 @@ internal class IntermediateTextInputUIView(
         _inputDelegate?.selectionDidChange(this)
     }
 
-    override fun isUserInteractionEnabled(): Boolean = usingNativeTextInput
-
-    override fun editMenuDelay(): Double =
-        doubleTapTimeoutMillis.milliseconds.toDouble(DurationUnit.SECONDS)
-
-    fun hideTextMenu() = this.hideEditMenu()
-
-    fun isTextMenuShown() = isEditMenuShown
-    override fun shouldUseNonComposeMenuActions() = usingNativeTextInput
-
+    override fun shouldUseNonComposeMenuActions() = true
     private var onCopy: (() -> Unit)? = null
     private var onPaste: (() -> Unit)? = null
     private var onCut: (() -> Unit)? = null
@@ -690,52 +611,29 @@ internal class IntermediateTextInputUIView(
     private var customActions: List<CMPEditMenuCustomAction> = emptyList()
 
     override fun copy(sender: Any?) {
-        if (usingNativeTextInput) {
-            onCopy?.invoke()
-        } else {
-            super.copy(sender)
-        }
+        onCopy?.invoke()
     }
 
     override fun paste(sender: Any?) {
-        if (usingNativeTextInput) {
-            onPaste?.invoke()
-        } else {
-            super.paste(sender)
-        }
+        onPaste?.invoke()
     }
 
     override fun cut(sender: Any?) {
-        if (usingNativeTextInput) {
-            onCut?.invoke()
-        } else {
-            super.cut(sender)
-        }
+        onCut?.invoke()
     }
 
     override fun selectAll(sender: Any?) {
-        if (usingNativeTextInput) {
-            onSelectAll?.invoke()
-        } else {
-            super.selectAll(sender)
-        }
+        onSelectAll?.invoke()
     }
 
-    override fun canPerformAction(action: COpaquePointer?, withSender: Any?): Boolean {
-        if (usingNativeTextInput) {
-            val selectorName = NSStringFromSelector(action)
-
-            return when (selectorName) {
-                "copy:" -> onCopy != null
-                "paste:" -> onPaste != null
-                "cut:" -> onCut != null
-                "selectAll:" -> onSelectAll != null
-                else -> super.canPerformAction(action, withSender)
-            }
-        } else {
-            return super.canPerformAction(action, withSender)
+    override fun canPerformAction(action: COpaquePointer?, withSender: Any?): Boolean =
+        when (NSStringFromSelector(action)) {
+            "copy:" -> onCopy != null
+            "paste:" -> onPaste != null
+            "cut:" -> onCut != null
+            "selectAll:" -> onSelectAll != null
+            else -> super.canPerformAction(action, withSender)
         }
-    }
 
     fun updateMenuActions(
         copy: (() -> Unit)?,
@@ -751,19 +649,14 @@ internal class IntermediateTextInputUIView(
         this.customActions = customActions
     }
 
-
     override fun editMenuForTextRange(textRange: UITextRange, suggestedActions: List<*>): UIMenu? {
-        if (usingNativeTextInput) {
-            val customMenuElements = makeCustomMenuElements()
-            if (customMenuElements.isEmpty()) return null // The default menu would be returned
+        val customMenuElements = makeCustomMenuElements()
+        if (customMenuElements.isEmpty()) return null // The default menu would be returned
 
-            @Suppress("UNCHECKED_CAST")
-            val suggestedActionsElements = suggestedActions as List<UIMenuElement>
+        @Suppress("UNCHECKED_CAST")
+        val suggestedActionsElements = suggestedActions as List<UIMenuElement>
 
-            return UIMenu.menuWithTitle("", children = customMenuElements + suggestedActionsElements)
-        } else {
-            return null
-        }
+        return UIMenu.menuWithTitle("", children = customMenuElements + suggestedActionsElements)
     }
 
     private fun makeCustomMenuElements(): List<UIMenuElement> {
@@ -785,18 +678,6 @@ internal class IntermediateTextInputUIView(
     }
     override fun tokenizer(): UITextInputTokenizerProtocol = _tokenizer
 
-    fun resetOnKeyboardPressesCallback() {
-        onKeyboardPresses = NoOpOnKeyboardPresses
-    }
-
-    private fun IOSSkikoInput.withBatch(update: () -> Unit) {
-        beginEditBatch()
-        update()
-        coroutineScope.launch {
-            endEditBatch()
-        }
-    }
-
     private fun UITextRange.isValid(): Boolean {
         val range = this.toTextRange() ?: return false
         val textEndPos = input?.endOfDocument() ?: 0
@@ -804,170 +685,8 @@ internal class IntermediateTextInputUIView(
     }
 }
 
-private class IntermediateTextPosition(val position: Int = 0) : UITextPosition() {
-    override fun description(): String {
-        return "IntermediateTextPosition($position)"
-    }
-
-    init {
-        assert(position >= 0) { "position should be >= 0" }
-    }
-}
-
-private class IntermediateTextSelectionRect(
-    private var _rect: CValue<CGRect>,
-    private val _writingDirection: UITextWritingDirection,
-    private val _containsStart: Boolean,
-    private val _containsEnd: Boolean,
-    private val _isVertical: Boolean
-
-) : UITextSelectionRect() {
-    constructor(textSelectionRect: TextSelectionRect) : this(
-        textSelectionRect.dpRect.asCGRect(),
-        NSWritingDirectionNatural,
-        textSelectionRect.containsStart,
-        textSelectionRect.containsEnd,
-        textSelectionRect.isVertical
-    )
-
-    override fun rect(): CValue<CGRect> = _rect
-    override fun writingDirection(): NSWritingDirection = _writingDirection
-    override fun containsStart(): Boolean = _containsStart
-    override fun containsEnd(): Boolean = _containsEnd
-    override fun isVertical(): Boolean = _isVertical
-}
-
-private fun IntermediateTextRange(start: Int, end: Int) =
-    IntermediateTextRange(
-        _start = IntermediateTextPosition(start),
-        _end = IntermediateTextPosition(end)
-    )
-
-private class IntermediateTextRange(
-    val _start: IntermediateTextPosition,
-    val _end: IntermediateTextPosition
-) : UITextRange() {
-    override fun isEmpty() = (_end.position - _start.position) <= 0
-    override fun start(): UITextPosition = _start
-    override fun end(): UITextPosition = _end
-
-    override fun description(): String {
-        return "IntermediateTextRange(start=$_start, end=$_end)"
-    }
-}
-
-// Despite UITextRange being declared as non-null, iOS can still pass null to methods that take a UITextRange parameter.
-private fun UITextRange.toTextRange(): TextRange? {
-    val start = (start() as? IntermediateTextPosition)?.position ?: return null
-    val end = (end() as? IntermediateTextPosition)?.position ?: return null
-    return TextRange(start, end)
-}
-
-private fun TextRange.toUITextRange(): UITextRange =
-    IntermediateTextRange(start = start, end = end)
-
-internal class IntermediateTextTokenizer(
-    textInput: UIResponder,
-    val getString: () -> String?
-): CMPTextInputStringTokenizer(textInput) {
-    private val newLineCharacters = setOf('\n', '\r', '\u2029')
-
-    override fun positionFromPosition(
-        position: UITextPosition,
-        toBoundary: UITextGranularity,
-        inDirection: UITextDirection
-    ): UITextPosition? {
-        val textPosition = position as? IntermediateTextPosition ?: return null
-        val isForward = inDirection == UITextStorageDirectionForward ||
-            inDirection == UITextLayoutDirectionRight ||
-            inDirection == UITextLayoutDirectionDown
-
-        val iterator = when (toBoundary) {
-            UITextGranularity.UITextGranularityCharacter -> BreakIterator.makeCharacterInstance()
-            UITextGranularity.UITextGranularityWord -> BreakIterator.makeWordInstance()
-            UITextGranularity.UITextGranularitySentence -> BreakIterator.makeSentenceInstance()
-            UITextGranularity.UITextGranularityLine -> BreakIterator.makeLineInstance()
-            UITextGranularity.UITextGranularityParagraph ->
-                return positionFromPositionToParagraphBoundary(position, isForward)
-
-            else -> return super.positionFromPosition(position, toBoundary, inDirection)
-        }
-
-        val string = getString() ?: ""
-        iterator.setText(string)
-
-        val iteratorResult = if (isForward) {
-            if (textPosition.position >= string.length - 1) {
-                string.length
-            } else {
-                iterator.following(textPosition.position)
-            }
-        } else {
-            if (textPosition.position <= 0) {
-                0
-            } else {
-                iterator.preceding(textPosition.position)
-            }
-        }
-
-        return IntermediateTextPosition(iteratorResult)
-    }
-
-    override fun isPositionAtBoundary(
-        position: UITextPosition,
-        atBoundary: UITextGranularity,
-        inDirection: UITextDirection
-    ): Boolean {
-        val textPosition = position as? IntermediateTextPosition ?: return false
-
-        val iterator = when (atBoundary) {
-            UITextGranularity.UITextGranularityCharacter -> BreakIterator.makeCharacterInstance()
-            UITextGranularity.UITextGranularityWord -> BreakIterator.makeWordInstance()
-            UITextGranularity.UITextGranularitySentence -> BreakIterator.makeSentenceInstance()
-            UITextGranularity.UITextGranularityLine -> BreakIterator.makeLineInstance()
-            UITextGranularity.UITextGranularityParagraph -> {
-                return isAtParagraphBoundary(getString() ?: "", textPosition.position)
-            }
-            else -> return super.isPositionAtBoundary(position, atBoundary, inDirection)
-        }
-
-        iterator.setText(getString() ?: "")
-        return iterator.isBoundary(textPosition.position)
-    }
-
-    private fun positionFromPositionToParagraphBoundary(
-        position: UITextPosition,
-        isForward: Boolean
-    ): UITextPosition? {
-        val textPosition = position as? IntermediateTextPosition ?: return null
-
-        val string = getString() ?: ""
-        var location = textPosition.position
-        while (isForward && location < string.length || !isForward && location > 0) {
-            if (isForward) {
-                if (string[location] in newLineCharacters) {
-                    break
-                }
-                location++
-            } else {
-                if (string[location] in newLineCharacters) {
-                    location++
-                    break
-                }
-                location--
-            }
-        }
-        return IntermediateTextPosition(location)
-    }
-
-    private fun isAtParagraphBoundary(text: String, position: Int): Boolean {
-        if (position == 0 || position == text.length) return true
-        return text[position] in newLineCharacters || text[position - 1] in newLineCharacters
-    }
-}
-
 /**
- * A [UIScrollView] that hosts the [IntermediateTextInputUIView] when native input handling (Native Text Input)
+ * A [UIScrollView] that hosts the [ComposeTextInputView] when native input handling (Native Text Input)
  * is enabled.
  *
  * This container is necessary because:
@@ -976,7 +695,7 @@ internal class IntermediateTextTokenizer(
  *    to align correctly with the Compose-rendered text.
  * 2. It synchronizes its [contentOffset] and [contentInset] with the Compose text field's
  *    internal scroll state, ensuring that the UITextInput-conforming overlay view
- *    ([IntermediateTextInputUIView]) stays in sync with the visual rendering.
+ *    ([ComposeTextInputView]) stays in sync with the visual rendering.
  * 3. It provides a larger hit-testing area for native interactive elements (like selection handles)
  *    that may overflow the immediate visual bounds of the text field.
  *
@@ -993,7 +712,7 @@ internal class IntermediateTextScrollView(): UIScrollView(frame = CGRectZero.rea
         setClipsToBounds(true)
     }
 
-    var textView: IntermediateTextInputUIView? = null
+    var textView: NativeTextInputView? = null
         set(value) {
             if (field != value) {
                 field?.removeFromSuperview()
@@ -1171,19 +890,5 @@ private class TouchTrackingGestureRecognizer : CMPGestureRecognizer(target = nul
     ): Boolean {
         // Prevent other gesture recognizers so this one handles touches exclusively
         return true
-    }
-}
-
-// Kotlin wrapper for UITextLayoutDirection
-internal enum class PlatformTextLayoutDirection(val platform: UITextLayoutDirection) {
-    Left(UITextLayoutDirectionLeft),
-    Right(UITextLayoutDirectionRight),
-    Up(UITextLayoutDirectionUp),
-    Down(UITextLayoutDirectionDown);
-
-    companion object {
-        operator fun invoke(platform: UITextLayoutDirection): PlatformTextLayoutDirection? {
-            return entries.find { it.platform == platform }
-        }
     }
 }
