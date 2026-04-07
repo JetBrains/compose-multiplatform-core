@@ -18,11 +18,11 @@ pluginManagement {
             }
         }
     }
-    includeBuild("androidx-settings-plugins")
+    includeBuild("../androidx-settings-plugins")
 }
 
 buildscript {
-    ext.supportRootFolder = buildscript.sourceFile.getParentFile()
+    ext.supportRootFolder = buildscript.sourceFile.getParentFile().getParentFile()
     apply(from: "buildSrc/repos.gradle")
     apply(from: "buildSrc/settingsScripts/project-dependency-graph.groovy")
     apply(from: "buildSrc/settingsScripts/skiko-setup.groovy")
@@ -49,7 +49,7 @@ buildscript {
 
 enableFeaturePreview "STABLE_CONFIGURATION_CACHE"
 
-def supportRootFolder = buildscript.sourceFile.getParentFile()
+def supportRootFolder = buildscript.sourceFile.getParentFile().getParentFile()
 skikoSetup.defineSkikoInVersionCatalog(settings)
 
 /* In JetBrains Fork we don't force Android Studio usage.
@@ -85,7 +85,7 @@ getGradle().beforeProject { project ->
     }
     project.ext.supportRootFolder = supportRootFolder
     project.ext.prebuiltsRoot = prebuiltsRoot
-    def checkoutRoot = new File("${buildscript.sourceFile.parent}")
+    def checkoutRoot = new File("${buildscript.sourceFile.parentFile.parent}")
     init.chooseBuildDirectory(checkoutRoot, rootProject.name, project)
 
     /*
@@ -376,6 +376,7 @@ filteredProjects.add(":lint-checks")
 //   the Maven artifactId
 //
 def includeProject(String name, filePath, List<BuildType> filter = []) {
+    def aospRootDir = new File(rootDir, "..")
     if (projectPrefixFilter.isConfigured) {
         if (projectPrefixFilter.matches(name)) {
             filteredProjects.add(name)
@@ -389,12 +390,12 @@ def includeProject(String name, filePath, List<BuildType> filter = []) {
             if ((":" + filePath.replace("/",":")).equals(name)) {
                 throw new IllegalArgumentException("Redundant filepath for $name, please remove it")
             }
-            file = new File(rootDir, filePath)
+            file = new File(aospRootDir, filePath)
         } else {
             file = filePath
         }
     } else {
-        file = new File(rootDir, name.substring(1).replace(":", "/"))
+        file = new File(aospRootDir, name.substring(1).replace(":", "/"))
     }
     projectDependencyGraph.addToAllProjects(name, file)
 }
@@ -554,7 +555,7 @@ includeProject(":internal-testutils-mockito", "testutils/testutils-mockito")
 includeProject(":internal-testutils-xctest", "testutils/testutils-xctest")
 
 // Workaround for b/203825166
-includeBuild("placeholder")
+includeBuild("../placeholder")
 
 includeProject(":mpp")
 
@@ -580,6 +581,9 @@ includeProject(":navigation3:navigation3-ui:integration-tests:navigation3-demos"
 includeProject(":paging:paging-compose:integration-tests", "mpp/stub-project")
 includeProject(":paging:paging-compose:integration-tests:paging-demos", "mpp/stub-project")
 includeProject(":paging:paging-compose", "mpp/stub-project")
+includeProject(":paging:paging-common", "mpp/stub-project")
+includeProject(":paging:paging-compose:paging-compose-samples", "mpp/stub-project")
+includeProject(":internal-testutils-paging", "mpp/stub-project")
 includeProject(":activity:activity", "mpp/stub-project")
 includeProject(":activity:activity-compose", "mpp/stub-project")
 includeProject(":compose:integration-tests:demos", "mpp/stub-project")
@@ -591,6 +595,8 @@ includeProject(":compose:material3:material3-adaptive-navigation-suite:material3
 includeProject(":compose:ui:ui-text-lint", "mpp/stub-project")
 includeProject(":compose:material3:adaptive:adaptive-samples", "mpp/stub-project")
 includeProject(":compose:ui:ui-test-manifest:integration-tests:testapp", "mpp/stub-project")
+includeProject(":compose:ui:ui-text-google-fonts", "mpp/stub-project")
+includeProject(":savedstate:savedstate-ktx", "mpp/stub-project")
 
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----
@@ -600,9 +606,25 @@ void includeRequestedProjectsAndDependencies() {
     Set<String> projectsToInclude = projectDependencyGraph
             .getAllProjectsWithDependencies(filteredProjects)
     projectsToInclude.forEach { path, dir ->
-        settings.include(path)
-        project(path).projectDir = dir
+        includeProjectWithAncestors(path, dir)
     }
 }
+
+void includeProjectWithAncestors(String path, File dir) {
+    def aospDir = new File(rootDir, "..")
+    def segments = path.substring(1).split(":")
+    def currentPath = ""
+    for (int i = 0; i < segments.length; i++) {
+        currentPath += ":" + segments[i]
+        settings.include(currentPath)
+        if (i == segments.length - 1) {
+            project(currentPath).projectDir = dir
+        } else {
+            project(currentPath).projectDir =
+                    new File(aospDir, currentPath.substring(1).replace(":", "/"))
+        }
+    }
+}
+
 includeRequestedProjectsAndDependencies()
 gradle.ext.allProjectConsumers = allProjectsConsumers(projectDependencyGraph)
