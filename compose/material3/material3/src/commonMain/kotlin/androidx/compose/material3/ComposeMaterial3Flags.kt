@@ -94,4 +94,18 @@ object ComposeMaterial3Flags {
     @field:Suppress("MutableBareField")
     @JvmField
     var isAnchoredDraggableComponentsInvalidationFixEnabled: Boolean = true
+
+    /**
+     * This flag affects Material3 components that use
+     * [androidx.compose.foundation.gestures.anchoredDraggable]. Those are: [BottomSheetScaffold],
+     * [ModalBottomSheet], [SwipeToDismissBox] and [WideNavigationRail].
+     *
+     * When this flag is set to true, Material3 components using AnchoredDraggable will attempt to
+     * recover from orphaned targets (targets not present in the anchor set) during anchor updates.
+     * This prevents the internal offset from becoming NaN.
+     */
+    // TODO: b/491554789
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isAnchoredDraggableComponentsAnchorRecoveryEnabled: Boolean = true
 }
