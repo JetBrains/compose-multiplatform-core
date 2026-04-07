@@ -309,8 +309,14 @@ internal constructor(
         requirePrecondition(textStart <= textEnd) {
             "Expected textStart=$textStart <= textEnd=$textEnd"
         }
-        onTextWillChange(start, end, textEnd - textStart)
-        buffer.replace(start, end, text, textStart, textEnd)
+
+        val coercedStart = start.coerceIn(0, length)
+        val coercedEnd = end.coerceIn(0, length)
+        val coercedTextStart = textStart.coerceIn(0, text.length)
+        val coercedTextEnd = textEnd.coerceIn(0, text.length)
+
+        onTextWillChange(coercedStart, coercedEnd, coercedTextEnd - coercedTextStart)
+        buffer.replace(coercedStart, coercedEnd, text, coercedTextStart, coercedTextEnd)
 
         commitComposition()
         clearHighlight()
