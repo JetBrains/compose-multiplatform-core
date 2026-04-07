@@ -142,11 +142,15 @@ interface WindowBoundsProvider {
         )
 
         /**
-         * Aligns the window in the screen according to [alignment], given [sizeProvider] that
-         * determines its size.
+         * Aligns the window within the screen according to [alignment] and [offset].
+         *
+         * @param alignment The alignment of the window relative to the screen.
+         * @param offset An additional absolute offset added after aligning.
+         * @param sizeProvider Provides the size of the window.
          */
         fun AlignedToScreen(
             alignment: Alignment,
+            offset: DpOffset = DpOffset.Zero,
             sizeProvider: WindowSizeProvider = WindowSizeProvider.Default
         ): WindowBoundsProvider = WindowBoundsProvider {
             val size = sizeProvider.getSize().requireReal()
@@ -157,11 +161,13 @@ interface WindowBoundsProvider {
                 space = availableBounds.size.roundToIntSize(),
                 layoutDirection = LayoutDirection.Ltr
             )
+            val left = availableBounds.left + offsetInAvailable.x.dp + offset.x
+            val top = availableBounds.top + offsetInAvailable.y.dp + offset.y
             DpRect(
-                left = availableBounds.left + offsetInAvailable.x.dp,
-                top = availableBounds.top + offsetInAvailable.y.dp,
-                right = availableBounds.left + offsetInAvailable.x.dp + size.width,
-                bottom = availableBounds.top + offsetInAvailable.y.dp + size.height
+                left = left,
+                top = top,
+                right = left + size.width,
+                bottom = top + size.height
             )
         }
 
