@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.asDpOffset
 import androidx.compose.ui.unit.asDpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
-import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.MetalRedrawer
 import kotlin.coroutines.cancellation.CancellationException
@@ -55,19 +54,31 @@ import kotlin.time.TimeSource
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
+import org.jetbrains.skiko.OS
+import org.jetbrains.skiko.OSVersion
+import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGSizeMake
 import platform.Foundation.NSDate
 import platform.Foundation.NSRunLoop
 import platform.Foundation.dateWithTimeIntervalSinceNow
 import platform.Foundation.runUntilDate
+import platform.Foundation.setValue
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIColor
+import platform.UIKit.UIDevice
+import platform.UIKit.UIDeviceOrientation
+import platform.UIKit.UIDeviceOrientation.UIDeviceOrientationLandscapeLeft
+import platform.UIKit.UIDeviceOrientation.UIDeviceOrientationLandscapeRight
+import platform.UIKit.UIDeviceOrientation.UIDeviceOrientationPortrait
+import platform.UIKit.UIDeviceOrientation.UIDeviceOrientationPortraitUpsideDown
+import platform.UIKit.UIDeviceOrientation.UIDeviceOrientationUnknown
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
 import platform.UIKit.UIGraphicsGetCurrentContext
 import platform.UIKit.UIGraphicsGetImageFromCurrentImageContext
 import platform.UIKit.UIImage
+import platform.UIKit.UIInterfaceOrientation
 import platform.UIKit.UIInterfaceOrientationLandscapeLeft
 import platform.UIKit.UIInterfaceOrientationLandscapeRight
 import platform.UIKit.UIInterfaceOrientationMask
@@ -242,7 +253,7 @@ internal class UIKitInstrumentedTest(
 
     fun setContent(
         configure: ComposeContainerConfiguration.() -> Unit = {},
-        interfaceOrientation: UIInterfaceOrientationMask = UIInterfaceOrientationMaskPortrait,
+        interfaceOrientation: UIInterfaceOrientation = UIInterfaceOrientationPortrait,
         content: @Composable () -> Unit
     ) {
         val innerConfigure: ComposeContainerConfiguration.() -> Unit = {
@@ -507,25 +518,22 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
      * @return true if a rotation was requested, false if no change was necessary.
      */
     fun requestInterfaceOrientationChangeIfNeeded(
-        requestedInterfaceOrientationMask: UIInterfaceOrientationMask
+        requestedInterfaceOrientation: UIInterfaceOrientation
     ): Boolean {
         val currentInterfaceOrientation = window?.windowScene?.interfaceOrientation
 
-        val currentInterfaceOrientationMask: UIInterfaceOrientationMask = when (currentInterfaceOrientation) {
-            UIInterfaceOrientationPortrait -> UIInterfaceOrientationMaskPortrait
-            UIInterfaceOrientationPortraitUpsideDown -> UIInterfaceOrientationMaskPortraitUpsideDown
-            UIInterfaceOrientationLandscapeLeft -> UIInterfaceOrientationMaskLandscapeLeft
-            UIInterfaceOrientationLandscapeRight -> UIInterfaceOrientationMaskLandscapeRight
-            else -> UIInterfaceOrientationMaskAll
+        if (currentInterfaceOrientation == requestedInterfaceOrientation) return false
+
+        supportedInterfaceOrientations = requestedInterfaceOrientation.toMask()
+
+        if (!available(OS.Ios to OSVersion(16))) {
+            val device = UIDevice.currentDevice()
+            device.setValue(requestedInterfaceOrientation.toDeviceOrientation().value, forKey = "orientation")
         }
 
-        if (requestedInterfaceOrientationMask != currentInterfaceOrientationMask) {
-            supportedInterfaceOrientations = requestedInterfaceOrientationMask
-            UIViewController.attemptRotationToDeviceOrientation()
-            return true
-        }
+        UIViewController.attemptRotationToDeviceOrientation()
 
-        return false
+        return true
     }
 
     override fun application(
@@ -534,6 +542,22 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     ): UIInterfaceOrientationMask {
         return supportedInterfaceOrientations
     }
+}
+
+private fun UIInterfaceOrientation.toMask(): UIInterfaceOrientationMask = when (this) {
+    UIInterfaceOrientationPortrait -> UIInterfaceOrientationMaskPortrait
+    UIInterfaceOrientationPortraitUpsideDown -> UIInterfaceOrientationMaskPortraitUpsideDown
+    UIInterfaceOrientationLandscapeLeft -> UIInterfaceOrientationMaskLandscapeLeft
+    UIInterfaceOrientationLandscapeRight -> UIInterfaceOrientationMaskLandscapeRight
+    else -> UIInterfaceOrientationMaskAll
+}
+
+private fun UIInterfaceOrientation.toDeviceOrientation(): UIDeviceOrientation = when (this) {
+    UIInterfaceOrientationPortrait -> UIDeviceOrientationPortrait
+    UIInterfaceOrientationPortraitUpsideDown -> UIDeviceOrientationPortraitUpsideDown
+    UIInterfaceOrientationLandscapeLeft -> UIDeviceOrientationLandscapeLeft
+    UIInterfaceOrientationLandscapeRight -> UIDeviceOrientationLandscapeRight
+    else -> UIDeviceOrientationUnknown
 }
 
 internal fun MockAppDelegate.findLayersViewController(): ComposeLayersViewController {
