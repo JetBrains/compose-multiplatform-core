@@ -64,6 +64,7 @@ import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -105,7 +106,6 @@ import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.QuartzCore.CACurrentMediaTime
-import platform.QuartzCore.CATransaction
 import platform.UIKit.UIEvent
 import platform.UIKit.UIEventButtonMaskPrimary
 import platform.UIKit.UIEventButtonMaskSecondary
@@ -367,16 +367,8 @@ internal class ComposeSceneMediator(
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                if (usingNativeTextInput) {
-                    // Too heavy method for this purpose
-                    // we actually do not need to re-render the scene -
-                    // just flush all events and update its state.
-                    // https://youtrack.jetbrains.com/issue/CMP-9767
-                    redrawer.draw(false)
-                } else {
-                    redrawer.setNeedsRedraw()
-                }
-                CATransaction.flush()
+                scene.drainPendingWork(CACurrentMediaTime().toNanoSeconds())
+                redrawer.setNeedsRedraw()
             },
             view = _overlayView,
             viewConfiguration = viewConfiguration,
@@ -598,7 +590,6 @@ internal class ComposeSceneMediator(
     }
 
     fun render(canvas: Canvas, nanoTime: Long) {
-        textInputService.flushEditCommandsIfNeeded(force = true)
         scene.render(canvas, nanoTime)
     }
 

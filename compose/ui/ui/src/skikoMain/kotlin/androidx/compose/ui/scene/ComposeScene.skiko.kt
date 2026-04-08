@@ -189,6 +189,8 @@ sealed interface ComposeScene : AutoCloseable {
      */
     fun render(canvas: Canvas, nanoTime: Long)
 
+    fun drainPendingWork(nanoTime: Long)
+
     /**
      * Send pointer event to the content.
      *

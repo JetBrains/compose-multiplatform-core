@@ -155,6 +155,20 @@ internal abstract class BaseComposeScene(
             recomposer.performScheduledRecomposerTasks()
         }
 
+    override fun drainPendingWork(nanoTime: Long) {
+        if (isClosed) return
+        postponeInvalidation("BaseComposeScene:drainPendingWork") {
+            while (recomposer.hasPendingWork) {
+                snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
+                recomposer.performScheduledEffects()
+                recomposer.performScheduledRecomposerTasks()
+                frameClock.sendFrame(nanoTime)
+                doMeasureAndLayout()
+                Snapshot.sendApplyNotifications()
+            }
+        }
+    }
+
     override fun render(canvas: Canvas, nanoTime: Long) {
         // This is a no-op if the scene is closed, this situation can happen if the scene is
         // in the list for rendering, but recomposition in another scene from the same list
