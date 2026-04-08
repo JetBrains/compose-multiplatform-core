@@ -22,6 +22,7 @@ import androidx.compose.ui.scene.MeasuredSceneContent
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpInsets
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.DpOffset
@@ -30,11 +31,12 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.plus
+import androidx.compose.ui.unit.requireReal
+import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.window.WindowLocationTracker
-import androidx.compose.ui.window.requireReal
 import androidx.compose.ui.window.roundToDimension
-import androidx.compose.ui.window.roundToIntSize
 import androidx.compose.ui.window.toDpOffset
 import java.awt.GraphicsDevice
 

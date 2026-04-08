@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.requireReal
 import androidx.compose.ui.util.ComponentUpdater
 import androidx.compose.ui.util.componentListenerRef
 import androidx.compose.ui.util.setIcon
@@ -46,9 +47,9 @@ import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.density
-import androidx.compose.ui.window.requireReal
 import androidx.compose.ui.window.resizerThickness
 import androidx.compose.ui.window.roundToDimensionOrNull
+import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.v2.Screen
 import androidx.compose.ui.window.v2.Window
 import androidx.compose.ui.window.v2.WindowBoundsProvider
@@ -58,7 +59,6 @@ import androidx.compose.ui.window.v2.WindowScreenProviderScope
 import androidx.compose.ui.window.v2.WindowSizeLimits
 import androidx.compose.ui.window.v2.WindowState
 import androidx.compose.ui.window.v2.rememberWindowState
-import androidx.compose.ui.window.v2.toDpInsets
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 import java.awt.Window

@@ -17,7 +17,10 @@
 package androidx.compose.ui.window.v2
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.unit.DpInsets
 import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.minus
+import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.toDpRect
 import java.awt.GraphicsDevice
 import java.awt.Toolkit

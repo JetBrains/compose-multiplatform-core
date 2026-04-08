@@ -32,8 +32,8 @@ import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.requireReal
 import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.requireReal
 import java.awt.Rectangle
 import kotlinx.coroutines.channels.Channel
 
@@ -148,12 +148,6 @@ fun WindowState(
 /**
  * A state object that can be hoisted to control and observe window attributes
  * (size/position/state).
- *
- * @param isInitialized the initial value for [WindowState.isInitialized]
- * @param screenId the initial value for [WindowState._screenId]
- * @param placement the initial value for [WindowState._placement]
- * @param isMinimized the initial value for [WindowState._isMinimized]
- * @param bounds the initial value for [WindowState._bounds]
  */
 @Stable
 @ExperimentalComposeUiApi

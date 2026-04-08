@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.window.v2
+package androidx.compose.ui.unit
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import java.awt.Insets
 
 
 /**
  * Represents a set of insets in [Dp] units.
- *
- * @see Screen.insets
  */
 @ExperimentalComposeUiApi
 @Immutable
@@ -91,13 +84,3 @@ operator fun DpSize.plus(insets: DpInsets): DpSize =
         width = width + insets.left + insets.right,
         height = height + insets.top + insets.bottom
     )
-
-/**
- * Converts AWT [Insets] to [DpInsets].
- */
-internal fun Insets.toDpInsets() = DpInsets(
-    top = top.dp,
-    left = left.dp,
-    bottom = bottom.dp,
-    right = right.dp
-)
