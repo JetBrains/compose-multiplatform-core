@@ -143,11 +143,12 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
 
     @Suppress("UNREACHABLE_CODE", "UNUSED_VARIABLE")
     override fun apply(project: Project) {
+        project.configureRedirectionCapability()
+
         if (!isJetBrainsFork(project)) return
 
         project.configureTests()
         project.changeMavenCoordinatesToJetBrains()
-        project.configureRedirectionCapability()
         project.configureMavenArtifactUpload(componentFactory)
         project.configureDependencyVerification()
         project.plugins.all { plugin ->

@@ -96,7 +96,10 @@ fun Project.configureJetBrainsCapabilityResolution() {
         }
 
         configuration.resolutionStrategy.capabilitiesResolution.all { details ->
-            if (JetBrainsPublication.isAndroidXGroup(details.capability.group)) {
+            if (
+                JetBrainsPublication.isAndroidXGroup(details.capability.group) ||
+                    JetBrainsPublication.isJetBrainsForkGroup(details.capability.group)
+            ) {
                 details.selectPreferredAndroidXCandidate()
             }
         }
@@ -118,9 +121,16 @@ fun Project.configureRedirectionCapability() {
             // any explicit capability, all capabilities must be declared, including the implicit one.
             configuration.outgoing.capability("$group:$name:$version")
 
-            // Add the androidx.* capability in addition to the implicit project capability
-            val redirectedVersion = redirection.versionForConfigurationOrDefault(configuration.name)
-            configuration.outgoing.capability("${redirection.groupId}:$name:$redirectedVersion")
+            val additionalProjectCapability = if (isJetBrainsFork(this)) {
+                // Add the androidx.* capability in addition to the implicit project capability
+                val redirectedVersion = redirection.versionForConfigurationOrDefault(configuration.name)
+                "${redirection.groupId}:$name:$redirectedVersion"
+            } else {
+                // Add the org.jetbrains.* capability in addition to the implicit project capability
+                val jetBrainsGroup = JetBrainsPublication.mavenGroupFor(path)
+                "$jetBrainsGroup:$name:$version"
+            }
+            configuration.outgoing.capability(additionalProjectCapability)
         }
     }
 }
