@@ -34,6 +34,7 @@ import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.uikit.embedSubview
+import androidx.compose.ui.uikit.utils.CMPUIWindowSceneUtils
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -62,7 +63,6 @@ import platform.Foundation.NSDate
 import platform.Foundation.NSRunLoop
 import platform.Foundation.dateWithTimeIntervalSinceNow
 import platform.Foundation.runUntilDate
-import platform.Foundation.setValue
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIColor
@@ -92,11 +92,11 @@ import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIScreen
 import platform.UIKit.UITextInputProtocol
 import platform.UIKit.UITouch
+import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
-import platform.UIKit.attemptRotationToDeviceOrientation
 import platform.UIKit.endEditing
 import platform.UIKit.systemBackgroundColor
 import platform.darwin.NSObject
@@ -137,12 +137,22 @@ internal fun runUIKitInstrumentedTest(testBlock: UIKitInstrumentedTest.() -> Uni
  * Then tears down the test environment.
  * Use the methods on [UIKitInstrumentedTest] in the test to find compose content and make
  * assertions on it.
+ * @param [ignoreIf] Condition to ignore the test.
+ * @param [ignoreNotes] A description of why the test is ignored if it doesn't run.
  * @param [params] The parameters to configure the test run.
  * @param [testBlock] The test function.
  */
 internal fun <T> runUIKitInstrumentedTest(
-    params: List<T>, testBlock: UIKitInstrumentedTest.(T) -> Unit
+    ignoreIf: Boolean = false,
+    ignoreNotes: String = "",
+    params: List<T>,
+    testBlock: UIKitInstrumentedTest.(T) -> Unit
 ) {
+    if (ignoreIf) {
+        println("Debug: Ignored test: $ignoreNotes")
+        return
+    }
+
     for (param in params) {
         with(UIKitInstrumentedTest(useHostingView = true)) {
             try {
@@ -216,6 +226,11 @@ internal class UIKitInstrumentedTest(
                 runLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.005))
             }
         }
+
+        val iPadOrientationChangesNotSupported: Boolean get() =
+            !(available(OS.Ios to OSVersion(16)) && isRunningOnIPad)
+
+        val isRunningOnIPad: Boolean get() = UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad
     }
 
     private val screen = UIScreen.mainScreen()
@@ -526,12 +541,12 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
         supportedInterfaceOrientations = requestedInterfaceOrientation.toMask()
 
-        if (!available(OS.Ios to OSVersion(16))) {
-            val device = UIDevice.currentDevice()
-            device.setValue(requestedInterfaceOrientation.toDeviceOrientation().value, forKey = "orientation")
+        CMPUIWindowSceneUtils.requestOrientationChangeForWindow(
+            window,
+            requestedInterfaceOrientation
+        ) { error ->
+            println("Failed to update interface orientation: ${error?.localizedDescription})")
         }
-
-        UIViewController.attemptRotationToDeviceOrientation()
 
         return true
     }
