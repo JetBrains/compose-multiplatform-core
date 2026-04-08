@@ -567,14 +567,6 @@ private fun UIInterfaceOrientation.toMask(): UIInterfaceOrientationMask = when (
     else -> UIInterfaceOrientationMaskAll
 }
 
-private fun UIInterfaceOrientation.toDeviceOrientation(): UIDeviceOrientation = when (this) {
-    UIInterfaceOrientationPortrait -> UIDeviceOrientationPortrait
-    UIInterfaceOrientationPortraitUpsideDown -> UIDeviceOrientationPortraitUpsideDown
-    UIInterfaceOrientationLandscapeLeft -> UIDeviceOrientationLandscapeLeft
-    UIInterfaceOrientationLandscapeRight -> UIDeviceOrientationLandscapeRight
-    else -> UIDeviceOrientationUnknown
-}
-
 internal fun MockAppDelegate.findLayersViewController(): ComposeLayersViewController {
     fun UIView.layersViewController(): ComposeLayersViewController? {
         (nextResponder as? ComposeLayersViewController)?.let {
