@@ -269,6 +269,7 @@ abstract class IntelliJTask : DefaultTask() {
                 when (ProjectLayoutType.from(this)) {
                     ProjectLayoutType.ANDROIDX -> RootIntelliJTask::class.java
                     ProjectLayoutType.PLAYGROUND -> return
+                    ProjectLayoutType.JETBRAINS_FORK -> return
                 }
             tasks.register(INTELLIJ_TASK, intellijTask)
         }
