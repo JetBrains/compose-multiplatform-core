@@ -23,10 +23,11 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.compose.internal.implementedInJetBrainsFork
 import kotlin.jvm.JvmName
 
+// TODO: https://youtrack.jetbrains.com/issue/CMP-10058/Move-DefaultNavTransitions-stubs-from-nonAndroidMain-to-nonAndroidStubsMain-in-upstream
 /** Default nav transitions to be used by [NavHost]. */
+/*
 public actual object DefaultNavTransitions {
 
     /** Default [enterTransition] for forward navigation to be used by [NavHost]. */
@@ -70,3 +71,4 @@ public actual object DefaultNavTransitions {
         (AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)?
         get() = implementedInJetBrainsFork()
 }
+*/

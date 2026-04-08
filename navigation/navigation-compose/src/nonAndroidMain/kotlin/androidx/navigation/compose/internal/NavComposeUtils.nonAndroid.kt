@@ -19,14 +19,12 @@
 package androidx.navigation.compose.internal
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlin.experimental.and
 import kotlin.experimental.or
 import kotlin.random.Random
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-
-
-
 
 internal actual class BackEventCompat(
     actual val touchX: Float,
