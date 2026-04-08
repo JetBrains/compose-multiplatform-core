@@ -82,6 +82,7 @@ import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -233,6 +234,7 @@ import kotlinx.coroutines.launch
  *   examples are shown in the code samples.
  * @see [androidx.wear.compose.foundation.SwipeToReveal]
  */
+@OptIn(ExperimentalWearComposeMaterial3Api::class)
 @Composable
 public fun SwipeToReveal(
     primaryAction: @Composable SwipeToRevealScope.() -> Unit,
@@ -305,6 +307,12 @@ public fun SwipeToReveal(
             }
         }
 
+    val revealedRatio: Float =
+        if (secondaryAction == null || anchorWidthPx / screenWidthPx == 1f) 0.5f
+        else
+            ((0.75f - anchorWidthPx / screenWidthPx) / (1f - anchorWidthPx / screenWidthPx))
+                .coerceAtLeast(0f)
+
     CustomTouchSlopProvider(
         newTouchSlop = LocalViewConfiguration.current.touchSlop * CustomTouchSlopMultiplier
     ) {
@@ -339,8 +347,28 @@ public fun SwipeToReveal(
                             anchoredDraggableFlingBehavior(
                                 state = revealState.anchoredDraggableState,
                                 snapAnimationSpec = AnchoredDraggableDefaults.SnapAnimationSpec,
-                                positionalThreshold = AnchoredDraggableDefaults.PositionalThreshold,
+                                positionalThreshold = { distance, isCompleting ->
+                                    if (
+                                        isCompleting &&
+                                            WearComposeMaterial3Flags
+                                                .isSwipeToRevealDualFlingThresholdEnabled
+                                    ) {
+                                        distance * revealedRatio
+                                    } else {
+                                        AnchoredDraggableDefaults.PositionalThreshold(distance)
+                                    }
+                                },
                                 density = LocalDensity.current,
+                                onFastFling = {
+                                    // Fast fling before user reaches Revealing anchors will skip
+                                    // second haptic feedback.
+                                    if (
+                                        revealState.targetValue == LeftRevealing ||
+                                            revealState.targetValue == RightRevealing
+                                    ) {
+                                        revealState.skipPartialHaptic = true
+                                    }
+                                },
                             ),
                     )
                     .onSizeChanged { size ->
@@ -355,13 +383,26 @@ public fun SwipeToReveal(
                                         if (secondaryAction == null && !hasPartiallyRevealedState) {
                                             null
                                         } else {
+                                            val revealingAnchorPx =
+                                                (anchorWidthPx / screenWidthPx) * width
                                             val result =
-                                                (anchorWidthPx / screenWidthPx) *
-                                                    width *
+                                                revealingAnchorPx *
                                                     anchorSideMultiplier(anchor, direction)
 
                                             if (anchor == RightRevealing) {
-                                                revealState.revealThreshold = abs(result)
+                                                revealState.revealThreshold =
+                                                    if (
+                                                        WearComposeMaterial3Flags
+                                                            .isSwipeToRevealDualFlingThresholdEnabled
+                                                    ) {
+                                                        revealingAnchorPx +
+                                                            abs(
+                                                                revealedRatio *
+                                                                    (width - revealingAnchorPx)
+                                                            )
+                                                    } else {
+                                                        abs(result)
+                                                    }
                                             }
 
                                             result
@@ -529,6 +570,7 @@ public fun SwipeToReveal(
                                     label = "RevealedContentAlpha",
                                 )
                             var revealedContentHeight by remember { mutableIntStateOf(0) }
+
                             Row(
                                 modifier =
                                     Modifier.graphicsLayer { alpha = revealedContentAlpha.value }
@@ -628,14 +670,23 @@ public fun SwipeToReveal(
                 }
             }
             LaunchedEffect(revealState.targetValue) {
-                if (
-                    (revealState.targetValue == LeftRevealed ||
-                        revealState.targetValue == RightRevealed)
+                val target = revealState.targetValue
+                val current = revealState.currentValue
+                val isFullReveal = target == LeftRevealed || target == RightRevealed
+                val isPartialReveal = target == LeftRevealing || target == RightRevealing
+                if (isFullReveal) {
+                    performHapticFeedback(hapticFeedback, revealState)
+                } else if (
+                    WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled &&
+                        isPartialReveal &&
+                        current == Covered &&
+                        abs(revealState.offset) < revealState.revealThreshold
                 ) {
-                    hapticFeedback.performHapticFeedback(
-                        HapticFeedbackType.GestureThresholdActivate
-                    )
+                    if (!revealState.skipPartialHaptic) {
+                        performHapticFeedback(hapticFeedback, revealState)
+                    }
                 }
+                revealState.skipPartialHaptic = false
             }
         }
     }
@@ -1192,6 +1243,18 @@ public class RevealState(initialValue: RevealValue) {
 
     internal val anchoredDraggableState = AnchoredDraggableState(initialValue = initialValue)
 
+    /**
+     * The flag indicates that partial haptics should be skipped when there is fling before swipe
+     * reaches Revealing anchors.
+     */
+    internal var skipPartialHaptic: Boolean = false
+
+    /**
+     * Timestamp of the last haptic feedback, to prevent the case that revealed haptic feedback is
+     * too close to the first one.
+     */
+    internal var lastHapticFeedbackTime: Long = 0
+
     internal var lastActionType: RevealActionType by mutableStateOf(RevealActionType.None)
 
     /**
@@ -1430,8 +1493,9 @@ private fun anchorSideMultiplier(anchor: RevealValue, direction: Int) =
 private fun <T> anchoredDraggableFlingBehavior(
     state: AnchoredDraggableState<T>,
     density: Density,
-    positionalThreshold: (totalDistance: Float) -> Float,
+    positionalThreshold: (totalDistance: Float, isCompleting: Boolean) -> Float,
     snapAnimationSpec: AnimationSpec<Float>,
+    onFastFling: () -> Unit,
 ): TargetedFlingBehavior =
     snapFlingBehavior(
         decayAnimationSpec = NoOpDecayAnimationSpec,
@@ -1440,7 +1504,8 @@ private fun <T> anchoredDraggableFlingBehavior(
             anchoredDraggableLayoutInfoProvider(
                 state = state,
                 positionalThreshold = positionalThreshold,
-                velocityThreshold = { with(density) { VelocityThreshold.toPx() } },
+                velocityThreshold = { threshold -> with(density) { threshold.toPx() } },
+                onFastFling = onFastFling,
             ),
     )
 
@@ -1470,8 +1535,9 @@ private val NoOpDecayAnimationSpec: DecayAnimationSpec<Float> =
 /** Exact copy from [androidx.compose.foundation.gestures.AnchoredDraggableLayoutInfoProvider]. */
 private fun <T> anchoredDraggableLayoutInfoProvider(
     state: AnchoredDraggableState<T>,
-    positionalThreshold: (totalDistance: Float) -> Float,
-    velocityThreshold: () -> Float,
+    positionalThreshold: (totalDistance: Float, isCompleting: Boolean) -> Float,
+    velocityThreshold: (threshold: Dp) -> Float,
+    onFastFling: () -> Unit,
 ): SnapLayoutInfoProvider =
     object : SnapLayoutInfoProvider {
 
@@ -1486,17 +1552,20 @@ private fun <T> anchoredDraggableLayoutInfoProvider(
                     velocity = velocity,
                     positionalThreshold = positionalThreshold,
                     velocityThreshold = velocityThreshold,
+                    onFastFling = onFastFling,
                 )
             return state.anchors.positionOf(target) - currentOffset
         }
     }
 
 /** Exact copy from [androidx.compose.foundation.gestures.computeTarget]. */
+@OptIn(ExperimentalWearComposeMaterial3Api::class)
 private fun <T> DraggableAnchors<T>.computeTarget(
     currentOffset: Float,
     velocity: Float,
-    positionalThreshold: (totalDistance: Float) -> Float,
-    velocityThreshold: () -> Float,
+    positionalThreshold: (totalDistance: Float, isCompleting: Boolean) -> Float,
+    velocityThreshold: (threshold: Dp) -> Float,
+    onFastFling: () -> Unit,
 ): T {
     val currentAnchors = this
     require(!currentOffset.isNaN()) { "The offset provided to computeTarget must not be NaN." }
@@ -1505,7 +1574,21 @@ private fun <T> DraggableAnchors<T>.computeTarget(
     // When we're not moving, pick the closest anchor and don't consider directionality
     return if (!isMoving) {
         currentAnchors.closestAnchor(currentOffset)!!
-    } else if (abs(velocity) >= abs(velocityThreshold())) {
+    } else if (
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled &&
+            abs(velocity) >= abs(velocityThreshold(VelocityNearThreshold))
+    ) {
+        if (abs(velocity) >= abs(velocityThreshold(VelocityRevealedThreshold))) {
+            onFastFling()
+            if (velocity < 0) currentAnchors.closestAnchor(currentAnchors.minPosition())!!
+            else currentAnchors.closestAnchor(currentAnchors.maxPosition())!!
+        } else {
+            currentAnchors.closestAnchor(currentOffset, searchUpwards = isMovingForward)!!
+        }
+    } else if (
+        !WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled &&
+            abs(velocity) >= abs(velocityThreshold(800.dp))
+    ) {
         currentAnchors.closestAnchor(currentOffset, searchUpwards = isMovingForward)!!
     } else {
         val left = currentAnchors.closestAnchor(currentOffset, false)!!
@@ -1513,7 +1596,10 @@ private fun <T> DraggableAnchors<T>.computeTarget(
         val right = currentAnchors.closestAnchor(currentOffset, true)!!
         val rightAnchorPosition = currentAnchors.positionOf(right)
         val distance = abs(leftAnchorPosition - rightAnchorPosition)
-        val relativeThreshold = abs(positionalThreshold(distance))
+        val isCompleting =
+            (velocity > 0 && left == LeftRevealing) || (velocity < 0 && right == RightRevealing)
+        val relativeThreshold = abs(positionalThreshold(distance, isCompleting))
+
         val closestAnchorFromStart =
             if (isMovingForward) leftAnchorPosition else rightAnchorPosition
         val relativePosition = abs(closestAnchorFromStart - currentOffset)
@@ -1524,7 +1610,44 @@ private fun <T> DraggableAnchors<T>.computeTarget(
     }
 }
 
-private val VelocityThreshold = 800.dp
+@OptIn(ExperimentalWearComposeMaterial3Api::class)
+private fun performHapticFeedback(hapticFeedback: HapticFeedback, revealState: RevealState) {
+    val currentTime = System.currentTimeMillis()
+    val shouldPerformHaptics =
+        !WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled ||
+            (currentTime > revealState.lastHapticFeedbackTime + HAPTIC_DEBOUNCING_TIME)
+    if (shouldPerformHaptics) {
+        revealState.lastHapticFeedbackTime = currentTime
+        // Use GestureThresholdActivate for both haptics, as it triggers
+        // HapticConstant#23
+        hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+    }
+}
+
+/**
+ * The threshold in milliseconds used to debounce haptic feedback during swipe gestures.
+ *
+ * This delay prevents double haptic triggers when a user performs a fast fling that transitions
+ * rapidly from [Covered] through [LeftRevealing]/[RightRevealing] to
+ * [LeftRevealed]/[RightRevealed].
+ *
+ * A value of 500ms ensures that a single continuous motion results in only one tactile
+ * confirmation, while still allowing distinct haptics if the user pauses or swipes deliberately
+ * between stages.
+ */
+private const val HAPTIC_DEBOUNCING_TIME = 500L
+
+/**
+ * The minimum swipe velocity required to snap to the next adjacent anchor. Swipes above this speed,
+ * but below [VelocityRevealedThreshold], will advance the state normally.
+ */
+private val VelocityNearThreshold = 200.dp
+
+/**
+ * The velocity required to trigger a fast fling. Swipes exceeding this speed will bypass
+ * intermediate positional checks and snap directly to the fully revealed end state.
+ */
+private val VelocityRevealedThreshold = 800.dp
 
 internal const val CustomTouchSlopMultiplier = 1.20f
 

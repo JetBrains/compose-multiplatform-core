@@ -17,9 +17,8 @@
 package androidx.xr.scenecore.spatial.core
 
 import androidx.core.app.ComponentActivity
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
-import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -56,9 +55,13 @@ class PerceivedResolutionUtilsTest {
     private lateinit var session: Session
     private lateinit var fakeSceneRuntime: FakeSceneRuntime
 
-    private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
+    private val fakePerceptionRuntimeFactory =
+        androidx.xr.arcore.testing.FakePerceptionRuntimeFactory()
 
     @Before
+    @SuppressWarnings("RestrictTo")
     fun setUp() {
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
         activity = activityController.get()

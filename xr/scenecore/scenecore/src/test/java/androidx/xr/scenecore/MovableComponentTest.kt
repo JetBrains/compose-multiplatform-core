@@ -20,15 +20,11 @@ import android.os.SystemClock
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.xr.arcore.runtime.Plane
-import androidx.xr.arcore.testing.FakeLifecycleManager
-import androidx.xr.arcore.testing.FakePerceptionManager
-import androidx.xr.arcore.testing.FakePerceptionRuntime
-import androidx.xr.arcore.testing.FakeRuntimePlane
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
@@ -160,15 +156,21 @@ class MovableComponentTest {
     private lateinit var activity: ComponentActivity
     private lateinit var sceneRuntime: SceneRuntime
     private lateinit var session: Session
-    private lateinit var mFakeRuntime: FakePerceptionRuntime
-    private lateinit var mFakeLifecycleManager: FakeLifecycleManager
-    private lateinit var mFakePerceptionManager: FakePerceptionManager
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
+    @Suppress("DEPRECATION")
+    private lateinit var mFakeRuntime: androidx.xr.arcore.testing.FakePerceptionRuntime
+    @Suppress("DEPRECATION")
+    private lateinit var mFakeLifecycleManager: androidx.xr.arcore.testing.FakeLifecycleManager
+    @Suppress("DEPRECATION")
+    private lateinit var mFakePerceptionManager: androidx.xr.arcore.testing.FakePerceptionManager
     private lateinit var fakeActivitySpace: RtActivitySpace
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var timeSource: TestTimeSource
     private var mCurrentTimeMillis: Long = 1000000000L
     private var anchorEntityToDispose: AnchorEntity? = null
 
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     private fun createSession() {
         testDispatcher = StandardTestDispatcher()
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
@@ -178,7 +180,10 @@ class MovableComponentTest {
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
         session = (result as SessionCreateSuccess).session
         session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
-        mFakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+        mFakeRuntime =
+            session.runtimes
+                .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                .first()
         mFakeLifecycleManager = mFakeRuntime.lifecycleManager
         mFakePerceptionManager = mFakeRuntime.perceptionManager
         sceneRuntime = session.sceneRuntime
@@ -186,6 +191,8 @@ class MovableComponentTest {
         SystemClock.setCurrentTimeMillis(mCurrentTimeMillis)
     }
 
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     private fun createCustomSession() {
         testDispatcher = StandardTestDispatcher()
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
@@ -197,7 +204,10 @@ class MovableComponentTest {
         sceneRuntime = session.sceneRuntime
         fakeActivitySpace = sceneRuntime.activitySpace
         session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
-        mFakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+        mFakeRuntime =
+            session.runtimes
+                .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                .first()
         mFakeLifecycleManager = mFakeRuntime.lifecycleManager
         mFakePerceptionManager = mFakeRuntime.perceptionManager
         timeSource = mFakeLifecycleManager.timeSource
@@ -583,7 +593,14 @@ class MovableComponentTest {
 
         val movableComponent = MovableComponent.createSystemMovable(session)
         val view = TextView(activity)
-        val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+        val panelEntity =
+            PanelEntity.create(
+                session,
+                view,
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
         assertThat(movableComponent.rtMovableComponent)
@@ -635,6 +652,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_updatesThePoseBasedOnPlanes() {
         createSession()
         runTest(testDispatcher) {
@@ -647,7 +666,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -660,7 +679,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             val proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -693,6 +719,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_nullParent_updatesThePoseBasedOnPlanes() {
         createSession()
         runTest(testDispatcher) {
@@ -705,7 +733,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -718,7 +746,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             panelEntity.parent = null
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
@@ -752,6 +787,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_withNonActivityParent_updatesPoseBasedOnPlanesAndParent() {
         createSession()
         runTest(testDispatcher) {
@@ -764,7 +801,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -780,7 +817,14 @@ class MovableComponentTest {
             val entityPose = Pose(Vector3(0f, -1f, 0f), Quaternion.Identity)
             val entity = Entity.create(session, "test", entityPose) as BaseEntity<*>
             (entity.rtScenePose as FakeScenePose).activitySpacePose = entityPose
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             panelEntity.parent = entity
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
@@ -815,6 +859,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_scaledParent_updatesThePoseBasedOnPlanes() {
         createSession()
         runTest(testDispatcher) {
@@ -833,7 +879,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -846,7 +892,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             val proposedPose = Pose(Vector3(.5f, .5f, .5f), Quaternion.Identity)
@@ -879,6 +932,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_withinAnchorDistance_setsAnchorEntity() {
         createSession()
         runTest(testDispatcher) {
@@ -891,7 +946,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -904,7 +959,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             val proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -957,6 +1019,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_withinAnchorDistanceAboveAnchor_resetsPose() {
         createSession()
         runTest(testDispatcher) {
@@ -969,7 +1033,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -982,7 +1046,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             // Put the proposed position at 2 + half the MIN_PLANE_ANCHOR_DISTANCE above the origin.
@@ -1041,6 +1112,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_withIncorrectPlaneType_doesNotCreateAnchor() {
         createSession()
         runTest(testDispatcher) {
@@ -1053,7 +1126,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -1072,7 +1145,14 @@ class MovableComponentTest {
                 MovableComponent.createAnchorable(session, setOf(anchorPlacement))
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             val proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -1121,6 +1201,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_withinAnchorDistanceAndScale_setsAnchorEntityAndScales() {
         createSession()
         runTest(testDispatcher) {
@@ -1139,7 +1221,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -1152,7 +1234,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             val entityScale = Vector3.One * 5f
             panelEntity.setScale(entityScale)
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
@@ -1220,7 +1309,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             val proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -1251,6 +1347,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_validPlaneButNotTracking_keepsProposedPose() {
         createSession()
         runTest(testDispatcher) {
@@ -1263,7 +1361,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.PAUSED,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -1276,7 +1374,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             val proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -1307,6 +1412,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_outsideExtents_keepsProposedPose() {
         createSession()
         runTest(testDispatcher) {
@@ -1319,7 +1426,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(5f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -1332,7 +1439,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             val proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -1363,6 +1477,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_resetsToScenePoseAfterAnchoring() {
         createSession()
         runTest(testDispatcher) {
@@ -1375,7 +1491,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -1388,7 +1504,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             var proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -1464,6 +1587,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_resetsAndScaleToScenePoseAfterAnchoring() {
         createSession()
         runTest(testDispatcher) {
@@ -1482,7 +1607,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -1495,7 +1620,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             val entityScale = Vector3.One * 5f
             panelEntity.setScale(entityScale)
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
@@ -1575,6 +1707,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_childOfEntity_resetsToActivityPoseAfterAnchoring() {
         createSession()
         runTest(testDispatcher) {
@@ -1587,7 +1721,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -1600,7 +1734,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             // Create a parent entity whose pose is below the activity space pose.
@@ -1682,6 +1823,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_shouldDispose_disposesAnchorAfterUnparenting() {
         createSession()
         runTest(testDispatcher) {
@@ -1694,7 +1837,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -1707,7 +1850,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             var proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -1790,6 +1940,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_shouldDispose_doeNotDisposeIfAnchorHasChildren() {
         createSession()
         runTest(testDispatcher) {
@@ -1802,7 +1954,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -1815,7 +1967,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             var proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -1905,6 +2064,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_nearPlane_callsSetPlanePoseWithNonNullPose() {
         createSession()
         runTest(testDispatcher) {
@@ -1917,7 +2078,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -1930,7 +2091,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             val proposedPose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -1961,6 +2129,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_awayFromPlane_callsSetPlanePoseWithNonNullPose() {
         createSession()
         runTest(testDispatcher) {
@@ -1973,7 +2143,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,
@@ -1986,7 +2156,14 @@ class MovableComponentTest {
             val movableComponent = MovableComponent.createAnchorable(session)
             val view = TextView(activity)
 
-            val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+            val panelEntity =
+                PanelEntity.create(
+                    session,
+                    view,
+                    IntSize2d(720, 480),
+                    "test",
+                    parent = session.scene.activitySpace,
+                )
             assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
             // Put the proposed position at 5 above the origin. so it is far away from the plane.
@@ -2018,6 +2195,8 @@ class MovableComponentTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
     fun createAnchorable_unsupportedEntityType_throwsIllegalArgumentException() {
         createSession()
         runTest(testDispatcher) {
@@ -2030,7 +2209,7 @@ class MovableComponentTest {
 
             val planeCenterPose = Pose(Vector3(0f, 2f, 0f), Quaternion.Identity)
             val plane =
-                FakeRuntimePlane(
+                androidx.xr.arcore.testing.FakeRuntimePlane(
                     trackingState = TrackingState.TRACKING,
                     type = Plane.Type.HORIZONTAL_UPWARD_FACING,
                     label = Plane.Label.FLOOR,

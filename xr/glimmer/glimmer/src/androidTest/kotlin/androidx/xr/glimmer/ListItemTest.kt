@@ -182,13 +182,11 @@ class ListItemTest {
 
     @Test
     fun setsContentColor() {
-        var primary = Color.Unspecified
         var leadingIconContentColor = Color.Unspecified
         var trailingIconContentColor = Color.Unspecified
         var primaryLabelContentColor = Color.Unspecified
         var supportingLabelContentColor = Color.Unspecified
         rule.setGlimmerThemeContent {
-            primary = GlimmerTheme.colors.primary
             ListItem(
                 supportingLabel = {
                     Box(
@@ -223,8 +221,8 @@ class ListItemTest {
         }
 
         rule.runOnIdle {
-            assertThat(leadingIconContentColor).isEqualTo(primary)
-            assertThat(trailingIconContentColor).isEqualTo(primary)
+            assertThat(leadingIconContentColor).isEqualTo(Color.White)
+            assertThat(trailingIconContentColor).isEqualTo(Color.White)
             assertThat(primaryLabelContentColor).isEqualTo(Color.White)
             assertThat(supportingLabelContentColor).isEqualTo(Color.White)
         }

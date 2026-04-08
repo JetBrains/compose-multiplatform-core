@@ -50,7 +50,14 @@ class SpatialPointerComponentTest {
 
     @Test
     fun addSpatialPointerComponent_addsRuntimeSpatialPointerComponent() {
-        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
+        val entity =
+            PanelEntity.create(
+                session,
+                TextView(activity),
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         assertThat(entity).isNotNull()
         val pointerComponent = SpatialPointerComponent.create(session)
 
@@ -71,7 +78,14 @@ class SpatialPointerComponentTest {
 
     @Test
     fun getSpatialPointerIcon_returnsSetValue() {
-        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
+        val entity =
+            PanelEntity.create(
+                session,
+                TextView(activity),
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         assertThat(entity).isNotNull()
 
         val pointerComponent = SpatialPointerComponent.create(session)
@@ -87,7 +101,14 @@ class SpatialPointerComponentTest {
 
     @Test
     fun getSpatialPointerIcon_addAndRemoveComponentSetsDefaultIcon() {
-        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
+        val entity =
+            PanelEntity.create(
+                session,
+                TextView(activity),
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         assertThat(entity).isNotNull()
 
         val pointerComponent = SpatialPointerComponent.create(session)

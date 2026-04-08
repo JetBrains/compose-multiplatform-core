@@ -16,34 +16,10 @@
 
 package androidx.compose.remote.creation.compose.layout
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
-import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
 import androidx.compose.remote.creation.compose.v2.RemoteBoxV2
-import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-
-/** Utility modifier to record the layout information */
-internal class RemoteComposeBoxModifier(
-    private val modifier: RemoteModifier,
-    private val contentAlignment: RemoteAlignment = RemoteAlignment.TopStart,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            canvas.document.startBox(
-                canvas.toRecordingModifier(modifier),
-                contentAlignment.horizontal.toRemote(this.layoutDirection),
-                contentAlignment.vertical.toRemote(),
-            )
-            this@draw.drawContent()
-            canvas.document.endBox()
-        }
-    }
-}
+import androidx.compose.ui.platform.LocalLayoutDirection
 
 /**
  * A layout composable that positions its children relative to its own edges.
@@ -62,21 +38,7 @@ public fun RemoteBox(
     contentAlignment: RemoteAlignment = RemoteAlignment.TopStart,
     content: @Composable () -> Unit,
 ) {
-    if (currentComposer.applier is RemoteComposeApplierV2) {
-        RemoteBoxV2(modifier, contentAlignment) { content() }
-        return
-    }
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
-    androidx.compose.foundation.layout.Box(
-        RemoteComposeBoxModifier(modifier, contentAlignment).then(modifier.toComposeUiLayout())
-    ) {
-        content()
-    }
-}
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public inline fun <reified T : RemoteModifier.Element> RemoteModifier.find(): T? {
-    return this.foldIn<T?>(null) { result, element -> result ?: element as? T }
+    RemoteBoxV2(modifier, contentAlignment, LocalLayoutDirection.current) { content() }
 }
 
 /**
@@ -87,9 +49,5 @@ public inline fun <reified T : RemoteModifier.Element> RemoteModifier.find(): T?
 @RemoteComposable
 @Composable
 public fun RemoteBox(modifier: RemoteModifier = RemoteModifier) {
-    if (currentComposer.applier is RemoteComposeApplierV2) {
-        RemoteBoxV2(modifier)
-        return
-    }
-    RemoteBox(modifier) {}
+    RemoteBoxV2(modifier)
 }

@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalRemoteCreationComposeApi::class)
-
 package androidx.compose.remote.creation.compose.state
 
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.remote.core.operations.NamedVariable
-import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteBox

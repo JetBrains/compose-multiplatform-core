@@ -60,6 +60,10 @@ public interface RemoteState<T> {
     /** The constant value held by this state, or `null` if the state is dynamic. */
     public val constantValueOrNull: T?
 
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val asEncoded: RemoteState<*>
+        get() = this
+
     /**
      * Represents the domain (namespace) for named remote states.
      *
@@ -166,7 +170,12 @@ public abstract class BaseRemoteState<T : Any> internal constructor() : RemoteSt
  *
  * @param T The type of the value held by this state.
  */
-@Stable public interface MutableRemoteState<T> : RemoteState<T>
+@Stable
+public interface MutableRemoteState<T> : RemoteState<T> {
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val asEncodedMutable: MutableRemoteState<*>
+        get() = this
+}
 
 /**
  * Remembers a named state value.

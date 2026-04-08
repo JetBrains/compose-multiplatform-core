@@ -230,6 +230,14 @@ public class FloatToStringTest {
 
     }
 
+    @Test
+    public void decimalPoint() {
+        assertEquals("2",
+                StringUtils.floatToString(2, 1, 0,
+                        PAD_NONE, PAD_NONE, SEPARATOR_COMMA_PERIOD,
+                        GROUPING_NONE, ROUNDING));
+
+    }
 
     @Test
     public void largerFractional() {

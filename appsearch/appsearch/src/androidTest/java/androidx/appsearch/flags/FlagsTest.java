@@ -244,12 +244,6 @@ public class FlagsTest {
     }
 
     @Test
-    public void testFlagValue_enableCompressionMemLevelOne() {
-        assertThat(Flags.FLAG_ENABLE_COMPRESSION_MEM_LEVEL_ONE)
-                .isEqualTo("com.android.appsearch.flags.enable_compression_mem_level_one");
-    }
-
-    @Test
     public void testFlagValue_enableResultAborted() {
         assertThat(Flags.FLAG_ENABLE_RESULT_ABORTED)
                 .isEqualTo("com.android.appsearch.flags.enable_result_aborted");

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.arcore.testapp.common
 
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.xr.arcore.AugmentedObject
 import androidx.xr.arcore.Plane
+import androidx.xr.arcore.PlaneLabel
 import androidx.xr.arcore.Trackable
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.arcore.testapp.ui.theme.PurpleGrey80
@@ -127,12 +129,13 @@ private fun AugmentedObjectCategory.getDescription(): String =
         else -> "Unknown"
     }
 
-private fun convertPlaneLabelToColor(label: Plane.Label): Color =
+@Suppress("DEPRECATION")
+private fun convertPlaneLabelToColor(label: PlaneLabel): Color =
     when (label) {
-        Plane.Label.WALL -> Color.Green
-        Plane.Label.FLOOR -> Color.Blue
-        Plane.Label.CEILING -> Color.Yellow
-        Plane.Label.TABLE -> Color.Magenta
+        PlaneLabel.WALL -> Color.Green
+        PlaneLabel.FLOOR -> Color.Blue
+        PlaneLabel.CEILING -> Color.Yellow
+        PlaneLabel.TABLE -> Color.Magenta
         else -> Color.Red
     }
 

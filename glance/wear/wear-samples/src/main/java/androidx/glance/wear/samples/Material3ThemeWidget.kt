@@ -35,14 +35,23 @@ import androidx.glance.wear.GlanceWearWidgetService
 import androidx.glance.wear.WearWidgetBrush
 import androidx.glance.wear.WearWidgetData
 import androidx.glance.wear.WearWidgetDocument
+import androidx.glance.wear.color
 import androidx.glance.wear.core.WearWidgetParams
+import androidx.wear.compose.remote.material3.RemoteColorScheme
 import androidx.wear.compose.remote.material3.RemoteMaterialTheme
 
 private class Material3ThemeWidget : GlanceWearWidget() {
     override suspend fun provideWidgetData(
         context: Context,
         params: WearWidgetParams,
-    ): WearWidgetData = WearWidgetDocument(background = WearWidgetBrush) { Material3ThemeContent() }
+    ): WearWidgetData {
+        val colorScheme = RemoteColorScheme()
+        return WearWidgetDocument(
+            background = WearWidgetBrush.color(colorScheme.surfaceContainerLow)
+        ) {
+            RemoteMaterialTheme(colorScheme = colorScheme) { Material3ThemeContent() }
+        }
+    }
 }
 
 @RemoteComposable

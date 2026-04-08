@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -586,6 +586,16 @@ class SpatialSceneRuntimeTest {
 
         assertThat(anchorEntity).isNotNull()
         assertThat(anchorEntity.state).isEqualTo(AnchorEntity.State.UNANCHORED)
+    }
+
+    @Test
+    fun createSubspaceNodeEntityWithNodeHolder_returnSubspaceNodeEntity() {
+        val nodeHolder: NodeHolder<Node> = NodeHolder(xrExtensions.createNode(), Node::class.java)
+        val dimensions = Dimensions(1f, 2f, 3f)
+        val subspaceNodeEntity = testRuntime.createSubspaceNodeEntity(nodeHolder, dimensions)
+
+        assertThat(subspaceNodeEntity).isNotNull()
+        assertThat(subspaceNodeEntity.size).isEqualTo(dimensions)
     }
 
     @Test
@@ -1239,89 +1249,12 @@ class SpatialSceneRuntimeTest {
     }
 
     @Test
-    fun getPoseInActivitySpace_withParentChainTranslation_returnsOffsetPositionFromRoot() {
-        // Create a simple pose with only a small translation on all axes
-        val pose = Pose(Vector3(1f, 2f, 3f), Quaternion.Identity)
-
-        // Set the activity space as the root of this entity hierarchy.
-        val parentEntity =
-            testRuntime.createEntity(pose, "parent", testRuntime.activitySpace) as AndroidXrEntity
-        val childEntity1 = testRuntime.createEntity(pose, "child1", parentEntity) as AndroidXrEntity
-        val childEntity2 = testRuntime.createEntity(pose, "child2", childEntity1) as AndroidXrEntity
-
-        assertVector3(parentEntity.poseInActivitySpace.translation, Vector3(1f, 2f, 3f))
-        assertVector3(childEntity1.poseInActivitySpace.translation, Vector3(2f, 4f, 6f))
-        assertVector3(childEntity2.poseInActivitySpace.translation, Vector3(3f, 6f, 9f))
-    }
-
-    @Test
-    fun getPoseInActivitySpace_withParentChainRotation_returnsOffsetRotationFromRoot() {
-        // Create a pose with a translation and one with 90-degree rotation around the y-axis.
-        val parentTranslation = Vector3(1f, 2f, 3f)
-        val translatedPose = Pose(parentTranslation, Quaternion.Identity)
-        val quaternion = fromAxisAngle(Vector3(0f, 1f, 0f), 90f)
-        val rotatedPose = Pose(Vector3(0f, 0f, 0f), quaternion)
-
-        // The parent has a translation and no rotation.
-        val parentEntity =
-            testRuntime.createEntity(translatedPose, "parent", testRuntime.activitySpace)
-                as AndroidXrEntity
-
-        // Each child adds a rotation, but no translation.
-        val childEntity1 =
-            testRuntime.createEntity(rotatedPose, "child1", parentEntity) as AndroidXrEntity
-        val childEntity2 =
-            testRuntime.createEntity(rotatedPose, "child2", childEntity1) as AndroidXrEntity
-
-        // There should be no translation offset from the root, only changes in rotation.
-        assertPose(parentEntity.poseInActivitySpace, translatedPose)
-        assertPose(childEntity1.poseInActivitySpace, Pose(parentTranslation, quaternion))
-        assertPose(
-            childEntity2.poseInActivitySpace,
-            Pose(parentTranslation, fromAxisAngle(Vector3(0f, 1f, 0f), 180f)),
-        )
-    }
-
-    @Test
-    fun getPoseInActivitySpace_withParentChainPoseOffsets_returnsOffsetPoseFromRoot() {
-        // Create a pose with a 1D translation and a 90-degree rotation around the z axis.
-        val parentTranslation = Vector3(1f, 0f, 0f)
-        val quaternion = fromAxisAngle(Vector3(0f, 0f, 1f), 90f)
-        val pose = Pose(parentTranslation, quaternion)
-
-        // Each entity adds a translation and a rotation.
-        val parentEntity =
-            testRuntime.createEntity(pose, "parent", testRuntime.activitySpace) as AndroidXrEntity
-        val childEntity1 = testRuntime.createEntity(pose, "child1", parentEntity) as AndroidXrEntity
-        val childEntity2 = testRuntime.createEntity(pose, "child2", childEntity1) as AndroidXrEntity
-
-        // Local pose of ActivitySpace's direct child must be the same as child's ActivitySpace
-        // pose.
-        assertPose(parentEntity.poseInActivitySpace, parentEntity.getPose())
-
-        // Each child should be positioned one unit away at 90 degrees from its parent's position.
-        // Since our coordinate system is right-handed, a +ve rotation around the z axis is a
-        // counter-clockwise rotation of the XY plane.
-        // First child should be 1 unit in the ActivitySpace's positive y direction from its parent
-        assertPose(
-            childEntity1.poseInActivitySpace,
-            Pose(Vector3(1f, 1f, 0f), fromAxisAngle(Vector3(0f, 0f, 1f), 180f)),
-        )
-        // Second child should be 1 unit in the ActivitySpace's negative x direction from its parent
-        assertPose(
-            childEntity2.poseInActivitySpace,
-            Pose(Vector3(0f, 1f, 0f), fromAxisAngle(Vector3(0f, 0f, 1f), 270f)),
-        )
-    }
-
-    @Test
     @Throws(Exception::class)
-    fun getPoseInActivitySpace_withScaledActivitySpaceParent_returnsPose() {
+    fun getActivitySpacePose_withScaledActivitySpaceParent_returnsPose() {
         val pose = Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f))
 
         // Set the parent as the activity space so these entities' activitySpacePose should match
-        // their
-        // local pose relative to their parent regardless of the activity space
+        // their local pose relative to their parent regardless of the activity space
         // scale/position/rotation.
         val panelEntity = createPanelEntity(pose) as PanelEntityImpl
         val gltfEntity = createGltfEntity(pose) as GltfEntityImpl
@@ -1334,54 +1267,9 @@ class SpatialSceneRuntimeTest {
         gltfEntity.parent = activitySpace
         entity.parent = activitySpace
 
-        assertPose(panelEntity.poseInActivitySpace, pose)
-        assertPose(gltfEntity.poseInActivitySpace, pose)
-        assertPose(entity.poseInActivitySpace, pose)
-    }
-
-    @Test
-    @Throws(Exception::class)
-    fun getPoseInActivitySpace_withScale_returnsPose() {
-        val localPose = Pose(Vector3(1f, 2f, 1f), Quaternion.Identity)
-
-        // Create a hierarchy of entities each translated from their parent by (1,2,1) in parent
-        // space.
-        val child1 = createGltfEntity(localPose) as GltfEntityImpl
-        val child2 = createGltfEntity(localPose) as GltfEntityImpl
-        val child3 = createGltfEntity(localPose) as GltfEntityImpl
-        val activitySpace: ActivitySpace = testRuntime.activitySpace
-        (activitySpace as ActivitySpaceImpl).setOpenXrReferenceSpaceTransform(
-            fromTrs(Vector3(5f, 6f, 7f), fromEulerAngles(22f, 33f, 44f), Vector3(2f, 2f, 2f))
-        )
-
-        // Set a non-unit local scale to each child.
-        child1.parent = activitySpace
-        child1.setScale(Vector3(2f, 2f, 2f))
-
-        child2.parent = child1
-        child2.setScale(Vector3(3f, 2f, 3f))
-
-        child3.parent = child2
-        child3.setScale(Vector3(1f, 1f, 2f))
-
-        // The position (in ActivitySpace) should be:
-        // child's local position * parent's scale in AS + parent's position since there's no
-        // rotation.
-
-        // Assuming c1 = child1, c2 = child2, c3 = child3, AS = activitySpace.
-        // c1.posInAS = c1.localPos * AS.scaleInAS + AS.posInAS = (1,2,1) * (1,1,1) + (0,0,0) =
-        // (1,2,1)
-        assertPose(child1.poseInActivitySpace, Pose(Vector3(1f, 2f, 1f), Quaternion.Identity))
-
-        // c2.posInAS = c2.localPos * c1.scaleInAS + c1.posInAS = (1,2,1) * (2,2,2) + (1,2,1) =
-        // (3,6,3)
-        assertPose(child2.poseInActivitySpace, Pose(Vector3(3f, 6f, 3f), Quaternion.Identity))
-
-        // c2.scaleInA = c2.localScale * c1.scaleInAS * AS.scale = (3,2,3) * (2,2,2) * (1,1,1) =
-        // (6,4,6)
-        // c3.posInAS = c3.localPos * c2.scaleInAS + c2.posInAS = (1,2,1) * (6,4,6) + (3,6,3) =
-        // (9,14,9)
-        assertPose(child3.poseInActivitySpace, Pose(Vector3(9f, 14f, 9f), Quaternion.Identity))
+        assertPose(panelEntity.activitySpacePose, pose)
+        assertPose(gltfEntity.activitySpacePose, pose)
+        assertPose(entity.activitySpacePose, pose)
     }
 
     @Test
@@ -1472,7 +1360,7 @@ class SpatialSceneRuntimeTest {
 
     @Test
     @Throws(Exception::class)
-    fun getPoseInActivitySpace_withScale_returnsScaledPose() {
+    fun getActivitySpacePose_withScale_returnsScaledPose() {
         val localPose = Pose(Vector3(1f, 2f, 1f), Quaternion.Identity)
 
         // Create a hierarchy of entities each translated from their parent by (1,1,1) in parent
@@ -1493,11 +1381,23 @@ class SpatialSceneRuntimeTest {
         child3.parent = child2
         child3.setScale(Vector3(1f, 1f, 2f))
 
-        // See getPoseInActivitySpace_withScale_returnsScaledPose for more detailed comments.
-        // The position should be (parent's scale * child's position) + parent's position
-        // since there's no rotation.
+        // The position (in ActivitySpace) should be:
+        // child's local position * parent's scale in AS + parent's position since there's no
+        // rotation.
+
+        // Assuming c1 = child1, c2 = child2, c3 = child3, AS = activitySpace.
+        // c1.posInAS = c1.localPos * AS.scaleInAS + AS.posInAS = (1,2,1) * (1,1,1) + (0,0,0) =
+        // (1,2,1)
         assertPose(child1.activitySpacePose, Pose(Vector3(1f, 2f, 1f), Quaternion.Identity))
+
+        // c2.posInAS = c2.localPos * c1.scaleInAS + c1.posInAS = (1,2,1) * (2,2,2) + (1,2,1) =
+        // (3,6,3)
         assertPose(child2.activitySpacePose, Pose(Vector3(3f, 6f, 3f), Quaternion.Identity))
+
+        // c2.scaleInA = c2.localScale * c1.scaleInAS * AS.scale = (3,2,3) * (2,2,2) * (1,1,1) =
+        // (6,4,6)
+        // c3.posInAS = c3.localPos * c2.scaleInAS + c2.posInAS = (1,2,1) * (6,4,6) + (3,6,3) =
+        // (9,14,9)
         assertPose(child3.activitySpacePose, Pose(Vector3(9f, 14f, 9f), Quaternion.Identity))
     }
 

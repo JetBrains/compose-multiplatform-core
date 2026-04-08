@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
+// removed.
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.arcore.openxr
 
 import androidx.activity.ComponentActivity
@@ -24,12 +28,12 @@ import androidx.test.filters.SdkSuppress
 import androidx.xr.arcore.runtime.AnchorInvalidUuidException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.HandJointType
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.PlaneTrackingMode
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
@@ -65,8 +69,8 @@ class OpenXrPerceptionManagerTest {
 
     @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
-    lateinit var openXrManager: OpenXrManager
-    lateinit var underTest: OpenXrPerceptionManager
+    private lateinit var openXrManager: OpenXrManager
+    private lateinit var underTest: OpenXrPerceptionManager
 
     @Before
     fun setUp() {

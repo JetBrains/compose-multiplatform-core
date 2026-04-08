@@ -122,6 +122,7 @@ class SpatialUserActivity : AppCompatActivity() {
                 IntSize2d(640, 480),
                 "Spatial User Test Panel",
                 Pose(Vector3(0f, 0f, 0.5f)),
+                parent = session!!.scene.activitySpace,
             )
         spatialUserPanel.parent = session!!.scene.activitySpace
 
@@ -163,6 +164,9 @@ class SpatialUserActivity : AppCompatActivity() {
         }
     }
 
+    // TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
+    // removed.
+    @Suppress("DEPRECATION")
     private fun isEntityInView(entity: Entity, camera: RenderViewpoint): Boolean {
         val cameraScenePose =
             session!!.scene.perceptionSpace.getScenePoseFromPerceptionPose(camera.state.value.pose)

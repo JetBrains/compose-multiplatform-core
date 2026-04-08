@@ -26,6 +26,7 @@ import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
 import com.google.common.truth.Truth.assertThat
+import java.text.DecimalFormat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -106,7 +107,7 @@ class RemoteIntTest {
     @Test
     fun toRemoteString() {
         val sum = RemoteInt(100) + 20
-        val sumString = sum.toRemoteString(3)
+        val sumString = sum.toRemoteString(DecimalFormat("##0"))
         val sumStringId = sumString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -376,7 +377,7 @@ class RemoteIntTest {
                     .hasConstantValue
             )
             .isTrue()
-        assertThat(RemoteInt(10).toRemoteString(2).hasConstantValue).isTrue()
+        assertThat(RemoteInt(10).toRemoteString(DecimalFormat("#0")).hasConstantValue).isTrue()
         assertThat(RemoteFloat(10f).toRemoteInt().hasConstantValue).isTrue()
     }
 
@@ -387,7 +388,7 @@ class RemoteIntTest {
         assertThat(
                 RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
                     .toRemoteInt()
-                    .toRemoteString(2)
+                    .toRemoteString(DecimalFormat("#0"))
                     .hasConstantValue
             )
             .isFalse()

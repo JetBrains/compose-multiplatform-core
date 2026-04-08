@@ -17,10 +17,15 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
+import androidx.xr.scenecore.runtime.MaterialResource
 import androidx.xr.scenecore.runtime.MeshEntity
 import androidx.xr.scenecore.runtime.MeshFeature
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.MeshEntity] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public open class FakeMeshEntity(private val feature: MeshFeature? = null) :
-    FakeEntity(), MeshEntity
+    FakeEntity(), MeshEntity {
+    override fun setMaterial(material: MaterialResource, subsetIndex: Int) {
+        feature?.setMaterial(material, subsetIndex)
+    }
+}

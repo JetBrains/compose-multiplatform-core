@@ -19,6 +19,7 @@ import static androidx.compose.remote.core.documentation.DocumentedOperation.FLO
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -274,7 +275,11 @@ public class CollapsibleColumnLayout extends ColumnLayout {
             }
         }
         if (!mChildrenComponents.isEmpty() && size != null) {
-            size.setHeight(size.getHeight() + (mSpacedBy * (visibleChildren - 1)));
+            float spacedBy = mSpacedBy;
+            if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP) {
+                spacedBy *= context.getDensity();
+            }
+            size.setHeight(size.getHeight() + (spacedBy * (visibleChildren - 1)));
         }
 
         float childrenWidth = 0f;

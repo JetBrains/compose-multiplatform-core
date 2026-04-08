@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore
 
@@ -208,16 +209,17 @@ class XrResourcesManagerTest {
     }
 
     @Test
+    @Suppress("TYPEALIAS_EXPANSION_DEPRECATION", "DEPRECATION")
     fun update_geospatialUpdated() = doBlocking {
         val runtimeGeospatial = FakeRuntimeGeospatial()
         underTest.initiateGeospatial(runtimeGeospatial)
         underTest.update()
-        check(underTest.geospatial.state.value == Geospatial.State.NOT_RUNNING)
+        check(underTest.geospatial.state.value == GeospatialState.NOT_RUNNING)
         runtimeGeospatial.state = RuntimeGeospatial.State.RUNNING
 
         underTest.update()
 
-        assertThat(underTest.geospatial.state.value).isEqualTo(Geospatial.State.RUNNING)
+        assertThat(underTest.geospatial.state.value).isEqualTo(GeospatialState.RUNNING)
     }
 
     @Test

@@ -18,7 +18,6 @@ package androidx.xr.scenecore
 
 import android.app.Activity
 import android.content.Intent
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.internal.LifecycleManager
@@ -109,10 +108,11 @@ private constructor(
          *   [Scene]'s [ActivitySpace].
          * @return an ActivityPanelEntity instance.
          */
+        @JvmOverloads
         @JvmStatic
-        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
-        //  once the API proposal is approved.
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        // TODO: b/493469066 - Once internal clients explicitly set the parent parameter at all call
+        //  sites, change the default parent value to null in the entity factory and update the
+        //  release notes accordingly.
         public fun create(
             session: Session,
             pixelDimensions: IntSize2d,
@@ -130,35 +130,6 @@ private constructor(
                 session.context as Activity,
                 pose,
                 parent,
-            )
-
-        /**
-         * Public factory function for a spatial ActivityPanelEntity.
-         *
-         * @param session XR [Session] to create the ActivityPanelEntity.
-         * @param pixelDimensions Bounds for the panel surface in pixels.
-         * @param name Name of the panel.
-         * @param pose [Pose] of this entity relative to its parent, the default value is
-         *   [Pose.Identity].
-         * @return an ActivityPanelEntity instance.
-         */
-        @JvmOverloads
-        @JvmStatic
-        public fun create(
-            session: Session,
-            pixelDimensions: IntSize2d,
-            name: String,
-            pose: Pose = Pose.Identity,
-        ): ActivityPanelEntity =
-            ActivityPanelEntity.create(
-                session.perceptionRuntime.lifecycleManager,
-                session.sceneRuntime,
-                session.scene.perceptionSpace,
-                session.scene.entityRegistry,
-                pixelDimensions,
-                name,
-                session.context as Activity,
-                pose,
             )
     }
 }

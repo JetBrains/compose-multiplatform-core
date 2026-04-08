@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Pose
 import java.util.concurrent.Executor
@@ -38,7 +39,7 @@ import java.util.function.Consumer
  *
  * This API is intended for internal use only and is not a public API.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface SceneRuntime : JxrRuntime {
     /** Return the Spatial Capabilities set that are currently supported by the platform. */
     public val spatialCapabilities: SpatialCapabilities
@@ -165,6 +166,17 @@ public interface SceneRuntime : JxrRuntime {
 
     /** A function to create a XR Runtime Entity. */
     public fun createLoggingEntity(pose: Pose): LoggingEntity
+
+    /**
+     * A factory function to create a SubspaceNodeEntity.
+     *
+     * @param nodeHolder Hold the Node to create the SubspaceNodeEntity from.
+     * @param size The (width, depth, height) of the [SubspaceNodeEntity].
+     */
+    public fun createSubspaceNodeEntity(
+        nodeHolder: NodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity
 
     /**
      * Adds the given {@link Consumer} as a listener to be invoked when this Session's current

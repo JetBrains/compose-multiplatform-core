@@ -30,7 +30,10 @@ import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.PreviewSpatialApi
+import androidx.xr.runtime.XrDevice
 import androidx.xr.runtime.XrLog
+import androidx.xr.runtime.getNativeInstanceData
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.manifest.HAND_TRACKING
@@ -52,8 +55,7 @@ import kotlinx.coroutines.delay
  * @property config the current [Config] of the session
  */
 @Suppress("NotCloseable")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrManager
+internal class OpenXrManager
 internal constructor(
     private val context: Context,
     private val perceptionManager: OpenXrPerceptionManager,
@@ -73,17 +75,26 @@ internal constructor(
         private set
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override var instancePointer: Long = 0L
+    public var instancePointer: Long = 0L
         private set
 
+    internal var instanceProcAddr: Long = 0L
+        private set
+
+    @OptIn(
+        androidx.xr.runtime.UnstableNativeResourceApi::class,
+        androidx.xr.runtime.ExperimentalXrDeviceLifecycleApi::class,
+    )
     override fun create() {
         nativePointer = nativeGetPointer()
+        val nativeInstanceData = XrDevice.getCurrentDevice(context).getNativeInstanceData(context)
+        instancePointer = nativeInstanceData.instancePointer
+        instanceProcAddr = nativeInstanceData.functionTablePointer
         // Only initialize the OpenXrManager and bring up resources.
-        check(nativeInit(context, startPollingThread = false))
+        check(nativeInit(context, startPollingThread = false, instancePointer, instanceProcAddr))
         contextList.add(context)
         setAuthentication(context)
         sessionPointer = nativeGetXrSessionHandle()
-        instancePointer = nativeGetXrInstanceHandle()
     }
 
     override var config: Config =
@@ -96,7 +107,14 @@ internal constructor(
         )
         private set
 
+    @OptIn(PreviewSpatialApi::class)
     override fun configure(config: Config) {
+        if (config.deviceTracking == DeviceTrackingMode.INERTIAL_LAST_KNOWN) {
+            throw UnsupportedOperationException(
+                "OpenXR does not support native 3DoF tracking (INERTIAL_LAST_KNOWN)."
+            )
+        }
+
         if (config.depthEstimation == DepthEstimationMode.SMOOTH_AND_RAW) {
             throw UnsupportedOperationException(
                 "Failed to configure session, runtime does not support raw and smooth depth simultaneously."
@@ -225,7 +243,7 @@ internal constructor(
         // lifecycle. Ideally make this two different functions.
         // The initialization will be a no-op but it will start the polling loop for the resumed
         // lifecycle.
-        check(nativeInit(context, startPollingThread = true))
+        check(nativeInit(context, startPollingThread = true, instancePointer, instanceProcAddr))
     }
 
     override suspend fun update(): ComparableTimeMark {
@@ -313,7 +331,12 @@ internal constructor(
 
     private external fun nativeGetXrInstanceHandle(): Long
 
-    private external fun nativeInit(context: Context, startPollingThread: Boolean): Boolean
+    private external fun nativeInit(
+        context: Context,
+        startPollingThread: Boolean,
+        instancePointer: Long,
+        instanceProcAddr: Long,
+    ): Boolean
 
     private external fun nativeDeInit(): Boolean
 

@@ -66,7 +66,6 @@ import androidx.camera.core.ImageCapture.ScreenFlash;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.InitializationException;
 import androidx.camera.core.Logger;
-import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.MirrorMode;
 import androidx.camera.core.Preview;
@@ -117,6 +116,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -178,10 +178,6 @@ public abstract class CameraController {
     private static final String VIDEO_CAPTURE_DISABLED = "VideoCapture disabled.";
     private static final String VIDEO_RECORDING_UNFINISHED = "Recording video. Only one recording"
             + " can be active at a time.";
-
-    // Auto focus is 1/6 of the area.
-    private static final float AF_SIZE = 1.0f / 6.0f;
-    private static final float AE_SIZE = AF_SIZE * 1.5f;
 
     /**
      * {@link ImageAnalysis.Analyzer} option for returning {@link PreviewView} coordinates.
@@ -342,13 +338,6 @@ public abstract class CameraController {
     @SuppressWarnings("WeakerAccess")
     Preview.@Nullable SurfaceProvider mSurfaceProvider;
 
-    private final RotationProvider mRotationProvider;
-
-    @VisibleForTesting
-    final RotationProvider.@NonNull Listener mDeviceRotationListener;
-
-    private int mLastKnownRotation = ImageOutputConfig.INVALID_ROTATION;
-
     private boolean mPinchToZoomEnabled = true;
     private boolean mTapToFocusEnabled = true;
     private FocusMeteringResultCallback mFocusMeteringResultCallback;
@@ -378,6 +367,8 @@ public abstract class CameraController {
     private long mTapToFocusAutoCancelDurationNanos = TimeUnit.MILLISECONDS.toNanos(
             FocusMeteringAction.DEFAULT_AUTO_CANCEL_DURATION_MILLIS);
 
+    private boolean mAutoRotationEnabled = true;
+
     private @Nullable SessionConfig mSessionConfig = null;
     private @Nullable SessionConfig mBoundSessionConfig = null;
 
@@ -405,17 +396,6 @@ public abstract class CameraController {
                     startCameraAndTrackStates();
                     return null;
                 }, mainThreadExecutor());
-
-        // Listen for device rotation changes and set target rotation for non-preview use cases.
-        // The output of non-preview use cases need to be corrected in fixed landscape/portrait
-        // mode.
-        mRotationProvider = new RotationProvider(mAppContext);
-        mDeviceRotationListener = rotation -> {
-            mLastKnownRotation = rotation;
-            mImageAnalysis.setTargetRotation(rotation);
-            mImageCapture.setTargetRotation(rotation);
-            mVideoCapture.setTargetRotation(rotation);
-        };
     }
 
     /**
@@ -461,6 +441,48 @@ public abstract class CameraController {
 
     private boolean isCameraAttached() {
         return mCamera != null;
+    }
+
+    /**
+     * Sets whether to enable auto-rotation.
+     *
+     * <p>When enabled, {@link CameraController} will monitor the device rotation changes and set
+     * the target rotation for non-preview use cases (e.g. image capture, video capture, and image
+     * analysis). This ensures the output images/videos are oriented correctly relative to the
+     * device.
+     *
+     * <p>Auto-rotation is enabled by default.
+     *
+     * <p>If a {@link SessionConfig} is set via
+     * {@link #setSessionConfig(SessionConfig, CameraSelector)}, the auto-rotation setting in the
+     * provided {@link SessionConfig} will be overridden by the state of this controller.
+     *
+     * <p>Changing the value will reconfigure the camera which will cause additional latency. To
+     * avoid this, set the value before controller is bound to the lifecycle.
+     *
+     * @param enabled {@code true} to enable auto-rotation, {@code false} to disable.
+     */
+    @MainThread
+    public void setAutoRotationEnabled(boolean enabled) {
+        checkMainThread();
+        if (mAutoRotationEnabled == enabled) {
+            return;
+        }
+        mAutoRotationEnabled = enabled;
+        unbindSessionConfig();
+        startCameraAndTrackStates();
+    }
+
+    /**
+     * Returns whether auto-rotation is enabled.
+     *
+     * @return {@code true} if auto-rotation is enabled, {@code false} otherwise.
+     * @see #setAutoRotationEnabled(boolean)
+     */
+    @MainThread
+    public boolean isAutoRotationEnabled() {
+        checkMainThread();
+        return mAutoRotationEnabled;
     }
 
     /**
@@ -589,6 +611,10 @@ public abstract class CameraController {
      * <p>{@link HighSpeedVideoSessionConfig} is not supported because it is not compatible with
      * {@link ViewPort}, which is always enabled by CameraController.
      *
+     * <p>CameraController will override the autoRotationEnabled setting in the provided
+     * SessionConfig to match its current state. See {@link #setAutoRotationEnabled(boolean)} for
+     * more information.
+     *
      * @param sessionConfig  The {@link SessionConfig} to be used. This can be a standard
      *                       {@link SessionConfig} or an
      *                       {@link androidx.camera.extensions.ExtensionSessionConfig}.
@@ -621,11 +647,7 @@ public abstract class CameraController {
             stopRecording();
         }
 
-        if (mSessionConfig != null) {
-            unbindSessionConfig();
-        } else {
-            unbindAllUseCases();
-        }
+        unbindSessionConfig();
 
         if (isCameraInitialized()) {
             if (!isConfigurationSupported(cameraSelector, sessionConfig)) {
@@ -786,7 +808,6 @@ public abstract class CameraController {
                 mSessionConfig == null && (mViewPort == null || getViewportAspectRatioStrategy(
                         viewPort) != getViewportAspectRatioStrategy(mViewPort));
         mViewPort = viewPort;
-        startListeningToRotationEvents();
         if (shouldUnbindAndRecreate) {
             unbindAllAndRecreate();
         }
@@ -799,25 +820,11 @@ public abstract class CameraController {
     @MainThread
     void clearPreviewSurface() {
         checkMainThread();
-        if (mCameraProvider != null) {
-            // Preview is required. Unbind everything if Preview is down.
-            mCameraProvider.unbind(mPreview, mImageCapture, mImageAnalysis, mVideoCapture);
-        }
+        unbindSessionConfig();
         mPreview.setSurfaceProvider(null);
         mCamera = null;
         mSurfaceProvider = null;
         mViewPort = null;
-        stopListeningToRotationEvents();
-    }
-
-    private void startListeningToRotationEvents() {
-        if (!mRotationProvider.addListener(mainThreadExecutor(), mDeviceRotationListener)) {
-            Logger.w(TAG, "The device cannot detect rotation changes.");
-        }
-    }
-
-    private void stopListeningToRotationEvents() {
-        mRotationProvider.removeListener(mDeviceRotationListener);
     }
 
     /**
@@ -848,7 +855,7 @@ public abstract class CameraController {
             return;
         }
         mPreviewTargetSize = targetSize;
-        recreatePreview(/* unbindAllUseCases= */ true);
+        recreatePreview(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -889,7 +896,7 @@ public abstract class CameraController {
             return;
         }
         mPreviewResolutionSelector = resolutionSelector;
-        recreatePreview(/* unbindAllUseCases= */ true);
+        recreatePreview(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -936,7 +943,7 @@ public abstract class CameraController {
         checkMainThread();
         throwExceptionIfSessionConfigExists("setPreviewDynamicRange");
         mPreviewDynamicRange = dynamicRange;
-        recreatePreview(/* unbindAllUseCases= */ true);
+        recreatePreview(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -956,9 +963,9 @@ public abstract class CameraController {
      * Recreates {@link Preview} with the latest parameters.
      */
     @MainThread
-    private void recreatePreview(boolean unbindAllUseCases) {
-        if (unbindAllUseCases) {
-            unbindAllUseCases();
+    private void recreatePreview(boolean shouldUnbind) {
+        if (shouldUnbind) {
+            unbindSessionConfig();
         }
 
         mPreview = createPreview();
@@ -1216,7 +1223,7 @@ public abstract class CameraController {
         if (mImageCapture.getCaptureMode() == captureMode) {
             return;
         }
-        recreateImageCapture(captureMode, /* unbindAllUseCases= */ true);
+        recreateImageCapture(captureMode, /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1258,7 +1265,7 @@ public abstract class CameraController {
             return;
         }
         mImageCaptureTargetSize = targetSize;
-        recreateImageCapture(getImageCaptureMode(), /* unbindAllUseCases= */ true);
+        recreateImageCapture(getImageCaptureMode(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1300,7 +1307,7 @@ public abstract class CameraController {
             return;
         }
         mImageCaptureResolutionSelector = resolutionSelector;
-        recreateImageCapture(getImageCaptureMode(), /* unbindAllUseCases= */ true);
+        recreateImageCapture(getImageCaptureMode(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1344,7 +1351,7 @@ public abstract class CameraController {
             return;
         }
         mImageCaptureIoExecutor = executor;
-        recreateImageCapture(getImageCaptureMode(), /* unbindAllUseCases= */ true);
+        recreateImageCapture(getImageCaptureMode(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1364,9 +1371,9 @@ public abstract class CameraController {
      * Recreates {@link ImageCapture} with the latest parameters.
      */
     @MainThread
-    private void recreateImageCapture(Integer imageCaptureMode, boolean unbindAllUseCases) {
-        if (unbindAllUseCases) {
-            unbindAllUseCases();
+    private void recreateImageCapture(Integer imageCaptureMode, boolean shouldUnbind) {
+        if (shouldUnbind) {
+            unbindSessionConfig();
         }
 
         int flashMode = mImageCapture.getFlashMode();
@@ -1383,9 +1390,6 @@ public abstract class CameraController {
         configureResolution(builder, mImageCaptureResolutionSelector, mImageCaptureTargetSize);
         if (mImageCaptureIoExecutor != null) {
             builder.setIoExecutor(mImageCaptureIoExecutor);
-        }
-        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
-            builder.setTargetRotation(mLastKnownRotation);
         }
 
         return builder.build();
@@ -1483,7 +1487,7 @@ public abstract class CameraController {
             // Rebind ImageAnalysis to reconfigure target resolution.
             recreateImageAnalysis(mImageAnalysis.getBackpressureStrategy(),
                     mImageAnalysis.getImageQueueDepth(), mImageAnalysis.getOutputImageFormat(),
-                    /* unbindAllUseCases= */ true);
+                    /* shouldUnbind= */ true);
             startCameraAndTrackStates();
         }
     }
@@ -1529,7 +1533,7 @@ public abstract class CameraController {
         }
 
         recreateImageAnalysis(strategy, mImageAnalysis.getImageQueueDepth(),
-                mImageAnalysis.getOutputImageFormat(), /* unbindAllUseCases= */ true);
+                mImageAnalysis.getOutputImageFormat(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1556,7 +1560,7 @@ public abstract class CameraController {
             return;
         }
         recreateImageAnalysis(mImageAnalysis.getBackpressureStrategy(), depth,
-                mImageAnalysis.getOutputImageFormat(), /* unbindAllUseCases= */ true);
+                mImageAnalysis.getOutputImageFormat(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1604,7 +1608,7 @@ public abstract class CameraController {
                 mImageAnalysis.getBackpressureStrategy(),
                 mImageAnalysis.getImageQueueDepth(),
                 mImageAnalysis.getOutputImageFormat(),
-                /* unbindAllUseCases= */ true);
+                /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1650,7 +1654,7 @@ public abstract class CameraController {
                 mImageAnalysis.getBackpressureStrategy(),
                 mImageAnalysis.getImageQueueDepth(),
                 mImageAnalysis.getOutputImageFormat(),
-                /* unbindAllUseCases= */ true);
+                /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1695,7 +1699,7 @@ public abstract class CameraController {
         mAnalysisBackgroundExecutor = executor;
         recreateImageAnalysis(mImageAnalysis.getBackpressureStrategy(),
                 mImageAnalysis.getImageQueueDepth(),
-                mImageAnalysis.getOutputImageFormat(), /* unbindAllUseCases= */ true);
+                mImageAnalysis.getOutputImageFormat(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1751,7 +1755,7 @@ public abstract class CameraController {
         }
         recreateImageAnalysis(mImageAnalysis.getBackpressureStrategy(),
                 mImageAnalysis.getImageQueueDepth(),
-                imageAnalysisOutputImageFormat, /* unbindAllUseCases= */ true);
+                imageAnalysisOutputImageFormat, /* shouldUnbind= */ true);
     }
 
     /**
@@ -1778,11 +1782,11 @@ public abstract class CameraController {
      */
     @MainThread
     private void recreateImageAnalysis(Integer strategy, Integer imageQueueDepth,
-            Integer outputFormat, boolean unbindAllUseCases) {
+            Integer outputFormat, boolean shouldUnbind) {
         checkMainThread();
 
-        if (unbindAllUseCases) {
-            unbindAllUseCases();
+        if (shouldUnbind) {
+            unbindSessionConfig();
         }
 
         mImageAnalysis = createImageAnalysis(strategy, imageQueueDepth, outputFormat);
@@ -1807,9 +1811,6 @@ public abstract class CameraController {
         configureResolution(builder, mImageAnalysisResolutionSelector, mImageAnalysisTargetSize);
         if (mAnalysisBackgroundExecutor != null) {
             builder.setBackgroundExecutor(mAnalysisBackgroundExecutor);
-        }
-        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
-            builder.setTargetRotation(mLastKnownRotation);
         }
 
         return builder.build();
@@ -2113,7 +2114,7 @@ public abstract class CameraController {
         checkMainThread();
         throwExceptionIfSessionConfigExists("setVideoCaptureQualitySelector");
         mVideoCaptureQualitySelector = qualitySelector;
-        recreateVideoCapture(/* unbindAllUseCases= */ true);
+        recreateVideoCapture(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -2150,7 +2151,7 @@ public abstract class CameraController {
         checkMainThread();
         throwExceptionIfSessionConfigExists("setVideoCaptureMirrorMode");
         mVideoCaptureMirrorMode = mirrorMode;
-        recreateVideoCapture(/* unbindAllUseCases= */ true);
+        recreateVideoCapture(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -2195,7 +2196,7 @@ public abstract class CameraController {
         checkMainThread();
         throwExceptionIfSessionConfigExists("setVideoCaptureDynamicRange");
         mVideoCaptureDynamicRange = dynamicRange;
-        recreateVideoCapture(/* unbindAllUseCases= */ true);
+        recreateVideoCapture(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -2234,7 +2235,7 @@ public abstract class CameraController {
         checkMainThread();
         throwExceptionIfSessionConfigExists("setVideoCaptureTargetFrameRate");
         mVideoCaptureTargetFrameRate = targetFrameRate;
-        recreateVideoCapture(/* unbindAllUseCases= */ true);
+        recreateVideoCapture(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -2255,10 +2256,11 @@ public abstract class CameraController {
      * Recreates VideoCapture with the latest parameters.
      */
     @MainThread
-    private void recreateVideoCapture(boolean unbindAllUseCases) {
-        if (unbindAllUseCases) {
-            unbindAllUseCases();
+    private void recreateVideoCapture(boolean shouldUnbind) {
+        if (shouldUnbind) {
+            unbindSessionConfig();
         }
+
         mVideoCapture = createVideoCapture();
     }
 
@@ -2279,9 +2281,6 @@ public abstract class CameraController {
                 .setTargetFrameRate(mVideoCaptureTargetFrameRate)
                 .setMirrorMode(mVideoCaptureMirrorMode)
                 .setDynamicRange(mVideoCaptureDynamicRange);
-        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
-            builder.setTargetRotation(mLastKnownRotation);
-        }
         return builder.build();
     }
 
@@ -2368,17 +2367,6 @@ public abstract class CameraController {
     }
 
     @MainThread
-    private void unbindAllUseCases() {
-        if (!isCameraInitialized()) {
-            return;
-        }
-
-        // Invokes the unbind() method to unbind all use cases created by the CameraController.
-        // This can avoid to unbind the UseCases bound with the other lifecycle owner unexpectedly.
-        mCameraProvider.unbind(mPreview, mImageCapture, mImageAnalysis, mVideoCapture);
-    }
-
-    @MainThread
     private void unbindSessionConfig() {
         if (!isCameraInitialized() || mBoundSessionConfig == null) {
             return;
@@ -2387,6 +2375,7 @@ public abstract class CameraController {
         // Invokes the unbind() method to unbind all use cases created by the CameraController.
         // This can avoid to unbind the UseCases bound with the other lifecycle owner unexpectedly.
         mCameraProvider.unbind(mBoundSessionConfig);
+        mBoundSessionConfig = null;
     }
 
     /**
@@ -2394,13 +2383,13 @@ public abstract class CameraController {
      */
     @MainThread
     private void unbindAllAndRecreate() {
-        unbindAllUseCases();
-        recreatePreview(/* unbindAllUseCases= */ false);
-        recreateImageCapture(getImageCaptureMode(), /* unbindAllUseCases= */ false);
+        unbindSessionConfig();
+        recreatePreview(/* shouldUnbind= */ false);
+        recreateImageCapture(getImageCaptureMode(), /* shouldUnbind= */ false);
         recreateImageAnalysis(mImageAnalysis.getBackpressureStrategy(),
                 mImageAnalysis.getImageQueueDepth(),
-                mImageAnalysis.getOutputImageFormat(), /* unbindAllUseCases= */ false);
-        recreateVideoCapture(/* unbindAllUseCases= */ false);
+                mImageAnalysis.getOutputImageFormat(), /* shouldUnbind= */ false);
+        recreateVideoCapture(/* shouldUnbind= */ false);
     }
 
     // -----------------
@@ -2441,15 +2430,7 @@ public abstract class CameraController {
         CameraSelector oldCameraSelector = mCameraSelector;
         mCameraSelector = cameraSelector;
 
-        if (mCameraProvider == null) {
-            return;
-        }
-
-        if (mSessionConfig != null) {
-            mCameraProvider.unbind(mSessionConfig);
-        } else {
-            mCameraProvider.unbind(mPreview, mImageCapture, mImageAnalysis, mVideoCapture);
-        }
+        unbindSessionConfig();
         startCameraAndTrackStates(() -> mCameraSelector = oldCameraSelector);
     }
 
@@ -2463,17 +2444,11 @@ public abstract class CameraController {
     }
 
     private boolean isConfigurationSupported(@NonNull CameraSelector cameraSelector,
-            @Nullable SessionConfig sessionConfig) {
+            @NonNull SessionConfig sessionConfig) {
         Preconditions.checkState(isCameraInitialized(), CAMERA_NOT_INITIALIZED);
         CameraInfo cameraInfo = mCameraProvider.getCameraInfo(cameraSelector);
 
-        if (sessionConfig != null) {
-            return cameraInfo.isSessionConfigSupported(sessionConfig);
-        } else {
-            UseCaseGroup useCaseGroup = createUseCaseGroup(/* checkPreviewViewAttached= */ false);
-            return cameraInfo.isSessionConfigSupported(
-                    new SessionConfig.Builder(useCaseGroup.getUseCases()).build());
-        }
+        return cameraInfo.isSessionConfigSupported(sessionConfig);
     }
 
     /**
@@ -2607,8 +2582,9 @@ public abstract class CameraController {
         }
 
         PointF tapPoint = new PointF(x, y);
-        FocusMeteringAction focusMeteringAction = createFocusMeteringAction(meteringPointFactory,
-                tapPoint);
+        FocusMeteringAction focusMeteringAction = FocusMeteringAction.create(
+                meteringPointFactory, tapPoint,
+                TimeUnit.NANOSECONDS.toMillis(mTapToFocusAutoCancelDurationNanos));
 
         Logger.d(TAG, "Tap to focus started: " + x + ", " + y);
 
@@ -2633,22 +2609,6 @@ public abstract class CameraController {
             new Handler(Looper.getMainLooper()).postDelayed(
                     focusMeteringResultCallback::resetStateAndClose, cancelDuration);
         }
-    }
-
-    private FocusMeteringAction createFocusMeteringAction(MeteringPointFactory meteringPointFactory,
-            PointF tapPoint) {
-        MeteringPoint afPoint = meteringPointFactory.createPoint(tapPoint.x, tapPoint.y, AF_SIZE);
-        MeteringPoint aePoint = meteringPointFactory.createPoint(tapPoint.x, tapPoint.y, AE_SIZE);
-        FocusMeteringAction.Builder focusMeteringActionBuilder = new FocusMeteringAction
-                .Builder(afPoint, FocusMeteringAction.FLAG_AF)
-                .addPoint(aePoint, FocusMeteringAction.FLAG_AE);
-        if (mTapToFocusAutoCancelDurationNanos > 0L) {
-            focusMeteringActionBuilder = focusMeteringActionBuilder.setAutoCancelDuration(
-                    mTapToFocusAutoCancelDurationNanos, TimeUnit.NANOSECONDS);
-        } else {
-            focusMeteringActionBuilder = focusMeteringActionBuilder.disableAutoCancel();
-        }
-        return focusMeteringActionBuilder.build();
     }
 
     /**
@@ -3029,7 +2989,7 @@ public abstract class CameraController {
         }
         if (mCameraProvider != null) {
             // Unbind to make sure the pipelines will be recreated.
-            unbindAllUseCases();
+            unbindSessionConfig();
         }
         validateEffects(effects);
         mEffects.clear();
@@ -3070,7 +3030,7 @@ public abstract class CameraController {
         throwExceptionIfSessionConfigExists("clearEffects");
         if (mCameraProvider != null) {
             // Unbind to make sure the pipelines will be recreated.
-            unbindAllUseCases();
+            unbindSessionConfig();
         }
         mEffects.clear();
         startCameraAndTrackStates();
@@ -3115,57 +3075,7 @@ public abstract class CameraController {
     }
 
     /**
-     * Creates {@link UseCaseGroup} from all the use cases.
-     *
-     * <p>Preview is required. If it is {@code null}, then controller is not ready. Return
-     * {@code null} and ignore other use cases.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    protected @Nullable UseCaseGroup createUseCaseGroup(boolean checkPreviewViewAttached) {
-        if (!isCameraInitialized()) {
-            Logger.d(TAG, CAMERA_NOT_INITIALIZED);
-            return null;
-        }
-        if (checkPreviewViewAttached && !isPreviewViewAttached()) {
-            // Preview is required. Return early if preview Surface is not ready.
-            Logger.d(TAG, PREVIEW_VIEW_NOT_ATTACHED);
-            return null;
-        }
-
-        // While mSessionConfig is set, getBoundSessionConfig should be invoked to get the required
-        // SessionConfig for binding.
-        if (mSessionConfig != null) {
-            return null;
-        }
-
-        // Always unbinds all UseCases to allow the resolution selection logic to re-select a
-        // workable resolutions set for the new UseCases combination.
-        unbindAllUseCases();
-
-        UseCaseGroup.Builder builder = new UseCaseGroup.Builder().addUseCase(mPreview);
-
-        if (isImageCaptureEnabled()) {
-            builder.addUseCase(mImageCapture);
-        }
-
-        if (isImageAnalysisEnabled()) {
-            builder.addUseCase(mImageAnalysis);
-        }
-
-        if (isVideoCaptureEnabled()) {
-            builder.addUseCase(mVideoCapture);
-        }
-
-        builder.setViewPort(mViewPort);
-        for (CameraEffect effect : mEffects) {
-            builder.addEffect(effect);
-        }
-        return builder.build();
-    }
-
-    /**
-     * Obtains a session config for calling bindToLifecycle if a {@link SessionConfig} is set to
-     * the CameraController.
+     * Obtains a session config for calling bindToLifecycle.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     protected @Nullable SessionConfig getBoundSessionConfig() {
@@ -3178,11 +3088,36 @@ public abstract class CameraController {
             Logger.d(TAG, PREVIEW_VIEW_NOT_ATTACHED);
             return null;
         }
-        if (mSessionConfig == null) {
-            return null;
+
+        SessionConfig.Builder builder;
+        if (mSessionConfig != null) {
+            builder = new SessionConfig.Builder(mSessionConfig);
+        } else {
+            List<UseCase> useCases = new ArrayList<>();
+            useCases.add(mPreview);
+
+            if (isImageCaptureEnabled()) {
+                useCases.add(mImageCapture);
+            }
+
+            if (isImageAnalysisEnabled()) {
+                useCases.add(mImageAnalysis);
+            }
+
+            if (isVideoCaptureEnabled()) {
+                useCases.add(mVideoCapture);
+            }
+
+            builder = new SessionConfig.Builder(useCases);
+
+            for (CameraEffect effect : mEffects) {
+                builder.addEffect(effect);
+            }
         }
-        mBoundSessionConfig = new SessionConfig.Builder(mSessionConfig)
+
+        mBoundSessionConfig = builder
                 .setViewPort(mViewPort)
+                .setAutoRotationEnabled(mAutoRotationEnabled)
                 .build();
         return mBoundSessionConfig;
     }

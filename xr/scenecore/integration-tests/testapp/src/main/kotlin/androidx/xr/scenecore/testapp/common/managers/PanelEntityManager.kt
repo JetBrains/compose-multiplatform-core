@@ -30,6 +30,7 @@ import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.Space
+import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import java.util.function.Consumer
 
@@ -97,6 +98,7 @@ class PanelEntityManager(
                                 0.2f + (panelNumber * 0.01f),
                             )
                         ),
+                    parent = session.scene.activitySpace,
                 )
 
             val movableComponent = MovableComponent.createSystemMovable(session)

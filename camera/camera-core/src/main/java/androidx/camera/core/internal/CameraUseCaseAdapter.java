@@ -159,8 +159,8 @@ public final class CameraUseCaseAdapter implements Camera {
     @GuardedBy("mLock")
     private @Nullable StreamSharing mStreamSharing;
 
-    private final @NonNull CompositionSettings mCompositionSettings;
-    private final @NonNull CompositionSettings mSecondaryCompositionSettings;
+    private @NonNull CompositionSettings mCompositionSettings;
+    private @NonNull CompositionSettings mSecondaryCompositionSettings;
     private final StreamSharingForceEnabler mStreamSharingForceEnabler =
             new StreamSharingForceEnabler();
     private final StreamSpecsCalculator mStreamSpecsCalculator;
@@ -241,10 +241,39 @@ public final class CameraUseCaseAdapter implements Camera {
     }
 
     /**
+     * Updates the composition settings.
+     */
+    @Override
+    public void setCompositionSettings(
+            @NonNull List<CompositionSettings> compositionSettings) {
+        Preconditions.checkArgument(compositionSettings.size() >= 2,
+                "CompositionSettings list size should be >= 2.");
+        synchronized (mLock) {
+            mCompositionSettings = compositionSettings.get(0);
+            mSecondaryCompositionSettings = compositionSettings.get(1);
+            // Update the composition settings only when in composition mode
+            if (mStreamSharing != null && mSecondaryCameraInternal != null) {
+                mStreamSharing.updateCompositionSettings(
+                        mCompositionSettings, mSecondaryCompositionSettings);
+            }
+        }
+    }
+
+    /**
      * Returns true if the {@link CameraUseCaseAdapter} is an equivalent camera.
      */
     public boolean isEquivalent(@NonNull CameraUseCaseAdapter cameraUseCaseAdapter) {
         return getAdapterIdentifier().equals(cameraUseCaseAdapter.getAdapterIdentifier());
+    }
+
+    /**
+     * Returns the {@link CompositionSettings}.
+     */
+    @VisibleForTesting
+    public @NonNull List<CompositionSettings> getCompositionSettings() {
+        synchronized (mLock) {
+            return Arrays.asList(mCompositionSettings, mSecondaryCompositionSettings);
+        }
     }
 
     /**

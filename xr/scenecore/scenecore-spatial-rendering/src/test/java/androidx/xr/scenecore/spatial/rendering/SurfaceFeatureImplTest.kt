@@ -31,12 +31,12 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -60,7 +60,7 @@ class SurfaceFeatureImplTest {
 
         impressApi = mock(ImpressApi::class.java)
         `when`(impressApi.createImpressNode()).thenReturn(fakeImpressApi.createImpressNode())
-        `when`(impressApi.createStereoSurface(any(), any(), any()))
+        `when`(impressApi.createStereoSurface(anyInt(), anyInt(), anyInt(), anyBoolean()))
             .thenReturn(fakeImpressApi.createImpressNode())
 
         Assert.assertNotNull(xrExtensions)

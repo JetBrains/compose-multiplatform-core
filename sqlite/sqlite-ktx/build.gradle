@@ -34,9 +34,6 @@ plugins {
 
 dependencies {
     api(project(":sqlite:sqlite"))
-
-    testImplementation(libs.junit)
-    testImplementation(libs.mockitoCore4)
 }
 
 androidx {
@@ -44,7 +41,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2018"
     description = "Kotlin extensions for DB"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {

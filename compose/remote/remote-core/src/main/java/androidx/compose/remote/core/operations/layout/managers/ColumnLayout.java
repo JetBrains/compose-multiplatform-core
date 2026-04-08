@@ -19,6 +19,7 @@ import static androidx.compose.remote.core.documentation.DocumentedOperation.FLO
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -30,7 +31,7 @@ import androidx.compose.remote.core.operations.layout.LayoutComponent;
 import androidx.compose.remote.core.operations.layout.measure.ComponentMeasure;
 import androidx.compose.remote.core.operations.layout.measure.MeasurePass;
 import androidx.compose.remote.core.operations.layout.measure.Size;
-import androidx.compose.remote.core.operations.layout.modifiers.HeightInModifierOperation;
+import androidx.compose.remote.core.operations.layout.modifiers.DimensionInModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ScrollModifierOperation;
 import androidx.compose.remote.core.operations.layout.utils.DebugLog;
 import androidx.compose.remote.core.serialize.MapSerializer;
@@ -201,7 +202,11 @@ public class ColumnLayout extends LayoutManager {
             }
         }
         if (!mChildrenComponents.isEmpty()) {
-            size.setHeight(size.getHeight() + (mSpacedBy * (visibleChildrens - 1)));
+            float spacedBy = mSpacedBy;
+            if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP) {
+                spacedBy *= context.getDensity();
+            }
+            size.setHeight(size.getHeight() + (spacedBy * (visibleChildrens - 1)));
         }
         DebugLog.e();
     }
@@ -347,7 +352,7 @@ public class ColumnLayout extends LayoutManager {
                         }
                         float weight = ((LayoutComponent) child).getHeightModifier().getValue();
                         float childHeight = (weight * availableSpace) / totalWeights;
-                        HeightInModifierOperation heightInConstraints =
+                        DimensionInModifierOperation heightInConstraints =
                                 ((LayoutComponent) child).getHeightModifier().getHeightIn();
                         if (heightInConstraints != null) {
                             float min = heightInConstraints.getMin();
@@ -387,7 +392,11 @@ public class ColumnLayout extends LayoutManager {
             childrenHeight += childMeasure.getH();
             visibleChildrens++;
         }
-        childrenHeight += mSpacedBy * (visibleChildrens - 1);
+        float spacedBy = mSpacedBy;
+        if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP) {
+            spacedBy *= context.getDensity();
+        }
+        childrenHeight += spacedBy * (visibleChildrens - 1);
 
         float tx = 0f;
         float ty = 0f;
@@ -467,7 +476,7 @@ public class ColumnLayout extends LayoutManager {
                     || mVerticalPositioning == SPACE_EVENLY) {
                 ty += verticalGap;
             }
-            ty += mSpacedBy;
+            ty += spacedBy;
         }
         DebugLog.e();
     }

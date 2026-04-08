@@ -168,10 +168,16 @@ class TransformationActivity : AppCompatActivity() {
                 PlaneOrientation.ANY,
                 PlaneSemanticType.ANY,
             )
-        GltfModelEntity.create(session!!, staticEntityModel, Pose.Identity).also {
-            it.setScale(1f)
-            anchor!!.addChild(it)
-        }
+        GltfModelEntity.create(
+                session!!,
+                staticEntityModel,
+                Pose.Identity,
+                parent = session!!.scene.activitySpace,
+            )
+            .also {
+                it.setScale(1f)
+                anchor!!.addChild(it)
+            }
         val anchorLabelDimensions = FloatSize3d(245f, 87f)
         anchorDebugPanel =
             createDebugPanelAndLabel("Anchor", anchor!!, anchorLabelDimensions).also { panel ->
@@ -350,23 +356,41 @@ class TransformationActivity : AppCompatActivity() {
         }
 
         sunEntity =
-            GltfModelEntity.create(session!!, solarSystemEntityModel, Pose.Identity).also {
-                it.setScale(3f)
-                it.setPose(Pose(Vector3(-0.5f, 3f, -9f)))
-                it.parent = session!!.scene.activitySpace
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    solarSystemEntityModel,
+                    Pose.Identity,
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(3f)
+                    it.setPose(Pose(Vector3(-0.5f, 3f, -9f)))
+                    it.parent = session!!.scene.activitySpace
+                }
         planetEntity =
-            GltfModelEntity.create(session!!, solarSystemEntityModel, Pose.Identity).also {
-                it.setScale(0.5f)
-                it.setPose(Pose(Vector3(-1f, 3f, -9f)))
-                it.parent = sunEntity
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    solarSystemEntityModel,
+                    Pose.Identity,
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(0.5f)
+                    it.setPose(Pose(Vector3(-1f, 3f, -9f)))
+                    it.parent = sunEntity
+                }
         moonEntity =
-            GltfModelEntity.create(session!!, solarSystemEntityModel, Pose.Identity).also {
-                it.setScale(0.5f)
-                it.setPose(Pose(Vector3(-1.5f, 3f, -9f)))
-                it.parent = planetEntity
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    solarSystemEntityModel,
+                    Pose.Identity,
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(0.5f)
+                    it.setPose(Pose(Vector3(-1.5f, 3f, -9f)))
+                    it.parent = planetEntity
+                }
         orbitModelAroundParent(planetEntity, 4f, 0f, 20000f)
         orbitModelAroundParent(moonEntity, 2f, 1.67f, 5000f)
 

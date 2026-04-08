@@ -82,6 +82,7 @@ fun RemoteTextFontScaleComparisonPreview() {
 
 @Composable
 private fun RowScope.RCText() {
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     Box(modifier = Modifier.weight(1f)) {
         RemotePreview {
             Container {

@@ -187,10 +187,10 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
     }
 
     @Test
-    fun getPoseInActivitySpace_returnsIdentity() {
+    fun getActivitySpacePose_returnsIdentity() {
         val activitySpaceImpl = activitySpace
 
-        assertPose(activitySpaceImpl.poseInActivitySpace, Pose())
+        assertPose(activitySpaceImpl.activitySpacePose, Pose())
     }
 
     @Test
@@ -437,7 +437,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
     fun getPoseRelativeToActivitySpace_returnsIdentity() {
         val activitySpaceImpl = activitySpace
 
-        assertPose(activitySpaceImpl.getPose(Space.ACTIVITY), activitySpaceImpl.poseInActivitySpace)
+        assertPose(activitySpaceImpl.getPose(Space.ACTIVITY), activitySpaceImpl.activitySpacePose)
     }
 
     @Test

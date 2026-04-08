@@ -874,7 +874,7 @@ class MovableComponentImplTest {
 
     @Test
     fun removeMovableComponent_clearsMoveReformOptionsAndMoveEventListeners() {
-        val entity = createTestEntity()
+        val entity = createTestPanelEntity()
         val movableComponent =
             MovableComponentImpl(
                 systemMovable = true,
@@ -1054,7 +1054,7 @@ class MovableComponentImplTest {
         sendReformEvent(getEntityNode(entity), moveStartReformEvent)
         sendReformEvent(getEntityNode(entity), moveEndReformEvent)
 
-        verify(mockPanelShadowRenderer).destroy()
+        verify(mockPanelShadowRenderer, times(2)).hideShadow()
     }
 
     @Test
@@ -1230,7 +1230,7 @@ class MovableComponentImplTest {
         sendInputEvent(shadowNode, moveStartInputEvent)
         sendInputEvent(shadowNode, moveEndInputEvent)
 
-        verify(mockPanelShadowRenderer).destroy()
+        verify(mockPanelShadowRenderer, times(2)).hideShadow()
     }
 
     internal inner class TestMoveEventListener(var movableComponent: MovableComponent) :

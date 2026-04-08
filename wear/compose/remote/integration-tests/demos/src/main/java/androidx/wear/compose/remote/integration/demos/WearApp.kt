@@ -28,6 +28,7 @@ import androidx.wear.compose.remote.integration.demos.components.RemoteButtonDem
 import androidx.wear.compose.remote.integration.demos.components.RemoteButtonGroupDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteCardDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteCircularProgressIndicatorDemos
+import androidx.wear.compose.remote.integration.demos.components.RemoteCompactButtonDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteIconButtonDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteIconDemos
 import androidx.wear.compose.remote.integration.demos.components.RemoteTextButtonDemos
@@ -49,6 +50,9 @@ fun WearApp(
                 MainScreen(navigateToRoute = navController::navigate)
             }
             composable(route = Screen.RemoteButtonDemosScreen.route) { RemoteButtonDemos() }
+            composable(route = Screen.RemoteCompactButtonDemosScreen.route) {
+                RemoteCompactButtonDemos()
+            }
             composable(route = Screen.RemoteIconButtonDemosScreen.route) { RemoteIconButtonDemos() }
             composable(route = Screen.RemoteTextButtonDemosScreen.route) { RemoteTextButtonDemos() }
             composable(route = Screen.RemoteButtonGroupDemosScreen.route) {

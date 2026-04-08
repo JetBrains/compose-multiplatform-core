@@ -50,9 +50,9 @@ public interface IcingOptionsConfig {
 
     /**
      * The default compression mem level in IcingSearchEngineOptions proto matches the
-     * previously-hardcoded document compression level in Icing (which is 8).
+     * previously-hardcoded document compression level in Icing (which is 1).
      */
-    int DEFAULT_COMPRESSION_MEM_LEVEL = 8;
+    int DEFAULT_COMPRESSION_MEM_LEVEL = 1;
 
     boolean DEFAULT_USE_PREMAPPING_WITH_FILE_BACKED_VECTOR = false;
 
@@ -146,12 +146,12 @@ public interface IcingOptionsConfig {
      */
     int getCompressionLevel();
 
-
     /**
      * The mem level for gzip compression for documents in the Icing document store.
      *
      * <p> 1 uses minimum memory but is slow and reduces compression ratio; 9 uses maximum memory
-     * for optimal speed and compression ratio. Icing historically used a memLevel of 8.
+     * for optimal speed and compression ratio. Icing historically used a memLevel of 8, and then
+     * switched to 1 for memory performance
      */
     int getCompressionMemLevel();
 
@@ -388,9 +388,7 @@ public interface IcingOptionsConfig {
                 .setCompressionThresholdBytes(
                         (Flags.enableCompressionThreshold() || isVMEnabled)
                                 ? Math.max(0, getCompressionThresholdBytes()) : 0)
-                .setCompressionMemLevel(
-                        (Flags.enableCompressionMemLevelOne() || isVMEnabled) ? 1
-                                : getCompressionMemLevel())
+                .setCompressionMemLevel(getCompressionMemLevel())
                 .setEnableSchemaDatabase(
                         Flags.enableDatabaseScopedSchemaOperations() || isVMEnabled)
                 .setEnableSmallerDecompressionBufferSize(true)

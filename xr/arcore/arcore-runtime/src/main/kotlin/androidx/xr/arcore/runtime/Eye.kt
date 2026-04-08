@@ -17,7 +17,6 @@
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
 /**
@@ -35,5 +34,5 @@ public interface Eye : Trackable {
      */
     public val isOpen: Boolean
     public val pose: Pose
-    public override val trackingState: TrackingState
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public override val trackingState: TrackingState
 }

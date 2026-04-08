@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore
 
@@ -31,7 +32,6 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -120,7 +120,7 @@ class FaceTest {
             check(userFace.state.value.trackingState != TrackingState.TRACKING)
             check(!userFace.state.value.blendShapeValues.contentEquals(expectedBlendShapeValues))
             check(!userFace.state.value.confidenceValues.contentEquals(expectedConfidenceValues))
-            runtimeFace.trackingState = TrackingState.TRACKING
+            runtimeFace.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
             runtimeFace.blendShapeValues = expectedBlendShapeValues
             runtimeFace.confidenceValues = expectedConfidenceValues
 
@@ -175,7 +175,7 @@ class FaceTest {
         check(underTest.state.value.trackingState != TrackingState.TRACKING)
         check(!underTest.state.value.blendShapeValues.contentEquals(expectedBlendShapeValues))
         check(!underTest.state.value.confidenceValues.contentEquals(expectedConfidenceValues))
-        runtimeFace.trackingState = TrackingState.TRACKING
+        runtimeFace.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
         runtimeFace.blendShapeValues = expectedBlendShapeValues
         runtimeFace.confidenceValues = expectedConfidenceValues
 
@@ -196,9 +196,12 @@ class FaceTest {
         val runtimeFace = FakeRuntimeFace()
         xrResourcesManager.syncTrackables(listOf(runtimeFace))
         val underTest = xrResourcesManager.trackablesMap[runtimeFace] as Face
-        check(underTest.state.value.trackingState == runtimeFace.trackingState)
+        check(
+            underTest.state.value.trackingState.toRuntimeTrackingState() ==
+                runtimeFace.trackingState
+        )
 
-        runtimeFace.trackingState = TrackingState.TRACKING
+        runtimeFace.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
         underTest.update()
 
         assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.TRACKING)

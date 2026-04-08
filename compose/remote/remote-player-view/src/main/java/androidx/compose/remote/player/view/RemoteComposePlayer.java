@@ -51,6 +51,7 @@ import androidx.compose.remote.player.core.platform.SettingsRetriever;
 import androidx.compose.remote.player.core.state.StateUpdater;
 import androidx.compose.remote.player.core.state.StateUpdaterImpl;
 import androidx.compose.remote.player.view.accessibility.platform.RemoteComposeTouchHelper;
+import androidx.compose.remote.player.view.platform.AndroidFloatSystemVariables;
 import androidx.compose.remote.player.view.platform.HapticSupport;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.compose.remote.player.view.platform.RemotePreparedDocument;
@@ -89,6 +90,8 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     private final @NonNull ThemeSupport mThemeSupport = new ThemeSupport();
     private final @NonNull SensorSupport mSensorsSupport = new SensorSupport();
     private final @NonNull HapticSupport mHapticSupport = new HapticSupport();
+    private @Nullable FloatSystemVariables mFloatSystemVariables =
+            new AndroidFloatSystemVariables();
 
     private @NonNull ShaderControl mShaderControl = (shader) -> false;
 
@@ -351,6 +354,11 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
             RemoteComposeTouchHelper.REGISTRAR.clearAccessibilityDelegate(this);
         }
 
+        FloatSystemVariables sysVar = mFloatSystemVariables;
+        if (sysVar != null) {
+            sysVar.loadSystemVariables(mInner, mInner.getNamedVariables(NamedVariable.FLOAT_TYPE));
+        }
+
         mThemeSupport.mapColors(getContext(), mInner);
         mSensorsSupport.setupSensors(getContext().getApplicationContext(), mInner);
         mHapticSupport.setupHaptics(mInner);
@@ -453,6 +461,30 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     }
 
     /**
+     * Sets a FloatSystemVariables on the RemoteContext.
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public interface FloatSystemVariables {
+        /**
+         * Called to load system variables.
+         * @param rcView the view to setValues on
+         * @param var list of strings
+         */
+        @RestrictTo(LIBRARY_GROUP)
+        void loadSystemVariables(@NonNull RemoteComposeView rcView, String @NonNull [] var);
+    }
+
+    /**
+     * Sets the class to override system variables
+     *
+     * @param floatSystemVariables class to set system variables.
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public void setFloatSystemVariables(@Nullable FloatSystemVariables floatSystemVariables) {
+        mFloatSystemVariables = floatSystemVariables;
+    }
+
+    /**
      * Set an override for a string resource
      *
      * @param domain  domain (SYSTEM or USER)
@@ -518,6 +550,28 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     @RestrictTo(LIBRARY_GROUP)
     public void setUserLocalFloat(@NonNull String name, float value) {
         mInner.setLocalFloat("USER:" + name, value);
+    }
+
+
+    /**
+     * Set an override for a user domain float resource
+     *
+     * @param name  name of the float
+     * @param value value of the float
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public void setLocalFloat(@NonNull String name, float value) {
+        mInner.setLocalFloat(name, value);
+    }
+
+    /**
+     * Get the animation time. This is used in many
+     *
+     * @return
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public float getAnimationTime() {
+        return mInner.getAnimationTime();
     }
 
     /**

@@ -77,7 +77,12 @@ class ActivityPanelActivity : AppCompatActivity() {
 
         // Create activity panel entity
         activityPanelEntity =
-            ActivityPanelEntity.create(session!!, IntSize2d(640, 480), ACTIVITY_NAME)
+            ActivityPanelEntity.create(
+                session!!,
+                IntSize2d(640, 480),
+                ACTIVITY_NAME,
+                parent = session!!.scene.activitySpace,
+            )
 
         // Set button listener
         val button: Button = findViewById(R.id.spawn_activity_panel_button)

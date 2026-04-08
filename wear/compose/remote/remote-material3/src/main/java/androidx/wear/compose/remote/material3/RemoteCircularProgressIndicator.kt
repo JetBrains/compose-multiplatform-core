@@ -15,7 +15,6 @@
  */
 package androidx.wear.compose.remote.material3
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteOffset
@@ -64,7 +63,6 @@ import androidx.compose.ui.graphics.StrokeCap
  * @param gapSize The size (in RemoteDp) of the gap between the ends of the progress indicator and
  *   the track. The stroke endcaps are not included in this distance.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
 public fun RemoteCircularProgressIndicator(
@@ -132,7 +130,6 @@ public fun RemoteCircularProgressIndicator(
 }
 
 /** Contains defaults for Remote Progress Indicators. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object RemoteProgressIndicatorDefaults {
     /** Creates a [RemoteProgressIndicatorColors] with the default colors. */
     @Composable
@@ -141,7 +138,7 @@ public object RemoteProgressIndicatorDefaults {
 
     /** Returns recommended size of the gap based on `strokeWidth`. */
     public fun calculateRecommendedGapSize(strokeWidth: RemoteDp): RemoteDp =
-        (strokeWidth.value * (1f.rf / 3f.rf)).asRemoteDp()
+        (strokeWidth.value / 3f.rf).asRemoteDp()
 
     /** Creates a [RemoteProgressIndicatorColors] with modified colors. */
     @Composable
@@ -218,7 +215,6 @@ public object RemoteProgressIndicatorDefaults {
 }
 
 /** Represents the indicator and track colors used in progress indicator in a remote context. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteProgressIndicatorColors(
     public val indicatorBrush: RemoteBrush,
     public val trackBrush: RemoteBrush,

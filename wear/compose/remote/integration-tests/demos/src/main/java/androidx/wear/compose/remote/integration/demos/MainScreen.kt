@@ -63,6 +63,12 @@ fun MainScreen(navigateToRoute: (String) -> Unit, modifier: Modifier = Modifier)
             }
             item {
                 MenuButton(
+                    "RemoteCompactButton",
+                    onClick = { navigateToRoute(Screen.RemoteCompactButtonDemosScreen.route) },
+                )
+            }
+            item {
+                MenuButton(
                     "RemoteIconButton",
                     onClick = { navigateToRoute(Screen.RemoteIconButtonDemosScreen.route) },
                 )

@@ -28,11 +28,15 @@ import kotlin.time.ComparableTimeMark
  *
  * @property lifecycleManager the [LifecycleManager] for this runtime
  * @property perceptionManager the [PerceptionManager] for this runtime
+ * @property config the [Config] for this runtime
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface PerceptionRuntime : JxrRuntime {
     public val lifecycleManager: LifecycleManager
+
     public val perceptionManager: PerceptionManager
+
+    public val config: Config
 
     override fun initialize() {
         lifecycleManager.create()
@@ -57,4 +61,7 @@ public interface PerceptionRuntime : JxrRuntime {
     override fun destroy() {
         lifecycleManager.stop()
     }
+
+    override val sessionPointer: Long?
+        get() = lifecycleManager.sessionPointer
 }

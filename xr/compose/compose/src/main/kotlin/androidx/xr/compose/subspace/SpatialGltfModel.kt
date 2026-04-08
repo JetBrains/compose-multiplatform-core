@@ -19,7 +19,6 @@ package androidx.xr.compose.subspace
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableFloatState
@@ -56,6 +55,7 @@ import androidx.xr.scenecore.GltfAnimationStartOptions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.GltfModelNode
+import androidx.xr.scenecore.scene
 import java.nio.file.Path
 import java.util.Collections
 import java.util.function.Consumer
@@ -99,7 +99,6 @@ import kotlinx.coroutines.supervisorScope
  */
 @Composable
 @SubspaceComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialGltfModel(
     state: SpatialGltfModelState,
     modifier: SubspaceModifier = SubspaceModifier,
@@ -121,7 +120,8 @@ public fun SpatialGltfModel(
                 }
             ) {
                 val model = state.source.createModel(session)
-                val entity = GltfModelEntity.create(session, model)
+                val entity =
+                    GltfModelEntity.create(session, model, parent = session.scene.activitySpace)
                 coreModelEntity.attachEntity(entity)
                 state.setLoadResult(Result.success(coreModelEntity))
                 intrinsicSize = coreModelEntity.intrinsicSize
@@ -143,7 +143,6 @@ public fun SpatialGltfModel(
  * @param source The [SpatialGltfModelSource] that defines where to load the 3D model from.
  */
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun rememberSpatialGltfModelState(source: SpatialGltfModelSource): SpatialGltfModelState =
     remember(source) { SpatialGltfModelStateHolder(SpatialGltfModelState(source)) }.state
 
@@ -171,7 +170,6 @@ private class SpatialGltfModelStateHolder(val state: SpatialGltfModelState) : Re
  *
  * @param source The [SpatialGltfModelSource] that defines where to load the 3D model from.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialGltfModelState(internal val source: SpatialGltfModelSource) : AutoCloseable {
     private val coreEntityActionQueue = ActionQueue<CoreModelEntity>()
 
@@ -232,7 +230,11 @@ public class SpatialGltfModelState(internal val source: SpatialGltfModelSource) 
                     )
                 }
             }
-            .onFailure { exception -> _status.value = SpatialGltfModelStatus.Failed(exception) }
+            .onFailure { exception ->
+                val gltfException =
+                    exception as? GltfLoadException ?: GltfLoadException(cause = exception)
+                _status.value = SpatialGltfModelStatus.Failed(gltfException)
+            }
     }
 
     override fun close() {
@@ -246,7 +248,6 @@ public class SpatialGltfModelState(internal val source: SpatialGltfModelSource) 
  * An object that describes and contains information relevant to the current loading state of the
  * glTF model.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public abstract class SpatialGltfModelStatus private constructor() {
 
     /** The glTF model is fully loaded and ready to be displayed. */
@@ -262,7 +263,7 @@ public abstract class SpatialGltfModelStatus private constructor() {
      *
      * @param exception thrown when the glTF model tried to load.
      */
-    public class Failed(public val exception: Throwable) : SpatialGltfModelStatus() {
+    public class Failed(public val exception: GltfLoadException) : SpatialGltfModelStatus() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Failed) return false
@@ -283,7 +284,6 @@ public abstract class SpatialGltfModelStatus private constructor() {
  *
  * Instances of [SpatialGltfModelSource] are created using [fromPath], [fromUri], or [fromData].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatialGltfModelSource {
 
     /**
@@ -307,6 +307,7 @@ public interface SpatialGltfModelSource {
          *   composable.
          * @throws IllegalArgumentException if [path] is an absolute path.
          */
+        @JvmStatic
         public fun fromPath(path: Path): SpatialGltfModelSource = PathGltfModelSource(path)
 
         private data class PathGltfModelSource(private val path: Path) : SpatialGltfModelSource {
@@ -326,7 +327,7 @@ public interface SpatialGltfModelSource {
          * @return A [SpatialGltfModelSource] that can be used with the [SpatialGltfModel]
          *   composable.
          */
-        public fun fromUri(uri: Uri): SpatialGltfModelSource = UriGltfModelSource(uri)
+        @JvmStatic public fun fromUri(uri: Uri): SpatialGltfModelSource = UriGltfModelSource(uri)
 
         private data class UriGltfModelSource(private val uri: Uri) : SpatialGltfModelSource {
             override suspend fun createModel(session: Session): GltfModel =
@@ -348,6 +349,7 @@ public interface SpatialGltfModelSource {
          * @return A [SpatialGltfModelSource] that can be used with the [SpatialGltfModel]
          *   composable.
          */
+        @JvmStatic
         public fun fromData(
             assetData: ByteArray,
             assetKey: String = assetData.hashCode().toString(),
@@ -449,7 +451,6 @@ private class SpatialGltfModelMeasurePolicy(private val intrinsicSize: IntVolume
  * This may be used to inspect or control the state of this animation.
  */
 @RequiresApi(Build.VERSION_CODES.O)
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialGltfModelAnimation internal constructor(private val animation: GltfAnimation) :
     AutoCloseable {
 
@@ -561,7 +562,6 @@ public class SpatialGltfModelAnimation internal constructor(private val animatio
                     seekStartTime = seekStartTime.toJavaDuration(),
                 )
         )
-        seekStartTime = 0.seconds
     }
 
     /**
@@ -582,7 +582,6 @@ public class SpatialGltfModelAnimation internal constructor(private val animatio
                     seekStartTime = seekStartTime.toJavaDuration(),
                 )
         )
-        seekStartTime = 0.seconds
     }
 
     /**
@@ -635,3 +634,14 @@ public class SpatialGltfModelAnimation internal constructor(private val animatio
         animation.removeAnimationStateListener(stateListener)
     }
 }
+
+/**
+ * Exception thrown when a glTF model fails to load.
+ *
+ * @param message the detail message.
+ * @param cause the underlying cause of the failure.
+ */
+public class GltfLoadException(
+    message: String? = "Failed to load glTF model",
+    cause: Throwable? = null,
+) : RuntimeException(message, cause)

@@ -162,6 +162,11 @@ package androidx.xr.glimmer {
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void GlimmerTheme(androidx.xr.glimmer.Colors?, androidx.xr.glimmer.Typography?, androidx.xr.glimmer.ComponentSpacingValues?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
+  public final class IconButtonKt {
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void IconButton(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.foundation.BorderStroke? border, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void IconButton--pzL6y0(kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.ui.Modifier?, boolean, androidx.compose.ui.graphics.Shape?, long, long, androidx.compose.foundation.BorderStroke?, androidx.compose.foundation.layout.PaddingValues?, androidx.compose.foundation.interaction.MutableInteractionSource?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
+  }
+
   public final class IconKt {
     method @KotlinOnly @androidx.compose.runtime.Composable public static void Icon(androidx.compose.ui.graphics.ImageBitmap bitmap, androidx.compose.ui.graphics.Color tint, String? contentDescription, optional androidx.compose.ui.Modifier modifier);
     method @KotlinOnly @androidx.compose.runtime.Composable public static void Icon(androidx.compose.ui.graphics.ImageBitmap bitmap, String? contentDescription, optional androidx.compose.ui.Modifier modifier);
@@ -490,8 +495,8 @@ package androidx.xr.glimmer.stack {
   }
 
   public static final class StackState.Companion {
-    method @InaccessibleFromKotlin public androidx.compose.runtime.saveable.Saver<androidx.xr.glimmer.stack.StackState,java.lang.Integer> getSaver();
-    property public androidx.compose.runtime.saveable.Saver<androidx.xr.glimmer.stack.StackState,java.lang.Integer> Saver;
+    method @InaccessibleFromKotlin public androidx.compose.runtime.saveable.Saver<androidx.xr.glimmer.stack.StackState,? extends java.lang.Object?> getSaver();
+    property public androidx.compose.runtime.saveable.Saver<androidx.xr.glimmer.stack.StackState,? extends java.lang.Object?> Saver;
   }
 
   public final class StackStateKt {

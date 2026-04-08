@@ -161,7 +161,14 @@ class InteractableComponentTest {
         val interactableComponent =
             InteractableComponent.create(session, directExecutor(), inputEventListener)
         val view = TextView(activity)
-        val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+        val panelEntity =
+            PanelEntity.create(
+                session,
+                view,
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
 
         assertThat(panelEntity.addComponent(interactableComponent)).isTrue()
         assertThat(panelEntity.rtEntity?.getComponents()?.toList()[0])

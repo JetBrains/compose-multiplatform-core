@@ -232,7 +232,13 @@ class GltfModelAnimationActivity : AppCompatActivity() {
     fun createGltfEntity() {
 
         fun initGltfEntity(@NonNull gltfModel: GltfModel) {
-            gltfModelEntity = GltfModelEntity.create(session, gltfModel, modelInitPose)
+            gltfModelEntity =
+                GltfModelEntity.create(
+                    session,
+                    gltfModel,
+                    modelInitPose,
+                    parent = session.scene.activitySpace,
+                )
             gltfModelEntity?.setScale(modelScale)
         }
 

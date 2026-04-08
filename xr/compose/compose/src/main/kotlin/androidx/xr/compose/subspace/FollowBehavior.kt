@@ -32,13 +32,12 @@ import java.lang.Runnable
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
@@ -133,6 +132,15 @@ internal class SoftFollowBehavior(private val durationMs: Int = DEFAULT_SOFT_DUR
 
         if (target is FollowTargetFlow) {
             withContext(dispatcherOverride) {
+                // The first device pose received is handled differently than the rest. There is no
+                // animation to the trailingEntity, it will instantly appear at the device location.
+                // It will also be made visible, enabled, at this time.
+                val pose = target.poseUpdates.first()
+                targetCurrentPose = applyTrackedDimensions(pose, dimensions, initialPose)
+                trailingEntity.poseInMeters = targetCurrentPose
+                endPose = targetCurrentPose
+                trailingEntity.enabled = true
+
                 target.poseUpdates.collect { pose ->
                     // Determine the target pose using the source pose but ignoring the
                     // dimensions we are not tracking.
@@ -141,7 +149,7 @@ internal class SoftFollowBehavior(private val durationMs: Int = DEFAULT_SOFT_DUR
                     // If the target has moved significantly enough, start the animation over.
                     if (shouldStartAnimation()) {
                         currentAnimationJob?.cancel()
-                        startPose = trailingEntity?.poseInMeters ?: Pose.Identity
+                        startPose = trailingEntity.poseInMeters
                         endPose = targetCurrentPose
                         currentFrame = 1
                         currentAnimationJob = this.launch { animate() }
@@ -291,13 +299,12 @@ internal object StaticFollowBehavior : FollowBehavior() {
     ) {
         if (target is FollowTargetFlow) {
             withContext(dispatcherOverride) {
-                target.poseUpdates.collect { targetCurrentPose ->
-                    // Update the trailingEntity just once.
-                    if (trailingEntity.poseInMeters == Pose.Identity) {
-                        trailingEntity.poseInMeters = targetCurrentPose
-                        currentCoroutineContext().cancel()
-                    }
-                }
+                // Suspends until the first item is emitted, then cancel automatically.
+                val firstPose = target.poseUpdates.first()
+
+                // The pose should be updated first before enabling.
+                trailingEntity.poseInMeters = firstPose
+                trailingEntity.enabled = true
             }
         }
     }
@@ -315,9 +322,17 @@ internal object TightFollowBehavior : FollowBehavior() {
         target: FollowTarget,
         dimensions: TrackedDimensions,
     ) {
+        var isInitialized = false
+
         if (target is FollowTargetFlow) {
             withContext(dispatcherOverride) {
-                target.poseUpdates.collect { pose -> trailingEntity.poseInMeters = pose }
+                target.poseUpdates.collect { pose ->
+                    trailingEntity.poseInMeters = pose
+                    if (!isInitialized) {
+                        trailingEntity.enabled = true
+                        isInitialized = true
+                    }
+                }
             }
         }
     }
@@ -341,7 +356,16 @@ public class TrackedDimensions(
     public val isRotationYTracked: Boolean = false,
     public val isRotationZTracked: Boolean = false,
 ) {
-    /** returns a copy of this object with the given values updated. */
+    /**
+     * returns a copy of this object with the given values updated.
+     *
+     * @param isTranslationXTracked Whether to track translation along the X axis.
+     * @param isTranslationYTracked Whether to track translation along the Y axis.
+     * @param isTranslationZTracked Whether to track translation along the Z axis.
+     * @param isRotationXTracked Whether to track rotation around the X axis.
+     * @param isRotationYTracked Whether to track rotation around the Y axis.
+     * @param isRotationZTracked Whether to track rotation around the Z axis.
+     */
     public fun copy(
         isTranslationXTracked: Boolean = this.isTranslationXTracked,
         isTranslationYTracked: Boolean = this.isTranslationYTracked,

@@ -133,7 +133,7 @@ constructor(private val threads: Threads, cameraPipeConfig: CameraPipe.Config) :
             val imageReader =
                 AndroidMultiResolutionImageReader.create(
                     cameraStream,
-                    capacity,
+                    imageReaderCapacity,
                     executorProvider(),
                     usage,
                     enableConcurrentOutputs,
@@ -198,6 +198,14 @@ public class ImageReaderImageSource(
     }
 
     override fun toString(): String = "ImageSource($imageReader)"
+
+    override fun discardFreeBuffers() {
+        imageReader.discardFreeBuffers()
+    }
+
+    override fun flush() {
+        imageReader.flush()
+    }
 
     private fun onImage(streamId: StreamId, outputId: OutputId, image: ImageWrapper) {
         // Always increment the imageCount before acquireNextImage

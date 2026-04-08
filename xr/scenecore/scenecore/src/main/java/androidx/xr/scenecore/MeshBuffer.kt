@@ -25,20 +25,26 @@ import java.nio.ByteBuffer
 /**
  * A container holding raw vertex and index data.
  *
- * A `MeshBuffer` contains one or more vertex buffers and an optional index buffer. The vertex
- * buffers contain the vertex data according to the provided [VertexLayout]. The index buffer
- * contains the indices of the vertices that form the primitives of the mesh.
+ * A `MeshBuffer` contains one or more vertex buffers and an index buffer. The vertex buffers
+ * contain the vertex data according to the provided [VertexLayout]. The index buffer contains the
+ * indices of the vertices that form the primitives of the mesh.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MeshBuffer
 private constructor(
     private val resource: RtMeshBufferResource,
     public val vertexLayout: VertexLayout,
-    public val maxVertices: Int,
-    public val maxIndices: Int,
     private val session: Session,
 ) : AutoCloseable {
 
+    /**
+     * Closes the given [MeshBuffer].
+     *
+     * The [MeshBuffer] can be explicitly closed at anytime or garbage collected. An exception will
+     * be thrown if the [MeshBuffer] is used after being closed.
+     *
+     * @throws IllegalStateException if the resource has already been closed.
+     */
     @MainThread
     override fun close() {
         session.renderingRuntime.destroyMeshBuffer(resource)
@@ -49,29 +55,48 @@ private constructor(
     }
 
     public companion object {
+        private fun getRtVertexAttribute(attribute: VertexAttribute): Int =
+            when (attribute) {
+                VertexAttribute.POSITION -> RtMeshBufferResource.VertexAttribute.POSITION
+                VertexAttribute.NORMAL -> RtMeshBufferResource.VertexAttribute.NORMAL
+                VertexAttribute.COLOR -> RtMeshBufferResource.VertexAttribute.COLOR
+                VertexAttribute.UV0 -> RtMeshBufferResource.VertexAttribute.UV0
+                VertexAttribute.UV1 -> RtMeshBufferResource.VertexAttribute.UV1
+                VertexAttribute.BONE_INDICES -> RtMeshBufferResource.VertexAttribute.BONE_INDICES
+                VertexAttribute.BONE_WEIGHTS -> RtMeshBufferResource.VertexAttribute.BONE_WEIGHTS
+                else -> throw IllegalArgumentException("Unknown VertexAttribute")
+            }
+
+        private fun getRtVertexAttributeType(type: VertexAttributeType): Int =
+            when (type) {
+                VertexAttributeType.FLOAT -> RtMeshBufferResource.VertexAttributeType.FLOAT
+                VertexAttributeType.FLOAT2 -> RtMeshBufferResource.VertexAttributeType.FLOAT2
+                VertexAttributeType.FLOAT3 -> RtMeshBufferResource.VertexAttributeType.FLOAT3
+                VertexAttributeType.FLOAT4 -> RtMeshBufferResource.VertexAttributeType.FLOAT4
+                VertexAttributeType.UBYTE4_NORM ->
+                    RtMeshBufferResource.VertexAttributeType.UBYTE4_NORM
+                VertexAttributeType.UBYTE4 -> RtMeshBufferResource.VertexAttributeType.UBYTE4
+                else -> throw IllegalArgumentException("Unknown VertexAttributeType")
+            }
+
         /**
          * Creates a new [MeshBuffer].
          *
          * @param session The session to use for creating the MeshBuffer.
          * @param vertexLayout The layout of the vertices in the vertex buffer(s).
-         * @param maxVertices The maximum number of vertices the buffer can hold.
-         * @param maxIndices The maximum number of indices the buffer can hold.
-         * @param vertexData The vertex data arrays, one for each buffer index used in the layout.
-         * @param vertexDataSizes The sizes of the vertex data arrays in bytes.
-         * @param indexData The index data.
-         * @param indexDataSize The size of the index data in bytes.
+         * @param vertexData The vertex data regions, one for each buffer index used in the layout.
+         *   The data is copied and the original data in the ByteBuffer can be released or modified
+         *   without affecting the [MeshBuffer].
+         * @param indexData The index data region. The data is copied and the original data in the
+         *   ByteBuffer can be released or modified without affecting the [MeshBuffer].
          * @return A new [MeshBuffer].
          */
         @MainThread
         public fun create(
             session: Session,
             vertexLayout: VertexLayout,
-            maxVertices: Int,
-            maxIndices: Int,
-            vertexData: Array<ByteBuffer>? = null,
-            vertexDataSizes: IntArray? = null,
-            indexData: ByteBuffer? = null,
-            indexDataSize: Int = 0,
+            vertexData: Array<ByteBufferRegion>,
+            indexData: ByteBufferRegion,
         ): MeshBuffer {
             val runtime = session.renderingRuntime
 
@@ -81,25 +106,31 @@ private constructor(
 
             for (i in vertexLayout.attributes.indices) {
                 val attr = vertexLayout.attributes[i]
-                attributeIds[i] = attr.attribute.id
-                attributeTypes[i] = attr.type.id
+                attributeIds[i] = getRtVertexAttribute(attr.attribute)
+                attributeTypes[i] = getRtVertexAttributeType(attr.type)
                 bufferIndices[i] = attr.bufferIndex.toByte()
             }
+
+            val vertexBuffers = Array<ByteBuffer>(vertexData.size) { vertexData[it].buffer }
+            val vertexDataOffsets = IntArray(vertexData.size) { vertexData[it].offset }
+            val vertexDataSizes = IntArray(vertexData.size) { vertexData[it].size }
 
             val resource =
                 runtime.createMeshBuffer(
                     attributeIds,
                     attributeTypes,
                     bufferIndices,
-                    maxVertices,
-                    maxIndices,
-                    vertexData,
+                    0,
+                    0,
+                    vertexBuffers,
+                    vertexDataOffsets,
                     vertexDataSizes,
-                    indexData,
-                    indexDataSize,
+                    indexData.buffer,
+                    indexData.offset,
+                    indexData.size,
                 )
 
-            return MeshBuffer(resource, vertexLayout, maxVertices, maxIndices, session)
+            return MeshBuffer(resource, vertexLayout, session)
         }
     }
 }

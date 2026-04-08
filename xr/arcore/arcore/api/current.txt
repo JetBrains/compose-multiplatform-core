@@ -108,8 +108,8 @@ package androidx.xr.arcore {
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
-  public final class CreateGeospatialPoseFromPoseErrorInternal extends androidx.xr.arcore.CreateGeospatialPoseFromPoseResult {
-    ctor public CreateGeospatialPoseFromPoseErrorInternal(String error);
+  public final class CreateGeospatialPoseFromPoseInternalError extends androidx.xr.arcore.CreateGeospatialPoseFromPoseResult {
+    ctor public CreateGeospatialPoseFromPoseInternalError(String error);
     method @InaccessibleFromKotlin public String getError();
     property public String error;
   }
@@ -132,8 +132,8 @@ package androidx.xr.arcore {
     property public double verticalAccuracy;
   }
 
-  public final class CreatePoseFromGeospatialPoseErrorInternal extends androidx.xr.arcore.CreatePoseFromGeospatialPoseResult {
-    ctor public CreatePoseFromGeospatialPoseErrorInternal(String error);
+  public final class CreatePoseFromGeospatialPoseInternalError extends androidx.xr.arcore.CreatePoseFromGeospatialPoseResult {
+    ctor public CreatePoseFromGeospatialPoseInternalError(String error);
     method @InaccessibleFromKotlin public String getError();
     property public String error;
   }
@@ -403,9 +403,9 @@ package androidx.xr.arcore {
   }
 
   public final class Geospatial {
-    method public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
+    method public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.arcore.VpsAvailabilityResult>);
     method public androidx.xr.arcore.AnchorCreateResult createAnchor(double latitude, double longitude, double altitude, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion);
-    method public suspend Object? createAnchorOnSurface(double latitude, double longitude, double altitudeAboveSurface, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion, androidx.xr.arcore.Geospatial.Surface surface, kotlin.coroutines.Continuation<? super androidx.xr.arcore.AnchorCreateResult>);
+    method public suspend Object? createAnchorOnSurface(double latitude, double longitude, double altitudeAboveSurface, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion, androidx.xr.arcore.GeospatialSurface surface, kotlin.coroutines.Continuation<? super androidx.xr.arcore.AnchorCreateResult>);
     method public androidx.xr.arcore.CreateGeospatialPoseFromPoseResult createGeospatialPoseFromPose(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.arcore.CreatePoseFromGeospatialPoseResult createPoseFromGeospatialPose(androidx.xr.runtime.math.GeospatialPose geospatialPose);
     method public static androidx.xr.arcore.Geospatial getInstance(androidx.xr.runtime.Session session);
@@ -418,38 +418,38 @@ package androidx.xr.arcore {
     method public androidx.xr.arcore.Geospatial getInstance(androidx.xr.runtime.Session session);
   }
 
-  public static final class Geospatial.State {
-    field public static final androidx.xr.arcore.Geospatial.State.Companion Companion;
-    field public static final androidx.xr.arcore.Geospatial.State ERROR_INTERNAL;
-    field public static final androidx.xr.arcore.Geospatial.State ERROR_NOT_AUTHORIZED;
-    field public static final androidx.xr.arcore.Geospatial.State ERROR_RESOURCE_EXHAUSTED;
-    field public static final androidx.xr.arcore.Geospatial.State NOT_RUNNING;
-    field public static final androidx.xr.arcore.Geospatial.State PAUSED;
-    field public static final androidx.xr.arcore.Geospatial.State RUNNING;
+  @Deprecated public static final class Geospatial.State {
+    field @Deprecated public static final androidx.xr.arcore.Geospatial.State.Companion Companion;
+    field @Deprecated public static final androidx.xr.arcore.Geospatial.State ERROR_INTERNAL;
+    field @Deprecated public static final androidx.xr.arcore.Geospatial.State ERROR_NOT_AUTHORIZED;
+    field @Deprecated public static final androidx.xr.arcore.Geospatial.State ERROR_RESOURCE_EXHAUSTED;
+    field @Deprecated public static final androidx.xr.arcore.Geospatial.State NOT_RUNNING;
+    field @Deprecated public static final androidx.xr.arcore.Geospatial.State PAUSED;
+    field @Deprecated public static final androidx.xr.arcore.Geospatial.State RUNNING;
   }
 
-  public static final class Geospatial.State.Companion {
-    property public androidx.xr.arcore.Geospatial.State ERROR_INTERNAL;
-    property public androidx.xr.arcore.Geospatial.State ERROR_NOT_AUTHORIZED;
-    property public androidx.xr.arcore.Geospatial.State ERROR_RESOURCE_EXHAUSTED;
-    property public androidx.xr.arcore.Geospatial.State NOT_RUNNING;
-    property public androidx.xr.arcore.Geospatial.State PAUSED;
-    property public androidx.xr.arcore.Geospatial.State RUNNING;
+  @Deprecated public static final class Geospatial.State.Companion {
+    property @Deprecated public androidx.xr.arcore.Geospatial.State ERROR_INTERNAL;
+    property @Deprecated public androidx.xr.arcore.Geospatial.State ERROR_NOT_AUTHORIZED;
+    property @Deprecated public androidx.xr.arcore.Geospatial.State ERROR_RESOURCE_EXHAUSTED;
+    property @Deprecated public androidx.xr.arcore.Geospatial.State NOT_RUNNING;
+    property @Deprecated public androidx.xr.arcore.Geospatial.State PAUSED;
+    property @Deprecated public androidx.xr.arcore.Geospatial.State RUNNING;
   }
 
-  public static final class Geospatial.Surface {
-    field public static final androidx.xr.arcore.Geospatial.Surface.Companion Companion;
-    field public static final androidx.xr.arcore.Geospatial.Surface ROOFTOP;
-    field public static final androidx.xr.arcore.Geospatial.Surface TERRAIN;
+  public final class GeospatialSurface {
+    field public static final androidx.xr.arcore.GeospatialSurface.Companion Companion;
+    field public static final androidx.xr.arcore.GeospatialSurface ROOFTOP;
+    field public static final androidx.xr.arcore.GeospatialSurface TERRAIN;
   }
 
-  public static final class Geospatial.Surface.Companion {
-    property public androidx.xr.arcore.Geospatial.Surface ROOFTOP;
-    property public androidx.xr.arcore.Geospatial.Surface TERRAIN;
+  public static final class GeospatialSurface.Companion {
+    property public androidx.xr.arcore.GeospatialSurface ROOFTOP;
+    property public androidx.xr.arcore.GeospatialSurface TERRAIN;
   }
 
   public final class Hand implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Hand.State> {
-    method public static androidx.xr.arcore.Hand.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
+    method public static androidx.xr.arcore.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> getState();
     method public static androidx.xr.arcore.Hand? left(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.Hand? right(androidx.xr.runtime.Session session);
@@ -458,15 +458,15 @@ package androidx.xr.arcore {
   }
 
   public static final class Hand.Companion {
-    method public androidx.xr.arcore.Hand.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
+    method public androidx.xr.arcore.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
     method public androidx.xr.arcore.Hand? left(androidx.xr.runtime.Session session);
     method public androidx.xr.arcore.Hand? right(androidx.xr.runtime.Session session);
   }
 
-  public enum Hand.HandSide {
-    enum_constant public static final androidx.xr.arcore.Hand.HandSide LEFT;
-    enum_constant public static final androidx.xr.arcore.Hand.HandSide RIGHT;
-    enum_constant public static final androidx.xr.arcore.Hand.HandSide UNKNOWN;
+  @Deprecated public enum Hand.HandSide {
+    enum_constant @Deprecated public static final androidx.xr.arcore.Hand.HandSide LEFT;
+    enum_constant @Deprecated public static final androidx.xr.arcore.Hand.HandSide RIGHT;
+    enum_constant @Deprecated public static final androidx.xr.arcore.Hand.HandSide UNKNOWN;
   }
 
   public static final class Hand.State implements androidx.xr.arcore.Trackable.State {
@@ -515,6 +515,12 @@ package androidx.xr.arcore {
     property @Deprecated public androidx.xr.arcore.HandJointType HAND_JOINT_TYPE_THUMB_TIP;
   }
 
+  public enum HandSide {
+    enum_constant public static final androidx.xr.arcore.HandSide LEFT;
+    enum_constant public static final androidx.xr.arcore.HandSide RIGHT;
+    enum_constant public static final androidx.xr.arcore.HandSide UNKNOWN;
+  }
+
   public final class HitResult {
     method public androidx.xr.arcore.AnchorCreateResult createAnchor();
     method @InaccessibleFromKotlin public float getDistance();
@@ -527,17 +533,6 @@ package androidx.xr.arcore {
 
   public final class Interaction {
     method public static java.util.List<androidx.xr.arcore.HitResult> hitTest(androidx.xr.runtime.Session session, androidx.xr.runtime.math.Ray ray);
-  }
-
-  public final class NativeData {
-    method @InaccessibleFromKotlin public Long? getNativeInstancePointer();
-    method @InaccessibleFromKotlin public long getNativeSessionPointer();
-    property public Long? nativeInstancePointer;
-    property public long nativeSessionPointer;
-  }
-
-  @SuppressCompatibility public final class NativeDataExt {
-    method @SuppressCompatibility @androidx.xr.arcore.UnstableNativeResourceApi public static androidx.xr.arcore.NativeData getNativeData(androidx.xr.runtime.Session);
   }
 
   public final class PerceptionState {
@@ -581,21 +576,21 @@ package androidx.xr.arcore {
     method public kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Plane>> subscribe(androidx.xr.runtime.Session session);
   }
 
-  public static final class Plane.Label {
-    field public static final androidx.xr.arcore.Plane.Label CEILING;
-    field public static final androidx.xr.arcore.Plane.Label.Companion Companion;
-    field public static final androidx.xr.arcore.Plane.Label FLOOR;
-    field public static final androidx.xr.arcore.Plane.Label TABLE;
-    field public static final androidx.xr.arcore.Plane.Label UNKNOWN;
-    field public static final androidx.xr.arcore.Plane.Label WALL;
+  @Deprecated public static final class Plane.Label {
+    field @Deprecated public static final androidx.xr.arcore.Plane.Label CEILING;
+    field @Deprecated public static final androidx.xr.arcore.Plane.Label.Companion Companion;
+    field @Deprecated public static final androidx.xr.arcore.Plane.Label FLOOR;
+    field @Deprecated public static final androidx.xr.arcore.Plane.Label TABLE;
+    field @Deprecated public static final androidx.xr.arcore.Plane.Label UNKNOWN;
+    field @Deprecated public static final androidx.xr.arcore.Plane.Label WALL;
   }
 
-  public static final class Plane.Label.Companion {
-    property public androidx.xr.arcore.Plane.Label CEILING;
-    property public androidx.xr.arcore.Plane.Label FLOOR;
-    property public androidx.xr.arcore.Plane.Label TABLE;
-    property public androidx.xr.arcore.Plane.Label UNKNOWN;
-    property public androidx.xr.arcore.Plane.Label WALL;
+  @Deprecated public static final class Plane.Label.Companion {
+    property @Deprecated public androidx.xr.arcore.Plane.Label CEILING;
+    property @Deprecated public androidx.xr.arcore.Plane.Label FLOOR;
+    property @Deprecated public androidx.xr.arcore.Plane.Label TABLE;
+    property @Deprecated public androidx.xr.arcore.Plane.Label UNKNOWN;
+    property @Deprecated public androidx.xr.arcore.Plane.Label WALL;
   }
 
   public static final class Plane.State implements androidx.xr.arcore.Trackable.State {
@@ -613,17 +608,17 @@ package androidx.xr.arcore {
     property public java.util.List<androidx.xr.runtime.math.Vector2> vertices;
   }
 
-  public static final class Plane.Type {
-    field public static final androidx.xr.arcore.Plane.Type.Companion Companion;
-    field public static final androidx.xr.arcore.Plane.Type HORIZONTAL_DOWNWARD_FACING;
-    field public static final androidx.xr.arcore.Plane.Type HORIZONTAL_UPWARD_FACING;
-    field public static final androidx.xr.arcore.Plane.Type VERTICAL;
+  @Deprecated public static final class Plane.Type {
+    field @Deprecated public static final androidx.xr.arcore.Plane.Type.Companion Companion;
+    field @Deprecated public static final androidx.xr.arcore.Plane.Type HORIZONTAL_DOWNWARD_FACING;
+    field @Deprecated public static final androidx.xr.arcore.Plane.Type HORIZONTAL_UPWARD_FACING;
+    field @Deprecated public static final androidx.xr.arcore.Plane.Type VERTICAL;
   }
 
-  public static final class Plane.Type.Companion {
-    property public androidx.xr.arcore.Plane.Type HORIZONTAL_DOWNWARD_FACING;
-    property public androidx.xr.arcore.Plane.Type HORIZONTAL_UPWARD_FACING;
-    property public androidx.xr.arcore.Plane.Type VERTICAL;
+  @Deprecated public static final class Plane.Type.Companion {
+    property @Deprecated public androidx.xr.arcore.Plane.Type HORIZONTAL_DOWNWARD_FACING;
+    property @Deprecated public androidx.xr.arcore.Plane.Type HORIZONTAL_UPWARD_FACING;
+    property @Deprecated public androidx.xr.arcore.Plane.Type VERTICAL;
   }
 
   public final class RenderViewpoint {
@@ -642,10 +637,10 @@ package androidx.xr.arcore {
   }
 
   public static final class RenderViewpoint.State {
-    method @InaccessibleFromKotlin public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method @InaccessibleFromKotlin @Deprecated public androidx.xr.runtime.FieldOfView getFieldOfView();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getLocalPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
-    property public androidx.xr.runtime.FieldOfView fieldOfView;
+    property @Deprecated public androidx.xr.runtime.FieldOfView fieldOfView;
     property public androidx.xr.runtime.math.Pose localPose;
     property public androidx.xr.runtime.math.Pose pose;
   }
@@ -686,8 +681,40 @@ package androidx.xr.arcore {
     property public abstract androidx.xr.runtime.TrackingState trackingState;
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="Access to native pointers is discouraged and the data returned by this API may change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface UnstableNativeResourceApi {
+  public final class VpsAvailabilityAvailable extends androidx.xr.arcore.VpsAvailabilityResult {
+    ctor public VpsAvailabilityAvailable();
   }
+
+  public final class VpsAvailabilityErrorInternal extends androidx.xr.arcore.VpsAvailabilityResult {
+    ctor public VpsAvailabilityErrorInternal();
+  }
+
+  public final class VpsAvailabilityNetworkError extends androidx.xr.arcore.VpsAvailabilityResult {
+    ctor public VpsAvailabilityNetworkError();
+  }
+
+  public final class VpsAvailabilityNotAuthorized extends androidx.xr.arcore.VpsAvailabilityResult {
+    ctor public VpsAvailabilityNotAuthorized();
+  }
+
+  public final class VpsAvailabilityResourceExhausted extends androidx.xr.arcore.VpsAvailabilityResult {
+    ctor public VpsAvailabilityResourceExhausted();
+  }
+
+  public abstract sealed exhaustive class VpsAvailabilityResult {
+  }
+
+  public final class VpsAvailabilityUnavailable extends androidx.xr.arcore.VpsAvailabilityResult {
+    ctor public VpsAvailabilityUnavailable();
+  }
+
+  public typealias GeospatialState = androidx.xr.arcore.Geospatial.State;
+
+  public typealias PlaneLabel = androidx.xr.arcore.Plane.Label;
+
+  public typealias PlaneType = androidx.xr.arcore.Plane.Type;
+
+  public typealias TrackingState = androidx.xr.runtime.TrackingState;
 
 }
 

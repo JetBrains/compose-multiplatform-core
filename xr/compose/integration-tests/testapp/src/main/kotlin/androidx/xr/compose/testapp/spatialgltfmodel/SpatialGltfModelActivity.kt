@@ -72,7 +72,6 @@ import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
-import androidx.xr.compose.subspace.draw.scale
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxWidth
@@ -438,7 +437,7 @@ class SpatialGltfModelActivity : ComponentActivity() {
                 if (state.showArrows) {
                     SpatialGltfModel(
                         state = arrowsModelState,
-                        modifier = SubspaceModifier.then(nodeOffset).scale(1.5f),
+                        modifier = SubspaceModifier.then(nodeOffset),
                     )
                 }
             }

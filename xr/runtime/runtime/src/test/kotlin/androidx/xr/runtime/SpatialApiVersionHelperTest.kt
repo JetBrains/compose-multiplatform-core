@@ -16,7 +16,7 @@
 
 package androidx.xr.runtime
 
-import androidx.xr.runtime.testing.FakeSpatialApiVersionProvider
+import androidx.xr.runtime.testing.internal.FakeSpatialApiVersionProvider
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.After

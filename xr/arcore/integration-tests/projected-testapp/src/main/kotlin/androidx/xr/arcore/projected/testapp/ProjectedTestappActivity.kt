@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.arcore.projected.testapp
 
@@ -29,25 +30,27 @@ import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
 import androidx.xr.arcore.CreatePoseFromGeospatialPoseSuccess
 import androidx.xr.arcore.Geospatial
+import androidx.xr.arcore.GeospatialState
+import androidx.xr.arcore.VpsAvailabilityAvailable
+import androidx.xr.arcore.VpsAvailabilityErrorInternal
+import androidx.xr.arcore.VpsAvailabilityNetworkError
+import androidx.xr.arcore.VpsAvailabilityNotAuthorized
+import androidx.xr.arcore.VpsAvailabilityResourceExhausted
+import androidx.xr.arcore.VpsAvailabilityResult
+import androidx.xr.arcore.VpsAvailabilityUnavailable
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.permissions.ProjectedPermissionsRequestParams
 import androidx.xr.projected.permissions.ProjectedPermissionsResultContract
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.GeospatialMode
+import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
-import androidx.xr.runtime.VpsAvailabilityAvailable
-import androidx.xr.runtime.VpsAvailabilityErrorInternal
-import androidx.xr.runtime.VpsAvailabilityNetworkError
-import androidx.xr.runtime.VpsAvailabilityNotAuthorized
-import androidx.xr.runtime.VpsAvailabilityResourceExhausted
-import androidx.xr.runtime.VpsAvailabilityResult
-import androidx.xr.runtime.VpsAvailabilityUnavailable
 import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.GeospatialPose
 import kotlinx.coroutines.CompletableDeferred
@@ -56,6 +59,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** Test app which tests projected perception API surface. */
+@Suppress("DEPRECATION")
+@OptIn(PreviewSpatialApi::class)
 class ProjectedTestAppActivity : ComponentActivity() {
     private lateinit var session: Session
     private lateinit var geospatial: Geospatial
@@ -64,7 +69,6 @@ class ProjectedTestAppActivity : ComponentActivity() {
     private var vpsStatusMessage: String = "VPS status: checking..."
     private val sessionInitialized = CompletableDeferred<Unit>()
     private var exceptionMessage: String? = null
-    private val TAG = "ProjectedTestAppActivity"
     private val configs =
         listOf(
             "Geospatial On, 6DoF On" to
@@ -234,6 +238,10 @@ class ProjectedTestAppActivity : ComponentActivity() {
     private fun getGeospatialPoseText(): String {
         val devicePose = ArDevice.getInstance(session).state.value.devicePose
         val geospatialState = Geospatial.getInstance(session).state.value
+        if (geospatialState != GeospatialState.RUNNING) {
+            return "\nGeospatial State: ${getGeospatialStateMessage(geospatialState)} (Waiting for Earth...)"
+        }
+
         when (val geospatialPoseResult = geospatial.createGeospatialPoseFromPose(devicePose)) {
             is CreateGeospatialPoseFromPoseSuccess -> {
                 val currentGeospatialPose = geospatialPoseResult.pose
@@ -257,7 +265,8 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 )
                 val comparisonMessage = testGeospatialConversions(currentGeospatialPose)
 
-                var text = "\nGeospatial State: ${getGeospatialStateMessage(geospatialState)}"
+                var text =
+                    "\nGeospatial GeospatialState: ${getGeospatialStateMessage(geospatialState)}"
                 text += "\nGeospatialPose: ${currentGeospatialPose}"
                 text += "\nVPS availability: $vpsStatusMessage"
                 text += "\nComparison:\n$comparisonMessage"
@@ -281,14 +290,14 @@ class ProjectedTestAppActivity : ComponentActivity() {
         }
     }
 
-    private fun getGeospatialStateMessage(geospatialState: Geospatial.State?): String {
+    private fun getGeospatialStateMessage(geospatialState: GeospatialState?): String {
         return when (geospatialState) {
-            Geospatial.State.RUNNING -> "Running"
-            Geospatial.State.NOT_RUNNING -> "Not Running"
-            Geospatial.State.ERROR_INTERNAL -> "Internal Error"
-            Geospatial.State.ERROR_NOT_AUTHORIZED -> "Not Authorized"
-            Geospatial.State.ERROR_RESOURCE_EXHAUSTED -> "Resource Exhausted"
-            Geospatial.State.PAUSED -> "Paused"
+            GeospatialState.RUNNING -> "Running"
+            GeospatialState.NOT_RUNNING -> "Not Running"
+            GeospatialState.ERROR_INTERNAL -> "Internal Error"
+            GeospatialState.ERROR_NOT_AUTHORIZED -> "Not Authorized"
+            GeospatialState.ERROR_RESOURCE_EXHAUSTED -> "Resource Exhausted"
+            GeospatialState.PAUSED -> "Paused"
             else -> "Checking..."
         }
     }

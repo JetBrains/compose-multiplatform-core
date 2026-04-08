@@ -41,12 +41,12 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Hand
 import androidx.xr.arcore.HandJointType
+import androidx.xr.arcore.TrackingState
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
@@ -463,6 +463,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
                     shape = shape,
                     stereoMode = stereoMode,
                     surfaceProtection = surfaceProtection,
+                    parent = session.scene.activitySpace,
                 )
             surfaceEntity.parent = parent
 

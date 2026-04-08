@@ -133,6 +133,10 @@ class SessionLifecycleHelper(
                     showErrorMessage(result.errorMessage)
                     activity.finish()
                 }
+                else -> {
+                    showErrorMessage("Unexpected ${result::class.simpleName}")
+                    activity.finish()
+                }
             }
         } catch (e: SecurityException) {
             requestPermissionLauncher.launch(getRequiredPermissions(config).toTypedArray())

@@ -79,6 +79,7 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
                 IntSize2d(640, 600),
                 "panel_entity",
                 Pose(Vector3(0.1f, -0.5f, 0.1f)),
+                parent = session!!.scene.activitySpace,
             )
         panelEntity?.parent = session!!.scene.keyEntity
 
@@ -198,7 +199,12 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
     fun tryToCreateActivityPanel(capabilities: Set<SpatialCapability>) {
         if (capabilities.contains(SpatialCapability.EMBED_ACTIVITY) && !activityPanelCreated) {
             activityPanelEntity =
-                ActivityPanelEntity.create(session!!, IntSize2d(640, 480), "activity_panel")
+                ActivityPanelEntity.create(
+                    session!!,
+                    IntSize2d(640, 480),
+                    "activity_panel",
+                    parent = session!!.scene.activitySpace,
+                )
             val intent = Intent(this, ActivityPanel::class.java)
             intent.putExtra("NAV_ICON", false)
             activityPanelEntity!!.startActivity(intent)

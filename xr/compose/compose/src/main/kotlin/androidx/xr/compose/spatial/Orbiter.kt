@@ -912,6 +912,7 @@ private class SpatialOrbiter(
             CorePanelEntity(
                     PanelEntity.create(
                         session = session,
+                        parent = null,
                         view = view,
                         pixelDimensions = IntSize2d(0, 0),
                         name = "Orbiter:${view.id}",

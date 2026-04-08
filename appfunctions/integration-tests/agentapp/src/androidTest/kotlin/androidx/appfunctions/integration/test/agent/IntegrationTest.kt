@@ -17,6 +17,7 @@
 package androidx.appfunctions.integration.test.agent
 
 import android.Manifest
+import android.app.AppInteractionAttribution
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -55,7 +56,9 @@ import androidx.appfunctions.integration.test.agent.TestUtil.assertReadInaccessi
 import androidx.appfunctions.integration.test.agent.TestUtil.assertWriteAccessible
 import androidx.appfunctions.integration.test.agent.TestUtil.assertWriteInaccessible
 import androidx.appfunctions.integration.test.agent.TestUtil.doBlocking
+import androidx.appfunctions.integration.test.agent.TestUtil.grantAppFunctionAccess
 import androidx.appfunctions.integration.test.agent.TestUtil.retryAssert
+import androidx.appfunctions.integration.test.agent.TestUtil.revokeAppFunctionAccess
 import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
@@ -96,6 +99,8 @@ class IntegrationTest {
 
     @Before
     fun setup() = doBlocking {
+        uiAutomation.grantAppFunctionAccess(targetContext, TARGET_APP_PACKAGE)
+
         appFunctionCaller = AppFunctionCaller(targetContext)
 
         uiAutomation.apply {
@@ -110,6 +115,7 @@ class IntegrationTest {
 
     @After
     fun tearDown() {
+        uiAutomation.revokeAppFunctionAccess()
         InstallHelper.uninstall(TARGET_APP_PACKAGE)
         uiAutomation.dropShellPermissionIdentity()
     }
@@ -129,6 +135,34 @@ class IntegrationTest {
                         AppFunctionData.Builder(metadata.parameters, metadata.components)
                             .setLong("num1", 1)
                             .setLong("num2", 2)
+                            .build(),
+                    )
+            )
+
+        val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
+        assertThat(successResponse.returnValue.getLong(PROPERTY_RETURN_VALUE)).isEqualTo(3)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 37)
+    fun executeAppFunctionWithAttribution_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(targetContext))
+        val metadata =
+            findAppFunctionMetadata("androidx.appfunctions.integration.testapp.TestFunctions#add")
+
+        val response =
+            appFunctionCaller.executeAppFunction(
+                request =
+                    ExecuteAppFunctionRequest(
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components)
+                            .setLong("num1", 1)
+                            .setLong("num2", 2)
+                            .build(),
+                        AppInteractionAttribution.Builder(
+                                AppInteractionAttribution.INTERACTION_TYPE_USER_QUERY
+                            )
                             .build(),
                     )
             )

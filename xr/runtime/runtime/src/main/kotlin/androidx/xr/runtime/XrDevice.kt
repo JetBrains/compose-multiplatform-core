@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.annotation.GuardedBy
 import androidx.lifecycle.Lifecycle
 import androidx.xr.runtime.XrDevice.Companion.getCurrentDevice
+import androidx.xr.runtime.interfaces.DisplayBlendMode as InternalDisplayBlendMode
 import androidx.xr.runtime.interfaces.XrDeviceCapabilityProvider
 import androidx.xr.runtime.interfaces.XrDeviceCapabilityProviderFactory
 import java.util.WeakHashMap
@@ -80,6 +81,7 @@ private constructor(
             listOf(
                 "androidx.xr.runtime.openxr.OpenXrDeviceCapabilityProviderFactory",
                 "androidx.xr.projected.ProjectedDeviceCapabilityProviderFactory",
+                "androidx.xr.runtime.testing.internal.FakeXrDeviceCapabilityProviderFactory",
             )
 
         @GuardedBy("deviceCache") private val deviceCache = WeakHashMap<Context, XrDevice>()
@@ -141,14 +143,21 @@ private constructor(
      *   available.
      */
     public fun getPreferredDisplayBlendMode(): androidx.xr.runtime.DisplayBlendMode {
-        // TODO(b/461561664) : Use XrDeviceCapabilityProvider.getPreferredDisplayBlendMode() once it
-        // is implemented.
-        if (session != null) {
-            return if (session.runtimes.isEmpty()) {
-                androidx.xr.runtime.DisplayBlendMode.NO_DISPLAY
-            } else {
-                session.runtimes.firstNotNullOf { it.getPreferredDisplayBlendMode() }
-            }
-        } else throw NotImplementedError("XrDevice was not instantiated with a session.")
+        return androidx.xr.runtime.DisplayBlendMode.fromInternalDisplayBlendMode(
+            xrDeviceCapabilityProvider?.getPreferredDisplayBlendMode()
+                ?: throw IllegalStateException(
+                    "XrDeviceCapabilityProvider was not initialized. Did you use XrDevice.getCurrentDevice(context)?"
+                )
+        )
     }
 }
+
+private fun DisplayBlendMode.Companion.fromInternalDisplayBlendMode(
+    value: InternalDisplayBlendMode
+): DisplayBlendMode =
+    when (value) {
+        InternalDisplayBlendMode.NO_DISPLAY -> DisplayBlendMode.NO_DISPLAY
+        InternalDisplayBlendMode.ADDITIVE -> DisplayBlendMode.ADDITIVE
+        InternalDisplayBlendMode.ALPHA_BLEND -> DisplayBlendMode.ALPHA_BLEND
+        else -> throw IllegalArgumentException("Unknown DisplayBlendMode: $value")
+    }

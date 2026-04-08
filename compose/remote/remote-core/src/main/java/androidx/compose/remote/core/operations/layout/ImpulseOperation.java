@@ -141,8 +141,12 @@ public class ImpulseOperation extends PaintOperation implements VariableSupport,
     @Override
     public void paint(@NonNull PaintContext context) {
         RemoteContext remoteContext = context.getContext();
-
-        if (remoteContext.getAnimationTime() <= mOutStartAt + mOutDuration) {
+        float currentTime = remoteContext.getAnimationTime();
+        if (currentTime < mOutStartAt) {
+            context.wakeIn(mOutStartAt - currentTime);
+            return;
+        }
+        if (currentTime >= mOutStartAt && currentTime <= mOutStartAt + mOutDuration) {
             if (mInitialPass) {
                 for (Operation op : mList) {
                     if (op instanceof VariableSupport && op.isDirty()) {

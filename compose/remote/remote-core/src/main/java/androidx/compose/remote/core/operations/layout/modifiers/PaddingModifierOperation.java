@@ -18,6 +18,7 @@ package androidx.compose.remote.core.operations.layout.modifiers;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -233,5 +234,13 @@ public class PaddingModifierOperation extends Operation implements ModifierOpera
                 : mRight;
         mBottomValue = Float.isNaN(mBottom) ? context.getFloat(Utils.idFromNan(mBottom))
                 : mBottom;
+
+        if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP) {
+            float density = context.getDensity();
+            mLeftValue *= density;
+            mTopValue *= density;
+            mRightValue *= density;
+            mBottomValue *= density;
+        }
     }
 }

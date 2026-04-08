@@ -2,13 +2,13 @@
 package androidx.room3 {
 
   public final class DatabaseConfiguration {
-    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public DatabaseConfiguration(android.content.Context context, String? name, androidx.room3.RoomDatabase.MigrationContainer migrationContainer, java.util.List<? extends androidx.room3.RoomDatabase.Callback> callbacks, boolean allowMainThreadQueries, androidx.room3.RoomDatabase.JournalMode journalMode, android.content.Intent? multiInstanceInvalidationServiceIntent, boolean isMigrationRequired, boolean allowDestructiveMigrationOnDowngrade, java.util.Set<java.lang.Integer>? migrationNotRequiredFrom, androidx.room3.RoomDatabase.PrepackagedDatabaseCallback? prepackagedDatabaseCallback, java.util.List<?> typeConverters, java.util.List<? extends androidx.room3.migration.AutoMigrationSpec> autoMigrationSpecs, boolean allowDestructiveMigrationForAllTables, androidx.sqlite.SQLiteDriver sqliteDriver, kotlin.coroutines.CoroutineContext queryCoroutineContext);
+    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public DatabaseConfiguration(android.content.Context? context, String? name, androidx.room3.RoomDatabase.MigrationContainer migrationContainer, java.util.List<? extends androidx.room3.RoomDatabase.Callback> callbacks, boolean allowMainThreadQueries, androidx.room3.RoomDatabase.JournalMode journalMode, android.content.Intent? multiInstanceInvalidationServiceIntent, boolean isMigrationRequired, boolean allowDestructiveMigrationOnDowngrade, java.util.Set<java.lang.Integer>? migrationNotRequiredFrom, androidx.room3.RoomDatabase.PrepackagedDatabaseCallback? prepackagedDatabaseCallback, java.util.List<?> typeConverters, java.util.List<? extends androidx.room3.migration.AutoMigrationSpec> autoMigrationSpecs, boolean allowDestructiveMigrationForAllTables, androidx.sqlite.SQLiteDriver sqliteDriver, kotlin.coroutines.CoroutineContext queryCoroutineContext);
     method @InaccessibleFromKotlin public boolean getAllowDestructiveMigrationForAllTables();
     method @InaccessibleFromKotlin public boolean getAllowDestructiveMigrationOnDowngrade();
     method @InaccessibleFromKotlin public boolean getAllowMainThreadQueries();
     method @InaccessibleFromKotlin public java.util.List<androidx.room3.migration.AutoMigrationSpec> getAutoMigrationSpecs();
     method @InaccessibleFromKotlin public java.util.List<androidx.room3.RoomDatabase.Callback> getCallbacks();
-    method @InaccessibleFromKotlin public android.content.Context getContext();
+    method @InaccessibleFromKotlin public android.content.Context? getContext();
     method @InaccessibleFromKotlin public androidx.room3.RoomDatabase.JournalMode getJournalMode();
     method @InaccessibleFromKotlin public androidx.room3.RoomDatabase.MigrationContainer getMigrationContainer();
     method @InaccessibleFromKotlin public String? getName();
@@ -22,7 +22,7 @@ package androidx.room3 {
     property public boolean allowMainThreadQueries;
     property public java.util.List<androidx.room3.migration.AutoMigrationSpec> autoMigrationSpecs;
     property public java.util.List<androidx.room3.RoomDatabase.Callback> callbacks;
-    property public android.content.Context context;
+    property public android.content.Context? context;
     property public boolean isMigrationRequired;
     property public androidx.room3.RoomDatabase.JournalMode journalMode;
     property public androidx.room3.RoomDatabase.MigrationContainer migrationContainer;
@@ -99,24 +99,26 @@ package androidx.room3 {
   public final class Room {
     method public static <T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> databaseBuilder(android.content.Context context, Class<T> klass, String? name);
     method @KotlinOnly public inline <reified T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> databaseBuilder(android.content.Context context, String name, optional kotlin.jvm.functions.Function0<T> factory);
+    method @KotlinOnly public inline <reified T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> databaseBuilder(String name, optional kotlin.jvm.functions.Function0<T> factory);
     method public static <T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> inMemoryDatabaseBuilder(android.content.Context context, Class<T> klass);
     method @KotlinOnly public inline <reified T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> inMemoryDatabaseBuilder(android.content.Context context, optional kotlin.jvm.functions.Function0<T> factory);
+    method @KotlinOnly public inline <reified T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> inMemoryDatabaseBuilder(optional kotlin.jvm.functions.Function0<T> factory);
     property public static String MASTER_TABLE_NAME;
     field public static final androidx.room3.Room INSTANCE;
     field public static final String MASTER_TABLE_NAME = "room_master_table";
   }
 
   public abstract class RoomDatabase {
-    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public RoomDatabase();
+    ctor public RoomDatabase();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void assertNotMainThread();
     method public abstract suspend Object? clearAllTables(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void close();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract java.util.List<androidx.room3.migration.Migration> createAutoMigrations(java.util.Map<kotlin.reflect.KClass<? extends androidx.room3.migration.AutoMigrationSpec>,? extends androidx.room3.migration.AutoMigrationSpec> autoMigrationSpecs);
-    method protected abstract androidx.room3.InvalidationTracker createInvalidationTracker();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected abstract androidx.room3.RoomOpenDelegateMarker createOpenDelegate();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.room3.migration.Migration> createAutoMigrations(java.util.Map<kotlin.reflect.KClass<? extends androidx.room3.migration.AutoMigrationSpec>,? extends androidx.room3.migration.AutoMigrationSpec> autoMigrationSpecs);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected androidx.room3.InvalidationTracker createInvalidationTracker();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected androidx.room3.RoomOpenDelegateMarker createOpenDelegate();
     method @InaccessibleFromKotlin public androidx.room3.InvalidationTracker getInvalidationTracker();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract java.util.Set<kotlin.reflect.KClass<? extends androidx.room3.migration.AutoMigrationSpec>> getRequiredAutoMigrationSpecClasses();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected abstract java.util.Map<kotlin.reflect.KClass<? extends java.lang.Object?>,java.util.List<kotlin.reflect.KClass<? extends java.lang.Object?>>> getRequiredTypeConverterClasses();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.Set<kotlin.reflect.KClass<? extends androidx.room3.migration.AutoMigrationSpec>> getRequiredAutoMigrationSpecClasses();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected java.util.Map<kotlin.reflect.KClass<? extends java.lang.Object?>,java.util.List<kotlin.reflect.KClass<? extends java.lang.Object?>>> getRequiredTypeConverterClasses();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected java.util.Map<java.lang.Class<? extends java.lang.Object?>,java.util.List<java.lang.Class<? extends java.lang.Object?>>> getRequiredTypeConverters();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final <T> T getTypeConverter(kotlin.reflect.KClass<T> klass);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected final suspend Object? internalInitInvalidationTracker(androidx.sqlite.SQLiteConnection connection, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -126,7 +128,7 @@ package androidx.room3 {
   }
 
   public static final class RoomDatabase.Builder<T extends androidx.room3.RoomDatabase> {
-    ctor @kotlin.PublishedApi internal RoomDatabase.Builder(kotlin.reflect.KClass<T> klass, String? name, kotlin.jvm.functions.Function0<? extends T>? factory, android.content.Context context);
+    ctor @kotlin.PublishedApi internal RoomDatabase.Builder(kotlin.reflect.KClass<T> klass, String? name, kotlin.jvm.functions.Function0<? extends T>? factory, android.content.Context? context);
     method public androidx.room3.RoomDatabase.Builder<T> addAutoMigrationSpec(androidx.room3.migration.AutoMigrationSpec autoMigrationSpec);
     method public androidx.room3.RoomDatabase.Builder<T> addCallback(androidx.room3.RoomDatabase.Callback callback);
     method public androidx.room3.RoomDatabase.Builder<T> addMigrations(androidx.room3.migration.Migration... migrations);

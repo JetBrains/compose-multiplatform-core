@@ -16,18 +16,17 @@
 
 package androidx.xr.arcore.projected
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.Geospatial
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
-import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.VpsAvailabilityAvailable
-import androidx.xr.runtime.VpsAvailabilityErrorInternal
-import androidx.xr.runtime.VpsAvailabilityNetworkError
-import androidx.xr.runtime.VpsAvailabilityNotAuthorized
-import androidx.xr.runtime.VpsAvailabilityResourceExhausted
-import androidx.xr.runtime.VpsAvailabilityResult
-import androidx.xr.runtime.VpsAvailabilityUnavailable
+import androidx.xr.arcore.runtime.TrackingState
+import androidx.xr.arcore.runtime.VpsAvailabilityAvailable
+import androidx.xr.arcore.runtime.VpsAvailabilityErrorInternal
+import androidx.xr.arcore.runtime.VpsAvailabilityNetworkError
+import androidx.xr.arcore.runtime.VpsAvailabilityNotAuthorized
+import androidx.xr.arcore.runtime.VpsAvailabilityResourceExhausted
+import androidx.xr.arcore.runtime.VpsAvailabilityResult
+import androidx.xr.arcore.runtime.VpsAvailabilityUnavailable
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -41,10 +40,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  *
  * @property state the [Geospatial.State] of the geospatial instance
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class ProjectedGeospatial internal constructor(private val xrResources: XrResources) :
+internal class ProjectedGeospatial internal constructor(private val xrResources: XrResources) :
     Geospatial {
-    public override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
+    override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
         internal set
 
     private val service: IProjectedPerceptionService
@@ -59,7 +57,7 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
         }
     }
 
-    override public fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose {
+    override fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose {
         checkTrackingState()
         val projectedQuaternion =
             ProjectedQuarternion().apply {
@@ -86,7 +84,7 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
         )
     }
 
-    override public fun createGeospatialPoseFromPose(pose: Pose): Geospatial.GeospatialPoseResult {
+    override fun createGeospatialPoseFromPose(pose: Pose): Geospatial.GeospatialPoseResult {
         checkTrackingState()
         val projectedVector =
             ProjectedVector3().apply {
@@ -145,7 +143,7 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
         )
     }
 
-    override public fun createAnchor(
+    override fun createAnchor(
         latitude: Double,
         longitude: Double,
         altitude: Double,
@@ -154,7 +152,7 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
         throw NotImplementedError("Not implemented yet.")
     }
 
-    override public suspend fun createAnchorOnSurface(
+    override suspend fun createAnchorOnSurface(
         latitude: Double,
         longitude: Double,
         altitudeAboveSurface: Double,

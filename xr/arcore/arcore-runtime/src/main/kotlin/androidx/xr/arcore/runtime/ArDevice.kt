@@ -17,7 +17,6 @@
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
 /**
@@ -28,5 +27,5 @@ import androidx.xr.runtime.math.Pose
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface ArDevice {
     public val devicePose: Pose
-    public val trackingState: TrackingState
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val trackingState: TrackingState
 }

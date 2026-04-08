@@ -16,15 +16,18 @@
 
 package androidx.glance.wear
 
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.Build
+import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 import androidx.annotation.VisibleForTesting
 import androidx.glance.wear.cache.WearWidgetCache
+import androidx.glance.wear.cache.WearWidgetCache.WidgetCacheMissException
 import androidx.glance.wear.core.ActiveWearWidgetHandle
 import androidx.glance.wear.core.WearWidgetEvent
 import androidx.glance.wear.core.WearWidgetParams
@@ -117,33 +120,46 @@ internal constructor(
      *
      * TODO: Provide a default mechanism for storing instanceId
      */
+    @RestrictTo(LIBRARY_GROUP) // TODO: b/446828899 - Remove after clients have migrated.
     public fun triggerUpdate(context: Context, provider: ComponentName) {
         triggerPullUpdate(context, provider)
-        val isDebuggable = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        if (isDebuggable) {
+        if (context.isDebuggable()) {
             updateClient.sendUpdateBroadcast(context, provider)
         }
     }
 
     /**
-     * Triggers a content update for a widget instance. This is used to updates the widget's
-     * contents.
+     * Triggers a content update for the given widget [instanceId], resulting in a call to
+     * [provideWidgetData], after which the results to the Host.
      *
-     * This will trigger a call to [provideWidgetData] and send the results to the Host.
+     * All [WidgetInstanceId] for active widgets associated with this class can be retrieved from
+     * [GlanceWearWidgetManager.fetchActiveWidgets(KClass)].
      *
      * The coroutine will be canceled if it doesn't complete within 10 seconds of being called.
      *
      * @param context the context from which this method is called.
      * @param instanceId the ID of the widget instance to update.
+     * @throws [IllegalArgumentException] if the provided [WidgetInstanceId] is invalid or not owned
+     *   by the calling application.
      */
-    // TODO: b/446828899 - Move API to public once we have compat implementation
-    @RestrictTo(LIBRARY_GROUP)
     public suspend fun triggerUpdate(context: Context, instanceId: WidgetInstanceId) {
-        if (isAtLeastC()) {
-            pushUpdate(context, instanceId)
-        } else {
-            TODO("b/446828899 - Add compat implementation")
+        if (context.isDebuggable()) {
+            updateClient.sendUpdateBroadcast(context, instanceId = instanceId)
         }
+
+        if (isAtLeastC()) {
+            try {
+                pushUpdate(context, instanceId)
+                return
+            } catch (ex: WidgetCacheMissException) {
+                Log.d(TAG, "Error in push update. Falling back to pull update request.", ex)
+            }
+        }
+
+        val widgetHandle =
+            findActiveWidgetById(context, instanceId)
+                ?: throw IllegalArgumentException("Invalid WidgetInstanceId=$instanceId")
+        triggerPullUpdate(context, widgetHandle.provider, instanceId)
     }
 
     /**
@@ -168,13 +184,12 @@ internal constructor(
      *
      * @param context the context from which this method is called.
      * @param instanceId the ID of the widget instance to update.
-     * @throws IllegalArgumentException if the widget instance or its parameters cannot be found in
-     *   the local cache.
+     * @throws [IllegalArgumentException] if the provided [WidgetInstanceId] is invalid or not owned
+     *   by the calling application.
      * @throws [WearWidgetCache.WidgetCacheMissException] if any required cache entry cannot be
      *   found.
      */
     // TODO: b/446828899 - Add RequiresApi(37) annotation.
-    // TODO: b/446828899 - Recover if cache entries are not found.
     private suspend fun pushUpdate(context: Context, instanceId: WidgetInstanceId) {
         val cache = widgetCache ?: WearWidgetCache(context)
         val containerType = cache.getContainerTypeForInstance(instanceId)
@@ -189,7 +204,19 @@ internal constructor(
         updateClient.pushUpdate(context, WearWidgetUpdateRequest(instanceId), rawContent)
     }
 
+    @VisibleForTesting
+    @SuppressLint("ListIterator") // Not running inside Compose code.
+    internal open suspend fun findActiveWidgetById(
+        context: Context,
+        instanceId: WidgetInstanceId,
+    ): ActiveWearWidgetHandle? =
+        GlanceWearWidgetManager(context).fetchActiveWidgets().find { it.instanceId == instanceId }
+
     internal companion object {
+        private const val TAG = "GlanceWearWidget"
+
+        private fun Context.isDebuggable(): Boolean =
+            (this.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
         /**
          * Robolectric does not support SDK 37 version, so we need to force the SDK version to 37 to

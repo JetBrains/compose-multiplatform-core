@@ -21,11 +21,11 @@ package androidx.compose.remote.creation.compose.v2
 import android.content.Context
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.RemoteClock
-import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.CapturedDocument
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.RemoteDensity
 import androidx.compose.remote.creation.compose.capture.WriterEvents
 import androidx.compose.remote.creation.compose.capture.toLayoutDirection
@@ -45,8 +45,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.util.trace
 import androidx.core.graphics.createBitmap
+import androidx.tracing.traceAsync
+import java.util.concurrent.ThreadLocalRandom
 import kotlin.coroutines.CoroutineContext
+import kotlin.random.nextInt
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -83,9 +87,12 @@ import kotlinx.coroutines.launch
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public suspend fun captureSingleRemoteDocumentV2(
-    creationDisplayInfo: CreationDisplayInfo,
+    creationDisplayInfo: RemoteCreationDisplayInfo,
     remoteDensity: RemoteDensity =
-        RemoteDensity(creationDisplayInfo.density.rf, context.resources.configuration.fontScale.rf),
+        RemoteDensity(
+            creationDisplayInfo.density.density.rf,
+            context.resources.configuration.fontScale.rf,
+        ),
     layoutDirection: LayoutDirection? = null,
     context: Context,
     clock: RemoteClock = RemoteClock.SYSTEM,
@@ -109,18 +116,17 @@ public suspend fun captureSingleRemoteDocumentV2(
                 profile = profile,
                 writerEvents = writerEvents,
                 layoutDirection = layoutDirection,
-                remoteDensity =
-                    RemoteDensity(
-                        creationDisplayInfo.density.rf,
-                        context.resources.configuration.fontScale.rf,
-                    ),
+                remoteDensity = remoteDensity,
             )
 
         composition.setContent {
             CompositionLocalProvider(
                 LocalRemoteComposeCreationState provides creationState,
                 LocalDensity provides
-                    Density(creationDisplayInfo.density, context.resources.configuration.fontScale),
+                    Density(
+                        creationDisplayInfo.density.density,
+                        context.resources.configuration.fontScale,
+                    ),
                 LocalContext provides context,
                 LocalConfiguration provides context.resources.configuration,
                 LocalLayoutDirection provides layoutDirection,
@@ -132,18 +138,26 @@ public suspend fun captureSingleRemoteDocumentV2(
         // are properly cancelled when the flow execution finishes.
         coroutineScope {
             try {
-                lateinit var frameClock: BroadcastFrameClock
-                frameClock = BroadcastFrameClock {
-                    // Automatically send a frame when the recomposer starts waiting.
-                    // This avoids a race condition where sendFrame is called before runRecompose is
-                    // ready.
-                    launch(recomposerContext) { frameClock.sendFrame(clock.nanoTime()) }
+                traceAsync(
+                    "CaptureRemoteDocument:captureSingleRemoteDocument:compositionInitialization",
+                    ThreadLocalRandom.current().nextInt(),
+                ) {
+                    lateinit var frameClock: BroadcastFrameClock
+                    frameClock = BroadcastFrameClock {
+                        // Automatically send a frame when the recomposer starts waiting.
+                        // This avoids a race condition where sendFrame is called before
+                        // runRecompose is
+                        // ready.
+                        launch(recomposerContext) { frameClock.sendFrame(clock.nanoTime()) }
+                    }
+                    launch(recomposerContext + frameClock) {
+                        recomposer.runRecomposeAndApplyChanges()
+                    }
+
+                    // Wait for the first idle state.
+                    val unused =
+                        recomposer.currentState.filter { it == Recomposer.State.Idle }.first()
                 }
-
-                launch(recomposerContext + frameClock) { recomposer.runRecomposeAndApplyChanges() }
-
-                // Wait for the first idle state.
-                val unused = recomposer.currentState.filter { it == Recomposer.State.Idle }.first()
             } finally {
                 // nothing for now
                 recomposer.cancel()
@@ -158,16 +172,19 @@ public suspend fun captureSingleRemoteDocumentV2(
                     }
 
                 val remoteCanvas = RemoteCanvas(recordingCanvas)
-
-                rootNode.render(creationState, remoteCanvas)
-
+                trace("CaptureRemoteDocument:captureSingleRemoteDocument:rootNodeRender") {
+                    rootNode.render(creationState, remoteCanvas)
+                }
                 // This is only safe for the first document
                 // since some ids might be generated early
-                creationState.document.encodeToByteArray()
+                trace("CaptureRemoteDocument:captureSingleRemoteDocument:toByteArray") {
+                    creationState.document.encodeToByteArray()
+                }
             }
 
         return CapturedDocument(document, writerEvents.pendingIntents)
     } finally {
+
         // Ensure the composition is always disposed and cancelled to avoid leaks.
         composition.dispose()
     }
@@ -184,9 +201,12 @@ public suspend fun captureSingleRemoteDocumentV2(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun captureRemoteDocumentV2(
-    creationDisplayInfo: CreationDisplayInfo,
+    creationDisplayInfo: RemoteCreationDisplayInfo,
     remoteDensity: RemoteDensity =
-        RemoteDensity(creationDisplayInfo.density.rf, context.resources.configuration.fontScale.rf),
+        RemoteDensity(
+            creationDisplayInfo.density.density.rf,
+            context.resources.configuration.fontScale.rf,
+        ),
     layoutDirection: LayoutDirection? = null,
     writerEvents: WriterEvents,
     context: Context,
@@ -227,7 +247,10 @@ public fun captureRemoteDocumentV2(
             CompositionLocalProvider(
                 LocalRemoteComposeCreationState provides creationState,
                 LocalDensity provides
-                    Density(creationDisplayInfo.density, context.resources.configuration.fontScale),
+                    Density(
+                        creationDisplayInfo.density.density,
+                        context.resources.configuration.fontScale,
+                    ),
                 LocalContext provides context,
                 LocalConfiguration provides context.resources.configuration,
                 LocalLayoutDirection provides layoutDirection,

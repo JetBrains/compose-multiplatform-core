@@ -18,31 +18,9 @@ package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
-import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
 import androidx.compose.remote.creation.compose.v2.RemoteFlowRowV2
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-
-internal class RemoteComposeFlowRowModifier(
-    private val modifier: RemoteModifier,
-    private val horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start,
-    private val verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            canvas.document.startFlow(
-                canvas.toRecordingModifier(modifier),
-                horizontalArrangement.toRemote(this.layoutDirection),
-                verticalArrangement.toRemote(),
-            )
-            this@draw.drawContent()
-            canvas.document.endFlow()
-        }
-    }
-}
+import androidx.compose.ui.platform.LocalLayoutDirection
 
 /**
  * A layout composable that places its children in a horizontal flow.
@@ -64,8 +42,11 @@ public fun RemoteFlowRow(
     verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
     content: @Composable () -> Unit,
 ) {
-    require(currentComposer.applier is RemoteComposeApplierV2) {
-        "This component is only supported with RemoteComposeApplierV2."
-    }
-    RemoteFlowRowV2(modifier, horizontalArrangement, verticalArrangement, content)
+    RemoteFlowRowV2(
+        modifier,
+        horizontalArrangement,
+        verticalArrangement,
+        LocalLayoutDirection.current,
+        content,
+    )
 }

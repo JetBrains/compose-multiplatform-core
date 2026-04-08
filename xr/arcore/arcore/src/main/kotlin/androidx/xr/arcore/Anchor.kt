@@ -23,7 +23,6 @@ import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import java.util.UUID
 import kotlin.coroutines.Continuation
@@ -153,15 +152,15 @@ internal constructor(
         }
     }
 
-    // TODO(b/372049781): This constructor is only used for testing. Remove it once cl/683360061 is
-    // submitted.
+    // TODO(b/482642212): This constructor is only used for testing. Remove it once tests have been
+    // refactored to use ArCoreTestRule.
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public constructor(runtimeAnchor: RuntimeAnchor) : this(runtimeAnchor, XrResourcesManager())
 
     /**
      * The representation of the current state of an [Anchor].
      *
-     * @property trackingState the current [TrackingState] of the anchor
+     * @property trackingState the current [androidx.xr.runtime.TrackingState] of the anchor
      * @property pose the location of the anchor in the world coordinate space
      */
     public class State
@@ -181,7 +180,9 @@ internal constructor(
     }
 
     private val _state: MutableStateFlow<State> =
-        MutableStateFlow<State>(State(runtimeAnchor.trackingState, runtimeAnchor.pose))
+        MutableStateFlow<State>(
+            State(runtimeAnchor.trackingState.toTrackingState(), runtimeAnchor.pose)
+        )
 
     public val state: StateFlow<State> = _state.asStateFlow()
 
@@ -222,7 +223,7 @@ internal constructor(
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
-        _state.emit(State(runtimeAnchor.trackingState, runtimeAnchor.pose))
+        _state.emit(State(runtimeAnchor.trackingState.toTrackingState(), runtimeAnchor.pose))
         if (persistContinuation == null) {
             return
         }

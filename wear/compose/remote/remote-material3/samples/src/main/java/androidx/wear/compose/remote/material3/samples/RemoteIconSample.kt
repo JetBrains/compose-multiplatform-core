@@ -22,8 +22,6 @@ import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
-import androidx.compose.remote.creation.compose.modifier.size
-import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -35,7 +33,7 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 @Composable
 fun RemoteIconSimpleSample(modifier: RemoteModifier = RemoteModifier) {
     RemoteIcon(
-        modifier = modifier.size(24.rdp),
+        modifier = modifier,
         imageVector = ImageVector.vectorResource(R.drawable.gs_map_wght500rond100_vd_theme_24),
         contentDescription = null,
     )

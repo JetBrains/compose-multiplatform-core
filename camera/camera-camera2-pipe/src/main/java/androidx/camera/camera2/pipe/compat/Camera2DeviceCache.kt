@@ -19,6 +19,7 @@ package androidx.camera.camera2.pipe.compat
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraAccessException
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.os.Build
 import androidx.annotation.GuardedBy
@@ -31,6 +32,7 @@ import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
 import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
+import androidx.camera.camera2.pipe.internal.CriticalCameraErrorListener
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompatFactory
 import javax.inject.Inject
@@ -47,11 +49,13 @@ import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Singleton
@@ -59,6 +63,7 @@ internal class Camera2DeviceCache
 @Inject
 constructor(
     private val cameraManager: Provider<CameraManager>,
+    private val metadataProvider: Camera2MetadataProvider,
     private val threads: Threads,
     @CameraPipeContext private val context: Context,
     packageManager: PackageManager,
@@ -66,7 +71,7 @@ constructor(
     private val cameraDeviceSetupCompatFactoryProvider: Provider<CameraDeviceSetupCompatFactory>,
     cameraPipeLifetime: CameraPipeLifetime,
     @CameraPipeJob cameraPipeJob: Job,
-) {
+) : CriticalCameraErrorListener {
     private val scope =
         CoroutineScope(
             SupervisorJob(cameraPipeJob) +
@@ -383,7 +388,47 @@ constructor(
             .toSet()
     }
 
+    override fun onCriticalCameraError(cameraId: CameraId) {
+        // Pre-Android 17, opening and physically disconnecting an external camera would not induce
+        // a second onCameraUnavailable() call (during disconnection). However, since the external
+        // camera HAL would fire a camera error callback, we leverage that to refresh our list.
+        // See ag/37037453 for the CL that addresses the issue.
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.BAKLAVA) {
+            scope.launch {
+                if (isExternalCamera(cameraId)) {
+                    Log.info { "Critical camera error occurred on external $cameraId" }
+
+                    // Re-read the camera ID list on an interval.
+                    // When camera HAL reports a camera device error, it isn't guaranteed that the
+                    // camera device is truly gone, nor is it guaranteed that the camera
+                    // availability (the camera ID list) is updated right away. As such, here we
+                    // retry reading the camera ID list repeatedly on a timeout.
+                    var cameraIds = readCameraIds()
+                    for (i in 1..CRITICAL_CAMERA_ERROR_READ_CAMERA_ID_RETRY_COUNT) {
+                        if (cameraIds != null && !cameraIds.contains(cameraId)) {
+                            Log.info { "External $cameraId was removed" }
+                            break
+                        }
+                        delay(CRITICAL_CAMERA_ERROR_READ_CAMERA_ID_INTERVAL_MS)
+                        cameraIds = readCameraIds()
+                    }
+                }
+            }
+        }
+    }
+
     fun shutdown() {
         scope.cancel()
+    }
+
+    private suspend fun isExternalCamera(cameraId: CameraId): Boolean {
+        val cameraMetadata = metadataProvider.getCameraMetadata(cameraId)
+        return cameraMetadata[CameraCharacteristics.LENS_FACING] ==
+            CameraCharacteristics.LENS_FACING_EXTERNAL
+    }
+
+    companion object {
+        const val CRITICAL_CAMERA_ERROR_READ_CAMERA_ID_INTERVAL_MS = 300L
+        const val CRITICAL_CAMERA_ERROR_READ_CAMERA_ID_RETRY_COUNT = 3
     }
 }

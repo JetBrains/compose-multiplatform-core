@@ -75,15 +75,6 @@ class OpenXrManagerTest {
     }
 
     @Test
-    fun instancePointer_initializedAfterCreate() = initOpenXrManagerAndRunTest {
-        check(underTest.instancePointer == 0L)
-
-        underTest.create()
-
-        assertThat(underTest.instancePointer).isGreaterThan(0L)
-    }
-
-    @Test
     fun create_initializesNativeOpenXrManager() = initOpenXrManagerAndRunTest {
         check(underTest.nativePointer == 0L)
 

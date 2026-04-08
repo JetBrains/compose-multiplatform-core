@@ -28,6 +28,7 @@ import androidx.compose.remote.core.RemoteContextActions;
 import androidx.compose.remote.core.operations.layout.ClickModifierOperation;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.operations.layout.LayoutComponent;
+import androidx.compose.remote.core.operations.layout.MultiClickModifier;
 import androidx.compose.remote.core.operations.layout.RootLayoutComponent;
 import androidx.compose.remote.core.operations.layout.modifiers.ComponentModifiers;
 import androidx.compose.remote.core.operations.layout.modifiers.ModifierOperation;
@@ -49,7 +50,8 @@ import java.util.stream.Stream;
  * Java Player implementation of the {@link RemoteComposeDocumentAccessibility} interface. Each item
  * in the semantic tree is a {@link Component} from the remote Compose UI. Each Component can have a
  * list of modifiers that must be tagged with {@link AccessibilitySemantics} either incidentally
- * (see {@link ClickModifierOperation}) or explicitly (see {@link CoreSemantics}).
+ * (see {@link ClickModifierOperation} and {@link MultiClickModifier}) or explicitly (see
+ * {@link CoreSemantics}).
  */
 @RestrictTo(LIBRARY_GROUP)
 public class CoreDocumentAccessibility implements RemoteComposeDocumentAccessibility {

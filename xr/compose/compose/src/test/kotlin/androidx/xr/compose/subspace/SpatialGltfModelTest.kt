@@ -411,7 +411,7 @@ class SpatialGltfModelTest {
         assertThat(createdAssets).hasSize(0)
         val status = state.status
         assertIs<Failed>(status)
-        assertIs<IllegalStateException>(status.exception)
+        assertIs<GltfLoadException>(status.exception)
 
         // Change to a source that will load successfully
         state =
@@ -1232,6 +1232,64 @@ class SpatialGltfModelTest {
         // Seek while playing updates the animation time
         animation.seekTo(10.seconds)
         assertThat(fakeAnimation?.seekStartTimeSeconds).isEqualTo(10.0f)
+    }
+
+    @Test
+    fun animation_seekTo_retainsStartSeekTimeAcrossPlayingStateChanges() {
+        val state =
+            SpatialGltfModelState(source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")))
+        var fakeGltfEntity: FakeGltfEntity?
+        var fakeAnimation: FakeGltfAnimationFeature? = null
+
+        composeTestRule.configureFakeSession(
+            renderingRuntime = {
+                object : RenderingRuntime by it {
+                    override fun createGltfEntity(
+                        pose: Pose,
+                        loadedGltf: GltfModelResource,
+                        parentEntity: Entity?,
+                    ): GltfEntity {
+                        return it.createGltfEntity(pose, loadedGltf, parentEntity).apply {
+                            fakeGltfEntity = this as FakeGltfEntity
+                            fakeAnimation = FakeGltfAnimationFeature()
+                            fakeGltfEntity.addAnimation(fakeAnimation)
+                        }
+                    }
+                }
+            }
+        )
+
+        composeTestRule.setContent {
+            Subspace {
+                SpatialGltfModel(state = state, modifier = SubspaceModifier.testTag("model"))
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
+        val animation = state.animations[0]
+
+        // Seek to a specific time while stopped.
+        animation.seekTo(7.seconds)
+
+        // Start the animation and verify it starts from the seek position, not 0.
+        animation.start()
+
+        composeTestRule.waitForIdle()
+        assertThat(fakeAnimation?.seekStartTimeSeconds).isEqualTo(7.0f)
+        assertThat(animation.animationState)
+            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Playing)
+
+        animation.stop()
+        composeTestRule.waitForIdle()
+        assertThat(animation.animationState)
+            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Stopped)
+
+        // Start the animation and verify it starts from the seek position, not 0.
+        animation.start()
+        composeTestRule.waitForIdle()
+        assertThat(fakeAnimation?.seekStartTimeSeconds).isEqualTo(7.0f)
+        assertThat(animation.animationState)
+            .isEqualTo(SpatialGltfModelAnimation.AnimationState.Playing)
     }
 
     @Test

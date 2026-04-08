@@ -48,6 +48,28 @@ class MergedKlibDumpParserTest {
     }
 
     @Test
+    fun mergedKlibDumpParser_addsDeclarationsToCorrectTargetsWhenUsingAlias() {
+        val parsed = MergedKlibDumpParser(mergedDumpWithAliasText).parse()
+        val jvm = parsed["jvm"]!!
+        val ios = parsed["iosArm64"]!!
+        val mac = parsed["macosArm64"]!!
+        val linux = parsed["linuxX64"]!!
+
+        assertThat(jvm.topLevelDeclarations.declarations).hasSize(1)
+        assertThat(linux.topLevelDeclarations.declarations).hasSize(1)
+        assertThat(ios.topLevelDeclarations.declarations).hasSize(2)
+        assertThat(mac.topLevelDeclarations.declarations).hasSize(2)
+        assertThat(jvm.topLevelDeclarations.declarations.single().qualifiedName.toString())
+            .isEqualTo("example/commonFun")
+        assertThat(linux.topLevelDeclarations.declarations.single().qualifiedName.toString())
+            .isEqualTo("example/commonFun")
+        assertThat(ios.topLevelDeclarations.declarations.map() { it.qualifiedName.toString() })
+            .containsExactly("example/commonFun", "example/AppleOnly")
+        assertThat(mac.topLevelDeclarations.declarations.map() { it.qualifiedName.toString() })
+            .containsExactly("example/commonFun", "example/AppleOnly")
+    }
+
+    @Test
     fun mergedKlibDumpParser_usesTargetNameNotCustomNameOrCombination() {
         val dumpTextWithCustomTargetName =
             """
@@ -92,6 +114,28 @@ private val mergedDumpText =
         constructor <init>() // example/LinuxOnly.<init>|<init>(){}[0]
 
         final fun linuxFun(): kotlin/Int // example/LinuxOnly.kotlinFun|linuxFun(){}[0]
+    }
+    """
+        .trimIndent()
+
+private val mergedDumpWithAliasText =
+    """
+    // Klib ABI Dump
+    // Targets: [jvm, iosArm64, macosArm64, linuxX64]
+    // Alias: apple => [iosArm64, macosArm64]
+    // Rendering settings:
+    // - Signature version: 2
+    // - Show manifest properties: true
+    // - Show declarations: true
+
+    // Library unique name: <io.github.kotlin:library>
+    final fun example/commonFun(): kotlin/Int // example/commonFun|commonFun(){}[0]
+
+    // Targets: [apple]
+    final class example/AppleOnly { // example/AppleOnly|null[0]
+        constructor <init>() // example/AppleOnly.<init>|<init>(){}[0]
+
+        final fun appleFun(): kotlin/Int // example/AppleOnly.appleFun|appleFun(){}[0]
     }
     """
         .trimIndent()

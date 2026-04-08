@@ -17,7 +17,6 @@
 package androidx.xr.arcore
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.MutableStateFlow

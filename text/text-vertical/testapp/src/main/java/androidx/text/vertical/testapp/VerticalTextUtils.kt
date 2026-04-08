@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.isSpecified
 import androidx.text.vertical.EmphasisSpan
+import androidx.text.vertical.EmphasisStyle
 import androidx.text.vertical.FontShearSpan
 import androidx.text.vertical.FontShearSpan.Companion.DEFAULT_FONT_SHEAR
 import androidx.text.vertical.RubySpan
@@ -49,7 +50,7 @@ class VerticalTextBuilder {
 
     @Composable
     fun <R : Any> ruby(ruby: CharSequence, block: @Composable VerticalTextBuilder.() -> R): R =
-        withSpan(RubySpan.Builder(ruby).build(), block)
+        withSpan(RubySpan(ruby), block)
 
     fun text(text: CharSequence, rubyMap: Map<String, String> = emptyMap()) {
         val textStartOffset = result.length
@@ -59,7 +60,7 @@ class VerticalTextBuilder {
             var searchOffset = textStartOffset
             var found = result.indexOf(key, searchOffset)
             while (found != -1) {
-                result.setSpan(RubySpan.Builder(ruby).build(), found, found + key.length, SPAN_FLAG)
+                result.setSpan(RubySpan(ruby), found, found + key.length, SPAN_FLAG)
                 searchOffset = found + key.length
                 found = result.indexOf(key, searchOffset)
             }
@@ -117,11 +118,11 @@ class VerticalTextBuilder {
 
     @Composable
     fun <R : Any> withEmphasis(
-        style: Int = EmphasisSpan.STYLE_DOT,
+        style: EmphasisStyle = EmphasisStyle.Dot,
         filled: Boolean = true,
         scale: Float = 0.5f,
         block: @Composable VerticalTextBuilder.() -> R,
-    ): R = withSpan(EmphasisSpan(style, filled, scale), block)
+    ): R = withSpan(EmphasisSpan(style, filled, scale = scale), block)
 
     var result = SpannableStringBuilder()
 }

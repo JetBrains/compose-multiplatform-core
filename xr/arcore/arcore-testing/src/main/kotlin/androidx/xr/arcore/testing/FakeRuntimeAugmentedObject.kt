@@ -16,10 +16,11 @@
 
 package androidx.xr.arcore.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
 import androidx.xr.arcore.runtime.AugmentedObject as RuntimeObject
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.AugmentedObjectCategory
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 
@@ -29,6 +30,10 @@ import androidx.xr.runtime.math.Pose
  * @property anchors a [MutableCollection] of [Anchors][RuntimeAnchor] attached to this object
  */
 @SuppressWarnings("HiddenSuperclass")
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class FakeRuntimeAugmentedObject(
     override var centerPose: Pose = Pose(),
     override var extents: FloatSize3d = FloatSize3d(),

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalRemoteCreationComposeApi::class)
-
 package androidx.compose.remote.creation.compose.capture
 
 import android.content.Context
@@ -24,7 +22,6 @@ import androidx.compose.remote.core.Operations
 import androidx.compose.remote.core.RcProfiles
 import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.creation.RemoteComposeWriterAndroid
-import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
@@ -88,7 +85,14 @@ class CaptureRemoteDocumentTest {
                 CoreDocument.DOCUMENT_API_LEVEL,
                 RcProfiles.PROFILE_ANDROID_NATIVE,
                 AndroidxRcPlatformServices(),
-                { setOf(Operations.DRAW_TEXT_ON_CIRCLE) },
+                {
+                    Operations.getOperations(
+                            CoreDocument.DOCUMENT_API_LEVEL,
+                            RcProfiles.PROFILE_ANDROIDX,
+                        )
+                        ?.keySet()
+                        .orEmpty() + setOf(Operations.DRAW_TEXT_ON_CIRCLE)
+                },
             ) { creationDisplayInfo, profile, callback ->
                 RemoteComposeWriterAndroid(creationDisplayInfo, null, profile, callback)
             }

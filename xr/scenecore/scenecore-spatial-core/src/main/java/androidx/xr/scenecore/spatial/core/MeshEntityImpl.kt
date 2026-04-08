@@ -18,6 +18,7 @@ package androidx.xr.scenecore.spatial.core
 
 import android.content.Context
 import androidx.xr.scenecore.runtime.Entity
+import androidx.xr.scenecore.runtime.MaterialResource
 import androidx.xr.scenecore.runtime.MeshEntity
 import androidx.xr.scenecore.runtime.MeshFeature
 import com.android.extensions.xr.XrExtensions
@@ -33,5 +34,9 @@ internal class MeshEntityImpl(
 ) : BaseRenderingEntity(context, meshFeature, extensions, sceneNodeRegistry, executor), MeshEntity {
     init {
         parent = parentEntity
+    }
+
+    override fun setMaterial(material: MaterialResource, subsetIndex: Int) {
+        meshFeature.setMaterial(material, subsetIndex)
     }
 }

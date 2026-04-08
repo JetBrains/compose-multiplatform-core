@@ -19,7 +19,7 @@ import android.app.Activity
 import android.hardware.display.DisplayManager
 import android.view.View
 import android.view.ViewGroup
-import androidx.xr.runtime.FieldOfView
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector2

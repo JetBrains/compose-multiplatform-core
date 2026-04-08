@@ -31,11 +31,16 @@ import kotlin.time.ComparableTimeMark
  *   [androidx.xr.runtime.XrDevice.getPreferredDisplayBlendMode]
  */
 @Suppress("DataClassDefinition")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
 public data class FakePerceptionRuntime(
-    override val lifecycleManager: FakeLifecycleManager,
-    override val perceptionManager: FakePerceptionManager,
+    @Suppress("DEPRECATION") override val lifecycleManager: FakeLifecycleManager,
+    @Suppress("DEPRECATION") override val perceptionManager: FakePerceptionManager,
 ) : PerceptionRuntime {
+    override var config: Config = Config()
+
     public var xrDevicePreferredDisplayBlendMode: DisplayBlendMode = DisplayBlendMode.NO_DISPLAY
 
     override fun initialize() {

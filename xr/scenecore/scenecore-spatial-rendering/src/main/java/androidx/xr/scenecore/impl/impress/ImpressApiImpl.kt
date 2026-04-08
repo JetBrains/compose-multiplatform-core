@@ -683,27 +683,6 @@ public class ImpressApiImpl : ImpressApi {
         )
     }
 
-    override fun createStereoSurface(@StereoMode stereoMode: Int): ImpressNode =
-        createStereoSurface(stereoMode, ContentSecurityLevel.NONE)
-
-    override fun createStereoSurface(
-        @StereoMode stereoMode: Int,
-        @ContentSecurityLevel contentSecurityLevel: Int,
-    ): ImpressNode =
-        createStereoSurface(stereoMode, contentSecurityLevel, /* useSuperSampling= */ false)
-
-    override fun createStereoSurface(
-        @StereoMode stereoMode: Int,
-        @ContentSecurityLevel contentSecurityLevel: Int,
-        useSuperSampling: Boolean,
-    ): ImpressNode =
-        createStereoSurface(
-            stereoMode,
-            MediaBlendingMode.TRANSPARENT,
-            contentSecurityLevel,
-            useSuperSampling,
-        )
-
     override fun createStereoSurface(
         @StereoMode stereoMode: Int,
         @MediaBlendingMode mediaBlendingMode: Int,
@@ -1660,8 +1639,10 @@ public class ImpressApiImpl : ImpressApi {
         maxVertices: Int,
         maxIndices: Int,
         vertexData: Array<java.nio.ByteBuffer>?,
+        vertexDataOffsets: IntArray?,
         vertexDataSizes: IntArray?,
         indexData: java.nio.ByteBuffer?,
+        indexDataOffset: Int,
         indexDataSize: Int,
     ): MeshBuffer {
         val meshBufferHandle =
@@ -1673,8 +1654,10 @@ public class ImpressApiImpl : ImpressApi {
                 maxVertices,
                 maxIndices,
                 vertexData,
+                vertexDataOffsets,
                 vertexDataSizes,
                 indexData,
+                indexDataOffset,
                 indexDataSize,
             )
         return MeshBuffer.Builder()
@@ -1690,6 +1673,13 @@ public class ImpressApiImpl : ImpressApi {
         meshBufferHandle: Long,
         subsetOffsets: IntArray,
         subsetCounts: IntArray,
+        subsetTopologies: IntArray,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
     ): CustomMesh {
         val customMeshHandle =
             nCreateCustomMesh(
@@ -1697,6 +1687,13 @@ public class ImpressApiImpl : ImpressApi {
                 meshBufferHandle,
                 subsetOffsets,
                 subsetCounts,
+                subsetTopologies,
+                centerX,
+                centerY,
+                centerZ,
+                halfExtentX,
+                halfExtentY,
+                halfExtentZ,
             )
         return CustomMesh.Builder()
             .setImpressApi(this)
@@ -1704,31 +1701,37 @@ public class ImpressApiImpl : ImpressApi {
             .build()
     }
 
+    override fun getCustomMeshAabb(customMeshHandle: Long, outAabb: FloatArray) {
+        nGetCustomMeshAabb(getViewNativeHandle(view), customMeshHandle, outAabb)
+    }
+
     override fun destroyCustomMesh(customMeshHandle: Long): Unit =
         nDestroyCustomMesh(getViewNativeHandle(view), customMeshHandle)
 
-    override fun setCustomMeshBoundingBox(
+    override fun createCustomMeshNode(
         customMeshHandle: Long,
-        centerX: Float,
-        centerY: Float,
-        centerZ: Float,
-        halfExtentX: Float,
-        halfExtentY: Float,
-        halfExtentZ: Float,
-    ): Unit =
-        nSetCustomMeshBoundingBox(
+        materialHandles: LongArray,
+        boneCount: Int,
+    ): Int =
+        nCreateCustomMeshNode(
             getViewNativeHandle(view),
             customMeshHandle,
-            centerX,
-            centerY,
-            centerZ,
-            halfExtentX,
-            halfExtentY,
-            halfExtentZ,
+            materialHandles,
+            boneCount,
         )
 
-    override fun createCustomMeshNode(customMeshHandle: Long, materialHandles: LongArray): Int =
-        nCreateCustomMeshNode(getViewNativeHandle(view), customMeshHandle, materialHandles)
+    override fun setCustomMeshNodeMaterial(
+        impressNode: ImpressNode,
+        submeshIndex: Int,
+        materialHandle: Long,
+    ) {
+        nSetCustomMeshNodeMaterial(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            submeshIndex,
+            materialHandle,
+        )
+    }
 
     private fun getViewNativeHandle(view: View?): Long {
         if (view != null) {
@@ -2467,8 +2470,10 @@ public class ImpressApiImpl : ImpressApi {
         maxVertices: Int,
         maxIndices: Int,
         vertexData: Array<java.nio.ByteBuffer>?,
+        vertexDataOffsets: IntArray?,
         vertexDataSizes: IntArray?,
         indexData: java.nio.ByteBuffer?,
+        indexDataOffset: Int,
         indexDataSize: Int,
     ): Long
 
@@ -2479,24 +2484,30 @@ public class ImpressApiImpl : ImpressApi {
         meshBufferHandle: Long,
         subsetOffsets: IntArray,
         subsetCounts: IntArray,
-    ): Long
-
-    private external fun nDestroyCustomMesh(view: Long, customMeshHandle: Long)
-
-    private external fun nSetCustomMeshBoundingBox(
-        view: Long,
-        customMeshHandle: Long,
+        subsetTopologies: IntArray,
         centerX: Float,
         centerY: Float,
         centerZ: Float,
         halfExtentX: Float,
         halfExtentY: Float,
         halfExtentZ: Float,
-    )
+    ): Long
+
+    private external fun nGetCustomMeshAabb(view: Long, customMeshHandle: Long, outAabb: FloatArray)
+
+    private external fun nDestroyCustomMesh(view: Long, customMeshHandle: Long)
 
     private external fun nCreateCustomMeshNode(
         view: Long,
         customMeshHandle: Long,
         materialHandles: LongArray,
+        boneCount: Int,
     ): Int
+
+    private external fun nSetCustomMeshNodeMaterial(
+        view: Long,
+        nodeId: Int,
+        submeshIndex: Int,
+        materialHandle: Long,
+    )
 }

@@ -16,7 +16,6 @@
 
 package androidx.xr.scenecore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Pose
@@ -39,7 +38,8 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityRegistry:
             parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): GroupEntity =
             GroupEntity(
-                sceneRuntime.createEntity(
+                @Suppress("DEPRECATION")
+                sceneRuntime.createGroupEntity(
                     pose,
                     name,
                     if (parent != null && parent !is BaseEntity<*>) {
@@ -60,7 +60,10 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityRegistry:
          *
          * @param session Session to create the GroupEntity in.
          * @param name Name of the entity.
-         * @param pose Initial pose of the entity.
+         * @param pose Initial pose of the entity. The default value is [Pose.Identity].
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
          */
         @JvmOverloads
         @JvmStatic
@@ -69,23 +72,9 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityRegistry:
                 "Use Entity.create instead. Creating an Entity without any content is now done from the Entity class",
             replaceWith = ReplaceWith("Entity.create", "androidx.xr.scenecore.Entity"),
         )
-        public fun create(session: Session, name: String, pose: Pose = Pose.Identity): GroupEntity =
-            create(session.sceneRuntime, session.scene.entityRegistry, name, pose)
-
-        /**
-         * Public factory method for creating a [GroupEntity].
-         *
-         * @param session Session to create the GroupEntity in.
-         * @param name Name of the entity.
-         * @param pose Initial pose of the entity. The default value is [Pose.Identity].
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is
-         *   [Scene]'s [ActivitySpace].
-         */
-        @JvmStatic
-        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
-        //  once the API proposal is approved.
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        // TODO: b/493469066 - Once internal clients explicitly set the parent parameter at all call
+        //  sites, change the default parent value to null in the entity factory and update the
+        //  release notes accordingly.
         public fun create(
             session: Session,
             name: String,

@@ -17,8 +17,8 @@
 package androidx.wear.compose.remote.material3
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.action.HostAction
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -33,6 +33,7 @@ import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -54,13 +55,24 @@ class RemoteIconButtonTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val creationDisplayInfo =
-        CreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
+        RemoteCreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
 
     @Test
     fun remote_icon_button_enabled() {
         remoteComposeTestRule.runScreenshotTest(
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
+        ) {
+            Center(RemoteModifier.fillMaxSize()) { RemoteIconButtonEnabled() }
+        }
+    }
+
+    @Test
+    fun remote_icon_button_rtl() {
+        remoteComposeTestRule.runScreenshotTest(
+            backgroundColor = Color.Black,
+            creationDisplayInfo = creationDisplayInfo,
+            layoutDirection = LayoutDirection.Rtl,
         ) {
             Center(RemoteModifier.fillMaxSize()) { RemoteIconButtonEnabled() }
         }

@@ -24,6 +24,8 @@ import androidx.window.layout.WindowLayoutInfo
  * Returns a [WindowLayoutInfo] with default values for testing.
  *
  * @param displayFeatures a [List] of [DisplayFeature], the default value is an empty [List].
+ * @param engagementModes a [Set] of [WindowLayoutInfo.EngagementMode], the default value is
+ *   [WindowLayoutInfo.EngagementMode.VISUALS_ON] and [WindowLayoutInfo.EngagementMode.AUDIO_ON].
  * @return [WindowLayoutInfo] with matching parameters.
  * @see WindowLayoutInfoPublisherRule.overrideWindowLayoutInfo
  */
@@ -31,7 +33,9 @@ import androidx.window.layout.WindowLayoutInfo
 @JvmName("createWindowLayoutInfo")
 @JvmOverloads
 public fun TestWindowLayoutInfo(
-    displayFeatures: List<DisplayFeature> = emptyList()
+    displayFeatures: List<DisplayFeature> = emptyList(),
+    engagementModes: Set<WindowLayoutInfo.EngagementMode> =
+        setOf(WindowLayoutInfo.EngagementMode.VISUALS_ON, WindowLayoutInfo.EngagementMode.AUDIO_ON),
 ): WindowLayoutInfo {
-    return WindowLayoutInfo(displayFeatures)
+    return WindowLayoutInfo(displayFeatures, engagementModes)
 }

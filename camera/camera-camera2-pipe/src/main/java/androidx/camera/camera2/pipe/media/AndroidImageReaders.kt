@@ -35,6 +35,7 @@ import androidx.camera.camera2.pipe.compat.Api28Compat
 import androidx.camera.camera2.pipe.compat.Api29Compat
 import androidx.camera.camera2.pipe.compat.Api33Compat
 import androidx.camera.camera2.pipe.core.Log
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.Executor
 import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
@@ -79,6 +80,10 @@ private constructor(
         // discardFreeBuffers to ensure we release as much memory as possible.
         imageReader.acquireLatestImage()?.close()
 
+        discardFreeBuffers()
+    }
+
+    override fun discardFreeBuffers() {
         // ImageReaders are pools of shared memory that is not actively released until the
         // ImageReader is closed. This method call actively frees these unused buffers from the
         // internal buffer pool.
@@ -217,6 +222,7 @@ public class AndroidMultiResolutionImageReader(
     private val concurrentOutputsEnabled: Boolean,
 ) : ImageReaderWrapper, ImageReader.OnImageAvailableListener, CameraOnActiveOutputSurfacesListener {
     private val singleOutputIdSets = surfaceToOutputIdMap.mapValues { setOf(it.value) }
+    private val imageReaderSet = CopyOnWriteArraySet<ImageReader>()
 
     override val surface: Surface
         get() = multiResolutionImageReader.surface
@@ -227,6 +233,7 @@ public class AndroidMultiResolutionImageReader(
         atomic(null)
 
     override fun onImageAvailable(reader: ImageReader?) {
+        if (reader != null) imageReaderSet.add(reader)
         val image = reader?.acquireNextImage()
         if (image != null) {
             val imageListener = onImageListener
@@ -291,6 +298,12 @@ public class AndroidMultiResolutionImageReader(
         // ImageReader is closed. This method call actively frees these unused buffers from the
         // internal buffer pool(s).
         multiResolutionImageReader.flush()
+    }
+
+    override fun discardFreeBuffers() {
+        for (imageReader in imageReaderSet) {
+            imageReader.discardFreeBuffers()
+        }
     }
 
     @Suppress("UNCHECKED_CAST")

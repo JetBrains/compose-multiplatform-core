@@ -110,6 +110,7 @@ class HeadLockedUIManager(
                 pixelDimensions = IntSize2d(800, 360),
                 name = "headLockedPanel",
                 pose = Pose(Vector3(0f, 0f, 0f)),
+                parent = mSession.scene.activitySpace,
             )
         this.mHeadLockedPanel.parent = mSession.scene.activitySpace
     }

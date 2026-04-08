@@ -71,8 +71,12 @@ internal constructor(
     public fun flush() {
         if (isEnabled) {
             process.flush()
-            process.threads.forEachValue { threadTrack -> threadTrack.flush() }
-            process.counters.forEachValue { counterTrack -> counterTrack.flush() }
+            synchronized(process.threads) {
+                process.threads.forEachValue { threadTrack -> threadTrack.flush() }
+            }
+            synchronized(process.counters) {
+                process.counters.forEachValue { counterTrack -> counterTrack.flush() }
+            }
 
             // Call flush() on the sink after all the tracks have been flushed.
             sink.flush()
@@ -91,23 +95,36 @@ internal constructor(
         }
         var count = 0L
         count += process.pool.poolableCount()
-        process.threads.forEachValue { threadTrack -> count += threadTrack.pool.poolableCount() }
-        process.counters.forEachValue { counterTrack -> count += counterTrack.pool.poolableCount() }
+        synchronized(process.threads) {
+            process.threads.forEachValue { threadTrack ->
+                count += threadTrack.pool.poolableCount()
+            }
+        }
+        synchronized(process.counters) {
+            process.counters.forEachValue { counterTrack ->
+                count += counterTrack.pool.poolableCount()
+            }
+        }
         return count
     }
 
     internal fun validateTrackPools(validateTrackPool: (Track) -> Unit) {
         if (isDebug) {
             validateTrackPool(process)
-            process.threads.forEachValue { threadTrack -> validateTrackPool(threadTrack) }
-            process.counters.forEachValue { counterTrack -> validateTrackPool(counterTrack) }
+            synchronized(process.threads) {
+                process.threads.forEachValue { threadTrack -> validateTrackPool(threadTrack) }
+            }
+            synchronized(process.counters) {
+                process.counters.forEachValue { counterTrack -> validateTrackPool(counterTrack) }
+            }
         }
     }
 }
 
 // An empty trace context when tracing is disabled.
-internal object EmptyTraceContext : TraceContext(sink = EmptyTraceSink(), isEnabled = false) {
-    val track = EmptyProcessTrack(context = this)
+@RestrictTo(Scope.LIBRARY_GROUP)
+public object EmptyTraceContext : TraceContext(sink = EmptyTraceSink(), isEnabled = false) {
+    internal val track = EmptyProcessTrack(context = this)
     override var process: ProcessTrack = track
     internal val thread = EmptyThreadTrack(track)
     internal val counter = EmptyCounterTrack(track)

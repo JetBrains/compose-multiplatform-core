@@ -20,6 +20,7 @@ import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.ActivitySpace
@@ -55,6 +56,7 @@ import androidx.xr.scenecore.runtime.SpatialEnvironment
 import androidx.xr.scenecore.runtime.SpatialModeChangeListener
 import androidx.xr.scenecore.runtime.SpatialPointerComponent
 import androidx.xr.scenecore.runtime.SpatialVisibility
+import androidx.xr.scenecore.runtime.SubspaceNodeEntity
 import java.util.concurrent.Executor
 import java.util.concurrent.ScheduledExecutorService
 import java.util.function.Consumer
@@ -151,6 +153,13 @@ internal constructor(
     }
 
     override fun createLoggingEntity(pose: Pose): LoggingEntity {
+        TODO("Not yet implemented")
+    }
+
+    override fun createSubspaceNodeEntity(
+        nodeHolder: NodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity {
         TODO("Not yet implemented")
     }
 

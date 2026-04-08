@@ -95,13 +95,58 @@ class KspTypeNamesGoldenTest {
         kaptSignatures: Map<String, MethodSignature>,
         kspSignatures: Map<String, MethodSignature>,
     ) {
-        val failingKeys =
-            kspSignatures.keys
+        val kaptKeys = kaptSignatures.keys
+        val kspKeys = kspSignatures.keys
+
+        val missingInKsp = (kaptKeys - kspKeys).sorted()
+        val extraInKsp = (kspKeys - kaptKeys).sorted()
+        val mismatched =
+            kspKeys
+                .intersect(kaptKeys)
                 .filter { name -> kspSignatures[name] != kaptSignatures[name] }
-                .joinToString(prefix = "[\n\t", separator = "\n\t", postfix = "\n]")
-        assertWithMessage("Found incorrect KSP signatures: $failingKeys")
-            .that(kspSignatures.values)
-            .containsExactlyElementsIn(kaptSignatures.values)
+                .sorted()
+
+        if (missingInKsp.isEmpty() && extraInKsp.isEmpty() && mismatched.isEmpty()) {
+            return
+        }
+
+        val errorMessage = buildString {
+            appendLine("Found incorrect KSP signatures:")
+
+            if (missingInKsp.isNotEmpty()) {
+                appendLine("\n[Missing in KSP - ${missingInKsp.size} items]")
+                missingInKsp.forEach { appendLine("  $it") }
+            }
+
+            if (extraInKsp.isNotEmpty()) {
+                appendLine("\n[Extra in KSP - ${extraInKsp.size} items]")
+                extraInKsp.forEach { appendLine("  $it") }
+            }
+
+            if (mismatched.isNotEmpty()) {
+                appendLine("\n[Mismatched Details - ${mismatched.size} items]")
+                mismatched.forEach { name ->
+                    val kapt = kaptSignatures[name]!!
+                    val ksp = kspSignatures[name]!!
+                    appendLine("  $name:")
+
+                    if (kapt.returnType != ksp.returnType) {
+                        appendLine("    Return Type:")
+                        appendLine("      KAPT: ${kapt.returnType}")
+                        appendLine("      KSP:  ${ksp.returnType}")
+                    }
+
+                    if (kapt.parameterTypes != ksp.parameterTypes) {
+                        appendLine("    Parameters:")
+                        appendLine("      KAPT: ${kapt.parameterTypes}")
+                        appendLine("      KSP:  ${ksp.parameterTypes}")
+                    }
+                }
+            }
+        }
+
+        // Using fail() with the formatted string to ensure the diff is readable in the console
+        assertWithMessage(errorMessage).fail()
     }
 
     private data class MethodSignature(

@@ -70,7 +70,7 @@ class RemoteBoxTest {
 
     @Test
     fun rtl() =
-        composeTestRule.runScreenshotTest(layoutDirection = LayoutDirection.Rtl) {
+        composeTestRule.runScreenshotTest {
             val alignments =
                 listOf(
                     RemoteAlignment.TopStart,
@@ -83,7 +83,10 @@ class RemoteBoxTest {
                     RemoteAlignment.BottomCenter,
                     RemoteAlignment.BottomEnd,
                 )
-            gridScreenshotUI.GridContent(getLayoutAlignmentUIs(alignments))
+            gridScreenshotUI.GridContent(
+                getLayoutAlignmentUIs(alignments),
+                layoutDirection = LayoutDirection.Rtl,
+            )
         }
 
     @Test
@@ -106,7 +109,7 @@ class RemoteBoxTest {
 
     @Test
     fun rtlAbsoluteAlignment() =
-        composeTestRule.runScreenshotTest(layoutDirection = LayoutDirection.Rtl) {
+        composeTestRule.runScreenshotTest {
             val alignments =
                 listOf(
                     RemoteAbsoluteAlignment.TopLeft,
@@ -119,7 +122,10 @@ class RemoteBoxTest {
                     RemoteAlignment.BottomCenter,
                     RemoteAbsoluteAlignment.BottomRight,
                 )
-            gridScreenshotUI.GridContent(getLayoutAlignmentUIs(alignments))
+            gridScreenshotUI.GridContent(
+                getLayoutAlignmentUIs(alignments),
+                layoutDirection = LayoutDirection.Rtl,
+            )
         }
 
     private fun getLayoutAlignmentUIs(

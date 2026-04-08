@@ -16,8 +16,7 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
 /**
@@ -27,8 +26,7 @@ import androidx.xr.runtime.math.Pose
  * @property pose the [Pose] of the center of the detected anchor
  */
 @Suppress("DataClassDefinition")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public data class AnchorState(
+internal data class AnchorState(
     val trackingState: TrackingState = TrackingState.PAUSED,
     val pose: Pose? = Pose(),
 ) {

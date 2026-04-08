@@ -80,7 +80,6 @@ kapt {
 
 android {
     compileSdk = 36
-    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.appfunctions"
 }
 

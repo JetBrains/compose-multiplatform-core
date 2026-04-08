@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.arcore.apps.whitebox.mobile.geospatial
 
@@ -55,15 +56,17 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.ArDevice
-import androidx.xr.arcore.CreateGeospatialPoseFromPoseErrorInternal
+import androidx.xr.arcore.CreateGeospatialPoseFromPoseInternalError
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseNotTracking
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
 import androidx.xr.arcore.Geospatial
+import androidx.xr.arcore.GeospatialState
 import androidx.xr.arcore.HitResult
 import androidx.xr.arcore.Plane
 import androidx.xr.arcore.apps.whitebox.mobile.common.SessionLifecycleHelper
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.SampleRender
 import androidx.xr.arcore.hitTest
+import androidx.xr.arcore.playservices.ExperimentalCameraApi
 import androidx.xr.arcore.playservices.UnsupportedArCoreCompatApi
 import androidx.xr.arcore.playservices.cameraState
 import androidx.xr.runtime.Config
@@ -79,6 +82,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 
 /** Activity to test the Geospatial API. */
+@Suppress("DEPRECATION")
 class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
 
     private lateinit var session: Session
@@ -123,7 +127,7 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
         surfaceView.onPause()
     }
 
-    @OptIn(UnsupportedArCoreCompatApi::class)
+    @OptIn(UnsupportedArCoreCompatApi::class, ExperimentalCameraApi::class)
     private fun getHits() {
         if (lifecycle.currentStateFlow.value == Lifecycle.State.RESUMED) {
             val pose: Pose? = session.state.value.cameraState?.displayOrientedPose
@@ -150,7 +154,7 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
 
     private fun createAnchorAtPose(pose: Pose) {
         val geospatial = Geospatial.getInstance(session)
-        if (geospatial.state.value != Geospatial.State.RUNNING) {
+        if (geospatial.state.value != GeospatialState.RUNNING) {
             XrLog.error { "Failed to create anchor: Geospatial is not running." }
             return
         }
@@ -176,7 +180,7 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
                 XrLog.error { "Failed to create anchor: Geospatial is not tracking." }
             }
 
-            is CreateGeospatialPoseFromPoseErrorInternal ->
+            is CreateGeospatialPoseFromPoseInternalError ->
                 XrLog.error { geospatialPoseResult.error }
         }
     }
@@ -266,13 +270,13 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
 
     private fun localizationTextForGeospatial(geospatial: Geospatial): String {
         return when (geospatial.state.value) {
-            Geospatial.State.NOT_RUNNING -> "Enable Config.GeospatialMode to use the Geospatial API"
-            Geospatial.State.ERROR_INTERNAL -> "Error: Internal"
-            Geospatial.State.PAUSED -> "Paused"
-            Geospatial.State.ERROR_NOT_AUTHORIZED ->
+            GeospatialState.NOT_RUNNING -> "Enable Config.GeospatialMode to use the Geospatial API"
+            GeospatialState.ERROR_INTERNAL -> "Error: Internal"
+            GeospatialState.PAUSED -> "Paused"
+            GeospatialState.ERROR_NOT_AUTHORIZED ->
                 "Error: Not authorized. Check your API key or keyless authorization configuration"
-            Geospatial.State.ERROR_RESOURCE_EXHAUSTED -> "Error: ARCore API limit reached."
-            Geospatial.State.RUNNING ->
+            GeospatialState.ERROR_RESOURCE_EXHAUSTED -> "Error: ARCore API limit reached."
+            GeospatialState.RUNNING ->
                 when (
                     val result =
                         geospatial.createGeospatialPoseFromPose(
@@ -293,7 +297,7 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
                     is CreateGeospatialPoseFromPoseNotTracking ->
                         "Localization Status: Not tracking"
 
-                    is CreateGeospatialPoseFromPoseErrorInternal ->
+                    is CreateGeospatialPoseFromPoseInternalError ->
                         "Localization Status: ${result.error}"
                 }
             else -> "Localization Status: Unknown"

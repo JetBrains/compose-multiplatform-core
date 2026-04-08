@@ -334,4 +334,15 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
     public int getBackForwardCacheMaxPagesInCache() {
         return 0;
     }
+
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    @Override
+    public void setBackForwardCacheKeepForwardEntries(boolean keepForwardEntries) {
+    }
+
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    @Override
+    public boolean getBackForwardCacheKeepForwardEntries() {
+        return true;
+    }
 }

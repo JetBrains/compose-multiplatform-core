@@ -87,11 +87,7 @@ private fun Button(imageVector: ImageVector, modifier: RemoteModifier) {
         colors = tonalColors,
         shape = RemoteButtonDefaults.shape,
     ) {
-        RemoteIcon(
-            modifier = RemoteModifier.size(RemoteIconButtonDefaults.SmallIconSize),
-            imageVector = imageVector,
-            contentDescription = null,
-        )
+        RemoteIcon(imageVector = imageVector, contentDescription = null)
     }
 }
 

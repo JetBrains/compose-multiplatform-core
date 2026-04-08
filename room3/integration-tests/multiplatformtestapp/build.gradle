@@ -53,6 +53,7 @@ androidXMultiplatform {
                 implementation(project(":room3:room3-runtime"))
                 implementation(project(":room3:room3-testing"))
                 implementation(project(":room3:room3-paging"))
+                implementation(project(":sqlite:sqlite-async"))
                 implementation(project(":paging:paging-common"))
                 implementation(project(":kruth:kruth"))
                 implementation(libs.kotlinTest)
@@ -81,7 +82,7 @@ androidXMultiplatform {
         nativeTest.dependsOn(nonWebTest)
 
         // Host OSes (Linux and Mac)
-        hostNativeTest.dependsOn(nativeTest)
+        create("hostNativeTest").dependsOn(nativeTest)
         macosTest.dependsOn(hostNativeTest)
         linuxTest.dependsOn(hostNativeTest)
 

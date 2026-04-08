@@ -22,6 +22,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.LayoutDirection
 
 @Composable
 @RemoteComposable
@@ -29,6 +30,7 @@ import androidx.compose.runtime.remember
 public fun RemoteBoxV2(
     modifier: RemoteModifier = RemoteModifier,
     contentAlignment: RemoteAlignment = RemoteAlignment.TopStart,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     content: @Composable RemoteBoxScopeV2.() -> Unit = {},
 ) {
     val scope = remember { RemoteBoxScopeV2() }
@@ -41,6 +43,9 @@ public fun RemoteBoxV2(
             }
             set(contentAlignment.vertical) { nodeVerticalAlignment ->
                 this.verticalAlignment = nodeVerticalAlignment
+            }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
             }
         },
         content = { scope.content() },

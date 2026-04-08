@@ -24,6 +24,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.XrLog
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
@@ -69,7 +70,7 @@ private constructor(
          */
         public class Quad : Shape {
             public val extents: FloatSize2d
-            @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val cornerRadius: Float
+            @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val cornerRadius: Float
 
             /**
              * A Quadrilateral-shaped canvas.
@@ -87,7 +88,7 @@ private constructor(
              * @param cornerRadius The radius of the rounded corners of the Quad in the local
              *   spatial coordinate system of the entity. If set to 0.0f, the corners will be sharp.
              */
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
             public constructor(extents: FloatSize2d, cornerRadius: Float) {
                 require(extents.width >= 0.0f && extents.height >= 0.0f) {
                     "extents must be non-negative"
@@ -145,7 +146,7 @@ private constructor(
          *   geometry will be assembled (according to the [DrawMode]) from the vertex data
          *   sequentially.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public class TriangleMesh(
             public val positions: FloatBuffer,
             public val texCoords: FloatBuffer,
@@ -178,7 +179,7 @@ private constructor(
          * @property drawMode The [DrawMode] to use when drawing the mesh. Default is
          *   [DrawMode.TRIANGLES].
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public class CustomMesh(
             public val leftEye: TriangleMesh,
             public val rightEye: TriangleMesh? = null,
@@ -258,7 +259,7 @@ private constructor(
     }
 
     /** Specifies the drawing mode for a [Shape.TriangleMesh]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public class DrawMode private constructor(private val name: String) {
         public companion object {
             /** Draw the mesh as a list of triangles. */
@@ -305,7 +306,7 @@ private constructor(
     }
 
     /** Specifies the blending mode of the content. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public class MediaBlendingMode private constructor(private val name: String) {
         public companion object {
             /** Content is alpha-blended with the background. */
@@ -327,7 +328,7 @@ private constructor(
      * @property colorRange The color range of the content.
      * @property maxContentLightLevel The maximum brightness of the content (in nits).
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public class ContentColorMetadata(
         public val colorSpace: ColorSpace = ColorSpace.BT709,
         public val colorTransfer: ColorTransfer = ColorTransfer.SRGB,
@@ -669,11 +670,17 @@ private constructor(
          *   surface should support Widevine DRM.
          * @param superSampling The [SuperSampling] which describes whether super sampling is
          *   enabled for the surface.
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
          * @return a SurfaceEntity instance
          */
         @MainThread
         @JvmOverloads
         @JvmStatic
+        // TODO: b/493469066 - Once internal clients explicitly set the parent parameter at all call
+        //  sites, change the default parent value to null in the entity factory and update the
+        //  release notes accordingly.
         public fun create(
             session: Session,
             pose: Pose = Pose.Identity,
@@ -681,6 +688,7 @@ private constructor(
             stereoMode: StereoMode = StereoMode.MONO,
             superSampling: SuperSampling = SuperSampling.PENTAGON,
             surfaceProtection: SurfaceProtection = SurfaceProtection.NONE,
+            parent: Entity? = session.scene.activitySpace,
         ): SurfaceEntity =
             SurfaceEntity.create(
                 session,
@@ -691,6 +699,7 @@ private constructor(
                 surfaceProtection,
                 null,
                 superSampling,
+                parent,
             )
 
         /**
@@ -714,9 +723,7 @@ private constructor(
          */
         @MainThread
         @JvmStatic
-        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
-        //  once the API proposal is approved.
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun create(
             session: Session,
             pose: Pose = Pose.Identity,
@@ -725,6 +732,12 @@ private constructor(
             mediaBlendingMode: MediaBlendingMode = MediaBlendingMode.TRANSPARENT,
             superSampling: SuperSampling = SuperSampling.PENTAGON,
             surfaceProtection: SurfaceProtection = SurfaceProtection.NONE,
+            // TODO: b/493469066 - Once internal clients explicitly set the parent parameter at all
+            //  call sites, change the default parent value to null in the entity factory and update
+            //  the release notes accordingly.
+            // Since this API also includes another restriction parameter, `mediaBlendingMode`,
+            // we will just modify the parent parameter to null in the entity factory later and keep
+            // the `@RestrictTo` annotation.
             parent: Entity? = session.scene.activitySpace,
         ): SurfaceEntity =
             SurfaceEntity.create(
@@ -764,14 +777,14 @@ private constructor(
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var mediaBlendingMode: MediaBlendingMode
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         get() {
             checkNotDisposed()
             return getMediaBlendingModeFromRt(rtEntity!!.mediaBlendingMode)
         }
         @MainThread
         @SuppressLint("HiddenTypeParameter")
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
             checkNotDisposed()
             rtEntity!!.mediaBlendingMode = getRtMediaBlendingMode(value)
@@ -822,16 +835,16 @@ private constructor(
      *
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var primaryAlphaMaskTexture: Texture? = null
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         get() {
             checkNotDisposed()
             return field
         }
         @MainThread
         @SuppressLint("HiddenTypeParameter")
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
             checkNotDisposed()
             rtEntity!!.setPrimaryAlphaMaskTexture(value?.texture)
@@ -844,16 +857,16 @@ private constructor(
      *
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var auxiliaryAlphaMaskTexture: Texture? = null
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         get() {
             checkNotDisposed()
             return field
         }
         @MainThread
         @SuppressLint("HiddenTypeParameter")
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
             checkNotDisposed()
             rtEntity!!.setAuxiliaryAlphaMaskTexture(value?.texture)
@@ -903,9 +916,9 @@ private constructor(
      *
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var contentColorMetadata: ContentColorMetadata? = null
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         get() {
             checkNotDisposed()
             return if (!rtEntity!!.contentColorMetadataSet) {
@@ -922,7 +935,7 @@ private constructor(
         }
         @MainThread
         @SuppressLint("HiddenTypeParameter")
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
             checkNotDisposed()
             if (value == null) {
@@ -998,6 +1011,9 @@ private constructor(
      *   [androidx.xr.runtime.Config.DeviceTrackingMode.SPATIAL_LAST_KNOWN].
      * @see PerceivedResolutionResult
      */
+    // TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
+    // removed.
+    @Suppress("DEPRECATION")
     public fun getPerceivedResolution(renderViewpoint: RenderViewpoint): PerceivedResolutionResult {
         checkNotDisposed()
         val renderViewpointState = renderViewpoint.state.value
@@ -1006,7 +1022,12 @@ private constructor(
                 (perceptionSpace.getScenePoseFromPerceptionPose(renderViewpointState.pose)
                         as PerceptionScenePose)
                     .rtScenePose,
-                renderViewpointState.fieldOfView,
+                FieldOfView(
+                    renderViewpointState.fieldOfView.angleLeft,
+                    renderViewpointState.fieldOfView.angleRight,
+                    renderViewpointState.fieldOfView.angleUp,
+                    renderViewpointState.fieldOfView.angleDown,
+                ),
             )
             .toPerceivedResolutionResult()
     }

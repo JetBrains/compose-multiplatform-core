@@ -22,13 +22,13 @@ import androidx.xr.arcore.runtime.AnchorNotAuthorizedException
 import androidx.xr.arcore.runtime.AnchorUnsupportedLocationException
 import androidx.xr.arcore.runtime.Geospatial
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
-import androidx.xr.runtime.VpsAvailabilityAvailable
-import androidx.xr.runtime.VpsAvailabilityErrorInternal
-import androidx.xr.runtime.VpsAvailabilityNetworkError
-import androidx.xr.runtime.VpsAvailabilityNotAuthorized
-import androidx.xr.runtime.VpsAvailabilityResourceExhausted
-import androidx.xr.runtime.VpsAvailabilityResult
-import androidx.xr.runtime.VpsAvailabilityUnavailable
+import androidx.xr.arcore.runtime.VpsAvailabilityAvailable
+import androidx.xr.arcore.runtime.VpsAvailabilityErrorInternal
+import androidx.xr.arcore.runtime.VpsAvailabilityNetworkError
+import androidx.xr.arcore.runtime.VpsAvailabilityNotAuthorized
+import androidx.xr.arcore.runtime.VpsAvailabilityResourceExhausted
+import androidx.xr.arcore.runtime.VpsAvailabilityResult
+import androidx.xr.arcore.runtime.VpsAvailabilityUnavailable
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -55,7 +55,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * @property arCoreEarth the ARCore [Earth][ARCore1xEarth] object
  * @property state the current [Geospatial.State]
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ArCoreEarth internal constructor(private val resources: XrResources) : Geospatial {
 
     /** Reference to the ARCore Java Session object for checkVpsAvailability. */
@@ -67,7 +67,7 @@ public class ArCoreEarth internal constructor(private val resources: XrResources
     public override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
         private set
 
-    override public fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose {
+    public override fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose {
         validateGeospatialTracking()
 
         try {
@@ -85,8 +85,7 @@ public class ArCoreEarth internal constructor(private val resources: XrResources
             return arCorePose.toRuntimePose()
         } catch (e: NotTrackingException) {
             // Since Jetpack updates are async, it's possible that the Earth becomes not tracking
-            // even
-            // after validation.
+            // even after validation.
             throw GeospatialPoseNotTrackingException(e)
         }
     }
@@ -246,7 +245,6 @@ public class ArCoreEarth internal constructor(private val resources: XrResources
     }
 
     public fun update(session: Session) {
-        this.arCoreSession = session
         this.arCoreEarth = session.earth
 
         when (arCoreEarth?.earthState) {

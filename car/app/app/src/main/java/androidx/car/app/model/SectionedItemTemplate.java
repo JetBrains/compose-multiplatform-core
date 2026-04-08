@@ -37,7 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-/** A template that contains sections of items like rows, grid items, filter chips, etc. */
+/** A template that contains sections of items like rows, grid items, chips, etc. */
 @KeepFields
 @RequiresCarApi(8)
 @CarProtocol
@@ -264,9 +264,9 @@ public final class SectionedItemTemplate implements Template {
      *
      * <ul>
      *     <li>The template is not both loading and populated with sections
-     *     <li>Only {@link FilterChipSection}, {@link RowSection} and/or {@link GridSection} are
+     *     <li>Only {@link ChipSection}, {@link RowSection} and/or {@link GridSection} are
      *     added as sections
-     *     <li>If a {@link FilterChipSection} is added, it must be the first section and only one
+     *     <li>If a {@link ChipSection} is added, it must be the first section and only one
      *     is allowed
      * </ul>
      */
@@ -479,23 +479,23 @@ public final class SectionedItemTemplate implements Template {
                 }
             }
 
-            boolean hasFilterChipSection = false;
+            boolean hasChipSection = false;
             for (int i = 0; i < mSections.size(); i++) {
                 Section<?> section = mSections.get(i);
-                if (section instanceof FilterChipSection) {
-                    if (hasFilterChipSection) {
+                if (section instanceof ChipSection) {
+                    if (hasChipSection) {
                         throw new IllegalArgumentException(
-                                "Only one FilterChipSection is allowed in SectionedItemTemplate.");
+                                "Only one ChipSection is allowed in SectionedItemTemplate.");
                     }
                     if (i != 0) {
                         throw new IllegalArgumentException(
-                                "FilterChipSection must be the first section in "
+                                "ChipSection must be the first section in "
                                         + "SectionedItemTemplate.");
                     }
-                    hasFilterChipSection = true;
+                    hasChipSection = true;
                 } else if (!(section instanceof RowSection) && !(section instanceof GridSection)) {
                     throw new IllegalArgumentException(
-                            "Only FilterChipSections, RowSections and GridSections are allowed in "
+                            "Only ChipSections, RowSections and GridSections are allowed in "
                                     + "SectionedItemTemplate.");
                 }
             }

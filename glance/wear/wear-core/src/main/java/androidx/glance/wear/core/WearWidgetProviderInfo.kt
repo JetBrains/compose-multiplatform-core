@@ -266,7 +266,7 @@ public constructor(
          */
         public const val CONTAINER_TYPE_SMALL: Int = 2
 
-        private const val STRING_CONTAINER_TYPE_FULLSCREEN = "FULLSCREEN"
+        private const val STRING_CONTAINER_TYPE_TILE_COMPAT = "TILE_COMPAT"
         private const val STRING_CONTAINER_TYPE_LARGE = "LARGE"
         private const val STRING_CONTAINER_TYPE_SMALL = "SMALL"
 
@@ -274,7 +274,7 @@ public constructor(
         @JvmStatic
         public fun containerTypeToString(@ContainerType containerType: Int): String =
             when (containerType) {
-                CONTAINER_TYPE_TILE_COMPAT -> STRING_CONTAINER_TYPE_FULLSCREEN
+                CONTAINER_TYPE_TILE_COMPAT -> STRING_CONTAINER_TYPE_TILE_COMPAT
                 CONTAINER_TYPE_SMALL -> STRING_CONTAINER_TYPE_SMALL
                 CONTAINER_TYPE_LARGE -> STRING_CONTAINER_TYPE_LARGE
                 else -> containerType.toString()
@@ -289,7 +289,7 @@ public constructor(
         @ContainerType
         public fun containerTypeFromString(input: String): Int? =
             when (input.uppercase()) {
-                STRING_CONTAINER_TYPE_FULLSCREEN -> CONTAINER_TYPE_TILE_COMPAT
+                STRING_CONTAINER_TYPE_TILE_COMPAT -> CONTAINER_TYPE_TILE_COMPAT
                 STRING_CONTAINER_TYPE_SMALL -> CONTAINER_TYPE_SMALL
                 STRING_CONTAINER_TYPE_LARGE -> CONTAINER_TYPE_LARGE
                 else -> null

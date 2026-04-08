@@ -96,7 +96,6 @@ android {
         }
     }
     namespace = "androidx.glance.appwidget"
-    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     compileSdk = 35
 }
 

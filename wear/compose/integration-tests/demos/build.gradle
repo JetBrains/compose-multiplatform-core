@@ -28,15 +28,15 @@ android {
     defaultConfig {
         applicationId = "androidx.wear.compose.integration.demos"
         minSdk { version = release(25) }
-        versionCode = 100
-        versionName = "1.100"
+        versionCode = 101
+        versionName = "1.101"
     }
 
     buildTypes {
         release {
             minifyEnabled = true
             shrinkResources = true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
     buildFeatures {

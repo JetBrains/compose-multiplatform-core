@@ -16,11 +16,16 @@
 
 package androidx.xr.arcore.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.DepthMap as RuntimeDepthMap
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 
 /** Fake implementation of [DepthMap][RuntimeDepthMap] for testing purposes. */
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class FakeRuntimeDepthMap(
     override var width: Int = 0,
     override var height: Int = 0,

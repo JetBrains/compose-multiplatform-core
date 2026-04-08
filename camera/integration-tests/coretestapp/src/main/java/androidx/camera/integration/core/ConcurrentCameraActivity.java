@@ -162,16 +162,34 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
     private @NonNull ToggleButton mVideoMirrorButton;
     private @NonNull ToggleButton mViewportButton;
     private @NonNull ToggleButton mPreviewViewFitButton;
+    private @NonNull Button mSwapButton;
     private @NonNull LinearLayout mSideBySideLayout;
     private @NonNull FrameLayout mPiPLayout;
     private @Nullable ProcessCameraProvider mCameraProvider;
+    private @Nullable ConcurrentCamera mConcurrentCamera;
     private boolean mIsConcurrentModeOn = false;
     private boolean mIsLayoutPiP = true;
     private boolean mIsFrontPrimary = true;
     private boolean mIsDualSelfieEnabled = false;
     private boolean mIsDualRecordEnabled = false;
+    private boolean mIsSwapped = false;
     private Media3Effect mMedia3Effect;
     private Media3Effect mMedia3Effect2;
+    private CompositionSettings mPIPMainComposition =
+            new CompositionSettings.Builder()
+                    .setAlpha(1.0f)
+                    .setOffset(0.0f, 0.0f)
+                    .setScale(1.0f, 1.0f)
+                    .setZOrder(0)
+                    .build();
+    private CompositionSettings mPIPSecondaryComposition =
+            new CompositionSettings.Builder()
+                    .setAlpha(1.0f)
+                    .setOffset(-0.3f, -0.4f)
+                    .setScale(0.3f, 0.3f)
+                    .setZOrder(1)
+                    .build();
+
 
     @OptIn(markerClass = UnstableApi.class)
     @SuppressLint("RestrictedApiAndroidX")
@@ -201,6 +219,7 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
         mVideoMirrorButton = findViewById(R.id.toggle_videocapture_mirror);
         mViewportButton = findViewById(R.id.toggle_viewport);
         mPreviewViewFitButton = findViewById(R.id.toggle_previewview_fit);
+        mSwapButton = findViewById(R.id.swap_button);
         mMedia3Effect = new Media3Effect(this,
                 CameraEffect.PREVIEW | CameraEffect.VIDEO_CAPTURE | CameraEffect.IMAGE_CAPTURE,
                 CameraXExecutors.mainThreadExecutor(),
@@ -298,8 +317,23 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
             }
             bindPreview();
         });
+        mSwapButton.setOnClickListener(view -> swapCompositionSettings());
 
         setupPermissions();
+    }
+
+    private void swapCompositionSettings() {
+        if (mConcurrentCamera == null) {
+            return;
+        }
+        mIsSwapped = !mIsSwapped;
+        if (mIsSwapped) {
+            mConcurrentCamera.setCompositionSettings(
+                    Arrays.asList(mPIPSecondaryComposition, mPIPMainComposition));
+        } else {
+            mConcurrentCamera.setCompositionSettings(
+                    Arrays.asList(mPIPMainComposition, mPIPSecondaryComposition));
+        }
     }
 
     private void bindPreview() {
@@ -389,8 +423,10 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
         mDualSelfieButton.setVisibility(GONE);
         mDualRecordButton.setVisibility(GONE);
         if (mIsDualRecordEnabled) {
+            mSwapButton.setVisibility(VISIBLE);
             mRecordUi.showUi();
         } else {
+            mSwapButton.setVisibility(GONE);
             mRecordUi.hideUi();
         }
         mLayoutButton.setVisibility(mIsDualRecordEnabled ? GONE : VISIBLE);
@@ -531,7 +567,8 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
                             .addUseCase(previewBack)
                             .build(),
                     lifecycleOwner);
-            cameraProvider.bindToLifecycle(ImmutableList.of(primary, secondary));
+            mConcurrentCamera =
+                    cameraProvider.bindToLifecycle(ImmutableList.of(primary, secondary));
         } else {
             CameraSelector cameraSelectorPrimary = null;
             CameraSelector cameraSelectorSecondary = null;
@@ -584,22 +621,15 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
                 SingleCameraConfig primary = new SingleCameraConfig(
                         cameraSelectorPrimary,
                         useCaseGroup,
-                        new CompositionSettings.Builder()
-                                .setAlpha(1.0f)
-                                .setOffset(0.0f, 0.0f)
-                                .setScale(1.0f, 1.0f)
-                                .build(),
+                        mPIPMainComposition,
                         lifecycleOwner);
                 SingleCameraConfig secondary = new SingleCameraConfig(
                         cameraSelectorSecondary,
                         useCaseGroup,
-                        new CompositionSettings.Builder()
-                                .setAlpha(1.0f)
-                                .setOffset(-0.3f, -0.4f)
-                                .setScale(0.3f, 0.3f)
-                                .build(),
+                        mPIPSecondaryComposition,
                         lifecycleOwner);
-                cameraProvider.bindToLifecycle(ImmutableList.of(primary, secondary));
+                mConcurrentCamera =
+                        cameraProvider.bindToLifecycle(ImmutableList.of(primary, secondary));
             } else {
                 Preview previewPrimary = createPreview();
                 previewPrimary.setSurfaceProvider(frontPreviewView.getSurfaceProvider());
@@ -629,11 +659,11 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
                         cameraSelectorSecondary,
                         usecaseGroupBuilderSecondary.build(),
                         lifecycleOwner);
-                ConcurrentCamera concurrentCamera =
+                mConcurrentCamera =
                         cameraProvider.bindToLifecycle(ImmutableList.of(primary, secondary));
 
-                setupZoomAndTapToFocus(concurrentCamera.getCameras().get(0), frontPreviewView);
-                setupZoomAndTapToFocus(concurrentCamera.getCameras().get(1), backPreviewView);
+                setupZoomAndTapToFocus(mConcurrentCamera.getCameras().get(0), frontPreviewView);
+                setupZoomAndTapToFocus(mConcurrentCamera.getCameras().get(1), backPreviewView);
             }
         }
     }

@@ -18,10 +18,43 @@ package androidx.xr.runtime.openxr
 
 import android.content.Context
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.xr.runtime.interfaces.DisplayBlendMode
 import androidx.xr.runtime.interfaces.XrDeviceCapabilityProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 internal class OpenXrDeviceCapabilityProvider(override val context: Context) :
     XrDeviceCapabilityProvider {
-    override val lifecycle: Lifecycle = ProcessLifecycleOwner.get().lifecycle
+
+    // See b/496257589: Use a stub class to avoid dependency on lifecycle-process.
+    override val lifecycle: Lifecycle = StubProcessLifecycleOwner.lifecycle
+
+    override fun getPreferredDisplayBlendMode(): DisplayBlendMode {
+        return nativeGetPreferredBlendMode(OpenXrInstanceManager.nativePointer)
+            ?: throw IllegalStateException("Failed to get preferred blend mode.")
+    }
+
+    private external fun nativeGetPreferredBlendMode(nativePointer: Long): DisplayBlendMode?
+}
+
+/**
+ * A singleton that provides a lifecycle for the application process.
+ *
+ * Note: The lifecycle provided by this object does not observe the application going into the
+ * background and will remain in [Lifecycle.State.RESUMED] after the process has been initialized,
+ * until it is destroyed. This is different from
+ * [ProcessLifecycleOwner](https://developer.android.com/reference/androidx/lifecycle/ProcessLifecycleOwner)
+ * which will dispatch [Lifecycle.Event.ON_STOP] if the application is backgrounded.
+ */
+private object StubProcessLifecycleOwner : LifecycleOwner {
+    private val registry = LifecycleRegistry(this)
+
+    init {
+        CoroutineScope(Dispatchers.Main).launch { registry.currentState = Lifecycle.State.RESUMED }
+    }
+
+    override val lifecycle: Lifecycle = registry
 }

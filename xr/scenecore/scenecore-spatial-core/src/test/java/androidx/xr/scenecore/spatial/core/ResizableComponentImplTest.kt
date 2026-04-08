@@ -804,7 +804,8 @@ class ResizableComponentImplTest {
 
     @Test
     fun addMoveAndResizeComponents_removingMoveKeepsResize() {
-        val entity = createTestEntity() as AndroidXrEntity
+        val panelDimensions = Dimensions(2.0f, 1.0f, 0.0f)
+        val entity = createTestPanelEntity(Pose(), panelDimensions) as PanelEntityImpl
 
         assertThat(entity).isNotNull()
 

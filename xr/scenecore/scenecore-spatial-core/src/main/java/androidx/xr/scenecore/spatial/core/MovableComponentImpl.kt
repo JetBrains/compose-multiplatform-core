@@ -18,8 +18,6 @@
 
 package androidx.xr.scenecore.spatial.core
 
-import android.content.res.Resources
-import androidx.xr.runtime.SpatialApiVersionHelper.spatialApiVersion
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
@@ -35,7 +33,6 @@ import androidx.xr.scenecore.runtime.MoveEventListener
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.runtime.SurfaceEntity
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getPose
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getVector3
 import com.android.extensions.xr.function.Consumer
@@ -54,7 +51,7 @@ internal class MovableComponentImpl(
     private val scaleInZ: Boolean,
     private val userAnchorable: Boolean,
     private val activitySpaceImpl: ActivitySpaceImpl,
-    private val entityShadowRenderer: EntityShadowRenderer,
+    private val entityShadowRenderer: EntityShadowRenderer?,
     private val runtimeExecutor: ScheduledExecutorService,
 ) : MovableComponent {
     private val moveEventListenersMap = ConcurrentHashMap<MoveEventListener, Executor>()
@@ -116,7 +113,7 @@ internal class MovableComponentImpl(
             isMoving = true
         } else if (reformEvent.state == ReformEvent.REFORM_STATE_END) {
             isMoving = false
-            entityShadowRenderer.destroy()
+            entityShadowRenderer?.hideShadow()
         }
 
         val newPose = getPose(reformEvent.proposedPosition, reformEvent.proposedOrientation)
@@ -177,7 +174,7 @@ internal class MovableComponentImpl(
             InputEvent.Action.UP -> {
                 moveState = MoveEvent.MOVE_STATE_END
                 isMoving = false
-                if (entity is GltfEntityImpl) entityShadowRenderer.destroy()
+                if (entity is GltfEntityImpl) entityShadowRenderer?.hideShadow()
             }
             else -> return null
         }
@@ -238,7 +235,9 @@ internal class MovableComponentImpl(
     private fun updateReformsForGltfEntity(): Boolean {
         (entity as GltfEntity).setReformAffordanceEnabled(
             enabled = true,
-            systemMovable = systemMovable && !userAnchorable,
+            // Ensure system movable is not handled in api-bindings.
+            // TODO(b/495927805): Remove system movable flag from the SVXR forked component.
+            systemMovable = false,
         )
         (entity as AndroidXrEntity).addInputEventListener(runtimeExecutor, inputEventListener)
         return true
@@ -273,19 +272,11 @@ internal class MovableComponentImpl(
         if (success && entity !is GltfEntity) {
             (entity as AndroidXrEntity).addReformEventConsumer(reformEventConsumer, runtimeExecutor)
         }
+        if (userAnchorable) entityShadowRenderer?.enableShadow()
         return success
     }
 
-    override fun onDetach(entity: Entity) {
-        if (entity is GltfEntity) {
-            entity.setReformAffordanceEnabled(
-                enabled = false,
-                systemMovable = systemMovable && !userAnchorable,
-            )
-            entity.removeInputEventListener(inputEventListener)
-            this.entity = null
-            return
-        }
+    private fun cleanReformOptions() {
         val reformOptions = (entity as AndroidXrEntity).getReformOptions()
         reformOptions.enabledReform = reformOptions.enabledReform and ReformOptions.ALLOW_MOVE.inv()
         // Clear any flags that were set by this component.
@@ -297,9 +288,26 @@ internal class MovableComponentImpl(
             if (scaleInZ) reformFlags and ReformOptions.FLAG_SCALE_WITH_DISTANCE.inv()
             else reformFlags
         reformOptions.flags = reformFlags
-        entity.updateReformOptions()
-        entity.removeReformEventConsumer(reformEventConsumer)
+        (entity as AndroidXrEntity).updateReformOptions()
+        (entity as AndroidXrEntity).removeReformEventConsumer(reformEventConsumer)
+    }
+
+    override fun onDetach(entity: Entity) {
+        when (entity) {
+            is GltfEntity -> {
+                entity.setReformAffordanceEnabled(
+                    enabled = false,
+                    systemMovable = systemMovable && !userAnchorable,
+                )
+                entity.removeInputEventListener(inputEventListener)
+            }
+
+            is PanelEntity,
+            is SurfaceEntity -> cleanReformOptions()
+            else -> {}
+        }
         this.entity = null
+        if (userAnchorable) entityShadowRenderer?.disableShadow()
     }
 
     override fun addMoveEventListener(moveEventListener: MoveEventListener) {
@@ -328,7 +336,7 @@ internal class MovableComponentImpl(
             }
         }
 
-        entityShadowRenderer.updateShadow(proposedPose, planePose, shadowDim = shadowDim)
+        entityShadowRenderer?.updateShadow(proposedPose, planePose, shadowDim = shadowDim)
     }
 
     private fun shouldRenderPlaneShadow(): Boolean {
@@ -337,7 +345,7 @@ internal class MovableComponentImpl(
 
     override fun setPlanePoseForMoveUpdatePose(planePose: Pose?, moveUpdatePose: Pose) {
         if (planePose == null) {
-            entityShadowRenderer.hidePlane()
+            entityShadowRenderer?.hideShadow()
         } else {
             tryRenderPlaneShadow(moveUpdatePose, planePose)
         }
@@ -347,9 +355,9 @@ internal class MovableComponentImpl(
         // Scale the panel shadow to the size of the PanelEntity in the activity space.
         val entityScale: Vector3 = panelEntity.worldSpaceScale
         val sizeX: Float =
-            (panelEntity.sizeInPixels.width * entityScale.x / activitySpaceImpl.worldSpaceScale.x)
+            (panelEntity.size.width * entityScale.x / activitySpaceImpl.worldSpaceScale.x)
         val sizeZ: Float =
-            (panelEntity.sizeInPixels.height * entityScale.z / activitySpaceImpl.worldSpaceScale.x)
+            (panelEntity.size.height * entityScale.z / activitySpaceImpl.worldSpaceScale.x)
         return FloatSize2d(sizeX, sizeZ)
     }
 
@@ -360,29 +368,14 @@ internal class MovableComponentImpl(
                 gltfEntity.worldSpaceScale to gltfEntity.gltfModelBoundingBox
             }
 
-        // TODO(b/484421916): Get rid of densityFactor once EntityShadowRenderer uses
-        // PanelEntityImpl
-        val xrExtensions = checkNotNull(XrExtensionsProvider.getXrExtensions())
-
-        // This factor is used to convert the size of the GltfEntity from meters to pixels
-        val densityFactor: Float
-        if (spatialApiVersion >= 2) {
-            densityFactor = xrExtensions.underlyingObject.config.defaultPixelsPerMeter()
-        } else {
-            densityFactor =
-                xrExtensions.config.defaultPixelsPerMeter(
-                    Resources.getSystem().displayMetrics.density
-                )
-        }
-
+        // Determine the rendered width and depth of the glTF entity in the activity space
+        // to scale the gLTF shadow accordingly
         val width: Float =
-            gltfBounds.halfExtents.width.times(HALF_EXTENTS_MULTIPLIER) *
-                densityFactor *
-                entityScale.x / activitySpaceImpl.worldSpaceScale.x
+            gltfBounds.halfExtents.width.times(HALF_EXTENTS_MULTIPLIER) * entityScale.x /
+                activitySpaceImpl.worldSpaceScale.x
         val depth: Float =
-            gltfBounds.halfExtents.depth.times(HALF_EXTENTS_MULTIPLIER) *
-                densityFactor *
-                entityScale.z / activitySpaceImpl.worldSpaceScale.x
+            gltfBounds.halfExtents.depth.times(HALF_EXTENTS_MULTIPLIER) * entityScale.z /
+                activitySpaceImpl.worldSpaceScale.x
 
         return FloatSize2d(width, depth)
     }

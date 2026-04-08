@@ -16,7 +16,6 @@
 
 package androidx.room3.compiler.processing.ksp
 
-import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeArgument
 import com.google.devtools.ksp.symbol.KSTypeReference
@@ -33,17 +32,8 @@ internal class KspValueClassArgumentType(
     env: KspProcessingEnv,
     // Using KSTypeArgument rather than resolved type to indicate do not inline in type name.
     val typeArg: KSTypeArgument,
-    originalKSAnnotations: Sequence<KSAnnotation>,
     scope: KSTypeVarianceResolverScope? = null,
-    typeAlias: KSType? = null,
-) :
-    KspType(
-        env = env,
-        ksType = typeArg.requireType(),
-        originalKSAnnotations = originalKSAnnotations,
-        scope = scope,
-        typeAlias = typeAlias,
-    ) {
+) : KspType(env, typeArg.requireType(), scope) {
     override fun resolveJTypeName(): JTypeName {
         return typeArg.asJTypeName(env.resolver)
     }
@@ -56,19 +46,11 @@ internal class KspValueClassArgumentType(
         return this
     }
 
-    override fun copy(
-        env: KspProcessingEnv,
-        ksType: KSType,
-        originalKSAnnotations: Sequence<KSAnnotation>,
-        scope: KSTypeVarianceResolverScope?,
-        typeAlias: KSType?,
-    ) =
+    override fun copy(env: KspProcessingEnv, ksType: KSType, scope: KSTypeVarianceResolverScope?) =
         KspValueClassArgumentType(
             env = env,
             typeArg = DelegatingTypeArg(typeArg, type = ksType.createTypeReference()),
-            originalKSAnnotations = originalKSAnnotations,
             scope = scope,
-            typeAlias = typeAlias,
         )
 
     private class DelegatingTypeArg(

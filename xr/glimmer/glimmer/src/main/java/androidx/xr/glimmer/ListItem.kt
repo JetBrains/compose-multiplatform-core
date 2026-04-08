@@ -64,7 +64,8 @@ import androidx.compose.ui.unit.dp
  * @param shape the [Shape] used to clip this list item, and also used to draw the background and
  *   border
  * @param color background color of this list item
- * @param contentColor content color used by components inside [content], and [supportingLabel].
+ * @param contentColor content color used by components inside [content], [supportingLabel],
+ *   [leadingIcon], and [trailingIcon].
  * @param border the border to draw around this list item
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content
@@ -136,7 +137,8 @@ public fun ListItem(
  * @param shape the [Shape] used to clip this list item, and also used to draw the background and
  *   border
  * @param color background color of this list item
- * @param contentColor content color used by components inside [content], and [supportingLabel].
+ * @param contentColor content color used by components inside [content], [supportingLabel],
+ *   [leadingIcon], and [trailingIcon].
  * @param border the border to draw around this list item
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content
@@ -192,7 +194,6 @@ private fun ListItemImpl(
     interactionSource: MutableInteractionSource?,
     content: @Composable () -> Unit,
 ) {
-    val colors = GlimmerTheme.colors
     val iconSize = GlimmerTheme.iconSizes.large
     val typography = GlimmerTheme.typography
     val innerPadding = GlimmerTheme.componentSpacingValues.small
@@ -233,10 +234,7 @@ private fun ListItemImpl(
         verticalAlignment = CenterVertically,
     ) {
         if (leadingIcon != null) {
-            Box(
-                Modifier.align(Alignment.Top).contentColorProvider(colors.primary),
-                contentAlignment = Alignment.TopStart,
-            ) {
+            Box(modifier = Modifier.align(Alignment.Top), contentAlignment = Alignment.TopStart) {
                 CompositionLocalProvider(LocalIconSize provides iconSize, content = leadingIcon)
             }
         }
@@ -258,10 +256,7 @@ private fun ListItemImpl(
             }
         }
         if (trailingIcon != null) {
-            Box(
-                Modifier.align(Alignment.Top).contentColorProvider(colors.primary),
-                Alignment.TopEnd,
-            ) {
+            Box(modifier = Modifier.align(Alignment.Top), contentAlignment = Alignment.TopEnd) {
                 CompositionLocalProvider(LocalIconSize provides iconSize, content = trailingIcon)
             }
         }

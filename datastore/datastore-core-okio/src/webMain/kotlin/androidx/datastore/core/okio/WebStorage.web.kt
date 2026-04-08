@@ -28,13 +28,19 @@ import okio.Buffer
 import okio.ByteString.Companion.decodeBase64
 import org.w3c.dom.Storage as DomStorage
 
-// TODO(b/441511612): Support OPFS.
-public enum class WebStorageType {
-    SESSION,
-    LOCAL,
+public class WebSessionStorage<T>(serializer: OkioSerializer<T>, name: String) : Storage<T> {
+    private val delegateStorage = WebStorage(serializer, name, WebStorageType.SESSION)
+
+    override fun createConnection(): StorageConnection<T> = delegateStorage.createConnection()
 }
 
-public class WebStorage<T>(
+public class WebLocalStorage<T>(serializer: OkioSerializer<T>, name: String) : Storage<T> {
+    private val delegateStorage = WebStorage(serializer, name, WebStorageType.LOCAL)
+
+    override fun createConnection(): StorageConnection<T> = delegateStorage.createConnection()
+}
+
+private class WebStorage<T>(
     private val serializer: OkioSerializer<T>,
     private val name: String,
     private val storageType: WebStorageType,
@@ -55,7 +61,7 @@ public class WebStorage<T>(
             domStorage,
             name,
             serializer,
-            coordinatorProducer(name, storageType),
+            coordinatorProducer.invoke(name, storageType),
         )
     }
 }
@@ -66,7 +72,6 @@ internal class WebStorageConnection<T>(
     private val serializer: OkioSerializer<T>,
     override val coordinator: WebInterProcessCoordinator,
 ) : StorageConnection<T> {
-
     private val closed = AtomicBoolean(false)
 
     override suspend fun <R> readScope(block: suspend ReadScope<T>.(locked: Boolean) -> R): R {
@@ -108,12 +113,10 @@ internal open class WebReadScope<T>(
         if (stringData.isNullOrEmpty()) {
             return serializer.defaultValue
         }
-
         val byteStringData =
             stringData.decodeBase64()
                 ?: throw CorruptionException("Unable to decode Base64 stored data.")
         val buffer = Buffer().write(byteStringData)
-
         try {
             return serializer.readFrom(buffer)
         } catch (ex: Exception) {
@@ -140,4 +143,9 @@ internal class WebWriteScope<T>(
         val stringData = buffer.readByteString().base64()
         domStorage.setItem(name, stringData)
     }
+}
+
+internal enum class WebStorageType {
+    SESSION,
+    LOCAL,
 }

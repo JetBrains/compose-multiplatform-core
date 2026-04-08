@@ -85,6 +85,16 @@ open class AnnotatedAppFunctionSerializable(override val classDeclaration: KSCla
     override fun validate(
         allowSerializableInterfaceTypes: Boolean
     ): AnnotatedAppFunctionSerializable {
+        if (
+            classDeclaration.annotations.findAnnotation(
+                IntrospectionHelper.AppFunctionSerializableAnnotation.CLASS_NAME
+            ) == null
+        ) {
+            throw ProcessingException(
+                "${classDeclaration.getJvmClassName()} cannot be represented as an app function serializable. Did you forget to annotate ${classDeclaration.getJvmClassName()}?",
+                classDeclaration,
+            )
+        }
         val validateHelper = AppFunctionSerializableValidateHelper(this)
         validateHelper.validatePrimaryConstructor()
         validateHelper.validateParameters(allowSerializableInterfaceTypes)

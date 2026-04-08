@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore
 
@@ -99,30 +100,32 @@ class GeospatialTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun state_defaultStateIsNotRunning() = runBlocking {
         val runtimeGeospatial = FakeRuntimeGeospatial()
         val underTest = Geospatial(runtimeGeospatial, xrResourcesManager)
 
-        assertThat(underTest.state.value).isEqualTo(Geospatial.State.NOT_RUNNING)
+        assertThat(underTest.state.value).isEqualTo(GeospatialState.NOT_RUNNING)
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun update_stateMatchesRuntimeGeospatial() = runBlocking {
         val runtimeGeospatial = FakeRuntimeGeospatial(RuntimeGeospatial.State.NOT_RUNNING)
         val underTest = Geospatial(runtimeGeospatial, xrResourcesManager)
-        check(underTest.state.value == Geospatial.State.NOT_RUNNING)
+        check(underTest.state.value == GeospatialState.NOT_RUNNING)
 
         // Update to Running state.
         runtimeGeospatial.state = RuntimeGeospatial.State.RUNNING
         underTest.update()
 
-        assertThat(underTest.state.value).isEqualTo(Geospatial.State.RUNNING)
+        assertThat(underTest.state.value).isEqualTo(GeospatialState.RUNNING)
 
         // Update to NotRunning state with error.
         runtimeGeospatial.state = RuntimeGeospatial.State.ERROR_INTERNAL
         underTest.update()
 
-        assertThat(underTest.state.value).isEqualTo(Geospatial.State.ERROR_INTERNAL)
+        assertThat(underTest.state.value).isEqualTo(GeospatialState.ERROR_INTERNAL)
     }
 
     @Test
@@ -248,7 +251,7 @@ class GeospatialTest {
                         LONGITUDE,
                         ALTITUDE_ABOVE_SURFACE,
                         EUS_QUATERNION,
-                        Geospatial.Surface.TERRAIN,
+                        GeospatialSurface.TERRAIN,
                     )
 
                 assertThat(result).isInstanceOf(AnchorCreateSuccess::class.java)
@@ -272,7 +275,7 @@ class GeospatialTest {
                         LONGITUDE,
                         ALTITUDE_ABOVE_SURFACE,
                         EUS_QUATERNION,
-                        Geospatial.Surface.TERRAIN,
+                        GeospatialSurface.TERRAIN,
                     )
 
                 assertThat(result).isInstanceOf(AnchorCreateResourcesExhausted::class.java)
@@ -292,7 +295,7 @@ class GeospatialTest {
                         LONGITUDE,
                         ALTITUDE_ABOVE_SURFACE,
                         EUS_QUATERNION,
-                        Geospatial.Surface.TERRAIN,
+                        GeospatialSurface.TERRAIN,
                     )
 
                 assertThat(result).isInstanceOf(AnchorCreateNotAuthorized::class.java)
@@ -312,7 +315,7 @@ class GeospatialTest {
                         LONGITUDE,
                         ALTITUDE_ABOVE_SURFACE,
                         EUS_QUATERNION,
-                        Geospatial.Surface.TERRAIN,
+                        GeospatialSurface.TERRAIN,
                     )
 
                 assertThat(result).isInstanceOf(AnchorCreateUnsupportedLocation::class.java)
@@ -332,7 +335,7 @@ class GeospatialTest {
                         LONGITUDE,
                         ALTITUDE_ABOVE_SURFACE,
                         EUS_QUATERNION,
-                        Geospatial.Surface.TERRAIN,
+                        GeospatialSurface.TERRAIN,
                     )
                 }
             }

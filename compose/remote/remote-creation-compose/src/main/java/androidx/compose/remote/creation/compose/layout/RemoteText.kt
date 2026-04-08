@@ -17,13 +17,8 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.core.Operations
-import androidx.compose.remote.core.operations.layout.managers.TextLayout
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.RemoteDensity
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
-import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
 import androidx.compose.remote.creation.compose.state.MutableRemoteString
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteFloat
@@ -35,15 +30,9 @@ import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.creation.compose.text.RemoteTextStyle
-import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
 import androidx.compose.remote.creation.compose.v2.RemoteTextV2
-import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
-import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontVariation
@@ -183,193 +172,25 @@ public fun RemoteText(
     textDecoration: TextDecoration? = null,
     fontVariationSettings: FontVariation.Settings? = null,
 ) {
-    val captureMode = LocalRemoteComposeCreationState.current
-
-    if (currentComposer.applier is RemoteComposeApplierV2) {
-        RemoteTextV2(
-            text = text,
-            modifier = modifier,
-            color = color,
-            fontSize = fontSize,
-            fontWeight = fontWeight,
-            fontStyle = fontStyle,
-            fontFamily = fontFamily,
-            textAlign = textAlign,
-            overflow = overflow,
-            maxLines = maxLines,
-            minFontSize = minFontSize,
-            maxFontSize = maxFontSize,
-            letterSpacing = letterSpacing,
-            lineHeightAdd = lineHeightAdd,
-            lineHeightMultiply = lineHeightMultiply,
-            textDecoration = textDecoration ?: TextDecoration.None,
-            fontVariationSettings = fontVariationSettings,
-        )
-        return
-    }
-
-    val useCoreTextComponent =
-        LocalRemoteComposeCreationState.current.profile.supportedOperations.contains(
-            Operations.CORE_TEXT
-        )
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
-    if (useCoreTextComponent) {
-        androidx.compose.foundation.layout.Box(
-            RemoteComposeCoreTextComponentModifier(
-                    modifier = captureMode.toRecordingModifier(modifier),
-                    id = text,
-                    color = color,
-                    fontSize = fontSize,
-                    minFontSize = minFontSize,
-                    maxFontSize = maxFontSize,
-                    fontStyle = fontStyle.encode(),
-                    fontWeight = fontWeight,
-                    fontFamily = fontFamily,
-                    textAlign = textAlign.encode(),
-                    overflow = overflow.encode(),
-                    maxLines = maxLines,
-                    textDecoration = textDecoration ?: TextDecoration.None,
-                    letterSpacing = letterSpacing,
-                    lineHeightAdd = lineHeightAdd,
-                    lineHeightMultiply = lineHeightMultiply,
-                    fontVariationSettings = fontVariationSettings,
-                )
-                .then(modifier.toComposeUiLayout())
-        )
-    } else {
-        androidx.compose.foundation.layout.Box(
-            RemoteComposeTextComponentModifier(
-                    modifier = captureMode.toRecordingModifier(modifier),
-                    id = RemoteIntReference(text.getIdForCreationState(captureMode)),
-                    color =
-                        color.constantValueOrNull?.toArgb()
-                            ?: color.getIdForCreationState(captureMode),
-                    isColorConstant = color.hasConstantValue,
-                    fontSize = with(LocalRemoteComposeCreationState.current) { fontSize.floatId },
-                    fontStyle = fontStyle.encode(),
-                    fontWeight = fontWeight.constantValueOrNull ?: 400f,
-                    fontFamily = fontFamily,
-                    textAlign = textAlign.encode(),
-                    overflow = overflow.encode(),
-                    maxLines = maxLines,
-                )
-                .then(modifier.toComposeUiLayout())
-        )
-    }
-}
-
-/** Utility modifier to record the layout information */
-internal class RemoteComposeTextComponentModifier(
-    public var modifier: RecordingModifier,
-    public var id: RemoteIntReference,
-    public var color: Int,
-    public val isColorConstant: Boolean,
-    public var fontSize: Float,
-    public var fontStyle: Int,
-    public var fontWeight: Float,
-    public var fontFamily: String?,
-    public var textAlign: Int,
-    public var overflow: Int,
-    public var maxLines: Int,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            val flags =
-                if (isColorConstant) {
-                    0
-                } else {
-                    TextLayout.FLAG_IS_DYNAMIC_COLOR.toShort()
-                }
-
-            canvas.document.startTextComponent(
-                modifier,
-                id.toInt(),
-                color,
-                fontSize,
-                fontStyle,
-                fontWeight,
-                fontFamily,
-                flags,
-                textAlign.toShort(),
-                overflow,
-                maxLines,
-            )
-
-            this@draw.drawContent()
-            canvas.document.endTextComponent()
-        }
-    }
-}
-
-/** Utility modifier to record the layout information */
-internal class RemoteComposeCoreTextComponentModifier(
-    public val modifier: RecordingModifier,
-    public val id: RemoteString,
-    public val color: RemoteColor,
-    public val fontSize: RemoteFloat,
-    public val minFontSize: Float? = null,
-    public val maxFontSize: Float? = null,
-    public val fontStyle: Int,
-    public val fontWeight: RemoteFloat,
-    public val fontFamily: String?,
-    public val textAlign: Int,
-    public val overflow: Int,
-    public val maxLines: Int,
-    public val textDecoration: TextDecoration,
-    public val letterSpacing: RemoteFloat,
-    public val lineHeightAdd: Float? = null,
-    public val lineHeightMultiply: RemoteFloat,
-    public val fontVariationSettings: FontVariation.Settings?,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        val settings = fontVariationSettings?.settings
-        drawIntoRemoteCanvas { canvas ->
-            val (fontAxisNames, fontAxisValues) = extractFontSettings(settings)
-            canvas.document.startTextComponent(
-                modifier,
-                id.getIdForCreationState(canvas.creationState),
-                -1,
-                color.constantValueOrNull?.toArgb() ?: Color.Black.toArgb(),
-                if (color.hasConstantValue) -1
-                else color.getIdForCreationState(canvas.creationState),
-                fontSize.getFloatIdForCreationState(canvas.creationState),
-                minFontSize ?: -1f,
-                maxFontSize ?: -1f,
-                fontStyle,
-                fontWeight.getFloatIdForCreationState(canvas.creationState),
-                fontFamily,
-                textAlign,
-                overflow,
-                maxLines,
-                letterSpacing.getFloatIdForCreationState(canvas.creationState),
-                lineHeightAdd ?: 0f,
-                lineHeightMultiply.getFloatIdForCreationState(canvas.creationState),
-                0,
-                0,
-                0,
-                textDecoration.contains(TextDecoration.Underline),
-                textDecoration.contains(TextDecoration.LineThrough),
-                fontAxisNames,
-                fontAxisValues,
-                false,
-                0,
-            )
-
-            this@draw.drawContent()
-            canvas.document.endTextComponent()
-        }
-    }
-
-    private fun extractFontSettings(
-        settings: List<FontVariation.Setting>?
-    ): Pair<Array<String>?, FloatArray?> {
-        val size = settings?.size ?: return Pair(null, null)
-
-        val fontAxisNames = Array(size) { settings[it].axisName }
-        val fontAxisValues = FloatArray(size) { settings[it].toVariationValue(null) }
-
-        return Pair(fontAxisNames, fontAxisValues)
-    }
+    RemoteTextV2(
+        text = text,
+        modifier = modifier,
+        color = color,
+        fontSize = fontSize,
+        fontWeight = fontWeight,
+        fontStyle = fontStyle,
+        fontFamily = fontFamily,
+        textAlign = textAlign,
+        overflow = overflow,
+        maxLines = maxLines,
+        minFontSize = minFontSize,
+        maxFontSize = maxFontSize,
+        letterSpacing = letterSpacing,
+        lineHeightAdd = lineHeightAdd,
+        lineHeightMultiply = lineHeightMultiply,
+        textDecoration = textDecoration ?: TextDecoration.None,
+        fontVariationSettings = fontVariationSettings,
+    )
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

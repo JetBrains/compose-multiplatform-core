@@ -180,12 +180,10 @@ class ButtonTest {
 
     @Test
     fun setsContentColor() {
-        var primary = Color.Unspecified
         var leadingIconContentColor = Color.Unspecified
         var trailingIconContentColor = Color.Unspecified
         var contentContentColor = Color.Unspecified
         rule.setGlimmerThemeContent {
-            primary = GlimmerTheme.colors.primary
             Button(
                 onClick = {},
                 leadingIcon = {
@@ -213,8 +211,8 @@ class ButtonTest {
         }
 
         rule.runOnIdle {
-            assertThat(leadingIconContentColor).isEqualTo(primary)
-            assertThat(trailingIconContentColor).isEqualTo(primary)
+            assertThat(leadingIconContentColor).isEqualTo(Color.White)
+            assertThat(trailingIconContentColor).isEqualTo(Color.White)
             assertThat(contentContentColor).isEqualTo(Color.White)
         }
     }

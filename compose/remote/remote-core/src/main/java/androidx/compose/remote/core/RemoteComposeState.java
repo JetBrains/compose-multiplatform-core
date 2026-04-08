@@ -529,7 +529,9 @@ public class RemoteComposeState implements CollectionsAccess {
             int sub = (int) (currentTime % 60000);
             return Math.min(repaintMs, 2 + 1000 * 60 - sub);
         }
-
+        if (!Float.isNaN(mRepaintSeconds)) {
+            return (int) (mRepaintSeconds * 1000);
+        }
         return -1;
     }
 

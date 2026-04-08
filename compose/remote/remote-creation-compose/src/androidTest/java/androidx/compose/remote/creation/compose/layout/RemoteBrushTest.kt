@@ -51,7 +51,9 @@ import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteC
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -244,6 +246,56 @@ class RemoteBrushTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleFitTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.Fit) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleCropTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.Crop) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleFillBoundsTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.FillBounds) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleFillWidthTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.FillWidth) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleFillHeightTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.FillHeight) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleInsideTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.Inside) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleNoneTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.None) }
+    }
+
+    @Composable
+    @RemoteComposable
+    private fun BitmapBrushBox(contentScale: ContentScale) {
+        val backgroundImage =
+            rememberNamedRemoteBitmap(name = "background") { createImage(300, 400).asImageBitmap() }
+        val backgroundBrush =
+            RemoteBrush.bitmap(
+                bitmap = backgroundImage,
+                tileModeX = TileMode.Decal,
+                tileModeY = TileMode.Decal,
+                contentScale = contentScale,
+            )
+        RemoteBox(modifier = RemoteModifier.fillMaxSize().background(backgroundBrush))
     }
 
     @Composable

@@ -80,12 +80,13 @@ import kotlin.math.max
  *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
  *   aspect ratio.
  * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param shape the [Shape] used to clip this card, and also used to draw the background and border
  * @param color background color of this card
- * @param contentColor content color used by components inside [content], [title] and [subtitle].
+ * @param contentColor content color used by components inside [content], [title], [subtitle],
+ *   [leadingIcon], and [trailingIcon].
  * @param border the border to draw around this card
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content. Note that there is additional padding applied around the content / text / icons inside
@@ -172,12 +173,13 @@ public fun Card(
  *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
  *   aspect ratio.
  * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param shape the [Shape] used to clip this card, and also used to draw the background and border
  * @param color background color of this card
- * @param contentColor content color used by components inside [content], [title] and [subtitle].
+ * @param contentColor content color used by components inside [content], [title], [subtitle],
+ *   [leadingIcon], and [trailingIcon].
  * @param border the border to draw around this card
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content. Note that there is additional padding applied around the content / text / icons inside
@@ -254,12 +256,13 @@ public fun Card(
  *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
  *   aspect ratio.
  * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param shape the [Shape] used to clip this card, and also used to draw the background and border
  * @param color background color of this card
- * @param contentColor content color used by components inside [content], [title] and [subtitle].
+ * @param contentColor content color used by components inside [content], [title], [subtitle],
+ *   [leadingIcon], and [trailingIcon].
  * @param border the border to draw around this card
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content. Note that there is additional padding applied around the content / text / icons inside
@@ -323,7 +326,6 @@ private fun CardImpl(
     interactionSource: MutableInteractionSource?,
     content: @Composable () -> Unit,
 ) {
-    val colors = GlimmerTheme.colors
     val iconSize = GlimmerTheme.iconSizes.large
     val typography = GlimmerTheme.typography
     val componentSpacingValues = GlimmerTheme.componentSpacingValues
@@ -372,9 +374,7 @@ private fun CardImpl(
         ) {
             if (leadingIcon != null) {
                 Box(
-                    Modifier.align(Alignment.Top)
-                        .padding(end = iconSpacing)
-                        .contentColorProvider(colors.primary),
+                    modifier = Modifier.align(Alignment.Top).padding(end = iconSpacing),
                     contentAlignment = Alignment.TopStart,
                 ) {
                     CompositionLocalProvider(LocalIconSize provides iconSize, content = leadingIcon)
@@ -405,10 +405,8 @@ private fun CardImpl(
             }
             if (trailingIcon != null) {
                 Box(
-                    Modifier.align(Alignment.Top)
-                        .padding(start = iconSpacing)
-                        .contentColorProvider(colors.primary),
-                    Alignment.TopEnd,
+                    modifier = Modifier.align(Alignment.Top).padding(start = iconSpacing),
+                    contentAlignment = Alignment.TopEnd,
                 ) {
                     CompositionLocalProvider(
                         LocalIconSize provides iconSize,

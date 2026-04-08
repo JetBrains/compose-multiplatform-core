@@ -659,6 +659,26 @@ package androidx.window.layout {
     property public androidx.window.layout.SupportedPosture TABLETOP;
   }
 
+  public final class VisualStateRequest {
+    method public boolean isSustainedVisualsEnabled();
+  }
+
+  public static final class VisualStateRequest.Builder {
+    ctor public VisualStateRequest.Builder();
+    method public androidx.window.layout.VisualStateRequest build();
+    method public androidx.window.layout.VisualStateRequest.Builder setSustainedVisualsEnabled(boolean isSustainedVisualsEnabled);
+  }
+
+  public abstract class WindowInfoController {
+    method public static final androidx.window.layout.WindowInfoController getInstance(@UiContext android.content.Context context);
+    method @MainThread public abstract void requestVisualState(@UiContext android.content.Context context, androidx.window.layout.VisualStateRequest request);
+    field public static final androidx.window.layout.WindowInfoController.Companion Companion;
+  }
+
+  public static final class WindowInfoController.Companion {
+    method public androidx.window.layout.WindowInfoController getInstance(@UiContext android.content.Context context);
+  }
+
   public interface WindowInfoTracker {
     method @androidx.window.RequiresWindowSdkExtension(version=9) public default androidx.window.layout.WindowLayoutInfo getCurrentWindowLayoutInfo(@UiContext android.content.Context context);
     method @InaccessibleFromKotlin public static androidx.window.layout.WindowInfoTracker getOrCreate(android.content.Context context);
@@ -677,7 +697,26 @@ package androidx.window.layout {
 
   public final class WindowLayoutInfo {
     method @InaccessibleFromKotlin public java.util.List<androidx.window.layout.DisplayFeature> getDisplayFeatures();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.window.layout.WindowLayoutInfo.EngagementMode> getEngagementModes();
+    method public boolean hasEngagementMode(androidx.window.layout.WindowLayoutInfo.EngagementMode mode);
+    method public boolean hasEngagementModes(androidx.window.layout.WindowLayoutInfo.EngagementMode... modes);
     property public java.util.List<androidx.window.layout.DisplayFeature> displayFeatures;
+    property public java.util.Set<androidx.window.layout.WindowLayoutInfo.EngagementMode> engagementModes;
+  }
+
+  public static final class WindowLayoutInfo.EngagementMode {
+    field public static final androidx.window.layout.WindowLayoutInfo.EngagementMode AUDIO_ON;
+    field public static final androidx.window.layout.WindowLayoutInfo.EngagementMode.Companion Companion;
+    field public static final androidx.window.layout.WindowLayoutInfo.EngagementMode ENGAGEMENT_PRECISE_POINTER;
+    field public static final androidx.window.layout.WindowLayoutInfo.EngagementMode ENGAGEMENT_TOUCH;
+    field public static final androidx.window.layout.WindowLayoutInfo.EngagementMode VISUALS_ON;
+  }
+
+  public static final class WindowLayoutInfo.EngagementMode.Companion {
+    property public androidx.window.layout.WindowLayoutInfo.EngagementMode AUDIO_ON;
+    property public androidx.window.layout.WindowLayoutInfo.EngagementMode ENGAGEMENT_PRECISE_POINTER;
+    property public androidx.window.layout.WindowLayoutInfo.EngagementMode ENGAGEMENT_TOUCH;
+    property public androidx.window.layout.WindowLayoutInfo.EngagementMode VISUALS_ON;
   }
 
   public final class WindowMetrics {

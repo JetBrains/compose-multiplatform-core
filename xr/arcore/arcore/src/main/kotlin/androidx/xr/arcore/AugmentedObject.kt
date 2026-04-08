@@ -21,7 +21,6 @@ import androidx.xr.arcore.runtime.AugmentedObject as RuntimeObject
 import androidx.xr.runtime.AugmentedObjectCategory as Category
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -90,7 +89,7 @@ internal constructor(
     /**
      * The representation of the current state of an AugmentedObject.
      *
-     * @property trackingState the [TrackingState] of the object
+     * @property trackingState the [androidx.xr.runtime.TrackingState] of the object
      * @property category the [Category] of the augmented object
      * @property centerPose the [Pose] determined to represent the center of this object
      * @property extents the dimensions of the object, axis aligned relative to the center pose,
@@ -124,7 +123,7 @@ internal constructor(
     private val _state =
         MutableStateFlow(
             State(
-                runtimeObject.trackingState,
+                runtimeObject.trackingState.toTrackingState(),
                 runtimeObject.category,
                 runtimeObject.centerPose,
                 runtimeObject.extents,
@@ -141,7 +140,7 @@ internal constructor(
     override suspend fun update() {
         _state.emit(
             State(
-                runtimeObject.trackingState,
+                runtimeObject.trackingState.toTrackingState(),
                 runtimeObject.category,
                 runtimeObject.centerPose,
                 runtimeObject.extents,

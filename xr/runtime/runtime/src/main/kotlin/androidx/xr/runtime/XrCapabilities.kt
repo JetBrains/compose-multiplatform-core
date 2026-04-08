@@ -171,7 +171,9 @@ private constructor(@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) publi
          * Supported runtimes:
          * - Projected
          */
-        @JvmField public val INERTIAL_LAST_KNOWN: DeviceTrackingMode = DeviceTrackingMode(2)
+        @PreviewSpatialApi
+        @JvmField
+        public val INERTIAL_LAST_KNOWN: DeviceTrackingMode = DeviceTrackingMode(2)
     }
 }
 
@@ -312,8 +314,8 @@ private constructor(@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) publi
     public companion object {
         /**
          * The Geospatial API is disabled. When GeospatialMode is disabled, current `Anchor` objects
-         * created from `Geospatial` will stop updating, and have their [TrackingState] set to
-         * [TrackingState.STOPPED].
+         * created from `Geospatial` will stop updating, and have their
+         * [androidx.xr.runtime.TrackingState] set to [androidx.xr.runtime.TrackingState.STOPPED].
          */
         @JvmField public val DISABLED: GeospatialMode = GeospatialMode(0)
 

@@ -22,6 +22,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LENS_FACING_BACK
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
 import androidx.camera.core.CameraXConfig
+import androidx.camera.core.CompositionSettings
 import androidx.camera.core.ConcurrentCamera.SingleCameraConfig
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
@@ -319,6 +320,57 @@ class ConcurrentCameraTest {
             assertThrows<UnsupportedOperationException> {
                 provider.bindToLifecycle(listOf(singleCameraConfig0, singleCameraConfig1))
             }
+        }
+    }
+
+    @Test
+    fun setCompositionSettings_updatesSettings(): Unit = runBlocking {
+        ProcessCameraProvider.configureInstance(createConcurrentCameraAppConfig())
+
+        provider = ProcessCameraProvider.getInstance(context).await()
+        val useCase0 = Preview.Builder().build()
+        val useCase1 =
+            FakeUseCase(
+                FakeUseCaseConfig.Builder(CaptureType.VIDEO_CAPTURE).useCaseConfig,
+                CaptureType.VIDEO_CAPTURE,
+            )
+
+        val singleCameraConfig0 =
+            SingleCameraConfig(
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                UseCaseGroup.Builder().addUseCase(useCase0).addUseCase(useCase1).build(),
+                lifecycleOwner0,
+            )
+        val singleCameraConfig1 =
+            SingleCameraConfig(
+                CameraSelector.DEFAULT_FRONT_CAMERA,
+                UseCaseGroup.Builder().addUseCase(useCase0).addUseCase(useCase1).build(),
+                lifecycleOwner1,
+            )
+
+        if (context.packageManager.hasSystemFeature(FEATURE_CAMERA_CONCURRENT)) {
+            val concurrentCamera =
+                provider.bindToLifecycle(listOf(singleCameraConfig0, singleCameraConfig1))
+
+            val primarySettings =
+                CompositionSettings.Builder()
+                    .setAlpha(0.5f)
+                    .setOffset(0.1f, 0.1f)
+                    .setScale(0.5f, 0.5f)
+                    .build()
+            val secondarySettings =
+                CompositionSettings.Builder()
+                    .setAlpha(0.8f)
+                    .setOffset(-0.1f, -0.1f)
+                    .setScale(0.3f, 0.3f)
+                    .build()
+
+            concurrentCamera.setCompositionSettings(listOf(primarySettings, secondarySettings))
+
+            val camera = concurrentCamera.cameras[0]
+            val adapter = (camera as LifecycleCamera).cameraUseCaseAdapter
+            assertThat(adapter.compositionSettings[0].alpha).isEqualTo(0.5f)
+            assertThat(adapter.compositionSettings[1].alpha).isEqualTo(0.8f)
         }
     }
 

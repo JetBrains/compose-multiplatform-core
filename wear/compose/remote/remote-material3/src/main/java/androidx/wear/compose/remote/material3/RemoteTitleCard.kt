@@ -16,11 +16,11 @@
 
 package androidx.wear.compose.remote.material3
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
 import androidx.compose.remote.creation.compose.layout.RemoteRow
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
@@ -28,7 +28,6 @@ import androidx.compose.remote.creation.compose.modifier.height
 import androidx.compose.remote.creation.compose.modifier.width
 import androidx.compose.remote.creation.compose.shapes.RemoteShape
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
-import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
@@ -40,8 +39,11 @@ import androidx.compose.runtime.CompositionLocalProvider
  * information about an application, e.g. a message.
  *
  * @sample androidx.wear.compose.remote.material3.samples.RemoteTitleCardSample
+ * @param onClick Will be called when the user clicks the card
  * @param title A slot for displaying the title of the card
  * @param modifier Modifier to be applied to the card
+ * @param enabled Controls the enabled state of the card. When false, this component will not
+ *   respond to user input
  * @param time An optional slot for displaying the time relevant to the contents of the card
  * @param subtitle An optional slot for displaying the subtitle of the card
  * @param shape Defines the card's shape.
@@ -50,7 +52,6 @@ import androidx.compose.runtime.CompositionLocalProvider
  *   content
  * @param content The optional body content of the card.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
 public fun RemoteTitleCard(
@@ -62,7 +63,7 @@ public fun RemoteTitleCard(
     subtitle: (@Composable @RemoteComposable () -> Unit)? = null,
     shape: RemoteShape = RemoteCardDefaults.shape,
     colors: RemoteCardColors = RemoteCardDefaults.cardColors(),
-    contentPadding: RemoteDp = RemoteCardDefaults.ContentPadding,
+    contentPadding: RemotePaddingValues = RemoteCardDefaults.ContentPadding,
     content: (@Composable @RemoteComposable () -> Unit)? = null,
 ) {
     val timeWithTextStyle: @Composable @RemoteComposable () -> Unit = {

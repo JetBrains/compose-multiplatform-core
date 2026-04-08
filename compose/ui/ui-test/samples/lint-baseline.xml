@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 9.0.0-beta02" type="baseline" client="gradle" dependencies="true" name="AGP (9.0.0-beta02)" variant="all" version="9.0.0-beta02">
+<issues format="6" by="lint 9.2.0-alpha05" type="baseline" client="gradle" dependencies="true" name="AGP (9.2.0-alpha05)" variant="all" version="9.2.0-alpha05">
 
     <issue
         id="NewApi"
@@ -20,21 +20,30 @@
     </issue>
 
     <issue
-        id="ComposeTestRuleDispatcher"
-        message="`TestDispatcher` is required. Add `effectContext = StandardTestDispatcher()` to control coroutine execution."
-        errorLine1="internal val composeTestRule = createComposeRule()"
-        errorLine2="                               ~~~~~~~~~~~~~~~~~~~">
+        id="ObsoleteSampledAnnotation"
+        message="androidx.compose.ui.test.samples.hasPendingWorkSample is annotated with @Sampled, but is not linked to from a @sample tag."
+        errorLine1="fun hasPendingWorkSample() = runComposeUiTest {"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/ui/test/samples/Common.kt"/>
+            file="src/main/java/androidx/compose/ui/test/samples/HasPendingWorkSamples.kt"/>
     </issue>
 
     <issue
-        id="ComposeTestRuleDispatcher"
-        message="`TestDispatcher` is required. Add `effectContext = StandardTestDispatcher()` to control coroutine execution."
-        errorLine1="internal val androidComposeTestRule = createAndroidComposeRule&lt;ComponentActivity>()"
-        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="ObsoleteSampledAnnotation"
+        message="androidx.compose.ui.test.samples.runWhenIdleSample is annotated with @Sampled, but is not linked to from a @sample tag."
+        errorLine1="fun runWhenIdleSample() = runComposeUiTest {"
+        errorLine2="    ~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/androidx/compose/ui/test/samples/Common.kt"/>
+            file="src/main/java/androidx/compose/ui/test/samples/RunWhenIdleSamples.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSampledAnnotation"
+        message="androidx.compose.ui.test.samples.awaitAndRunWhenIdleSample is annotated with @Sampled, but is not linked to from a @sample tag."
+        errorLine1="fun awaitAndRunWhenIdleSample() = runComposeUiTest {"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/ui/test/samples/RunWhenIdleSamples.kt"/>
     </issue>
 
 </issues>

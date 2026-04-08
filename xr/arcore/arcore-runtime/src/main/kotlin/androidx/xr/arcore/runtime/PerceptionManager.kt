@@ -83,6 +83,19 @@ public interface PerceptionManager {
      */
     public fun unpersistAnchor(uuid: UUID)
 
+    /**
+     * Sets the display rotation on supported devices.
+     *
+     * @param rotation the angle in degrees to rotate the display from its default orientation, with
+     *   positive values representing clockwise rotations
+     * @param width the new display width after rotation
+     * @param height the new display width after rotation
+     * @throws UnsupportedOperationException if the current runtime does not support display
+     *   rotation
+     */
+    public fun setDisplayRotation(rotation: Int, width: Int, height: Int): Unit =
+        throw UnsupportedOperationException()
+
     public val trackables: Collection<Trackable>
     public val leftEye: Eye?
     public val rightEye: Eye?
@@ -95,7 +108,7 @@ public interface PerceptionManager {
     public val rightRenderViewpoint: RenderViewpoint?
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val monoRenderViewpoint: RenderViewpoint?
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val geospatial: Geospatial
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val geospatial: Geospatial
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val leftDepthMap: DepthMap?
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val rightDepthMap: DepthMap?
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val monoDepthMap: DepthMap?

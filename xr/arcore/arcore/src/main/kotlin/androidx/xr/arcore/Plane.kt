@@ -22,7 +22,6 @@ import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.Plane as RuntimePlane
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
@@ -49,9 +48,9 @@ internal constructor(
         /**
          * Emits the planes that are currently being tracked in the [session].
          *
-         * Only [Plane]s that are [TrackingState.TRACKING] will be emitted in the [Collection].
-         * Instances of the same [Plane] will remain between subsequent emits to the [StateFlow] as
-         * long as they remain tracking.
+         * Only [Plane]s that are [androidx.xr.runtime.TrackingState.TRACKING] will be emitted in
+         * the [Collection]. Instances of the same [Plane] will remain between subsequent emits to
+         * the [StateFlow] as long as they remain tracking.
          *
          * @param session the [Session] to track planes from
          * @throws [IllegalStateException] if [Session.config] is set to
@@ -104,6 +103,8 @@ internal constructor(
     public class State
     internal constructor(
         public override val trackingState: TrackingState,
+        @Suppress("DEPRECATION")
+        @get:SuppressWarnings("ReferencesDeprecated")
         public val label: Label,
         public val centerPose: Pose,
         public val extents: FloatSize2d,
@@ -133,6 +134,8 @@ internal constructor(
     }
 
     /** A simple summary of the normal vector of a [Plane]. */
+    @Deprecated("Use PlaneType instead.", replaceWith = ReplaceWith("PlaneType"))
+    @Suppress("DEPRECATION")
     public class Type private constructor(private val value: Int) {
         public companion object {
             /** A horizontal plane facing upward (e.g. floor or tabletop). */
@@ -155,6 +158,8 @@ internal constructor(
     }
 
     /** A semantic description of a [Plane]. */
+    @Deprecated("Use PlaneLabel instead.", replaceWith = ReplaceWith("PlaneLabel"))
+    @Suppress("DEPRECATION")
     public class Label private constructor(private val value: Int) {
         public companion object {
             /** The plane represents an unknown type. */
@@ -186,7 +191,7 @@ internal constructor(
     private val _state =
         MutableStateFlow(
             State(
-                runtimePlane.trackingState,
+                runtimePlane.trackingState.toTrackingState(),
                 labelFromRuntimeType(),
                 runtimePlane.centerPose,
                 runtimePlane.extents,
@@ -197,7 +202,9 @@ internal constructor(
 
     public override val state: StateFlow<Plane.State> = _state.asStateFlow()
 
-    public val type: Type
+    @Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
+    @get:SuppressWarnings("ReferencesDeprecated")
+    public val type: PlaneType
         get() = typeFromRuntimeType()
 
     /**
@@ -229,7 +236,7 @@ internal constructor(
     override suspend fun update() {
         _state.emit(
             State(
-                trackingState = runtimePlane.trackingState,
+                trackingState = runtimePlane.trackingState.toTrackingState(),
                 label = labelFromRuntimeType(),
                 centerPose = runtimePlane.centerPose,
                 extents = runtimePlane.extents,
@@ -239,22 +246,24 @@ internal constructor(
         )
     }
 
-    private fun typeFromRuntimeType(): Type =
+    @Suppress("TYPEALIAS_EXPANSION_DEPRECATION", "DEPRECATION")
+    private fun typeFromRuntimeType(): PlaneType =
         when (runtimePlane.type) {
-            RuntimePlane.Type.HORIZONTAL_UPWARD_FACING -> Type.HORIZONTAL_UPWARD_FACING
-            RuntimePlane.Type.HORIZONTAL_DOWNWARD_FACING -> Type.HORIZONTAL_DOWNWARD_FACING
-            RuntimePlane.Type.VERTICAL -> Type.VERTICAL
-            else -> Type.HORIZONTAL_UPWARD_FACING
+            RuntimePlane.Type.HORIZONTAL_UPWARD_FACING -> PlaneType.HORIZONTAL_UPWARD_FACING
+            RuntimePlane.Type.HORIZONTAL_DOWNWARD_FACING -> PlaneType.HORIZONTAL_DOWNWARD_FACING
+            RuntimePlane.Type.VERTICAL -> PlaneType.VERTICAL
+            else -> PlaneType.HORIZONTAL_UPWARD_FACING
         }
 
-    private fun labelFromRuntimeType(): Label =
+    @Suppress("TYPEALIAS_EXPANSION_DEPRECATION", "DEPRECATION")
+    private fun labelFromRuntimeType(): PlaneLabel =
         when (runtimePlane.label) {
-            RuntimePlane.Label.UNKNOWN -> Label.UNKNOWN
-            RuntimePlane.Label.WALL -> Label.WALL
-            RuntimePlane.Label.FLOOR -> Label.FLOOR
-            RuntimePlane.Label.CEILING -> Label.CEILING
-            RuntimePlane.Label.TABLE -> Label.TABLE
-            else -> Label.UNKNOWN
+            RuntimePlane.Label.UNKNOWN -> PlaneLabel.UNKNOWN
+            RuntimePlane.Label.WALL -> PlaneLabel.WALL
+            RuntimePlane.Label.FLOOR -> PlaneLabel.FLOOR
+            RuntimePlane.Label.CEILING -> PlaneLabel.CEILING
+            RuntimePlane.Label.TABLE -> PlaneLabel.TABLE
+            else -> PlaneLabel.UNKNOWN
         }
 
     private fun subsumedByFromRuntimePlane(): Plane? =

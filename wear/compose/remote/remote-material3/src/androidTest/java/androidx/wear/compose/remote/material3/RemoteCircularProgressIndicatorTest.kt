@@ -17,9 +17,15 @@
 package androidx.wear.compose.remote.material3
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
-import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
+import androidx.compose.remote.creation.compose.layout.RemoteAlignment
+import androidx.compose.remote.creation.compose.layout.RemoteBox
+import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -32,7 +38,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalRemoteCreationComposeApi::class)
 @MediumTest
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @RunWith(JUnit4::class)
@@ -43,33 +48,52 @@ class RemoteCircularProgressIndicatorTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val creationDisplayInfo =
-        CreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
+        RemoteCreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
 
     @Test
     fun indicator_enabled() {
         remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            RemoteCircularProgressEnabled()
+            Center { RemoteCircularProgressEnabled() }
+        }
+    }
+
+    @Test
+    fun indicator_enabled_rtl() {
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo = creationDisplayInfo,
+            layoutDirection = LayoutDirection.Rtl,
+        ) {
+            Center { RemoteCircularProgressEnabled() }
         }
     }
 
     @Test
     fun indicator_disabled() {
         remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            RemoteCircularProgressIndicatorDisabled()
+            Center { RemoteCircularProgressIndicatorDisabled() }
         }
     }
 
     @Test
     fun indicator_customColors() {
         remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            RemoteCircularProgressIndicatorCustomColor()
+            Center { RemoteCircularProgressIndicatorCustomColor() }
         }
     }
 
     @Test
     fun indicator_customEndAngle_and_noGap() {
         remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            RemoteCircularProgressNoGapCustomAngle()
+            Center { RemoteCircularProgressNoGapCustomAngle() }
         }
+    }
+
+    @Composable
+    @RemoteComposable
+    private fun Center(
+        modifier: RemoteModifier = RemoteModifier.fillMaxSize(),
+        content: @Composable @RemoteComposable () -> Unit,
+    ) {
+        RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
     }
 }

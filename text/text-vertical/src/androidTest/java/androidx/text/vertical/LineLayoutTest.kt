@@ -73,7 +73,7 @@ class LineLayoutRunTest {
 
     @Test
     fun lineLayout_PlainTextWithMixed() {
-        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.MIXED).run {
+        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.Mixed).run {
             assertThat(start).isEqualTo(LATIN_START)
             assertThat(end).isEqualTo(JAPANESE_END)
             assertThat(width).isEqualTo(ONE_EM) // width is 1em.
@@ -93,7 +93,7 @@ class LineLayoutRunTest {
 
     @Test
     fun lineLayout_PlainTextWithUpright() {
-        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.UPRIGHT).run {
+        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.Upright).run {
             assertThat(start).isEqualTo(LATIN_START)
             assertThat(end).isEqualTo(JAPANESE_END)
             assertThat(width).isEqualTo(ONE_EM) // width is 1em.
@@ -110,7 +110,7 @@ class LineLayoutRunTest {
 
     @Test
     fun lineLayout_PlainTextWithSideways() {
-        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.SIDEWAYS).run {
+        createLineLayout(TEXT, LATIN_START, JAPANESE_END, PAINT, TextOrientation.Sideways).run {
             assertThat(start).isEqualTo(LATIN_START)
             assertThat(end).isEqualTo(JAPANESE_END)
             assertThat(width).isEqualTo(ONE_EM) // width is 1em.
@@ -131,7 +131,7 @@ class LineLayoutRunTest {
             SpannableString(TEXT).apply {
                 setSpan(TextOrientationSpan.Sideways(), JAPANESE_START, JAPANESE_END, SPAN_FLAG)
             }
-        createLineLayout(spanned, LATIN_START, JAPANESE_END, PAINT, TextOrientation.MIXED).run {
+        createLineLayout(spanned, LATIN_START, JAPANESE_END, PAINT, TextOrientation.Mixed).run {
             assertThat(start).isEqualTo(LATIN_START)
             assertThat(end).isEqualTo(JAPANESE_END)
             assertThat(width).isEqualTo(ONE_EM) // width is 1em.
@@ -152,7 +152,7 @@ class LineLayoutRunTest {
             SpannableString(TEXT).apply {
                 setSpan(TextOrientationSpan.TextCombineUpright(), LATIN_START, LATIN_END, SPAN_FLAG)
             }
-        createLineLayout(spanned, LATIN_START, JAPANESE_END, PAINT, TextOrientation.MIXED).run {
+        createLineLayout(spanned, LATIN_START, JAPANESE_END, PAINT, TextOrientation.Mixed).run {
             assertThat(start).isEqualTo(LATIN_START)
             assertThat(end).isEqualTo(JAPANESE_END)
             // Overall line width is extended to 1.1em because of the long TateChuYoko span.

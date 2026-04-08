@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
+// removed.
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
@@ -109,6 +113,7 @@ internal constructor(
     internal constructor(
         public val pose: Pose,
         public val localPose: Pose,
+        @Deprecated(message = "Convert to androidx.xr.runtime.math.FieldOfView")
         public val fieldOfView: FieldOfView,
     ) {
         override fun equals(other: Any?): Boolean {
@@ -124,10 +129,6 @@ internal constructor(
             result = 31 * result + localPose.hashCode()
             result = 31 * result + fieldOfView.hashCode()
             return result
-        }
-
-        override fun toString(): String {
-            return "State(pose=$pose, localPose=$localPose, fieldOfView=$fieldOfView)"
         }
     }
 

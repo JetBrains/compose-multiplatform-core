@@ -94,4 +94,16 @@ public class BackForwardCacheSettingsTest {
         backForwardCacheSettings.setTimeoutSeconds(largeTimeout);
         Assert.assertEquals(largeTimeout, backForwardCacheSettings.getTimeoutSeconds());
     }
+
+    @Test
+    public void testSetKeepForwardEntries() {
+        WebkitUtils.checkFeature(WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4);
+
+        WebSettings settings = mWebViewOnUiThread.getSettings();
+        BackForwardCacheSettings backForwardCacheSettings =
+                WebSettingsCompat.getBackForwardCacheSettings(settings);
+
+        backForwardCacheSettings.setKeepForwardEntriesEnabled(false);
+        Assert.assertFalse(backForwardCacheSettings.isKeepForwardEntriesEnabled());
+    }
 }

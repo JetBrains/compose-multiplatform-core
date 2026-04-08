@@ -7,7 +7,7 @@ package androidx.room3 {
     method @InaccessibleFromKotlin public boolean getAllowMainThreadQueries();
     method @InaccessibleFromKotlin public java.util.List<androidx.room3.migration.AutoMigrationSpec> getAutoMigrationSpecs();
     method @InaccessibleFromKotlin public java.util.List<androidx.room3.RoomDatabase.Callback> getCallbacks();
-    method @InaccessibleFromKotlin public android.content.Context getContext();
+    method @InaccessibleFromKotlin public android.content.Context? getContext();
     method @InaccessibleFromKotlin public androidx.room3.RoomDatabase.JournalMode getJournalMode();
     method @InaccessibleFromKotlin public androidx.room3.RoomDatabase.MigrationContainer getMigrationContainer();
     method @InaccessibleFromKotlin public String? getName();
@@ -21,7 +21,7 @@ package androidx.room3 {
     property public boolean allowMainThreadQueries;
     property public java.util.List<androidx.room3.migration.AutoMigrationSpec> autoMigrationSpecs;
     property public java.util.List<androidx.room3.RoomDatabase.Callback> callbacks;
-    property public android.content.Context context;
+    property public android.content.Context? context;
     property public boolean isMigrationRequired;
     property public androidx.room3.RoomDatabase.JournalMode journalMode;
     property public androidx.room3.RoomDatabase.MigrationContainer migrationContainer;
@@ -51,17 +51,19 @@ package androidx.room3 {
   public final class Room {
     method public static <T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> databaseBuilder(android.content.Context context, Class<T> klass, String? name);
     method @KotlinOnly public inline <reified T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> databaseBuilder(android.content.Context context, String name, optional kotlin.jvm.functions.Function0<T> factory);
+    method @KotlinOnly public inline <reified T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> databaseBuilder(String name, optional kotlin.jvm.functions.Function0<T> factory);
     method public static <T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> inMemoryDatabaseBuilder(android.content.Context context, Class<T> klass);
     method @KotlinOnly public inline <reified T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> inMemoryDatabaseBuilder(android.content.Context context, optional kotlin.jvm.functions.Function0<T> factory);
+    method @KotlinOnly public inline <reified T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> inMemoryDatabaseBuilder(optional kotlin.jvm.functions.Function0<T> factory);
     property public static String MASTER_TABLE_NAME;
     field public static final androidx.room3.Room INSTANCE;
     field public static final String MASTER_TABLE_NAME = "room_master_table";
   }
 
   public abstract class RoomDatabase {
+    ctor public RoomDatabase();
     method public abstract suspend Object? clearAllTables(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void close();
-    method protected abstract androidx.room3.InvalidationTracker createInvalidationTracker();
     method @InaccessibleFromKotlin public androidx.room3.InvalidationTracker getInvalidationTracker();
     property public androidx.room3.InvalidationTracker invalidationTracker;
     field public static final androidx.room3.RoomDatabase.Companion Companion;

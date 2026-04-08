@@ -115,61 +115,99 @@ class SwipeToRevealTest {
 
     @Test
     fun onStateChangeToRevealed_performsHaptics() {
-        val results = mutableMapOf<HapticFeedbackType, Int>()
-        val haptics = hapticFeedback(collectResultsFromHapticFeedback(results))
-        lateinit var revealState: RevealState
-        lateinit var coroutineScope: CoroutineScope
+        assertHapticFeedback(
+            initialValue = RightRevealing,
+            action = { coroutineScope, revealState ->
+                rule.runOnIdle { coroutineScope.launch { revealState.animateTo(RightRevealed) } }
+            },
+            expectedHapticCount = 1,
+        )
+    }
 
-        rule.setContent {
-            revealState = rememberRevealState(initialValue = RightRevealing)
-            coroutineScope = rememberCoroutineScope()
-            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
-                SwipeToRevealWithDefaults(
-                    modifier = Modifier.testTag(TEST_TAG),
-                    revealState = revealState,
-                )
-            }
-        }
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    @Test
+    fun onStateChangeToRevealing_performsHaptics() {
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        assertHapticFeedback(
+            initialValue = Covered,
+            action = { coroutineScope, revealState ->
+                rule.runOnIdle { coroutineScope.launch { revealState.animateTo(RightRevealing) } }
+            },
+            expectedHapticCount = 1,
+        )
+    }
 
-        rule.runOnIdle { assertThat(results).isEmpty() }
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    @Test
+    fun onSwipeSlowlyToFullyRevealed_performsHapticsTwice() {
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        assertHapticFeedback(
+            initialValue = Covered,
+            action = { _, _ ->
+                // We can not use swipeLeft/swipeRight for slowly swiping in test since
+                // composeTestRule will advance clock automatically and make it run very fast.
+                try {
+                    rule.mainClock.autoAdvance = false
 
-        rule.runOnIdle { coroutineScope.launch { revealState.animateTo(RightRevealed) } }
+                    rule.onNodeWithTag(TEST_TAG).performTouchInput {
+                        down(Offset(LARGE_SCREEN_WIDTH_DP * density * 0.9f, centerY))
+                    }
 
-        rule.runOnIdle {
-            assertThat(results).hasSize(1)
-            assertThat(results).containsKey(HapticFeedbackType.GestureThresholdActivate)
-            assertThat(results[HapticFeedbackType.GestureThresholdActivate]).isEqualTo(1)
-        }
+                    repeat(20) {
+                        rule.onNodeWithTag(TEST_TAG).performTouchInput { moveBy(Offset(-20f, 0f)) }
+                        rule.mainClock.advanceTimeBy(16)
+                        rule.waitForIdle()
+                    }
+
+                    rule.onNodeWithTag(TEST_TAG).performTouchInput { up() }
+                } finally {
+                    rule.mainClock.autoAdvance = true
+                }
+            },
+            expectedHapticCount = 2,
+        )
+    }
+
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    @Test
+    fun onFastFlingBeforeRevealing_performsHapticsOnce() {
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        assertHapticFeedback(
+            initialValue = Covered,
+            action = { _, _ ->
+                rule.onNodeWithTag(TEST_TAG).performTouchInput {
+                    swipeLeft(startX = 50 * density, endX = 0f, durationMillis = 100)
+                }
+            },
+            expectedHapticCount = 1,
+        )
+    }
+
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    @Test
+    fun onFastFlingAfterRevealing_performsHapticsOnce() {
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        assertHapticFeedback(
+            initialValue = Covered,
+            action = { _, _ ->
+                rule.onNodeWithTag(TEST_TAG).performTouchInput {
+                    swipeLeft(startX = 130 * density, endX = 0f, durationMillis = 100)
+                }
+            },
+            expectedHapticCount = 1,
+        )
     }
 
     @Test
     fun onStateChangeToLeftRevealed_performsHaptics() {
-        val results = mutableMapOf<HapticFeedbackType, Int>()
-        val haptics = hapticFeedback(collectResultsFromHapticFeedback(results))
-        lateinit var revealState: RevealState
-        lateinit var coroutineScope: CoroutineScope
-
-        rule.setContent {
-            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
-                revealState = rememberRevealState(initialValue = LeftRevealing)
-                coroutineScope = rememberCoroutineScope()
-                SwipeToRevealWithDefaults(
-                    modifier = Modifier.testTag(TEST_TAG),
-                    revealState = revealState,
-                    revealDirection = Bidirectional,
-                )
-            }
-        }
-
-        rule.runOnIdle { assertThat(results).isEmpty() }
-
-        rule.runOnIdle { coroutineScope.launch { revealState.animateTo(LeftRevealed) } }
-
-        rule.runOnIdle {
-            assertThat(results).hasSize(1)
-            assertThat(results).containsKey(HapticFeedbackType.GestureThresholdActivate)
-            assertThat(results[HapticFeedbackType.GestureThresholdActivate]).isEqualTo(1)
-        }
+        assertHapticFeedback(
+            revealDirection = Bidirectional,
+            initialValue = LeftRevealing,
+            action = { coroutineScope, revealState ->
+                rule.runOnIdle { coroutineScope.launch { revealState.animateTo(LeftRevealed) } }
+            },
+            expectedHapticCount = 1,
+        )
     }
 
     @Test
@@ -358,6 +396,150 @@ class SwipeToRevealTest {
         rule.onNodeWithTag(SECONDARY_ACTION_TAG).assertExists()
     }
 
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    @Test
+    fun onSwipeRight_twoActions_swipePastRevealingState_doesNotShowSecondAction() {
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        verifyGestureTwoActions(
+            gesture = { swipeRight(startX = 0f, endX = 140 * density) },
+            assertions = {
+                rule.waitForIdle()
+                rule.onNodeWithTag(PRIMARY_ACTION_TAG).assertExists()
+                rule.onNodeWithTag(SECONDARY_ACTION_TAG).assertDoesNotExist()
+            },
+        )
+    }
+
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    @Test
+    fun onSwipeRight_twoActions_swipeBelowRevealingThreshold_showsSecondAction() {
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        verifyGestureTwoActions(
+            gesture = { swipeRight(startX = 0f, endX = 120 * density) },
+            assertions = {
+                rule.waitForIdle()
+                rule.onNodeWithTag(PRIMARY_ACTION_TAG).assertExists()
+                rule.onNodeWithTag(SECONDARY_ACTION_TAG).assertExists()
+            },
+        )
+    }
+
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    @Test
+    fun onSwipeRight_twoActions_swipePast75Percent_triggersAction() {
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        var onSwipePrimaryAction = false
+        verifyGestureTwoActions(
+            onSwipePrimaryAction = { onSwipePrimaryAction = true },
+            gesture = {
+                swipeRight(
+                    startX = 0f,
+                    endX = LARGE_SCREEN_WIDTH_DP * density * 0.76f,
+                    durationMillis = 2000,
+                )
+            },
+            assertions = {
+                rule.waitForIdle()
+                rule.runOnIdle { assertTrue(onSwipePrimaryAction) }
+            },
+        )
+    }
+
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    @Test
+    fun onSwipeRight_twoActions_swipeBelow75Percent_doesNotTriggerAction() {
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        var onSwipePrimaryAction = false
+
+        verifyGestureTwoActions(
+            onSwipePrimaryAction = { onSwipePrimaryAction = true },
+            gesture = {
+                swipeRight(
+                    startX = 0f,
+                    endX = LARGE_SCREEN_WIDTH_DP * density * 0.74f,
+                    durationMillis = 2000,
+                )
+            },
+            assertions = {
+                rule.waitForIdle()
+                rule.onNodeWithTag(PRIMARY_ACTION_TAG).assertExists()
+                rule.onNodeWithTag(SECONDARY_ACTION_TAG).assertExists()
+                rule.runOnIdle { assertFalse(onSwipePrimaryAction) }
+            },
+        )
+    }
+
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    @Test
+    fun onSwipeLeft_twoActions_swipePastRevealingThreshold_doesNotShowSecondAction() {
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        verifyGestureTwoActions(
+            gesture = { swipeLeft(startX = 140 * density, endX = 0f) },
+            assertions = {
+                rule.waitForIdle()
+                rule.onNodeWithTag(PRIMARY_ACTION_TAG).assertExists()
+                rule.onNodeWithTag(SECONDARY_ACTION_TAG).assertDoesNotExist()
+            },
+        )
+    }
+
+    @Test
+    fun onSwipeLeft_twoActions_swipeBelowRevealingThreshold_showsSecondAction() {
+        verifyGestureTwoActions(
+            gesture = { swipeLeft(startX = 120 * density, endX = 0f) },
+            assertions = {
+                rule.waitForIdle()
+                rule.onNodeWithTag(PRIMARY_ACTION_TAG).assertExists()
+                rule.onNodeWithTag(SECONDARY_ACTION_TAG).assertExists()
+            },
+        )
+    }
+
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    @Test
+    fun onSwipeLeft_twoActions_swipePast75Percent_triggersAction() {
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        var onSwipePrimaryAction = false
+        verifyGestureTwoActions(
+            onSwipePrimaryAction = { onSwipePrimaryAction = true },
+            gesture = {
+                swipeLeft(
+                    startX = LARGE_SCREEN_WIDTH_DP * density * 0.76f,
+                    endX = 0f,
+                    durationMillis = 2000,
+                )
+            },
+            assertions = {
+                rule.waitForIdle()
+                rule.runOnIdle { assertTrue(onSwipePrimaryAction) }
+            },
+        )
+    }
+
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    @Test
+    fun onSwipeLeft_twoActions_swipeBelow75Percent_doesNotTriggerAction() {
+        WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        var onSwipePrimaryAction = false
+
+        verifyGestureTwoActions(
+            onSwipePrimaryAction = { onSwipePrimaryAction = true },
+            gesture = {
+                swipeLeft(
+                    startX = LARGE_SCREEN_WIDTH_DP * density * 0.74f,
+                    endX = 0f,
+                    durationMillis = 2000,
+                )
+            },
+            assertions = {
+                rule.waitForIdle()
+                rule.onNodeWithTag(PRIMARY_ACTION_TAG).assertExists()
+                rule.onNodeWithTag(SECONDARY_ACTION_TAG).assertExists()
+                rule.runOnIdle { assertFalse(onSwipePrimaryAction) }
+            },
+        )
+    }
+
     @Test
     fun onFullSwipe_drawsAction() {
         rule.setContent {
@@ -475,8 +657,15 @@ class SwipeToRevealTest {
     }
 
     @Test
-    fun onAboveVelocityThresholdSmallDistanceSwipe_stateToRevealing() {
+    fun onAboveVelocityRevealingThresholdSmallDistanceSwipe_stateToRevealing() {
         verifyGesture(expectedRevealValue = RightRevealing, enableTouchSlop = false) { density ->
+            swipeLeft(endX = (LARGE_SCREEN_WIDTH_DP - 32) * density, durationMillis = 100L)
+        }
+    }
+
+    @Test
+    fun onAboveVelocityRevealedThresholdSmallDistanceSwipe_stateToRevealing() {
+        verifyGesture(expectedRevealValue = RightRevealed, enableTouchSlop = false) { density ->
             swipeLeft(endX = (LARGE_SCREEN_WIDTH_DP - 32) * density, durationMillis = 30L)
         }
     }
@@ -489,8 +678,15 @@ class SwipeToRevealTest {
     }
 
     @Test
-    fun onAboveVelocityThresholdLongDistanceSwipe_stateToRevealing() {
+    fun onAboveVelocityRevealingThresholdLongDistanceSwipe_stateToRevealing() {
         verifyGesture(expectedRevealValue = RightRevealing, enableTouchSlop = false) { density ->
+            swipeLeft(endX = (LARGE_SCREEN_WIDTH_DP - 64) * density, durationMillis = 100L)
+        }
+    }
+
+    @Test
+    fun onAboveVelocityRevealedThresholdLongDistanceSwipe_stateToRevealing() {
+        verifyGesture(expectedRevealValue = RightRevealed, enableTouchSlop = false) { density ->
             swipeLeft(endX = (LARGE_SCREEN_WIDTH_DP - 64) * density, durationMillis = 30L)
         }
     }
@@ -1064,6 +1260,54 @@ class SwipeToRevealTest {
         )
     }
 
+    @Test()
+    fun isSwipeToRevealDualFlingThresholdEnabled_true() {
+        verify_isSwipeToRevealDualFlingThresholdEnabled(true)
+    }
+
+    @Test()
+    fun isSwipeToRevealDualFlingThresholdEnabled_false() {
+        verify_isSwipeToRevealDualFlingThresholdEnabled(false)
+    }
+
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    private fun verify_isSwipeToRevealDualFlingThresholdEnabled(enabled: Boolean) {
+        try {
+            WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = enabled
+            rule.setContent {
+                ScreenConfiguration(SCREEN_SIZE_LARGE) {
+                    val revealState = rememberRevealState(initialValue = Covered)
+                    SwipeToRevealWithDefaults(
+                        modifier = Modifier.testTag(TEST_TAG),
+                        primaryAction = { DefaultPrimaryActionButton(onClick = {}) },
+                        revealState = revealState,
+                        secondaryAction = { DefaultSecondaryActionButton(onClick = {}) },
+                        undoPrimaryAction = {
+                            DefaultUndoActionButton(
+                                modifier = Modifier.testTag(UNDO_PRIMARY_ACTION_TAG),
+                                onClick = {},
+                            )
+                        },
+                    )
+                }
+            }
+
+            rule.onNodeWithTag(TEST_TAG).performTouchInput {
+                swipeLeft(startX = centerX, endX = 0f, 100)
+            }
+            rule.waitForIdle()
+
+            if (enabled) {
+                rule.onNodeWithTag(UNDO_PRIMARY_ACTION_TAG).assertExists()
+            } else {
+                rule.onNodeWithTag(UNDO_PRIMARY_ACTION_TAG).assertDoesNotExist()
+            }
+        } finally {
+            // reset flag back
+            WearComposeMaterial3Flags.isSwipeToRevealDualFlingThresholdEnabled = true
+        }
+    }
+
     private fun verifyAnimateToIllegalState(
         targetValue: RevealValue,
         revealDirection: RevealDirection = RightToLeft,
@@ -1116,6 +1360,42 @@ class SwipeToRevealTest {
             ) {
                 Button({}, Modifier.fillMaxWidth().padding(horizontal = 4.dp)) { Text(text) }
             }
+        }
+    }
+
+    private fun assertHapticFeedback(
+        revealDirection: RevealDirection = RightToLeft,
+        initialValue: RevealValue = Covered,
+        action: (CoroutineScope, RevealState) -> Unit,
+        expectedHapticCount: Int,
+    ) {
+        val results = mutableMapOf<HapticFeedbackType, Int>()
+        val haptics = hapticFeedback(collectResultsFromHapticFeedback(results))
+        lateinit var revealState: RevealState
+        lateinit var coroutineScope: CoroutineScope
+
+        rule.setContent {
+            revealState = rememberRevealState(initialValue = initialValue)
+            coroutineScope = rememberCoroutineScope()
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                ScreenConfiguration(LARGE_SCREEN_WIDTH_DP) {
+                    SwipeToRevealTwoActionsWithDefault(
+                        revealState = revealState,
+                        revealDirection = revealDirection,
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(results).isEmpty() }
+
+        action(coroutineScope, revealState)
+
+        rule.runOnIdle {
+            assertThat(results).hasSize(1)
+            assertThat(results).containsKey(HapticFeedbackType.GestureThresholdActivate)
+            assertThat(results[HapticFeedbackType.GestureThresholdActivate])
+                .isEqualTo(expectedHapticCount)
         }
     }
 
@@ -1189,6 +1469,38 @@ class SwipeToRevealTest {
             rule.onNodeWithTag(nodeTagToPerformClick).performClick()
         }
         rule.runOnIdle { assertEquals(expectedClickType, revealState.lastActionType) }
+    }
+
+    private fun verifyGestureTwoActions(
+        onSwipePrimaryAction: () -> Unit = {},
+        gesture: TouchInjectionScope.(density: Float) -> Unit,
+        assertions: () -> Unit = {},
+    ) {
+        lateinit var revealState: RevealState
+        rule.setContent {
+            ScreenConfiguration(desiredScreenSizeDp = LARGE_SCREEN_WIDTH_DP) {
+                revealState = rememberRevealState()
+                SwipeToRevealWithDefaults(
+                    modifier = Modifier.testTag(TEST_TAG),
+                    revealState = revealState,
+                    onSwipePrimaryAction = onSwipePrimaryAction,
+                    primaryAction = {
+                        DefaultPrimaryActionButton(modifier = Modifier.testTag(PRIMARY_ACTION_TAG))
+                    },
+                    secondaryAction = {
+                        DefaultSecondaryActionButton(
+                            modifier = Modifier.testTag(SECONDARY_ACTION_TAG)
+                        )
+                    },
+                    revealDirection = Bidirectional,
+                    enableTouchSlop = false,
+                )
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { gesture(density) }
+
+        assertions()
     }
 
     private fun verifyGesture(
@@ -1344,6 +1656,25 @@ class SwipeToRevealTest {
         } else {
             CustomTouchSlopProvider(newTouchSlop = 0f, content = swipeToRevealContent)
         }
+    }
+
+    @Composable
+    private fun SwipeToRevealTwoActionsWithDefault(
+        revealState: RevealState,
+        revealDirection: RevealDirection,
+    ) {
+        SwipeToRevealWithDefaults(
+            modifier = Modifier.testTag(TEST_TAG),
+            primaryAction = {
+                DefaultPrimaryActionButton(modifier = Modifier.testTag(PRIMARY_ACTION_TAG))
+            },
+            secondaryAction = {
+                DefaultSecondaryActionButton(modifier = Modifier.testTag(SECONDARY_ACTION_TAG))
+            },
+            revealDirection = revealDirection,
+            revealState = revealState,
+            enableTouchSlop = false,
+        )
     }
 
     @Composable

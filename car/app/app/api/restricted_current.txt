@@ -1381,6 +1381,51 @@ package androidx.car.app.model {
     method public androidx.car.app.model.CarText build();
   }
 
+  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(9) public final class Chip implements androidx.car.app.model.Item {
+    method public androidx.car.app.model.CarIcon? getEndIcon();
+    method public androidx.car.app.model.OnClickDelegate? getOnClickDelegate();
+    method public androidx.car.app.model.CarIcon? getStartIcon();
+    method public androidx.car.app.model.ChipStyle? getStyle();
+    method public androidx.car.app.model.CarText? getTitle();
+    method public boolean isSelected();
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class Chip.Builder {
+    ctor public Chip.Builder();
+    method public androidx.car.app.model.Chip build();
+    method public androidx.car.app.model.Chip.Builder setEndIcon(androidx.car.app.model.CarIcon);
+    method public androidx.car.app.model.Chip.Builder setOnClickListener(androidx.car.app.model.OnClickListener);
+    method public androidx.car.app.model.Chip.Builder setSelected(boolean);
+    method public androidx.car.app.model.Chip.Builder setStartIcon(androidx.car.app.model.CarIcon);
+    method public androidx.car.app.model.Chip.Builder setStyle(androidx.car.app.model.ChipStyle);
+    method public androidx.car.app.model.Chip.Builder setTitle(androidx.car.app.model.CarText);
+    method public androidx.car.app.model.Chip.Builder setTitle(CharSequence);
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(9) public final class ChipSection extends androidx.car.app.model.Section<androidx.car.app.model.Chip!> {
+    method public androidx.car.app.model.ChipStyle? getStyle();
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class ChipSection.Builder extends androidx.car.app.model.Section.BaseBuilder<androidx.car.app.model.Chip!,androidx.car.app.model.ChipSection.Builder!> {
+    ctor public ChipSection.Builder();
+    method public androidx.car.app.model.ChipSection build();
+    method public androidx.car.app.model.ChipSection.Builder setStyle(androidx.car.app.model.ChipStyle);
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(9) public final class ChipStyle {
+    method public androidx.car.app.model.CarColor? getBackgroundColor();
+    method public androidx.car.app.model.CarColor? getContentColor();
+    method public androidx.car.app.model.CarColor? getOutlineColor();
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class ChipStyle.Builder {
+    ctor public ChipStyle.Builder();
+    method public androidx.car.app.model.ChipStyle build();
+    method public androidx.car.app.model.ChipStyle.Builder setBackgroundColor(androidx.car.app.model.CarColor);
+    method public androidx.car.app.model.ChipStyle.Builder setContentColor(androidx.car.app.model.CarColor);
+    method public androidx.car.app.model.ChipStyle.Builder setOutlineColor(androidx.car.app.model.CarColor);
+  }
+
   @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.RequiresCarApi(2) public final class ClickableSpan extends androidx.car.app.model.CarSpan {
     method public static androidx.car.app.model.ClickableSpan create(androidx.car.app.model.OnClickListener);
     method public androidx.car.app.model.OnClickDelegate getOnClickDelegate();
@@ -1421,51 +1466,6 @@ package androidx.car.app.model {
     method @RequiresApi(26) public static androidx.car.app.model.DurationSpan create(java.time.Duration);
     method public static androidx.car.app.model.DurationSpan create(long);
     method public long getDurationSeconds();
-  }
-
-  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(9) public final class FilterChip implements androidx.car.app.model.Item {
-    method public androidx.car.app.model.CarIcon? getEndIcon();
-    method public androidx.car.app.model.OnClickDelegate? getOnClickDelegate();
-    method public androidx.car.app.model.CarIcon? getStartIcon();
-    method public androidx.car.app.model.FilterChipStyle? getStyle();
-    method public androidx.car.app.model.CarText? getTitle();
-    method public boolean isSelected();
-  }
-
-  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class FilterChip.Builder {
-    ctor public FilterChip.Builder();
-    method public androidx.car.app.model.FilterChip build();
-    method public androidx.car.app.model.FilterChip.Builder setEndIcon(androidx.car.app.model.CarIcon);
-    method public androidx.car.app.model.FilterChip.Builder setOnClickListener(androidx.car.app.model.OnClickListener);
-    method public androidx.car.app.model.FilterChip.Builder setSelected(boolean);
-    method public androidx.car.app.model.FilterChip.Builder setStartIcon(androidx.car.app.model.CarIcon);
-    method public androidx.car.app.model.FilterChip.Builder setStyle(androidx.car.app.model.FilterChipStyle);
-    method public androidx.car.app.model.FilterChip.Builder setTitle(androidx.car.app.model.CarText);
-    method public androidx.car.app.model.FilterChip.Builder setTitle(CharSequence);
-  }
-
-  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(9) public final class FilterChipSection extends androidx.car.app.model.Section<androidx.car.app.model.FilterChip!> {
-    method public androidx.car.app.model.FilterChipStyle? getStyle();
-  }
-
-  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class FilterChipSection.Builder extends androidx.car.app.model.Section.BaseBuilder<androidx.car.app.model.FilterChip!,androidx.car.app.model.FilterChipSection.Builder!> {
-    ctor public FilterChipSection.Builder();
-    method public androidx.car.app.model.FilterChipSection build();
-    method public androidx.car.app.model.FilterChipSection.Builder setStyle(androidx.car.app.model.FilterChipStyle);
-  }
-
-  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(9) public final class FilterChipStyle {
-    method public androidx.car.app.model.CarColor? getBackgroundColor();
-    method public androidx.car.app.model.CarColor? getContentColor();
-    method public androidx.car.app.model.CarColor? getOutlineColor();
-  }
-
-  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class FilterChipStyle.Builder {
-    ctor public FilterChipStyle.Builder();
-    method public androidx.car.app.model.FilterChipStyle build();
-    method public androidx.car.app.model.FilterChipStyle.Builder setBackgroundColor(androidx.car.app.model.CarColor);
-    method public androidx.car.app.model.FilterChipStyle.Builder setContentColor(androidx.car.app.model.CarColor);
-    method public androidx.car.app.model.FilterChipStyle.Builder setOutlineColor(androidx.car.app.model.CarColor);
   }
 
   @androidx.car.app.annotations.CarProtocol public final class ForegroundCarColorSpan extends androidx.car.app.model.CarSpan {

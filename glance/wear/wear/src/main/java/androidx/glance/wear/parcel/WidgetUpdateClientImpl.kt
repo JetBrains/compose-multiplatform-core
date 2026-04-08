@@ -60,10 +60,15 @@ internal class WidgetUpdateClientImpl(
 
     private val scope = CoroutineScope(dispatcher + SupervisorJob())
 
-    override fun sendUpdateBroadcast(context: Context, provider: ComponentName) {
+    override fun sendUpdateBroadcast(
+        context: Context,
+        provider: ComponentName?,
+        instanceId: WidgetInstanceId?,
+    ) {
         val intent =
             Intent(ACTION_REQUEST_TILE_UPDATE_BROADCAST_LEGACY).apply {
-                putExtra(Intent.EXTRA_COMPONENT_NAME, provider)
+                provider?.let { putExtra(Intent.EXTRA_COMPONENT_NAME, it) }
+                instanceId?.let { putExtra(EXTRA_WIDGET_ID, it.id) }
             }
         context.sendBroadcast(intent)
     }
@@ -132,6 +137,9 @@ internal class WidgetUpdateClientImpl(
         /** Intent action to broadcast debugging update requests. */
         internal const val ACTION_REQUEST_TILE_UPDATE_BROADCAST_LEGACY =
             "androidx.wear.tiles.action.REQUEST_TILE_UPDATE"
+
+        /** Extra containing the ID of the widget instance to update. */
+        internal const val EXTRA_WIDGET_ID = "androidx.glance.wear.EXTRA_WIDGET_ID"
 
         /** Create a binder that can be used to request updates from the legacy Tile Renderer. */
         fun createLegacyBinder(

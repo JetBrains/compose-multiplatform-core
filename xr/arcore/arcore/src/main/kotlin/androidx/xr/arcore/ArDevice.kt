@@ -20,7 +20,6 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,7 +63,7 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
      * Contains the current state of the AR Device tracking.
      *
      * @property devicePose the current [Pose] of the device
-     * @property trackingState The current [TrackingState]
+     * @property trackingState The current [androidx.xr.runtime.TrackingState]
      */
     public class State
     internal constructor(public val devicePose: Pose, public val trackingState: TrackingState) {
@@ -87,7 +86,9 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
-        _state.emit(State(runtimeArDevice.devicePose, runtimeArDevice.trackingState))
+        _state.emit(
+            State(runtimeArDevice.devicePose, runtimeArDevice.trackingState.toTrackingState())
+        )
     }
 
     override fun equals(other: Any?): Boolean {

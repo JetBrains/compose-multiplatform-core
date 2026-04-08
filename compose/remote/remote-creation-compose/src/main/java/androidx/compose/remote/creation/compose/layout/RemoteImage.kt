@@ -18,41 +18,17 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.layout.Box
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.state.RemoteBitmap
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rf
-import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
 import androidx.compose.remote.creation.compose.v2.RemoteImageV2
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
-import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.DefaultAlpha
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.layout.ContentScale
-
-internal class RemoteComposeImageModifier(
-    private val modifier: RemoteModifier,
-    val bitmapId: Int,
-    val contentScale: ContentScale,
-    val alpha: RemoteFloat,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            canvas.document.image(
-                with(modifier) { canvas.toRecordingModifier() },
-                bitmapId,
-                contentScale.toImageScalingInt(),
-                with(canvas) { alpha.floatId },
-            )
-        }
-    }
-}
 
 /**
  * A composable that lays out and draws a given [ImageBitmap]. This is the remote equivalent of
@@ -100,26 +76,11 @@ public fun RemoteImage(
     contentScale: ContentScale = ContentScale.Fit,
     alpha: RemoteFloat = DefaultAlpha.rf,
 ) {
-    if (currentComposer.applier is RemoteComposeApplierV2) {
-        RemoteImageV2(
-            remoteBitmap = remoteBitmap,
-            modifier = modifier,
-            contentScale = contentScale,
-            alpha = alpha,
-            contentDescription = contentDescription,
-        )
-        return
-    }
-
-    val creationState = LocalRemoteComposeCreationState.current
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
-    Box(
-        modifier =
-            RemoteComposeImageModifier(
-                modifier,
-                with(creationState) { remoteBitmap.id },
-                contentScale,
-                alpha,
-            )
+    RemoteImageV2(
+        remoteBitmap = remoteBitmap,
+        modifier = modifier,
+        contentScale = contentScale,
+        alpha = alpha,
+        contentDescription = contentDescription,
     )
 }

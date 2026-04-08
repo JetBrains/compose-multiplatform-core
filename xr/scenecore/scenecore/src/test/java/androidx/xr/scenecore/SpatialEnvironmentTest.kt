@@ -78,7 +78,13 @@ class SpatialEnvironmentTest {
 
         val gltfModel = GltfModel.create(session, Paths.get("test.glb"))
         gltfModelEntity =
-            GltfModelEntity.create(sceneRuntime, renderingRuntime, entityRegistry, gltfModel)
+            GltfModelEntity.create(
+                sceneRuntime,
+                renderingRuntime,
+                entityRegistry,
+                gltfModel,
+                parent = session.scene.activitySpace,
+            )
     }
 
     @Test

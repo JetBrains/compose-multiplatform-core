@@ -115,10 +115,10 @@ class WearWidgetProviderImplTest {
                 MODIFIERS
                   DRAW_CONTENT
                 BOX [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-                  DATA_TEXT<42> = "Testing ..."
+                  DATA_TEXT<44> = "Testing ..."
                   MODIFIERS
                     PADDING = [0.0, 0.0, 0.0, 0.0]
-                  TEXT_LAYOUT [-7:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
+                  TEXT_LAYOUT [-7:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (44:"null")
                     MODIFIERS
             """
                 .trimIndent()

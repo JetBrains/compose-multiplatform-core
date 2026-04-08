@@ -18,7 +18,6 @@ package androidx.xr.scenecore
 
 import android.media.SoundPool
 import androidx.activity.ComponentActivity
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.runtime.Entity as RtEntity
@@ -46,7 +45,10 @@ import org.robolectric.RobolectricTestRunner
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SpatialSoundPoolTest {
 
-    private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
+    private val fakePerceptionRuntimeFactory =
+        androidx.xr.arcore.testing.FakePerceptionRuntimeFactory()
     private var mockSceneRuntime: SceneRuntime = mock()
 
     private var mockRtSoundPoolExtensions: RtSoundPoolExtensionsWrapper = mock()
@@ -59,6 +61,7 @@ class SpatialSoundPoolTest {
     private lateinit var session: Session
 
     @Before
+    @SuppressWarnings("RestrictTo")
     fun setUp() {
         mockSceneRuntime.stub {
             on { spatialEnvironment } doReturn mock()

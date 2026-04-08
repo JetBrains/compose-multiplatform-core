@@ -35,12 +35,13 @@ import kotlin.time.ComparableTimeMark
  * @property lifecycleManager that manages the lifecycle of the ARCore session
  * @property perceptionManager that manages the perception capabilities of a runtime using ARCore
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ArCoreRuntime
 internal constructor(
     override val lifecycleManager: ArCoreManager,
     override val perceptionManager: ArCorePerceptionManager,
 ) : PerceptionRuntime {
+    override var config: Config = Config()
 
     override fun initialize() {
         lifecycleManager.create()

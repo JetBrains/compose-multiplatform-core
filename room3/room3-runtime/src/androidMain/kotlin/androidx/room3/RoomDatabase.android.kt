@@ -73,16 +73,14 @@ import kotlinx.coroutines.cancel
  *   [#Room.databaseBuilder] or [#Room.inMemoryDatabaseBuilder].
  * @see Database
  */
-public actual abstract class RoomDatabase
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-actual constructor() {
+public actual abstract class RoomDatabase actual constructor() {
 
     private lateinit var configuration: DatabaseConfiguration
     private lateinit var coroutineScope: CoroutineScope
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val path: String?
-        get() = configuration.name?.let { configuration.context.getDatabasePath(it).path }
+        get() = configuration.name?.let { configuration.context?.getDatabasePath(it)?.path ?: it }
 
     /**
      * The executor for thread-confined transactions, such as those from the [AndroidSQLiteDriver]
@@ -199,6 +197,7 @@ actual constructor() {
         // Configure multi-instance invalidation, if enabled
         if (configuration.multiInstanceInvalidationServiceIntent != null) {
             requireNotNull(configuration.name)
+            requireNotNull(configuration.context)
             invalidationTracker.initMultiInstanceInvalidation(
                 configuration.context,
                 configuration.name,
@@ -258,9 +257,11 @@ actual constructor() {
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public actual abstract fun createAutoMigrations(
+    public actual open fun createAutoMigrations(
         autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
-    ): List<Migration>
+    ): List<Migration> {
+        return emptyList()
+    }
 
     /**
      * Creates a delegate to configure and initialize the database when it is being opened. An
@@ -271,7 +272,11 @@ actual constructor() {
      * @throws NotImplementedError by default
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected actual abstract fun createOpenDelegate(): RoomOpenDelegateMarker
+    protected actual open fun createOpenDelegate(): RoomOpenDelegateMarker {
+        throw NotImplementedError(
+            "This function should be implemented by Room's generated database implementation."
+        )
+    }
 
     /**
      * Creates the invalidation tracker
@@ -281,7 +286,12 @@ actual constructor() {
      *
      * @return A new invalidation tracker.
      */
-    protected actual abstract fun createInvalidationTracker(): InvalidationTracker
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+    protected actual open fun createInvalidationTracker(): InvalidationTracker {
+        throw NotImplementedError(
+            "This function should be implemented by Room's generated database implementation."
+        )
+    }
 
     internal fun getConfiguration() = configuration
 
@@ -320,15 +330,19 @@ actual constructor() {
      * @return A map that will include all required type converters for this database.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected actual abstract fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>>
+    protected actual open fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
+        return emptyMap()
+    }
 
     /** Property delegate of [getRequiredTypeConverterClasses] for common ext functionality. */
     internal actual val requiredTypeConverterClassesMap: Map<KClass<*>, List<KClass<*>>>
         get() = getRequiredTypeConverterClasses()
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public actual abstract fun getRequiredAutoMigrationSpecClasses():
-        Set<KClass<out AutoMigrationSpec>>
+    public actual open fun getRequiredAutoMigrationSpecClasses():
+        Set<KClass<out AutoMigrationSpec>> {
+        return emptySet()
+    }
 
     /**
      * Deletes all rows from all the tables that are registered to this database as
@@ -448,7 +462,7 @@ actual constructor() {
     @Suppress("GetterOnBuilder")
     public actual class Builder<T : RoomDatabase> {
         private val klass: KClass<T>
-        private val context: Context
+        private val context: Context?
         private val name: String?
         private val factory: (() -> T)?
 
@@ -466,7 +480,7 @@ actual constructor() {
             klass: KClass<T>,
             name: String?,
             factory: (() -> T)?,
-            context: Context,
+            context: Context?,
         ) {
             this.klass = klass
             this.context = context
@@ -550,6 +564,9 @@ actual constructor() {
          * @return This builder instance.
          */
         public fun createFromAsset(databaseFilePath: String): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from asset when no Context is provided to this Builder."
+            }
             this.copyFromAssetPath = databaseFilePath
         }
 
@@ -566,7 +583,8 @@ actual constructor() {
          * pre-packaged database schema utilizing the exported schema files generated when
          * [Database.exportSchema] is enabled.
          *
-         * This method is not supported for an in memory database [Builder].
+         * This method is not supported for an in memory database [Builder] and a [Context] is
+         * required during builder instantiation.
          *
          * @param databaseFilePath The file path within the 'assets/' directory of where the
          *   database file is located.
@@ -578,6 +596,9 @@ actual constructor() {
             databaseFilePath: String,
             callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from asset when no Context is provided to this Builder."
+            }
             this.prepackagedDatabaseCallback = callback
             this.copyFromAssetPath = databaseFilePath
         }
@@ -602,6 +623,9 @@ actual constructor() {
          * @return This builder instance.
          */
         public fun createFromFile(databaseFile: File): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from file when no Context is provided to this Builder."
+            }
             this.copyFromFile = databaseFile
         }
 
@@ -619,7 +643,8 @@ actual constructor() {
          * The [Callback.onOpen] method can be used as an indicator that the pre-packaged database
          * was successfully opened by Room and can be cleaned up.
          *
-         * This method is not supported for an in memory database [Builder].
+         * This method is not supported for an in memory database [Builder] and a [Context] is
+         * required during builder instantiation.
          *
          * @param databaseFile The database file.
          * @param callback The pre-packaged callback.
@@ -630,6 +655,9 @@ actual constructor() {
             databaseFile: File,
             callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from file when no Context is provided to this Builder."
+            }
             this.prepackagedDatabaseCallback = callback
             this.copyFromFile = databaseFile
         }
@@ -649,7 +677,8 @@ actual constructor() {
          * The [Callback.onOpen] method can be used as an indicator that the pre-packaged database
          * was successfully opened by Room and can be cleaned up.
          *
-         * This method is not supported for an in memory database [Builder].
+         * This method is not supported for an in memory database [Builder] and a [Context] is
+         * required during builder instantiation.
          *
          * @param inputStreamCallable A callable that returns an InputStream from which to copy the
          *   database. The callable will be invoked in a thread from the dispatcher set via
@@ -661,6 +690,9 @@ actual constructor() {
         @SuppressLint("BuilderSetStyle") // To keep naming consistency.
         public fun createFromInputStream(inputStreamCallable: Callable<InputStream>): Builder<T> =
             apply {
+                requireNotNull(context) {
+                    "Cannot create from stream when no Context is provided to this Builder."
+                }
                 this.copyFromInputStream = inputStreamCallable
             }
 
@@ -694,6 +726,9 @@ actual constructor() {
             inputStreamCallable: Callable<InputStream>,
             callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from stream when no Context is provided to this Builder."
+            }
             this.prepackagedDatabaseCallback = callback
             this.copyFromInputStream = inputStreamCallable
         }
@@ -796,7 +831,8 @@ actual constructor() {
          * separate process. In order to enable multi-instance invalidation, this has to be turned
          * on both ends and need to point to the same [MultiInstanceInvalidationService].
          *
-         * This is not enabled by default.
+         * This is not enabled by default and requires that a [Context] is used during builder
+         * instantiation.
          *
          * This does not work for in-memory databases. This does not work between database instances
          * targeting different database files.
@@ -810,6 +846,10 @@ actual constructor() {
         public fun setMultiInstanceInvalidationServiceIntent(
             invalidationServiceIntent: Intent
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Multi-instance invalidation cannot be enabled when no Context is provided " +
+                    "to this Builder."
+            }
             this.multiInstanceInvalidationIntent =
                 if (name != null) invalidationServiceIntent else null
         }
@@ -1032,11 +1072,12 @@ actual constructor() {
          */
         public actual fun build(): T {
             validateMigrationsNotRequired(migrationStartAndEndVersions, migrationsNotRequiredFrom)
-
             if (driver == null) {
                 // No driver, use default one for Android
                 driver = AndroidSQLiteDriver()
             }
+            val journalMode =
+                context?.let { journalMode.resolve(context) } ?: JournalMode.WRITE_AHEAD_LOGGING
             val autoCloseConfig =
                 if (autoCloseTimeout > 0) {
                     AutoCloserConfig(autoCloseTimeout, requireNotNull(autoCloseTimeUnit))
@@ -1049,6 +1090,9 @@ actual constructor() {
                 ) {
                     requireNotNull(name) {
                         "Cannot create from asset or file for an in-memory database."
+                    }
+                    requireNotNull(context) {
+                        "Cannot create from asset or file when no Context is provided to this Builder."
                     }
                     val copyFromAssetPathConfig = if (copyFromAssetPath == null) 0 else 1
                     val copyFromFileConfig = if (copyFromFile == null) 0 else 1
@@ -1074,7 +1118,7 @@ actual constructor() {
                         migrationContainer = migrationContainer,
                         callbacks = callbacks,
                         allowMainThreadQueries = allowMainThreadQueries,
-                        journalMode = journalMode.resolve(context),
+                        journalMode = journalMode,
                         multiInstanceInvalidationServiceIntent = multiInstanceInvalidationIntent,
                         isMigrationRequired = requireMigration,
                         allowDestructiveMigrationOnDowngrade = allowDestructiveMigrationOnDowngrade,

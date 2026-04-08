@@ -16,9 +16,10 @@
 
 package androidx.xr.arcore.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Face as RuntimeFace
 import androidx.xr.arcore.runtime.Mesh
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -26,6 +27,10 @@ import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 
 /** Fake implementation of [Face][RuntimeFace] for testing purposes. */
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class FakeRuntimeFace(
     override var trackingState: TrackingState = TrackingState.PAUSED,
     override var isValid: Boolean = true,

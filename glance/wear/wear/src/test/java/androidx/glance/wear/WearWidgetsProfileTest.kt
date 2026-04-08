@@ -17,6 +17,7 @@
 package androidx.glance.wear
 
 import androidx.compose.remote.core.Operations.CLIP_PATH
+import androidx.compose.remote.core.Operations.COLOR_THEME
 import androidx.compose.remote.core.Operations.CORE_TEXT
 import androidx.compose.remote.core.Operations.DATA_BITMAP_FONT
 import androidx.compose.remote.core.Operations.DATA_SHADER
@@ -38,7 +39,7 @@ import androidx.compose.remote.core.Operations.PARTICLE_DEFINE
 import androidx.compose.remote.core.Operations.PARTICLE_LOOP
 import androidx.compose.remote.core.Operations.ROOT_CONTENT_DESCRIPTION
 import androidx.compose.remote.core.Operations.SKIP
-import androidx.compose.remote.core.Operations.TEXT_TRANSFORM
+import androidx.compose.remote.core.Operations.TEXT_STYLE
 import androidx.compose.remote.core.Operations.THEME
 import androidx.compose.remote.core.Operations.TOUCH_EXPRESSION
 import androidx.compose.remote.core.Operations.WAKE_IN
@@ -57,6 +58,7 @@ class WearWidgetsProfileTest {
         val operations = profile.supportedOperations
         val exclusions =
             setOf(
+                COLOR_THEME,
                 CLIP_PATH,
                 DATA_BITMAP_FONT,
                 DATA_SHADER,
@@ -76,6 +78,7 @@ class WearWidgetsProfileTest {
                 PARTICLE_LOOP,
                 ROOT_CONTENT_DESCRIPTION,
                 SKIP,
+                TEXT_STYLE,
                 THEME,
                 TOUCH_EXPRESSION,
                 WAKE_IN,
@@ -84,7 +87,7 @@ class WearWidgetsProfileTest {
             )
 
         // Things not in AndroidX profile, so either experimental, Widgets or Wear related
-        val missingFromAndroidX = setOf(DRAW_TEXT_ON_CIRCLE, MODIFIER_ALIGN_BY, TEXT_TRANSFORM)
+        val missingFromAndroidX = setOf(DRAW_TEXT_ON_CIRCLE, MODIFIER_ALIGN_BY)
 
         assertThat(operations.intersect(exclusions)).isEmpty()
 

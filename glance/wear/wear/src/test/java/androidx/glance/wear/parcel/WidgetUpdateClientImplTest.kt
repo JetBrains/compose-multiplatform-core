@@ -241,7 +241,8 @@ class WidgetUpdateClientImplTest {
     @Test
     fun sendUpdateBroadcast_sendsBroadcast() = runTest {
         val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
-        updateClient.sendUpdateBroadcast(appContext, TEST_PROVIDER_COMPONENT)
+
+        updateClient.sendUpdateBroadcast(appContext, provider = TEST_PROVIDER_COMPONENT)
 
         val broadcasts = shadowOf(appContext as Application?).broadcastIntents
         assertThat(broadcasts).hasSize(1)
@@ -256,6 +257,31 @@ class WidgetUpdateClientImplTest {
                 )
             )
             .isEqualTo(TEST_PROVIDER_COMPONENT)
+        assertThat(intent.hasExtra(WidgetUpdateClientImpl.EXTRA_WIDGET_ID)).isFalse()
+    }
+
+    @Test
+    fun sendUpdateBroadcast_withInstanceId_sendsBroadcastWithId() = runTest {
+        val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+        val id = 1234
+        val instanceId = WidgetInstanceId(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE, id)
+
+        updateClient.sendUpdateBroadcast(appContext, TEST_PROVIDER_COMPONENT, instanceId)
+
+        val broadcasts = shadowOf(appContext as Application?).broadcastIntents
+        assertThat(broadcasts).hasSize(1)
+        val intent = broadcasts.first()
+        assertThat(intent.action)
+            .isEqualTo(WidgetUpdateClientImpl.ACTION_REQUEST_TILE_UPDATE_BROADCAST_LEGACY)
+        assertThat(
+                IntentCompat.getParcelableExtra(
+                    intent,
+                    Intent.EXTRA_COMPONENT_NAME,
+                    ComponentName::class.java,
+                )
+            )
+            .isEqualTo(TEST_PROVIDER_COMPONENT)
+        assertThat(intent.getIntExtra(WidgetUpdateClientImpl.EXTRA_WIDGET_ID, -1)).isEqualTo(id)
     }
 
     @Test

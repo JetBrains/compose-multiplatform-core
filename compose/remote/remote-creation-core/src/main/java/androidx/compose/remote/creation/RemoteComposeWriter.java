@@ -66,6 +66,7 @@ import androidx.compose.remote.core.operations.TextLength;
 import androidx.compose.remote.core.operations.TouchExpression;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.layout.managers.BoxLayout;
+import androidx.compose.remote.core.operations.layout.modifiers.DimensionConstraintsModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ScrollModifierOperation;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
@@ -88,7 +89,7 @@ import java.util.Set;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeWriter {
-    private int mApiLevel;
+    protected int mApiLevel;
     protected @NonNull RemoteComposeBuffer mBuffer;
     protected @NonNull RemoteComposeState mState = new RemoteComposeState();
     protected @NonNull RcPlatformServices mPlatform;
@@ -172,12 +173,12 @@ public class RemoteComposeWriter {
      */
     public RemoteComposeWriter(@NonNull Profile profile, HTag @NonNull ... tags) {
         this.mPlatform = profile.getPlatform();
+        this.mApiLevel = profile.getApiLevel();
         mBuffer = new RemoteComposeBuffer(profile.getApiLevel());
 
         Object w = HTag.getValue(tags, Header.DOC_WIDTH);
         Object h = HTag.getValue(tags, Header.DOC_HEIGHT);
         Object d = HTag.getValue(tags, Header.DOC_CONTENT_DESCRIPTION);
-        int profiles = HTag.getProfiles(tags);
 
         if (w instanceof Integer) {
             mOriginalWidth = (int) w;
@@ -190,12 +191,8 @@ public class RemoteComposeWriter {
         }
 
         Set<Integer> supportedOperations = profile.getSupportedOperations();
-        if (supportedOperations != null) {
-            mBuffer.setVersion(profile.getApiLevel(),
-                    profile.getOperationsProfiles(), supportedOperations);
-        } else {
-            mBuffer.setVersion(profile.getApiLevel(), profiles);
-        }
+        mBuffer.setVersion(profile.getApiLevel(),
+                profile.getOperationsProfiles(), supportedOperations);
 
         mBuffer.addHeader(HTag.getTags(tags), HTag.getValues(tags));
     }
@@ -332,6 +329,7 @@ public class RemoteComposeWriter {
     public RemoteComposeWriter(
             @NonNull Profile profile, @NonNull RemoteComposeBuffer buffer, HTag @NonNull ... tags) {
         this.mPlatform = profile.getPlatform();
+        this.mApiLevel = profile.getApiLevel();
         mBuffer = buffer;
 
         Object w = HTag.getValue(tags, Header.DOC_WIDTH);
@@ -642,6 +640,17 @@ public class RemoteComposeWriter {
         public HTag(@NonNull Short tag, @NonNull Object value) {
             mTag = tag;
             mValue = value;
+        }
+
+        /** Returns the tag ID. */
+        public short getTag() {
+            return mTag;
+        }
+
+        /** Returns the tag value. */
+        @NonNull
+        public Object getValue() {
+            return mValue;
         }
 
         /**
@@ -1125,28 +1134,28 @@ public class RemoteComposeWriter {
     /**
      * Add a text style
      *
-     * @param color the color
-     * @param colorId the color id
-     * @param fontSize the font size
-     * @param minFontSize the minimum font size
-     * @param maxFontSize the maximum font size
-     * @param fontStyle the font style
-     * @param fontWeight the font weight
-     * @param fontFamily the font family
-     * @param textAlign the text alignment
-     * @param overflow the overflow strategy
-     * @param maxLines the maximum number of lines
-     * @param letterSpacing the letter spacing
-     * @param lineHeightAdd the line height addition
+     * @param color                the color
+     * @param colorId              the color id
+     * @param fontSize             the font size
+     * @param minFontSize          the minimum font size
+     * @param maxFontSize          the maximum font size
+     * @param fontStyle            the font style
+     * @param fontWeight           the font weight
+     * @param fontFamily           the font family
+     * @param textAlign            the text alignment
+     * @param overflow             the overflow strategy
+     * @param maxLines             the maximum number of lines
+     * @param letterSpacing        the letter spacing
+     * @param lineHeightAdd        the line height addition
      * @param lineHeightMultiplier the line height multiplier
-     * @param lineBreakStrategy the line break strategy
+     * @param lineBreakStrategy    the line break strategy
      * @param hyphenationFrequency the hyphenation frequency
-     * @param justificationMode the justification mode
-     * @param underline if underlined
-     * @param strikethrough if strikethrough
-     * @param fontAxis font axis tags
-     * @param fontAxisValues font axis values
-     * @param autosize if autosize
+     * @param justificationMode    the justification mode
+     * @param underline            if underlined
+     * @param strikethrough        if strikethrough
+     * @param fontAxis             font axis tags
+     * @param fontAxisValues       font axis values
+     * @param autosize             if autosize
      * @return the id of the text style
      */
     public int addTextStyle(
@@ -3104,19 +3113,23 @@ public class RemoteComposeWriter {
     }
 
     /**
-     * Add a flow layout
+     * Add a Flow layout
      *
-     * @param modifier   list of modifiers for the layout
-     * @param horizontal horizontal positioning
-     * @param vertical   vertical positioning
-     * @param content    content of the layout
+     * @param modifier          list of modifiers for the layout
+     * @param horizontal        horizontal positioning
+     * @param vertical          vertical positioning
+     * @param maxItemsInEachRow maximum number of items in each row
+     * @param maxLines          maximum number of lines
+     * @param content           content of the layout
      */
     public void flow(
             @NonNull RecordingModifier modifier,
             int horizontal,
             int vertical,
+            int maxItemsInEachRow,
+            int maxLines,
             @NonNull RemoteComposeWriterInterface content) {
-        startFlow(modifier, horizontal, vertical);
+        startFlow(modifier, horizontal, vertical, maxItemsInEachRow, maxLines);
         content.run();
         endFlow();
     }
@@ -3124,10 +3137,12 @@ public class RemoteComposeWriter {
     /**
      * Start a flow layout
      */
-    public void startFlow(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
+    public void startFlow(@NonNull RecordingModifier modifier, int horizontal, int vertical,
+            int maxItemsInEachRow, int maxLines) {
         int componentId = modifier.getComponentId();
         float spacedBy = modifier.getSpacedBy();
-        mBuffer.addFlowStart(componentId, -1, horizontal, vertical, spacedBy);
+        mBuffer.addFlowStart(componentId, -1, horizontal, vertical, spacedBy,
+                maxItemsInEachRow, maxLines);
         for (RecordingModifier.Element m : modifier.getList()) {
             m.write(this);
         }
@@ -4390,15 +4405,37 @@ public class RemoteComposeWriter {
         mBuffer.addRoundClipRectModifier(topStart, topEnd, bottomStart, bottomEnd);
     }
 
+    public static final byte HORIZONTAL_CONSTRAINTS =
+            DimensionConstraintsModifierOperation.HORIZONTAL_CONSTRAINTS;
+    public static final byte VERTICAL_CONSTRAINTS =
+            DimensionConstraintsModifierOperation.VERTICAL_CONSTRAINTS;
+    public static final byte REQUIRED_HORIZONTAL_CONSTRAINTS =
+            DimensionConstraintsModifierOperation.REQUIRED_HORIZONTAL_CONSTRAINTS;
+    public static final byte REQUIRED_VERTICAL_CONSTRAINTS =
+            DimensionConstraintsModifierOperation.REQUIRED_VERTICAL_CONSTRAINTS;
+
     /**
      * Add a width in modifier operation
      *
-     * @param min the minimum width
-     * @param max the maximum width
+     * @param min the min width
+     * @param max the max width
      */
     public void addWidthInModifierOperation(float min, float max) {
         mBuffer.addWidthInModifierOperation(min, max);
     }
+
+    /**
+     * Add a dimension constraints modifier operation
+     *
+     * @param min  the min dimension
+     * @param max  the max dimension
+     * @param type the type of constraint (Horizontal, Vertical, Required Horizontal,
+     *             Required Vertical)
+     */
+    public void addDimensionConstraintsModifierOperation(int type, float min, float max) {
+        mBuffer.addDimensionConstraintsModifierOperation(type, min, max);
+    }
+
 
     /**
      * Add a modifier padding
@@ -4461,6 +4498,15 @@ public class RemoteComposeWriter {
                 mode,
                 enabled,
                 clickable);
+    }
+
+    /**
+     * Add a click modifier operation
+     *
+     * @param clickType type of click (0=single, 1=long, 2=double)
+     */
+    public void addClickModifierOperation(int clickType) {
+        mBuffer.addClickModifierOperation(clickType);
     }
 
     /**
@@ -4619,8 +4665,6 @@ public class RemoteComposeWriter {
     /**
      * Add a message to the log
      * This is for debugging purposes only it is used by debugging software
-     *
-     * @param message
      */
     public void rem(@NonNull String message) {
         mBuffer.rem(message);

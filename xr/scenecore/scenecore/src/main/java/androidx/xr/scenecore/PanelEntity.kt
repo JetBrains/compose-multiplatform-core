@@ -19,10 +19,10 @@ package androidx.xr.scenecore
 import android.app.Activity
 import android.content.Context
 import android.view.View
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.XrLog
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -113,6 +113,9 @@ internal constructor(
      *
      * @see PerceivedResolutionResult
      */
+    // TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
+    // removed.
+    @Suppress("DEPRECATION")
     public fun getPerceivedResolution(renderViewpoint: RenderViewpoint): PerceivedResolutionResult {
         checkNotDisposed()
         val renderViewpointState = renderViewpoint.state.value
@@ -121,7 +124,12 @@ internal constructor(
                 (perceptionSpace.getScenePoseFromPerceptionPose(renderViewpointState.pose)
                         as PerceptionScenePose)
                     .rtScenePose,
-                renderViewpoint.state.value.fieldOfView,
+                FieldOfView(
+                    renderViewpointState.fieldOfView.angleLeft,
+                    renderViewpointState.fieldOfView.angleRight,
+                    renderViewpointState.fieldOfView.angleUp,
+                    renderViewpointState.fieldOfView.angleDown,
+                ),
             )
             .toPerceivedResolutionResult()
     }
@@ -249,77 +257,16 @@ internal constructor(
          *   in meters.
          * @param name Name of this PanelEntity.
          * @param pose [Pose] of this entity relative to its parent, default value is Identity.
-         * @return a PanelEntity instance.
-         */
-        @JvmOverloads
-        @JvmStatic
-        public fun create(
-            session: Session,
-            view: View,
-            dimensions: FloatSize2d,
-            name: String,
-            pose: Pose = Pose.Identity,
-        ): PanelEntity =
-            PanelEntity.create(
-                session.context as Activity,
-                session.sceneRuntime,
-                session.scene.perceptionSpace,
-                session.scene.entityRegistry,
-                view,
-                dimensions,
-                name,
-                pose,
-            )
-
-        /**
-         * Factory method for a spatialized PanelEntity.
-         *
-         * @param session XR [Session] in which to create the PanelEntity.
-         * @param view [View] to embed in this panel entity.
-         * @param pixelDimensions Dimensions for the underlying surface for the given view, in
-         *   pixels.
-         * @param name Name of the panel.
-         * @param pose [Pose] of this PanelEntity relative to its parent, default value is Identity.
-         * @return a PanelEntity instance.
-         */
-        @JvmOverloads
-        @JvmStatic
-        public fun create(
-            session: Session,
-            view: View,
-            pixelDimensions: IntSize2d,
-            name: String,
-            pose: Pose = Pose.Identity,
-        ): PanelEntity =
-            PanelEntity.create(
-                session.context as Activity,
-                session.sceneRuntime,
-                session.scene.perceptionSpace,
-                session.scene.entityRegistry,
-                view,
-                pixelDimensions,
-                name,
-                pose,
-            )
-
-        /**
-         * Factory method for a spatialized PanelEntity.
-         *
-         * @param session XR [Session] in which to create the PanelEntity.
-         * @param view [View] to embed in this panel entity.
-         * @param dimensions Spatialized dimensions for the underlying surface for the given view,
-         *   in meters.
-         * @param name Name of this PanelEntity.
-         * @param pose [Pose] of this entity relative to its parent, default value is Identity.
          * @param parent Parent entity. If `null`, the entity is created but not attached to the
          *   scene graph and will not be visible until a parent is set. The default value is
          *   [Scene]'s [ActivitySpace].
          * @return a PanelEntity instance.
          */
+        @JvmOverloads
         @JvmStatic
-        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
-        //  once the API proposal is approved.
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        // TODO: b/493469066 - Once internal clients explicitly set the parent parameter at all call
+        //  sites, change the default parent value to null in the entity factory and update the
+        //  release notes accordingly.
         public fun create(
             session: Session,
             view: View,
@@ -354,10 +301,11 @@ internal constructor(
          *   [Scene]'s [ActivitySpace].
          * @return a PanelEntity instance.
          */
+        @JvmOverloads
         @JvmStatic
-        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
-        //  once the API proposal is approved.
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        // TODO: b/493469066 - Once internal clients explicitly set the parent parameter at all call
+        //  sites, change the default parent value to null in the entity factory and update the
+        //  release notes accordingly.
         public fun create(
             session: Session,
             view: View,

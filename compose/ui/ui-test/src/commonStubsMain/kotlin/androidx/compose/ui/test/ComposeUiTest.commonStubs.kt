@@ -40,11 +40,16 @@ actual fun runComposeUiTest(
 @ExperimentalTestApi
 actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
     actual val density: Density
+
     actual val mainClock: MainTestClock
 
     actual fun <T> runOnUiThread(action: () -> T): T
 
     actual fun <T> runOnIdle(action: () -> T): T
+
+    actual fun <T> runWhenIdle(action: () -> T): T
+
+    actual suspend fun <T> awaitAndRunWhenIdle(action: () -> T): T
 
     actual fun waitForIdle()
 
@@ -57,4 +62,6 @@ actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
     )
 
     actual fun setContent(composable: @Composable () -> Unit)
+
+    actual fun hasPendingWork(): Boolean
 }

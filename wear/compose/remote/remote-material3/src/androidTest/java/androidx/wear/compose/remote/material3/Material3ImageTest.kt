@@ -19,7 +19,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rdp
@@ -29,6 +29,7 @@ import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -52,10 +53,31 @@ class Material3ImageTest {
         val sizeDp = size.rdp
         remoteComposeTestRule.runScreenshotTest(
             creationDisplayInfo =
-                CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi)
+                RemoteCreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi)
         ) {
             val avatarImage =
                 rememberNamedRemoteBitmap(name = "avatarImage") {
+                    createImage(size, size).asImageBitmap()
+                }
+            RemoteAvatarImage(
+                avatarImage,
+                contentDescription = "background".rs,
+                RemoteModifier.size(sizeDp),
+            )
+        }
+    }
+
+    @Test
+    fun avatarImage_rtl() {
+        val size = 48
+        val sizeDp = size.rdp
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo =
+                RemoteCreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi),
+            layoutDirection = LayoutDirection.Rtl,
+        ) {
+            val avatarImage =
+                rememberNamedRemoteBitmap(name = "avatarImage_rtl") {
                     createImage(size, size).asImageBitmap()
                 }
             RemoteAvatarImage(
@@ -72,10 +94,32 @@ class Material3ImageTest {
         val sizeDp = size.rdp
         remoteComposeTestRule.runScreenshotTest(
             creationDisplayInfo =
-                CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi)
+                RemoteCreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi)
         ) {
             val backgroundImage =
                 rememberNamedRemoteBitmap(name = "backgroundImage") {
+                    createImage(size, size).asImageBitmap()
+                }
+            RemoteBackgroundImage(
+                background = backgroundImage,
+                contentDescription = "background".rs,
+                modifier = RemoteModifier.size(sizeDp),
+                overlayColor = rememberNamedRemoteColor("overlay", Color.Yellow.copy(alpha = 0.6f)),
+            )
+        }
+    }
+
+    @Test
+    fun backgroundImage_rtl() {
+        val size = 227
+        val sizeDp = size.rdp
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo =
+                RemoteCreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi),
+            layoutDirection = LayoutDirection.Rtl,
+        ) {
+            val backgroundImage =
+                rememberNamedRemoteBitmap(name = "backgroundImage_rtl") {
                     createImage(size, size).asImageBitmap()
                 }
             RemoteBackgroundImage(

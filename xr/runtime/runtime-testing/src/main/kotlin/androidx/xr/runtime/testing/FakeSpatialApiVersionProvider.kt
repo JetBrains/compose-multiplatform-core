@@ -19,6 +19,7 @@ package androidx.xr.runtime.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.SpatialApiVersionProvider
 import androidx.xr.runtime.SpatialApiVersions
+import androidx.xr.runtime.testing.internal.FakeSpatialApiVersionProvider as MigratedFakeSpatialApiVersionProvider
 
 /**
  * A fake implementation of [SpatialApiVersionProvider] for testing.
@@ -27,6 +28,9 @@ import androidx.xr.runtime.SpatialApiVersions
  * the companion object.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@Deprecated(
+    "runtime-testing fakes have been moved internal and should no longer be used by unit tests."
+)
 public class FakeSpatialApiVersionProvider : SpatialApiVersionProvider {
     public companion object {
         /**
@@ -35,20 +39,33 @@ public class FakeSpatialApiVersionProvider : SpatialApiVersionProvider {
          * If null, accessing [spatialApiVersion] will throw an [IllegalStateException].
          */
         public var testSpatialApiVersion: Int? = null
+            set(value) {
+                field = value
+                MigratedFakeSpatialApiVersionProvider.testSpatialApiVersion = value
+            }
+
         /**
          * The value to be returned by [previewSpatialApiVersion].
          *
          * If null, accessing [previewSpatialApiVersion] will throw an [IllegalStateException].
          */
         public var testPreviewSpatialApiVersion: Int? = null
+            set(value) {
+                field = value
+                MigratedFakeSpatialApiVersionProvider.testPreviewSpatialApiVersion = value
+            }
     }
 
     override val spatialApiVersion: Int
-        get() = testSpatialApiVersion ?: SpatialApiVersions.LATEST_STABLE_API_LEVEL
+        get() =
+            MigratedFakeSpatialApiVersionProvider.testSpatialApiVersion
+                ?: testSpatialApiVersion
+                ?: SpatialApiVersions.LATEST_STABLE_API_LEVEL
 
     override val previewSpatialApiVersion: Int
         get() =
-            testPreviewSpatialApiVersion
+            MigratedFakeSpatialApiVersionProvider.testPreviewSpatialApiVersion
+                ?: testPreviewSpatialApiVersion
                 ?: throw IllegalStateException(
                     "previewSpatialApiVersion is not set for testing. Provide a value via " +
                         "FakeSpatialApiVersionProvider.testPreviewSpatialApiVersion"

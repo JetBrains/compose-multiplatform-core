@@ -23,13 +23,13 @@ import kotlin.coroutines.CoroutineContext
  * We use the [PlatformThreadContextElement] construct to know when a coroutine has suspended, and
  * about to resume on a `Thread`.
  */
-public abstract class PlatformThreadContextElement<S, T : Tracer>
+public abstract class PlatformThreadContextElement
 internal constructor(
     /**
      * The [Tracer] instance that can use this [PropagationToken] for context propagation when the
      * coroutine suspends and resumes.
      */
-    public open val tracer: T,
+    internal open val tracer: PerfettoTracer,
     /** The `category` that a trace section belongs to. */
     public open var category: String,
     /** The `name` of the code section as it appears in a trace. */
@@ -42,15 +42,6 @@ internal constructor(
 ) : AbstractCoroutineContextElement(key = KEY), PropagationToken, AutoCloseable {
     // Always starts in a `begin` state.
     @JvmField internal var started: Int = STATE_BEGIN
-
-    /**
-     * This method is called **before a coroutine is resumed** on a thread that belongs to a
-     * dispatcher.
-     */
-    internal abstract fun updateThreadContext(context: CoroutineContext): S
-
-    /** This method is called **after** a coroutine is suspended on the current thread. */
-    internal abstract fun restoreThreadContext(context: CoroutineContext, oldState: S)
 
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun synchronizedCompareAndSet(expected: Int, newValue: Int): Boolean {
@@ -69,6 +60,12 @@ internal constructor(
         return this
     }
 
+    public override fun close() {
+        if (synchronizedCompareAndSet(expected = STATE_BEGIN, newValue = STATE_END)) {
+            tracer.process.currentThreadTrack().endSection()
+        }
+    }
+
     @PublishedApi
     internal companion object {
         // Used to represent that the current slice has begun.
@@ -79,19 +76,23 @@ internal constructor(
 
         @PublishedApi
         @JvmField
-        internal val KEY: CoroutineContext.Key<PlatformThreadContextElement<*, *>> =
-            object : CoroutineContext.Key<PlatformThreadContextElement<*, *>> {}
+        internal val KEY: CoroutineContext.Key<PlatformThreadContextElement> =
+            object : CoroutineContext.Key<PlatformThreadContextElement> {}
     }
 }
 
 /** Builds an instance of the Platform specific [PlatformThreadContextElement]. */
-@PublishedApi
-internal expect fun <T : Tracer> buildThreadContextElement(
-    tracer: T,
+internal expect fun buildPropagationElement(
+    tracer: PerfettoTracer,
     category: String,
     name: String,
     flowIds: List<Long>,
-    updateThreadContextBlock: (context: CoroutineContext) -> Unit,
-    restoreThreadContextBlock: (context: CoroutineContext) -> Unit,
-    close: (platformThreadContextElement: PlatformThreadContextElement<*, T>) -> Unit,
-): PlatformThreadContextElement<Unit, T>
+): PlatformThreadContextElement
+
+/** Builds an instance of the Platform specific [PlatformThreadContextElement]. */
+internal expect fun buildCoroutinePropagationElement(
+    tracer: PerfettoTracer,
+    category: String,
+    name: String,
+    flowIds: List<Long>,
+): PlatformThreadContextElement

@@ -1471,6 +1471,199 @@ class IndirectPointerGestureTest {
         rule.runOnIdle { assertThat(outerOnSwipeBackwardCount).isEqualTo(1) }
     }
 
+    @Test
+    fun outerHandlesSwipeBackward_innerHandlesSwipeForward_bothTriggered() {
+        var outerOnSwipeBackwardCount = 0
+        var innerOnSwipeForwardCount = 0
+        var touchSlop = 0f
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(
+                            enabled = true,
+                            onSwipeBackward = { outerOnSwipeBackwardCount++ },
+                        )
+            ) {
+                Box(
+                    modifier =
+                        Modifier.size(10.dp)
+                            .onIndirectPointerGesture(
+                                enabled = true,
+                                onSwipeForward = { innerOnSwipeForwardCount++ },
+                            )
+                            .focusable()
+                )
+            }
+        }
+
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = -(touchSlop * 2), moveDuration = 10L)
+
+        rule.runOnIdle { assertThat(outerOnSwipeBackwardCount).isEqualTo(1) }
+        rule.runOnIdle { assertThat(innerOnSwipeForwardCount).isEqualTo(0) }
+
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = touchSlop * 2, moveDuration = 10L)
+
+        rule.runOnIdle { assertThat(outerOnSwipeBackwardCount).isEqualTo(1) }
+        rule.runOnIdle { assertThat(innerOnSwipeForwardCount).isEqualTo(1) }
+    }
+
+    @Test
+    fun outerHandlesSwipeForward_innerHandlesSwipeBackward_bothTriggered() {
+        var outerOnSwipeForwardCount = 0
+        var innerOnSwipeBackwardCount = 0
+        var touchSlop = 0f
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(
+                            enabled = true,
+                            onSwipeForward = { outerOnSwipeForwardCount++ },
+                        )
+            ) {
+                Box(
+                    modifier =
+                        Modifier.size(10.dp)
+                            .onIndirectPointerGesture(
+                                enabled = true,
+                                onSwipeBackward = { innerOnSwipeBackwardCount++ },
+                            )
+                            .focusable()
+                )
+            }
+        }
+
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = -(touchSlop * 2), moveDuration = 10L)
+
+        rule.runOnIdle { assertThat(innerOnSwipeBackwardCount).isEqualTo(1) }
+        rule.runOnIdle { assertThat(outerOnSwipeForwardCount).isEqualTo(0) }
+
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = touchSlop * 2, moveDuration = 10L)
+
+        rule.runOnIdle { assertThat(innerOnSwipeBackwardCount).isEqualTo(1) }
+        rule.runOnIdle { assertThat(outerOnSwipeForwardCount).isEqualTo(1) }
+    }
+
+    @Test
+    fun outerHandlesClick_innerHandlesSwipes_outerClickNotTriggered() {
+        var outerOnClickCount = 0
+        var innerOnSwipeForwardCount = 0
+        var innerOnSwipeBackwardCount = 0
+        var touchSlop = 0f
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(enabled = true, onClick = { outerOnClickCount++ })
+            ) {
+                Box(
+                    modifier =
+                        Modifier.size(10.dp)
+                            .onIndirectPointerGesture(
+                                enabled = true,
+                                onSwipeBackward = { innerOnSwipeBackwardCount++ },
+                                onSwipeForward = { innerOnSwipeForwardCount++ },
+                            )
+                            .focusable()
+                )
+            }
+        }
+
+        rule.onNodeWithTag(ROOT_TEST_TAG).performIndirectClick(rule = rule)
+
+        rule.runOnIdle { assertThat(outerOnClickCount).isEqualTo(0) }
+        rule.runOnIdle { assertThat(innerOnSwipeForwardCount).isEqualTo(0) }
+        rule.runOnIdle { assertThat(innerOnSwipeBackwardCount).isEqualTo(0) }
+
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = -(touchSlop * 2), moveDuration = 10L)
+
+        rule.runOnIdle { assertThat(outerOnClickCount).isEqualTo(0) }
+        rule.runOnIdle { assertThat(innerOnSwipeForwardCount).isEqualTo(0) }
+        rule.runOnIdle { assertThat(innerOnSwipeBackwardCount).isEqualTo(1) }
+
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = touchSlop * 2, moveDuration = 10L)
+
+        rule.runOnIdle { assertThat(outerOnClickCount).isEqualTo(0) }
+        rule.runOnIdle { assertThat(innerOnSwipeForwardCount).isEqualTo(1) }
+        rule.runOnIdle { assertThat(innerOnSwipeBackwardCount).isEqualTo(1) }
+    }
+
+    @Test
+    fun outerHandlesSwipes_innerHandlesClick_bothTriggered() {
+        var innerOnClickCount = 0
+        var outerOnSwipeForwardCount = 0
+        var outerOnSwipeBackwardCount = 0
+        var touchSlop = 0f
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(
+                            enabled = true,
+                            onSwipeForward = { outerOnSwipeForwardCount++ },
+                            onSwipeBackward = { outerOnSwipeBackwardCount++ },
+                        )
+            ) {
+                Box(
+                    modifier =
+                        Modifier.size(10.dp)
+                            .onIndirectPointerGesture(
+                                enabled = true,
+                                onClick = { innerOnClickCount++ },
+                            )
+                            .focusable()
+                )
+            }
+        }
+
+        rule.onNodeWithTag(ROOT_TEST_TAG).performIndirectClick(rule = rule)
+
+        rule.runOnIdle { assertThat(innerOnClickCount).isEqualTo(1) }
+        rule.runOnIdle { assertThat(outerOnSwipeForwardCount).isEqualTo(0) }
+        rule.runOnIdle { assertThat(outerOnSwipeBackwardCount).isEqualTo(0) }
+
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = -(touchSlop * 2), moveDuration = 10L)
+
+        rule.runOnIdle { assertThat(innerOnClickCount).isEqualTo(1) }
+        rule.runOnIdle { assertThat(outerOnSwipeForwardCount).isEqualTo(0) }
+        rule.runOnIdle { assertThat(outerOnSwipeBackwardCount).isEqualTo(1) }
+
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = touchSlop * 2, moveDuration = 10L)
+
+        rule.runOnIdle { assertThat(innerOnClickCount).isEqualTo(1) }
+        rule.runOnIdle { assertThat(outerOnSwipeForwardCount).isEqualTo(1) }
+        rule.runOnIdle { assertThat(outerOnSwipeBackwardCount).isEqualTo(1) }
+    }
+
     private fun buildMotionEvent(
         action: Int,
         pointers: List<MotionEvent.PointerProperties>,

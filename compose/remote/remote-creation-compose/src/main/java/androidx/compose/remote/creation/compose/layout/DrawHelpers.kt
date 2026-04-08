@@ -37,6 +37,9 @@ import androidx.compose.ui.text.style.TextOverflow
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun BlendMode.toAndroidBlendMode(): android.graphics.BlendMode {
     return when (this) {
+        BlendMode.Clear -> AndroidBlendMode.CLEAR
+        BlendMode.Src -> AndroidBlendMode.SRC
+        BlendMode.Dst -> AndroidBlendMode.DST
         BlendMode.SrcOver -> AndroidBlendMode.SRC_OVER
         BlendMode.SrcIn -> AndroidBlendMode.SRC_IN
         BlendMode.SrcOut -> AndroidBlendMode.SRC_OUT

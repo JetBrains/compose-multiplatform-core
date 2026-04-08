@@ -72,6 +72,7 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.scene
 
 /**
  * A composable that creates a panel in 3D space to hoist Popup based composables.
@@ -294,6 +295,7 @@ private class SpatialPopupRenderer(
                         view = view,
                         pixelDimensions = IntSize2d(IntSize.Zero.width, IntSize.Zero.height),
                         name = "ElevatedPanel:${view.id}",
+                        parent = session.scene.activitySpace,
                     )
                 )
                 .apply { view.setTag(R.id.compose_xr_local_view_entity, this) }

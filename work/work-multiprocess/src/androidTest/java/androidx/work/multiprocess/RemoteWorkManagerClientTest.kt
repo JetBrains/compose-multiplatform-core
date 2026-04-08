@@ -30,6 +30,7 @@ import androidx.work.Configuration
 import androidx.work.RunnableScheduler
 import androidx.work.impl.WorkManagerImpl
 import androidx.work.impl.utils.SerialExecutorImpl
+import androidx.work.impl.utils.futures.SettableFuture
 import androidx.work.impl.utils.taskexecutor.SerialExecutor
 import androidx.work.impl.utils.taskexecutor.TaskExecutor
 import java.util.concurrent.Executor
@@ -169,6 +170,27 @@ public class RemoteWorkManagerClientTest {
             exception = throwable
         }
         assertNotNull(exception)
+        verify(mClient).cleanUp()
+        verify(mRunnableScheduler, atLeastOnce())
+            .scheduleWithDelay(anyLong(), any(Runnable::class.java))
+    }
+
+    @Test
+    @MediumTest
+    @Suppress("UNCHECKED_CAST")
+    public fun cleanUpWhenSessionIsCancelled() {
+        if (Build.VERSION.SDK_INT <= 27) {
+            // Exclude <= API 27, from tests because it causes a SIGSEGV.
+            return
+        }
+
+        val remoteDispatcher =
+            mock(RemoteDispatcher::class.java) as RemoteDispatcher<IWorkManagerImpl>
+        val session = SettableFuture.create<IWorkManagerImpl>()
+
+        mClient.execute(session, remoteDispatcher)
+        session.cancel(true)
+
         verify(mClient).cleanUp()
         verify(mRunnableScheduler, atLeastOnce())
             .scheduleWithDelay(anyLong(), any(Runnable::class.java))

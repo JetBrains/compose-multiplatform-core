@@ -18,9 +18,14 @@ package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.NodeHolder
+import androidx.xr.scenecore.runtime.MaterialResource
 import androidx.xr.scenecore.runtime.MeshFeature
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.MeshFeature] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeMeshFeature(nodeHolder: NodeHolder<*>) :
-    FakeBaseRenderingFeature(nodeHolder), MeshFeature
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public open class FakeMeshFeature(nodeHolder: NodeHolder<*>) :
+    FakeBaseRenderingFeature(nodeHolder), MeshFeature {
+    override fun setMaterial(material: MaterialResource, subsetIndex: Int) {
+        // Test stub.
+    }
+}

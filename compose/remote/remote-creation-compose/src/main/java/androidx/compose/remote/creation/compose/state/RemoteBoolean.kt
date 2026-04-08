@@ -49,6 +49,10 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
     public override val constantValueOrNull: Boolean?
         get() = intValue.constantValueOrNull?.let { it != 0 }
 
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override val asEncoded: RemoteInt
+        get() = intValue
+
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         intValue.writeToDocument(creationState)
@@ -387,6 +391,10 @@ public class MutableRemoteBoolean internal constructor(remoteInt: MutableRemoteI
                 is Int -> true
                 null -> null
             }
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override val asEncodedMutable: MutableRemoteInt
+        get() = intValue as MutableRemoteInt
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =

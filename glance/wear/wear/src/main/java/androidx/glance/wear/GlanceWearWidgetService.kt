@@ -24,8 +24,10 @@ import androidx.glance.wear.parcel.IWearWidgetProvider
 import androidx.glance.wear.parcel.LegacyTileProviderImpl
 import androidx.glance.wear.parcel.WearWidgetProviderImpl
 import androidx.glance.wear.parcel.legacy.TileProvider
+import androidx.glance.wear.util.isRobolectricBuild
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 /**
  * Service used for communication between the Host and a Widget Provider.
@@ -38,6 +40,14 @@ import androidx.lifecycle.lifecycleScope
  * ```
  */
 public abstract class GlanceWearWidgetService : LifecycleService() {
+
+    override fun onCreate() {
+        super.onCreate()
+        // TODO: b/483999057 - Add CallSuper annotation to lifecycle methods.
+        if (!isRobolectricBuild()) {
+            updateServiceMapping()
+        }
+    }
 
     /** Instance of [GlanceWearWidget] associated with this provider. */
     public abstract val widget: GlanceWearWidget
@@ -71,6 +81,13 @@ public abstract class GlanceWearWidgetService : LifecycleService() {
                 }
 
             else -> null
+        }
+    }
+
+    private fun updateServiceMapping() {
+        lifecycleScope.launch {
+            GlanceWearWidgetManager(this@GlanceWearWidgetService)
+                .updateServiceMapping(this@GlanceWearWidgetService, widget)
         }
     }
 

@@ -19,7 +19,6 @@ import android.text.SpannableString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
-import androidx.text.vertical.OrientationMode
 import androidx.text.vertical.ResolvedOrientation
 import androidx.text.vertical.TextOrientation
 import androidx.text.vertical.TextOrientationSpan
@@ -46,7 +45,7 @@ class OrientationsTest {
         text: CharSequence,
         start: Int = 0,
         end: Int = text.length,
-        @OrientationMode textOrientation: Int = TextOrientation.MIXED,
+        textOrientation: TextOrientation = TextOrientation.Mixed,
     ): List<Run> {
         val out = mutableListOf<Run>()
         forEachOrientation(text, start, end, textOrientation) { oStart, oEnd, orientation ->
@@ -61,7 +60,7 @@ class OrientationsTest {
 
     private fun resolve(
         text: CharSequence,
-        @OrientationMode textOrientation: Int = TextOrientation.MIXED,
+        textOrientation: TextOrientation = TextOrientation.Mixed,
     ) = resolve(text, 0, text.length, textOrientation)
 
     @Test
@@ -114,56 +113,56 @@ class OrientationsTest {
 
     @Test
     fun orientation_noOverrideText_UprightOrientation() {
-        var runs = resolve("あいうえお", TextOrientation.UPRIGHT)
+        var runs = resolve("あいうえお", TextOrientation.Upright)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Upright(0, 5))
 
-        runs = resolve("abcde", TextOrientation.UPRIGHT)
+        runs = resolve("abcde", TextOrientation.Upright)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Upright(0, 5))
 
-        runs = resolve("あいうえおabcde", TextOrientation.UPRIGHT)
+        runs = resolve("あいうえおabcde", TextOrientation.Upright)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Upright(0, 10))
 
         // Substring
-        runs = resolve("あいうえお", 1, 3, TextOrientation.UPRIGHT)
+        runs = resolve("あいうえお", 1, 3, TextOrientation.Upright)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Upright(1, 3))
 
-        runs = resolve("abcde", 1, 3, TextOrientation.UPRIGHT)
+        runs = resolve("abcde", 1, 3, TextOrientation.Upright)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Upright(1, 3))
 
-        runs = resolve("あいうえおabcde", 4, 7, textOrientation = TextOrientation.UPRIGHT)
+        runs = resolve("あいうえおabcde", 4, 7, textOrientation = TextOrientation.Upright)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Upright(4, 7))
     }
 
     @Test
     fun orientation_noOverrideText_SidewaysOrientation() {
-        var runs = resolve("あいうえお", TextOrientation.SIDEWAYS)
+        var runs = resolve("あいうえお", TextOrientation.Sideways)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Rotate(0, 5))
 
-        runs = resolve("abcde", TextOrientation.SIDEWAYS)
+        runs = resolve("abcde", TextOrientation.Sideways)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Rotate(0, 5))
 
-        runs = resolve("あいうえおabcde", TextOrientation.SIDEWAYS)
+        runs = resolve("あいうえおabcde", TextOrientation.Sideways)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Rotate(0, 10))
 
         // Substring
-        runs = resolve("あいうえお", 1, 3, TextOrientation.SIDEWAYS)
+        runs = resolve("あいうえお", 1, 3, TextOrientation.Sideways)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Rotate(1, 3))
 
-        runs = resolve("abcde", 1, 3, TextOrientation.SIDEWAYS)
+        runs = resolve("abcde", 1, 3, TextOrientation.Sideways)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Rotate(1, 3))
 
-        runs = resolve("あいうえおabcde", 4, 7, TextOrientation.SIDEWAYS)
+        runs = resolve("あいうえおabcde", 4, 7, TextOrientation.Sideways)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Rotate(4, 7))
     }

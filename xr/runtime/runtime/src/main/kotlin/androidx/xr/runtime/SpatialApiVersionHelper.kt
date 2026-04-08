@@ -35,7 +35,7 @@ public object SpatialApiVersionHelper {
     private val PROVIDERS =
         listOf(
             "androidx.xr.scenecore.spatial.core.SpatialCoreApiVersionProvider",
-            "androidx.xr.runtime.testing.FakeSpatialApiVersionProvider",
+            "androidx.xr.runtime.testing.internal.FakeSpatialApiVersionProvider",
         )
 
     /** Lazily loads all available [SpatialApiVersionProvider]s from the [PROVIDERS] list. */

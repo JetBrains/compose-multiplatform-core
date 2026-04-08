@@ -37,12 +37,25 @@ import java.util.List;
 /** Represents an align by modifier. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AlignByModifierOperation extends DecoratorModifierOperation {
+
+    /** First baseline (for alignment) */
+    public static final int ID_FIRST_BASELINE = 1;
+
+    /** last baseline (for alignment) */
+    public static final int ID_LAST_BASELINE = 2;
+
+    /** Last Baseline */
+    public static final float LAST_BASELINE = Utils.asNan(ID_LAST_BASELINE);
+
+    /** First Baseline */
+    public static final float FIRST_BASELINE = Utils.asNan(ID_FIRST_BASELINE);
+
     private static final int OP_CODE = Operations.MODIFIER_ALIGN_BY;
     public static final String CLASS_NAME = "AlignByModifierOperation";
 
     private @Nullable Component mParent;
 
-    private float mLine = RemoteContext.FIRST_BASELINE;
+    private float mLine = FIRST_BASELINE;
     private int mFlags = 0;
 
     public void setParent(@NonNull Component component) {
@@ -156,10 +169,10 @@ public class AlignByModifierOperation extends DecoratorModifierOperation {
         if (Float.isNaN(mLine)) {
             int id = Utils.idFromNan(mLine);
             switch (id) {
-                case RemoteContext.ID_FIRST_BASELINE:
+                case ID_FIRST_BASELINE:
                     value = "FirstBaseline";
                     break;
-                case RemoteContext.ID_LAST_BASELINE:
+                case ID_LAST_BASELINE:
                     value = "LastBaseline";
                     break;
                 default:

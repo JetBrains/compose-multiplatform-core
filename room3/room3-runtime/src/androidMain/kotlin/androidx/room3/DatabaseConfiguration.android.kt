@@ -30,7 +30,7 @@ public actual class DatabaseConfiguration
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 constructor(
     /* The context to use while connecting to the database. */
-    public val context: Context,
+    public val context: Context?,
 
     /* The name of the database file or null if it is an in-memory database. */
     public actual val name: String?,
@@ -101,7 +101,7 @@ constructor(
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun copy(
-        context: Context = this.context,
+        context: Context? = this.context,
         name: String? = this.name,
         migrationContainer: RoomDatabase.MigrationContainer = this.migrationContainer,
         callbacks: List<RoomDatabase.Callback> = this.callbacks,

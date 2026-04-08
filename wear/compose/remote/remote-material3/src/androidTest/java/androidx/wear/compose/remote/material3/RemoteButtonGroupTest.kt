@@ -17,7 +17,7 @@
 package androidx.wear.compose.remote.material3
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -26,6 +26,7 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -46,13 +47,24 @@ class RemoteButtonGroupTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val creationDisplayInfo =
-        CreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
+        RemoteCreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
 
     @Test
     fun buttonGroup_threeButton() {
         remoteComposeTestRule.runScreenshotTest(
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
+        ) {
+            Center { RemoteButtonGroupThreeButtons() }
+        }
+    }
+
+    @Test
+    fun buttonGroup_threeButton_rtl() {
+        remoteComposeTestRule.runScreenshotTest(
+            backgroundColor = Color.Black,
+            creationDisplayInfo = creationDisplayInfo,
+            layoutDirection = LayoutDirection.Rtl,
         ) {
             Center { RemoteButtonGroupThreeButtons() }
         }

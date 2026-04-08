@@ -54,6 +54,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.arcore.Face
 import androidx.xr.arcore.FaceBlendShapeType
 import androidx.xr.arcore.FaceConfidenceRegion
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
@@ -61,7 +62,6 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import kotlinx.coroutines.launch
 
 class FaceTrackingActivity : ComponentActivity() {

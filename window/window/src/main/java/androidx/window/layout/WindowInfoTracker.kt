@@ -27,6 +27,7 @@ import androidx.core.util.Consumer
 import androidx.window.RequiresWindowSdkExtension
 import androidx.window.WindowSdkExtensions
 import androidx.window.core.ConsumerAdapter
+import androidx.window.layout.adapter.EngagementModeBackendApi0
 import androidx.window.layout.adapter.WindowBackend
 import androidx.window.layout.adapter.extensions.ExtensionWindowBackend
 import androidx.window.layout.adapter.sidecar.SidecarWindowBackend
@@ -205,11 +206,13 @@ public interface WindowInfoTracker {
         @JvmStatic
         public fun getOrCreate(context: Context): WindowInfoTracker {
             val backend = extensionBackend ?: SidecarWindowBackend.getInstance(context)
+            val engagementStateTracker = EngagementModeBackendApi0.getInstance(context)
             val repo =
                 WindowInfoTrackerImpl(
                     WindowMetricsCalculatorCompat(),
                     backend,
                     WindowSdkExtensions.getInstance(),
+                    engagementStateTracker,
                 )
             return decorator.decorate(repo)
         }

@@ -21,12 +21,14 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.annotation.DimenRes
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
@@ -54,8 +56,11 @@ import kotlin.random.Random
  * @param pagesPerRow The number of pages to display in a single row.
  * @param horizontalPageSpacing The spacing between horizontally adjacent pages.
  * @param verticalPageSpacing The spacing between vertically adjacent pages.
- * @param fastScrollConfig a [FastScrollConfiguration] instance to customize the fast scoller's
+ * @param fastScrollConfig a [FastScrollConfiguration] instance to customize the fast scroller's
  *   appearance
+ * @param contentPadding a padding around the whole content. This will add padding for the content
+ *   after it has been clipped, which is not possible via [modifier] param. Note: The content bleeds
+ *   into the padded area when the view is scrolled.
  * @param onUrlLinkClicked a callback to be invoked when the user taps a URL link in this PDF viewer
  * @param onFormWidgetInfoUpdated a callback to be invoked when a form widget is updated due to a
  *   user interaction. @see [PdfView.OnFormWidgetInfoUpdatedListener]
@@ -81,6 +86,7 @@ public fun PdfViewer(
     verticalPageSpacing: Dp = 8.dp,
     fastScrollConfig: FastScrollConfiguration =
         FastScrollConfiguration.withDrawableAndDimensionIds(),
+    contentPadding: PaddingValues = NoPadding,
     appendContextMenuComponents: (PdfSelectionMenuBuilderScope.() -> Unit)? = null,
     filterContextMenuComponents: ((ContextMenuComponent) -> Boolean)? = null,
     onFormWidgetInfoUpdated: ((FormEditInfo) -> Unit)? = null,
@@ -109,6 +115,7 @@ public fun PdfViewer(
     }
     // Convert Dp to Px for the underlying PdfView.
     val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
     val horizontalPageSpacingPx = with(density) { horizontalPageSpacing.roundToPx() }
     val verticalPageSpacingPx = with(density) { verticalPageSpacing.roundToPx() }
 
@@ -118,6 +125,20 @@ public fun PdfViewer(
             PdfView(context).apply {
                 this.id = pdfViewId
                 state.pdfView = this
+                if (contentPadding != NoPadding) {
+                    with(density) {
+                        setPadding(
+                            contentPadding.calculateLeftPadding(layoutDirection).roundToPx(),
+                            contentPadding.calculateTopPadding().roundToPx(),
+                            contentPadding.calculateRightPadding(layoutDirection).roundToPx(),
+                            contentPadding.calculateBottomPadding().roundToPx(),
+                        )
+                    }
+                    // Allow the content to bleed into the padded area.
+                    clipToPadding = false
+                } else {
+                    clipToPadding = true
+                }
                 setLinkClickListener(PdfViewerLinkClickListener(onUrlLinkClicked))
                 addOnFirstContentLoadListener(
                     PdfViewerOnFirstContentLoadListener(onFirstContentLoad)
@@ -325,3 +346,5 @@ private class PdfViewerSelectionMenuPreparer(
         }
     }
 }
+
+private val NoPadding = PaddingValues(0.dp)

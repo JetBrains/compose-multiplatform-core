@@ -64,7 +64,7 @@ import kotlinx.coroutines.sync.withLock
  */
 @Suppress("NotCloseable")
 public class Session
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 @JvmOverloads
 public constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val context: Context,
@@ -122,11 +122,11 @@ public constructor(
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Deprecated(
             message =
-                "unScaledGravityAlignedActivitySpace flag deprecated, scheduled for removal in future release."
+                "unscaledGravityAlignedActivitySpace flag deprecated, scheduled for removal in future release."
         )
         public fun create(
             activity: Activity,
-            coroutineContext: CoroutineContext,
+            coroutineContext: CoroutineContext = EmptyCoroutineContext,
             unscaledGravityAlignedActivitySpace: Boolean,
         ): SessionCreateResult =
             create(
@@ -353,10 +353,10 @@ public constructor(
 
         private val RUNTIME_FACTORY_PROVIDERS =
             listOf(
-                "androidx.xr.arcore.projected.ProjectedRuntimeFactory",
                 "androidx.xr.arcore.playservices.ArCoreRuntimeFactory",
                 "androidx.xr.arcore.openxr.OpenXrRuntimeFactory",
                 "androidx.xr.arcore.testing.FakePerceptionRuntimeFactory",
+                "androidx.xr.runtime.StubPerceptionRuntimeFactory",
             )
 
         private val SCENE_RUNTIME_FACTORY_PROVIDERS =
@@ -376,12 +376,14 @@ public constructor(
             listOf(
                 "androidx.xr.arcore.PerceptionStateExtender",
                 "androidx.xr.arcore.playservices.CameraStateExtender",
-                "androidx.xr.arcore.testing.FakeStateExtender",
+                "androidx.xr.arcore.testing.internal.FakeStateExtender",
+                "androidx.xr.runtime.StubStateExtender",
             )
         private val SESSION_CONNECTOR_PROVIDERS =
             listOf(
                 "androidx.xr.scenecore.Scene",
                 "androidx.xr.runtime.testing.FakeSessionConnector",
+                "androidx.xr.runtime.StubSessionConnector",
             )
     }
 
@@ -406,6 +408,17 @@ public constructor(
             else -> {}
         }
     }
+
+    @Deprecated(
+        "Session.activity is an unsafe reference and may not resolve in the future. Please keep a reference to the activity outside of the Session."
+    )
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val activity: Activity
+        get() {
+            check(lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED)
+            check(context is Activity)
+            return context
+        }
 
     private val Activity.lifecycle: Lifecycle
         get() = (this as LifecycleOwner).lifecycle

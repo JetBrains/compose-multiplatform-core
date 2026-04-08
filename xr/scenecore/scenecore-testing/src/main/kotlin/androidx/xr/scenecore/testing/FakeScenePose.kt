@@ -34,14 +34,10 @@ import androidx.xr.scenecore.runtime.impl.BaseScenePose
  *
  * @see androidx.xr.scenecore.runtime.ScenePose
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public open class FakeScenePose : BaseScenePose() {
     /** Returns the pose for this entity, relative to the activity space root. */
     override var activitySpacePose: Pose = Pose.Identity
-    override val poseInActivitySpace: Pose
-        get() {
-            return activitySpacePose
-        }
 
     /**
      * Returns the scale of this ScenePose. For base ScenePoses, the scale is (1,1,1). For entities

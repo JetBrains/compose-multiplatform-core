@@ -24,6 +24,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import java.nio.file.Paths
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -104,6 +105,7 @@ class GltfManager(
                         mGltfModel!!,
                         // Offset each new entity
                         Pose(Vector3.Forward * 3f + Vector3.Right * entityNumber.toFloat() * 1.5f),
+                        parent = session.scene.activitySpace,
                     )
                 for (callback in onEntityChangedCallbacks) callback(newEntity)
                 gltfModelEntities.add(newEntity)

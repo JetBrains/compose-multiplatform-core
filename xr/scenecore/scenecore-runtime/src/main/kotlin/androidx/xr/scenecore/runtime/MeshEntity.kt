@@ -19,8 +19,25 @@ package androidx.xr.scenecore.runtime
 import androidx.annotation.RestrictTo
 
 /** Interface for a Mesh entity. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface MeshEntity : Entity {}
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface MeshEntity : Entity {
+    /**
+     * Sets a material for a mesh subset.
+     *
+     * @param material The new [MaterialResource] to apply to the mesh subset.
+     * @param subsetIndex The zero-based index for the mesh subset.
+     */
+    public fun setMaterial(material: MaterialResource, subsetIndex: Int)
+}
 
 /** Provide the rendering implementation for [MeshEntity] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public interface MeshFeature : RenderingFeature {}
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface MeshFeature : RenderingFeature {
+    /**
+     * Sets a material for a mesh subset.
+     *
+     * @param material The new [MaterialResource] to apply to the mesh subset.
+     * @param subsetIndex The zero-based index for the mesh subset.
+     */
+    public fun setMaterial(material: MaterialResource, subsetIndex: Int)
+}

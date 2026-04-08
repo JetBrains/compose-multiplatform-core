@@ -401,9 +401,9 @@ internal class AdaptableCoreEntity<T : Entity>(
     var sceneCoreEntitySizeAdapter: SceneCoreEntitySizeAdapter<T>? = null,
 ) : CoreEntity(coreEntity) {
     override var size: IntVolumeSize
-        get() = sceneCoreEntitySizeAdapter?.intrinsicSize?.invoke(coreEntity) ?: super.size
+        get() = sceneCoreEntitySizeAdapter?.currentSize(coreEntity) ?: super.size
         set(value) {
-            sceneCoreEntitySizeAdapter?.onLayoutSizeChanged?.let { coreEntity.it(value) }
+            sceneCoreEntitySizeAdapter?.onLayoutSizeChanged(coreEntity, value)
             super.size = value
         }
 }

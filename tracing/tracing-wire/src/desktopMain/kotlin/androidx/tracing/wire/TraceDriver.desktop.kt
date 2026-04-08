@@ -18,8 +18,11 @@
 
 package androidx.tracing.wire
 
+import androidx.annotation.RestrictTo
 import androidx.tracing.AbstractTraceDriver
 import androidx.tracing.AbstractTraceSink
+import androidx.tracing.EmptyTraceContext
+import androidx.tracing.TraceAttributes
 import androidx.tracing.TraceContext
 import androidx.tracing.Tracer
 import kotlin.jvm.optionals.getOrNull
@@ -30,14 +33,32 @@ import kotlin.jvm.optionals.getOrNull
  * @param sink The [TraceSink] instance.
  * @param isEnabled Set this to `true` to emit trace events. `false` disables all tracing to lower
  *   overhead.
+ * @param attributes Collection of key value pairs to be attached to a trace to provide additional
+ *   context about any facet of the trace. This can include what data it contains, and properties of
+ *   the host / machine the trace was collected on, and other interesting information about a trace.
+ *
+ * Examples include:
+ * ```
+ * gradle_version = "9.0.10-alpha01"
+ * java_major_version = 24
+ * ```
  */
 @Suppress("DEPRECATION")
 public actual class TraceDriver
 @JvmOverloads
-constructor(sink: AbstractTraceSink, isEnabled: Boolean = true) :
-    AbstractTraceDriver(sink = sink, isEnabled = isEnabled) {
+constructor(
+    sink: AbstractTraceSink,
+    isEnabled: Boolean = true,
+    attributes: (TraceAttributes.() -> Unit)? = null,
+) : AbstractTraceDriver(sink = sink, isEnabled = isEnabled) {
 
-    private val context = TraceContext(sink = sink, isEnabled = isEnabled)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val context: TraceContext =
+        if (isEnabled) {
+            TraceContext(sink = sink, isEnabled = isEnabled)
+        } else {
+            EmptyTraceContext
+        }
 
     init {
         val processHandle = ProcessHandle.current()
@@ -47,7 +68,14 @@ constructor(sink: AbstractTraceSink, isEnabled: Boolean = true) :
         context.createProcessTrack(id = pid.toInt(), name = name)
         // Eagerly populate the current thread track
         val thread = Thread.currentThread()
-        context.process.getOrCreateThreadTrack(id = thread.id.toInt(), name = thread.name)
+        val track =
+            context.process.getOrCreateThreadTrack(id = thread.id.toInt(), name = thread.name)
+        // Trace Attributes
+        if (attributes != null) {
+            val attributes = track.traceAttributes()
+            attributes.attributes()
+            attributes.dispatchToTraceSink()
+        }
     }
 
     override val tracer: Tracer by

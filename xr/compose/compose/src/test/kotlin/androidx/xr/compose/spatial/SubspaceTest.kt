@@ -41,9 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateSuccess
-import androidx.xr.arcore.testing.FakeLifecycleManager
-import androidx.xr.arcore.testing.FakePerceptionRuntime
-import androidx.xr.arcore.testing.FakeRuntimeAnchor
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.SceneManager
 import androidx.xr.compose.subspace.ArDeviceTarget
@@ -103,6 +100,7 @@ import androidx.xr.scenecore.runtime.ActivitySpace
 import androidx.xr.scenecore.runtime.RenderingEntityFactory
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.scene
+import com.google.common.collect.Range
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -130,10 +128,12 @@ class SubspaceTest {
     val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Before
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     fun setUp() {
         FollowBehavior.dispatcherOverride = testDispatcher
-        FakeRuntimeAnchor.anchorsCreatedCount = 0
+        androidx.xr.arcore.testing.FakeRuntimeAnchor.anchorsCreatedCount = 0
     }
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
@@ -193,22 +193,38 @@ class SubspaceTest {
         return session
     }
 
-    private fun translateDevice(fakeRuntime: FakePerceptionRuntime, offset: Vector3) {
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
+    private fun translateDevice(
+        fakeRuntime: androidx.xr.arcore.testing.FakePerceptionRuntime,
+        offset: Vector3,
+    ) {
         val arDevice = fakeRuntime.perceptionManager.arDevice
         arDevice.devicePose = arDevice.devicePose.translate(translation = offset)
         testDispatcher.scheduler.advanceUntilIdle()
         fakeRuntime.lifecycleManager.allowOneMoreCallToUpdate()
     }
 
-    private fun rotateDevice(fakeRuntime: FakePerceptionRuntime, offset: Quaternion) {
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
+    private fun rotateDevice(
+        fakeRuntime: androidx.xr.arcore.testing.FakePerceptionRuntime,
+        offset: Quaternion,
+    ) {
         val fakePerceptionManager = fakeRuntime.perceptionManager
-        val fakeLifecycleManager: FakeLifecycleManager = fakeRuntime.lifecycleManager
+        val fakeLifecycleManager: androidx.xr.arcore.testing.FakeLifecycleManager =
+            fakeRuntime.lifecycleManager
 
         fakePerceptionManager.arDevice.devicePose =
             fakePerceptionManager.arDevice.devicePose.rotate(rotation = offset)
 
         testDispatcher.scheduler.advanceUntilIdle()
         fakeLifecycleManager.allowOneMoreCallToUpdate()
+    }
+
+    private fun assertExistenceAndGetNodeWorldPose(testTag: String): Pose {
+        val node = composeTestRule.onSubspaceNodeWithTag(testTag).fetchSemanticsNode()
+        return assertNotNull(node.semanticsEntity).getPose(relativeTo = Space.REAL_WORLD)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -1022,7 +1038,7 @@ class SubspaceTest {
             }
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val headPanelPose = getSemanticsNodeWorldPose("HeadPanel")
+            val headPanelPose = assertExistenceAndGetNodeWorldPose("HeadPanel")
             assertThat(headPanelPose).isEqualTo(ArDeviceTarget.DEFAULT_OFFSET)
         }
 
@@ -1063,11 +1079,16 @@ class SubspaceTest {
 
     @Test
     @OptIn(ExperimentalFollowingSubspaceApi::class)
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenFollowTargetChanges_switchesTarget() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             var followTarget by mutableStateOf(FollowTarget.ArDevice(session))
             var followBehavior by mutableStateOf(FollowBehavior.Soft(durationMs = 1000))
 
@@ -1082,7 +1103,7 @@ class SubspaceTest {
             val arDeviceTranslation = Vector3(x = 1F, y = 2F, z = 3F)
             translateDevice(fakeRuntime, arDeviceTranslation)
 
-            var subspaceCurrentPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            var subspaceCurrentPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             assertThat(subspaceCurrentPose.translation).isEqualTo(arDeviceTranslation)
 
             // Switch to an anchor target
@@ -1094,17 +1115,22 @@ class SubspaceTest {
 
             followTarget = FollowTarget.Anchor(anchorEntity)
             followBehavior = FollowBehavior.Tight
-            subspaceCurrentPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            subspaceCurrentPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             assertThat(subspaceCurrentPose.translation).isEqualTo(anchorTranslation)
         }
 
     @Test
     @OptIn(ExperimentalFollowingSubspaceApi::class, ExperimentalCoroutinesApi::class)
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenFollowBehaviorChanges_actsLikeNewBehavior() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             var followBehavior by mutableStateOf(FollowBehavior.Soft(durationMs = 1000))
 
             composeTestRule.setContent {
@@ -1120,26 +1146,32 @@ class SubspaceTest {
             translateDevice(fakeRuntime, unitVector)
 
             // With Soft behavior, subspace should have moved 2 unit vectors.
-            var subspaceCurrentPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            var subspaceCurrentPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             assertThat(subspaceCurrentPose.translation).isEqualTo(unitVector * 2F)
 
             followBehavior = FollowBehavior.Static
             composeTestRule.waitForIdle()
             translateDevice(fakeRuntime, unitVector)
+            translateDevice(fakeRuntime, unitVector)
             testDispatcher.scheduler.advanceUntilIdle()
 
-            // With Static behavior, it should not move any more since it already moved.
-            subspaceCurrentPose = getSemanticsNodeWorldPose("FollowingSubspace")
-            assertThat(subspaceCurrentPose.translation).isEqualTo(unitVector * 2F)
+            // With Static behavior, it should move only once.
+            subspaceCurrentPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
+            assertThat(subspaceCurrentPose.translation).isEqualTo(unitVector * 3F)
         }
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenStaticBehavior_OnlyMovesOnce() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
 
             composeTestRule.setContent {
                 FollowingSubspace(
@@ -1159,18 +1191,72 @@ class SubspaceTest {
             translateDevice(fakeRuntime, unitVector)
             translateDevice(fakeRuntime, unitVector)
 
-            val subspaceCurrentPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val subspaceCurrentPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             // Device was moved 1 unit vector twice but is still just offset 1 unit vector.
             assertThat(subspaceCurrentPose.translation).isEqualTo(unitVector)
         }
 
+    @OptIn(ExperimentalFollowingSubspaceApi::class, ExperimentalCoroutinesApi::class)
+    @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
+    fun followingSubspace_whenFirstPoseReceived_NoAnimation() =
+        runTest(testDispatcher) {
+            composeTestRule.session = configureSessionWithDeviceTracking()
+            val session = assertNotNull(composeTestRule.session)
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
+            val animationTime = 2200
+            val subAnimationTime = 1500L
+
+            composeTestRule.setContent {
+                FollowingSubspace(
+                    target = FollowTarget.ArDevice(session),
+                    behavior = FollowBehavior.Soft(durationMs = animationTime),
+                    modifier = SubspaceModifier.testTag("FollowingSubspace"),
+                ) {}
+            }
+
+            val unitVector = Vector3(x = 1F, y = 1F, z = 1F)
+            val arDevice = fakeRuntime.perceptionManager.arDevice
+            arDevice.devicePose = arDevice.devicePose.translate(translation = unitVector)
+
+            // TODO(b/491579552): Update unit test to use runCurrent instead of advanceTimeBy
+            testDispatcher.scheduler.advanceTimeBy(subAnimationTime)
+            fakeRuntime.lifecycleManager.allowOneMoreCallToUpdate()
+
+            // The first device pose should cause the subspace to instantly spawn at that location.
+            // The animation durationMs parameter only affects subsequent movements.
+            var subspaceTranslation =
+                assertExistenceAndGetNodeWorldPose("FollowingSubspace").translation
+            assertThat(subspaceTranslation).isEqualTo(unitVector)
+
+            // Demonstrate how the next pose movement is not completed if adequate time is not
+            // given.
+            arDevice.devicePose = arDevice.devicePose.translate(translation = unitVector)
+            testDispatcher.scheduler.advanceTimeBy(subAnimationTime)
+
+            subspaceTranslation =
+                assertExistenceAndGetNodeWorldPose("FollowingSubspace").translation
+            assertThat(subspaceTranslation.x).isIn(Range.open(1f, 2f))
+            assertThat(subspaceTranslation.y).isIn(Range.open(1f, 2f))
+            assertThat(subspaceTranslation.z).isIn(Range.open(1f, 2f))
+        }
+
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenNoDimensionsTracked_DoesNotMove() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
 
             composeTestRule.setContent {
                 FollowingSubspace(
@@ -1190,23 +1276,29 @@ class SubspaceTest {
                 }
             }
 
-            val headPanelInitialPose = getSemanticsNodeWorldPose("HeadPanel")
+            val headPanelInitialPose = assertExistenceAndGetNodeWorldPose("HeadPanel")
             val offsetTranslation = Vector3(x = 1F, y = 2F, z = 3F)
             translateDevice(fakeRuntime, offsetTranslation)
 
             val offsetRotation = Quaternion.fromEulerAngles(pitch = 15F, yaw = 30F, roll = 45F)
             rotateDevice(fakeRuntime, offsetRotation)
 
-            assertThat(getSemanticsNodeWorldPose("HeadPanel")).isEqualTo(headPanelInitialPose)
+            assertThat(assertExistenceAndGetNodeWorldPose("HeadPanel"))
+                .isEqualTo(headPanelInitialPose)
         }
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenDeviceTranslatesAndRotates_MatchesMovement() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
 
             composeTestRule.setContent {
                 FollowingSubspace(
@@ -1222,18 +1314,23 @@ class SubspaceTest {
             val offsetRotation = Quaternion.fromEulerAngles(pitch = 15F, yaw = 30F, roll = 45F)
             rotateDevice(fakeRuntime, offsetRotation)
 
-            val subspaceWorldPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val subspaceWorldPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             assertThat(subspaceWorldPose)
                 .isEqualTo(fakeRuntime.perceptionManager.arDevice.devicePose)
         }
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenDeviceTranslates_MatchesMovement() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
 
             composeTestRule.setContent {
                 FollowingSubspace(
@@ -1249,14 +1346,14 @@ class SubspaceTest {
                 ) {}
             }
 
-            val subspaceInitialPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val subspaceInitialPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             val offsetTranslation = Vector3(x = 1F, y = 2F, z = 3F)
             translateDevice(fakeRuntime, offsetTranslation)
 
             val offsetRotation = Quaternion.fromEulerAngles(pitch = 15F, yaw = 30F, roll = 45F)
             rotateDevice(fakeRuntime, offsetRotation)
 
-            val subspaceCurrentPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val subspaceCurrentPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             assertThat(subspaceCurrentPose.translation)
                 .isEqualTo(fakeRuntime.perceptionManager.arDevice.devicePose.translation)
             // Panel should not rotate because rotation is not being tracked.
@@ -1265,11 +1362,16 @@ class SubspaceTest {
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenOnlyXTranslationTracked_OnlyXTranslationMatches() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             val fakeArDevice = fakeRuntime.perceptionManager.arDevice
 
             composeTestRule.setContent {
@@ -1281,14 +1383,14 @@ class SubspaceTest {
                 ) {}
             }
 
-            val subspaceInitialPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val subspaceInitialPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             val offsetTranslation = Vector3(x = 1F, y = 2F, z = 3F)
             translateDevice(fakeRuntime, offsetTranslation)
 
             val offsetRotation = Quaternion.fromEulerAngles(pitch = 15F, yaw = 30F, roll = 45F)
             rotateDevice(fakeRuntime, offsetRotation)
 
-            val subspaceCurrentPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val subspaceCurrentPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             val expectedTranslation = Vector3(fakeArDevice.devicePose.translation.x, 0F, 0F)
 
             assertThat(subspaceCurrentPose.translation).isEqualTo(expectedTranslation)
@@ -1298,11 +1400,16 @@ class SubspaceTest {
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenOnlyYTranslationTracked_OnlyYTranslationMatches() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             val fakeArDevice = fakeRuntime.perceptionManager.arDevice
 
             composeTestRule.setContent {
@@ -1314,14 +1421,14 @@ class SubspaceTest {
                 ) {}
             }
 
-            val subspaceInitialPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val subspaceInitialPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             val offsetTranslation = Vector3(x = 1F, y = 2F, z = 3F)
             translateDevice(fakeRuntime, offsetTranslation)
 
             val offsetRotation = Quaternion.fromEulerAngles(pitch = 15F, yaw = 30F, roll = 45F)
             rotateDevice(fakeRuntime, offsetRotation)
 
-            val subspaceCurrentPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val subspaceCurrentPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             val expectedTranslation = Vector3(0F, fakeArDevice.devicePose.translation.y, 0F)
 
             assertThat(subspaceCurrentPose.translation).isEqualTo(expectedTranslation)
@@ -1331,11 +1438,16 @@ class SubspaceTest {
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenOnlyZTranslationTracked_OnlyZTranslationMatches() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             val fakeArDevice = fakeRuntime.perceptionManager.arDevice
 
             composeTestRule.setContent {
@@ -1347,14 +1459,14 @@ class SubspaceTest {
                 ) {}
             }
 
-            val subspaceInitialPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val subspaceInitialPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             val offsetTranslation = Vector3(x = 1F, y = 2F, z = 3F)
             translateDevice(fakeRuntime, offsetTranslation)
 
             val offsetRotation = Quaternion.fromEulerAngles(pitch = 15F, yaw = 30F, roll = 45F)
             rotateDevice(fakeRuntime, offsetRotation)
 
-            val subspaceCurrentPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val subspaceCurrentPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             val expectedTranslation = Vector3(0F, 0F, fakeArDevice.devicePose.translation.z)
             assertThat(subspaceCurrentPose.translation).isEqualTo(expectedTranslation)
             // Panel should not rotate because rotation is not being tracked.
@@ -1363,11 +1475,16 @@ class SubspaceTest {
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenDeviceRotates_MatchesMovement() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             val fakeArDevice = fakeRuntime.perceptionManager.arDevice
 
             composeTestRule.setContent {
@@ -1384,26 +1501,31 @@ class SubspaceTest {
                 ) {}
             }
 
-            val headPanelInitialPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val headPanelInitialPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             val offsetTranslation = Vector3(x = 1F, y = 2F, z = 3F)
             translateDevice(fakeRuntime, offsetTranslation)
 
             val offsetRotation = Quaternion.fromEulerAngles(pitch = 15F, yaw = 30F, roll = 45F)
             rotateDevice(fakeRuntime, offsetRotation)
 
-            assertThat(getSemanticsNodeWorldPose("FollowingSubspace").rotation)
+            assertThat(assertExistenceAndGetNodeWorldPose("FollowingSubspace").rotation)
                 .isEqualTo(fakeArDevice.devicePose.rotation)
-            assertThat(getSemanticsNodeWorldPose("FollowingSubspace").translation)
+            assertThat(assertExistenceAndGetNodeWorldPose("FollowingSubspace").translation)
                 .isEqualTo(headPanelInitialPose.translation)
         }
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenOnlyXRotationTracked_OnlyXRotationMatches() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             val fakeArDevice = fakeRuntime.perceptionManager.arDevice
 
             composeTestRule.setContent {
@@ -1415,15 +1537,16 @@ class SubspaceTest {
                 ) {}
             }
 
-            val headPanelInitialPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val headPanelInitialPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             val offsetTranslation = Vector3(x = 1F, y = 2F, z = 3F)
             translateDevice(fakeRuntime, offsetTranslation)
 
             val offsetRotation = Quaternion.fromEulerAngles(pitch = 15F, yaw = 30F, roll = 45F)
             rotateDevice(fakeRuntime, offsetRotation)
 
-            val currentTranslation = getSemanticsNodeWorldPose("FollowingSubspace").translation
-            val currentRotation = getSemanticsNodeWorldPose("FollowingSubspace").rotation
+            val currentTranslation =
+                assertExistenceAndGetNodeWorldPose("FollowingSubspace").translation
+            val currentRotation = assertExistenceAndGetNodeWorldPose("FollowingSubspace").rotation
             val deviceRotation = fakeArDevice.devicePose.rotation.eulerAngles
             val expectedRotation =
                 Quaternion.fromEulerAngles(pitch = deviceRotation.x, yaw = 0F, roll = 0F)
@@ -1437,11 +1560,16 @@ class SubspaceTest {
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenOnlyYRotationTracked_OnlyYRotationMatches() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             val fakeArDevice = fakeRuntime.perceptionManager.arDevice
 
             composeTestRule.setContent {
@@ -1453,15 +1581,16 @@ class SubspaceTest {
                 ) {}
             }
 
-            val headPanelInitialPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val headPanelInitialPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             val offsetTranslation = Vector3(x = 1F, y = 2F, z = 3F)
             translateDevice(fakeRuntime, offsetTranslation)
 
             val offsetRotation = Quaternion.fromEulerAngles(pitch = 15F, yaw = 30F, roll = 45F)
             rotateDevice(fakeRuntime, offsetRotation)
 
-            val currentTranslation = getSemanticsNodeWorldPose("FollowingSubspace").translation
-            val currentRotation = getSemanticsNodeWorldPose("FollowingSubspace").rotation
+            val currentTranslation =
+                assertExistenceAndGetNodeWorldPose("FollowingSubspace").translation
+            val currentRotation = assertExistenceAndGetNodeWorldPose("FollowingSubspace").rotation
             val deviceRotation = fakeArDevice.devicePose.rotation.eulerAngles
             val expectedRotation =
                 Quaternion.fromEulerAngles(pitch = 0F, yaw = deviceRotation.y, roll = 0F)
@@ -1475,11 +1604,16 @@ class SubspaceTest {
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenOnlyZRotationTracked_OnlyZRotationMatches() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             val fakeArDevice = fakeRuntime.perceptionManager.arDevice
 
             composeTestRule.setContent {
@@ -1491,15 +1625,16 @@ class SubspaceTest {
                 ) {}
             }
 
-            val headPanelInitialPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            val headPanelInitialPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             val offsetTranslation = Vector3(x = 1F, y = 2F, z = 3F)
             translateDevice(fakeRuntime, offsetTranslation)
 
             val offsetRotation = Quaternion.fromEulerAngles(pitch = 15F, yaw = 30F, roll = 45F)
             rotateDevice(fakeRuntime, offsetRotation)
 
-            val currentTranslation = getSemanticsNodeWorldPose("FollowingSubspace").translation
-            val currentRotation = getSemanticsNodeWorldPose("FollowingSubspace").rotation
+            val currentTranslation =
+                assertExistenceAndGetNodeWorldPose("FollowingSubspace").translation
+            val currentRotation = assertExistenceAndGetNodeWorldPose("FollowingSubspace").rotation
             val deviceRotation = fakeArDevice.devicePose.rotation.eulerAngles
             val expectedRotation =
                 Quaternion.fromEulerAngles(pitch = 0F, yaw = 0F, roll = deviceRotation.z)
@@ -1513,11 +1648,16 @@ class SubspaceTest {
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenTrackedDimensionsChange_MatchedDimensionsChange() =
         runTest(testDispatcher) {
             composeTestRule.session = configureSessionWithDeviceTracking()
             val session = assertNotNull(composeTestRule.session)
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             val fakeArDevice = fakeRuntime.perceptionManager.arDevice
             var trackedDimensions by mutableStateOf(TrackedDimensions(isTranslationXTracked = true))
 
@@ -1533,7 +1673,7 @@ class SubspaceTest {
 
             translateDevice(fakeRuntime, Vector3(x = 1F, y = 2F, z = 3F))
 
-            var subspaceCurrentPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            var subspaceCurrentPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             var expectedTranslation = Vector3(fakeArDevice.devicePose.translation.x, 0F, 0F)
             assertThat(subspaceCurrentPose.translation).isEqualTo(expectedTranslation)
 
@@ -1542,7 +1682,7 @@ class SubspaceTest {
             composeTestRule.waitForIdle()
             testDispatcher.scheduler.advanceUntilIdle()
 
-            subspaceCurrentPose = getSemanticsNodeWorldPose("FollowingSubspace")
+            subspaceCurrentPose = assertExistenceAndGetNodeWorldPose("FollowingSubspace")
             expectedTranslation += Vector3(0F, fakeArDevice.devicePose.translation.y, 0F)
             assertThat(subspaceCurrentPose.translation).isEqualTo(expectedTranslation)
         }
@@ -1758,7 +1898,7 @@ class SubspaceTest {
         }
 
         val anchorWorldPose = anchorEntity.getPose(Space.REAL_WORLD)
-        val panelWorldPose = getSemanticsNodeWorldPose("Panel")
+        val panelWorldPose = assertExistenceAndGetNodeWorldPose("Panel")
         assertThat(anchorWorldPose).isEqualTo(Pose(Vector3(20.0f, 30.0f, 40.0f)))
         assertThat(panelWorldPose).isEqualTo(Pose(Vector3(20.0f, 30.0f, 40.0f)))
 
@@ -1802,27 +1942,34 @@ class SubspaceTest {
             }
         }
 
-        assertThat(getSemanticsNodeWorldPose("Panel")).isEqualTo(initialPose)
+        assertThat(assertExistenceAndGetNodeWorldPose("Panel")).isEqualTo(initialPose)
         composeTestRule.onSubspaceNodeWithTag("Panel").assertPositionIsEqualTo(0.dp, 0.dp, 0.dp)
 
         currentAnchorState.value = updatedAnchorEntity
         composeTestRule.waitForIdle()
 
-        assertThat(getSemanticsNodeWorldPose("Panel")).isEqualTo(updatedPose)
+        assertThat(assertExistenceAndGetNodeWorldPose("Panel")).isEqualTo(updatedPose)
 
         composeTestRule.onSubspaceNodeWithTag("Panel").assertPositionIsEqualTo(0.dp, 0.dp, 0.dp)
     }
 
     @Test
     @OptIn(ExperimentalFollowingSubspaceApi::class)
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenAnchorPoseChanges_repositions() {
         runBlocking {
             composeTestRule.session = composeTestRule.configureFakeSession()
             val session = assertNotNull(composeTestRule.session)
             val initialPose = Pose(Vector3(10f, 20f, 30f), Quaternion(10f, 20f, 30f, 40f))
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             val fakePerceptionManager = fakeRuntime.perceptionManager
-            val runtimeAnchor = fakePerceptionManager.createAnchor(initialPose) as FakeRuntimeAnchor
+            val runtimeAnchor =
+                fakePerceptionManager.createAnchor(initialPose)
+                    as androidx.xr.arcore.testing.FakeRuntimeAnchor
             val anchorUnderTest = Anchor(runtimeAnchor)
             assertThat(anchorUnderTest.state.value.pose).isEqualTo(initialPose)
             val anchorEntity = AnchorEntity.create(session, anchor = anchorUnderTest)
@@ -1836,7 +1983,7 @@ class SubspaceTest {
                 }
             }
 
-            assertThat(getSemanticsNodeWorldPose("Panel")).isEqualTo(initialPose)
+            assertThat(assertExistenceAndGetNodeWorldPose("Panel")).isEqualTo(initialPose)
             composeTestRule.onSubspaceNodeWithTag("Panel").assertPositionIsEqualTo(0.dp, 0.dp, 0.dp)
 
             val updatedPose = Pose(Vector3(40f, 50f, 60f), Quaternion(15f, 25f, 35f, 45f))
@@ -1844,22 +1991,28 @@ class SubspaceTest {
             anchorUnderTest.update()
 
             assertThat(anchorUnderTest.state.value.pose).isEqualTo(updatedPose)
-            assertThat(getSemanticsNodeWorldPose("Panel")).isEqualTo(updatedPose)
+            assertThat(assertExistenceAndGetNodeWorldPose("Panel")).isEqualTo(updatedPose)
             composeTestRule.onSubspaceNodeWithTag("Panel").assertPositionIsEqualTo(0.dp, 0.dp, 0.dp)
         }
     }
 
     @Test
     @OptIn(ExperimentalFollowingSubspaceApi::class)
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenAnchorUsesSoftFollow_repositions() {
         runTest(testDispatcher) {
             composeTestRule.session = composeTestRule.configureFakeSession()
             val session = assertNotNull(composeTestRule.session)
             val initialAnchorPose = Pose(Vector3(10f, 20f, 30f), Quaternion(10f, 20f, 30f, 40f))
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             val fakePerceptionManager = fakeRuntime.perceptionManager
             val runtimeAnchor =
-                fakePerceptionManager.createAnchor(initialAnchorPose) as FakeRuntimeAnchor
+                fakePerceptionManager.createAnchor(initialAnchorPose)
+                    as androidx.xr.arcore.testing.FakeRuntimeAnchor
             val anchorUnderTest = Anchor(runtimeAnchor)
             assertThat(anchorUnderTest.state.value.pose).isEqualTo(initialAnchorPose)
             val anchorEntity = AnchorEntity.create(session, anchor = anchorUnderTest)
@@ -1880,8 +2033,8 @@ class SubspaceTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertThat(anchorUnderTest.state.value.pose).isEqualTo(updatedPose)
-            val currentTranslation = getSemanticsNodeWorldPose("Panel").translation
-            val currentRotation = getSemanticsNodeWorldPose("Panel").rotation
+            val currentTranslation = assertExistenceAndGetNodeWorldPose("Panel").translation
+            val currentRotation = assertExistenceAndGetNodeWorldPose("Panel").rotation
 
             assertThat(currentRotation.x).isWithin(1f).of(updatedPose.rotation.x)
             assertThat(currentRotation.y).isWithin(1f).of(updatedPose.rotation.y)
@@ -1893,14 +2046,21 @@ class SubspaceTest {
 
     @Test
     @OptIn(ExperimentalFollowingSubspaceApi::class)
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun followingSubspace_whenAnchorUsesStaticFollow_movesOnlyOnce() {
         runTest(testDispatcher) {
             composeTestRule.session = composeTestRule.configureFakeSession()
             val session = assertNotNull(composeTestRule.session)
             val initialPose = Pose(Vector3(10f, 20f, 30f), Quaternion(10f, 20f, 30f, 40f))
-            val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+            val fakeRuntime =
+                session.runtimes
+                    .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                    .first()
             val fakePerceptionManager = fakeRuntime.perceptionManager
-            val runtimeAnchor = fakePerceptionManager.createAnchor(initialPose) as FakeRuntimeAnchor
+            val runtimeAnchor =
+                fakePerceptionManager.createAnchor(initialPose)
+                    as androidx.xr.arcore.testing.FakeRuntimeAnchor
             val anchorUnderTest = Anchor(runtimeAnchor)
             assertThat(anchorUnderTest.state.value.pose).isEqualTo(initialPose)
             val anchorEntity = AnchorEntity.create(session, anchor = anchorUnderTest)
@@ -1916,12 +2076,12 @@ class SubspaceTest {
 
             // Verify the panel is not at its destination immediately but after waiting, it is
             // there.
-            assertThat(getSemanticsNodeWorldPose("Panel").translation)
+            assertThat(assertExistenceAndGetNodeWorldPose("Panel").translation)
                 .isNotEqualTo(initialPose.translation)
 
             testDispatcher.scheduler.advanceUntilIdle()
 
-            assertThat(getSemanticsNodeWorldPose("Panel").translation)
+            assertThat(assertExistenceAndGetNodeWorldPose("Panel").translation)
                 .isEqualTo(initialPose.translation)
 
             // Verify the panel doesn't move if pose changes again.
@@ -1933,14 +2093,9 @@ class SubspaceTest {
 
             composeTestRule.waitForIdle()
 
-            assertThat(getSemanticsNodeWorldPose("Panel").translation)
+            assertThat(assertExistenceAndGetNodeWorldPose("Panel").translation)
                 .isNotEqualTo(updatedPose.translation)
             composeTestRule.onSubspaceNodeWithTag("Panel").assertPositionIsEqualTo(0.dp, 0.dp, 0.dp)
         }
-    }
-
-    private fun getSemanticsNodeWorldPose(testTag: String): Pose {
-        val node = composeTestRule.onSubspaceNodeWithTag(testTag).fetchSemanticsNode()
-        return assertNotNull(node.semanticsEntity).getPose(relativeTo = Space.REAL_WORLD)
     }
 }

@@ -21,16 +21,22 @@ package androidx.tracing {
     method public abstract void onDroppedTraceEvent();
   }
 
+  @SuppressCompatibility @androidx.tracing.DelicateTracingApi public final class AttributeEntry {
+    method public void reset();
+    property public Long? longValue;
+    property public String? name;
+    property public String? stringValue;
+    field public Long? longValue;
+    field public String? name;
+    field public String? stringValue;
+  }
+
   public final class ClockSource_androidKt {
     method public static inline long nanoTime();
   }
 
   public final class CommonKt {
     method @kotlin.PublishedApi internal static long monotonicId();
-  }
-
-  public final class ContextElements_jvmAndAndroidKt {
-    method @kotlin.PublishedApi internal static <T extends androidx.tracing.Tracer> androidx.tracing.PlatformThreadContextElement<kotlin.Unit,T> buildThreadContextElement(T tracer, String category, String name, java.util.List<java.lang.Long> flowIds, kotlin.jvm.functions.Function1<? super kotlin.coroutines.CoroutineContext,kotlin.Unit> updateThreadContextBlock, kotlin.jvm.functions.Function1<? super kotlin.coroutines.CoroutineContext,kotlin.Unit> restoreThreadContextBlock, kotlin.jvm.functions.Function1<? super androidx.tracing.PlatformThreadContextElement<? extends java.lang.Object?,T>,kotlin.Unit> close);
   }
 
   public abstract class Counter {
@@ -105,26 +111,25 @@ package androidx.tracing {
     field public int type;
   }
 
-  public abstract class PlatformThreadContextElement<S, T extends androidx.tracing.Tracer> extends kotlin.coroutines.AbstractCoroutineContextElement implements java.lang.AutoCloseable androidx.tracing.PropagationToken {
+  public abstract class PlatformThreadContextElement extends kotlin.coroutines.AbstractCoroutineContextElement implements java.lang.AutoCloseable androidx.tracing.PropagationToken {
+    method public void close();
     method @SuppressCompatibility @androidx.tracing.DelicateTracingApi public kotlin.coroutines.CoroutineContext.Element? contextElementOrNull();
     method @InaccessibleFromKotlin public String getCategory();
     method @InaccessibleFromKotlin public java.util.List<java.lang.Long> getFlowIds();
     method @InaccessibleFromKotlin public String getName();
-    method @InaccessibleFromKotlin public T getTracer();
     method @InaccessibleFromKotlin public void setCategory(String);
     method @InaccessibleFromKotlin public void setName(String);
     property public String category;
     property public java.util.List<java.lang.Long> flowIds;
     property public String name;
-    property public T tracer;
     field @kotlin.PublishedApi internal static final androidx.tracing.PlatformThreadContextElement.Companion Companion;
-    field @kotlin.PublishedApi internal static final kotlin.coroutines.CoroutineContext.Key<androidx.tracing.PlatformThreadContextElement<? extends java.lang.Object?,? extends java.lang.Object?>> KEY;
+    field @kotlin.PublishedApi internal static final kotlin.coroutines.CoroutineContext.Key<androidx.tracing.PlatformThreadContextElement> KEY;
     field @kotlin.PublishedApi internal static final int STATE_BEGIN = 1; // 0x1
     field @kotlin.PublishedApi internal static final int STATE_END = 0; // 0x0
   }
 
   @kotlin.PublishedApi internal static final class PlatformThreadContextElement.Companion {
-    property @kotlin.PublishedApi internal kotlin.coroutines.CoroutineContext.Key<androidx.tracing.PlatformThreadContextElement<? extends java.lang.Object?,? extends java.lang.Object?>> KEY;
+    property @kotlin.PublishedApi internal kotlin.coroutines.CoroutineContext.Key<androidx.tracing.PlatformThreadContextElement> KEY;
     property @kotlin.PublishedApi internal static int STATE_BEGIN;
     property @kotlin.PublishedApi internal static int STATE_END;
   }
@@ -169,6 +174,12 @@ package androidx.tracing {
     field public static final androidx.tracing.Trace INSTANCE;
   }
 
+  public abstract class TraceAttributes {
+    method public abstract void addAttribute(String name, String value);
+    method public abstract void addAttribute(String name, long value);
+    method @SuppressCompatibility @androidx.tracing.DelicateTracingApi public abstract void dispatchToTraceSink();
+  }
+
   @SuppressCompatibility @androidx.tracing.DelicateTracingApi public final class TraceEvent {
     ctor public TraceEvent();
     method public void copyFrom(androidx.tracing.TraceEvent src);
@@ -179,6 +190,7 @@ package androidx.tracing {
     method @kotlin.PublishedApi internal inline void setCounterLong(long trackUuid, long value);
     method @kotlin.PublishedApi internal inline void setEndSection(long trackUuid);
     method @kotlin.PublishedApi internal inline void setInstant(long trackUuid, String name);
+    property public java.util.List<androidx.tracing.AttributeEntry> attributes;
     property public java.util.List<java.lang.String> categories;
     property public Long? correlationId;
     property public String? correlationIdString;
@@ -186,6 +198,7 @@ package androidx.tracing {
     property public Long? counterLongValue;
     property public java.util.List<java.lang.Long> flowIds;
     property public java.util.List<androidx.tracing.Frame> frames;
+    property public int lastAttributeIndex;
     property public int lastCategoryIndex;
     property public int lastFrameIndex;
     property public int lastMetadataEntryIndex;
@@ -196,6 +209,7 @@ package androidx.tracing {
     property public androidx.tracing.TrackDescriptor? trackDescriptor;
     property public long trackUuid;
     property public int type;
+    field public java.util.List<androidx.tracing.AttributeEntry> attributes;
     field public java.util.List<java.lang.String> categories;
     field public Long? correlationId;
     field public String? correlationIdString;
@@ -203,6 +217,7 @@ package androidx.tracing {
     field public Long? counterLongValue;
     field public java.util.List<java.lang.Long> flowIds;
     field public java.util.List<androidx.tracing.Frame> frames;
+    field public int lastAttributeIndex;
     field public int lastCategoryIndex;
     field public int lastFrameIndex;
     field public int lastMetadataEntryIndex;

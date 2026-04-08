@@ -35,7 +35,6 @@ import androidx.room3.integration.kotlintestapp.vo.Hivemind
 import androidx.room3.integration.kotlintestapp.vo.Robot
 import androidx.room3.withWriteTransaction
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import java.nio.ByteBuffer
@@ -179,10 +178,7 @@ class PoKoTest {
 
     @Before
     fun setup() {
-        db =
-            Room.inMemoryDatabaseBuilder<PokoDatabase>(ApplicationProvider.getApplicationContext())
-                .setDriver(AndroidSQLiteDriver())
-                .build()
+        db = Room.inMemoryDatabaseBuilder<PokoDatabase>().setDriver(AndroidSQLiteDriver()).build()
         dao = db.dao()
     }
 

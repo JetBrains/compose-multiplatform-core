@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.xr.runtime
 
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.testing.FakeLifecycleManager
-import androidx.xr.arcore.testing.FakePerceptionRuntime
+import androidx.xr.runtime.testing.XrDeviceTestRule
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -33,8 +34,8 @@ import org.robolectric.android.controller.ActivityController
 @RunWith(AndroidJUnit4::class)
 @Suppress("deprecation")
 class XrDeviceTest {
+    @Rule @JvmField val xrDeviceTestRule = XrDeviceTestRule()
 
-    private lateinit var session: Session
     private lateinit var activityController: ActivityController<ComponentActivity>
     private lateinit var activity: ComponentActivity
     private lateinit var testDispatcher: TestDispatcher
@@ -46,22 +47,9 @@ class XrDeviceTest {
         activity = activityController.get()
 
         val shadowApplication = shadowOf(activity.application)
-        FakeLifecycleManager.TestPermissions.forEach { permission ->
+        StubPerceptionRuntime.TestPermissions.forEach { permission ->
             shadowApplication.grantPermissions(permission)
         }
-    }
-
-    @Test
-    fun getPreferredDisplayBlendMode_returnsGivenDisplayBlendMode() {
-        activityController.create()
-        session = createSession()
-        session.runtimes
-            .filterIsInstance<FakePerceptionRuntime>()
-            .single()
-            .xrDevicePreferredDisplayBlendMode = DisplayBlendMode.ADDITIVE
-
-        assertThat(XrDevice.getCurrentDevice(session).getPreferredDisplayBlendMode())
-            .isEqualTo(DisplayBlendMode.ADDITIVE)
     }
 
     @OptIn(ExperimentalXrDeviceLifecycleApi::class)

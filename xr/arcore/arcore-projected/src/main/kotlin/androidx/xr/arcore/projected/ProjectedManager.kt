@@ -23,12 +23,12 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.IBinder
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Geospatial
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.GeospatialMode
-import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.Pose
@@ -55,8 +55,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * @property config the current [Config] of the session
  */
 @Suppress("NotCloseable")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class ProjectedManager
+internal class ProjectedManager
 internal constructor(
     private val context: Context,
     internal val perceptionManager: ProjectedPerceptionManager,
@@ -97,6 +96,7 @@ internal constructor(
         }
     }
 
+    @OptIn(PreviewSpatialApi::class)
     private fun serviceRequired(config: Config): Boolean {
         // The service is required if tracking or geospatial are enabled.
         // I.E. if no features are needed from the service we don't require it.
@@ -190,6 +190,7 @@ internal constructor(
         disconnect()
     }
 
+    @OptIn(PreviewSpatialApi::class)
     private fun startServiceInternal(config: Config) {
         val service = perceptionManager.xrResources.service ?: return
         val serviceConfig = ProjectedConfig()

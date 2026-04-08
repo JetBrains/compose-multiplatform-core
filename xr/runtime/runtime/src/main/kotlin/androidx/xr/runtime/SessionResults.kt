@@ -53,13 +53,19 @@ public class SessionCreateUnknownError(public val errorMessage: String) : Sessio
  * Result of an unsuccessful [Session.create] call. The session was not created because the request
  * timed out.
  */
-public class SessionCreateTimedOut() : SessionCreateResult()
+public class SessionCreateTimedOut : SessionCreateResult()
+
+/**
+ * An unused result type to prevent exhaustive when clauses and force developers to provide an
+ * "else" condition.
+ */
+private class SessionCreateUnusedResult : SessionCreateResult()
 
 /** Result of a [Session.configure] call. */
 public sealed class SessionConfigureResult
 
 /** Result of a successful [Session.configure] call. */
-public class SessionConfigureSuccess() : SessionConfigureResult()
+public class SessionConfigureSuccess : SessionConfigureResult()
 
 /**
  * Result of an unsuccessful [Session.configure] call. The Google Play Service Location Library is
@@ -99,3 +105,9 @@ public class SessionConfigureUnknownError(public val errorMessage: String) :
 public class SessionConfigureCalibrationRequired(
     public val calibrationType: RequiredCalibrationType
 ) : SessionConfigureResult()
+
+/**
+ * An unused result type for Session configuration to prevent exhaustive when clauses and force
+ * developers to provide an "else" condition.
+ */
+private class SessionConfigureUnusedResult : SessionConfigureResult()

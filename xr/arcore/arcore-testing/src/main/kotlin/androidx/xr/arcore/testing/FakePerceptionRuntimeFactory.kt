@@ -18,13 +18,17 @@ package androidx.xr.arcore.testing
 
 import android.content.Context
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.interfaces.Feature
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
 /** Factory for creating a [FakePerceptionRuntime] for testing purposes. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
 public class FakePerceptionRuntimeFactory() : PerceptionRuntimeFactory {
     public companion object {
         /** Will be passed to the [FakeLifecycleManager] constructor during testing. */
@@ -40,12 +44,15 @@ public class FakePerceptionRuntimeFactory() : PerceptionRuntimeFactory {
          * call to succeed.
          */
         public var lifecycleCreateException: Exception? = null
+
+        internal var createNewFakeRuntime: Boolean = false
     }
 
     override val requirements: Set<Feature> = emptySet()
 
     // TODO b/438853896 - migrate all tests to use the coroutine context
-    public fun createRuntime(context: Context): FakePerceptionRuntime =
+    @Suppress("DEPRECATION")
+    public fun createRuntime(context: Context): PerceptionRuntime =
         createRuntime(context, EmptyCoroutineContext)
 
     /**
@@ -54,9 +61,19 @@ public class FakePerceptionRuntimeFactory() : PerceptionRuntimeFactory {
      * @param context The host [Context].
      * @param coroutineContext The [CoroutineContext] for the runtime to use during testing.
      */
+    @Suppress("DEPRECATION")
     override fun createRuntime(
         context: Context,
         coroutineContext: CoroutineContext,
-    ): FakePerceptionRuntime =
-        FakePerceptionRuntime(FakeLifecycleManager(hasCreatePermission), FakePerceptionManager())
+    ): PerceptionRuntime =
+        if (createNewFakeRuntime) {
+            androidx.xr.arcore.testing.internal
+                .FakePerceptionRuntimeFactory()
+                .createRuntime(context, coroutineContext)
+        } else {
+            FakePerceptionRuntime(
+                FakeLifecycleManager(hasCreatePermission),
+                FakePerceptionManager(),
+            )
+        }
 }

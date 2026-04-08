@@ -16,7 +16,6 @@
 
 package androidx.room3.compiler.processing.ksp
 
-import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeArgument
 import com.google.devtools.ksp.symbol.KSTypeParameter
@@ -31,18 +30,9 @@ internal open class KspTypeArgumentType
 private constructor(
     env: KspProcessingEnv,
     val typeArg: KSTypeArgument,
-    originalKSAnnotations: Sequence<KSAnnotation> = typeArg.annotations,
     scope: KSTypeVarianceResolverScope? = null,
-    typeAlias: KSType? = null,
     ksType: KSType = typeArg.requireType(),
-) :
-    KspType(
-        env = env,
-        ksType = ksType,
-        originalKSAnnotations = originalKSAnnotations,
-        scope = scope,
-        typeAlias = typeAlias,
-    ) {
+) : KspType(env, ksType, scope) {
     /**
      * When KSP resolves classes, it always resolves to the upper bound. Hence, the ksType we pass
      * to super is actually our extendsBound. Note that an unbound type argument will resolve to
@@ -67,19 +57,11 @@ private constructor(
 
     override fun boxed() = this
 
-    override fun copy(
-        env: KspProcessingEnv,
-        ksType: KSType,
-        originalKSAnnotations: Sequence<KSAnnotation>,
-        scope: KSTypeVarianceResolverScope?,
-        typeAlias: KSType?,
-    ) =
+    override fun copy(env: KspProcessingEnv, ksType: KSType, scope: KSTypeVarianceResolverScope?) =
         KspTypeArgumentType(
             env = env,
             typeArg = DelegatingTypeArg(typeArg, type = ksType.createTypeReference()),
-            originalKSAnnotations,
             scope = scope,
-            typeAlias = typeAlias,
         )
 
     internal class DelegatingTypeArg(

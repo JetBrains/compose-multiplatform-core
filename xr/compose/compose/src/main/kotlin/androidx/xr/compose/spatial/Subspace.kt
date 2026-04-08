@@ -308,9 +308,9 @@ public fun PlanarEmbeddedSubspace(
                     }
                 val measuredContentVolume =
                     IntVolumeSize(
-                            width = placeables.maxOf { it.measuredWidth },
-                            height = placeables.maxOf { it.measuredHeight },
-                            depth = placeables.maxOf { it.measuredDepth },
+                            width = placeables.maxOf { it.width },
+                            height = placeables.maxOf { it.height },
+                            depth = placeables.maxOf { it.depth },
                         )
                         .apply { subspaceContentPixelSize = IntSize(width, height) }
                 layout(
@@ -459,7 +459,7 @@ public fun FollowingSubspace(
             }
         }
         val subspaceRootNode by remember {
-            disposableValueOf(CoreGroupEntity(subspaceRoot).apply { enabled = true }) {
+            disposableValueOf(CoreGroupEntity(subspaceRoot).apply { enabled = false }) {
                 it.dispose()
             }
         }

@@ -111,6 +111,7 @@ import androidx.compose.remote.core.operations.layout.ImpulseOperation;
 import androidx.compose.remote.core.operations.layout.ImpulseProcess;
 import androidx.compose.remote.core.operations.layout.LayoutComponentContent;
 import androidx.compose.remote.core.operations.layout.LoopOperation;
+import androidx.compose.remote.core.operations.layout.MultiClickModifier;
 import androidx.compose.remote.core.operations.layout.RootLayoutComponent;
 import androidx.compose.remote.core.operations.layout.TouchCancelModifierOperation;
 import androidx.compose.remote.core.operations.layout.TouchDownModifierOperation;
@@ -134,6 +135,7 @@ import androidx.compose.remote.core.operations.layout.modifiers.BorderModifierOp
 import androidx.compose.remote.core.operations.layout.modifiers.ClipRectModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.CollapsiblePriorityModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ComponentVisibilityOperation;
+import androidx.compose.remote.core.operations.layout.modifiers.DimensionConstraintsModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.DrawContentOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.GraphicsLayerModifierOperation;
@@ -1581,6 +1583,11 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
     }
 
     @Override
+    public void addDimensionConstraintsModifierOperation(int type, float min, float max) {
+        addOperation(new DimensionConstraintsModifierOperation(type, min, max));
+    }
+
+    @Override
     public void addDrawContentOperation() {
         addOperation(new DrawContentOperation());
     }
@@ -1613,6 +1620,15 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
                         mode,
                         enabled,
                         clickable));
+    }
+
+    /**
+     * Add a click modifier operation
+     * @param clickType type of click (0=single, 1=long, 2=double)
+     */
+    @Override
+    public void addClickModifierOperation(int clickType) {
+        addOperation(new MultiClickModifier(clickType));
     }
 
     @Override

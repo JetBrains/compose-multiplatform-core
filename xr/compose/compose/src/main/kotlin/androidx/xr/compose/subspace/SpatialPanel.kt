@@ -779,6 +779,7 @@ public fun SpatialActivityPanel(
                                         corePanelEntity.size.run { IntSize2d(width, height) },
                                     name = entityName,
                                     pose = Pose.Identity,
+                                    parent = null,
                                 )
                             )
                             .apply {
@@ -884,10 +885,12 @@ internal fun buildSpatialPanelModifier(
                 minimumSize = resizePolicy.minimumSize,
                 maximumSize = resizePolicy.maximumSize,
                 maintainAspectRatio = resizePolicy.shouldMaintainAspectRatio,
-                onResizeStart = resizePolicy.onResizeStart,
-                onResizeUpdate = resizePolicy.onResizeUpdate,
-                onResizeEnd = resizePolicy.onResizeEnd,
-                onSizeChange = resizePolicy.onSizeChange,
+                onResizeStart = resizePolicy.onResizeStart ?: {},
+                onResizeUpdate = resizePolicy.onResizeUpdate ?: {},
+                onResizeEnd = { size ->
+                    resizePolicy.onResizeEnd?.let { it(size) }
+                    resizePolicy.onSizeChange?.let { it(size) } == true
+                },
             )
     }
 
@@ -895,7 +898,7 @@ internal fun buildSpatialPanelModifier(
         finalModifier =
             finalModifier.interactable(
                 enabled = interactionPolicy.isEnabled,
-                onInputEvent = interactionPolicy.onInputEvent,
+                onInputEvent = { interactionPolicy.onInputEvent(it) },
             )
     }
 

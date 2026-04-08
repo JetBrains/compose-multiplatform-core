@@ -76,7 +76,7 @@ import kotlinx.coroutines.withTimeout
 @OpenForTesting
 internal open class FakePdfDocument(
     /** A list of (x, y) page dimensions in content coordinates */
-    internal val pages: List<Point?> = listOf(),
+    internal val pages: List<Point?> = listOf(Point(600, 800)),
     override val formType: Int = PDF_FORM_TYPE_NONE,
     override val linearizationStatus: Int = LINEARIZATION_STATUS_UNKNOWN,
     override val renderParams: RenderParams = RenderParams(RenderParams.RENDER_MODE_FOR_DISPLAY),
@@ -156,6 +156,7 @@ internal open class FakePdfDocument(
     }
 
     override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
+        if (exceptionToThrow != null) throw exceptionToThrow
         return annotationsPerPage.getOrDefault(pageNum, emptyList())
     }
 
@@ -216,6 +217,7 @@ internal open class FakePdfDocument(
         query: String,
         pageRange: IntRange,
     ): SparseArray<List<PageMatchBounds>> {
+        if (exceptionToThrow != null) throw exceptionToThrow
         return searchResults
     }
 
@@ -235,6 +237,7 @@ internal open class FakePdfDocument(
     }
 
     override suspend fun getPageInfo(pageNumber: Int, pageInfoFlags: Long): PdfDocument.PageInfo {
+        if (exceptionToThrow != null) throw exceptionToThrow
         layoutReach = maxOf(pageNumber, layoutReach)
         val size = pages[pageNumber]
         if (size == null) {

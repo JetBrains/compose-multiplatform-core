@@ -16,11 +16,16 @@
 
 package androidx.xr.arcore.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Eye
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
 /** Fake implementation of [Eye] for testing purposes. */
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class FakeRuntimeEye : Eye {
     override var isOpen: Boolean = true
 

@@ -55,6 +55,7 @@ import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.DisplayBlendMode
+import androidx.xr.runtime.ExperimentalXrDeviceLifecycleApi
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
@@ -104,14 +105,17 @@ class HelloArPlaneActivity : ComponentActivity() {
         sessionHelper.tryCreateSession()
     }
 
+    @OptIn(ExperimentalXrDeviceLifecycleApi::class)
     @Composable
     @Suppress("deprecation")
     fun HelloPlanes(session: Session) {
         val state by session.state.collectAsStateWithLifecycle()
         val perceptionState = state.perceptionState
+        val arDevice = androidx.xr.arcore.ArDevice.getInstance(session)
+        val arDeviceState by arDevice.state.collectAsStateWithLifecycle()
         var title = intent.getStringExtra("TITLE")
         if (title == null) title = "Hello AR Plane"
-        val blendMode = XrDevice.getCurrentDevice(session).getPreferredDisplayBlendMode()
+        val blendMode = XrDevice.getCurrentDevice(applicationContext).getPreferredDisplayBlendMode()
         val isGeospatialSupported = session.runtimes.first().isSupported(GeospatialMode.VPS_AND_GPS)
         Scaffold(
             modifier = Modifier.fillMaxSize().padding(0.dp),
@@ -144,6 +148,20 @@ class HelloArPlaneActivity : ComponentActivity() {
                     Text(
                         modifier = Modifier.padding(start = 10.dp).weight(3f),
                         text = "${state.timeMark}",
+                        fontSize = 20.sp,
+                    )
+                }
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        modifier = Modifier.padding(start = 10.dp).weight(1f),
+                        text = "Tracking State:",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = 10.dp).weight(3f),
+                        text = "${arDeviceState.trackingState}",
                         fontSize = 20.sp,
                     )
                 }

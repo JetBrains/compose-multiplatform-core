@@ -195,6 +195,7 @@ package androidx.camera.core {
     method public float getAlpha();
     method public androidx.core.util.Pair<java.lang.Float!,java.lang.Float!> getOffset();
     method public androidx.core.util.Pair<java.lang.Float!,java.lang.Float!> getScale();
+    method public int getZOrder();
     field public static final androidx.camera.core.CompositionSettings DEFAULT;
   }
 
@@ -204,11 +205,13 @@ package androidx.camera.core {
     method public androidx.camera.core.CompositionSettings.Builder setAlpha(@FloatRange(from=0, to=1) float);
     method public androidx.camera.core.CompositionSettings.Builder setOffset(@FloatRange(from=0xffffffff, to=1) float, @FloatRange(from=0xffffffff, to=1) float);
     method public androidx.camera.core.CompositionSettings.Builder setScale(float, float);
+    method public androidx.camera.core.CompositionSettings.Builder setZOrder(int);
   }
 
   public class ConcurrentCamera {
     ctor public ConcurrentCamera(java.util.List<androidx.camera.core.Camera!>);
     method public java.util.List<androidx.camera.core.Camera!> getCameras();
+    method public void setCompositionSettings(java.util.List<androidx.camera.core.CompositionSettings!>);
   }
 
   public static final class ConcurrentCamera.SingleCameraConfig {
@@ -291,6 +294,7 @@ package androidx.camera.core {
 
   public final class FocusMeteringAction {
     method public long getAutoCancelDurationInMillis();
+    method public int getLockingMode();
     method public java.util.List<androidx.camera.core.MeteringPoint!> getMeteringPointsAe();
     method public java.util.List<androidx.camera.core.MeteringPoint!> getMeteringPointsAf();
     method public java.util.List<androidx.camera.core.MeteringPoint!> getMeteringPointsAwb();
@@ -308,6 +312,7 @@ package androidx.camera.core {
     method public androidx.camera.core.FocusMeteringAction build();
     method public androidx.camera.core.FocusMeteringAction.Builder disableAutoCancel();
     method public androidx.camera.core.FocusMeteringAction.Builder setAutoCancelDuration(@IntRange(from=1) long, java.util.concurrent.TimeUnit);
+    method public androidx.camera.core.FocusMeteringAction.Builder setLockingMode(int);
   }
 
   public final class FocusMeteringResult {
@@ -650,13 +655,14 @@ package androidx.camera.core {
 
   public class SessionConfig {
     ctor public SessionConfig(androidx.camera.core.UseCase... useCases);
-    ctor @BytecodeOnly public SessionConfig(java.util.List!, androidx.camera.core.ViewPort!, java.util.List!, android.util.Range!, java.util.Set!, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public SessionConfig(java.util.List!, androidx.camera.core.ViewPort!, java.util.List!, android.util.Range!, java.util.Set!, java.util.List!, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange, optional java.util.Set<? extends androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange, optional java.util.Set<? extends androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup, optional java.util.List<? extends androidx.camera.core.featuregroup.GroupableFeature> preferredFeatureGroup);
+    ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange, optional java.util.Set<? extends androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup, optional java.util.List<? extends androidx.camera.core.featuregroup.GroupableFeature> preferredFeatureGroup, optional boolean isAutoRotationEnabled);
     method @InaccessibleFromKotlin public final java.util.List<androidx.camera.core.CameraEffect> getEffects();
     method @InaccessibleFromKotlin public final androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> getFeatureSelectionListener();
     method @InaccessibleFromKotlin public final java.util.concurrent.Executor getFeatureSelectionListenerExecutor();
@@ -665,6 +671,7 @@ package androidx.camera.core {
     method @InaccessibleFromKotlin public final java.util.Set<androidx.camera.core.featuregroup.GroupableFeature> getRequiredFeatureGroup();
     method @InaccessibleFromKotlin public final java.util.List<androidx.camera.core.UseCase> getUseCases();
     method @InaccessibleFromKotlin public final androidx.camera.core.ViewPort? getViewPort();
+    method @InaccessibleFromKotlin public final boolean isAutoRotationEnabled();
     method public final void setFeatureSelectionListener(androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> listener);
     method public final void setFeatureSelectionListener(optional java.util.concurrent.Executor executor, androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> listener);
     method @BytecodeOnly public static void setFeatureSelectionListener$default(androidx.camera.core.SessionConfig!, java.util.concurrent.Executor!, androidx.core.util.Consumer!, int, Object!);
@@ -672,6 +679,7 @@ package androidx.camera.core {
     property public final androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> featureSelectionListener;
     property public final java.util.concurrent.Executor featureSelectionListenerExecutor;
     property public final android.util.Range<java.lang.Integer> frameRateRange;
+    property public final boolean isAutoRotationEnabled;
     property public final java.util.List<androidx.camera.core.featuregroup.GroupableFeature> preferredFeatureGroup;
     property public final java.util.Set<androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup;
     property public final java.util.List<androidx.camera.core.UseCase> useCases;
@@ -683,6 +691,7 @@ package androidx.camera.core {
     ctor public SessionConfig.Builder(java.util.List<? extends androidx.camera.core.UseCase> useCases);
     method public androidx.camera.core.SessionConfig.Builder addEffect(androidx.camera.core.CameraEffect effect);
     method public androidx.camera.core.SessionConfig build();
+    method public androidx.camera.core.SessionConfig.Builder setAutoRotationEnabled(boolean autoRotationEnabled);
     method public androidx.camera.core.SessionConfig.Builder setFrameRateRange(android.util.Range<java.lang.Integer> frameRateRange);
     method public androidx.camera.core.SessionConfig.Builder setPreferredFeatureGroup(androidx.camera.core.featuregroup.GroupableFeature... features);
     method public androidx.camera.core.SessionConfig.Builder setRequiredFeatureGroup(androidx.camera.core.featuregroup.GroupableFeature... features);

@@ -22,7 +22,6 @@ import androidx.xr.arcore.runtime.Face as RuntimeFace
 import androidx.xr.arcore.runtime.Mesh
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -171,7 +170,7 @@ internal constructor(
     /**
      * The representation of the current state of [Face].
      *
-     * @property trackingState the current [TrackingState] of the face.
+     * @property trackingState the current [androidx.xr.runtime.TrackingState] of the face.
      * @property centerPose the pose at the center of the face, defined to have the origin located
      *   behind the nose and between the two cheek bones
      *
@@ -281,7 +280,7 @@ internal constructor(
         if (!runtimeFace.isValid) return
         _state.emit(
             State(
-                runtimeFace.trackingState,
+                runtimeFace.trackingState.toTrackingState(),
                 runtimeFace.centerPose,
                 runtimeFace.mesh,
                 runtimeFace.blendShapeValues,

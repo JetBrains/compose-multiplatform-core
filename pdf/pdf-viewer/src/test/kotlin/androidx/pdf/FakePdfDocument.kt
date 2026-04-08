@@ -53,7 +53,7 @@ import kotlinx.coroutines.withTimeout
 /** Fake implementation of [PdfDocument], for testing. */
 @OpenForTesting
 internal open class FakePdfDocument(
-    internal val pages: List<Point?> = listOf(),
+    internal val pages: List<Point?> = listOf(Point(600, 800)),
     override val formType: Int = PDF_FORM_TYPE_NONE,
     @Deprecated(
         "Deprecated, Use linearizationStatus instead",
@@ -68,6 +68,7 @@ internal open class FakePdfDocument(
     private val pageFormWidgetInfos: Map<Int, List<FormWidgetInfo>> = mapOf(),
     private val annotationsPerPage: Map<Int, List<KeyedPdfAnnotation>> = mapOf(),
     override val linearizationStatus: Int = LINEARIZATION_STATUS_UNKNOWN,
+    private val exceptionToThrow: Exception? = null,
 ) : PdfDocument {
     override val pageCount: Int = pages.size
 
@@ -133,6 +134,7 @@ internal open class FakePdfDocument(
     }
 
     override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
+        if (exceptionToThrow != null) throw exceptionToThrow
         return annotationsPerPage.getOrDefault(pageNum, emptyList())
     }
 

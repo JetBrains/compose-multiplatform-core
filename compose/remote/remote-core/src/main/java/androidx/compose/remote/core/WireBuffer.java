@@ -508,6 +508,7 @@ public class WireBuffer {
      *     Any operation code not in this set will be considered invalid.
      */
     public void setValidOperations(@NonNull Set<Integer> supportedOperations) {
+        Arrays.fill(mValidOperations, false);
         for (Integer o : supportedOperations) {
             mValidOperations[o] = true;
         }

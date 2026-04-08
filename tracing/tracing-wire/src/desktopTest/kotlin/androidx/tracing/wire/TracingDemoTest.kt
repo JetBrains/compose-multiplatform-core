@@ -39,7 +39,11 @@ class TracingDemoTest {
     // Tracks the number of batches completed
     @Volatile internal var count = 0L
     internal val driver =
-        TraceDriver(sink = TraceSink(sequenceId = 1, directory = File("/tmp")), isEnabled = true)
+        TraceDriver(
+            sink = TraceSink(sequenceId = 1, directory = File("/tmp")),
+            isEnabled = true,
+            attributes = { addAttribute("java_version", "${Runtime.version()}") },
+        )
     internal val tracer = driver.tracer
     internal val counter = tracer.counter(category = "Counters", name = "Batches Completed")
 

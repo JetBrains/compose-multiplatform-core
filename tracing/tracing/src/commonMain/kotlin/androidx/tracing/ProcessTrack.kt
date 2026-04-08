@@ -93,10 +93,7 @@ public open class ProcessTrack(
             l1 != null && l1.id == id -> l1
             l2 != null && l2.id == id -> l2
             else -> {
-                var track = threads[id]
-                if (track == null) {
-                    track = getOrCreateThreadTrack(id = id, name = current.name)
-                }
+                val track = getOrCreateThreadTrack(id = id, name = current.name)
                 l2ThreadTrack = l1ThreadTrack
                 l1ThreadTrack = track
                 track

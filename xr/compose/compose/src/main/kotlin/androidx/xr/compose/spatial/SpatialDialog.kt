@@ -67,6 +67,7 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.scene
 
 /**
  * Properties for configuring a [SpatialDialog].
@@ -301,6 +302,7 @@ private class SpatialDialogRenderer(
                         view = view,
                         pixelDimensions = IntSize2d(IntSize.Zero.width, IntSize.Zero.height),
                         name = "ElevatedPanel:${view.id}",
+                        parent = session.scene.activitySpace,
                     )
                 )
                 .apply {

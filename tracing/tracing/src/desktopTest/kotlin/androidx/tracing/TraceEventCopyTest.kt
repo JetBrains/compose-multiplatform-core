@@ -19,6 +19,7 @@ package androidx.tracing
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class TraceEventCopyTest {
     @Test
@@ -144,5 +145,25 @@ class TraceEventCopyTest {
         assertEquals(0, dest.lastFrameIndex)
         assertNull(dest.frames[1].name, "Frame name not cleared")
         assertNull(dest.frames[1].sourceFile, "Frame sourceFile not cleared")
+    }
+
+    @Test
+    fun testCopyTraceAttributes() {
+        val scope = TraceAttributesImpl()
+        val source = TraceEvent()
+        scope.event = source
+        repeat(6) { scope.addAttribute("src-$it", it.toLong()) }
+        val dest = TraceEvent()
+        scope.event = dest
+        repeat(10) { scope.addAttribute("dest-$it", it.toLong()) }
+        dest.copyFrom(source)
+        assertEquals(dest.lastAttributeIndex, 5)
+        repeat(dest.lastAttributeIndex + 1) {
+            val key = dest.attributes[it].name!!
+            assertTrue(key.startsWith("src"))
+        }
+        dest.reset()
+        assertEquals(dest.lastAttributeIndex, LAST_INDEX_WHEN_EMPTY)
+        assertEquals(dest.attributes.size, ATTRIBUTES_EXPECTED_SIZE)
     }
 }

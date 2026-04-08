@@ -30,6 +30,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteRowScope
 import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clickable
+import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.drawWithContent
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.height
@@ -120,7 +121,7 @@ public fun RemoteButton(
         borderColor = borderColor,
         shape = shape,
         contentPadding = contentPadding,
-        labelFont = LocalRemoteTypography.current.labelMedium,
+        labelFont = RemoteMaterialTheme.typography.labelMedium,
         containerPainter = null,
         disabledContainerPainter = null,
         content = content,
@@ -182,7 +183,7 @@ public fun RemoteButton(
         contentPadding = contentPadding,
         border = border,
         borderColor = borderColor,
-        labelFont = LocalRemoteTypography.current.labelMedium,
+        labelFont = RemoteMaterialTheme.typography.labelMedium,
         content = content,
     )
 }
@@ -280,7 +281,7 @@ public fun RemoteButton(
         icon = icon,
         enabled = enabled,
         shape = shape,
-        labelFont = LocalRemoteTypography.current.labelMedium,
+        labelFont = RemoteMaterialTheme.typography.labelMedium,
         containerPainter = containerPainter,
         disabledContainerPainter = disabledContainerPainter,
         colors = colors,
@@ -290,7 +291,7 @@ public fun RemoteButton(
         labelContent =
             provideScopeContent(
                 contentColor = colors.contentColor(enabled),
-                textStyle = LocalRemoteTypography.current.labelMedium,
+                textStyle = RemoteMaterialTheme.typography.labelMedium,
                 textConfiguration =
                     TextConfiguration(
                         textAlign =
@@ -378,7 +379,9 @@ public fun RemoteCompactButton(
                 .semantics(mergeDescendants = true) { role = Role.Button }
                 .compactButtonModifier()
                 .padding(tapPadding)
-                .clickable(onClick, enabled = enabled.constantValueOrNull ?: false)
+                .clip(shape = shape)
+                .clickable(onClick, enabled = enabled.constantValueOrNull ?: false),
+        contentAlignment = RemoteAlignment.Center,
     ) {
         if (label != null) {
             RemoteButtonImpl(
@@ -387,7 +390,7 @@ public fun RemoteCompactButton(
                 icon = icon,
                 enabled = enabled,
                 shape = shape,
-                labelFont = LocalRemoteTypography.current.labelSmall,
+                labelFont = RemoteMaterialTheme.typography.labelSmall,
                 containerPainter = null,
                 disabledContainerPainter = null,
                 colors = colors,
@@ -397,10 +400,10 @@ public fun RemoteCompactButton(
                 labelContent =
                     provideScopeContent(
                         contentColor = colors.contentColor(enabled),
-                        textStyle = LocalRemoteTypography.current.labelSmall,
+                        textStyle = RemoteMaterialTheme.typography.labelSmall,
                         textConfiguration =
                             TextConfiguration(
-                                textAlign = if (icon != null) TextAlign.Start else TextAlign.Center,
+                                textAlign = TextAlign.Start,
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 3,
                             ),
@@ -417,7 +420,7 @@ public fun RemoteCompactButton(
                         .width(RemoteButtonDefaults.IconOnlyCompactButtonWidth),
                 enabled = enabled,
                 shape = shape,
-                labelFont = LocalRemoteTypography.current.labelSmall,
+                labelFont = RemoteMaterialTheme.typography.labelSmall,
                 containerPainter = null,
                 disabledContainerPainter = null,
                 colors = colors,
@@ -459,8 +462,9 @@ private fun RemoteButtonImpl(
     content: @Composable @RemoteComposable RemoteRowScope.() -> Unit,
 ) {
     val containerModifier =
-        RemoteModifier.clickable(
-                actions = buildList { onClick?.let { add(it) } },
+        RemoteModifier.clip(shape = shape)
+            .clickable(
+                action = onClick,
                 enabled = enabled.constantValueOrNull ?: false && onClick != null,
             )
             .padding(contentPadding)

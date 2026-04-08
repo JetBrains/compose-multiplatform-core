@@ -49,6 +49,11 @@ public final class SpeculativeLoadingParameters {
     }
 
     /**
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#PROFILE_URL_PREFETCH}.
+     *
      * @return The map of the additional headers built using {@link Builder}.
      */
     public @NonNull Map<String, String> getAdditionalHeaders() {
@@ -96,7 +101,15 @@ public final class SpeculativeLoadingParameters {
         /**
          * Use to finish building the PrefetchParams
          *
+         * <p>
+         * This method should only be called if
+         * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+         * {@link WebViewFeature#PROFILE_URL_PREFETCH}.
+         *
          * @return built PrefetchParams object.
+         * @throws UnsupportedOperationException if the
+         *                                       {@link WebViewFeature#PROFILE_URL_PREFETCH}
+         *                                       feature is not supported.
          */
         @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
                 enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

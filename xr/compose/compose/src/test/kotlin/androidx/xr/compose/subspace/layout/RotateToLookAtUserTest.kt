@@ -21,8 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.testing.FakePerceptionManager
-import androidx.xr.arcore.testing.FakePerceptionRuntime
 import androidx.xr.compose.spatial.ExperimentalFollowingSubspaceApi
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialBox
@@ -71,6 +69,8 @@ class RotateToLookAtUserTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun rotateToLookAtUser_userTranslationChanges_contentTurnsTowardsUser() =
         runTest(testDispatcher) {
             val fakePerceptionManager = createSessionAndGetPerceptionManager()
@@ -323,7 +323,10 @@ class RotateToLookAtUserTest {
                 .assertRotationInRootIsEqualTo(expectedWorldRotation, tolerance = 0.04f)
         }
 
-    private fun createSessionAndGetPerceptionManager(): FakePerceptionManager {
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
+    private fun createSessionAndGetPerceptionManager():
+        androidx.xr.arcore.testing.FakePerceptionManager {
         val sessionCreateResult = Session.create(composeTestRule.activity, testDispatcher)
         assertThat(sessionCreateResult).isInstanceOf(SessionCreateSuccess::class.java)
         val session = (sessionCreateResult as SessionCreateSuccess).session
@@ -331,7 +334,10 @@ class RotateToLookAtUserTest {
             config = session.config.copy(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN)
         )
         composeTestRule.session = session
-        val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
+        val fakeRuntime =
+            session.runtimes
+                .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+                .first()
         return fakeRuntime.perceptionManager
     }
 

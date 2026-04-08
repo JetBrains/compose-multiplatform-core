@@ -24,9 +24,12 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendModeColorFilter
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Interpolatable
+import androidx.compose.ui.graphics.LightingColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
@@ -51,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.text.style.isSpecified
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -142,6 +146,7 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
     internal var transformOrigin: TransformOrigin = TransformOrigin.Center
     internal var cameraDistance: Float = 1.0f
     internal var zIndex: Float = 0f
+    internal var colorFilter: ColorFilter? = null
 
     // text style, affects draw only
     internal var contentColor: Color = Color.Unspecified
@@ -149,6 +154,7 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
 
     // text style, affects text layout
     internal var fontFamily: FontFamily? = null
+    internal var textMotion: TextMotion? = null
     internal var textIndent: TextIndent? = null
     internal var fontSize: TextUnit = TextUnit.Unspecified
     internal var lineHeight: TextUnit = TextUnit.Unspecified
@@ -213,6 +219,7 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
                     borderBrush != other.borderBrush ||
                     backgroundColor != other.backgroundColor ||
                     backgroundBrush != other.backgroundBrush ||
+                    foregroundColor != other.foregroundColor ||
                     foregroundBrush != other.foregroundBrush ||
                     innerShadow != other.innerShadow ||
                     dropShadow != other.dropShadow ||
@@ -232,6 +239,7 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
                     rotationY != other.rotationY ||
                     rotationZ != other.rotationZ ||
                     transformOrigin != other.transformOrigin ||
+                    colorFilter != other.colorFilter ||
                     //            cameraDistance != other.cameraDistance ||
                     //            zIndex != other.zIndex ||
                     clip != other.clip
@@ -253,6 +261,7 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
         if (checkFor and TextLayoutFlag != 0) {
             if (
                 fontFamily != other.fontFamily ||
+                    textMotion != other.textMotion ||
                     textIndent != other.textIndent ||
                     fontSize != other.fontSize ||
                     lineHeight != other.lineHeight ||
@@ -281,6 +290,7 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
         target.contentColor = contentColor
         target.contentBrush = contentBrush
         target.fontFamily = fontFamily
+        target.textMotion = textMotion
         target.textIndent = textIndent
         target.fontSize = fontSize
         target.lineHeight = lineHeight
@@ -320,12 +330,14 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
         target.rotationY = rotationY
         target.rotationZ = rotationZ
         target.transformOrigin = transformOrigin
+        target.colorFilter = colorFilter
         target.zIndex = zIndex
         target.cameraDistance = cameraDistance
         target.borderColor = borderColor
         target.borderBrush = borderBrush
         target.backgroundColor = backgroundColor
         target.backgroundBrush = backgroundBrush
+        target.foregroundColor = foregroundColor
         target.foregroundBrush = foregroundBrush
         target.dropShadow = dropShadow
         target.innerShadow = innerShadow
@@ -375,6 +387,7 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
         contentColor = source.contentColor.takeOrElse(contentColor)
         contentBrush = source.contentBrush ?: contentBrush
         fontFamily = source.fontFamily ?: fontFamily
+        textMotion = source.textMotion ?: textMotion
         textIndent = source.textIndent ?: textIndent
         fontSize = source.fontSize.takeOrElse(fontSize)
         lineHeight = source.lineHeight.takeOrElse(lineHeight)
@@ -421,7 +434,7 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
                 lineHeightStyle = fallback.lineHeightStyle,
                 lineBreak = lineBreak.takeOrElse(fallback.lineBreak),
                 hyphens = if (hyphens != default.hyphens) hyphens else fallback.hyphens,
-                textMotion = fallback.textMotion,
+                textMotion = textMotion ?: fallback.textMotion,
             )
             .let { if (contentBrush != null) it.copy(brush = contentBrush) else it }
     }
@@ -462,18 +475,21 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
             if (default.rotationY != rotationY) add("rotationY", rotationY)
             if (default.rotationZ != rotationZ) add("rotationZ", rotationZ)
             if (default.transformOrigin != transformOrigin) add("transformOrigin", transformOrigin)
+            if (default.colorFilter != colorFilter) add("colorFilter", colorFilter)
             if (default.zIndex != zIndex) add("zIndex", zIndex)
             if (default.cameraDistance != cameraDistance) add("cameraDistance", cameraDistance)
             if (default.borderColor != borderColor) add("borderColor", borderColor)
             if (default.borderBrush != borderBrush) add("borderBrush", borderBrush)
             if (default.backgroundColor != backgroundColor) add("backgroundColor", backgroundColor)
             if (default.backgroundBrush != backgroundBrush) add("backgroundBrush", backgroundBrush)
+            if (default.foregroundColor != foregroundColor) add("foregroundColor", foregroundColor)
             if (default.foregroundBrush != foregroundBrush) add("foregroundBrush", foregroundBrush)
             if (default.clip != clip) add("clip", clip)
             if (default.shape != shape) add("shape", shape)
             if (default.contentColor.isSpecified) add("contentColor", contentColor)
             if (default.contentBrush != backgroundBrush) add("contentBrush", contentBrush)
             if (default.fontFamily != fontFamily) add("fontFamily", fontFamily)
+            if (default.textMotion != textMotion) add("textMotion", textMotion)
             if (default.textIndent != textIndent) add("textIndent", textIndent)
             if (default.fontSize != fontSize) add("fontSize", fontSize)
             if (default.lineHeight != lineHeight) add("lineHeight", lineHeight)
@@ -835,6 +851,11 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
         transformOrigin = value
     }
 
+    override fun colorFilter(value: ColorFilter?) {
+        flags = flags or LayerFlag
+        colorFilter = value
+    }
+
     override fun clip(value: Boolean) {
         flags = flags or LayerFlag
         clip = value
@@ -946,6 +967,7 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
         span.fontWeight?.let { fontWeight(it) }
         span.textDecoration?.let { textDecoration(it) }
         span.fontSynthesis?.let { fontSynthesis(it) }
+        span.fontFamily?.let { fontFamily(it) }
 
         val p = value.toParagraphStyle()
         p.textIndent?.let { textIndent(it) }
@@ -954,6 +976,7 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
         if (p.hyphens.isSpecified) hyphens(p.hyphens)
         if (p.textDirection.isSpecified) textDirection(p.textDirection)
         if (p.textAlign.isSpecified) textAlign(p.textAlign)
+        p.textMotion?.let { textMotion(it) }
     }
 
     internal val fontStyle: FontStyle
@@ -1012,6 +1035,11 @@ internal class ResolvedStyle internal constructor() : StyleScope, InspectableVal
         // TODO: should we deal with async differently?
         flags = flags or TextLayoutFlag
         fontFamily = value
+    }
+
+    override fun textMotion(value: TextMotion) {
+        flags = flags or TextLayoutFlag
+        textMotion = value
     }
 
     override fun textIndent(value: TextIndent) {
@@ -1188,8 +1216,9 @@ internal fun lerpDraw(a: ResolvedStyle, b: ResolvedStyle, t: Float, result: Reso
         backgroundColor = lerp(a.backgroundColor, b.backgroundColor, t)
         backgroundBrush =
             lerp(a.backgroundBrush, a.backgroundColor, b.backgroundBrush, b.backgroundColor, t)
+        foregroundColor = lerp(a.foregroundColor, b.foregroundColor, t)
         foregroundBrush =
-            lerp(a.foregroundBrush, Color.Unspecified, b.foregroundBrush, Color.Unspecified, t)
+            lerp(a.foregroundBrush, a.foregroundColor, b.foregroundBrush, b.foregroundColor, t)
         innerShadow = lerpShadows(a.innerShadow, b.innerShadow, t)
         dropShadow = lerpShadows(a.dropShadow, b.dropShadow, t)
     }
@@ -1244,6 +1273,7 @@ internal fun lerpLayer(a: ResolvedStyle, b: ResolvedStyle, t: Float, result: Res
             )
         zIndex = lerp(a.zIndex, b.zIndex, t)
         shape = lerp(a.shape, b.shape, t)
+        colorFilter = lerp(a.colorFilter, b.colorFilter, t)
         clip = if (t < 0.5f) a.clip else b.clip
     }
 }
@@ -1270,6 +1300,7 @@ internal fun lerpTextLayout(a: ResolvedStyle, b: ResolvedStyle, t: Float, result
         }
 
         fontFamily = if (t < 0.5f) a.fontFamily else b.fontFamily
+        textMotion = if (t < 0.5f) a.textMotion else b.textMotion
         textIndent = if (t < 0.5f) a.textIndent else b.textIndent
         baselineShift = if (t < 0.5f) a.baselineShift else b.baselineShift
         lineBreak = if (t < 0.5f) a.lineBreak else b.lineBreak
@@ -1295,6 +1326,37 @@ internal fun lerp(a: ResolvedStyle, b: ResolvedStyle, t: Float, flags: Int, resu
     if (flagsToRun and LayerFlag != 0) lerpLayer(a, b, t, result)
     if (flagsToRun and TextDrawFlag != 0) lerpTextDraw(a, b, t, result)
     if (flagsToRun and TextLayoutFlag != 0) lerpTextLayout(a, b, t, result)
+}
+
+internal fun lerp(start: ColorFilter?, stop: ColorFilter?, fraction: Float): ColorFilter? {
+    if (start is BlendModeColorFilter && stop is BlendModeColorFilter) {
+        return lerp(start, stop, fraction)
+    }
+    if (start is LightingColorFilter && stop is LightingColorFilter) {
+        return lerp(start, stop, fraction)
+    }
+
+    return if (fraction <= 0.5f) start else stop
+}
+
+private fun lerp(
+    start: BlendModeColorFilter,
+    stop: BlendModeColorFilter,
+    fraction: Float,
+): ColorFilter {
+    val mode = if (fraction <= 0.5f) start.blendMode else stop.blendMode
+    return ColorFilter.tint(color = lerp(start.color, stop.color, fraction), blendMode = mode)
+}
+
+private fun lerp(
+    start: LightingColorFilter,
+    stop: LightingColorFilter,
+    fraction: Float,
+): ColorFilter {
+    return ColorFilter.lighting(
+        multiply = lerp(start.multiply, stop.multiply, fraction),
+        add = lerp(start.add, stop.add, fraction),
+    )
 }
 
 private inline fun Int.floorToNearest100(): Int {
@@ -1392,6 +1454,7 @@ internal val TextDefaultsResolvedStyle =
         fontFamily(FontFamily.Default)
         baselineShift(BaselineShift.None)
         textDecoration(TextDecoration.None)
+        textMotion(TextMotion.Static)
     }
 
 // Packing (offset, length)

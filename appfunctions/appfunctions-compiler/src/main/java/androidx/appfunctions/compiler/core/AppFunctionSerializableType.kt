@@ -17,6 +17,7 @@
 package androidx.appfunctions.compiler.core
 
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
+import androidx.appfunctions.compiler.core.AnnotatedOneOfAppFunctionSerializable.Companion.isOneOfType
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
@@ -27,7 +28,6 @@ import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeArgument
 import com.google.devtools.ksp.symbol.KSTypeReference
-import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 
@@ -166,7 +166,7 @@ interface AppFunctionSerializableType {
             .map { it.resolve().declaration as KSClassDeclaration }
             .filter {
                 it.annotations.findAnnotation(AppFunctionSerializableAnnotation.CLASS_NAME) !=
-                    null && !it.modifiers.contains(Modifier.SEALED)
+                    null && !isOneOfType(it)
             }
             .toSet()
 
@@ -311,7 +311,7 @@ interface AppFunctionSerializableType {
 
                 isAnnotatedWithAppFunctionSerializable(classDeclaration) &&
                     isOneOfType(classDeclaration) ->
-                    AnnotatedOneOfAppFunctionSerializable(classDeclaration)
+                    AnnotatedOneOfAppFunctionSerializable.create(classDeclaration)
 
                 isAnnotatedWithAppFunctionSerializable(classDeclaration) ->
                     AnnotatedAppFunctionSerializable(classDeclaration)
@@ -342,8 +342,5 @@ interface AppFunctionSerializableType {
             classDeclaration.annotations.findAnnotation(
                 IntrospectionHelper.AppFunctionSerializableInterfaceAnnotation.CLASS_NAME
             ) != null
-
-        fun isOneOfType(classDeclaration: KSClassDeclaration) =
-            classDeclaration.modifiers.contains(Modifier.SEALED)
     }
 }

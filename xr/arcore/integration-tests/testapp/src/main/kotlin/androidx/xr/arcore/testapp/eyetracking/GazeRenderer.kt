@@ -19,8 +19,8 @@ package androidx.xr.arcore.testapp.eyetracking
 import android.util.Log
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Eye
+import androidx.xr.arcore.TrackingState
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -58,9 +58,8 @@ class GazeRenderer {
                         false -> "BoundingBoxBlue.glb"
                     }
                 val model = GltfModel.create(session, Paths.get("models", assetName))
-                val modelEntity = GltfModelEntity.create(session, model)
+                val modelEntity = GltfModelEntity.create(session, model, parent = offsetEntity)
                 modelEntity.setScale(PANEL_SIZE)
-                offsetEntity.addChild(modelEntity)
                 return EyeWidget(session, rootEntity, modelEntity, isLeft)
             }
 

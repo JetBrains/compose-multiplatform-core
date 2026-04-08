@@ -59,10 +59,10 @@ import kotlinx.coroutines.delay
  * @property config the current [Config] of the session
  */
 @Suppress("NotCloseable")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ArCoreManager
 internal constructor(
-    private val context: Context,
+    internal val context: Context,
     internal val perceptionManager: ArCorePerceptionManager,
     internal val timeSource: ArCoreTimeSource,
     private val arCoreApkInstance: ArCoreApk = ArCoreApk.getInstance(),
@@ -88,6 +88,7 @@ internal constructor(
         checkARCoreSupportedAndUpToDate(context)
         _session = Session(context)
         perceptionManager.session = _session
+        perceptionManager.geospatial.arCoreSession = _session
     }
 
     // TODO(b/392660855): Disable all features by default once this API is fully implemented.
@@ -177,10 +178,8 @@ internal constructor(
 
     override suspend fun update(): ComparableTimeMark {
         // Delay for average time between frames based on camera config fps setting. This frees up
-        // the
-        // thread this method is scheduled to run on to do other work. Note that this can result in
-        // the
-        // emission of duplicated CoreStates by the core Session if the underlying ARCore 1.x
+        // the thread this method is scheduled to run on to do other work. Note that this can result
+        // in the emission of duplicated CoreStates by the core Session if the underlying ARCore 1.x
         // Session has not produced a new frame by the time the delay has expired.
         val avgFps =
             (_session.cameraConfig.fpsRange.lower + _session.cameraConfig.fpsRange.upper) / 2

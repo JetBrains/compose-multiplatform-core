@@ -21,6 +21,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.LayoutDirection
 
 @Composable
 @RemoteComposable
@@ -29,6 +30,7 @@ public fun RemoteFlowRowV2(
     modifier: RemoteModifier = RemoteModifier,
     horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start,
     verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     content: @Composable () -> Unit,
 ) {
     RemoteComposeNode(
@@ -40,6 +42,9 @@ public fun RemoteFlowRowV2(
             }
             set(verticalArrangement) { nodeVerticalArrangement ->
                 this.verticalArrangement = nodeVerticalArrangement
+            }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
             }
         },
         content = content,

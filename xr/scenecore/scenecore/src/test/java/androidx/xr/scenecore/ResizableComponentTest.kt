@@ -576,7 +576,14 @@ class ResizableComponentTest {
     fun createResizableComponent_callsRuntimeCreateResizableComponent() {
         val resizableComponent = ResizableComponent.create(session) {}
         val view = TextView(activity)
-        val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+        val panelEntity =
+            PanelEntity.create(
+                session,
+                view,
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         val rtResizableComponent = addAndGetFakeResizableComponent(panelEntity, resizableComponent)
 
         assertThat(rtResizableComponent.resizeEventListenersMap).hasSize(1)

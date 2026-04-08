@@ -20,8 +20,8 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.Geospatial as RuntimeGeospatial
 import androidx.xr.arcore.runtime.Geospatial.GeospatialPoseResult
-import androidx.xr.runtime.VpsAvailabilityAvailable
-import androidx.xr.runtime.VpsAvailabilityResult
+import androidx.xr.arcore.runtime.VpsAvailabilityAvailable
+import androidx.xr.arcore.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -37,7 +37,10 @@ import androidx.xr.runtime.math.Quaternion
  * @property nextVpsAvailabilityResult the [VpsAvailabilityResult] to be returned by
  *   [checkVpsAvailability]
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
 public class FakeRuntimeGeospatial(
     override var state: RuntimeGeospatial.State = RuntimeGeospatial.State.NOT_RUNNING
 ) : RuntimeGeospatial {

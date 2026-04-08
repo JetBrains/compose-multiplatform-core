@@ -342,38 +342,34 @@ class FakeImpressApiImplTest {
     @Test
     fun createStereoSurface_createsStereoSurface() {
         val stereoMode = StereoMode.MONO
-        val stereoSurfaceNode = fakeImpressApi.createStereoSurface(stereoMode)
-        val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
-        val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
-        assertNotNull(stereoSurfaceData)
-        val stereoMode2 = stereoSurfaceData.stereoMode
-        assertThat(stereoMode).isEqualTo(stereoMode2)
-        val surface = stereoSurfaceData.surface
-        assertThat(surface).isNotNull()
-    }
-
-    @Test
-    fun createStereoSurface_withBlendingMode_createsStereoSurface() {
-        val stereoMode = StereoMode.MONO
-        val blendingMode = MediaBlendingMode.OPAQUE
-        val contentSecurityLevel = ContentSecurityLevel.NONE
         val stereoSurfaceNode =
             fakeImpressApi.createStereoSurface(
                 stereoMode,
-                blendingMode,
-                contentSecurityLevel,
+                MediaBlendingMode.TRANSPARENT,
+                ContentSecurityLevel.NONE,
                 useSuperSampling = false,
             )
         val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
         val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
-        assertNotNull(stereoSurfaceData)
-        assertThat(stereoSurfaceData.mediaBlendingMode).isEqualTo(blendingMode)
+
+        assertThat(stereoSurface.size).isEqualTo(1)
+        assertThat(stereoSurfaceData).isNotNull()
+        assertThat(stereoSurfaceData?.surface).isNotNull()
+        assertThat(stereoSurfaceData?.stereoMode).isEqualTo(stereoMode)
+        assertThat(stereoSurfaceData?.mediaBlendingMode).isEqualTo(MediaBlendingMode.TRANSPARENT)
+        assertThat(stereoSurfaceData?.useSuperSampling).isFalse()
     }
 
     @Test
     fun setStereoSurfaceEntityCanvasShapeQuad_setsCanvasShapeQuad() {
         val stereoMode = StereoMode.MONO
-        val stereoSurfaceNode = fakeImpressApi.createStereoSurface(stereoMode)
+        val stereoSurfaceNode =
+            fakeImpressApi.createStereoSurface(
+                stereoMode,
+                MediaBlendingMode.TRANSPARENT,
+                ContentSecurityLevel.NONE,
+                useSuperSampling = false,
+            )
         fakeImpressApi.setStereoSurfaceEntityCanvasShapeQuad(stereoSurfaceNode, 11.0f, 11.0f, 1.0f)
         val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
         val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
@@ -391,7 +387,13 @@ class FakeImpressApiImplTest {
     @Test
     fun setStereoSurfaceEntityCanvasShapeSphere_setsCanvasShapeSphere() {
         val stereoMode = StereoMode.MONO
-        val stereoSurfaceNode = fakeImpressApi.createStereoSurface(stereoMode)
+        val stereoSurfaceNode =
+            fakeImpressApi.createStereoSurface(
+                stereoMode,
+                MediaBlendingMode.TRANSPARENT,
+                ContentSecurityLevel.NONE,
+                useSuperSampling = false,
+            )
         fakeImpressApi.setStereoSurfaceEntityCanvasShapeSphere(stereoSurfaceNode, 11.0f)
         val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
         val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
@@ -405,7 +407,13 @@ class FakeImpressApiImplTest {
     @Test
     fun setStereoSurfaceEntityCanvasShapeHemisphere_setsCanvasShapeHemisphere() {
         val stereoMode = StereoMode.MONO
-        val stereoSurfaceNode = fakeImpressApi.createStereoSurface(stereoMode)
+        val stereoSurfaceNode =
+            fakeImpressApi.createStereoSurface(
+                stereoMode,
+                MediaBlendingMode.TRANSPARENT,
+                ContentSecurityLevel.NONE,
+                useSuperSampling = false,
+            )
         fakeImpressApi.setStereoSurfaceEntityCanvasShapeHemisphere(stereoSurfaceNode, 11.0f)
         val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
         val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
@@ -419,7 +427,13 @@ class FakeImpressApiImplTest {
     @Test
     fun getSurfaceFromStereoSurface_returnsSurface() {
         val stereoMode = StereoMode.MONO
-        val stereoSurfaceNode = fakeImpressApi.createStereoSurface(stereoMode)
+        val stereoSurfaceNode =
+            fakeImpressApi.createStereoSurface(
+                stereoMode,
+                MediaBlendingMode.TRANSPARENT,
+                ContentSecurityLevel.NONE,
+                useSuperSampling = false,
+            )
         val surface = fakeImpressApi.getSurfaceFromStereoSurface(stereoSurfaceNode)
         assertThat(surface).isNotNull()
     }
@@ -437,7 +451,13 @@ class FakeImpressApiImplTest {
     @Test
     fun setStereoSurfaceEntitySurfaceSize_whenSizeIsNegative_throwsException() {
         val stereoMode = StereoMode.MONO
-        val stereoSurfaceNode: ImpressNode = fakeImpressApi.createStereoSurface(stereoMode)
+        val stereoSurfaceNode: ImpressNode =
+            fakeImpressApi.createStereoSurface(
+                stereoMode,
+                MediaBlendingMode.TRANSPARENT,
+                ContentSecurityLevel.NONE,
+                useSuperSampling = false,
+            )
         val thrown =
             assertThrows(
                 java.lang.IllegalArgumentException::class.java,
@@ -462,7 +482,13 @@ class FakeImpressApiImplTest {
         val stereoMode = StereoMode.MONO
         val kWidth = 640
         val kHeight = 480
-        val stereoSurfaceNode: ImpressNode = fakeImpressApi.createStereoSurface(stereoMode)
+        val stereoSurfaceNode: ImpressNode =
+            fakeImpressApi.createStereoSurface(
+                stereoMode,
+                MediaBlendingMode.TRANSPARENT,
+                ContentSecurityLevel.NONE,
+                useSuperSampling = false,
+            )
         fakeImpressApi.setStereoSurfaceEntitySurfaceSize(stereoSurfaceNode, kWidth, kHeight)
         val stereoSurface: MutableMap<ImpressNode, StereoSurfaceEntityData> =
             fakeImpressApi.getStereoSurfaceEntities()
@@ -477,7 +503,13 @@ class FakeImpressApiImplTest {
     @Test
     fun setFeatherRadiusForStereoSurface_setsFeatherRadius() {
         val stereoMode = StereoMode.MONO
-        val stereoSurfaceNode = fakeImpressApi.createStereoSurface(stereoMode)
+        val stereoSurfaceNode =
+            fakeImpressApi.createStereoSurface(
+                stereoMode,
+                MediaBlendingMode.TRANSPARENT,
+                ContentSecurityLevel.NONE,
+                useSuperSampling = false,
+            )
         val radiusX = 11.0f
         val radiusY = 12.0f
         fakeImpressApi.setFeatherRadiusForStereoSurface(stereoSurfaceNode, radiusX, radiusY)
@@ -493,7 +525,13 @@ class FakeImpressApiImplTest {
     @Test
     fun setStereoModeForStereoSurface_setsStereoMode() {
         var stereoMode = StereoMode.MONO
-        val stereoSurfaceNode = fakeImpressApi.createStereoSurface(stereoMode)
+        val stereoSurfaceNode =
+            fakeImpressApi.createStereoSurface(
+                stereoMode,
+                MediaBlendingMode.TRANSPARENT,
+                ContentSecurityLevel.NONE,
+                useSuperSampling = false,
+            )
         stereoMode = StereoMode.SIDE_BY_SIDE
         fakeImpressApi.setStereoModeForStereoSurface(stereoSurfaceNode, stereoMode)
         var stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
@@ -513,7 +551,13 @@ class FakeImpressApiImplTest {
     @Test
     fun setStereoSurfaceEntityColliderEnabled_setsColliderEnabled() {
         val stereoMode = StereoMode.MONO
-        val stereoSurfaceNode = fakeImpressApi.createStereoSurface(stereoMode)
+        val stereoSurfaceNode =
+            fakeImpressApi.createStereoSurface(
+                stereoMode,
+                MediaBlendingMode.TRANSPARENT,
+                ContentSecurityLevel.NONE,
+                useSuperSampling = false,
+            )
 
         // Enable collider
         fakeImpressApi.setStereoSurfaceEntityColliderEnabled(stereoSurfaceNode, true)

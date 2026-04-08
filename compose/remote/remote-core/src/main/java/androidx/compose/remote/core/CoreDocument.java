@@ -86,6 +86,21 @@ public class CoreDocument implements Serializable {
 
     private static final boolean UPDATE_VARIABLES_BEFORE_LAYOUT = false;
 
+    /**
+     * Legacy density behavior
+     */
+    public static final int DENSITY_BEHAVIOR_LEGACY = 0;
+
+    /**
+     * Values are interpreted as pixels, no density applied by default.
+     */
+    public static final int DENSITY_BEHAVIOR_PIXELS = 1;
+
+    /**
+     * Values are interpreted as dp, density applied by default.
+     */
+    public static final int DENSITY_BEHAVIOR_DP = 2;
+
     ////////////////////////////////////////////////////////////////////////////////////////////
     // Default feature values
     /// /////////////////////////////////////////////////////////////////////////////////////////
@@ -93,8 +108,10 @@ public class CoreDocument implements Serializable {
     private static final int DEFAULT_FEATURE_PAINT_MEASURE = 1;
     private static final int DEFAULT_FEATURE_PRIORITY_FIX = 1;
     private static final int DEFAULT_FEATURE_LT_RESIZE = 1;
+    private static final int DEFAULT_FEATURE_ARRAY_LISTENERS = 1;
     private static final int DEFAULT_FEATURE_MEASURE_VERSION = LayoutManager.DEFAULT_MEASURE_TYPE;
     private static final int DEFAULT_FEATURE_TOUCH_VERSION = LayoutManager.DEFAULT_TOUCH_VERSION;
+    private static final int DEFAULT_DENSITY_BEHAVIOR = DENSITY_BEHAVIOR_LEGACY;
 
     /// /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -110,6 +127,7 @@ public class CoreDocument implements Serializable {
 
     int mMeasureVersion = DEFAULT_FEATURE_MEASURE_VERSION;
     int mTouchVersion = DEFAULT_FEATURE_TOUCH_VERSION;
+    int mDensityBehavior = DEFAULT_DENSITY_BEHAVIOR;
 
     boolean mNeedsInitialMeasure = true;
 
@@ -230,6 +248,18 @@ public class CoreDocument implements Serializable {
     }
 
     /**
+     * Returns the density of the document
+     *
+     * @return the density
+     */
+    public float getDensity() {
+        if (mHeader != null) {
+            return mHeader.getDensity();
+        }
+        return 1f;
+    }
+
+    /**
      * Set the viewport height of the document
      *
      * @param height document height
@@ -294,6 +324,24 @@ public class CoreDocument implements Serializable {
 
     public int getContentMode() {
         return mContentMode;
+    }
+
+    /**
+     * Returns the density behavior of the document.
+     * 0: Current behavior (mixed)
+     * 1: Values are interpreted as pixels, no density applied by default
+     * 2: Values are interpreted as dp, density applied by default
+     */
+    public int getDensityBehavior() {
+        return mDensityBehavior;
+    }
+
+    /**
+     * Sets the density behavior of the document.
+     * @param behavior
+     */
+    public void setDensityBehavior(int behavior) {
+        mDensityBehavior = behavior;
     }
 
     /**
@@ -684,6 +732,9 @@ public class CoreDocument implements Serializable {
         if (featureId == Header.FEATURE_LT_RESIZE) {
             return useFeature(featureId, DEFAULT_FEATURE_LT_RESIZE);
         }
+        if (featureId == Header.FEATURE_ARRAY_LISTENERS) {
+            return useFeature(featureId, DEFAULT_FEATURE_ARRAY_LISTENERS);
+        }
         return useFeature(featureId, 0);
     }
 
@@ -699,6 +750,9 @@ public class CoreDocument implements Serializable {
         }
         if (featureId == Header.FEATURE_TOUCH_VERSION) {
             return mHeader.getInt(featureId, DEFAULT_FEATURE_TOUCH_VERSION);
+        }
+        if (featureId == Header.DOC_DENSITY_BEHAVIOR) {
+            return mHeader.getInt(featureId, DEFAULT_DENSITY_BEHAVIOR);
         }
         return mHeader.getInt(featureId, -1);
     }
@@ -739,7 +793,7 @@ public class CoreDocument implements Serializable {
      * @param type the type of haptic pre-defined effect
      */
     public void haptic(int type) {
-        if (mHapticEngine != null) {
+        if (mHapticEngine != null && Limits.ENABLE_HAPTIC_FEEDBACK) {
             mHapticEngine.haptic(type);
         }
     }
@@ -972,8 +1026,10 @@ public class CoreDocument implements Serializable {
         mUseFeaturePaintMeasure = useFeature(Header.FEATURE_PAINT_MEASURE);
         mUseFeaturePriorityFix = useFeature(Header.FEATURE_PRIORITY_FIX);
         mUseFeatureLTResize = useFeature(Header.FEATURE_LT_RESIZE);
+
         mMeasureVersion = featureIntValue(Header.FEATURE_MEASURE_VERSION);
         mTouchVersion = featureIntValue(Header.FEATURE_TOUCH_VERSION);
+        mDensityBehavior = featureIntValue(Header.DOC_DENSITY_BEHAVIOR);
         mBitmapMemory = 0;
         mOperations = inflateComponents(mOperations);
 
@@ -1308,6 +1364,42 @@ public class CoreDocument implements Serializable {
         }
         if (mRootLayoutComponent != null) {
             if (mRootLayoutComponent.onClick(context, this, x, y)) {
+                handled = true;
+            }
+        }
+        return handled;
+    }
+
+    /**
+     * Passing a long click event to the document.
+     *
+     * @return true if the event was handled
+     */
+    public boolean onLongPress(@NonNull RemoteContext context, float x, float y) {
+        if (context.isBasicDebug()) {
+            System.out.println("[RC] LongPress at " + x + ", " + y);
+        }
+        boolean handled = false;
+        if (mRootLayoutComponent != null) {
+            if (mRootLayoutComponent.onLongPress(context, this, x, y)) {
+                handled = true;
+            }
+        }
+        return handled;
+    }
+
+    /**
+     * Passing a double click event to the document.
+     *
+     * @return true if the event was handled
+     */
+    public boolean onDoubleClick(@NonNull RemoteContext context, float x, float y) {
+        if (context.isBasicDebug()) {
+            System.out.println("[RC] DoubleClick at " + x + ", " + y);
+        }
+        boolean handled = false;
+        if (mRootLayoutComponent != null) {
+            if (mRootLayoutComponent.onDoubleClick(context, this, x, y)) {
                 handled = true;
             }
         }

@@ -242,7 +242,7 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"Liste 2"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Subtext unter jeder Liste"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"Demo zu Bild und Aktionen beenden"</string>
-    <string name="filter_chip_demo_title" msgid="92190365856639582">"Demo des Infofelds für Filter"</string>
+    <string name="chip_demo_title" msgid="814337127879515513">"Chip-Demo"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"Demo der Fortschrittsanzeige"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Demo der Bereichsvorlage"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Demo der Ortslistenvorlage"</string>
@@ -372,7 +372,7 @@
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"Laden deaktiviert"</string>
     <string name="loading_screen" msgid="4771507490730308794">"Ladebildschirm"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"Schieberegler zum Hinzufügen/Entfernen von Farben"</string>
-    <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Kartenvorlage mit Ein-/Aus-Schaltflächen"</string>
+    <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Kartenvorlage mit Ein/Aus-Buttons"</string>
     <string name="avoid_tolls_row_title" msgid="5194057244144831024">"Mautstraßen vermeiden"</string>
     <string name="route_options_demo_title" msgid="4599699012716426514">"Routenoptionen"</string>
     <string name="avoid_highways_row_title" msgid="4711913426200490304">"Autobahnen vermeiden"</string>

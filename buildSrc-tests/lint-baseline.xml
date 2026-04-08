@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 9.1.0-alpha06" type="baseline" client="gradle" dependencies="false" name="AGP (9.1.0-alpha06)" variant="all" version="9.1.0-alpha06">
+<issues format="6" by="lint 9.2.0-alpha03" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.0-alpha03)" variant="all" version="9.2.0-alpha03">
 
     <issue
         id="EagerGradleConfiguration"
@@ -68,24 +68,6 @@
         id="EagerGradleConfiguration"
         message="Use register instead of create"
         errorLine1="            project.configurations.create(&quot;library-version-metadata&quot;) {"
-        errorLine2="                                   ~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
-    </issue>
-
-    <issue
-        id="EagerGradleConfiguration"
-        message="Use register instead of create"
-        errorLine1="            project.configurations.create(&quot;docs-compile-classpath&quot;) {"
-        errorLine2="                                   ~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
-    </issue>
-
-    <issue
-        id="EagerGradleConfiguration"
-        message="Use register instead of create"
-        errorLine1="            project.configurations.create(&quot;docs-runtime-classpath&quot;) {"
         errorLine2="                                   ~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
@@ -197,6 +179,177 @@
         errorLine2="                               ~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/testConfiguration/TestSuiteConfiguration.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="        val expectedAgpVersion = System.getenv(&quot;EXPECTED_AGP_VERSION&quot;)"
+        errorLine2="                                        ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXRootImplPlugin.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="fun isSnapshotBuild() = System.getenv(&quot;SNAPSHOT&quot;) != null"
+        errorLine2="                               ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*3}/androidx/build/BuildServerConfiguration.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="        val changeInfo = System.getenv(&quot;CHANGE_INFO&quot;)"
+        errorLine2="                                ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/gitclient/ChangeInfo.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="        val manifest = System.getenv(&quot;MANIFEST&quot;)"
+        errorLine2="                              ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/gitclient/ChangeInfo.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="        val manifest = System.getenv(&quot;MANIFEST&quot;) ?: return null"
+        errorLine2="                              ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/gitclient/ChangeInfo.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="    if (System.getenv(&quot;IS_ANDROIDX_CI&quot;) != null) return"
+        errorLine2="               ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/DevelocityTokenFetcher.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="    if (System.getenv(&quot;USE_ANDROIDX_REMOTE_BUILD_CACHE&quot;) !in setOf(&quot;gcp&quot;, &quot;true&quot;)) return"
+        errorLine2="               ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/DevelocityTokenFetcher.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="    val keys = File(&quot;${System.getenv(&quot;GRADLE_USER_HOME&quot;)}/develocity/keys.properties&quot;)"
+        errorLine2="                              ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/DevelocityTokenFetcher.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="        if (!System.getenv().containsKey(&quot;GOOGLE_APPLICATION_CREDENTIALS&quot;)) {"
+        errorLine2="                    ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/FtlRunner.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="                        if (System.getenv(&quot;ALLOW_PUBLIC_REPOS&quot;) != null) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/sbom/Sbom.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="            System.getenv(&quot;COMPOSE_DESKTOP_GITHUB_BUILD&quot;) != null"
+        errorLine2="                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*3}/androidx/build/SdkHelper.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="        val envValue = System.getenv(it)"
+        errorLine2="                              ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*3}/androidx/build/SdkHelper.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="        File(System.getenv(&quot;HOME&quot;), &quot;.AndroidStudioAndroidX/config&quot;).also { it.mkdirs() }"
+        errorLine2="                    ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/studio/StudioTask.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="        if (System.getenv().containsKey(&quot;SSH_CLIENT&quot;) &amp;&amp; !System.getenv().containsKey(&quot;DISPLAY&quot;)) {"
+        errorLine2="                   ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/studio/StudioTask.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="        if (System.getenv().containsKey(&quot;SSH_CLIENT&quot;) &amp;&amp; !System.getenv().containsKey(&quot;DISPLAY&quot;)) {"
+        errorLine2="                                                                 ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/studio/StudioTask.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="        val canonicalSdkPath = File(System.getenv(&quot;HOME&quot;), relativeSdkPath)"
+        errorLine2="                                           ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/studio/StudioTask.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="                    !System.getenv().containsKey(&quot;ANDROIDX_PROJECTS&quot;) &amp;&amp;"
+        errorLine2="                            ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/studio/StudioTask.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="                    !System.getenv().containsKey(&quot;PROJECT_PREFIX&quot;)"
+        errorLine2="                            ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/studio/StudioTask.kt"/>
+    </issue>
+
+    <issue
+        id="GradleConfigurationCacheBroadInputs"
+        message="Use Project.providers.environmentVariable instead of getenv"
+        errorLine1="        return if (System.getenv(&quot;QT_QPA_PLATFORM&quot;) == &quot;wayland&quot;) {"
+        errorLine2="                          ~~~~~~">
+        <location
+            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/studio/StudioTask.kt"/>
     </issue>
 
     <issue

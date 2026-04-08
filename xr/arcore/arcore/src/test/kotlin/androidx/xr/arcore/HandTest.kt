@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore
 
@@ -29,7 +30,6 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -104,7 +104,7 @@ class HandTest {
             check(leftHand.state.value.trackingState != (TrackingState.TRACKING))
             check(leftHand.state.value.handJoints.isEmpty())
             val leftRuntimeHand = perceptionManager.leftHand!! as FakeRuntimeHand
-            leftRuntimeHand.trackingState = TrackingState.TRACKING
+            leftRuntimeHand.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
             val expectedHandJoints: Map<HandJointType, Pose> =
                 HandJointType.entries.associateWith { joint ->
                     val i = joint.ordinal.toFloat()
@@ -148,7 +148,7 @@ class HandTest {
             check(rightHand.state.value.trackingState != (TrackingState.TRACKING))
             check(rightHand.state.value.handJoints.isEmpty())
             val rightRuntimeHand = perceptionManager.rightHand!! as FakeRuntimeHand
-            rightRuntimeHand.trackingState = TrackingState.TRACKING
+            rightRuntimeHand.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
             val expectedHandJoints: Map<HandJointType, Pose> =
                 HandJointType.entries.associateWith { joint ->
                     val i = joint.ordinal.toFloat()
@@ -188,7 +188,7 @@ class HandTest {
         val underTest = Hand(runtimeHand)
         check(underTest.state.value.trackingState != TrackingState.TRACKING)
         check(underTest.state.value.handJoints.isEmpty())
-        runtimeHand.trackingState = TrackingState.TRACKING
+        runtimeHand.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
         val expectedHandJoints: Map<HandJointType, Pose> =
             HandJointType.entries.associateWith { joint ->
                 val i = joint.ordinal.toFloat()
@@ -217,7 +217,7 @@ class HandTest {
     fun getHandedness_settingNotConfigured_returnsUnknown() {
         ShadowContentResolver.reset()
 
-        assertThat(Hand.getPrimaryHandSide(mockContentResolver)).isEqualTo(Hand.HandSide.UNKNOWN)
+        assertThat(Hand.getPrimaryHandSide(mockContentResolver)).isEqualTo(HandSide.UNKNOWN)
     }
 
     @Test
@@ -225,10 +225,10 @@ class HandTest {
         ShadowContentResolver.reset()
 
         Settings.System.putInt(mockContentResolver, Hand.PRIMARY_HAND_SETTING_NAME, 1)
-        assertThat(Hand.getPrimaryHandSide(mockContentResolver)).isEqualTo(Hand.HandSide.RIGHT)
+        assertThat(Hand.getPrimaryHandSide(mockContentResolver)).isEqualTo(HandSide.RIGHT)
 
         Settings.System.putInt(mockContentResolver, Hand.PRIMARY_HAND_SETTING_NAME, 0)
-        assertThat(Hand.getPrimaryHandSide(mockContentResolver)).isEqualTo(Hand.HandSide.LEFT)
+        assertThat(Hand.getPrimaryHandSide(mockContentResolver)).isEqualTo(HandSide.LEFT)
     }
 
     private fun generateTestBuffer(handJoints: Map<HandJointType, Pose>): FloatBuffer {

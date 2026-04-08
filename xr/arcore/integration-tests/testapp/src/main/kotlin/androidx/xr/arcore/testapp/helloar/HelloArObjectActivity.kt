@@ -125,7 +125,8 @@ class HelloArObjectActivity : ComponentActivity() {
             objectEntitiesMap[augmentedObject]?.dispose()
             objectEntitiesMap.remove(augmentedObject)
             gltfModelMap[state.category]?.let { gltfModel ->
-                objectEntitiesMap[augmentedObject] = GltfModelEntity.create(session, gltfModel)
+                objectEntitiesMap[augmentedObject] =
+                    GltfModelEntity.create(session, gltfModel, parent = session.scene.activitySpace)
             }
             objectCategoryMap[augmentedObject] = state.category
         }

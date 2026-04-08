@@ -23,7 +23,8 @@ import androidx.build.Release.DEFAULT_PUBLISH_CONFIG
 import androidx.build.buildInfo.addCreateLibraryBuildInfoFileTasks
 import androidx.build.checkapi.AndroidMultiplatformApiTaskConfig
 import androidx.build.checkapi.JavaApiTaskConfig
-import androidx.build.checkapi.KmpApiTaskConfig
+import androidx.build.checkapi.KmpJvmApiTaskConfig
+import androidx.build.checkapi.KmpNoJvmApiTaskConfig
 import androidx.build.checkapi.LibraryApiTaskConfig
 import androidx.build.checkapi.configureProjectForApiTasks
 import androidx.build.dependencyTracker.AffectedModuleDetector
@@ -188,6 +189,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.configureKtfmt()
         project.configureKotlinVersion()
         project.configureJavaFormat()
+
+        // We want to set up the check docs task for all projects. For more information, see
+        // b/491430873
+        project.setUpCheckDocsTask(androidXExtension)
 
         // Avoid conflicts between full Guava and LF-only Guava.
         project.configureGuavaUpgradeHandler()
@@ -479,6 +484,18 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                         }
                     }
                 }
+
+                // Projects with an Android target will have API tasks configured through
+                // `configureWithKotlinMultiplatformAndroidPlugin`, projects with a jvm target will
+                // have API tasks configured through `configureWithJavaPlugin`. Configure API tasks
+                // for projects with neither target here.
+                project.configureProjectForApiTasks(
+                    KmpNoJvmApiTaskConfig,
+                    androidXExtension,
+                    // Only configure API tasks if there won't already be tasks configured based on
+                    // the android or jvm target.
+                    shouldConfigure = targetsAndroid.map { !it && !hasJvmTarget() },
+                )
             }
         } else {
             project.tasks.withType(KotlinJvmCompile::class.java).configureEach { task ->
@@ -654,7 +671,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
 
         project.disableStrictVersionConstraints()
         project.configureJavaCompilationWarnings(androidXExtension)
-        project.setUpCheckDocsTask(androidXExtension)
     }
 
     private fun KotlinSourceSet.includesSourceSet(otherName: String): Boolean =
@@ -932,14 +948,13 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
 
         val apiTaskConfig =
             if (project.multiplatformExtension != null) {
-                KmpApiTaskConfig
+                KmpJvmApiTaskConfig
             } else {
                 JavaApiTaskConfig
             }
 
         project.configureProjectForApiTasks(apiTaskConfig, androidXExtension)
         project.configureProjectForKzipTasks(apiTaskConfig, androidXExtension)
-        project.setUpCheckDocsTask(androidXExtension)
 
         if (project.multiplatformExtension == null) {
             project.addToBuildOnServer("jar")
@@ -1638,6 +1653,9 @@ internal fun KotlinMultiplatformExtension.hasJavaEnabled(): Boolean =
 
 internal fun KotlinMultiplatformExtension.hasJvmTarget(): Boolean =
     targets.withType(KotlinJvmTarget::class.java).isEmpty().not()
+
+internal fun KotlinMultiplatformExtension.hasAndroidTarget(): Boolean =
+    targets.withType(KotlinMultiplatformAndroidLibraryTarget::class.java).isEmpty().not()
 
 internal fun String.camelCase() = replaceFirstChar {
     if (it.isLowerCase()) it.titlecase() else it.toString()

@@ -19,33 +19,9 @@ package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
-import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
 import androidx.compose.remote.creation.compose.v2.FitBoxV2
-import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-
-/** Utility modifier to record the layout information */
-internal class RemoteComposeFitBoxModifier(
-    private val modifier: RemoteModifier,
-    private val horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
-    private val verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            canvas.document.startFitBox(
-                canvas.toRecordingModifier(modifier),
-                horizontalAlignment.toRemote(this.layoutDirection),
-                verticalArrangement.toRemote(),
-            )
-            this@draw.drawContent()
-            canvas.document.endFitBox()
-        }
-    }
-}
+import androidx.compose.ui.platform.LocalLayoutDirection
 
 /**
  * FitBox implements a Box layout, delegating to the foundation Box layout as needed. This allows
@@ -61,15 +37,11 @@ public fun FitBox(
     verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Center,
     content: @RemoteComposable @Composable () -> Unit,
 ) {
-    if (currentComposer.applier is RemoteComposeApplierV2) {
-        FitBoxV2(modifier, horizontalAlignment, verticalArrangement, content)
-        return
-    }
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
-    androidx.compose.foundation.layout.Box(
-        RemoteComposeFitBoxModifier(modifier, horizontalAlignment, verticalArrangement)
-            .then(modifier.toComposeUiLayout())
-    ) {
-        content()
-    }
+    FitBoxV2(
+        modifier,
+        horizontalAlignment,
+        verticalArrangement,
+        LocalLayoutDirection.current,
+        content,
+    )
 }

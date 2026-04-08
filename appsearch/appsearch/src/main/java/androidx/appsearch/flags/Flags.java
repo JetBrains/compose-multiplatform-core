@@ -234,11 +234,6 @@ public final class Flags {
     public static final String FLAG_ENABLE_COMPRESSION_THRESHOLD =
             FLAG_PREFIX + "enable_compression_threshold";
 
-    /** Enables setting the gzip compression memlevel to 1. */
-    public static final String FLAG_ENABLE_COMPRESSION_MEM_LEVEL_ONE =
-            FLAG_PREFIX + "enable_compression_mem_level_one";
-
-
     /** Enables {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED}. */
     public static final String FLAG_ENABLE_RESULT_ABORTED =
             FLAG_PREFIX + "enable_result_aborted";

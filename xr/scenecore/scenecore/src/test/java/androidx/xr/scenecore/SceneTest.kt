@@ -112,8 +112,20 @@ class SceneTest {
     @Test
     fun getPanelEntityType_returnsAllPanelEntities() {
         val panelEntity =
-            PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test1")
-        val activityPanelEntity = ActivityPanelEntity.create(session, IntSize2d(640, 480), "test2")
+            PanelEntity.create(
+                session,
+                TextView(activity),
+                IntSize2d(720, 480),
+                "test1",
+                parent = session.scene.activitySpace,
+            )
+        val activityPanelEntity =
+            ActivityPanelEntity.create(
+                session,
+                IntSize2d(640, 480),
+                "test2",
+                parent = session.scene.activitySpace,
+            )
 
         assertThat(session.scene.getEntitiesOfType(PanelEntity::class.java))
             .containsAtLeast(panelEntity, activityPanelEntity)
@@ -122,7 +134,13 @@ class SceneTest {
     @Test
     fun getEntitiesBaseType_returnsAllEntities() {
         val panelEntity =
-            PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test1")
+            PanelEntity.create(
+                session,
+                TextView(activity),
+                IntSize2d(720, 480),
+                "test1",
+                parent = session.scene.activitySpace,
+            )
         val anchorEntity =
             AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
 

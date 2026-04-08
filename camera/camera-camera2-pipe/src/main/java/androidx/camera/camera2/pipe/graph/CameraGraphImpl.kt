@@ -29,6 +29,7 @@ import androidx.camera.camera2.pipe.CameraGraph.Session
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.ControlMode
+import androidx.camera.camera2.pipe.Converge3ABehavior
 import androidx.camera.camera2.pipe.FlashMode
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
@@ -262,6 +263,30 @@ constructor(
 
     override fun setTorchOff(aeMode: AeMode?): Deferred<Result3A> = withSessionLockAsync {
         controller3A.setTorchOff(aeMode)
+    }
+
+    override fun converge3A(
+        aeRegions: List<MeteringRectangle>?,
+        afRegions: List<MeteringRectangle>?,
+        awbRegions: List<MeteringRectangle>?,
+        aeBehavior: Converge3ABehavior?,
+        afBehavior: Converge3ABehavior?,
+        awbBehavior: Converge3ABehavior?,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
+        frameLimit: Int?,
+        timeLimitNs: Long?,
+    ): Deferred<Result3A> {
+        return controller3A.converge3A(
+            aeRegions,
+            afRegions,
+            awbRegions,
+            aeBehavior,
+            afBehavior,
+            awbBehavior,
+            convergedCondition,
+            frameLimit,
+            timeLimitNs,
+        )
     }
 
     override fun lock3A(

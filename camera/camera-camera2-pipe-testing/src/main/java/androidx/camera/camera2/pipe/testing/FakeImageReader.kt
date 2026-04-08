@@ -77,6 +77,7 @@ private constructor(
             if (image is FakeImage) {
                 _images.add(image)
             }
+            _isFlushed.value = false
         }
         onImageListener?.onImage(streamId, outputId, image)
     }
@@ -90,7 +91,16 @@ private constructor(
     override var onExpectedOutputsListener: ImageReaderWrapper.OnExpectedOutputsListener? by
         atomic(null)
 
+    private val _isFlushed = atomic(false)
+
+    public val isFlushed: Boolean
+        get() = _isFlushed.value
+
     override fun flush() {
+        _isFlushed.value = true
+    }
+
+    override fun discardFreeBuffers() {
         // NoOp
     }
 

@@ -25,6 +25,7 @@ import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
+import androidx.compose.remote.core.operations.utilities.ArrayAccess;
 import androidx.compose.remote.core.serialize.MapSerializer;
 import androidx.compose.remote.core.serialize.Serializable;
 
@@ -38,12 +39,13 @@ import java.util.List;
  * the decimal point
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class TextLookup extends Operation implements VariableSupport, Serializable {
+public class TextLookup extends Operation implements VariableSupport, Serializable, ComponentData {
     private static final int OP_CODE = Operations.TEXT_LOOKUP;
     private static final String CLASS_NAME = "TextFromFloat";
     public int mTextId;
     public int mDataSetId;
     public float mOutIndex, mIndex;
+    private boolean mRegisteredForArray = false;
 
     public TextLookup(int textId, int dataSetId, float index) {
         this.mTextId = textId;
@@ -78,6 +80,21 @@ public class TextLookup extends Operation implements VariableSupport, Serializab
     public void registerListening(@NonNull RemoteContext context) {
         if (Float.isNaN(mIndex)) {
             context.listensTo(Utils.idFromNan(mIndex), this);
+        }
+        if (context.useFeature(Header.FEATURE_ARRAY_LISTENERS)) {
+            registerForArray(context);
+        }
+    }
+
+    private void registerForArray(@NonNull RemoteContext context) {
+        ArrayAccess array = context.getCollectionsAccess().getArray(
+                mDataSetId);
+        if (array != null) {
+            for (int i = 0; i < array.getLength(); i++) {
+                int next = array.getId(i);
+                context.listensTo(next, this);
+            }
+            mRegisteredForArray = true;
         }
     }
 
@@ -143,6 +160,10 @@ public class TextLookup extends Operation implements VariableSupport, Serializab
 
     @Override
     public void apply(@NonNull RemoteContext context) {
+        if (!mRegisteredForArray && context.useFeature(Header.FEATURE_ARRAY_LISTENERS)) {
+            registerForArray(context);
+        }
+
         int id = context.getCollectionsAccess().getId(mDataSetId, (int) mOutIndex);
         context.loadText(mTextId, context.getText(id));
     }

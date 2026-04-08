@@ -26,6 +26,7 @@ import androidx.compose.remote.creation.compose.state.RemoteInt.OperationKey
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
+import java.text.DecimalFormat
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -185,6 +186,40 @@ internal constructor(
                 }
             },
         )
+    }
+
+    /**
+     * Converts this [RemoteInt] to a [RemoteString] using the specified [format].
+     *
+     * This method maps the localized ICU [android.icu.text.DecimalFormat] configuration (including
+     * padding, rounding, and digit constraints) to a remote-compatible string representation. It
+     * specifically handles complex padding logic and threshold-based selections to ensure the
+     * formatted output remains consistent when evaluated on the remote target.
+     *
+     * @param format The [android.icu.text.DecimalFormat] used to format the integer value. Defaults
+     *   to [DefaultIntegerFormat].
+     * @return A [RemoteString] representing the formatted integer value.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toRemoteString(
+        format: android.icu.text.DecimalFormat = DefaultIntegerFormat
+    ): RemoteString {
+        return toRemoteFloat().toRemoteString(format)
+    }
+
+    /**
+     * Converts this RemoteInt to a RemoteString.
+     *
+     * This method maps the localized [DecimalFormat] symbols (such as separators and grouping
+     * sizes) and configuration (such as padding and rounding) to a remote-compatible string
+     * representation.
+     *
+     * @param format The [DecimalFormat] to use for determining separators, grouping, and padding.
+     * @return A [RemoteString] representing the formatted float.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toRemoteString(format: DecimalFormat): RemoteString {
+        return toRemoteFloat().toRemoteString(format)
     }
 
     /**
@@ -408,6 +443,9 @@ internal constructor(
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
+        internal val DefaultIntegerFormat =
+            android.icu.text.DecimalFormat().apply { maximumFractionDigits = 0 }
+
         public operator fun invoke(value: Int): RemoteInt {
             return RemoteIntExpression(
                 value,

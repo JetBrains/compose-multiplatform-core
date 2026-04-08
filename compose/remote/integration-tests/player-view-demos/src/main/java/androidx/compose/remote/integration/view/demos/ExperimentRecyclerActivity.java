@@ -109,6 +109,7 @@ public class ExperimentRecyclerActivity extends Activity {
     static final String CHANNEL_ID = "custom_notification_channel";
     static int sNotificationId = 1;
     public static final boolean BACKGROUND = false;
+    private static final boolean NO_COMPOSE = false;
 
 
     public static @NonNull RemoteComposeBuffer getCurrentDoc() {
@@ -214,7 +215,34 @@ public class ExperimentRecyclerActivity extends Activity {
         lock.setBackgroundColor(0xFFAAFFAA);
         docControl.addView(lock);
         docControl.addView(mStatsView);
+        // ===================== Next section button ================
+        TextView next = new TextView(this);
+        next.setText(">");
+        next.setTextSize(24);
+        next.setBackgroundColor(Color.LTGRAY);
 
+        next.setPadding(0, 0, 0, 0);
+        next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                nextSection();
+            }
+        });
+        TextView prev = new TextView(this);
+        prev.setText("<");
+        prev.setTextSize(24);
+        prev.setPadding(0, 0, 0, 0);
+        prev.setBackgroundColor(Color.LTGRAY);
+        prev.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                prevSection();
+            }
+        });
+        docControl.addView(prev);
+        docControl.addView(next);
+
+        // ==========================================================
         layout.addView(docControl);
         LinearLayout row = new LinearLayout(this);
         float textSize = 15;
@@ -297,6 +325,14 @@ public class ExperimentRecyclerActivity extends Activity {
         setContentView(layout);
     }
 
+    void nextSection() {
+
+    }
+
+    void prevSection() {
+
+    }
+
     void setUpMetrics() {
         Handler handler = new Handler();
         // Log.d("Metrics", "setup");
@@ -361,6 +397,9 @@ public class ExperimentRecyclerActivity extends Activity {
         }
 
         for (RCDoc doc : mDocList) {
+            if (NO_COMPOSE && doc.toString().startsWith("Compose")) {
+                continue;
+            }
             saveDoc(doc.toString(), docToBytes(doc), getApplicationContext(), false);
         }
     }

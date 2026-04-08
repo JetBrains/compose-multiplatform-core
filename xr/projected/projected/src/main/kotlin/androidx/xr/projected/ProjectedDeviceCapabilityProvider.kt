@@ -18,6 +18,7 @@ package androidx.xr.projected
 
 import android.content.Context
 import androidx.lifecycle.Lifecycle
+import androidx.xr.runtime.interfaces.DisplayBlendMode
 import androidx.xr.runtime.interfaces.XrDeviceCapabilityProvider
 import kotlin.coroutines.CoroutineContext
 
@@ -27,4 +28,9 @@ internal class ProjectedDeviceCapabilityProvider(
 ) : XrDeviceCapabilityProvider {
     override val lifecycle: Lifecycle
         get() = ProjectedDeviceLifecycle(provider = this, context, coroutineContext)
+
+    override fun getPreferredDisplayBlendMode(): DisplayBlendMode {
+        // TODO(b/461561664): Implement this function dynamically.
+        return DisplayBlendMode.ADDITIVE
+    }
 }

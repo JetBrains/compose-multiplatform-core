@@ -91,6 +91,7 @@ class HitTestActivity : AppCompatActivity() {
                 IntSize2d(640, 480),
                 "panel",
                 Pose(Vector3(0f, -0.5f, .5f)),
+                parent = session!!.scene.activitySpace,
             )
         panelEntity.parent = session!!.scene.activitySpace
         val movableComponent = MovableComponent.createSystemMovable(session!!)
@@ -137,7 +138,13 @@ class HitTestActivity : AppCompatActivity() {
                                     session!!.scene.activitySpace,
                                 )
                         transformWidgetModel?.let {
-                            val gltfEntity = GltfModelEntity.create(session!!, it, hitTestPose)
+                            val gltfEntity =
+                                GltfModelEntity.create(
+                                    session!!,
+                                    it,
+                                    hitTestPose,
+                                    parent = session!!.scene.activitySpace,
+                                )
                             gltfEntity.parent = session!!.scene.activitySpace
                         }
                         resultTextView.text =
@@ -153,7 +160,12 @@ class HitTestActivity : AppCompatActivity() {
             val dragonModel =
                 GltfModel.create(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
             val gltfEntity =
-                GltfModelEntity.create(session!!, dragonModel, Pose(Vector3(1f, 1f, -2f)))
+                GltfModelEntity.create(
+                    session!!,
+                    dragonModel,
+                    Pose(Vector3(1f, 1f, -2f)),
+                    parent = session!!.scene.activitySpace,
+                )
             gltfEntity.parent = session!!.scene.activitySpace
             val interactableComponent = InteractableComponent.create(session!!, mainExecutor) {}
             if (!gltfEntity.addComponent(interactableComponent)) {

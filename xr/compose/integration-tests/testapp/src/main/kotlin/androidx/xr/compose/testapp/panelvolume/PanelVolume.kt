@@ -67,6 +67,7 @@ import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.scene
 import java.nio.file.Paths
 
 class PanelVolume : ComponentActivity() {
@@ -130,7 +131,12 @@ class PanelVolume : ComponentActivity() {
                 "LocalSession.current was null. Session must be available."
             }
         var arrows by remember { mutableStateOf<GltfModel?>(null) }
-        val gltfEntity = arrows?.let { remember { GltfModelEntity.create(session, it) } }
+        val gltfEntity =
+            arrows?.let {
+                remember {
+                    GltfModelEntity.create(session, it, parent = session.scene.activitySpace)
+                }
+            }
 
         LaunchedEffect(Unit) {
             arrows = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))

@@ -67,5 +67,11 @@ public class Limits {
     /** Maximum number of cached items in player-side LRU caches */
     public static final int MAX_CACHE_ENTRIES = 20;
 
+    /** Enable the player to generate haptic feedback */
+    public static final boolean ENABLE_HAPTIC_FEEDBACK = true;
+
+    /** Enable the player to support Image URLs */
+    public static final boolean ENABLE_IMAGE_URLS = true;
+
     private Limits() {}
 }

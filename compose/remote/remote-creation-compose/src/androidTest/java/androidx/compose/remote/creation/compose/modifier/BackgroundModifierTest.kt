@@ -17,8 +17,8 @@
 package androidx.compose.remote.creation.compose.modifier
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -48,6 +48,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.matchers.MSSIMMatcher
+import java.text.DecimalFormat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -68,11 +69,13 @@ class BackgroundModifierTest {
 
     val size = Size(200f, 200f)
     private val creationDisplayInfo =
-        CreationDisplayInfo(
+        RemoteCreationDisplayInfo(
             size.width.toInt(),
             size.height.toInt(),
             context.resources.displayMetrics.densityDpi,
         )
+
+    val hexDecimalFormat = DecimalFormat("0")
 
     fun RemoteInt.toHexDigit(): RemoteString {
         return eq(15.ri)
@@ -91,7 +94,12 @@ class BackgroundModifierTest {
                                             .select(
                                                 "B".rs,
                                                 eq(10.ri)
-                                                    .select("A".rs, absoluteValue.toRemoteString(1)),
+                                                    .select(
+                                                        "A".rs,
+                                                        absoluteValue.toRemoteString(
+                                                            hexDecimalFormat
+                                                        ),
+                                                    ),
                                             ),
                                     ),
                             ),

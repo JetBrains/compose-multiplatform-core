@@ -20,6 +20,22 @@ import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.operations.TextFromFloat
+import androidx.compose.remote.core.operations.TextFromFloat.GROUPING_BY3
+import androidx.compose.remote.core.operations.TextFromFloat.GROUPING_BY32
+import androidx.compose.remote.core.operations.TextFromFloat.GROUPING_BY4
+import androidx.compose.remote.core.operations.TextFromFloat.GROUPING_NONE
+import androidx.compose.remote.core.operations.TextFromFloat.OPTIONS_NEGATIVE_PARENTHESES
+import androidx.compose.remote.core.operations.TextFromFloat.OPTIONS_ROUNDING
+import androidx.compose.remote.core.operations.TextFromFloat.PAD_AFTER_NONE
+import androidx.compose.remote.core.operations.TextFromFloat.PAD_AFTER_SPACE
+import androidx.compose.remote.core.operations.TextFromFloat.PAD_AFTER_ZERO
+import androidx.compose.remote.core.operations.TextFromFloat.PAD_PRE_NONE
+import androidx.compose.remote.core.operations.TextFromFloat.PAD_PRE_SPACE
+import androidx.compose.remote.core.operations.TextFromFloat.PAD_PRE_ZERO
+import androidx.compose.remote.core.operations.TextFromFloat.SEPARATOR_COMMA_PERIOD
+import androidx.compose.remote.core.operations.TextFromFloat.SEPARATOR_PERIOD_COMMA
+import androidx.compose.remote.core.operations.TextFromFloat.SEPARATOR_SPACE_COMMA
+import androidx.compose.remote.core.operations.TextFromFloat.SEPARATOR_UNDER_PERIOD
 import androidx.compose.remote.core.operations.TimeAttribute
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.core.operations.Utils.asNan
@@ -34,7 +50,6 @@ import androidx.compose.remote.creation.compose.state.RemoteFloat.OperationKey
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
-import java.math.RoundingMode
 import java.text.DecimalFormat
 
 /**
@@ -106,6 +121,9 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
         CompareGT(Float.NaN),
         CompareGE(Float.NaN),
         Anim(Float.NaN),
+        Cubic(AnimatedFloatExpression.CUBIC),
+        Spline(AnimatedFloatExpression.A_SPLINE),
+        SplineLoop(AnimatedFloatExpression.A_SPLINE_LOOP),
     }
 
     internal fun arrayForCreationState(creationState: RemoteComposeCreationState): FloatArray {
@@ -140,91 +158,6 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
     }
 
     /**
-     * Returns a [RemoteString] that evaluates to the result of this [RemoteFloat] formatted
-     * according to the provided [DecimalFormat].
-     *
-     * This method maps the localized [DecimalFormat] symbols (such as separators and grouping
-     * sizes) and configuration (such as padding and rounding) to a remote-compatible string
-     * representation.
-     *
-     * @param format The [DecimalFormat] to use for determining separators, grouping, and padding.
-     * @return A [RemoteString] representing the formatted float.
-     */
-    public fun toRemoteString(format: DecimalFormat): RemoteString {
-        val decimalSeparator = format.decimalFormatSymbols.decimalSeparator
-        val groupingSeparator = format.decimalFormatSymbols.groupingSeparator
-
-        val grouping =
-            if (format.groupingSize == 3) {
-                val pattern = format.toPattern()
-
-                if (pattern.matches(",[0#]{2},[0#]{3}".toRegex())) {
-                    TextFromFloat.GROUPING_BY32
-                } else {
-                    TextFromFloat.GROUPING_BY3
-                }
-            } else if (format.groupingSize == 4) {
-                TextFromFloat.GROUPING_BY4
-            } else {
-                TextFromFloat.GROUPING_NONE
-            }
-
-        val separator =
-            if (groupingSeparator == ',' && decimalSeparator == '.') {
-                TextFromFloat.SEPARATOR_COMMA_PERIOD
-            } else if (groupingSeparator == '.' && decimalSeparator == ',') {
-                TextFromFloat.SEPARATOR_PERIOD_COMMA
-            } else if (groupingSeparator == ' ' && decimalSeparator == ',') {
-                TextFromFloat.SEPARATOR_SPACE_COMMA
-            } else if (groupingSeparator == '_' && decimalSeparator == '.') {
-                TextFromFloat.SEPARATOR_UNDER_PERIOD
-            } else {
-                // default
-                TextFromFloat.SEPARATOR_COMMA_PERIOD
-            }
-
-        val before = format.maximumIntegerDigits.coerceAtMost(255)
-        val after = format.maximumFractionDigits.coerceAtMost(255)
-        var options = 0
-        if (format.negativePrefix == "(") {
-            options = options or TextFromFloat.OPTIONS_NEGATIVE_PARENTHESES
-        }
-
-        if (format.roundingMode != RoundingMode.UNNECESSARY) {
-            // Not clear we can represent rounding properly
-            options = options or TextFromFloat.OPTIONS_ROUNDING
-        }
-
-        var flags = separator or grouping or options
-        if (format.minimumFractionDigits > 1) {
-            flags = flags or TextFromFloat.PAD_AFTER_ZERO
-        } else {
-            flags = flags or TextFromFloat.PAD_AFTER_NONE
-        }
-
-        if (format.minimumIntegerDigits > 1) {
-            // Support DecimalFormat("000") and similar cases.
-            if (format.minimumFractionDigits == 0 && before == 255) {
-                val unpadded = toRemoteString(before, after, flags or TextFromFloat.PAD_PRE_NONE)
-                return (unpadded.length le format.minimumIntegerDigits.ri).select(
-                    toRemoteString(
-                        format.minimumIntegerDigits,
-                        after,
-                        flags or TextFromFloat.PAD_PRE_ZERO,
-                    ),
-                    unpadded,
-                )
-            }
-
-            flags = flags or TextFromFloat.PAD_PRE_ZERO
-        } else {
-            flags = flags or TextFromFloat.PAD_PRE_NONE
-        }
-
-        return toRemoteString(before, after, flags)
-    }
-
-    /**
      * Returns a [RemoteString] that converts the result of this [RemoteFloat] with specified
      * formatting.
      *
@@ -237,7 +170,7 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
     public fun toRemoteString(
         before: Int,
         after: Int = 2,
-        flags: Int = TextFromFloat.PAD_AFTER_ZERO,
+        flags: Int = PAD_AFTER_ZERO,
     ): RemoteString {
         constantValueOrNull?.let {
             return RemoteString(floatToString(it, before, after, flags))
@@ -269,7 +202,7 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
                         val preFlags = flags and 12
                         val afterFlags = flags and 3
                         if (after == 0) {
-                            if (before == 1 || preFlags != TextFromFloat.PAD_PRE_SPACE) {
+                            if (before == 1 || preFlags != PAD_PRE_SPACE) {
                                 return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
                             } else {
                                 return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", " ")
@@ -279,8 +212,7 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
                         // If flags is non-zero then we may pad with a space.
                         if (
                             (before == 1 && after == 1) ||
-                                (preFlags != TextFromFloat.PAD_PRE_SPACE &&
-                                    afterFlags != TextFromFloat.PAD_AFTER_SPACE)
+                                (preFlags != PAD_PRE_SPACE && afterFlags != PAD_AFTER_SPACE)
                         ) {
                             return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".")
                         } else {
@@ -289,6 +221,137 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
                     }
                 },
         )
+    }
+
+    /**
+     * Returns a [RemoteString] that evaluates to the result of this [RemoteFloat] formatted
+     * according to the provided [android.icu.text.DecimalFormat].
+     *
+     * This method maps the localized ICU [android.icu.text.DecimalFormat] configuration (including
+     * padding, rounding, and digit constraints) to a remote-compatible string representation. It
+     * specifically handles complex padding logic and threshold-based selections to ensure the
+     * formatted output remains consistent when evaluated on the remote target.
+     *
+     * @param format The ICU [android.icu.text.DecimalFormat] to use for determining formatting
+     *   options like separators, grouping, and padding width.
+     * @return A [RemoteString] representing the formatted float.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toRemoteString(
+        format: android.icu.text.DecimalFormat = DefaultDecimalFormat
+    ): RemoteString {
+        val (before, after, flags) = format.toTextFromFloatOptions()
+
+        val padPre = format.minimumIntegerDigits > 1 || format.formatWidth > 0
+        if (padPre) {
+            val padWidth =
+                if (format.formatWidth > 0) format.formatWidth else format.minimumIntegerDigits
+
+            // Support scenarios where max digits was not restricted (before == 255)
+            if (before == 255) {
+                val flagsWithoutPrePadding = flags and PAD_PRE_ZERO.inv()
+                val flagsPreNone = flagsWithoutPrePadding or PAD_PRE_NONE
+                val unpadded = toRemoteStringOptions(before, after, flagsPreNone)
+                val isSpacePadded = format.formatWidth > 0 && format.padCharacter == ' '
+                val flagsPadded =
+                    flagsWithoutPrePadding or if (isSpacePadded) PAD_PRE_SPACE else PAD_PRE_ZERO
+
+                var threshold = 1f
+                for (i in 1 until padWidth) {
+                    threshold *= 10f
+                }
+
+                val isNegative = this lt 0f.rf
+                val absValue = isNegative.select(-this, this)
+
+                return (absValue lt threshold.rf).select(
+                    toRemoteStringOptions(padWidth, after, flagsPadded),
+                    unpadded,
+                )
+            }
+        }
+
+        return toRemoteStringOptions(before, after, flags)
+    }
+
+    internal fun toRemoteStringOptions(before: Int, after: Int, flags: Int): RemoteString {
+        constantValueOrNull?.let {
+            return RemoteString(floatToString(it, before = before, after = after, flags = flags))
+        }
+        return MutableRemoteString(
+            constantValueOrNull = null,
+            cacheKey =
+                RemoteOperationCacheKey.create(
+                    OperationKey.ToRemoteString,
+                    this,
+                    before,
+                    after,
+                    flags,
+                ),
+            lazyRemoteString =
+                object : LazyRemoteString {
+                    override fun reserveTextId(creationState: RemoteComposeCreationState): Int {
+                        return creationState.document.createTextFromFloat(
+                            asNan(getIdForCreationState(creationState)),
+                            before,
+                            after,
+                            flags,
+                        )
+                    }
+
+                    override fun computeRequiredCodePointSet(
+                        creationState: RemoteComposeCreationState
+                    ): Set<String> {
+                        val preFlags = flags and PAD_PRE_ZERO
+                        val afterFlags = flags and PAD_AFTER_ZERO
+                        if (after == 0) {
+                            if (before == 1 || preFlags != PAD_PRE_SPACE) {
+                                return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+                            } else {
+                                return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", " ")
+                            }
+                        }
+
+                        // If flags is non-zero then we may pad with a space.
+                        if (
+                            (before == 1 && after == 1) ||
+                                (preFlags != PAD_PRE_SPACE && afterFlags != PAD_AFTER_SPACE)
+                        ) {
+                            return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".")
+                        } else {
+                            return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", " ")
+                        }
+                    }
+                },
+        )
+    }
+
+    /**
+     * Returns a [RemoteString] that evaluates to the result of this [RemoteFloat] formatted
+     * according to the provided [DecimalFormat].
+     *
+     * This method maps the localized [DecimalFormat] symbols (such as separators and grouping
+     * sizes) and configuration (such as padding and rounding) to a remote-compatible string
+     * representation.
+     *
+     * @param format The [DecimalFormat] to use for determining separators, grouping, and padding.
+     * @return A [RemoteString] representing the formatted float.
+     */
+    public fun toRemoteString(format: DecimalFormat): RemoteString {
+        val icuFormat = android.icu.text.DecimalFormat(format.toPattern())
+        icuFormat.decimalFormatSymbols =
+            android.icu.text.DecimalFormatSymbols.getInstance().apply {
+                decimalSeparator = format.decimalFormatSymbols.decimalSeparator
+                groupingSeparator = format.decimalFormatSymbols.groupingSeparator
+            }
+        icuFormat.minimumIntegerDigits = format.minimumIntegerDigits
+        icuFormat.maximumIntegerDigits = format.maximumIntegerDigits
+        icuFormat.minimumFractionDigits = format.minimumFractionDigits
+        icuFormat.maximumFractionDigits = format.maximumFractionDigits
+        icuFormat.groupingSize = format.groupingSize
+        icuFormat.negativePrefix = format.negativePrefix
+
+        return toRemoteString(icuFormat)
     }
 
     /**
@@ -667,6 +730,8 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
         }
 
     public companion object {
+        internal val DefaultDecimalFormat = android.icu.text.DecimalFormat()
+
         private fun isConstant(v: Float): Boolean {
             // Assume all NaNs are variables which are probably non-const.
             return !v.isNaN()
@@ -763,34 +828,104 @@ public abstract class RemoteFloat internal constructor() : BaseRemoteState<Float
     }
 }
 
+internal data class TextFromFloatOptions(val before: Int, val after: Int, val flags: Int)
+
+internal fun android.icu.text.DecimalFormat.toTextFromFloatOptions(): TextFromFloatOptions {
+    val decimalSeparator = decimalFormatSymbols.decimalSeparator
+    val groupingSeparator = decimalFormatSymbols.groupingSeparator
+
+    val grouping =
+        if (!isGroupingUsed) {
+            GROUPING_NONE
+        } else if (groupingSize == 3) {
+            if (secondaryGroupingSize == 2) {
+                GROUPING_BY32
+            } else {
+                GROUPING_BY3
+            }
+        } else if (groupingSize == 4) {
+            GROUPING_BY4
+        } else {
+            GROUPING_NONE
+        }
+
+    val separator =
+        if (groupingSeparator == ',' && decimalSeparator == '.') {
+            SEPARATOR_COMMA_PERIOD
+        } else if (groupingSeparator == '.' && decimalSeparator == ',') {
+            SEPARATOR_PERIOD_COMMA
+        } else if (groupingSeparator == ' ' && decimalSeparator == ',') {
+            SEPARATOR_SPACE_COMMA
+        } else if (groupingSeparator == '_' && decimalSeparator == '.') {
+            SEPARATOR_UNDER_PERIOD
+        } else {
+            // default
+            SEPARATOR_COMMA_PERIOD
+        }
+
+    val before = maximumIntegerDigits.coerceAtMost(255)
+    val after = maximumFractionDigits.coerceAtMost(255)
+    var options = 0
+    if (negativePrefix == "(") {
+        options = options or OPTIONS_NEGATIVE_PARENTHESES
+    }
+
+    // icu rounding mode
+    @Suppress("DEPRECATION")
+    if (roundingMode != java.math.BigDecimal.ROUND_UNNECESSARY) {
+        options = options or OPTIONS_ROUNDING
+    }
+
+    var flags = separator or grouping or options
+
+    if (minimumFractionDigits > 1) {
+        flags = flags or PAD_AFTER_ZERO
+    } else {
+        flags = flags or PAD_AFTER_NONE
+    }
+
+    val padPre = minimumIntegerDigits > 1 || formatWidth > 0
+    if (padPre) {
+        if (formatWidth > 0 && padCharacter == ' ') {
+            flags = flags or PAD_PRE_SPACE
+        } else {
+            flags = flags or PAD_PRE_ZERO
+        }
+    } else {
+        flags = flags or PAD_PRE_NONE
+    }
+
+    return TextFromFloatOptions(before, after, flags)
+}
+
 internal fun floatToString(v: Float, before: Int, after: Int, flags: Int) =
     StringUtils.floatToString(
         v,
         before,
         after,
         when (flags and 12) {
-            TextFromFloat.PAD_PRE_SPACE -> ' '
-            TextFromFloat.PAD_PRE_NONE -> 0.toChar()
-            TextFromFloat.PAD_PRE_ZERO -> '0'
+            PAD_PRE_SPACE -> ' '
+            PAD_PRE_NONE -> 0.toChar()
+            PAD_PRE_ZERO -> '0'
             else -> ' '
         },
         when (flags and 3) {
-            TextFromFloat.PAD_AFTER_SPACE -> ' '
-            TextFromFloat.PAD_AFTER_NONE -> 0.toChar()
-            TextFromFloat.PAD_AFTER_ZERO -> '0'
+            PAD_AFTER_SPACE -> ' '
+            PAD_AFTER_NONE -> 0.toChar()
+            PAD_AFTER_ZERO -> '0'
             else -> ' '
         },
         when (flags and (3 shl 6)) {
-            TextFromFloat.SEPARATOR_PERIOD_COMMA -> StringUtils.SEPARATOR_PERIOD_COMMA
-            TextFromFloat.SEPARATOR_COMMA_PERIOD -> StringUtils.SEPARATOR_COMMA_PERIOD
-            TextFromFloat.SEPARATOR_SPACE_COMMA -> StringUtils.SEPARATOR_SPACE_COMMA
-            TextFromFloat.SEPARATOR_UNDER_PERIOD -> StringUtils.SEPARATOR_UNDER_PERIOD
+            SEPARATOR_PERIOD_COMMA -> StringUtils.SEPARATOR_PERIOD_COMMA
+            SEPARATOR_COMMA_PERIOD -> StringUtils.SEPARATOR_COMMA_PERIOD
+            SEPARATOR_SPACE_COMMA -> StringUtils.SEPARATOR_SPACE_COMMA
+            SEPARATOR_UNDER_PERIOD -> StringUtils.SEPARATOR_UNDER_PERIOD
             else -> StringUtils.SEPARATOR_PERIOD_COMMA
         },
         when (flags and (3 shl 4)) {
-            TextFromFloat.GROUPING_BY3 -> StringUtils.GROUPING_BY3
-            TextFromFloat.GROUPING_BY4 -> StringUtils.GROUPING_BY4
-            TextFromFloat.GROUPING_BY32 -> StringUtils.GROUPING_BY32
+            GROUPING_BY3 -> StringUtils.GROUPING_BY3
+            GROUPING_BY4 -> StringUtils.GROUPING_BY4
+            GROUPING_BY32 -> StringUtils.GROUPING_BY32
             else -> StringUtils.GROUPING_NONE
         },
         flags shr 8,

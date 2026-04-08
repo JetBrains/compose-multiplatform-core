@@ -18,7 +18,7 @@ package androidx.xr.arcore.playservices
 
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.ArDevice
-import androidx.xr.runtime.TrackingState as RuntimeTrackingState
+import androidx.xr.arcore.runtime.TrackingState as RuntimeTrackingState
 import androidx.xr.runtime.math.Pose
 import com.google.ar.core.Frame
 import com.google.ar.core.TrackingState
@@ -29,7 +29,7 @@ import com.google.ar.core.TrackingState
  * @property devicePose the [Pose] of the device
  * @property trackingState the tracking state of the device
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ArCoreDevice internal constructor() : ArDevice {
 
     override var devicePose: Pose = Pose()

@@ -76,7 +76,6 @@ android {
     compileSdk = 35
     defaultConfig {
         minSdk = 25
-        consumerProguardFiles("proguard-rules.pro")
     }
     testOptions.unitTests.returnDefaultValues = true
     namespace = "androidx.wear.compose.material3"

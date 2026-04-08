@@ -17,7 +17,6 @@
 package androidx.tracing.benchmark.driver
 
 import android.content.Context
-import androidx.benchmark.BlackHole
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
@@ -89,7 +88,7 @@ class TracingBenchmark {
                 // 32 total events (or 16 begin/end pairs) will dispatch
                 // instead, we reset after 8 begin/end pairs so we only measure
                 // producer write cost without sending to sink
-                tracer.resetFillCount()
+                runWithMeasurementDisabled { tracer.resetTraceEvents() }
             }
         }
     }
@@ -103,22 +102,32 @@ class TracingBenchmark {
                     // 32 total events (or 16 begin/end pairs) will dispatch
                     // instead, we reset after 8 begin/end pairs so we only measure
                     // producer write cost without sending to sink
-                    runWithMeasurementDisabled { tracer.resetFillCount() }
+                    runWithMeasurementDisabled { tracer.resetTraceEvents() }
                 }
             }
         }
     }
 
-    // This benchmark is a reference benchmark for `beginEndCoroutine_writeOnly`. The goal is to
-    // get the numbers for `beginEndCoroutine_writeOnly` to get as close as possible to the
-    // benchmark below.
+    // This benchmark is a reference benchmark for `beginEndCoroutine_writeOnly`. We are trying to
+    // measure the cost of context propagation by comparing it with a ThreadContextElement that
+    // does nothing.
     @Test
     fun referenceForBeginEndCoroutine() = runTest {
         benchmarkRule.measureRepeated {
             runBlocking {
-                val coroutineContext = currentCoroutineContext()
-                withContext(coroutineContext + TestThreadContextElement()) {
-                    repeat(32) { BlackHole.consume(it) }
+                repeat(4) {
+                    repeat(8) {
+                        val coroutineContext = currentCoroutineContext()
+                        withContext(coroutineContext + TestThreadContextElement()) {
+                            tracer.trace(category = CATEGORY, name = BASIC_STRING) {
+                                // Do nothing
+                            }
+                        }
+                    }
+                    // 32 total events (or 16 begin/end pairs) will dispatch
+                    // instead, we reset after 8 begin/end pairs so we only measure
+                    // producer write cost without sending to sink
+                    runWithMeasurementDisabled { tracer.resetTraceEvents() }
                 }
             }
         }

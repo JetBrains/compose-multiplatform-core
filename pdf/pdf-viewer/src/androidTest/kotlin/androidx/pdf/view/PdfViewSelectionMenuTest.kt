@@ -73,7 +73,7 @@ class PdfViewSelectionMenuTest {
                 pdfView =
                     PdfView(activity).apply {
                         pdfDocument = fakePdfDocument
-                        id = R.id.pdf_view
+                        id = R.id.pdfView
                     }
                 container.addView(
                     pdfView,
@@ -96,7 +96,7 @@ class PdfViewSelectionMenuTest {
         val selectionMenuItemPreparer = SelectionMenuItemPreparer()
 
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
-            Espresso.onView(withId(R.id.pdf_view)).check { view, noViewFoundException ->
+            Espresso.onView(withId(R.id.pdfView)).check { view, noViewFoundException ->
                 view ?: throw noViewFoundException
                 val localPdfView = view as PdfView
                 localPdfView.addSelectionMenuItemPreparer(selectionMenuItemPreparer)
@@ -126,7 +126,7 @@ class PdfViewSelectionMenuTest {
         }
 
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
-            Espresso.onView(withId(R.id.pdf_view)).check { view, noViewFoundException ->
+            Espresso.onView(withId(R.id.pdfView)).check { view, noViewFoundException ->
                 view ?: throw noViewFoundException
                 val localPdfView = view as PdfView
                 localPdfView.addSelectionMenuItemPreparer(selectionMenuItemPreparer)
@@ -158,7 +158,7 @@ class PdfViewSelectionMenuTest {
         }
 
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
-            Espresso.onView(withId(R.id.pdf_view)).check { view, noViewFoundException ->
+            Espresso.onView(withId(R.id.pdfView)).check { view, noViewFoundException ->
                 view ?: throw noViewFoundException
                 val localPdfView = view as PdfView
                 localPdfView.addSelectionMenuItemPreparer(selectionMenuItemPreparer)
@@ -172,7 +172,7 @@ class PdfViewSelectionMenuTest {
     }
 
     private fun longClickAtCenter() {
-        onView(withId(R.id.pdf_view))
+        onView(withId(R.id.pdfView))
             .perform(
                 GeneralClickAction(
                     Tap.LONG,

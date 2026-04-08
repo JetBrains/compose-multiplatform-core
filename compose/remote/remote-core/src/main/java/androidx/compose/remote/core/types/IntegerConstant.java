@@ -24,6 +24,7 @@ import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.documentation.DocumentedOperation;
+import androidx.compose.remote.core.operations.ComponentData;
 import androidx.compose.remote.core.serialize.MapSerializer;
 import androidx.compose.remote.core.serialize.Serializable;
 
@@ -33,7 +34,7 @@ import java.util.List;
 
 /** Represents a single integer typically used for states or named for input into the system */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class IntegerConstant extends Operation implements Serializable {
+public class IntegerConstant extends Operation implements Serializable, ComponentData {
     private static final String CLASS_NAME = "IntegerConstant";
 
     private int mValue;

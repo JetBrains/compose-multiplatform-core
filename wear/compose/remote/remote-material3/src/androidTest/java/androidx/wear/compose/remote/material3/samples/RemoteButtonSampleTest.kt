@@ -17,12 +17,13 @@
 package androidx.wear.compose.remote.material3.samples
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -45,11 +46,12 @@ class RemoteButtonSampleTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val creationDisplayInfo =
-        CreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
+        RemoteCreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
 
     @Test
     fun remoteButtonSimpleSampleTest() {
         remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {

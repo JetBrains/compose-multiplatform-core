@@ -23,9 +23,8 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.runtime.Anchor.PersistenceState
 import androidx.xr.arcore.runtime.ExportableAnchor
-import androidx.xr.arcore.testing.FakeRuntimeAnchor
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.NodeHolder
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -35,6 +34,7 @@ import androidx.xr.runtime.testing.math.assertVector3
 import androidx.xr.scenecore.runtime.AnchorEntity
 import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
+import androidx.xr.scenecore.runtime.impl.PerceptionSpaceScenePoseImpl
 import androidx.xr.scenecore.testing.FakeGltfFeature
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.android.extensions.xr.node.Node
@@ -221,7 +221,7 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
     fun anchorEntityGetPoseRelativeToActivitySpace_returnsActivitySpacePose() {
         val anchorEntity = createAnchorEntityWithRuntimeAnchor()
 
-        assertPose(anchorEntity.getPose(Space.ACTIVITY), anchorEntity.poseInActivitySpace)
+        assertPose(anchorEntity.getPose(Space.ACTIVITY), anchorEntity.activitySpacePose)
     }
 
     @Test
@@ -261,35 +261,35 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
     }
 
     @Test
-    fun getPoseInActivitySpace_unanchored_returnsIdentityPose() {
+    fun getActivitySpacePose_unanchored_returnsIdentityPose() {
         val anchorEntity = createUnanchoredAnchorEntity()
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
         activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity)
         anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
 
-        assertPose(anchorEntity.poseInActivitySpace, Pose())
+        assertPose(anchorEntity.activitySpacePose, Pose())
     }
 
     @Test
-    fun getPoseInActivitySpace_noActivitySpaceOpenXrReferenceSpacePose_returnsIdentityPose() {
+    fun getActivitySpacePose_noActivitySpaceOpenXrReferenceSpacePose_returnsIdentityPose() {
         val anchorEntity = createAnchorEntityWithRuntimeAnchor()
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
         anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
-        assertPose(anchorEntity.poseInActivitySpace, Pose())
+        assertPose(anchorEntity.activitySpacePose, Pose())
     }
 
     @Test
-    fun getPoseInActivitySpace_noAnchorOpenXrReferenceSpacePose_returnsIdentityPose() {
+    fun getActivitySpacePose_noAnchorOpenXrReferenceSpacePose_returnsIdentityPose() {
         val anchorEntity = createAnchorEntityWithRuntimeAnchor()
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
         activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
 
         // anchorEntity.setOpenXrReferenceSpacePose(..) is not called to set the underlying pose.
-        assertPose(anchorEntity.poseInActivitySpace, Pose())
+        assertPose(anchorEntity.activitySpacePose, Pose())
     }
 
     @Test
-    fun getPoseInActivitySpace_whenAtSamePose_returnsIdentityPose() {
+    fun getActivitySpacePose_whenAtSamePose_returnsIdentityPose() {
         val anchorEntity = createAnchorEntityWithRuntimeAnchor()
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
         activitySpace.setOpenXrReferenceSpaceTransform(
@@ -297,21 +297,21 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
         )
         anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
 
-        assertPose(anchorEntity.poseInActivitySpace, Pose())
+        assertPose(anchorEntity.activitySpacePose, Pose())
     }
 
     @Test
-    fun getPoseInActivitySpace_returnsDifferencePose() {
+    fun getActivitySpacePose_returnsDifferencePose() {
         val anchorEntity = createAnchorEntityWithRuntimeAnchor()
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
         activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity)
         anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
 
-        assertPose(anchorEntity.poseInActivitySpace, pose)
+        assertPose(anchorEntity.activitySpacePose, pose)
     }
 
     @Test
-    fun getPoseInActivitySpace_withScaledAndRotatedActivitySpace_returnsDifferencePose() {
+    fun getActivitySpacePose_withScaledAndRotatedActivitySpace_returnsDifferencePose() {
         val anchorEntity = createAnchorEntityWithRuntimeAnchor()
         val activitySpaceQuaternion = Quaternion.fromEulerAngles(Vector3(0f, 0f, 90f))
         val pose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
@@ -328,29 +328,7 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
         val expectedPose =
             Pose(Vector3(-2.0f, 1.0f, -3.0f), Quaternion.fromEulerAngles(Vector3(0f, 0f, -90f)))
 
-        assertPose(anchorEntity.poseInActivitySpace, expectedPose)
-    }
-
-    @Test
-    fun getActivitySpacePose_whenAtSamePose_returnsIdentityPose() {
-        activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity)
-        val anchorEntity = createAnchorEntityWithRuntimeAnchor()
-        val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
-
-        anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
-
-        assertPose(anchorEntity.activitySpacePose, pose)
-    }
-
-    @Test
-    fun getActivitySpacePose_returnsDifferencePose() {
-        activitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity)
-        val anchorEntity = createAnchorEntityWithRuntimeAnchor()
-        val pose = Pose(Vector3(1f, 1f, 1f), Quaternion(0f, 1f, 0f, 1f))
-
-        anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose))
-
-        assertPose(anchorEntity.activitySpacePose, pose)
+        assertPose(anchorEntity.activitySpacePose, expectedPose)
     }
 
     @Test
@@ -392,10 +370,12 @@ class AnchorEntityImplTest : SystemSpaceEntityImplTest() {
     }
 
     @Test
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 remove references to arcore-testing Fakes
     fun setAnchor_nonExportableAnchor_remainsUnanchored() {
         val anchorEntity = createAnchorEntity()
         anchorEntity.setOnStateChangedListener(anchorStateListener)
-        val runtimeAnchor = FakeRuntimeAnchor(Pose.Identity, null, true)
+        val runtimeAnchor = androidx.xr.arcore.testing.FakeRuntimeAnchor(Pose.Identity, true)
         anchorEntity.setAnchor(Anchor(runtimeAnchor))
         executor.runAll()
 

@@ -93,7 +93,7 @@ public class LayoutTestPlayer {
         doc.initFromBuffer(buffer);
         MockRemoteContext debugContext = new MockRemoteContext();
         debugContext.setAnimationEnabled(false);
-        debugContext.setDensity(1f);
+        debugContext.setDensity(doc.getDensity());
         if (overridePlayerSize) {
             debugContext.mWidth = tw1;
             debugContext.mHeight = th1;

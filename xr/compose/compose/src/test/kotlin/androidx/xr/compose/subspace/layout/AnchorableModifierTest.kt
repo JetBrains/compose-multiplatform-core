@@ -31,10 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import androidx.xr.arcore.runtime.Plane
-import androidx.xr.arcore.testing.FakeLifecycleManager
-import androidx.xr.arcore.testing.FakePerceptionManager
-import androidx.xr.arcore.testing.FakePerceptionRuntime
-import androidx.xr.arcore.testing.FakeRuntimePlane
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
@@ -45,7 +42,6 @@ import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Matrix4
@@ -92,12 +88,18 @@ class AnchorableModifierTest {
     @get:Rule val permissionRule = GrantPermissionRule.grant(SCENE_UNDERSTANDING_COARSE)
 
     private lateinit var session: Session
-    private lateinit var lifecycleManager: FakeLifecycleManager
-    private lateinit var perceptionManager: FakePerceptionManager
+
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
+    @Suppress("DEPRECATION")
+    private lateinit var lifecycleManager: androidx.xr.arcore.testing.FakeLifecycleManager
+    @Suppress("DEPRECATION")
+    private lateinit var perceptionManager: androidx.xr.arcore.testing.FakePerceptionManager
     private lateinit var activitySpace: FakeActivitySpace
     private lateinit var sceneRuntime: FakeSceneRuntime
 
     @Before
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun setup() {
         val sessionCreateResult = Session.create(composeTestRule.activity, testDispatcher)
         assertThat(sessionCreateResult).isInstanceOf(SessionCreateSuccess::class.java)
@@ -105,10 +107,13 @@ class AnchorableModifierTest {
         session.configure(
             config = session.config.copy(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
         )
-        session.runtimes.filterIsInstance<FakePerceptionRuntime>().single().let {
-            lifecycleManager = it.lifecycleManager
-            perceptionManager = it.perceptionManager
-        }
+        session.runtimes
+            .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+            .single()
+            .let {
+                lifecycleManager = it.lifecycleManager
+                perceptionManager = it.perceptionManager
+            }
         session.runtimes.filterIsInstance<FakeSceneRuntime>().single().let {
             activitySpace = it.activitySpace
             sceneRuntime = it
@@ -668,6 +673,8 @@ class AnchorableModifierTest {
         }
     }
 
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     private fun addPlaneToRuntime(
         type: Plane.Type = Plane.Type.HORIZONTAL_UPWARD_FACING,
         label: Plane.Label = Plane.Label.FLOOR,
@@ -676,7 +683,13 @@ class AnchorableModifierTest {
         extents: FloatSize2d = FloatSize2d(),
     ) {
         perceptionManager.trackables.add(
-            FakeRuntimePlane(type, label, trackingState, centerPose, extents)
+            androidx.xr.arcore.testing.FakeRuntimePlane(
+                type,
+                label,
+                trackingState,
+                centerPose,
+                extents,
+            )
         )
         lifecycleManager.timeSource.plusAssign(1.milliseconds)
         lifecycleManager.allowOneMoreCallToUpdate()

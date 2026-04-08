@@ -90,6 +90,7 @@ class SpatialAudioActivity : AppCompatActivity() {
                 IntSize2d(640, 480),
                 "sound panel",
                 Pose(Vector3(0F, 0F, 0.5F)),
+                parent = session.scene.activitySpace,
             )
 
         val movableComponent = MovableComponent.createSystemMovable(session, scaleInZ = false)

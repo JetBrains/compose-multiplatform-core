@@ -48,9 +48,9 @@ import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeEvent
+import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.format
 import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.materialswitch.MaterialSwitch
@@ -68,7 +68,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
     private var resizablePanelActive = false
     private var mainPanelMovableActive = false
     private var mainPanelResizableActive = false
-    private lateinit var defaultPanelSize: FloatSize2d
+    private lateinit var defaultPanelSize: IntSize2d
 
     private val moveListener =
         object : EntityMoveListener {
@@ -136,7 +136,14 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         val switchText = "$text Switch"
         switch.text = switchText
 
-        val panelEntity = PanelEntity.create(session!!, panel, IntSize2d(640, 480), "panel")
+        val panelEntity =
+            PanelEntity.create(
+                session!!,
+                panel,
+                IntSize2d(640, 480),
+                "panel",
+                parent = session!!.scene.activitySpace,
+            )
         panelEntity.setPose(Pose(Vector3(0f, -0.5f, 0.5f)))
         panelEntity.parent = session!!.scene.activitySpace
         return panelEntity
@@ -145,39 +152,81 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
     private fun createMovableGltfEntity() {
         var moveEventCount = 0
         var inputEventCount = 0
-        val text = " glTF Events:\n MoveEvents = %d\n InputEvents = %d"
+        val text =
+            " glTF Events:\n\t\t MoveEvents = %d\n\t\t InputEvents = %d" +
+                "\n Translation: " +
+                "\n\t\t World (%.2f, %.2f, %.2f)" +
+                "\n\t\t Parent (%.2f, %.2f, %.2f)" +
+                "\n\t\t Activity (%.2f, %.2f, %.2f)"
+
         val gltfPanelView = layoutInflater.inflate(R.layout.standalone_panel, null)
         val textView = gltfPanelView.findViewById<TextView>(R.id.textView)
-        textView.textSize = 40f
+        textView.textSize = 30f
+        var worldPos = Vector3()
+        var parentPos = Vector3()
+        var activityPos = Vector3()
 
-        val updateText = { textView.text = text.format(moveEventCount, inputEventCount) }
+        val updateText = {
+            textView.text =
+                text.format(
+                    moveEventCount,
+                    inputEventCount,
+                    worldPos.x,
+                    worldPos.y,
+                    worldPos.z,
+                    parentPos.x,
+                    parentPos.y,
+                    parentPos.z,
+                    activityPos.x,
+                    activityPos.y,
+                    activityPos.z,
+                )
+        }
 
         PanelEntity.create(
             session!!,
             gltfPanelView,
-            IntSize2d(1000, 480),
+            IntSize2d(1000, 550),
             "panel",
             Pose(Vector3(0.0f, -1f, -0.1f)),
+            parent = session!!.scene.activitySpace,
         )
         updateText()
 
         lifecycleScope.launch {
             val gltfModel = GltfModel.create(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
             val gltfModelEntity =
-                GltfModelEntity.create(session!!, gltfModel, Pose(Vector3(0f, 1.5f, -2f))).also {
-                    it.setScale(0.75f)
-                }
+                GltfModelEntity.create(
+                        session!!,
+                        gltfModel,
+                        Pose(Vector3(0f, 1.5f, -2f)),
+                        parent = session!!.scene.activitySpace,
+                    )
+                    .also { it.setScale(0.75f) }
             val movableComponent = MovableComponent.createSystemMovable(session!!, false)
             val moveEventListener =
                 object : EntityMoveListener {
+                    override fun onMoveEnd(
+                        entity: Entity,
+                        finalInputRay: Ray,
+                        finalPose: Pose,
+                        finalScale: Float,
+                        updatedParent: Entity?,
+                    ) {
+                        Log.i(TAG, "$entity $finalInputRay $finalPose $finalScale")
+                        moveEventCount++
+                        updateText()
+                    }
+
                     override fun onMoveUpdate(
                         entity: Entity,
                         currentInputRay: Ray,
                         currentPose: Pose,
                         currentScale: Float,
                     ) {
-                        Log.i(TAG, "$entity $currentInputRay $currentPose $currentScale")
-                        moveEventCount++
+                        worldPos = entity.getPose(Space.REAL_WORLD).translation
+                        parentPos = entity.getPose(Space.PARENT).translation
+                        activityPos = entity.getPose(Space.ACTIVITY).translation
                         updateText()
                     }
                 }
@@ -349,17 +398,17 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
             this.finish()
         } else {
             if (savedInstanceState != null) {
-                val width = savedInstanceState.getFloat("defaultPanelSizeWidth")
-                val height = savedInstanceState.getFloat("defaultPanelSizeHeight")
-                defaultPanelSize = FloatSize2d(width, height)
+                val width = savedInstanceState.getInt("defaultPanelSizeWidth")
+                val height = savedInstanceState.getInt("defaultPanelSizeHeight")
+                defaultPanelSize = IntSize2d(width, height)
             } else {
-                defaultPanelSize = session!!.scene.mainPanelEntity.size
+                defaultPanelSize = session!!.scene.mainPanelEntity.sizeInPixels
             }
             Log.d(
                 TAG,
                 "defaultPanelSize: " +
-                    "w ${defaultPanelSize.width.format(2)} x " +
-                    "h ${defaultPanelSize.height.format(2)}",
+                    "w ${defaultPanelSize.width} x " +
+                    "h ${defaultPanelSize.height}",
             )
         }
 
@@ -604,7 +653,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putFloat("defaultPanelSizeWidth", defaultPanelSize.width)
-        outState.putFloat("defaultPanelSizeHeight", defaultPanelSize.height)
+        outState.putInt("defaultPanelSizeWidth", defaultPanelSize.width)
+        outState.putInt("defaultPanelSizeHeight", defaultPanelSize.height)
     }
 }

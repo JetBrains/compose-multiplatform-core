@@ -20,9 +20,11 @@ import android.content.Context
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.wear.compose.integration.demos.common.ActivityDemo
 import androidx.wear.compose.integration.demos.common.Centralize
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.integration.demos.common.Material3DemoCategory
+import androidx.wear.compose.material3.RevealDirection.Companion.Bidirectional
 import androidx.wear.compose.material3.samples.AnimatedTextSample
 import androidx.wear.compose.material3.samples.AnimatedTextSampleButtonResponse
 import androidx.wear.compose.material3.samples.AnimatedTextSampleSharedFontRegistry
@@ -38,6 +40,10 @@ import androidx.wear.compose.material3.samples.LevelIndicatorSample
 import androidx.wear.compose.material3.samples.ListHeaderSample
 import androidx.wear.compose.material3.samples.NonClickableImageCardSample
 import androidx.wear.compose.material3.samples.NonClickableTitleCardWithImageWithTimeAndTitleSample
+import androidx.wear.compose.material3.samples.OneHandedGestureButtonSample
+import androidx.wear.compose.material3.samples.OneHandedGestureHorizontalPagerSample
+import androidx.wear.compose.material3.samples.OneHandedGestureTransformingLazyColumnSample
+import androidx.wear.compose.material3.samples.OneHandedGestureVerticalPagerSample
 import androidx.wear.compose.material3.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.material3.samples.StatefulSwipeToDismissBox
 import androidx.wear.compose.material3.samples.SwipeToRevealNoPartialRevealWithScalingLazyColumnSample
@@ -214,8 +220,16 @@ val WearMaterial3Demos =
                         ComposableDemo("In TLC") {
                             SwipeToRevealWithTransformingLazyColumnSample()
                         },
+                        ComposableDemo("In TLC, two actions") {
+                            SwipeToRevealTwoActionsWithTransformingLazyColumnDemo()
+                        },
                         ComposableDemo("In TLC, bi-directional") {
                             SwipeToRevealWithTransformingLazyColumnDemo()
+                        },
+                        ComposableDemo("In TLC, bi-directional, two actions") {
+                            SwipeToRevealTwoActionsWithTransformingLazyColumnDemo(
+                                revealDirection = Bidirectional
+                            )
                         },
                         ComposableDemo("In TLC, icon only") {
                             SwipeToRevealIconOnlyWithTransformingLazyColumnDemo()
@@ -267,6 +281,9 @@ val WearMaterial3Demos =
                             TransformingLazyColumnExpandableCardSample()
                         },
                         ComposableDemo("TLC Buttons and Cards") { SurfaceTransformationDemo() },
+                        ComposableDemo("Request Anchor Demo") {
+                            TransformingLazyColumnRequestAnchorItemDemo()
+                        },
                         ComposableDemo("Animation Demo") {
                             TransformingLazyColumnAnimationSample()
                         },
@@ -283,6 +300,26 @@ val WearMaterial3Demos =
                             CustomCompositingStrategyTransformationSpecSample()
                         },
                         ComposableDemo("Snapping behavior") { TransformingLazyColumnSnappingDemo() },
+                    ),
+                ),
+                Material3DemoCategory(
+                    title = "One Handed Gestures",
+                    listOf(
+                        ComposableDemo("Button") { OneHandedGestureButtonSample() },
+                        ComposableDemo("TransformingLazyColumn") {
+                            OneHandedGestureTransformingLazyColumnSample()
+                        },
+                        ComposableDemo("Horizontal Pager") {
+                            OneHandedGestureHorizontalPagerSample()
+                        },
+                        ComposableDemo("Vertical Pager") { OneHandedGestureVerticalPagerSample() },
+                        ComposableDemo("Two Buttons with the same priority") {
+                            OneHandedGestureTwoButtonsSamePriorityDemo()
+                        },
+                        ActivityDemo(
+                            "SwipeDismissableNavHost",
+                            OneHandedGestureSwipeDismissableNavHostDemoActivity::class,
+                        ),
                     ),
                 ),
                 ComposableDemo("Text Block") { TextBlockDemo() },

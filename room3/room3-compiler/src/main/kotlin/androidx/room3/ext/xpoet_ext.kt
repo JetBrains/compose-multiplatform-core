@@ -85,6 +85,7 @@ object RoomTypeNames {
     val RAW_QUERY = XClassName.get(ROOM_PACKAGE, "RoomRawQuery")
     val ROOM_DB_CONSTRUCTOR = XClassName.get(ROOM_PACKAGE, "RoomDatabaseConstructor")
     val BYTE_ARRAY_WRAPPER = XClassName.get("$ROOM_PACKAGE.util", "ByteArrayWrapper")
+    val ANDROID_MARKER = XClassName.get("$ROOM_PACKAGE.util", "AndroidMarker")
 }
 
 object RoomAnnotationTypeNames {
@@ -235,9 +236,7 @@ object RoomMemberNames {
 }
 
 object SQLiteDriverMemberNames {
-    val CONNECTION_EXEC_SQL = SQLiteDriverTypeNames.SQLITE.packageMember("executeSQL")
-    val CONNECTION_PREPARE = SQLiteDriverTypeNames.SQLITE.packageMember("prepare")
-    val STATEMENT_STEP = SQLiteDriverTypeNames.SQLITE.packageMember("step")
+    val CONNECTION_EXEC_SQL = SQLiteDriverTypeNames.SQLITE.packageMember("execSQL")
 }
 
 val SUPPORTED_VALUES_TYPES =

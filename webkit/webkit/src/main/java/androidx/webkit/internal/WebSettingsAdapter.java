@@ -329,4 +329,20 @@ public class WebSettingsAdapter {
     public void setBackForwardCacheMaxPagesInCache(int maxPages) {
         mBoundaryInterface.setBackForwardCacheSettingsMaxPagesInCache(maxPages);
     }
+
+    /**
+     * Adapter method for {@link BackForwardCacheSettings#getKeepForwardEntries()}
+     */
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    public boolean getBackForwardCacheKeepForwardEntries() {
+        return mBoundaryInterface.getBackForwardCacheSettingsKeepForwardEntries();
+    }
+
+    /**
+     * Adapter method for {@link BackForwardCacheSettings#setKeepForwardEntries(boolean)}
+     */
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    public void setBackForwardCacheKeepForwardEntries(boolean keepForwardEntries) {
+        mBoundaryInterface.setBackForwardCacheSettingsKeepForwardEntries(keepForwardEntries);
+    }
 }

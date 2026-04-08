@@ -47,6 +47,7 @@ import kotlin.math.sin
  * A layout composable that arranges its children in a horizontal sequence. For arranging children
  * vertically, see [SpatialColumn].
  *
+ * @sample androidx.xr.compose.samples.SimpleSpatialRowSample
  * @param modifier Appearance modifiers to apply to this Composable.
  * @param verticalAlignment The default vertical alignment for child elements within the row.
  * @param depthAlignment The default depth alignment for child elements within the row.
@@ -81,6 +82,7 @@ public inline fun SpatialRow(
 /**
  * A layout composable that arranges its children in a curved horizontal sequence.
  *
+ * @sample androidx.xr.compose.samples.SimpleSpatialCurvedRowSample
  * @param modifier Appearance modifiers to apply to this Composable.
  * @param verticalAlignment The default vertical alignment for child elements within the row.
  * @param depthAlignment The default depth alignment for child elements within the row.
@@ -174,10 +176,10 @@ internal class SpatialRowMeasurePolicy(
     }
 
     override val SubspacePlaceable.mainAxisSize: Int
-        get() = measuredWidth
+        get() = width
 
     override val SubspacePlaceable.crossAxisSize: Int
-        get() = measuredHeight
+        get() = height
 
     override val VolumeConstraints.mainAxisTargetSpace: Int
         get() = if (maxWidth != VolumeConstraints.INFINITY) maxWidth else minWidth
@@ -285,7 +287,7 @@ internal class SpatialRowMeasurePolicy(
 
         val depthPosition =
             resolvedMeasurable.depthOffset(
-                depth = placeable.measuredDepth,
+                depth = placeable.depth,
                 space = containerSize.depth,
                 parentSpatialAlignment = alignment,
             )

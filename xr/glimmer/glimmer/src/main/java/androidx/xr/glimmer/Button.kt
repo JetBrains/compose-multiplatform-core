@@ -71,7 +71,8 @@ import androidx.compose.ui.unit.dp
  * @param shape the [Shape] used to clip this button, and also used to draw the background and
  *   border
  * @param color background color of this button
- * @param contentColor content color used by components inside [content]
+ * @param contentColor content color used by components inside [content], [leadingIcon], and
+ *   [trailingIcon].
  * @param border the border to draw around this button
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content
@@ -97,7 +98,6 @@ public fun Button(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val colors = GlimmerTheme.colors
     val iconSize = GlimmerTheme.iconSizes.small
     val iconSpacing = GlimmerTheme.componentSpacingValues.extraSmall
 
@@ -134,13 +134,13 @@ public fun Button(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (leadingIcon != null) {
-                Box(Modifier.padding(end = iconSpacing).contentColorProvider(colors.primary)) {
+                Box(Modifier.padding(end = iconSpacing)) {
                     CompositionLocalProvider(LocalIconSize provides iconSize, content = leadingIcon)
                 }
             }
             content()
             if (trailingIcon != null) {
-                Box(Modifier.padding(start = iconSpacing).contentColorProvider(colors.primary)) {
+                Box(Modifier.padding(start = iconSpacing)) {
                     CompositionLocalProvider(
                         LocalIconSize provides iconSize,
                         content = trailingIcon,

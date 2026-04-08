@@ -22,6 +22,7 @@ import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AwbMode
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.ControlMode
+import androidx.camera.camera2.pipe.Converge3ABehavior
 import androidx.camera.camera2.pipe.FlashMode
 import androidx.camera.camera2.pipe.Frame
 import androidx.camera.camera2.pipe.FrameCapture
@@ -158,6 +159,20 @@ open class FakeCameraGraphSession : CameraGraph.Session {
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
         awbRegions: List<MeteringRectangle>?,
+    ): Deferred<Result3A> {
+        throw NotImplementedError("Not used in testing")
+    }
+
+    override fun converge3A(
+        aeRegions: List<MeteringRectangle>?,
+        afRegions: List<MeteringRectangle>?,
+        awbRegions: List<MeteringRectangle>?,
+        aeBehavior: Converge3ABehavior?,
+        afBehavior: Converge3ABehavior?,
+        awbBehavior: Converge3ABehavior?,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
+        frameLimit: Int?,
+        timeLimitNs: Long?,
     ): Deferred<Result3A> {
         throw NotImplementedError("Not used in testing")
     }

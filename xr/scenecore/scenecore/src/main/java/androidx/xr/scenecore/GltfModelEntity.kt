@@ -176,42 +176,17 @@ private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
          *
          * @param session [Session] to create the [GltfModel] in.
          * @param model The [GltfModel] this [Entity] is referencing.
-         * @param pose The initial [Pose] of the [Entity].
-         */
-        @MainThread
-        @JvmStatic
-        @JvmOverloads
-        public fun create(
-            session: Session,
-            model: GltfModel,
-            pose: Pose = Pose.Identity,
-        ): GltfModelEntity =
-            create(
-                session.sceneRuntime,
-                session.renderingRuntime,
-                session.scene.entityRegistry,
-                model,
-                pose,
-            )
-
-        /**
-         * Public factory function for a [GltfModelEntity].
-         *
-         * This method must be called from the main thread.
-         * https://developer.android.com/guide/components/processes-and-threads
-         *
-         * @param session [Session] to create the [GltfModel] in.
-         * @param model The [GltfModel] this [Entity] is referencing.
          * @param pose The initial [Pose] of the [Entity]. The default value is [Pose.Identity].
          * @param parent Parent entity. If `null`, the entity is created but not attached to the
          *   scene graph and will not be visible until a parent is set. The default value is
          *   [Scene]'s [ActivitySpace].
          */
         @MainThread
+        @JvmOverloads
         @JvmStatic
-        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
-        //  once the API proposal is approved.
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        // TODO: b/493469066 - Once internal clients explicitly set the parent parameter at all call
+        //  sites, change the default parent value to null in the entity factory and update the
+        //  release notes accordingly.
         public fun create(
             session: Session,
             model: GltfModel,

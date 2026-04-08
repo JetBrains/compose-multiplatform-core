@@ -96,7 +96,7 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
         if (fileName != ":memory:") {
             // Get database path from context, if the database name is not an absolute path, then
             // the app's database directory will be used, otherwise the given path is used.
-            configuration.context.getDatabasePath(fileName).absolutePath
+            configuration.context?.getDatabasePath(fileName)?.absolutePath ?: fileName
         } else {
             fileName
         }

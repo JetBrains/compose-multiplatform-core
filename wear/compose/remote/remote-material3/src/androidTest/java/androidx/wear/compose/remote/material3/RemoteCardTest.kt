@@ -17,14 +17,16 @@
 package androidx.wear.compose.remote.material3
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -44,7 +46,7 @@ class RemoteCardTest {
         RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
 
     private val creationDisplayInfo =
-        CreationDisplayInfo(
+        RemoteCreationDisplayInfo(
             500,
             500,
             ApplicationProvider.getApplicationContext<Context>().resources.displayMetrics.densityDpi,
@@ -52,14 +54,31 @@ class RemoteCardTest {
 
     @Test
     fun card_default() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            creationDisplayInfo = creationDisplayInfo,
+        ) {
+            Container(RemoteModifier.fillMaxSize()) { RemoteCardDefault() }
+        }
+    }
+
+    @Test
+    fun card_default_rtl() {
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            creationDisplayInfo = creationDisplayInfo,
+            layoutDirection = LayoutDirection.Rtl,
+        ) {
             Container(RemoteModifier.fillMaxSize()) { RemoteCardDefault() }
         }
     }
 
     @Test
     fun card_outline() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            creationDisplayInfo = creationDisplayInfo,
+        ) {
             Container(RemoteModifier.fillMaxSize()) { RemoteCardOutline() }
         }
     }

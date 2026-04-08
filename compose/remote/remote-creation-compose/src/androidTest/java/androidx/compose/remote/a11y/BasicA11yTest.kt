@@ -16,7 +16,6 @@
 
 package androidx.compose.remote.a11y
 
-import androidx.compose.remote.creation.Rc
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.action.ValueChange
 import androidx.compose.remote.creation.compose.capture.RecordingCanvas
@@ -38,12 +37,14 @@ import androidx.compose.remote.creation.compose.state.rememberMutableRemoteStrin
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.uiautomator.uiAutomator
 import com.google.common.truth.Truth.assertThat
+import java.text.DecimalFormat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -143,6 +144,7 @@ class BasicA11yTest {
     @Test
     fun intValueChange() {
         remoteComposeTestRule.runTest {
+            val decimalFormat = remember { DecimalFormat("##0") }
             val remoteInt = rememberMutableRemoteInt(0)
             RemoteBox(
                 modifier =
@@ -151,7 +153,7 @@ class BasicA11yTest {
                         .background(Color.White),
                 contentAlignment = RemoteAlignment.Center,
             ) {
-                RemoteText("".rs + remoteInt.toRemoteString(3, Rc.TextFromFloat.PAD_PRE_NONE))
+                RemoteText("".rs + remoteInt.toRemoteString(decimalFormat))
             }
         }
 

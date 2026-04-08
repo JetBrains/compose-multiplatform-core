@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("BanConcurrentHashMap")
+@file:Suppress("BanConcurrentHashMap", "TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.arcore.testapp.helloar.rendering
 
@@ -26,8 +26,9 @@ import android.widget.TextView
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.Plane
+import androidx.xr.arcore.PlaneLabel
+import androidx.xr.arcore.TrackingState
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -106,6 +107,7 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
         _renderedPlanes.value = planesToRender
     }
 
+    @Suppress("DEPRECATION")
     private suspend fun addPlaneModel(plane: Plane, planesToRender: MutableList<PlaneModel>) {
         val label = plane.state.value.label.toString()
         val asset =
@@ -118,7 +120,12 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
             _planesModelsMap.getOrPut(label) {
                 GltfModel.create(session, Paths.get("models", asset))
             }
-        val modelEntity = GltfModelEntity.create(session, _planesModelsMap[label]!!)
+        val modelEntity =
+            GltfModelEntity.create(
+                session,
+                _planesModelsMap[label]!!,
+                parent = session.scene.activitySpace,
+            )
 
         // The counter starts at max to trigger the resize on the first update loop since emulators
         // only
@@ -129,7 +136,7 @@ internal class PlaneRenderer(val session: Session, val coroutineScope: Coroutine
             coroutineScope.launch(updateJob) {
                 plane.state.collect { state ->
                     if (state.trackingState == TrackingState.TRACKING) {
-                        if (state.label == Plane.Label.UNKNOWN) {
+                        if (state.label == PlaneLabel.UNKNOWN) {
                             modelEntity.setEnabled(false)
                         } else {
                             modelEntity.setEnabled(true)

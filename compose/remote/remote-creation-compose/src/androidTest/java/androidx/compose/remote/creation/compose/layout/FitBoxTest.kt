@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.test.screenshot.matchers.MSSIMMatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,7 +42,10 @@ import org.junit.runner.RunWith
 class FitBoxTest {
     @get:Rule
     val composeTestRule: RemoteComposeScreenshotTestRule by lazy {
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
+        RemoteComposeScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            matcher = MSSIMMatcher(threshold = 0.999),
+        )
     }
 
     private val gridScreenshotUI = GridScreenshotUI()
@@ -60,14 +64,17 @@ class FitBoxTest {
 
     @Test
     fun rtl() =
-        composeTestRule.runScreenshotTest(layoutDirection = LayoutDirection.Rtl) {
+        composeTestRule.runScreenshotTest {
             val alignments =
                 listOf(
                     RemoteAlignment.Start,
                     RemoteAlignment.CenterHorizontally,
                     RemoteAlignment.End,
                 )
-            gridScreenshotUI.GridContent(getLayoutAlignmentUIs(alignments))
+            gridScreenshotUI.GridContent(
+                getLayoutAlignmentUIs(alignments),
+                layoutDirection = LayoutDirection.Rtl,
+            )
         }
 
     @Test
@@ -84,14 +91,17 @@ class FitBoxTest {
 
     @Test
     fun rtlAbsoluteAlignment() =
-        composeTestRule.runScreenshotTest(layoutDirection = LayoutDirection.Rtl) {
+        composeTestRule.runScreenshotTest {
             val alignments =
                 listOf(
                     RemoteAbsoluteAlignment.Left,
                     RemoteAlignment.CenterHorizontally,
                     RemoteAbsoluteAlignment.Right,
                 )
-            gridScreenshotUI.GridContent(getLayoutAlignmentUIs(alignments))
+            gridScreenshotUI.GridContent(
+                getLayoutAlignmentUIs(alignments),
+                layoutDirection = LayoutDirection.Rtl,
+            )
         }
 
     private fun getLayoutAlignmentUIs(

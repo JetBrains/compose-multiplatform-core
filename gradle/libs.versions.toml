@@ -10,6 +10,8 @@ androidLint = "31.12.0"
 # https://developer.android.com/studio/archive and find the matching version of Studio.
 androidStudioIj = "2025.2.3.5"
 androidStudioName = "panda2-canary1"
+# For IntelliJ download via intellij gradle task
+intelliJVersion = "2026.1"
 # -----------------------------------------------------------------------------
 
 androidLintMin = "31.1.1"
@@ -86,7 +88,7 @@ wire = "6.0.0"
 core = "1.12.0"
 xmlApis = "1.4.01"
 yarn = "1.22.17"
-extensionsXr = "1.3.0"
+extensionsXr = "1.4.0-alpha01"
 xrProjectedMinApiVersion = "260316000"
 
 [libraries]

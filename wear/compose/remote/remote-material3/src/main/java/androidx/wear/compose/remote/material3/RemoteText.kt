@@ -16,6 +16,7 @@
 
 package androidx.wear.compose.remote.material3
 
+import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.state.RemoteColor
@@ -23,6 +24,9 @@ import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.RemoteTextUnit
 import androidx.compose.remote.creation.compose.text.RemoteTextStyle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
@@ -91,4 +95,35 @@ public fun RemoteText(
         style = style,
         fontVariationSettings = fontVariationSettings,
     )
+}
+
+/**
+ * CompositionLocal containing the preferred [RemoteTextStyle] that will be used by [RemoteText]
+ * components by default. To set the value for this CompositionLocal, see [ProvideRemoteTextStyle]
+ * which will merge any missing [RemoteTextStyle] properties with the existing [RemoteTextStyle] set
+ * in this CompositionLocal.
+ *
+ * @see ProvideRemoteTextStyle
+ */
+public val LocalRemoteTextStyle: ProvidableCompositionLocal<RemoteTextStyle> =
+    staticCompositionLocalOf {
+        RemoteTextStyle()
+    }
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) get
+
+/**
+ * This function is used to set the current value of [LocalRemoteTextStyle], merging the given style
+ * with the current style values for any missing attributes. Any [RemoteText] components included in
+ * this component's [content] will be styled with this style unless styled explicitly.
+ *
+ * @see LocalRemoteTextStyle
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@Composable
+public fun ProvideRemoteTextStyle(
+    value: RemoteTextStyle,
+    content: @RemoteComposable @Composable () -> Unit,
+) {
+    val mergedStyle = LocalRemoteTextStyle.current.merge(value)
+    CompositionLocalProvider(LocalRemoteTextStyle provides mergedStyle, content = content)
 }

@@ -17,6 +17,8 @@
 package androidx.webkit.internal;
 
 import android.os.CancellationSignal;
+import android.os.Handler;
+import android.os.Looper;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.ServiceWorkerController;
@@ -120,18 +122,22 @@ public class ProfileImpl implements Profile {
     @Profile.ExperimentalUrlPrefetch
     @Override
     public void prefetchUrlAsync(@NonNull String url,
-            @Nullable CancellationSignal cancellationSignal, @NonNull Executor callbackExecutor,
+            @Nullable CancellationSignal cancellationSignal, @Nullable Executor callbackExecutor,
             @NonNull SpeculativeLoadingParameters params,
-            @NonNull WebViewOutcomeReceiver<Void, PrefetchException> callback) {
+            @NonNull WebViewOutcomeReceiver<@Nullable Void, PrefetchException> outcomeReceiver) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.PROFILE_URL_PREFETCH;
         if (feature.isSupportedByWebView()) {
+            if (callbackExecutor == null) {
+                callbackExecutor = new Handler(Looper.getMainLooper())::post;
+            }
+
             InvocationHandler paramsBoundaryInterface =
                     BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
                             new SpeculativeLoadingParametersAdapter(params));
 
             mProfileImpl.prefetchUrl(url, cancellationSignal, callbackExecutor,
                     paramsBoundaryInterface,
-                    PrefetchOperationCallbackAdapter.buildInvocationHandler(callback));
+                    PrefetchOperationCallbackAdapter.buildInvocationHandler(outcomeReceiver));
 
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
@@ -141,12 +147,15 @@ public class ProfileImpl implements Profile {
     @Profile.ExperimentalUrlPrefetch
     @Override
     public void prefetchUrlAsync(@NonNull String url,
-            @Nullable CancellationSignal cancellationSignal, @NonNull Executor callbackExecutor,
-            @NonNull WebViewOutcomeReceiver<Void, PrefetchException> callback) {
+            @Nullable CancellationSignal cancellationSignal, @Nullable Executor callbackExecutor,
+            @NonNull WebViewOutcomeReceiver<@Nullable Void, PrefetchException> outcomeReceiver) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.PROFILE_URL_PREFETCH;
         if (feature.isSupportedByWebView()) {
+            if (callbackExecutor == null) {
+                callbackExecutor = new Handler(Looper.getMainLooper())::post;
+            }
             mProfileImpl.prefetchUrl(url, cancellationSignal, callbackExecutor,
-                    PrefetchOperationCallbackAdapter.buildInvocationHandler(callback));
+                    PrefetchOperationCallbackAdapter.buildInvocationHandler(outcomeReceiver));
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }

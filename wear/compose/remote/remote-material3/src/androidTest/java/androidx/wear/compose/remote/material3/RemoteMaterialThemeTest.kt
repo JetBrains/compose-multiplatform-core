@@ -16,10 +16,8 @@
 
 package androidx.wear.compose.remote.material3
 
-import androidx.compose.remote.creation.compose.state.RemoteColor
-import androidx.compose.remote.creation.compose.state.rememberNamedRemoteColor
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -56,11 +54,26 @@ class RemoteMaterialThemeTest {
     @Test
     fun theme_color_can_be_overridden_explicitly() {
         val expectedTint = Color.Yellow
-        val remoteColorScheme: RemoteColorScheme =
-            object : RemoteColorScheme() {
-                override val onSurface: RemoteColor
-                    @Composable get() = rememberNamedRemoteColor("OverrideValue", Color.Yellow)
+        val remoteColorScheme =
+            RemoteColorScheme(colorScheme = ColorScheme(onSurface = Color.Yellow))
+
+        remoteComposeTestRule.runTest {
+            RemoteMaterialTheme(colorScheme = remoteColorScheme) {
+                RemoteIcon(
+                    TestImageVectors.VolumeUp,
+                    contentDescription = null,
+                    tint = RemoteMaterialTheme.colorScheme.onSurface,
+                )
             }
+        }
+
+        remoteComposeTestRule.assertRootNodeContainsColor(expectedTint)
+    }
+
+    @Test
+    fun color_scheme_can_be_copied_and_overridden() {
+        val expectedTint = Color.Yellow
+        val remoteColorScheme = RemoteColorScheme().copy(onSurface = Color.Yellow.rc)
 
         remoteComposeTestRule.runTest {
             RemoteMaterialTheme(colorScheme = remoteColorScheme) {

@@ -28,14 +28,35 @@ import androidx.xr.scenecore.runtime.MeshEntity as RtMeshEntity
  * A `MeshEntity` renders a [CustomMesh] using a list of [Material]s. The number of materials must
  * match the number of subsets in the CustomMesh.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MeshEntity
 private constructor(
     rtEntity: RtMeshEntity,
     entityRegistry: EntityRegistry,
     public val mesh: CustomMesh,
-    public val materials: List<Material>,
+    private val _materials: MutableList<Material>,
 ) : BaseEntity<RtMeshEntity>(rtEntity, entityRegistry) {
+
+    /** The list of materials used to render this entity's custom mesh. */
+    public val materials: List<Material>
+        get() = _materials.toList()
+
+    /**
+     * Sets a material for a mesh subset.
+     *
+     * @param material The new [Material] to apply to the mesh subset.
+     * @param subsetIndex The zero-based index for the mesh subset. Default is the first subset of
+     *   the mesh.
+     */
+    @MainThread
+    public fun setMaterial(material: Material, subsetIndex: Int = 0) {
+        checkNotDisposed()
+        require(subsetIndex >= 0 && subsetIndex < _materials.size) {
+            "Subset index $subsetIndex is out of bounds for the number of subsets (${_materials.size})."
+        }
+        _materials[subsetIndex] = material
+        rtEntity!!.setMaterial(material.material, subsetIndex)
+    }
 
     public companion object {
         /**
@@ -43,7 +64,9 @@ private constructor(
          *
          * @param session The session to use for creating the MeshEntity.
          * @param mesh The [CustomMesh] to render.
-         * @param materials The list of [Material]s to use for each subset of the mesh.
+         * @param materials The list of [Material]s to use for each subset of the mesh. The list
+         *   must contain one material per mesh subset.
+         * @param boneCount the number of bones. If zero, skinning will be disabled.
          * @param pose The initial pose of the entity relative to its parent. Defaults to
          *   `Pose.Identity`.
          * @return A new [MeshEntity].
@@ -53,6 +76,7 @@ private constructor(
             session: Session,
             mesh: CustomMesh,
             materials: List<Material>,
+            boneCount: Int = 0,
             pose: Pose = Pose.Identity,
         ): MeshEntity {
             val renderingRuntime = session.renderingRuntime
@@ -69,11 +93,12 @@ private constructor(
                 renderingRuntime.createMeshEntity(
                     customMeshResource,
                     materialResources,
+                    boneCount,
                     pose,
                     parentEntity.rtEntity,
                 )
 
-            return MeshEntity(rtEntity, entityRegistry, mesh, materials)
+            return MeshEntity(rtEntity, entityRegistry, mesh, materials.toMutableList())
         }
     }
 }

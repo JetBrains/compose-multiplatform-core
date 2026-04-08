@@ -16,8 +16,8 @@
 
 package androidx.xr.arcore.projected
 
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.TrackingState
 
 /** Object that holds resources that are used in the XR session. */
 internal class XrResources {
@@ -32,7 +32,7 @@ internal class XrResources {
     val geospatial: ProjectedGeospatial = ProjectedGeospatial(this)
 
     /** The perception service. */
-    lateinit internal var service: IProjectedPerceptionService
+    internal lateinit var service: IProjectedPerceptionService
 
     /** The tracking state of the device */
     internal var trackingState: TrackingState = TrackingState.STOPPED

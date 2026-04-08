@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore
 
@@ -27,7 +28,6 @@ import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -124,12 +124,12 @@ class AugmentedObjectTest {
     @Test
     fun update_trackingStateMatchesRuntime() = runBlocking {
         val runtimeObject = FakeRuntimeObject()
-        runtimeObject.trackingState = TrackingState.STOPPED
+        runtimeObject.trackingState = TrackingState.STOPPED.toRuntimeTrackingState()
         xrResourcesManager.syncTrackables(listOf(runtimeObject))
         val underTest = xrResourcesManager.trackablesMap[runtimeObject] as AugmentedObject
         check(underTest.state.value.trackingState == TrackingState.STOPPED)
 
-        runtimeObject.trackingState = TrackingState.TRACKING
+        runtimeObject.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
         underTest.update()
 
         assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.TRACKING)

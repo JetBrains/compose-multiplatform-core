@@ -17,13 +17,10 @@
 package androidx.wear.compose.remote.material3
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
-import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
-import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteRow
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.padding
-import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
@@ -31,7 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -41,7 +38,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalRemoteCreationComposeApi::class)
 @MediumTest
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @RunWith(JUnit4::class)
@@ -52,17 +48,7 @@ class RemoteIconFromResTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val creationDisplayInfo =
-        CreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
-
-    @org.junit.Before
-    fun setup() {
-        RemoteComposeCreationComposeFlags.isRemoteApplierEnabled = true
-    }
-
-    @org.junit.After
-    fun tearDown() {
-        RemoteComposeCreationComposeFlags.isRemoteApplierEnabled = false
-    }
+        RemoteCreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
 
     @Test
     fun iconsFromRes() {
@@ -76,11 +62,23 @@ class RemoteIconFromResTest {
         }
     }
 
+    @Test
+    fun iconsFromRes_rtl() {
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo = creationDisplayInfo,
+            layoutDirection = LayoutDirection.Rtl,
+        ) {
+            RemoteRow {
+                Icon(resId = R.drawable.gs_map_wght500rond100_vd_theme_24)
+                Icon(resId = R.drawable.gs_work_wght500rond100_vd_theme_24)
+                Icon(resId = R.drawable.gs_category_search_wght500rond100_vd_theme_24)
+                Icon(resId = R.drawable.test_vector)
+            }
+        }
+    }
+
     @Composable
-    private fun Icon(
-        modifier: RemoteModifier = RemoteModifier.padding(8.dp).size(24.rdp),
-        resId: Int,
-    ) {
+    private fun Icon(modifier: RemoteModifier = RemoteModifier.padding(8.rdp), resId: Int) {
         RemoteIcon(
             modifier = modifier,
             imageVector = ImageVector.vectorResource(resId),

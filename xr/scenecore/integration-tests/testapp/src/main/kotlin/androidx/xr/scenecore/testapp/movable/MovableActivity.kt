@@ -149,6 +149,7 @@ class MovableActivity : AppCompatActivity() {
                 IntSize2d(640, 550),
                 "stationaryPanel",
                 Pose(Vector3(0.9f, 0f, 0f)),
+                parent = session!!.scene.activitySpace,
             )
         stationaryPanelEntity.parent = session!!.scene.keyEntity
         return stationaryPanelEntity
@@ -174,6 +175,7 @@ class MovableActivity : AppCompatActivity() {
                 IntSize2d(750, 1200),
                 "panel",
                 Pose(Vector3(0f, 0f, 0.1f)),
+                parent = session!!.scene.activitySpace,
             )
         movablePanelEntity.parent = session!!.scene.keyEntity
         val enableMovableSwitch =
@@ -363,6 +365,7 @@ class MovableActivity : AppCompatActivity() {
                     session = checkNotNull(session),
                     model = gltfModel,
                     pose = Pose(Vector3(-2f, -1.5f, -2f)),
+                    parent = session!!.scene.activitySpace,
                 )
 
             gltfModelEntity.setScale(0.5f)

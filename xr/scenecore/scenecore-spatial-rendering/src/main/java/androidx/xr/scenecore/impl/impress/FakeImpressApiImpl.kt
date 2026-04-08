@@ -524,35 +524,6 @@ public class FakeImpressApiImpl : ImpressApi {
     public fun getChannelAnimations(impressNode: ImpressNode): Map<Int, AnimationInProgress>? =
         channelAnimations[impressNode]
 
-    override fun createStereoSurface(@StereoMode stereoMode: Int): ImpressNode {
-        return createStereoSurface(
-            stereoMode,
-            ContentSecurityLevel.NONE,
-            /* useSuperSampling= */ false,
-        )
-    }
-
-    // TODO - b/410899125: Set the content security level properly.
-    override fun createStereoSurface(
-        @StereoMode stereoMode: Int,
-        @ContentSecurityLevel contentSecurityLevel: Int,
-    ): ImpressNode {
-        return createStereoSurface(stereoMode, contentSecurityLevel, /* useSuperSampling= */ false)
-    }
-
-    override fun createStereoSurface(
-        @StereoMode stereoMode: Int,
-        @ContentSecurityLevel contentSecurityLevel: Int,
-        useSuperSampling: Boolean,
-    ): ImpressNode {
-        return createStereoSurface(
-            stereoMode,
-            MediaBlendingMode.TRANSPARENT,
-            contentSecurityLevel,
-            useSuperSampling,
-        )
-    }
-
     override fun createStereoSurface(
         @StereoMode stereoMode: Int,
         @MediaBlendingMode mediaBlendingMode: Int,
@@ -1143,8 +1114,10 @@ public class FakeImpressApiImpl : ImpressApi {
         maxVertices: Int,
         maxIndices: Int,
         vertexData: Array<java.nio.ByteBuffer>?,
+        vertexDataOffsets: IntArray?,
         vertexDataSizes: IntArray?,
         indexData: java.nio.ByteBuffer?,
+        indexDataOffset: Int,
         indexDataSize: Int,
     ): MeshBuffer {
         val handle = nextMeshBufferId++
@@ -1157,25 +1130,36 @@ public class FakeImpressApiImpl : ImpressApi {
         meshBufferHandle: Long,
         subsetOffsets: IntArray,
         subsetCounts: IntArray,
-    ): CustomMesh {
-        val handle = nextCustomMeshId++
-        return CustomMesh.Builder().setImpressApi(this).setNativeCustomMesh(handle).build()
-    }
-
-    override fun destroyCustomMesh(customMeshHandle: Long) {}
-
-    override fun setCustomMeshBoundingBox(
-        customMeshHandle: Long,
+        subsetTopologies: IntArray,
         centerX: Float,
         centerY: Float,
         centerZ: Float,
         halfExtentX: Float,
         halfExtentY: Float,
         halfExtentZ: Float,
-    ) {}
+    ): CustomMesh {
+        val handle = nextCustomMeshId++
+        return CustomMesh.Builder().setImpressApi(this).setNativeCustomMesh(handle).build()
+    }
 
-    override fun createCustomMeshNode(customMeshHandle: Long, materialHandles: LongArray): Int {
+    override fun getCustomMeshAabb(customMeshHandle: Long, outAabb: FloatArray) {}
+
+    override fun destroyCustomMesh(customMeshHandle: Long) {}
+
+    override fun createCustomMeshNode(
+        customMeshHandle: Long,
+        materialHandles: LongArray,
+        boneCount: Int,
+    ): Int {
         return nextNodeId++
+    }
+
+    override fun setCustomMeshNodeMaterial(
+        impressNode: ImpressNode,
+        submeshIndex: Int,
+        materialHandle: Long,
+    ) {
+        // Test stub.
     }
 
     /** Returns the map of texture image tokens to their associated Texture object. */

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.arcore.testapp.helloar.rendering
 
@@ -25,9 +26,10 @@ import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Plane
+import androidx.xr.arcore.PlaneLabel
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.hitTest
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -79,6 +81,7 @@ internal class AnchorRenderer(
         renderedAnchors.clear()
     }
 
+    @Suppress("DEPRECATION")
     private fun attachInteractableComponents(planeModels: Collection<PlaneModel>) {
         for (planeModel in planeModels) {
             if (planeModel.modelEntity.getComponents().isEmpty()) {
@@ -106,7 +109,7 @@ internal class AnchorRenderer(
                                     // planes once we can
                                     // support rendering them.
                                     (it.trackable as? Plane)?.state?.value?.label !=
-                                        Plane.Label.UNKNOWN
+                                        PlaneLabel.UNKNOWN
                                 }
                                 ?.let { hitResult ->
                                     val anchorResult = Anchor.create(session, hitResult.hitPose)
@@ -148,7 +151,13 @@ internal class AnchorRenderer(
     }
 
     private fun createAnchorModel(anchor: Anchor): AnchorModel {
-        val entity = GltfModelEntity.create(session, gltfAnchorModel, Pose())
+        val entity =
+            GltfModelEntity.create(
+                session,
+                gltfAnchorModel,
+                Pose(),
+                parent = session.scene.activitySpace,
+            )
         entity.setScale(.1f)
         val renderJob =
             coroutineScope.launch(updateJob) {

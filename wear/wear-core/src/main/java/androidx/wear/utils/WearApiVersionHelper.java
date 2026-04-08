@@ -74,6 +74,8 @@ public final class WearApiVersionHelper {
                     WEAR_UDC_1,
                     WEAR_VIC_1,
                     WEAR_BAKLAVA_0,
+                    WEAR_BAKLAVA_1,
+                    WEAR_CINNAMON_BUN_0,
             })
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(RetentionPolicy.SOURCE)

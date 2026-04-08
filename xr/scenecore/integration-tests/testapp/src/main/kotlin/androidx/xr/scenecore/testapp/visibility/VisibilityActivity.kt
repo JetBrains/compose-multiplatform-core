@@ -226,7 +226,14 @@ class VisibilityActivity : AppCompatActivity() {
             supportActionBar?.setDisplayHomeAsUpEnabled(false)
         }
         val panelEntity =
-            PanelEntity.create(session!!, panelContentView, IntSize2d(640, 480), panelName, pose)
+            PanelEntity.create(
+                session!!,
+                panelContentView,
+                IntSize2d(640, 480),
+                panelName,
+                pose,
+                parent = session!!.scene.activitySpace,
+            )
         panelEntity.parent = parent
 
         val movableComponent = MovableComponent.createSystemMovable(session!!)
@@ -239,22 +246,40 @@ class VisibilityActivity : AppCompatActivity() {
 
     private fun createGltfEntities() {
         parentGltfEntity =
-            GltfModelEntity.create(session!!, model, Pose(Vector3(1f, 0f, 0f))).also {
-                it.setScale(0.5f)
-                it.parent = session!!.scene.activitySpace
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    model,
+                    Pose(Vector3(2f, 0f, 0f)),
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(0.5f)
+                    it.parent = session!!.scene.activitySpace
+                }
 
         childGltfEntity1 =
-            GltfModelEntity.create(session!!, model, Pose(Vector3(0.7f, -0.3f, 0f))).also {
-                it.setScale(0.5f)
-                it.parent = parentGltfEntity
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    model,
+                    Pose(Vector3(0.7f, -0.3f, 0f)),
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(0.5f)
+                    it.parent = parentGltfEntity
+                }
 
         childGltfEntity2 =
-            GltfModelEntity.create(session!!, model, Pose(Vector3(0.7f, -0.6f, 0f))).also {
-                it.setScale(0.5f)
-                it.parent = childGltfEntity1
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    model,
+                    Pose(Vector3(0.7f, -0.6f, 0f)),
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(0.5f)
+                    it.parent = childGltfEntity1
+                }
     }
 
     private fun getSizeInLocalSpace(panel: PanelEntity): FloatSize2d {

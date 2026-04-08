@@ -194,6 +194,7 @@ class EntityRegistryTest {
                 TextView(activity),
                 IntSize2d(720, 480),
                 "test",
+                parent = session.scene.activitySpace,
             )
     }
 
@@ -202,7 +203,13 @@ class EntityRegistryTest {
             gltfModel = GltfModel.create(session, Paths.get("test.glb"))
         }
         gltfModelEntity =
-            GltfModelEntity.create(sceneRuntime, renderingRuntime, entityRegistry, gltfModel)
+            GltfModelEntity.create(
+                sceneRuntime,
+                renderingRuntime,
+                entityRegistry,
+                gltfModel,
+                parent = session.scene.activitySpace,
+            )
     }
 
     private fun createAnchorEntity() {
@@ -227,6 +234,7 @@ class EntityRegistryTest {
                 IntSize2d(640, 480),
                 "test",
                 activity,
+                parent = session.scene.activitySpace,
             )
     }
 

@@ -1163,6 +1163,20 @@ class FrameBufferImplTest {
             frame1.close()
         }
 
+    @Test
+    fun trimAll_FramesRemovedFromFrameBuffer() =
+        testScope.runTest {
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
+            frameBuffer.onFrameStarted(frameRef1)
+            frameBuffer.onFrameStarted(frameRef2)
+            advanceUntilIdle()
+
+            frameBuffer.trimAll()
+
+            assertThat(frameBuffer.size.value).isEqualTo(0)
+        }
+
     @After
     fun cleanup() {
         fakeSurfaces.close()

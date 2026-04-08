@@ -38,6 +38,7 @@ import androidx.camera.camera2.impl.UseCaseCameraRequestControl
 import androidx.camera.camera2.impl.toMap
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
@@ -224,6 +225,7 @@ open class FakeUseCaseCameraRequestControl(
         awbLockBehavior: Lock3ABehavior?,
         afTriggerStartAeMode: AeMode?,
         timeLimitNs: Long,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
     ): Deferred<Result3A> {
         this.aeRegions = aeRegions
         this.afRegions = afRegions

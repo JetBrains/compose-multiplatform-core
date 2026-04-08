@@ -25,6 +25,7 @@ import androidx.opengl.EGLExt
 import androidx.opengl.EGLImageKHR
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.Plane
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Framebuffer
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Mesh
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.SampleRender
@@ -33,10 +34,10 @@ import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Texture
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.maybeThrowGLException
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.renderers.BackgroundRenderer
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.renderers.PlaneRenderer
-import androidx.xr.arcore.playservices.ArCoreRuntime
+import androidx.xr.arcore.playservices.ExperimentalCameraApi
 import androidx.xr.arcore.playservices.cameraState
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
@@ -94,11 +95,15 @@ class GeospatialRenderer(private val session: Session, private val anchors: List
     }
 
     override fun onSurfaceChanged(render: SampleRender, width: Int, height: Int) {
-        (session.runtimes.filterIsInstance<ArCoreRuntime>().first().perceptionManager)
+        session.runtimes
+            .filterIsInstance<PerceptionRuntime>()
+            .first()
+            .perceptionManager
             .setDisplayRotation(Surface.ROTATION_0, width, height)
         virtualSceneFramebuffer.resize(width, height)
     }
 
+    @OptIn(ExperimentalCameraApi::class)
     override fun onDrawFrame(render: SampleRender) {
         try {
             backgroundRenderer.setUseDepthVisualization(render, false)

@@ -31,7 +31,6 @@ import androidx.room3.TypeConverter
 import androidx.room3.TypeConverters
 import androidx.room3.useReaderConnection
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import kotlinx.coroutines.runBlocking
@@ -48,9 +47,7 @@ class NullabilityAwareTypeConversionTest {
     @Before
     fun init() {
         dao =
-            Room.inMemoryDatabaseBuilder<NullAwareConverterDatabase>(
-                    ApplicationProvider.getApplicationContext()
-                )
+            Room.inMemoryDatabaseBuilder<NullAwareConverterDatabase>()
                 .setDriver(AndroidSQLiteDriver())
                 .addTypeConverter(nullableConvertors)
                 .build()

@@ -111,7 +111,8 @@ public abstract class Track(
     }
 
     /** Test API for benchmarking */
-    public fun resetFillCount() {
+    public fun resetTraceEvents() {
+        currentPacketArray?.forEach { event -> event.reset() }
         currentPacketArray?.fillCount = 0
     }
 

@@ -32,6 +32,7 @@ import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.operations.layout.measure.ComponentMeasure;
 import androidx.compose.remote.core.operations.layout.measure.MeasurePass;
 import androidx.compose.remote.core.operations.layout.measure.Size;
+import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 import androidx.compose.remote.core.operations.utilities.StringSerializer;
 import androidx.compose.remote.core.semantics.AccessibleComponent;
@@ -265,10 +266,10 @@ public class TextLayout extends LayoutManager implements VariableSupport, Access
     public float getAlignValue(@NonNull PaintContext context, float line) {
         if (Float.isNaN(line)) {
             int id = Utils.idFromNan(line);
-            if (id == RemoteContext.ID_FIRST_BASELINE) {
+            if (id == AlignByModifierOperation.ID_FIRST_BASELINE) {
                 return mBaseline;
             }
-            if (id == RemoteContext.ID_LAST_BASELINE) {
+            if (id == AlignByModifierOperation.ID_LAST_BASELINE) {
                 // TODO add support for last baseline
                 return mBaseline;
             }

@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalRemoteCreationComposeApi::class)
-
 package androidx.compose.remote.creation.compose.v2
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
-import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
-import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.FitBox
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
@@ -29,20 +25,18 @@ import androidx.compose.remote.creation.compose.layout.RemoteCollapsibleColumn
 import androidx.compose.remote.creation.compose.layout.RemoteCollapsibleRow
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteRow
+import androidx.compose.remote.creation.compose.layout.RemoteStateLayout
 import androidx.compose.remote.creation.compose.layout.RemoteText
-import androidx.compose.remote.creation.compose.layout.StateLayout
-import androidx.compose.remote.creation.compose.layout.rememberStateMachine
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rc
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteInt
+import androidx.compose.remote.creation.compose.state.rememberMutableRemoteEnum
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.ui.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -53,14 +47,9 @@ import org.robolectric.annotation.Config
 class RemoteComposeV2Test {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    @Before
-    fun setup() {
-        RemoteComposeCreationComposeFlags.isRemoteApplierEnabled = true
-    }
-
     @Test
     fun testCaptureDocument() = runTest {
-        val displayInfo = CreationDisplayInfo(500, 500, 1)
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1)
         val document =
             captureSingleRemoteDocumentV2(creationDisplayInfo = displayInfo, context = context) {
                 RemoteBoxV2 { RemoteTextV2(text = "Hello V2".rs) }
@@ -72,7 +61,7 @@ class RemoteComposeV2Test {
 
     @Test
     fun testComplexComposition() = runTest {
-        val displayInfo = CreationDisplayInfo(500, 500, 1)
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1)
         val document =
             captureSingleRemoteDocumentV2(creationDisplayInfo = displayInfo, context = context) {
                 RemoteColumnV2 {
@@ -87,7 +76,7 @@ class RemoteComposeV2Test {
 
     @Test
     fun testScopeAndSpacer() = runTest {
-        val displayInfo = CreationDisplayInfo(500, 500, 1)
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1)
         val document =
             captureSingleRemoteDocumentV2(creationDisplayInfo = displayInfo, context = context) {
                 RemoteRowV2 {
@@ -102,7 +91,7 @@ class RemoteComposeV2Test {
 
     @Test
     fun testV1toV2Switching() = runTest {
-        val displayInfo = CreationDisplayInfo(500, 500, 1)
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1)
         val document =
             captureSingleRemoteDocumentV2(creationDisplayInfo = displayInfo, context = context) {
                 // Using V1 components inside V2 capture
@@ -120,7 +109,7 @@ class RemoteComposeV2Test {
 
     @Test
     fun testRemoteCanvasV2() = runTest {
-        val displayInfo = CreationDisplayInfo(500, 500, 1)
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1)
         val document =
             captureSingleRemoteDocumentV2(creationDisplayInfo = displayInfo, context = context) {
                 RemoteCanvas { drawRect(paint = RemotePaint { color = Color.Red.rc }) }
@@ -132,7 +121,7 @@ class RemoteComposeV2Test {
 
     @Test
     fun testFitBoxV2() = runTest {
-        val displayInfo = CreationDisplayInfo(500, 500, 1)
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1)
         val document =
             captureSingleRemoteDocumentV2(creationDisplayInfo = displayInfo, context = context) {
                 FitBox { RemoteText(text = "Fit Content") }
@@ -144,7 +133,7 @@ class RemoteComposeV2Test {
 
     @Test
     fun testCollapsibleLayoutsV2() = runTest {
-        val displayInfo = CreationDisplayInfo(500, 500, 1)
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1)
         val document =
             captureSingleRemoteDocumentV2(creationDisplayInfo = displayInfo, context = context) {
                 RemoteCollapsibleColumn {
@@ -161,19 +150,19 @@ class RemoteComposeV2Test {
 
     @Test
     fun testStateLayoutV2() = runTest {
-        val displayInfo = CreationDisplayInfo(500, 500, 1)
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1)
         val document =
             captureSingleRemoteDocumentV2(creationDisplayInfo = displayInfo, context = context) {
-                val checked = rememberMutableRemoteInt(1)
-                val off = 0
-                val on = 1
-                val stateMachine = rememberStateMachine(checked, off, on)
-                StateLayout(stateMachine = stateMachine) { state ->
-                    RemoteText(text = "State $state")
-                }
+                val checked = rememberMutableRemoteEnum(ToggleState.On)
+                RemoteStateLayout(state = checked) { state -> RemoteText(text = "State $state".rs) }
             }
 
         assertNotNull(document)
         assertTrue(document.bytes.isNotEmpty())
+    }
+
+    private enum class ToggleState {
+        Off,
+        On,
     }
 }

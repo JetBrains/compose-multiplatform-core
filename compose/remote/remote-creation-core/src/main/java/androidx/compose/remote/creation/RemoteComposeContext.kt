@@ -120,6 +120,7 @@ public open class RemoteComposeContext {
         content: RemoteComposeContext.() -> Unit,
     ) {
         mRemoteWriter = RemoteComposeWriter(platform, *tags)
+        content()
     }
 
     /** Create a new matrix expression. */
@@ -161,9 +162,13 @@ public open class RemoteComposeContext {
         modifier: RecordingModifier = Modifier,
         horizontal: Int = RowLayout.START,
         vertical: Int = RowLayout.TOP,
+        maxItemsInEachRow: Int = Int.MAX_VALUE,
+        maxLines: Int = Int.MAX_VALUE,
         content: RemoteComposeContext.() -> Unit,
     ) {
-        mRemoteWriter.flow(modifier, horizontal, vertical) { content() }
+        mRemoteWriter.flow(modifier, horizontal, vertical, maxItemsInEachRow, maxLines) {
+            content()
+        }
     }
 
     public fun box(
@@ -1203,6 +1208,11 @@ public open class RemoteComposeContext {
         mRemoteWriter.drawComponentContent()
     }
 
+    /** Alias for [drawComponentContent] to match Compose API. */
+    public fun drawContent() {
+        drawComponentContent()
+    }
+
     public fun startCanvas(modifier: RecordingModifier) {
         mRemoteWriter.startCanvas(modifier)
     }
@@ -2004,4 +2014,23 @@ public fun RecordingModifier.computePosition(
     block: ComponentLayoutChanges.() -> Unit
 ): RecordingModifier {
     return then(ComponentLayoutComputeModifier(LayoutComputeOperation.TYPE_POSITION, block))
+}
+
+/**
+ * Creates a [RecordingModifier] that allows drawing with the component's content.
+ *
+ * @param onDraw The drawing block that provides access to [RemoteComposeContext].
+ */
+public fun RecordingModifier.drawWithContent(
+    onDraw: RemoteComposeContext.() -> Unit
+): RecordingModifier = then(DrawWithContentModifier(onDraw))
+
+internal class DrawWithContentModifier(private val onDraw: RemoteComposeContext.() -> Unit) :
+    RecordingModifier.Element {
+    override fun write(writer: RemoteComposeWriter) {
+        val context = RemoteComposeContext(writer)
+        context.mRemoteWriter.startCanvasOperations()
+        context.onDraw()
+        context.mRemoteWriter.endCanvasOperations()
+    }
 }

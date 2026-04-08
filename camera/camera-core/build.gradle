@@ -105,7 +105,6 @@ android {
                                 "-Wl,--undefined-version"
             }
         }
-        consumerProguardFiles("proguard-rules.pro")
     }
     buildFeatures.prefab = true
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import android.provider.Settings
 import android.view.View
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.xr.runtime.NodeHolder
+import androidx.xr.runtime.TypeHolder
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.AnchorEntity
@@ -73,7 +75,8 @@ import androidx.xr.scenecore.runtime.SpatialVisibility
 import androidx.xr.scenecore.runtime.SubspaceNodeEntity
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.SurfaceFeature
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
+import androidx.xr.scenecore.runtime.impl.OpenXrScenePose
+import androidx.xr.scenecore.runtime.impl.PerceptionSpaceScenePoseImpl
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertPerceivedResolution
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertSpatialCapabilities
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertSpatialVisibility
@@ -417,6 +420,23 @@ private constructor(
         return entity
     }
 
+    override fun createSubspaceNodeEntity(
+        nodeHolder: NodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity {
+        val node: Node = TypeHolder.assertGetValue(nodeHolder, Node::class.java)
+        val entity: SubspaceNodeEntity =
+            SubspaceNodeEntityImpl(
+                checkNotNull(activity),
+                xrExtensions,
+                node,
+                sceneNodeRegistry,
+                scheduledExecutorService,
+            )
+        entity.size = size
+        return entity
+    }
+
     override fun createEntity(pose: Pose, name: String?, parent: Entity?): Entity {
         val node = xrExtensions.createNode()
         name?.let {
@@ -661,12 +681,16 @@ private constructor(
             scaleInZ,
             userAnchorable,
             activitySpace,
-            EntityShadowRendererImpl(
-                activitySpace,
-                perceptionSpaceScenePose,
-                checkNotNull(activity),
-                xrExtensions,
-            ),
+            if (!userAnchorable) null
+            else
+                EntityShadowRendererImpl(
+                    activitySpace,
+                    perceptionSpaceScenePose,
+                    checkNotNull(activity),
+                    xrExtensions,
+                    sceneNodeRegistry,
+                    scheduledExecutorService,
+                ),
             scheduledExecutorService,
         )
     }
@@ -857,7 +881,7 @@ private constructor(
             return create(
                 activity,
                 executor,
-                extensions = requireNotNull(getXrExtensions()),
+                SpatialCoreXrExtensionsHolderProvider.extensionsLegacy,
                 SceneNodeRegistry(),
                 sceneRootNode,
                 taskWindowLeashNode,
@@ -904,7 +928,7 @@ private constructor(
             return create(
                 activity,
                 executor,
-                requireNotNull(getXrExtensions()),
+                SpatialCoreXrExtensionsHolderProvider.extensionsLegacy,
                 SceneNodeRegistry(),
             )
         }
@@ -918,7 +942,7 @@ private constructor(
             executor: ScheduledExecutorService,
             unscaledGravityAlignedActivitySpace: Boolean = true,
         ): SpatialSceneRuntime {
-            val xrExtensions = requireNotNull(getXrExtensions())
+            val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
             val sceneRootNode = xrExtensions.createNode()
             val taskWindowLeashNode = xrExtensions.createNode()
             xrExtensions.attachSpatialScene(

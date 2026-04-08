@@ -584,4 +584,20 @@ public abstract class PaintContext {
     public boolean useFeature(short feature) {
         return mContext.useFeature(feature);
     }
+
+    /**
+     * Return current density
+     * @return
+     */
+    public float getDensity() {
+        return mContext.getDensity();
+    }
+
+    /**
+     * Return density behavior
+     * @return
+     */
+    public int getDensityBehavior() {
+        return mContext.mDocument.mDensityBehavior;
+    }
 }

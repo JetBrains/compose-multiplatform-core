@@ -21,12 +21,14 @@ import android.content.Context
 import androidx.annotation.UiContext
 import androidx.core.util.Consumer
 import androidx.window.WindowSdkExtensions
+import androidx.window.layout.adapter.EngagementModeBackend
 import androidx.window.layout.adapter.WindowBackend
 import java.util.concurrent.Executor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 
 /**
@@ -40,6 +42,7 @@ internal class WindowInfoTrackerImpl(
     private val windowMetricsCalculator: WindowMetricsCalculator,
     private val windowBackend: WindowBackend,
     private val windowSdkExtensions: WindowSdkExtensions,
+    private val engagementModeBackend: EngagementModeBackend,
 ) : WindowInfoTracker {
 
     /**
@@ -47,21 +50,34 @@ internal class WindowInfoTrackerImpl(
      * either an [Activity] or created with [Context.createWindowContext].
      */
     override fun windowLayoutInfo(@UiContext context: Context): Flow<WindowLayoutInfo> {
-        return callbackFlow {
-                val listener = Consumer { info: WindowLayoutInfo -> trySend(info) }
-                windowBackend.registerLayoutChangeCallback(context, Runnable::run, listener)
-                awaitClose { windowBackend.unregisterLayoutChangeCallback(listener) }
-            }
-            .flowOn(Dispatchers.Main)
+        return windowLayoutInfoInternal(context)
     }
 
     /** A [Flow] of window layout changes in the current visual [Activity]. */
     override fun windowLayoutInfo(activity: Activity): Flow<WindowLayoutInfo> {
-        return callbackFlow {
-                val listener = Consumer { info: WindowLayoutInfo -> trySend(info) }
-                windowBackend.registerLayoutChangeCallback(activity, Runnable::run, listener)
-                awaitClose { windowBackend.unregisterLayoutChangeCallback(listener) }
+        return windowLayoutInfoInternal(activity)
+    }
+
+    private fun windowLayoutInfoInternal(@UiContext context: Context): Flow<WindowLayoutInfo> {
+        val engagementFlow = callbackFlow {
+            val listener = Consumer { engagementMode: WindowLayoutInfo.EngagementMode ->
+                trySend(engagementMode)
             }
+            engagementModeBackend.addEngagementLayoutChangeCallback(
+                context,
+                Runnable::run,
+                listener,
+            )
+            awaitClose { engagementModeBackend.removeEngagementLayoutChangeCallback(listener) }
+        }
+
+        val layoutFlow = callbackFlow {
+            val listener = Consumer { info: WindowLayoutInfo -> trySend(info) }
+            windowBackend.registerLayoutChangeCallback(context, Runnable::run, listener)
+            awaitClose { windowBackend.unregisterLayoutChangeCallback(listener) }
+        }
+
+        return combine(layoutFlow, engagementFlow) { info, mode -> withEngagementMode(info, mode) }
             .flowOn(Dispatchers.Main)
     }
 
@@ -73,7 +89,9 @@ internal class WindowInfoTrackerImpl(
 
     override fun getCurrentWindowLayoutInfo(@UiContext context: Context): WindowLayoutInfo {
         windowSdkExtensions.requireExtensionVersion(9)
-        return windowBackend.getCurrentWindowLayoutInfo(context)
+        val windowLayoutInfo = windowBackend.getCurrentWindowLayoutInfo(context)
+        val engagementLayoutMode = engagementModeBackend.getCurrentEngagementLayoutMode(context)
+        return withEngagementMode(windowLayoutInfo, engagementLayoutMode)
     }
 
     override fun registerWindowLayoutInfoListener(
@@ -86,5 +104,19 @@ internal class WindowInfoTrackerImpl(
 
     override fun unregisterWindowLayoutInfoListener(listener: Consumer<WindowLayoutInfo>) {
         windowBackend.unregisterLayoutChangeCallback(listener)
+    }
+
+    internal fun withEngagementMode(
+        windowLayoutInfo: WindowLayoutInfo,
+        mode: WindowLayoutInfo.EngagementMode,
+    ): WindowLayoutInfo {
+        val newModes = windowLayoutInfo.engagementModes.toMutableSet()
+        newModes.add(mode)
+        if (mode == WindowLayoutInfo.EngagementMode.ENGAGEMENT_PRECISE_POINTER) {
+            newModes.remove(WindowLayoutInfo.EngagementMode.ENGAGEMENT_TOUCH)
+        } else if (mode == WindowLayoutInfo.EngagementMode.ENGAGEMENT_TOUCH) {
+            newModes.remove(WindowLayoutInfo.EngagementMode.ENGAGEMENT_PRECISE_POINTER)
+        }
+        return WindowLayoutInfo(windowLayoutInfo.displayFeatures, newModes)
     }
 }

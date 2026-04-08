@@ -701,6 +701,16 @@ public class WebViewFeatureInternal {
             new ApiFeature.NoFramework(WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3,
                     Features.BACK_FORWARD_CACHE_SETTINGS_V3);
 
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers
+     * {@link BackForwardCacheSettings#setKeepForwardEntries(boolean)}
+     * {@link BackForwardCacheSettings#getKeepForwardEntries()}
+     */
+    public static final ApiFeature.NoFramework BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4 =
+            new ApiFeature.NoFramework(WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4,
+                    Features.BACK_FORWARD_CACHE_SETTINGS_V4);
+
     public static final ApiFeature.NoFramework DELETE_BROWSING_DATA = new ApiFeature.NoFramework(
             WebViewFeature.DELETE_BROWSING_DATA, Features.WEB_STORAGE_DELETE_BROWSING_DATA
     );

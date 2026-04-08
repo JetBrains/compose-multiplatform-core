@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 /**
  * [Stepper] allows users to make a selection from a range of values. It's a full-screen control
  * with increase button on the top, decrease button on the bottom and a slot (expected to have
- * either [Text] or [Chip]) in the middle. Value can be increased and decreased by clicking on the
+ * either Text or Chip) in the middle. Value can be increased and decreased by clicking on the
  * increase and decrease buttons. Buttons can have custom icons - [decreaseIcon] and [increaseIcon].
  * Step value is calculated as the difference between min and max values divided by [steps]+1.
  * Stepper itself doesn't show the current value but can be displayed via the content slot or

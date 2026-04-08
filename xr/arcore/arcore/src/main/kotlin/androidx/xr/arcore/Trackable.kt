@@ -16,7 +16,6 @@
 
 package androidx.xr.arcore
 
-import androidx.xr.runtime.TrackingState
 import kotlinx.coroutines.flow.StateFlow
 
 /** An object that ARCore for Jetpack XR can track. */

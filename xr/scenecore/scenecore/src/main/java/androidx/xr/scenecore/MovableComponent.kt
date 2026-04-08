@@ -20,8 +20,8 @@ package androidx.xr.scenecore
 
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.Plane
+import androidx.xr.arcore.TrackingState
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -73,8 +73,16 @@ private constructor(
     private val moveListenersMap = ConcurrentHashMap<EntityMoveListener, Executor>()
     private val rtMoveEventListener: RtMoveEventListener = RtMoveEventListener { rtMoveEvent ->
         val moveEvent = rtMoveEvent.toMoveEvent(entityRegistry)
-        val updatedReformEventInfo: UpdatedReformEventInfo? =
-            if (anchorable) getUpdatedReformEventPoseAndParent(moveEvent) else null
+        var updatedReformEventInfo: UpdatedReformEventInfo? = null
+        if (anchorable) {
+            updatedReformEventInfo = getUpdatedReformEventPoseAndParent(moveEvent)
+        } else if (systemMovable && entity is GltfModelEntity) {
+            entity?.apply {
+                // TODO(b/495925250): Add SceneCore unit tests for movable gLTFs
+                setPose(moveEvent.currentPose)
+                setScale(moveEvent.currentScale)
+            }
+        }
         moveListenersMap.forEach { (entityMoveListener, executor) ->
             executor.execute {
                 when (moveEvent.moveState) {

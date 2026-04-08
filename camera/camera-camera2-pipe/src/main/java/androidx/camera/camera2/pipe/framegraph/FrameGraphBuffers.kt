@@ -118,6 +118,13 @@ internal constructor(
         }
     }
 
+    fun trimAll(streamId: StreamId) {
+        val buffersToTrim = synchronized(lock) { buffers.filter { it.streams.contains(streamId) } }
+        for (buffer in buffersToTrim) {
+            buffer.trimAll()
+        }
+    }
+
     fun invalidate() {
         cameraGraph.useSessionIn(frameGraphCoroutineScope) { session -> flush(session) }
     }

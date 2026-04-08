@@ -69,7 +69,6 @@ dependencies {
 
 android {
     defaultConfig {
-        consumerProguardFiles("proguard-rules.pro")
         minSdk = 24
     }
     namespace = "androidx.xr.scenecore"

@@ -21,13 +21,13 @@ import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.RcProfiles.PROFILE_ANDROIDX
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.VariableSupport
-import androidx.compose.remote.core.operations.TextFromFloat
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
 import com.google.common.collect.ImmutableList
 import com.google.common.truth.Truth.assertThat
+import java.text.DecimalFormat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -54,7 +54,7 @@ class RemoteStringTest {
     @Test
     fun toRemoteStringWithPostfix() {
         val percentage = RemoteFloat(45.5f)
-        val percentageString = percentage.toRemoteString(2, 1) + RemoteString("%")
+        val percentageString = percentage.toRemoteString(DecimalFormat("#0.0")) + RemoteString("%")
         val percentageStringId = percentageString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -68,8 +68,8 @@ class RemoteStringTest {
             selectIfLt(
                 v,
                 RemoteFloat(10000f),
-                v.toRemoteString(4, 0),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("#0")),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -84,8 +84,8 @@ class RemoteStringTest {
             selectIfLt(
                 v,
                 RemoteFloat(12345f),
-                v.toRemoteString(4, 0),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("###0")),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -100,8 +100,8 @@ class RemoteStringTest {
             selectIfLt(
                 v,
                 RemoteFloat(10000f),
-                v.toRemoteString(4, 0),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("###0")),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -116,8 +116,8 @@ class RemoteStringTest {
             selectIfLt(
                 v,
                 RemoteInt(10000),
-                v.toRemoteString(4),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -132,8 +132,8 @@ class RemoteStringTest {
             selectIfLt(
                 v,
                 RemoteInt(12345),
-                v.toRemoteString(4),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -148,8 +148,8 @@ class RemoteStringTest {
             selectIfLt(
                 v,
                 RemoteInt(10000),
-                v.toRemoteString(4),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -164,8 +164,8 @@ class RemoteStringTest {
             selectIfLe(
                 v,
                 RemoteFloat(10000f),
-                v.toRemoteString(4, 0),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("###0")),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -180,8 +180,8 @@ class RemoteStringTest {
             selectIfLe(
                 v,
                 RemoteFloat(1234f),
-                v.toRemoteString(4, 0),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("###0")),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -196,8 +196,8 @@ class RemoteStringTest {
             selectIfLe(
                 v,
                 RemoteFloat(9999f),
-                v.toRemoteString(4, 0),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("###0")),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -212,8 +212,8 @@ class RemoteStringTest {
             selectIfLe(
                 v,
                 RemoteInt(10000),
-                v.toRemoteString(4),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -228,8 +228,8 @@ class RemoteStringTest {
             selectIfLe(
                 v,
                 RemoteInt(1234),
-                v.toRemoteString(4),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -244,8 +244,8 @@ class RemoteStringTest {
             selectIfLe(
                 v,
                 RemoteInt(9999),
-                v.toRemoteString(4),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -260,8 +260,8 @@ class RemoteStringTest {
             selectIfGt(
                 v,
                 RemoteFloat(10000f),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
-                v.toRemoteString(4, 0),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("###0")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -276,8 +276,8 @@ class RemoteStringTest {
             selectIfGt(
                 v,
                 RemoteFloat(1234f),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
-                v.toRemoteString(4, 0),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("###0")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -292,8 +292,8 @@ class RemoteStringTest {
             selectIfGt(
                 v,
                 RemoteFloat(10000f),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
-                v.toRemoteString(4, 0),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("###0")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -308,8 +308,8 @@ class RemoteStringTest {
             selectIfGt(
                 v,
                 RemoteInt(10000),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
-                v.toRemoteString(4),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -324,8 +324,8 @@ class RemoteStringTest {
             selectIfGt(
                 v,
                 RemoteInt(1234),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
-                v.toRemoteString(4),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -340,8 +340,8 @@ class RemoteStringTest {
             selectIfGt(
                 v,
                 RemoteInt(10000),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
-                v.toRemoteString(4),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -356,8 +356,8 @@ class RemoteStringTest {
             selectIfGe(
                 v,
                 RemoteFloat(10000f),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
-                v.toRemoteString(4, 0),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("###0")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -372,8 +372,8 @@ class RemoteStringTest {
             selectIfGe(
                 v,
                 RemoteFloat(10000f),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
-                v.toRemoteString(4, 0),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("###0")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -388,8 +388,8 @@ class RemoteStringTest {
             selectIfGe(
                 v,
                 RemoteFloat(10000f),
-                (v / 1000f).toRemoteString(2, 0) + RemoteString("K"),
-                v.toRemoteString(4, 0),
+                (v / 1000f).toRemoteString(DecimalFormat("#0")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("###0")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -404,8 +404,8 @@ class RemoteStringTest {
             selectIfGe(
                 v,
                 RemoteInt(10000),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
-                v.toRemoteString(4),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -420,8 +420,8 @@ class RemoteStringTest {
             selectIfGe(
                 v,
                 RemoteInt(10000),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
-                v.toRemoteString(4),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -436,8 +436,8 @@ class RemoteStringTest {
             selectIfGe(
                 v,
                 RemoteInt(10000),
-                (v / 1000).toRemoteString(2) + RemoteString("K"),
-                v.toRemoteString(4),
+                (v / 1000).toRemoteString(DecimalFormat("##")) + RemoteString("K"),
+                v.toRemoteString(DecimalFormat("####")),
             )
         val conditionalStringId = conditionalString.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -517,7 +517,9 @@ class RemoteStringTest {
     fun hasConstantValue_false() {
         val c = creationState
         assertThat(
-                RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC).toRemoteString(2).hasConstantValue
+                RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
+                    .toRemoteString(DecimalFormat("#0.00"))
+                    .hasConstantValue
             )
             .isFalse()
         assertThat(
@@ -669,8 +671,13 @@ class RemoteStringTest {
 
     @Test
     fun computeRequiredCodePointSet_intToString_padSpace() {
-        val s = namedRemoteInt.toRemoteString(2, TextFromFloat.PAD_PRE_SPACE)
-        val s2 = RemoteFloat(2f).toRemoteString(2, TextFromFloat.PAD_PRE_SPACE)
+        val decimalFormat =
+            android.icu.text.DecimalFormat("#0").apply {
+                formatWidth = 10
+                padCharacter = ' '
+            }
+        val s = namedRemoteInt.toRemoteString(decimalFormat)
+        val s2 = RemoteFloat(2f).toRemoteString(decimalFormat)
 
         assertThat(s.computeRequiredCodePointSet(creationState))
             .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", " ")
@@ -679,8 +686,8 @@ class RemoteStringTest {
 
     @Test
     fun computeRequiredCodePointSet_intToString_padNone() {
-        val s = namedRemoteInt.toRemoteString(2, TextFromFloat.PAD_PRE_NONE)
-        val s2 = RemoteInt(2).toRemoteString(2, TextFromFloat.PAD_PRE_NONE)
+        val s = namedRemoteInt.toRemoteString(DecimalFormat("##"))
+        val s2 = RemoteInt(2).toRemoteString(DecimalFormat("##"))
 
         assertThat(s.computeRequiredCodePointSet(creationState))
             .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
@@ -689,7 +696,12 @@ class RemoteStringTest {
 
     @Test
     fun computeRequiredCodePointSet_floatToString_padSpace_zeroAfter() {
-        val s = namedRemoteFloat.toRemoteString(2, 0, TextFromFloat.PAD_PRE_SPACE)
+        val decimalFormat =
+            android.icu.text.DecimalFormat("#0").apply {
+                formatWidth = 10
+                padCharacter = ' '
+            }
+        val s = namedRemoteFloat.toRemoteString(decimalFormat)
 
         assertThat(s.computeRequiredCodePointSet(creationState))
             .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", " ")
@@ -697,40 +709,34 @@ class RemoteStringTest {
 
     @Test
     fun computeRequiredCodePointSet_floatToString_padNone_zeroAfter() {
-        val s = namedRemoteFloat.toRemoteString(2, 0, TextFromFloat.PAD_PRE_NONE)
-        val s2 = RemoteFloat(2f).toRemoteString(2, 0, TextFromFloat.PAD_PRE_SPACE)
+        val s = namedRemoteFloat.toRemoteString(DecimalFormat("#0"))
+        val s2 = RemoteFloat(2f).toRemoteString(DecimalFormat("#0"))
 
         assertThat(s.computeRequiredCodePointSet(creationState))
             .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
-        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly(" ", "2")
+        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly("2")
     }
 
     @Test
     fun computeRequiredCodePointSet_floatToString_padSpace_twoAfter() {
-        val s =
-            namedRemoteFloat.toRemoteString(
-                2,
-                2,
-                TextFromFloat.PAD_PRE_SPACE + TextFromFloat.PAD_AFTER_SPACE,
-            )
-        val s2 = RemoteFloat(2f).toRemoteString(2, TextFromFloat.PAD_PRE_SPACE)
+        val decimalFormat =
+            android.icu.text.DecimalFormat("#0.0").apply {
+                formatWidth = 10
+                padCharacter = ' '
+            }
+        val s = namedRemoteFloat.toRemoteString(decimalFormat)
+        val s2 = RemoteFloat(2f).toRemoteString(decimalFormat)
 
         assertThat(s.computeRequiredCodePointSet(creationState))
-            .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", " ", ".")
-        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly(" ", "2")
+            .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", " ")
+        assertThat(s2.computeRequiredCodePointSet(creationState))
+            .containsExactly(" ", "0", "2", ".")
     }
 
     @Test
     fun computeRequiredCodePointSet_floatToString_padNone_twoAfter() {
-        val s =
-            namedRemoteFloat.toRemoteString(
-                2,
-                2,
-                TextFromFloat.PAD_PRE_NONE + TextFromFloat.PAD_AFTER_NONE,
-            )
-        val s2 =
-            RemoteFloat(2f)
-                .toRemoteString(2, 2, TextFromFloat.PAD_PRE_NONE + TextFromFloat.PAD_AFTER_NONE)
+        val s = namedRemoteFloat.toRemoteString(DecimalFormat("0.00"))
+        val s2 = RemoteFloat(2f).toRemoteString(DecimalFormat("#0.0#"))
 
         assertThat(s.computeRequiredCodePointSet(creationState))
             .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".")
@@ -739,8 +745,8 @@ class RemoteStringTest {
 
     @Test
     fun computeRequiredCodePointSet_intToString_plus_constant() {
-        val s = namedRemoteInt.toRemoteString(2, TextFromFloat.PAD_PRE_NONE) + RemoteString("K")
-        val s2 = RemoteInt(20).toRemoteString(2, TextFromFloat.PAD_PRE_NONE) + RemoteString("K")
+        val s = namedRemoteInt.toRemoteString(DecimalFormat("##")) + RemoteString("K")
+        val s2 = RemoteInt(20).toRemoteString(DecimalFormat("##")) + RemoteString("K")
 
         assertThat(s.computeRequiredCodePointSet(creationState))
             .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "K")
@@ -823,11 +829,11 @@ class RemoteStringTest {
     fun remoteFloat_toRemoteString_caching() {
         val rf = RemoteFloat.createNamedRemoteFloat("testFloat", 1.0f)
 
-        val rs1 = rf.toRemoteString(1, 2, 0)
-        val rs2 = rf.toRemoteString(1, 2, 0)
-        val rs3 = rf.toRemoteString(2, 2, 0) // Different 'before'
-        val rs4 = rf.toRemoteString(1, 3, 0) // Different 'after'
-        val rs5 = rf.toRemoteString(1, 2, 1) // Different 'flags'
+        val rs1 = rf.toRemoteString(DecimalFormat("#0.##"))
+        val rs2 = rf.toRemoteString(DecimalFormat("#0.##"))
+        val rs3 = rf.toRemoteString(DecimalFormat("00.##")) // Different 'before'
+        val rs4 = rf.toRemoteString(DecimalFormat("#0.00")) // Different 'after'
+        val rs5 = rf.toRemoteString(DecimalFormat("#0.##;(#0.##)")) // Different 'flags'
 
         val id1 = rs1.getIdForCreationState(creationState)
         val id2 = rs2.getIdForCreationState(creationState)
@@ -846,10 +852,10 @@ class RemoteStringTest {
     fun remoteInt_toRemoteString_caching() {
         val ri = RemoteInt.createNamedRemoteInt("testInt", 1)
 
-        val rs1 = ri.toRemoteString(1, 0)
-        val rs2 = ri.toRemoteString(1, 0)
-        val rs3 = ri.toRemoteString(2, 0) // Different 'before'
-        val rs4 = ri.toRemoteString(1, 1) // Different 'flags'
+        val rs1 = ri.toRemoteString(DecimalFormat("#"))
+        val rs2 = ri.toRemoteString(DecimalFormat("#"))
+        val rs3 = ri.toRemoteString(DecimalFormat("00")) // Different 'before'
+        val rs4 = ri.toRemoteString(DecimalFormat("#;(#)")) // Different 'flags'
 
         val id1 = rs1.getIdForCreationState(creationState)
         val id2 = rs2.getIdForCreationState(creationState)
@@ -866,8 +872,8 @@ class RemoteStringTest {
         val rf1 = RemoteFloat.createNamedRemoteFloat("testFloat1", 1.0f)
         val rf2 = RemoteFloat.createNamedRemoteFloat("testFloat2", 2.0f)
 
-        val rs1 = rf1.toRemoteString(1, 2, 0)
-        val rs2 = rf2.toRemoteString(1, 2, 0)
+        val rs1 = rf1.toRemoteString(DecimalFormat("###0"))
+        val rs2 = rf2.toRemoteString(DecimalFormat("###0"))
 
         val id1 = rs1.getIdForCreationState(creationState)
         val id2 = rs2.getIdForCreationState(creationState)
@@ -880,8 +886,8 @@ class RemoteStringTest {
         val ri1 = RemoteInt.createNamedRemoteInt("testInt1", 1)
         val ri2 = RemoteInt.createNamedRemoteInt("testInt2", 2)
 
-        val rs1 = ri1.toRemoteString(1, 0)
-        val rs2 = ri2.toRemoteString(1, 0)
+        val rs1 = ri1.toRemoteString(DecimalFormat("#"))
+        val rs2 = ri2.toRemoteString(DecimalFormat("#"))
 
         val id1 = rs1.getIdForCreationState(creationState)
         val id2 = rs2.getIdForCreationState(creationState)

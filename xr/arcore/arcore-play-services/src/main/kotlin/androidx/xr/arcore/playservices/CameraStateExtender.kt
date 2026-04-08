@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:JvmName("CameraStateExt")
 
 package androidx.xr.arcore.playservices
 
 import android.os.Build
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.StateExtender
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Matrix4
 import com.google.ar.core.Coordinates2d
@@ -135,7 +135,11 @@ internal class CameraStateExtender : StateExtender {
     }
 }
 
-/** The state of the ARCore 1.x Camera. */
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/**
+ * Provides the latest [CameraState], which contains the latest information about the device camera,
+ * such as pose, projection, and timestamp for the current frame.
+ */
+@ExperimentalCameraApi
+@Suppress("ExperimentalPropertyAnnotation")
 public val CoreState.cameraState: CameraState?
     get() = CameraStateExtender.cameraStateMap[this.timeMark]

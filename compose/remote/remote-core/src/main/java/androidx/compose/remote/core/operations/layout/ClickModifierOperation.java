@@ -232,6 +232,18 @@ public class ClickModifierOperation extends PaintOperation
         return true;
     }
 
+    @Override
+    public boolean onLongPress(@NonNull RemoteContext context, @NonNull CoreDocument document,
+            @NonNull Component component, float x, float y) {
+        return false;
+    }
+
+    @Override
+    public boolean onDoubleClick(@NonNull RemoteContext context, @NonNull CoreDocument document,
+            @NonNull Component component, float x, float y) {
+        return false;
+    }
+
     /**
      * The name of the class
      *

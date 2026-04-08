@@ -17,7 +17,6 @@
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -44,8 +43,9 @@ public interface Hand : Trackable {
          *   the hand
          */
         @JvmStatic
+        @Suppress("UnavailableSymbol")
         public fun parseHandJoint(
-            trackingState: TrackingState,
+            @Suppress("HiddenTypeParameter") trackingState: TrackingState,
             handJointsBuffer: FloatBuffer,
         ): Map<HandJointType, Pose> {
             if (trackingState != TrackingState.Companion.TRACKING) {
@@ -68,7 +68,7 @@ public interface Hand : Trackable {
         }
     }
 
-    public override val trackingState: TrackingState
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public override val trackingState: TrackingState
 
     public val handJointsBuffer: FloatBuffer
 

@@ -21,7 +21,7 @@ import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.arcore.runtime.Plane
 import androidx.xr.arcore.runtime.Trackable
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
@@ -42,7 +42,7 @@ import com.google.ar.core.exceptions.NotTrackingException
  * @property type the [Plane.Type] of the plane
  * @property vertices the vertices of the plane
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ArCorePlane
 internal constructor(internal val _arCorePlane: ARCorePlane, private val resources: XrResources) :
     Plane, Trackable {

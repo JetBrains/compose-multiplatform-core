@@ -156,6 +156,10 @@ fun callSessionCreate(activity: ComponentActivity, userRequestedInstall: Boolean
                 is SessionCreateUnknownError -> {
                     Toast.makeText(activity, result.errorMessage, Toast.LENGTH_LONG)
                 }
+
+                else -> {
+                    Toast.makeText(activity, "Session creation failed.", Toast.LENGTH_LONG)
+                }
             }
         } catch (e: SecurityException) {
             // Session creation failed due to missing permission. Try asking the user for those

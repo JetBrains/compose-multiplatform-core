@@ -19,62 +19,70 @@ package androidx.xr.scenecore
 import androidx.annotation.RestrictTo
 
 /**
- * Enum defining the attribute of a vertex.
+ * Defines the attribute of a vertex.
  *
- * This enum is used to define the semantic meaning of a vertex attribute in a
+ * This class is used to define the semantic meaning of a vertex attribute in a
  * [VertexAttributeDescriptor].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public enum class VertexAttribute(public val id: Int) {
-    /** The position of the vertex. Must be a FLOAT3. */
-    POSITION(0),
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class VertexAttribute private constructor(private val name: String) {
+    public companion object {
+        /** The position of the vertex. Must be a FLOAT3. */
+        @JvmField public val POSITION: VertexAttribute = VertexAttribute("POSITION")
 
-    /**
-     * The normal of the vertex. Must be a FLOAT3 normal, or a FLOAT4 quaternion representing the
-     * entire tangent frame.
-     */
-    NORMAL(1),
+        /**
+         * The normal of the vertex. Must be a FLOAT3 normal, or a FLOAT4 quaternion representing
+         * the entire tangent frame.
+         */
+        @JvmField public val NORMAL: VertexAttribute = VertexAttribute("NORMAL")
 
-    /** The color of the vertex. Must be a UBYTE4_NORM. */
-    COLOR(2),
+        /** The color of the vertex. Must be a UBYTE4_NORM. */
+        @JvmField public val COLOR: VertexAttribute = VertexAttribute("COLOR")
 
-    /** The first set of texture coordinates. Must be a FLOAT2. */
-    UV0(3),
+        /** The first set of texture coordinates. Must be a FLOAT2. */
+        @JvmField public val UV0: VertexAttribute = VertexAttribute("UV0")
 
-    /** The second set of texture coordinates. Must be a FLOAT2. */
-    UV1(4),
+        /** The second set of texture coordinates. Must be a FLOAT2. */
+        @JvmField public val UV1: VertexAttribute = VertexAttribute("UV1")
 
-    /** The indices of the bones that affect this vertex. Must be a UBYTE4. */
-    BONE_INDICES(5),
+        /** The indices of the bones that affect this vertex. Must be a UBYTE4. */
+        @JvmField public val BONE_INDICES: VertexAttribute = VertexAttribute("BONE_INDICES")
 
-    /** The weights of the bones that affect this vertex. Must be a UBYTE4_NORM. */
-    BONE_WEIGHTS(6),
+        /** The weights of the bones that affect this vertex. Must be a UBYTE4_NORM. */
+        @JvmField public val BONE_WEIGHTS: VertexAttribute = VertexAttribute("BONE_WEIGHTS")
+    }
+
+    public override fun toString(): String = name
 }
 
 /**
- * Enum defining the type of data for a vertex attribute.
+ * Defines the type of data for a vertex attribute.
  *
  * This specifies the data type and component count for an attribute in the vertex buffer.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public enum class VertexAttributeType(public val id: Int) {
-    /** A single 32-bit floating point value. */
-    FLOAT(0),
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class VertexAttributeType private constructor(private val name: String) {
+    public companion object {
+        /** A single 32-bit floating point value. */
+        @JvmField public val FLOAT: VertexAttributeType = VertexAttributeType("FLOAT")
 
-    /** Two 32-bit floating point values. */
-    FLOAT2(1),
+        /** Two 32-bit floating point values. */
+        @JvmField public val FLOAT2: VertexAttributeType = VertexAttributeType("FLOAT2")
 
-    /** Three 32-bit floating point values. */
-    FLOAT3(2),
+        /** Three 32-bit floating point values. */
+        @JvmField public val FLOAT3: VertexAttributeType = VertexAttributeType("FLOAT3")
 
-    /** Four 32-bit floating point values. */
-    FLOAT4(3),
+        /** Four 32-bit floating point values. */
+        @JvmField public val FLOAT4: VertexAttributeType = VertexAttributeType("FLOAT4")
 
-    /** Four unsigned 8-bit integers, normalized to [0, 1]. */
-    UBYTE4_NORM(4),
+        /** Four unsigned 8-bit integers, normalized to [0, 1]. */
+        @JvmField public val UBYTE4_NORM: VertexAttributeType = VertexAttributeType("UBYTE4_NORM")
 
-    /** A single unsigned 8-bit integer. */
-    UBYTE(5),
+        /** Four unsigned 8-bit integers. */
+        @JvmField public val UBYTE4: VertexAttributeType = VertexAttributeType("UBYTE4")
+    }
+
+    public override fun toString(): String = name
 }
 
 /**
@@ -86,12 +94,32 @@ public enum class VertexAttributeType(public val id: Int) {
  * @param type The [VertexAttributeType] data type of the attribute.
  * @param bufferIndex The index of the vertex buffer where this attribute is stored.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public data class VertexAttributeDescriptor(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class VertexAttributeDescriptor(
     public val attribute: VertexAttribute,
     public val type: VertexAttributeType,
     public val bufferIndex: Int = 0,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is VertexAttributeDescriptor) return false
+        if (attribute != other.attribute) return false
+        if (type != other.type) return false
+        if (bufferIndex != other.bufferIndex) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = attribute.hashCode()
+        result = 31 * result + type.hashCode()
+        result = 31 * result + bufferIndex
+        return result
+    }
+
+    override fun toString(): String {
+        return "VertexAttributeDescriptor(attribute=$attribute, type=$type, bufferIndex=$bufferIndex)"
+    }
+}
 
 /**
  * Layout of a vertex, composed of multiple attribute descriptors.
@@ -101,5 +129,20 @@ public data class VertexAttributeDescriptor(
  *
  * @param attributes List of [VertexAttributeDescriptor]s defining the vertex layout.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public data class VertexLayout(public val attributes: List<VertexAttributeDescriptor>)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class VertexLayout(public val attributes: List<VertexAttributeDescriptor>) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is VertexLayout) return false
+        if (attributes != other.attributes) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return attributes.hashCode()
+    }
+
+    override fun toString(): String {
+        return "VertexLayout(attributes=$attributes)"
+    }
+}

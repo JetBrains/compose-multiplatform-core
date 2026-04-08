@@ -18,7 +18,9 @@ package androidx.appfunctions.compiler
 
 import androidx.appfunctions.compiler.testings.CompilationTestHelper
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import java.io.File
+import kotlin.io.path.Path
 import org.junit.Before
 import org.junit.Test
 
@@ -1063,7 +1065,7 @@ class AppFunctionCompilerTest {
 
         compilationTestHelper.assertErrorWithMessage(
             report,
-            "All subclasses of OneOfSealedInterface should be annotated with @AppFunctionSerializable. Did you forget to annotate OneOfSealedInterface\$ASubclass?",
+            "OneOfSealedInterface\$ASubclass cannot be represented as an app function serializable. Did you forget to annotate OneOfSealedInterface\$ASubclass?",
         )
     }
 
@@ -1092,6 +1094,7 @@ class AppFunctionCompilerTest {
             compilationTestHelper.compileAll(
                 sourceFileNames =
                     listOf(
+                        "oneofserializable/NonSealedOneOfSerializable.KT",
                         "oneofserializable/OneOfSealedClass.KT",
                         "oneofserializable/OneOfSealedInterface.KT",
                         "oneofserializable/OneOfFunctions.KT",
@@ -1108,6 +1111,20 @@ class AppFunctionCompilerTest {
             report = report,
             expectGeneratedResourceFileName = "app_functions_v2.xml",
             goldenFileName = "oneofserializable/oneOfFunctions_app_function_dynamic_schema.xml",
+        )
+    }
+
+    @Test
+    fun oneOfSerializable_nonSealedOneOfSerializable_generatesFactory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("oneofserializable/NonSealedOneOfSerializable.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report,
+            "NonSealedOneOfSerializableFactory.kt",
+            "oneofserializable/\$NonSealedOneOfSerializableFactory.KT",
         )
     }
 
@@ -1134,5 +1151,60 @@ class AppFunctionCompilerTest {
             expectGeneratedResourceFileName = "app_functions_v2.xml",
             goldenFileName = "xml/deprecated_app_function_dynamic_schema.xml",
         )
+    }
+
+    @Test
+    fun testAppFunctionsXmlLocation_generatesFileAtSpecifiedLocation() {
+        // Create a unique temporary directory for this test's output
+        val testOutputLocation =
+            Path(
+                    compilationTestHelper.outputDir.toString(),
+                    "build/test-generated-xml/${java.util.UUID.randomUUID()}",
+                )
+                .toString()
+        val dynamicSchemaXmlFile = File(testOutputLocation, "app_functions_v2.xml")
+        val legacySchemaXmlFile = File(testOutputLocation, "app_functions.xml")
+
+        try {
+            val report =
+                compilationTestHelper.compileAll(
+                    sourceFileNames = listOf("functions/valid/FunctionWithGenericSerializable.KT"),
+                    processorOptions =
+                        mapOf(
+                            "appfunctions:aggregateAppFunctions" to "true",
+                            "appfunctions:appFunctionsXmlLocation" to testOutputLocation,
+                        ),
+                )
+
+            assertThat(dynamicSchemaXmlFile.exists()).isTrue()
+            compilationTestHelper.assertSuccessWithGeneratedContent(
+                report,
+                expectGeneratedFileName = dynamicSchemaXmlFile.name,
+                goldenFileName =
+                    "xml/functionWithGenericSerializable_app_function_dynamic_schema.xml",
+                generatedFileContent = dynamicSchemaXmlFile.readText(),
+            )
+            assertThat(legacySchemaXmlFile.exists()).isTrue()
+            compilationTestHelper.assertSuccessWithGeneratedContent(
+                report,
+                expectGeneratedFileName = legacySchemaXmlFile.name,
+                goldenFileName = "xml/functionWithGenericSerializable_app_function_legacy.xml",
+                generatedFileContent = legacySchemaXmlFile.readText(),
+            )
+            // Also verify original XML under assets is still generated.
+            compilationTestHelper.assertSuccessWithResourceContent(
+                report = report,
+                expectGeneratedResourceFileName = "app_functions_v2.xml",
+                goldenFileName =
+                    "xml/functionWithGenericSerializable_app_function_dynamic_schema.xml",
+            )
+            compilationTestHelper.assertSuccessWithResourceContent(
+                report = report,
+                expectGeneratedResourceFileName = "app_functions.xml",
+                goldenFileName = "xml/functionWithGenericSerializable_app_function_legacy.xml",
+            )
+        } finally {
+            File(testOutputLocation).deleteRecursively()
+        }
     }
 }

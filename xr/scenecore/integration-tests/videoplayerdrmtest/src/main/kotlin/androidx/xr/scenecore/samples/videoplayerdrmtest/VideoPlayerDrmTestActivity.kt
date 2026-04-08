@@ -189,6 +189,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 IntSize2d(640, 480),
                 "playerControls",
                 Pose(Vector3(0.0f, -0.25f, 0.25f)), // below and slightly in front of the canvas
+                parent = session.scene.activitySpace,
             )
         controlPanelEntity!!.parent = surfaceEntity!!
 
@@ -276,6 +277,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                     shape = shape,
                     stereoMode = stereoMode,
                     surfaceProtection = surfaceContentLevel,
+                    parent = session.scene.activitySpace,
                 )
             // Make the video player movable (to make it easier to look at it from different
             // angles and distances) (only on quad canvas)

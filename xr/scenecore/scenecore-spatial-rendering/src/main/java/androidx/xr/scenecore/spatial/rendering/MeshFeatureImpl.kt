@@ -18,6 +18,8 @@ package androidx.xr.scenecore.spatial.rendering
 
 import androidx.xr.scenecore.impl.impress.ImpressApi
 import androidx.xr.scenecore.impl.impress.ImpressNode
+import androidx.xr.scenecore.impl.impress.Material
+import androidx.xr.scenecore.runtime.MaterialResource
 import androidx.xr.scenecore.runtime.MeshFeature
 import com.android.extensions.xr.XrExtensions
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
@@ -26,9 +28,17 @@ internal class MeshFeatureImpl(
     impressApi: ImpressApi,
     splitEngineSubspaceManager: SplitEngineSubspaceManager,
     extensions: XrExtensions,
-    impressNode: ImpressNode,
+    private val impressNode: ImpressNode,
 ) : BaseRenderingFeature(impressApi, splitEngineSubspaceManager, extensions), MeshFeature {
     init {
         bindImpressNodeToSubspace("mesh_entity_subspace_", impressNode)
+    }
+
+    override fun setMaterial(material: MaterialResource, subsetIndex: Int) {
+        impressApi.setCustomMeshNodeMaterial(
+            impressNode,
+            subsetIndex,
+            (material as Material).nativeHandle,
+        )
     }
 }

@@ -16,7 +16,6 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.AnchorInvalidUuidException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
@@ -57,8 +56,7 @@ import java.util.UUID
  * @property rightDepthMap the right [DepthMap], or null if not available
  * @property monoDepthMap the mono [DepthMap], or null if not available
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrPerceptionManager
+internal class OpenXrPerceptionManager
 internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManager {
 
     override fun createAnchor(pose: Pose): Anchor {

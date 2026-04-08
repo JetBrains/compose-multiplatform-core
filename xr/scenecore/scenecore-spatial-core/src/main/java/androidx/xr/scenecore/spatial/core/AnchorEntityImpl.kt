@@ -26,6 +26,7 @@ import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.runtime.SpaceValue
+import androidx.xr.scenecore.runtime.impl.OpenXrScenePoseHelper
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
 import java.util.concurrent.ScheduledExecutorService
@@ -105,7 +106,7 @@ internal class AnchorEntityImpl(
                     "AnchorEntity is a root space and it does not have a parent."
                 )
 
-            Space.ACTIVITY -> poseInActivitySpace
+            Space.ACTIVITY -> activitySpacePose
             Space.REAL_WORLD -> getPoseInPerceptionSpace()
             else -> throw IllegalArgumentException("Unsupported relativeTo value: $relativeTo")
         }
@@ -132,13 +133,13 @@ internal class AnchorEntityImpl(
         }
     }
 
-    override val poseInActivitySpace: Pose
+    override val activitySpacePose: Pose
         get() {
             synchronized(this) {
                 if (_state != AnchorEntity.State.ANCHORED) {
                     return Pose()
                 }
-                return openXrScenePoseHelper.getPoseInActivitySpace(poseInOpenXrReferenceSpace)
+                return openXrScenePoseHelper.getActivitySpacePose(poseInOpenXrReferenceSpace)
             }
         }
 
@@ -147,9 +148,6 @@ internal class AnchorEntityImpl(
             sceneNodeRegistry.getSystemSpaceScenePoseOfType(PerceptionSpaceScenePose::class.java)[0]
         return transformPoseTo(Pose(), perceptionSpaceScenePose)
     }
-
-    override val activitySpacePose: Pose
-        get() = openXrScenePoseHelper.getActivitySpacePose(poseInOpenXrReferenceSpace)
 
     override val activitySpaceScale: Vector3
         get() = openXrScenePoseHelper.getActivitySpaceScale(worldSpaceScale)

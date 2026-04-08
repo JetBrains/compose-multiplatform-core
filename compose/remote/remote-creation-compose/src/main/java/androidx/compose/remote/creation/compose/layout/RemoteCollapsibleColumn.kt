@@ -20,40 +20,13 @@ package androidx.compose.remote.creation.compose.layout
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.layout.managers.CollapsiblePriority
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation.Type
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.modifier.CollapsiblePriorityModifier
 import androidx.compose.remote.creation.compose.modifier.HeightModifier
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
-import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.v2.RemoteCollapsibleColumnV2
-import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
-import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
-import androidx.compose.runtime.remember
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-
-/** Utility modifier to record the layout information */
-internal class RemoteComposeCollapsibleColumnModifier(
-    public val modifier: RecordingModifier,
-    public val horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
-    public val verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            canvas.document.startCollapsibleColumn(
-                modifier,
-                horizontalAlignment.toRemote(this.layoutDirection),
-                verticalArrangement.toRemote(),
-            )
-            this@draw.drawContent()
-            canvas.document.endCollapsibleColumn()
-        }
-    }
-}
+import androidx.compose.ui.platform.LocalLayoutDirection
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteCollapsibleColumnScope {
@@ -81,27 +54,11 @@ public fun RemoteCollapsibleColumn(
     verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
     content: @Composable RemoteCollapsibleColumnScope.() -> Unit,
 ) {
-    if (currentComposer.applier is RemoteComposeApplierV2) {
-        RemoteCollapsibleColumnV2(modifier, horizontalAlignment, verticalArrangement, content)
-        return
-    }
-
-    val creationState = LocalRemoteComposeCreationState.current
-    val scope = remember { RemoteCollapsibleColumnScope() }
-
-    val composeModifiers =
-        RemoteComposeCollapsibleColumnModifier(
-                creationState.toRecordingModifier(modifier),
-                horizontalAlignment,
-                verticalArrangement,
-            )
-            .then(modifier.toComposeUiLayout())
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
-    androidx.compose.foundation.layout.Column(
-        composeModifiers,
-        horizontalAlignment = horizontalAlignment.toComposeUi(),
-        verticalArrangement = verticalArrangement.toComposeUi(),
-    ) {
-        content(scope)
-    }
+    RemoteCollapsibleColumnV2(
+        modifier,
+        horizontalAlignment,
+        verticalArrangement,
+        LocalLayoutDirection.current,
+        content,
+    )
 }

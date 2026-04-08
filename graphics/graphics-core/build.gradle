@@ -60,7 +60,6 @@ android {
                                 "-Wl,--undefined-version"
             }
         }
-        consumerProguardFiles("proguard-rules.pro")
     }
     externalNativeBuild {
         cmake {

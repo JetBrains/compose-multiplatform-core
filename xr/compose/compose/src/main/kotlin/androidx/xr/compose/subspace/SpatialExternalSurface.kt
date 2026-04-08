@@ -242,6 +242,7 @@ public fun SpatialExternalSurface(
                     stereoMode = stereoMode.value,
                     surfaceProtection = surfaceProtection.value,
                     superSampling = superSamplingPattern.value,
+                    parent = session.scene.activitySpace,
                 ),
                 localDensity = density,
             )
@@ -422,6 +423,7 @@ private fun SpatialExternalSurfaceBaseSphere(
                     stereoMode = stereoMode.value,
                     surfaceProtection = surfaceProtection.value,
                     superSampling = superSamplingPattern.value,
+                    parent = session.scene.activitySpace,
                     shape =
                         if (isHemisphere) {
                             SurfaceEntity.Shape.Hemisphere(meterRadius)

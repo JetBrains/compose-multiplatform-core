@@ -24,4 +24,6 @@ import androidx.lifecycle.LifecycleOwner
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface XrDeviceCapabilityProvider : LifecycleOwner {
     public val context: Context
+
+    public fun getPreferredDisplayBlendMode(): DisplayBlendMode
 }

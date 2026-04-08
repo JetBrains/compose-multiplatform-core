@@ -52,12 +52,19 @@ public interface ImageReaderWrapper : UnsafeWrapper, AutoCloseable {
     public var onExpectedOutputsListener: OnExpectedOutputsListener?
 
     /**
-     * Discard free buffers from the internal memory pool.
+     * Iteratively acquire and close all pending images. It additionally discards any free cached
+     * buffers.
      *
-     * @see [ImageReader.discardFreeBuffers]
      * @see [MultiResolutionImageReader.flush]
      */
     public fun flush()
+
+    /**
+     * Discards any free cached buffers owned by this ImageReader.
+     *
+     * @see [ImageReader.discardFreeBuffers]
+     */
+    public fun discardFreeBuffers()
 
     /**
      * The OnNextImageListener adapts the standard [ImageReader.OnImageAvailableListener] to push

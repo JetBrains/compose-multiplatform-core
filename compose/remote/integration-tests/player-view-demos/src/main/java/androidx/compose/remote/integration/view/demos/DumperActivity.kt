@@ -37,7 +37,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,8 +51,6 @@ import androidx.compose.ui.unit.dp
 class DumperActivity : ComponentActivity() {
     @Suppress("RestrictedApiAndroidX")
     override fun onCreate(savedInstanceState: Bundle?) {
-        @OptIn(androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi::class)
-        RemoteComposeCreationComposeFlags.isRemoteApplierEnabled = false
         super.onCreate(savedInstanceState)
 
         val initialMode = RenderMode.fromString(intent.getStringExtra("mode"))

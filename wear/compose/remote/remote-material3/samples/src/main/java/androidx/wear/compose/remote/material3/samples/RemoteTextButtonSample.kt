@@ -17,7 +17,6 @@
 package androidx.wear.compose.remote.material3.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.remote.core.operations.TextFromFloat
 import androidx.compose.remote.creation.compose.action.ValueChange
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -39,7 +38,7 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 @Composable
 fun RemoteTextButtonSimpleSample(modifier: RemoteModifier = RemoteModifier) {
     val tapCount = rememberMutableRemoteInt(0)
-    val text = "+".rs + tapCount.toRemoteString(3, TextFromFloat.PAD_PRE_NONE)
+    val text = "+".rs + tapCount.toRemoteString()
 
     RemoteTextButton(
         ValueChange(tapCount, tapCount + 1),

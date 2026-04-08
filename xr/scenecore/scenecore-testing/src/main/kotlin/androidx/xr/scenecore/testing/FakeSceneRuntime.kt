@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.AnchorEntity
@@ -66,7 +67,7 @@ import java.util.function.Consumer
  *
  * @param executor This used to input [executor] for tests.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FakeSceneRuntime(public val executor: Executor? = null) :
     SceneRuntime, RenderingEntityFactory {
 
@@ -233,6 +234,11 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
 
     override fun createLoggingEntity(pose: Pose): LoggingEntity =
         object : LoggingEntity, FakeEntity() {}
+
+    override fun createSubspaceNodeEntity(
+        nodeHolder: NodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity = FakeSubspaceNodeEntity(size)
 
     /**
      * For test purposes only.

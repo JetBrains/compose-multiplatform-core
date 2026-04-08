@@ -34,7 +34,9 @@ import androidx.glance.wear.parcel.WearWidgetCapture
  * within a widget.
  *
  * @param background The [WearWidgetBrush] for the widget's background. The system draws this behind
- *   the [content], applying host-defined clipping and padding.
+ *   the [content], applying host-defined clipping and padding. It is strongly recommended to
+ *   explicitly define a non-transparent background. If the given [background] is empty, a default
+ *   surface color will be applied.
  * @param content The RemoteComposable content of the widget. This content is rendered in a padded
  *   area on top of the background. See [WearWidgetParams.horizontalPaddingDp] and
  *   [WearWidgetParams.verticalPaddingDp].

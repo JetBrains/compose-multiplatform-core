@@ -67,14 +67,17 @@ import androidx.compose.material3.Text
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.core.operations.Theme
-import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.RemoteComposeWriter
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.WriterEvents
 import androidx.compose.remote.creation.compose.capture.rememberRemoteDocument
 import androidx.compose.remote.creation.compose.v2.captureSingleRemoteDocumentV2
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
+import androidx.compose.remote.integration.view.demos.dsl.RcDslClock
+import androidx.compose.remote.integration.view.demos.dsl.RcDslDemo
+import androidx.compose.remote.integration.view.demos.dsl.RcDslTicker
 import androidx.compose.remote.integration.view.demos.examples.DemoPaths.pathTest
 import androidx.compose.remote.integration.view.demos.examples.LayoutModifierDemo1
 import androidx.compose.remote.integration.view.demos.examples.LayoutModifierDemo2
@@ -83,7 +86,9 @@ import androidx.compose.remote.integration.view.demos.examples.RcCanvasComponent
 import androidx.compose.remote.integration.view.demos.examples.RcCanvasComponents3
 import androidx.compose.remote.integration.view.demos.examples.RcCanvasComponents4
 import androidx.compose.remote.integration.view.demos.examples.RcCanvasComponents5
+import androidx.compose.remote.integration.view.demos.examples.RcClicksDemo
 import androidx.compose.remote.integration.view.demos.examples.RcCollapsiblePriority
+import androidx.compose.remote.integration.view.demos.examples.RcDrawWithContent
 import androidx.compose.remote.integration.view.demos.examples.RcFitBox
 import androidx.compose.remote.integration.view.demos.examples.RcFlow
 import androidx.compose.remote.integration.view.demos.examples.RcRatio
@@ -106,6 +111,7 @@ import androidx.compose.remote.integration.view.demos.examples.ScrollViewDemo
 import androidx.compose.remote.integration.view.demos.examples.ShaderCalendar
 import androidx.compose.remote.integration.view.demos.examples.SimplePath
 import androidx.compose.remote.integration.view.demos.examples.SwitchWidgetDemo
+import androidx.compose.remote.integration.view.demos.examples.TestDrawContentDemo
 import androidx.compose.remote.integration.view.demos.examples.WeatherDemo
 import androidx.compose.remote.integration.view.demos.examples.countDown
 import androidx.compose.remote.integration.view.demos.examples.cube3d
@@ -264,7 +270,8 @@ fun getComposeDoc(
         suspend fun rememberRemoteDocument(
             context: Context,
             profile: Profile = DemoVersions.AndroidXCinnamonBun,
-            creationDisplayInfo: CreationDisplayInfo = CreationDisplayInfo(1000, 1000, 440),
+            creationDisplayInfo: RemoteCreationDisplayInfo =
+                RemoteCreationDisplayInfo(1000, 1000, 440),
             content: @Composable () -> Unit,
         ) {
             val result =
@@ -301,6 +308,7 @@ class ExperimentActivity : ComponentActivity() {
         mapOf<String, List<RemoteComposeFunc>>(
             "Frontend..." to
                 listOf(
+                    get("DrawContent") { TestDrawContentDemo() },
                     get("SimplePath") { SimplePath() },
                     get("WeatherDemo") { WeatherDemo() },
                     get("Simple Clock") { RcSimpleClock1() },
@@ -309,9 +317,14 @@ class ExperimentActivity : ComponentActivity() {
                 ),
             "Procedural..." to
                 listOf(
+                    getb("Rc DSL Clock Demo") { RcDslClock() },
+                    getb("Rc DSL Ticker Demo") { RcDslTicker() },
+                    getb("Rc DSL Demo") { RcDslDemo() },
+                    getpc("RcClicks") { RcClicksDemo() },
                     getpc("RcRatio") { RcRatio() },
                     getpc("RcScrollViewport") { RcScrollview() },
                     getpc("RcFlow") { RcFlow() },
+                    getpc("RcDrawWithContent") { RcDrawWithContent() },
                     getpc("RcCollapsiblePriority") { RcCollapsiblePriority() },
                     getpc("RcFitBox") { RcFitBox() },
                     getpc("Stock") { RcTicker(applicationContext) },
@@ -348,6 +361,40 @@ class ExperimentActivity : ComponentActivity() {
         gen: () -> RemoteComposeContext,
     ): RemoteComposeFunc {
         return getp(name, color) { gen().mRemoteWriter }
+    }
+
+    fun getb(
+        name: String,
+        color: Color = toRcColor(name, 0.1f),
+        gen: () -> ByteArray,
+    ): RemoteComposeFunc {
+        return object : RemoteComposeFunc {
+            private var buildTime: Float = 0f
+
+            @Composable override fun Run() {}
+
+            @Composable
+            override fun getDoc(): MutableState<CoreDocument?> {
+                val time = System.nanoTime()
+                val data = gen()
+                val doc = RemoteDocument(ByteArrayInputStream(data))
+                val doc2: MutableState<CoreDocument?> = remember { mutableStateOf(doc.document) }
+                buildTime = (System.nanoTime() - time) * 1E-6f
+                return doc2
+            }
+
+            override fun getBuildTime(): Float {
+                return buildTime
+            }
+
+            override fun getColor(): Color {
+                return color
+            }
+
+            override fun toString(): String {
+                return name
+            }
+        }
     }
 
     fun getp(
@@ -404,7 +451,7 @@ class ExperimentActivity : ComponentActivity() {
             @Composable
             override fun getDoc(): MutableState<CoreDocument?> {
                 val time = System.nanoTime()
-                val creationDisplayInfo = CreationDisplayInfo(1000, 1000, 160)
+                val creationDisplayInfo = RemoteCreationDisplayInfo(1000, 1000, 160)
                 val d =
                     rememberRemoteDocument(creationDisplayInfo = creationDisplayInfo) {
                         cRun.invoke()

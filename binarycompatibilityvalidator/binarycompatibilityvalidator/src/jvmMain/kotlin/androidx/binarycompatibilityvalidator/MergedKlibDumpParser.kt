@@ -42,6 +42,7 @@ class MergedKlibDumpParser(private val dumpText: String, private val filePath: S
 
     fun parse(): Map<String, LibraryAbi> {
         val lines = dumpText.lines()
+        val aliases = mutableMapOf<String, Set<String>>()
         val targetContent = mutableMapOf<String, MutableList<String>>()
         val globalLines = mutableListOf<String>()
         var isGlobalHeaderParsed = false
@@ -50,7 +51,9 @@ class MergedKlibDumpParser(private val dumpText: String, private val filePath: S
         for (line in lines) {
             if (line.trim().startsWith("// Targets: [")) {
                 val targets = parseTargets(line)
-                currentTargets = targets
+                val targetsAccountingForAliases =
+                    targets.flatMap { aliases[it] ?: setOf(it) }.toSet()
+                currentTargets = targetsAccountingForAliases
                 if (!isGlobalHeaderParsed) {
                     isGlobalHeaderParsed = true
                     for (target in targets) {
@@ -58,6 +61,13 @@ class MergedKlibDumpParser(private val dumpText: String, private val filePath: S
                     }
                 }
                 // Skip the "// Targets: " lines in output
+                continue
+            } else if (line.trim().startsWith("// Alias:")) {
+                val alias = line.substringAfter("Alias:").substringBefore("=>").trim()
+                val aliasTargets = parseTargets(line)
+                aliases[alias] = aliasTargets
+
+                // Skip the "// Alias: " lines in output
                 continue
             }
 

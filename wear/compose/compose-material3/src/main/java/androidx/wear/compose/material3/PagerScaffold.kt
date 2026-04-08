@@ -102,18 +102,13 @@ public fun HorizontalPagerScaffold(
  * default and coordinates showing/hiding [TimeText] and [VerticalPageIndicator] according to
  * whether the Pager is being paged, this is determined by the [PagerState].
  *
- * [VerticalPagerScaffold] supports rotary input by default. Rotary input allows users to scroll
- * through the pager's content - by using a crown or a rotating bezel on their Wear OS device. It
- * can be modified or turned off using the [rotaryScrollableBehavior] parameter.
- *
  * Example of using [AppScaffold] and [VerticalPagerScaffold] with default snap sensitivity, for
  * screens with many pages:
  *
  * @sample androidx.wear.compose.material3.samples.VerticalPagerScaffoldSample
  *
- * Example of using [AppScaffold] and [VerticalPagerScaffold] with [PagerSensitivity.Low] and
- * [androidx.wear.compose.foundation.rotary.RotarySnapSensitivityValues.Default], for screens where
- * gross motor control is limited:
+ * Example of using [AppScaffold] and [VerticalPagerScaffold] with low snap sensitivity, for screens
+ * where gross motor control is limited:
  *
  * @sample androidx.wear.compose.material3.samples.VerticalPagerScaffoldWithLowSensitivitySample
  * @param pagerState The state of the pager controlling the page content.

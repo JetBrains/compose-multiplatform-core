@@ -20,7 +20,7 @@ import android.content.Context
 import android.view.View
 import android.view.WindowManager
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.FieldOfView
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Vector2
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.Dimensions
@@ -31,7 +31,7 @@ import androidx.xr.scenecore.runtime.ScenePose
 import kotlin.math.roundToInt
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.PanelEntity] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public open class FakePanelEntity(public val view: View? = null, name: String = "") :
     FakeEntity(name), PanelEntity {
 

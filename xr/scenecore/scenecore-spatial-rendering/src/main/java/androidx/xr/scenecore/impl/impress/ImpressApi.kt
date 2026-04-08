@@ -474,51 +474,6 @@ public interface ImpressApi {
     /**
      * This method creates an Impress node with a stereo panel and returns the node object. Note
      * that the StereoSurfaceEntity will not render anything until the canvas shape is set.
-     * Furthermore, the surface cannot be used to render secure content.
-     *
-     * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
-     * @return An int impress node ID which can be used for updating the surface later
-     * @throws IllegalArgumentException if stereoMode is invalid.
-     */
-    // TODO - b/411225487: Remove this method.
-    public fun createStereoSurface(@StereoMode stereoMode: Int): ImpressNode
-
-    /**
-     * This method creates an Impress node with a stereo panel and returns the node object. Note
-     * that the StereoSurfaceEntity will not render anything until the canvas shape is set.
-     *
-     * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
-     * @param contentSecurityLevel The [Int] contentSecurityLevel to apply. Must be a member of
-     *   ContentSecurityLevel.
-     * @return An int impress node ID which can be used for updating the surface later
-     * @throws IllegalArgumentException if stereoMode or contentSecurityLevel are invalid.
-     */
-    public fun createStereoSurface(
-        @StereoMode stereoMode: Int,
-        @ContentSecurityLevel contentSecurityLevel: Int,
-    ): ImpressNode
-
-    /**
-     * This method creates an Impress node with a stereo panel and returns the node object. Note
-     * that the StereoSurfaceEntity will not render anything until the canvas shape is set.
-     *
-     * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
-     * @param contentSecurityLevel The [Int] contentSecurityLevel to apply. Must be a member of
-     *   ContentSecurityLevel.
-     * @param useSuperSampling This [Boolean] specifies if the super sampling filter is enabled when
-     *   rendering the surface.
-     * @return An int impress node ID which can be used for updating the surface later
-     * @throws IllegalArgumentException if stereoMode or contentSecurityLevel are invalid.
-     */
-    public fun createStereoSurface(
-        @StereoMode stereoMode: Int,
-        @ContentSecurityLevel contentSecurityLevel: Int,
-        useSuperSampling: Boolean,
-    ): ImpressNode
-
-    /**
-     * This method creates an Impress node with a stereo panel and returns the node object. Note
-     * that the StereoSurfaceEntity will not render anything until the canvas shape is set.
      *
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
      * @param mediaBlendingMode The [Int] mediaBlendingMode to apply. Must be a member of
@@ -1343,8 +1298,10 @@ public interface ImpressApi {
         maxVertices: Int,
         maxIndices: Int,
         vertexData: Array<ByteBuffer>?,
+        vertexDataOffsets: IntArray?,
         vertexDataSizes: IntArray?,
         indexData: ByteBuffer?,
+        indexDataOffset: Int,
         indexDataSize: Int,
     ): MeshBuffer
 
@@ -1367,7 +1324,23 @@ public interface ImpressApi {
         meshBufferHandle: Long,
         subsetOffsets: IntArray,
         subsetCounts: IntArray,
+        subsetTopologies: IntArray,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
     ): CustomMesh
+
+    /**
+     * Gets the axis-aligned bounding box of a custom mesh.
+     *
+     * @param customMeshHandle The native handle of the custom mesh.
+     * @param outAabb A float array of size 6 to receive the AABB (centerX, centerY, centerZ,
+     *   halfExtentX, halfExtentY, halfExtentZ).
+     */
+    public fun getCustomMeshAabb(customMeshHandle: Long, outAabb: FloatArray)
 
     /**
      * This method destroys a custom mesh using its native handle.
@@ -1377,32 +1350,28 @@ public interface ImpressApi {
     public fun destroyCustomMesh(customMeshHandle: Long)
 
     /**
-     * This method sets the bounding box of the custom mesh.
-     *
-     * @param customMeshHandle The native handle of the custom mesh.
-     * @param centerX The x coordinate of the center of the bounding box.
-     * @param centerY The y coordinate of the center of the bounding box.
-     * @param centerZ The z coordinate of the center of the bounding box.
-     * @param halfExtentX The half extent of the bounding box along the x-axis.
-     * @param halfExtentY The half extent of the bounding box along the y-axis.
-     * @param halfExtentZ The half extent of the bounding box along the z-axis.
-     */
-    public fun setCustomMeshBoundingBox(
-        customMeshHandle: Long,
-        centerX: Float,
-        centerY: Float,
-        centerZ: Float,
-        halfExtentX: Float,
-        halfExtentY: Float,
-        halfExtentZ: Float,
-    )
-
-    /**
      * This method creates an Impress node with a custom mesh and returns the node handle.
      *
      * @param customMeshHandle The native handle of the custom mesh.
      * @param materialHandles The native handles of the materials.
      * @return An int handle for the created Impress node.
      */
-    public fun createCustomMeshNode(customMeshHandle: Long, materialHandles: LongArray): Int
+    public fun createCustomMeshNode(
+        customMeshHandle: Long,
+        materialHandles: LongArray,
+        boneCount: Int,
+    ): Int
+
+    /**
+     * Sets the material of a custom mesh node subset.
+     *
+     * @param impressNode The impress node to update.
+     * @param submeshIndex The zero-based index of the submesh.
+     * @param materialHandle The native handle of the material.
+     */
+    public fun setCustomMeshNodeMaterial(
+        impressNode: ImpressNode,
+        submeshIndex: Int,
+        materialHandle: Long,
+    )
 }

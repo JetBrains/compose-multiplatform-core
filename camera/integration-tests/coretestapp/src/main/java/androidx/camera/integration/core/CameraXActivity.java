@@ -478,6 +478,7 @@ public class CameraXActivity extends AppCompatActivity {
     private boolean mDisableViewPort = true;
     private boolean mEnableTorchAsFlash;
     private boolean mAutoRotationEnabled = true;
+    private boolean mTapToFocusAeAwbLockEnabled = false;
 
     SessionMediaUriSet mSessionImagesUriSet = new SessionMediaUriSet();
     SessionMediaUriSet mSessionVideosUriSet = new SessionMediaUriSet();
@@ -1892,6 +1893,7 @@ public class CameraXActivity extends AppCompatActivity {
         menu.findItem(R.id.auto_rotation).setChecked(mAutoRotationEnabled);
         menu.findItem(R.id.view_port).setChecked(mDisableViewPort);
         menu.findItem(R.id.torch_as_flash).setChecked(mEnableTorchAsFlash);
+        menu.findItem(R.id.tap_to_focus_ae_awb_lock).setChecked(mTapToFocusAeAwbLockEnabled);
     }
 
     private static <T, E> T getKeyByValue(Map<T, E> map, E value) {
@@ -1933,6 +1935,8 @@ public class CameraXActivity extends AppCompatActivity {
             mDisableViewPort = !mDisableViewPort;
         } else if (itemId == R.id.torch_as_flash) {
             mEnableTorchAsFlash = !mEnableTorchAsFlash;
+        } else if (itemId == R.id.tap_to_focus_ae_awb_lock) {
+            mTapToFocusAeAwbLockEnabled = !mTapToFocusAeAwbLockEnabled;
         } else {
             Log.d(TAG, "Not handling item " + item.getTitle());
             return super.onOptionsItemSelected(item);
@@ -2374,9 +2378,14 @@ public class CameraXActivity extends AppCompatActivity {
                                     mCamera.getCameraInfo(),
                                     mViewFinder.getWidth(),
                                     mViewFinder.getHeight());
-                    FocusMeteringAction action = new FocusMeteringAction.Builder(
+                    FocusMeteringAction.Builder actionBuilder = new FocusMeteringAction.Builder(
                             factory.createPoint(e.getX(), e.getY())
-                    ).build();
+                    );
+                    if (mTapToFocusAeAwbLockEnabled) {
+                        actionBuilder.setLockingMode(FocusMeteringAction.FLAG_AF
+                                | FocusMeteringAction.FLAG_AE | FocusMeteringAction.FLAG_AWB);
+                    }
+                    FocusMeteringAction action = actionBuilder.build();
                     Futures.addCallback(
                             mCamera.getCameraControl().startFocusAndMetering(action),
                             new FutureCallback<FocusMeteringResult>() {

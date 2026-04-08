@@ -23,6 +23,7 @@ import androidx.webkit.WebViewOutcomeReceiver;
 
 import org.chromium.support_lib_boundary.PrefetchOperationCallbackBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.chromium.support_lib_boundary.util.Features;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -44,18 +45,25 @@ public class PrefetchOperationCallbackAdapter {
         PrefetchOperationCallbackBoundaryInterface operationCallback =
                 new PrefetchOperationCallbackBoundaryInterface() {
                     @SuppressWarnings("deprecation")
-                    @Override
                     public void onSuccess() {
                         callback.onResult(null);
                     }
 
-                    @SuppressWarnings({"UnusedVariable", "UnusedMethod", "MissingOverride"})
-                    public void onResult(int type) {
+                    @Override
+                    public void onResult(@PrefetchResultTypeBoundaryInterface int type) {
+                        switch (type) {
+                            case PrefetchResultTypeBoundaryInterface.SUCCESS:
+                            case PrefetchResultTypeBoundaryInterface.DUPLICATE:
+                                callback.onResult(null);
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Given type isn't defined.");
+                        }
                     }
 
-                    @SuppressWarnings({"UnusedMethod", "MissingOverride"})
-                    public String[] getSupportedFeatures() {
-                        return new String[]{};
+                    @Override
+                    public String @NonNull [] getSupportedFeatures() {
+                        return new String[]{Features.PREFETCH_WITH_CALLBACK_RESULT_V1};
                     }
 
                     @Override

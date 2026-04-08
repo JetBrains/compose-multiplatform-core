@@ -25,7 +25,6 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
-import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.Profile
@@ -62,13 +61,7 @@ fun RemoteAppCardDefault() {
         onClick = Action.Empty,
         appName = { RemoteText("App Name".rs) },
         time = { RemoteText("now".rs) },
-        appImage = {
-            RemoteIcon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = null,
-                modifier = RemoteModifier.size(24.rdp),
-            )
-        },
+        appImage = { RemoteIcon(imageVector = Icons.Filled.Favorite, contentDescription = null) },
         title = { RemoteText("Card Title".rs) },
     ) {
         RemoteText("Card Content".rs)

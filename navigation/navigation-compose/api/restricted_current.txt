@@ -40,6 +40,22 @@ package androidx.navigation.compose {
     property public kotlin.jvm.functions.Function1<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,androidx.compose.animation.SizeTransform?>? sizeTransform;
   }
 
+  public final class DefaultNavTransitions {
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,androidx.compose.animation.EnterTransition> getEnterTransition();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,androidx.compose.animation.ExitTransition> getExitTransition();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function2<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,java.lang.Integer,androidx.compose.animation.EnterTransition> getPredictivePopEnterTransition();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function2<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,java.lang.Integer,androidx.compose.animation.ExitTransition> getPredictivePopExitTransition();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,androidx.compose.animation.SizeTransform?>? getSizeTransform();
+    method public kotlin.jvm.functions.Function1<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,androidx.compose.animation.EnterTransition> popEnterTransition(kotlin.jvm.functions.Function1<? super androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,? extends androidx.compose.animation.EnterTransition> enterTransition);
+    method public kotlin.jvm.functions.Function1<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,androidx.compose.animation.ExitTransition> popExitTransition(kotlin.jvm.functions.Function1<? super androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,? extends androidx.compose.animation.ExitTransition> exitTransition);
+    property public kotlin.jvm.functions.Function1<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,androidx.compose.animation.EnterTransition> enterTransition;
+    property public kotlin.jvm.functions.Function1<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,androidx.compose.animation.ExitTransition> exitTransition;
+    property public kotlin.jvm.functions.Function2<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,java.lang.Integer,androidx.compose.animation.EnterTransition> predictivePopEnterTransition;
+    property public kotlin.jvm.functions.Function2<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,java.lang.Integer,androidx.compose.animation.ExitTransition> predictivePopExitTransition;
+    property public kotlin.jvm.functions.Function1<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>,androidx.compose.animation.SizeTransform?>? sizeTransform;
+    field public static final androidx.navigation.compose.DefaultNavTransitions INSTANCE;
+  }
+
   public final class DialogHostKt {
     method @KotlinOnly @androidx.compose.runtime.Composable public static void DialogHost(androidx.navigation.compose.DialogNavigator dialogNavigator);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void DialogHost(androidx.navigation.compose.DialogNavigator, androidx.compose.runtime.Composer?, int);

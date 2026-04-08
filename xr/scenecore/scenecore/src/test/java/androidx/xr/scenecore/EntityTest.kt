@@ -144,13 +144,20 @@ class EntityTest {
         activitySpace = ActivitySpace.create(sceneRuntime, entityRegistry)
         gltfModel = GltfModel.create(session, Paths.get("test.glb"))
         gltfModelEntity =
-            GltfModelEntity.create(sceneRuntime, renderingRuntime, entityRegistry, gltfModel)
+            GltfModelEntity.create(
+                sceneRuntime,
+                renderingRuntime,
+                entityRegistry,
+                gltfModel,
+                parent = session.scene.activitySpace,
+            )
         panelEntity =
             PanelEntity.create(
                 session,
                 view = TextView(activity),
                 pixelDimensions = IntSize2d(720, 480),
                 name = "test",
+                parent = session.scene.activitySpace,
             )
         anchorEntity =
             AnchorEntity.create(
@@ -160,7 +167,13 @@ class EntityTest {
                 PlaneSemanticType.ANY,
                 10.seconds.toJavaDuration(),
             )
-        activityPanelEntity = ActivityPanelEntity.create(session, IntSize2d(640, 480), "test")
+        activityPanelEntity =
+            ActivityPanelEntity.create(
+                session,
+                IntSize2d(640, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         entity = Entity.create(session, "test")
         surfaceEntity =
             SurfaceEntity.create(
@@ -168,6 +181,7 @@ class EntityTest {
                 Pose.Identity,
                 SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
                 SurfaceEntity.StereoMode.SIDE_BY_SIDE,
+                parent = session.scene.activitySpace,
             )
     }
 
@@ -1113,7 +1127,8 @@ class EntityTest {
     fun createGltfEntity_callsRuntimeCreateGltfEntity() {
         runBlocking {
             @Suppress("NewApi") val gltfModel = GltfModel.create(session, Paths.get("intest.glb"))
-            val gltfEntity = GltfModelEntity.create(session, gltfModel)
+            val gltfEntity =
+                GltfModelEntity.create(session, gltfModel, parent = session.scene.activitySpace)
 
             assertThat((gltfModel.model as FakeGltfModelResource).assetName).isEqualTo("intest.glb")
             assertThat(gltfEntity.rtEntity).isInstanceOf(FakeGltfEntity::class.java)
@@ -1124,7 +1139,14 @@ class EntityTest {
     fun createPanelEntity_callsRuntimeCreatePanelEntity() {
         val view = TextView(activity)
         @Suppress("UNUSED_VARIABLE")
-        val panelEntity = PanelEntity.create(session, view, IntSize2d(640, 480), "test")
+        val panelEntity =
+            PanelEntity.create(
+                session,
+                view,
+                IntSize2d(640, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
 
         assertThat((panelEntity.rtEntity as FakePanelEntity).sizeInPixels)
             .isEqualTo(IntSize2d(640, 480).toRtPixelDimensions())
@@ -1140,7 +1162,13 @@ class EntityTest {
     @Test
     fun createActivityPanelEntity_callsRuntimeCreateActivityPanelEntity() {
         @Suppress("UNUSED_VARIABLE")
-        val activityPanelEntity = ActivityPanelEntity.create(session, IntSize2d(320, 240), "test")
+        val activityPanelEntity =
+            ActivityPanelEntity.create(
+                session,
+                IntSize2d(320, 240),
+                "test",
+                parent = session.scene.activitySpace,
+            )
 
         assertThat((activityPanelEntity.rtEntity as FakeActivityPanelEntity).sizeInPixels)
             .isEqualTo(IntSize2d(320, 240).toRtPixelDimensions())

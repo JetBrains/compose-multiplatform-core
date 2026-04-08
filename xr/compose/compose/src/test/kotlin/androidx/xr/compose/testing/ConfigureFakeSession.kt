@@ -21,7 +21,6 @@ import androidx.annotation.RestrictTo
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.runtime.PerceptionRuntime
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.compose.platform.contentView
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.RenderingEntityFactory
@@ -106,6 +105,9 @@ fun AndroidComposeTestRule<*, *>.configureFakeSession(
  * @see androidx.xr.compose.subspace.SpatialGltfModelTest for an example
  */
 @CanIgnoreReturnValue
+@Suppress("DEPRECATION")
+@SuppressWarnings("RestrictTo")
+// TODO: b/494305963 Remove references to arcore-testing Fakes
 fun Activity.configureFakeSession(
     sceneRuntime: (SceneRuntime) -> SceneRuntime = { it },
     renderingRuntime: (RenderingRuntime) -> RenderingRuntime = { it },
@@ -135,9 +137,10 @@ fun Activity.configureFakeSession(
                     sceneRuntime,
                     renderingRuntime(FakeRenderingRuntime(sceneRuntime)),
                     perceptionRuntime(
-                        FakePerceptionRuntimeFactory().createRuntime(this).apply {
-                            lifecycleManager.create()
-                        }
+                        androidx.xr.arcore.testing
+                            .FakePerceptionRuntimeFactory()
+                            .createRuntime(this)
+                            .apply { lifecycleManager.create() }
                     ),
                 ),
             lifecycleOwner = this as LifecycleOwner,

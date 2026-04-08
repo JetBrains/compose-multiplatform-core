@@ -19,17 +19,22 @@ package androidx.xr.scenecore
 import androidx.annotation.RestrictTo
 
 /**
- * Enum defining the topology of the mesh subset.
+ * Defines the topology of the indices in a [MeshSubset].
  *
- * This specifies how the indices in the index buffer are interpreted to form geometric primitives.
+ * This specifies how the index buffer maps vertices to geometric primitives.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public enum class MeshSubsetTopology(public val id: Int) {
-    /** Every three indices form a separate triangle. */
-    TRIANGLES(0),
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class MeshSubsetTopology private constructor(private val name: String) {
+    public companion object {
+        /** Every three indices form a separate triangle. */
+        @JvmField public val TRIANGLES: MeshSubsetTopology = MeshSubsetTopology("TRIANGLES")
 
-    /** Every index after the first two forms a triangle with the previous two indices. */
-    TRIANGLE_STRIP(1),
+        /** Every index after the first two forms a triangle with the previous two indices. */
+        @JvmField
+        public val TRIANGLE_STRIP: MeshSubsetTopology = MeshSubsetTopology("TRIANGLE_STRIP")
+    }
+
+    public override fun toString(): String = name
 }
 
 /**
@@ -43,9 +48,29 @@ public enum class MeshSubsetTopology(public val id: Int) {
  *   buffer.
  * @param indexCount The number of indices to draw.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public data class MeshSubset(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class MeshSubset(
     public val topology: MeshSubsetTopology,
     public val indexOffset: Int,
     public val indexCount: Int,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MeshSubset) return false
+        if (topology != other.topology) return false
+        if (indexOffset != other.indexOffset) return false
+        if (indexCount != other.indexCount) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = topology.hashCode()
+        result = 31 * result + indexOffset
+        result = 31 * result + indexCount
+        return result
+    }
+
+    override fun toString(): String {
+        return "MeshSubset(topology=$topology, indexOffset=$indexOffset, indexCount=$indexCount)"
+    }
+}

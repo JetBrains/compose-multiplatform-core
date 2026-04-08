@@ -18,6 +18,7 @@ package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.NodeHolder
+import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -47,7 +48,7 @@ import java.nio.ByteBuffer
  *   [androidx.xr.scenecore.runtime.SceneRuntime] instance, which must also implement
  *   [androidx.xr.scenecore.runtime.RenderingEntityFactory].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FakeRenderingRuntime(
     private val sceneRuntime: SceneRuntime,
     private val entityFactory: RenderingEntityFactory = sceneRuntime as RenderingEntityFactory,
@@ -552,8 +553,10 @@ public class FakeRenderingRuntime(
         maxVertices: Int,
         maxIndices: Int,
         vertexData: Array<ByteBuffer>?,
+        vertexDataOffsets: IntArray?,
         vertexDataSizes: IntArray?,
         indexData: ByteBuffer?,
+        indexDataOffset: Int,
         indexDataSize: Int,
     ): MeshBufferResource = object : MeshBufferResource {}
 
@@ -563,23 +566,24 @@ public class FakeRenderingRuntime(
         meshBuffer: MeshBufferResource,
         subsetOffsets: IntArray,
         subsetCounts: IntArray,
-    ): CustomMeshResource = object : CustomMeshResource {}
-
-    override fun destroyCustomMesh(customMesh: CustomMeshResource) {}
-
-    override fun setCustomMeshBoundingBox(
-        customMesh: CustomMeshResource,
+        subsetTopologies: IntArray,
         centerX: Float,
         centerY: Float,
         centerZ: Float,
         halfExtentX: Float,
         halfExtentY: Float,
         halfExtentZ: Float,
-    ) {}
+    ): CustomMeshResource = object : CustomMeshResource {}
+
+    override fun getCustomMeshBoundingBox(customMesh: CustomMeshResource): BoundingBox =
+        BoundingBox.fromMinMax(Vector3(0f, 0f, 0f), Vector3(0f, 0f, 0f))
+
+    override fun destroyCustomMesh(customMesh: CustomMeshResource) {}
 
     override fun createMeshEntity(
         customMesh: CustomMeshResource,
         materials: List<MaterialResource>,
+        boneCount: Int,
         pose: Pose,
         parent: Entity?,
     ): MeshEntity {

@@ -26,7 +26,7 @@ import org.junit.Test
 class LayoutFlowTest : BaseLayoutTest() {
 
     init {
-        GENERATE_GOLD_FILES = false
+        GENERATE_GOLD_FILES = true
     }
 
     @Test
@@ -200,6 +200,110 @@ class LayoutFlowTest : BaseLayoutTest() {
                     }
                 },
                 CaptureComponentTree(),
+            )
+        checkLayout(
+            1000,
+            1000,
+            7,
+            RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+            "FlowLayout",
+            ops,
+        )
+    }
+
+    @Test
+    fun testFlowLayoutMaxItems() {
+        val ops =
+            arrayListOf<TestOperation>(
+                TestLayout {
+                    flow(
+                        Modifier.width(1000).background(Color.YELLOW).padding(8),
+                        maxItemsInEachRow = 2,
+                    ) {
+                        box(Modifier.size(100).background(Color.RED))
+                        box(Modifier.size(100).background(Color.GREEN))
+                        box(Modifier.size(100).background(Color.BLUE))
+                        box(Modifier.size(100).background(Color.CYAN))
+                    }
+                },
+                CaptureComponentTree(),
+            )
+        checkLayout(
+            1000,
+            1000,
+            7,
+            RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+            "FlowLayout",
+            ops,
+        )
+    }
+
+    @Test
+    fun testFlowLayoutMaxLines() {
+        val ops =
+            arrayListOf<TestOperation>(
+                TestLayout {
+                    flow(Modifier.width(250).background(Color.YELLOW).padding(8), maxLines = 2) {
+                        box(Modifier.size(100).background(Color.RED))
+                        box(Modifier.size(100).background(Color.GREEN))
+                        box(Modifier.size(100).background(Color.BLUE))
+                        box(Modifier.size(100).background(Color.CYAN))
+                    }
+                },
+                CaptureComponentTree(),
+            )
+        checkLayout(
+            1000,
+            1000,
+            7,
+            RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+            "FlowLayout",
+            ops,
+        )
+    }
+
+    @Test
+    fun testFlowLayoutMaxLinesValidation() {
+        val ops =
+            arrayListOf<TestOperation>(
+                TestLayout {
+                    flow(
+                        Modifier.componentId(42).width(250).background(Color.YELLOW).padding(8),
+                        maxLines = 2,
+                    ) {
+                        box(Modifier.size(100).background(Color.RED))
+                        box(Modifier.size(100).background(Color.GREEN))
+                        box(Modifier.width(150).height(100).background(Color.BLUE))
+                        box(Modifier.size(100).background(Color.CYAN))
+                    }
+                },
+                validateChildCount(42, 3),
+            )
+        checkLayout(
+            1000,
+            1000,
+            7,
+            RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+            "FlowLayout",
+            ops,
+        )
+    }
+
+    @Test
+    fun testFlowLayoutMaxHeightValidation() {
+        val ops =
+            arrayListOf<TestOperation>(
+                TestLayout {
+                    flow(
+                        Modifier.componentId(42).size(250, 100).background(Color.YELLOW).padding(8)
+                    ) {
+                        box(Modifier.size(100).background(Color.RED))
+                        box(Modifier.size(100).background(Color.GREEN))
+                        box(Modifier.size(100).background(Color.BLUE)) // Should overflow vertically
+                        box(Modifier.size(100).background(Color.CYAN))
+                    }
+                },
+                validateChildCount(42, 2),
             )
         checkLayout(
             1000,

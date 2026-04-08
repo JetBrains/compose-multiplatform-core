@@ -20,7 +20,6 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Eye as RuntimeEye
 import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -84,7 +83,7 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
      *
      * @property isOpen a flag indicating whether the eye is open
      * @property pose the [Pose] of the eye
-     * @property trackingState the [TrackingState] of the eye
+     * @property trackingState the [androidx.xr.runtime.TrackingState] of the eye
      */
     public class State
     internal constructor(
@@ -109,7 +108,9 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
     }
 
     private var _state =
-        MutableStateFlow(State(runtimeEye.isOpen, runtimeEye.pose, runtimeEye.trackingState))
+        MutableStateFlow(
+            State(runtimeEye.isOpen, runtimeEye.pose, runtimeEye.trackingState.toTrackingState())
+        )
 
     /** A [StateFlow] that contains the latest [State] of an [Eye]. */
     public override val state: StateFlow<State> = _state.asStateFlow()
@@ -120,6 +121,8 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
-        _state.emit(State(runtimeEye.isOpen, runtimeEye.pose, runtimeEye.trackingState))
+        _state.emit(
+            State(runtimeEye.isOpen, runtimeEye.pose, runtimeEye.trackingState.toTrackingState())
+        )
     }
 }

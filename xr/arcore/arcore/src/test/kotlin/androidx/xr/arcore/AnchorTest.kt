@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore
 
@@ -29,7 +30,6 @@ import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -121,10 +121,10 @@ class AnchorTest {
         runBlocking {
             val fakePerceptionManager = getFakePerceptionManager()
             val runtimeAnchor = fakePerceptionManager.createAnchor(Pose()) as FakeRuntimeAnchor
-            runtimeAnchor.trackingState = TrackingState.PAUSED
+            runtimeAnchor.trackingState = TrackingState.PAUSED.toRuntimeTrackingState()
             val underTest = Anchor(runtimeAnchor, xrResourcesManager)
             check(underTest.state.value.trackingState.equals(TrackingState.PAUSED))
-            runtimeAnchor.trackingState = TrackingState.TRACKING
+            runtimeAnchor.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
 
             underTest.update()
 

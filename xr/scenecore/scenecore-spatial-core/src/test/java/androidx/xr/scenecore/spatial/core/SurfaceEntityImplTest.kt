@@ -16,8 +16,8 @@
 package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
-import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.NodeHolder
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -27,6 +27,7 @@ import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
+import androidx.xr.scenecore.runtime.impl.PerceptionSpaceScenePoseImpl
 import androidx.xr.scenecore.testing.FakeScenePose
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import androidx.xr.scenecore.testing.FakeSurfaceFeature

@@ -64,7 +64,9 @@ import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.RevealDirection
 import androidx.wear.compose.material3.RevealDirection.Companion.Bidirectional
+import androidx.wear.compose.material3.RevealDirection.Companion.RightToLeft
 import androidx.wear.compose.material3.RevealValue
 import androidx.wear.compose.material3.RevealValue.Companion.Covered
 import androidx.wear.compose.material3.SplitSwitchButton
@@ -815,6 +817,91 @@ fun SwipeToRevealWithTransformingLazyColumnDemo() {
                                     messages.remove(message)
                                     true
                                 }
+                            )
+                    },
+                ) {
+                    Text("Item number: $message")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SwipeToRevealTwoActionsWithTransformingLazyColumnDemo(
+    revealDirection: RevealDirection = RightToLeft
+) {
+    val transformationSpec = rememberTransformationSpec()
+    val tlcState = rememberTransformingLazyColumnState()
+    val coroutineScope = rememberCoroutineScope()
+    val messages = remember {
+        mutableStateListOf<String>().apply {
+            for (i in 1..100) {
+                add("Message #${i}")
+            }
+        }
+    }
+
+    TransformingLazyColumn(
+        state = tlcState,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
+        modifier = Modifier.background(Color.Black),
+    ) {
+        items(items = messages, key = { it }) { message ->
+            val revealState = rememberRevealState(initialValue = Covered)
+
+            // SwipeToReveal is covered on scroll.
+            LaunchedEffect(tlcState.isScrollInProgress) {
+                if (tlcState.isScrollInProgress && revealState.currentValue != Covered) {
+                    coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                }
+            }
+
+            SwipeToReveal(
+                revealState = revealState,
+                revealDirection = revealDirection,
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { messages.remove(message) },
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = { Text("Delete") },
+                    )
+                },
+                onSwipePrimaryAction = { messages.remove(message) },
+                secondaryAction = {
+                    SecondaryActionButton(
+                        onClick = {
+                            /* Add the secondary click handler here */
+                        },
+                        icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "More") },
+                    )
+                },
+                modifier =
+                    Modifier.transformedHeight(this@items, transformationSpec)
+                        .animateItem()
+                        .graphicsLayer {
+                            with(transformationSpec) {
+                                applyContainerTransformation(scrollProgress)
+                            }
+                            // Is needed to disable clipping.
+                            compositingStrategy = CompositingStrategy.ModulateAlpha
+                            clip = false
+                        },
+            ) {
+                Button(
+                    {},
+                    Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics {
+                        // Use custom actions to make the primary and secondary actions accessible
+                        customActions =
+                            listOf(
+                                CustomAccessibilityAction("Delete") {
+                                    messages.remove(message)
+                                    true
+                                },
+                                CustomAccessibilityAction("More") {
+                                    /* Add the secondary click handler here */
+                                    true
+                                },
                             )
                     },
                 ) {

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore
 
@@ -26,7 +27,6 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -75,7 +75,7 @@ class EyeTest {
     fun update_trackingStateMatchesRuntime() = runBlocking {
         val runtimeEye = FakeRuntimeEye()
         runtimeEye.isOpen = false
-        runtimeEye.trackingState = TrackingState.TRACKING
+        runtimeEye.trackingState = TrackingState.TRACKING.toRuntimeTrackingState()
         val underTest = Eye(runtimeEye)
         check(!underTest.state.value.isOpen)
 

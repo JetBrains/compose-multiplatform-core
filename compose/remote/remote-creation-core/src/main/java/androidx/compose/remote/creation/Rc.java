@@ -43,6 +43,7 @@ import androidx.compose.remote.core.operations.Header;
 import androidx.compose.remote.core.operations.TimeAttribute;
 import androidx.compose.remote.core.operations.TouchExpression;
 import androidx.compose.remote.core.operations.layout.managers.TextLayout;
+import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
 import androidx.compose.remote.core.operations.utilities.ImageScaling;
 import androidx.compose.remote.core.operations.utilities.IntegerExpressionEvaluator;
@@ -900,8 +901,8 @@ public class Rc {
     }
 
     public static class Layout {
-        public static final float FIRST_BASELINE = RemoteContext.FIRST_BASELINE;
-        public static final float LAST_BASELINE = RemoteContext.LAST_BASELINE;
+        public static final float FIRST_BASELINE = AlignByModifierOperation.FIRST_BASELINE;
+        public static final float LAST_BASELINE = AlignByModifierOperation.LAST_BASELINE;
     }
 
     public static class PathEffect {

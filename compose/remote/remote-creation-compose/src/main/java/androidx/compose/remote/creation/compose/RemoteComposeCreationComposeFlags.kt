@@ -52,11 +52,4 @@ import androidx.annotation.RestrictTo
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @ExperimentalRemoteCreationComposeApi
-public object RemoteComposeCreationComposeFlags {
-    /** Whether to use the remote applier. If true, it uses the remote applier. */
-    // TODO: b/485961296
-    @field:Suppress("MutableBareField")
-    @JvmField
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public var isRemoteApplierEnabled: Boolean = true
-}
+public object RemoteComposeCreationComposeFlags {}

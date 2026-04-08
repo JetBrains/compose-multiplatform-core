@@ -25,7 +25,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 private const val LEFT = 101
-private const val RIGHT = 102
+private const val CENTER = 102
+private const val RIGHT = 103
 
 /**
  * In remote-compose, an arrangement is a contract for how to lay out children in a container that
@@ -184,7 +185,7 @@ public object RemoteArrangement {
         /**
          * Place children such that they are as close as possible to the middle of the [RemoteRow].
          */
-        public val Center: RemoteArrangement.Horizontal = HorizontalArrangement(ColumnLayout.CENTER)
+        public val Center: RemoteArrangement.Horizontal = HorizontalArrangement(CENTER)
 
         /**
          * Place children horizontally such that they are as close as possible to the right edge of
@@ -313,6 +314,7 @@ public data class HorizontalArrangement(var type: Int) : RemoteArrangement.Horiz
             ColumnLayout.SPACE_EVENLY -> androidx.compose.foundation.layout.Arrangement.SpaceEvenly
             ColumnLayout.SPACE_AROUND -> androidx.compose.foundation.layout.Arrangement.SpaceAround
             LEFT -> androidx.compose.foundation.layout.Arrangement.Absolute.Left
+            CENTER -> androidx.compose.foundation.layout.Arrangement.Absolute.Center
             RIGHT -> androidx.compose.foundation.layout.Arrangement.Absolute.Right
             else -> androidx.compose.foundation.layout.Arrangement.Start
         }
@@ -329,10 +331,13 @@ public data class HorizontalArrangement(var type: Int) : RemoteArrangement.Horiz
             ColumnLayout.SPACE_EVENLY -> ColumnLayout.SPACE_EVENLY
             ColumnLayout.SPACE_AROUND -> ColumnLayout.SPACE_AROUND
             LEFT -> ColumnLayout.START
+            CENTER -> ColumnLayout.CENTER
             RIGHT -> ColumnLayout.END
             else ->
                 if (layoutDirection == LayoutDirection.Ltr) ColumnLayout.START else ColumnLayout.END
         }
+
+    internal fun isAbsolute() = type == LEFT || type == CENTER || type == RIGHT
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

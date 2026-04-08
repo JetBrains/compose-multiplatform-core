@@ -85,6 +85,7 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.scene
 import java.nio.file.Paths
 
 class PanelEmbeddedSubspace : ComponentActivity() {
@@ -252,7 +253,9 @@ fun XyzArrows(modifier: SubspaceModifier = SubspaceModifier) {
         }
     } else {
         SceneCoreEntity(
-            factory = { GltfModelEntity.create(session, gltfModel!!) },
+            factory = {
+                GltfModelEntity.create(session, gltfModel!!, parent = session.scene.activitySpace)
+            },
             modifier =
                 modifier.rotate(
                     Quaternion.fromAxisAngle(Vector3(x = 1f), 45f) +

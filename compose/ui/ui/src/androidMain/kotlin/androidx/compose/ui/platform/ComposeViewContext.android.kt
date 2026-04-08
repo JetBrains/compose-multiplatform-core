@@ -76,7 +76,6 @@ import androidx.savedstate.findViewTreeSavedStateRegistryOwner
  *
  * @sample androidx.compose.ui.samples.ComposeViewContextUnattachedSample
  */
-@ExperimentalComposeViewContextApi
 class ComposeViewContext
 private constructor(
     composeViewContext: ComposeViewContext?,
@@ -145,6 +144,9 @@ private constructor(
     /** [ResourceIdCache] provided by [LocalResourceIdCache] */
     internal val resourceIdCache: ResourceIdCache =
         composeViewContext?.resourceIdCache ?: ResourceIdCache()
+
+    /** [GraphicsResourceCache] provided by [LocalGraphicsResourceCache] */
+    internal val graphicsResourceCache = GraphicsResourceCache()
 
     /**
      * [Configuration] that was last received. Used to determine if there has been an update to the
@@ -284,11 +286,13 @@ private constructor(
             override fun onLowMemory() {
                 imageVectorCache.clear()
                 resourceIdCache.clear()
+                graphicsResourceCache.clear()
             }
 
             override fun onTrimMemory(level: Int) {
                 imageVectorCache.clear()
                 resourceIdCache.clear()
+                graphicsResourceCache.clear()
             }
 
             override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -433,6 +437,7 @@ private constructor(
             LocalProvidableScrollCaptureInProgress provides scrollCaptureInProgress,
             LocalViewConfiguration provides owner.viewConfiguration,
             LocalHostDefaultProvider provides hostDefaultProvider,
+            LocalGraphicsResourceCache provides graphicsResourceCache,
         ) {
             if (isMediaQueryIntegrationEnabled) {
                 val mediaScope = obtainUiMediaScope(owner.context, owner.view, owner.windowInfo)

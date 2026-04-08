@@ -44,13 +44,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.arcore.Hand
 import androidx.xr.arcore.HandJointType
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
@@ -163,18 +163,28 @@ class HandTrackingActivity : ComponentActivity() {
 
                             val leftHandJointEntityMap =
                                 HandJointType.entries.associateWith {
-                                    GltfModelEntity.create(session, xyzModel).also {
-                                        it.setScale(0.015f)
-                                        it.setEnabled(false)
-                                    }
+                                    GltfModelEntity.create(
+                                            session,
+                                            xyzModel,
+                                            parent = session.scene.activitySpace,
+                                        )
+                                        .also {
+                                            it.setScale(0.015f)
+                                            it.setEnabled(false)
+                                        }
                                 }
 
                             val rightHandJointEntityMap =
                                 HandJointType.entries.associateWith {
-                                    GltfModelEntity.create(session, xyzModel).also {
-                                        it.setScale(0.015f)
-                                        it.setEnabled(false)
-                                    }
+                                    GltfModelEntity.create(
+                                            session,
+                                            xyzModel,
+                                            parent = session.scene.activitySpace,
+                                        )
+                                        .also {
+                                            it.setScale(0.015f)
+                                            it.setEnabled(false)
+                                        }
                                 }
 
                             launch {

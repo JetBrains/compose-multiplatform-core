@@ -215,18 +215,31 @@ internal class FrameBufferImpl(
             frameQueue.map { it.frameReference }
         }
 
+    fun trimAll() {
+        val framesToClose =
+            synchronized(lock) {
+                if (closed) return
+                clearQueueAndExtractFrames()
+            }
+        for (frame in framesToClose) {
+            frame.close()
+        }
+    }
+
+    @GuardedBy("lock")
+    private fun clearQueueAndExtractFrames(): List<Frame> {
+        val frames = frameQueue.mapNotNull { (it as? BufferEntry.WithFrame)?.frame }
+        frameQueue.clear()
+        _size.value = 0
+        return frames
+    }
+
     override fun close() {
         val framesToClose: List<Frame>
         synchronized(lock) {
-            if (closed) {
-                return
-            }
+            if (closed) return
             closed = true
-
-            framesToClose =
-                frameQueue.mapNotNull { entry -> (entry as? BufferEntry.WithFrame)?.frame }
-            frameQueue.clear()
-            _size.value = 0
+            framesToClose = clearQueueAndExtractFrames()
         }
         for (frame in framesToClose) {
             frame.close()
