@@ -63,7 +63,7 @@ class Screen internal constructor(
      * The bounds of the screen excluding the insets.
      */
     val availableBounds: DpRect
-        get() = bounds.withInsets(insets)
+        get() = bounds - insets
 
     override fun toString(): String = "Screen $id"
 }

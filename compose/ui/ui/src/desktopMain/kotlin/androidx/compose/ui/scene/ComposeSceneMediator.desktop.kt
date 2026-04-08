@@ -61,6 +61,7 @@ import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -364,6 +365,13 @@ internal class ComposeSceneMediator(
                 (contentSize.height / scale).toInt()
             )
         }
+
+    fun <T> measuringContentWithConstraints(
+        constraints: Constraints,
+        block: (MeasuredSceneContent) -> T
+    ): T {
+        return scene.measuringContentWithConstraints(constraints, block)
+    }
 
     /**
      * Keyboard modifiers state might be changed when window is not focused, so window doesn't

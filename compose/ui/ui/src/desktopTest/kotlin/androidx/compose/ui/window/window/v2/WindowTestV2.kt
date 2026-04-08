@@ -396,7 +396,7 @@ class WindowTestV2 {
         testDrawingBeforeWindowIsVisible(
             windowState = WindowState(
                 initialBoundsProvider = WindowBoundsProvider(
-                    sizeProvider = WindowSizeProvider.Intrinsic,
+                    sizeProvider = WindowSizeProvider.Unconstrained,
                 )
             ),
             canvasSizeModifier = Modifier.size(canvasSize),
@@ -468,7 +468,7 @@ class WindowTestV2 {
             Window(
                 onCloseRequest = { },
                 state = rememberWindowState(
-                    initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Intrinsic)
+                    initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Unconstrained)
                 ),
                 decoration = WindowDecoration.Undecorated(),
                 resizable = true,

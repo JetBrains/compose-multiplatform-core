@@ -18,6 +18,9 @@ package androidx.compose.ui.window.v2
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.scene.MeasuredSceneContent
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.isFinite
@@ -25,6 +28,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.window.WindowLocationTracker
@@ -86,13 +90,40 @@ class WindowGeometryProviderScope internal constructor(
      */
     val screen: Screen,
 
-    intrinsicWindowSize: () -> DpSize,
+    /**
+     * Returns the insets of the window.
+     */
+    windowInsets: () -> DpInsets,
+
+    /**
+     * Allows measuring the window's composable content.
+     */
+    private val measuringContentWithConstraints: (Constraints, Density.(MeasuredSceneContent) -> Any) -> Any,
 ) {
     /**
-     * The intrinsic/preferred size of the window, computed from its content and the window's
-     * insets.
+     * The insets of the window.
      */
-    val intrinsicWindowSize: DpSize by lazy(intrinsicWindowSize)
+    val windowInsets: DpInsets by lazy(windowInsets)
+
+    /**
+     * Returns the size a window should have given the content size.
+     *
+     * The content size is expanded by [windowInsets] and then constrained to
+     * [Screen.availableBounds].
+     */
+    fun contentToWindowSize(contentSize: DpSize): DpSize =
+        (contentSize + windowInsets).coerceAtMost(screen.availableBounds.size)
+
+    internal fun <T> measuringContentWithConstraints(
+        constraints: Constraints,
+        block: Density.(MeasuredSceneContent) -> T): T {
+        @Suppress("UNCHECKED_CAST")
+        return measuringContentWithConstraints.invoke(
+            constraints,
+            block as Density.(MeasuredSceneContent) -> Any
+        ) as T
+    }
+
 
     /**
      * Evaluates the given [WindowSizeProvider] in this scope.
@@ -156,13 +187,13 @@ interface WindowBoundsProvider {
             val size = sizeProvider.getSize().requireReal()
             val availableBounds = screen.availableBounds
 
-            val offsetInAvailable = alignment.align(
+            val position = alignment.align(
                 size = size.roundToIntSize(),
                 space = availableBounds.size.roundToIntSize(),
                 layoutDirection = LayoutDirection.Ltr
             )
-            val left = availableBounds.left + offsetInAvailable.x.dp + offset.x
-            val top = availableBounds.top + offsetInAvailable.y.dp + offset.y
+            val left = availableBounds.left + position.x.dp + offset.x
+            val top = availableBounds.top + position.y.dp + offset.y
             DpRect(
                 left = left,
                 top = top,
@@ -293,28 +324,58 @@ fun interface WindowSizeProvider {
         fun Exact(width: Dp, height: Dp) = Exact(DpSize(width, height))
 
         /**
-         * Sets the size of the window to its intrinsic size (see
-         * [WindowGeometryProviderScope.intrinsicWindowSize]).
+         * Sets the size of the window to its preferred size, constrained only by the size of the
+         * screen.
+         *
+         * The preferred size is computed by measuring the content with infinite
+         * [Constraints], and adding the window's insets to that.
          */
-        val Intrinsic = WindowSizeProvider { intrinsicWindowSize }
-
-        /**
-         * Sets the size of the window to its intrinsic width and the given [height].
-         */
-        fun IntrinsicWidth(height: Dp): WindowSizeProvider {
-            height.requireReal("height")
-            return WindowSizeProvider {
-                DpSize(intrinsicWindowSize.width, height)
+        val Unconstrained = WindowSizeProvider {
+            measuringContentWithConstraints(Constraints()) {
+                contentToWindowSize(
+                    DpSize(
+                        width = it.measuredWidth.toDp(),
+                        height = it.measuredHeight.toDp()
+                    )
+                )
             }
         }
 
         /**
-         * Sets the size of the window to the given [width] and its intrinsic height.
+         * Sets the width of the window to its minimum intrinsic width at the given [height].
+         *
+         * The height of the window is set to [height].
          */
-        fun IntrinsicHeight(width: Dp): WindowSizeProvider {
+        fun MinIntrinsicWidth(height: Dp): WindowSizeProvider {
+            height.requireReal("height")
+            return WindowSizeProvider {
+                measuringContentWithConstraints(Constraints()) {
+                    contentToWindowSize(
+                        DpSize(
+                            width = it.minIntrinsicWidth(height.roundToPx()).toDp(),
+                            height = height
+                        )
+                    )
+                }
+            }
+        }
+
+        /**
+         * Sets the height of the window to its minimum intrinsic height at the given [width].
+         *
+         * The width of the window is set to [width].
+         */
+        fun MinIntrinsicHeight(width: Dp): WindowSizeProvider {
             width.requireReal("width")
             return WindowSizeProvider {
-                DpSize(width, intrinsicWindowSize.height)
+                measuringContentWithConstraints(Constraints()) {
+                    contentToWindowSize(
+                        DpSize(
+                            width = width,
+                            height = it.minIntrinsicHeight(width.roundToPx()).toDp(),
+                        )
+                    )
+                }
             }
         }
     }

@@ -45,10 +45,10 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.density
 import androidx.compose.ui.window.requireReal
 import androidx.compose.ui.window.resizerThickness
 import androidx.compose.ui.window.roundToDimensionOrNull
-import androidx.compose.ui.window.toDpSize
 import androidx.compose.ui.window.v2.Screen
 import androidx.compose.ui.window.v2.Window
 import androidx.compose.ui.window.v2.WindowBoundsProvider
@@ -58,6 +58,7 @@ import androidx.compose.ui.window.v2.WindowScreenProviderScope
 import androidx.compose.ui.window.v2.WindowSizeLimits
 import androidx.compose.ui.window.v2.WindowState
 import androidx.compose.ui.window.v2.rememberWindowState
+import androidx.compose.ui.window.v2.toDpInsets
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 import java.awt.Window
@@ -309,17 +310,25 @@ private fun ComposeWindow.initializeBounds(state: WindowState) {
 }
 
 private fun ComposeWindow.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
-    @Suppress("UsePropertyAccessSyntax")
+    fun ensureIsDisplayable() {
+        if (!isDisplayable) {
+            pack()
+        }
+    }
+
     val scope = WindowGeometryProviderScope(
         screen = screen(),
-        intrinsicWindowSize = {
-            if (!isDisplayable) {  // Just in case
-                pack()
+        windowInsets = {
+            ensureIsDisplayable()
+            insets.toDpInsets()
+        },
+        measuringContentWithConstraints = { constraints, block ->
+            ensureIsDisplayable()
+            measuringContentWithConstraints(constraints) {
+                with(density) {
+                    block(it)
+                }
             }
-            // Setting it to null and then calling getPreferredSize() causes it to compute the
-            // actual preferred size, as determined by the content.
-            setPreferredSize(null)
-            getPreferredSize().toDpSize()
         }
     )
     with(scope) {

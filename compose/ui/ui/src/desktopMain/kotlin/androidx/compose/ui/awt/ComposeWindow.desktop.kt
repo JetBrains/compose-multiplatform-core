@@ -22,7 +22,9 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.scene.MeasuredSceneContent
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.UndecoratedWindowResizer
@@ -35,7 +37,7 @@ import java.awt.GraphicsConfiguration
 import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener
 import java.awt.event.MouseWheelListener
-import java.util.Locale
+import java.util.*
 import javax.swing.JFrame
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -194,6 +196,13 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
     @ExperimentalComposeUiApi
     fun saveState(): SavedState? {
         return composePanel.saveState()
+    }
+
+    internal fun <T> measuringContentWithConstraints(
+        constraints: Constraints,
+        block: (MeasuredSceneContent) -> T
+    ): T {
+        return composePanel.measuringContentWithConstraints(constraints, block)
     }
 
     override fun dispose() {

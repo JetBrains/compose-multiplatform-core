@@ -23,6 +23,8 @@ import androidx.compose.ui.LayerType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.scene.ComposeContainer
+import androidx.compose.ui.scene.MeasuredSceneContent
+import androidx.compose.ui.unit.Constraints
 import androidx.savedstate.SavedState
 import java.awt.Component
 import java.awt.Container
@@ -114,6 +116,13 @@ internal class ComposeWindowPanel(
             override fun getDefaultComponent(aContainer: Container?) = null
         }
         isFocusCycleRoot = true
+    }
+
+    fun <T> measuringContentWithConstraints(
+        constraints: Constraints,
+        block: (MeasuredSceneContent) -> T
+    ): T {
+        return composeContainer.measuringContentWithConstraints(constraints, block)
     }
 
     override fun setBounds(x: Int, y: Int, width: Int, height: Int) {

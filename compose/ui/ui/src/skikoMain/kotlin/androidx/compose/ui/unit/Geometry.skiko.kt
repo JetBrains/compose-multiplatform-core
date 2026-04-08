@@ -81,9 +81,18 @@ internal inline fun DpSize.toSize(density: Density): Size = with(density) {
 }
 
 /**
+ * Coerces this [DpSize] to at most the specified [size], on each axis.
+ */
+@Stable
+internal inline fun DpSize.coerceAtMost(size: DpSize): DpSize =
+    DpSize(
+        width = width.coerceAtMost(size.width),
+        height = height.coerceAtMost(size.height)
+    )
+
+/**
  * Converts a [IntSize] to a [Rect].
  */
 @Stable
 internal inline fun IntSize.toRect(): Rect =
     Rect(0f, 0f, width.toFloat(), height.toFloat())
-

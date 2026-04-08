@@ -20,6 +20,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import java.awt.Insets
 
@@ -73,12 +74,22 @@ class DpInsets(
  * Returns the rectangle remaining after applying the given insets.
  */
 @ExperimentalComposeUiApi
-fun DpRect.withInsets(insets: DpInsets): DpRect =
+operator fun DpRect.minus(insets: DpInsets): DpRect =
     DpRect(
         top = top + insets.top,
         left = left + insets.left,
         bottom = bottom - insets.bottom,
         right = right - insets.right
+    )
+
+/**
+ * Returns the size after adding the given insets.
+ */
+@ExperimentalComposeUiApi
+operator fun DpSize.plus(insets: DpInsets): DpSize =
+    DpSize(
+        width = width + insets.left + insets.right,
+        height = height + insets.top + insets.bottom
     )
 
 /**

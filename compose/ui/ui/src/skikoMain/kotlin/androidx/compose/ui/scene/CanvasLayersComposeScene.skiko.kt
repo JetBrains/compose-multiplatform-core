@@ -205,6 +205,15 @@ private class CanvasLayersComposeSceneImpl(
             return mainOwner.measurableRootContent
         }
 
+    override fun <T> measuringContentWithConstraints(
+        constraints: Constraints,
+        block: (MeasuredSceneContent) -> T
+    ): T {
+        return mainOwner.measuringRootWithConstraints(constraints) {
+            block(MeasuredSceneContent(it))
+        }
+    }
+
     override fun invalidatePositionInWindow() {
         check(!isClosed) { "invalidatePositionInWindow called after ComposeScene is closed" }
         mainOwner.invalidatePositionInWindow()
