@@ -51,6 +51,8 @@ internal abstract class WebTextInputService :
             field = value
         }
 
+    internal var currentTextLayoutResult: (() -> TextLayoutResult?)? = null
+
     /**
      * It's used for the initial positioning of the backing HTML input.
      * It's rather a workaround for the problem that startInput doesn't know the correct position yet.
@@ -65,12 +67,14 @@ internal abstract class WebTextInputService :
      */
     abstract val backingDomInputContainer: HTMLElement
 
-    fun startInput(
-        request: PlatformTextInputMethodRequest,
+    override fun startInput(
+        value: TextFieldValue,
+        imeOptions: ImeOptions,
         onEditCommand: (List<EditCommand>) -> Unit,
+        onImeActionPerformed: (ImeAction) -> Unit
     ) {
-        backingDomInput = BackingDomInput(
-            imeOptions = request.imeOptions,
+        backingDomInput = object : BackingDomInput(
+            imeOptions = imeOptions,
             composeCommunicator = object : ComposeCommandCommunicator {
                 override fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean {
                     return this@WebTextInputService.processKeyboardEvent(keyboardEvent)
@@ -79,11 +83,13 @@ internal abstract class WebTextInputService :
                 override fun sendEditCommand(commands: List<EditCommand>) {
                     onEditCommand(commands)
                 }
-
-                override fun currentTextLayoutResult() = request.textLayoutResult()
             },
             inputContainer = backingDomInputContainer,
-        )
+        ) {
+            override fun currentTextLayoutResult(): TextLayoutResult? =
+                this@WebTextInputService.currentTextLayoutResult?.invoke()
+        }
+
         backingDomInput?.register()
 
         if (currentTouchOffset != null) {
@@ -96,21 +102,12 @@ internal abstract class WebTextInputService :
         showSoftwareKeyboard()
     }
 
-    override fun startInput(
-        value: TextFieldValue,
-        imeOptions: ImeOptions,
-        onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
-    ) {
-        // This method is called from the common code.
-        // It's not used in the new API, but we keep it for backward compatibility.
-    }
-
     fun getBackingInput(): HTMLElement? {
         return backingDomInput?.backingElement?.takeIf { it.isConnected }
     }
 
     override fun stopInput() {
+        currentTextLayoutResult = null
         backingDomInput?.dispose()
         backingDomInput = null
     }

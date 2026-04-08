@@ -83,37 +83,6 @@ class NativeInputEventsProcessorTest {
             return true
         }
 
-        override fun currentTextLayoutResult(): TextLayoutResult? {
-            val text = editingBuffer.toString()
-            val annotatedString = AnnotatedString(text)
-            val density = Density(1f)
-            val constraints = Constraints()
-            val style = TextStyle.Default
-
-            return TextLayoutResult(
-                layoutInput = TextLayoutInput(
-                    text = annotatedString,
-                    style = style,
-                    placeholders = emptyList(),
-                    maxLines = Int.MAX_VALUE,
-                    softWrap = true,
-                    overflow = TextOverflow.Clip,
-                    density = density,
-                    layoutDirection = LayoutDirection.Ltr,
-                    fontFamilyResolver = fontFamilyResolver,
-                    constraints = constraints
-                ),
-                multiParagraph = MultiParagraph(
-                    annotatedString = annotatedString,
-                    style = style,
-                    constraints = constraints,
-                    density = density,
-                    fontFamilyResolver = fontFamilyResolver
-                ),
-                size = IntSize(0, 0)
-            )
-        }
-
         @Suppress("INVISIBLE_REFERENCE")
         fun currentTextFieldValue(): TextFieldValue {
             return TextFieldValue(
@@ -127,8 +96,8 @@ class NativeInputEventsProcessorTest {
      * A test implementation of NativeInputEventsProcessor that allows controlling when checkpoints are run
      */
     private class TestNativeInputEventsProcessor(
-        composeSender: ComposeCommandCommunicator
-    ) : NativeInputEventsProcessor(composeSender) {
+        private val composeSender: ComposeCommandCommunicator
+    ) : NativeInputEventsProcessor() {
 
         override fun scheduleCheckpoint() {
             isCheckpointScheduled = true
@@ -137,6 +106,14 @@ class NativeInputEventsProcessorTest {
         fun manuallyRunCheckpoint(currentTextFieldValue: TextFieldValue) {
             isCheckpointScheduled = false
             runCheckpoint(currentTextFieldValue)
+        }
+
+        override fun withCommandSenderContext(block: ComposeCommandCommunicator.() -> Unit) {
+            block.invoke(composeSender)
+        }
+
+        override fun currentTextLayoutResult(): TextLayoutResult? {
+            TODO("currentTextLayoutResult is tested in integration tests")
         }
     }
 

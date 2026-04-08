@@ -17,9 +17,7 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.ImeOptions
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlin.js.ExperimentalWasmJsInterop
@@ -38,12 +36,10 @@ import org.w3c.dom.events.UIEvent
 import org.w3c.dom.events.InputEvent
 import org.w3c.dom.events.KeyboardEvent
 
-internal class DomInputStrategy(
-    imeOptions: ImeOptions,
+internal abstract class DomInputStrategy(
+    private val htmlInput: HTMLElement,
     private val composeSender: ComposeCommandCommunicator,
-) {
-    val htmlInput = imeOptions.createDomElement()
-
+): TextLayoutProvider {
     private var lastMeaningfulUpdate = TextFieldValue("")
 
     // To avoid the re-triggering of the selection change
@@ -52,14 +48,6 @@ internal class DomInputStrategy(
 
     init {
         initEvents()
-    }
-
-    private val nativeInputEventsProcessor = object : NativeInputEventsProcessor(composeSender) {
-        override fun scheduleCheckpoint() {
-            window.requestAnimationFrame {
-                runCheckpoint(currentTextFieldValue = lastMeaningfulUpdate)
-            }
-        }
     }
 
     fun updateState(textFieldValue: TextFieldValue) {
@@ -82,9 +70,19 @@ internal class DomInputStrategy(
     private val tabKeyCode = Key.Tab.keyCode.toInt()
 
     private fun initEvents() {
-        htmlInput.addEventListener("blur", { evt ->
-            // TODO: any actions here?
-        })
+        val nativeInputEventsProcessor = object : NativeInputEventsProcessor() {
+            override fun scheduleCheckpoint() {
+                window.requestAnimationFrame {
+                    runCheckpoint(currentTextFieldValue = lastMeaningfulUpdate)
+                }
+            }
+
+            override fun withCommandSenderContext(block: ComposeCommandCommunicator.() -> Unit) {
+                block.invoke(composeSender)
+            }
+
+            override fun currentTextLayoutResult(): TextLayoutResult? = this@DomInputStrategy.currentTextLayoutResult()
+        }
 
         htmlInput.addEventListener("keydown", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
@@ -174,87 +172,6 @@ internal inline fun UIEvent.asInputEventExt(): InputEventExt =  unsafeCast<Input
 
 internal val InputEventExt.textRangeSize: Int
     get() = this.asInputEventExt().let { it.textRangeEnd - it.textRangeStart }
-
-
-private fun ImeOptions.createDomElement(): HTMLElement {
-    val htmlElement = document.createElement(
-        if (singleLine) "input" else "textarea"
-    ) as HTMLElement
-
-    // without autocorrect set "on" iOS virtual keyboard won't suggest
-    // see https://youtrack.jetbrains.com/issue/CMP-8807
-    htmlElement.setAttribute("autocorrect", "on")
-    htmlElement.setAttribute("autocomplete", "off")
-    htmlElement.setAttribute("autocapitalize", "off")
-    htmlElement.setAttribute("spellcheck", "false")
-
-    val inputMode = when (keyboardType) {
-        KeyboardType.Text -> "text"
-        KeyboardType.Ascii -> "text"
-        KeyboardType.Number -> "number"
-        KeyboardType.Phone -> "tel"
-        KeyboardType.Uri -> "url"
-        KeyboardType.Email -> "email"
-        KeyboardType.Password -> "password"
-        KeyboardType.NumberPassword -> "number"
-        KeyboardType.Decimal -> "decimal"
-        else -> "text"
-    }
-
-    val enterKeyHint = when (imeAction) {
-        ImeAction.Default -> "enter"
-        ImeAction.None -> "enter"
-        ImeAction.Done -> "done"
-        ImeAction.Go -> "go"
-        ImeAction.Next -> "next"
-        ImeAction.Previous -> "previous"
-        ImeAction.Search -> "search"
-        ImeAction.Send -> "send"
-        else -> "enter"
-    }
-
-    htmlElement.setAttribute("inputmode", inputMode)
-    htmlElement.setAttribute("enterkeyhint", enterKeyHint)
-
-
-    htmlElement.style.apply {
-        setProperty("position", "absolute")
-        setProperty("user-select", "none")
-        setProperty("forced-color-adjust", "none")
-        setProperty("white-space", "pre")
-        setProperty("align-content", "center")
-        setProperty(
-            "top",
-            "calc(min(var(--compose-internal-web-backing-input-top) * 1px, 100vh - var(--compose-internal-web-backing-input-height) * 1px))"
-        )
-        setProperty(
-            "left",
-            "calc(min(var(--compose-internal-web-backing-input-left) * 1px, 100vw - var(--compose-internal-web-backing-input-width) * 1px))"
-        )
-        setProperty("width", "calc(var(--compose-internal-web-backing-input-width) * 1px")
-        setProperty("height", "calc(var(--compose-internal-web-backing-input-height) * 1px")
-        setProperty("padding", "0")
-        setProperty("color", "transparent")
-        setProperty("background", "transparent")
-        setProperty("caret-color", "transparent")
-        setProperty("outline", "none")
-        setProperty("border", "none")
-        setProperty("resize", "none")
-        setProperty("text-shadow", "none")
-        setProperty("z-index", "-1")
-        // TODO: do we need pointer-events: none
-        //setProperty("pointer-events", "none")
-
-        // I keep "opacity" commented to make it explicit that we can't use this property.
-        // Reason: Safari iOS keyboard overlaps the text input. See CMP-8611
-        // setProperty("opacity", "0")
-
-        // To prevent auto-zoom in some mobile browsers, we set a larger font-size
-        setProperty("font-size", "20px")
-    }
-
-    return htmlElement
-}
 
 private external interface HTMLElementWithValue {
     var value: String

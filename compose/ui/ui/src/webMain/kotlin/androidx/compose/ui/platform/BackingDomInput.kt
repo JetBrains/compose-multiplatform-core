@@ -19,7 +19,9 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.EditCommand
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlin.js.js
 import kotlinx.browser.document
@@ -31,7 +33,9 @@ internal interface ComposeCommandCommunicator {
     fun sendEditCommand(command: EditCommand) = sendEditCommand(listOf(command))
 
     fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean
+}
 
+internal interface TextLayoutProvider {
     fun currentTextLayoutResult(): TextLayoutResult?
 }
 
@@ -47,17 +51,19 @@ private fun setBackingInputBox(container: HTMLElement, left: Float, top: Float, 
  * and the DOM HTMLTextAreaElement we are actually listening events on in order to show
  * the virtual keyboard.
  */
-internal class BackingDomInput(
+internal abstract class BackingDomInput(
     val inputContainer: HTMLElement,
     imeOptions: ImeOptions,
     composeCommunicator : ComposeCommandCommunicator,
-) {
-    private val inputStrategy = DomInputStrategy(
-        imeOptions,
-        composeCommunicator
-    )
+): TextLayoutProvider {
+    internal val backingElement = imeOptions.createDomElement()
 
-    internal val backingElement = inputStrategy.htmlInput
+    private val inputStrategy = object : DomInputStrategy(
+        backingElement,
+        composeCommunicator
+    ) {
+        override fun currentTextLayoutResult(): TextLayoutResult? = this@BackingDomInput.currentTextLayoutResult()
+    }
 
     fun register() {
         setBackingInputBox(container = inputContainer, 0f, 0f, 0f, 0f)
@@ -98,4 +104,85 @@ internal class BackingDomInput(
         inputStrategy.dispose()
         backingElement.remove()
     }
+}
+
+
+private fun ImeOptions.createDomElement(): HTMLElement {
+    val htmlElement = document.createElement(
+        if (singleLine) "input" else "textarea"
+    ) as HTMLElement
+
+    // without autocorrect set "on" iOS virtual keyboard won't suggest
+    // see https://youtrack.jetbrains.com/issue/CMP-8807
+    htmlElement.setAttribute("autocorrect", "on")
+    htmlElement.setAttribute("autocomplete", "off")
+    htmlElement.setAttribute("autocapitalize", "off")
+    htmlElement.setAttribute("spellcheck", "false")
+
+    val inputMode = when (keyboardType) {
+        KeyboardType.Text -> "text"
+        KeyboardType.Ascii -> "text"
+        KeyboardType.Number -> "number"
+        KeyboardType.Phone -> "tel"
+        KeyboardType.Uri -> "url"
+        KeyboardType.Email -> "email"
+        KeyboardType.Password -> "password"
+        KeyboardType.NumberPassword -> "number"
+        KeyboardType.Decimal -> "decimal"
+        else -> "text"
+    }
+
+    val enterKeyHint = when (imeAction) {
+        ImeAction.Default -> "enter"
+        ImeAction.None -> "enter"
+        ImeAction.Done -> "done"
+        ImeAction.Go -> "go"
+        ImeAction.Next -> "next"
+        ImeAction.Previous -> "previous"
+        ImeAction.Search -> "search"
+        ImeAction.Send -> "send"
+        else -> "enter"
+    }
+
+    htmlElement.setAttribute("inputmode", inputMode)
+    htmlElement.setAttribute("enterkeyhint", enterKeyHint)
+
+
+    htmlElement.style.apply {
+        setProperty("position", "absolute")
+        setProperty("user-select", "none")
+        setProperty("forced-color-adjust", "none")
+        setProperty("white-space", "pre")
+        setProperty("align-content", "center")
+        setProperty(
+            "top",
+            "calc(min(var(--compose-internal-web-backing-input-top) * 1px, 100vh - var(--compose-internal-web-backing-input-height) * 1px))"
+        )
+        setProperty(
+            "left",
+            "calc(min(var(--compose-internal-web-backing-input-left) * 1px, 100vw - var(--compose-internal-web-backing-input-width) * 1px))"
+        )
+        setProperty("width", "calc(var(--compose-internal-web-backing-input-width) * 1px")
+        setProperty("height", "calc(var(--compose-internal-web-backing-input-height) * 1px")
+        setProperty("padding", "0")
+        setProperty("color", "transparent")
+        setProperty("background", "transparent")
+        setProperty("caret-color", "transparent")
+        setProperty("outline", "none")
+        setProperty("border", "none")
+        setProperty("resize", "none")
+        setProperty("text-shadow", "none")
+        setProperty("z-index", "-1")
+        // TODO: do we need pointer-events: none
+        //setProperty("pointer-events", "none")
+
+        // I keep "opacity" commented to make it explicit that we can't use this property.
+        // Reason: Safari iOS keyboard overlaps the text input. See CMP-8611
+        // setProperty("opacity", "0")
+
+        // To prevent auto-zoom in some mobile browsers, we set a larger font-size
+        setProperty("font-size", "20px")
+    }
+
+    return htmlElement
 }

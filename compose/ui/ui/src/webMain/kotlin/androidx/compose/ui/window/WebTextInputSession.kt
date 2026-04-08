@@ -51,9 +51,13 @@ internal class WebTextInputSession(
         }
         suspendCancellableCoroutine<Nothing> { continuation ->
             webTextInputService.startInput(
-                request,
-                onEditCommand = request.onEditCommand
+                value = request.value(),
+                imeOptions = request.imeOptions,
+                onEditCommand = request.onEditCommand,
+                onImeActionPerformed = request.onImeAction ?: {}
             )
+
+            webTextInputService.currentTextLayoutResult = request.textLayoutResult
 
             continuation.invokeOnCancellation {
                 webTextInputService.stopInput()

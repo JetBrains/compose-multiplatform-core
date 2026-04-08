@@ -44,11 +44,11 @@ import org.w3c.dom.events.UIEvent
  * @param composeSender The communicator responsible for transmitting edit
  * commands and keyboard events to the Compose system.
  */
-internal abstract class NativeInputEventsProcessor(
-    private val composeSender: ComposeCommandCommunicator
-) {
+internal abstract class NativeInputEventsProcessor : TextLayoutProvider {
 
     private val collectedEvents = mutableListOf<UIEvent>()
+
+    internal abstract fun withCommandSenderContext(block: ComposeCommandCommunicator.() -> Unit)
 
     @get:TestOnly
     @set:TestOnly
@@ -57,16 +57,19 @@ internal abstract class NativeInputEventsProcessor(
     internal var lastCompositionEndTimestamp = 0.0 // Double because of k/wasm where Number.toLong() leads to a compilation error
     private var lastProcessedKeydown: KeyboardEvent? = null
 
-    private tailrec fun TextLayoutResult.getPrevWordOffset(currentOffset: Int): Int {
+    private tailrec fun TextLayoutResult.getPrevWordOffset(
+        currentOffset: Int,
+        offsetMapping: OffsetMapping = OffsetMapping.Identity
+    ): Int {
         if (currentOffset <= 0) {
             return 0
         }
         val text = layoutInput.text
-        val currentWord = getWordBoundary(currentOffset.coerceIn(0, text.length - 1))
+        val currentWord = getWordBoundary(currentOffset.coerceAtMost(text.length - 1))
         return if (currentWord.start >= currentOffset) {
             getPrevWordOffset(currentOffset - 1)
         } else {
-            OffsetMapping.Identity.transformedToOriginal(currentWord.start)
+            offsetMapping.transformedToOriginal(currentWord.start)
         }
     }
 
@@ -87,7 +90,7 @@ internal abstract class NativeInputEventsProcessor(
         }
     }
 
-    fun runCheckpoint(currentTextFieldValue: TextFieldValue) {
+    fun runCheckpoint(currentTextFieldValue: TextFieldValue) = withCommandSenderContext {
         isCheckpointScheduled = false
 
         collectedEvents.sortBy { it.timeStamp.toInt() }
@@ -126,7 +129,7 @@ internal abstract class NativeInputEventsProcessor(
                     val shouldBeProcessed = timestamp == 0.0 || !isFromLastComposition
 
                     if (shouldBeProcessed) {
-                        val isProcessed = composeSender.sendKeyboardEvent(evt.toComposeEvent())
+                        val isProcessed = sendKeyboardEvent(evt.toComposeEvent())
                         if (isProcessed) {
                             lastProcessedKeydown = evt
                         }
@@ -135,7 +138,7 @@ internal abstract class NativeInputEventsProcessor(
 
                 "compositionend" -> {
                     lastCompositionEndTimestamp = timestamp
-                    composeSender.sendEditCommand(CommitTextCommand((evt as CompositionEvent).data, 1))
+                    sendEditCommand(CommitTextCommand((evt as CompositionEvent).data, 1))
                 }
 
                 "beforeinput" -> {
@@ -149,83 +152,89 @@ internal abstract class NativeInputEventsProcessor(
         collectedEvents.clear()
     }
 
-    private fun InputEventExt.process(currentTextFieldValue: TextFieldValue) {
-        val editCommands = when (inputType) {
-            "deleteContentBackward" -> buildList {
-                // this means "deleteContentBackward" happened because of an earlier "keydown" event, so skipping it here
-                if (lastProcessedKeydown?.isBackspace() == true) return@buildList
+    private fun InputEventExt.process(currentTextFieldValue: TextFieldValue) = withCommandSenderContext {
+        val editCommands = buildList {
+            when (inputType) {
+                "deleteContentBackward" -> {
+                    // this means "deleteContentBackward" happened because of an earlier "keydown" event, so skipping it here
+                    if (lastProcessedKeydown?.isBackspace() == true) return@buildList
 
-                if (!currentTextFieldValue.selection.collapsed) {
-                    // Likely it's on mobile, where the Backspace has Unidentified key value.
-                    // When Compose TextField shows text selection,
-                    // a good UX for deleteContentBackward would be to emulate Backspace
-                    add(BackspaceCommand())
-                } else {
-                    // This happens when an autocorrection is applied on mobile:
-                    // The system first tells us to delete the old text,
-                    // and then it would send the "insertText" event.
-                    if (textRangeSize > 0) {
-                        // deleteContentBackward can happen under very non-trivial circumstances,
-                        // for instance; when an input suggestion on Android Chrome is accepted,
-                        // the browser then deletes space after the word just to add space again
-                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                    if (!currentTextFieldValue.selection.collapsed) {
+                        // Likely it's on mobile, where the Backspace has Unidentified key value.
+                        // When Compose TextField shows text selection,
+                        // a good UX for deleteContentBackward would be to emulate Backspace
                         add(BackspaceCommand())
-                    } else if (textRangeSize == 0) {
-                        // under specific circumstance previous symbol can be deleted while inputing new one
-                        // see https://youtrack.jetbrains.com/issue/CMP-8773
-                        add(BackspaceCommand())
+                    } else {
+                        // This happens when an autocorrection is applied on mobile:
+                        // The system first tells us to delete the old text,
+                        // and then it would send the "insertText" event.
+                        if (textRangeSize > 0) {
+                            // deleteContentBackward can happen under very non-trivial circumstances,
+                            // for instance; when an input suggestion on Android Chrome is accepted,
+                            // the browser then deletes space after the word just to add space again
+                            add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                            add(BackspaceCommand())
+                        } else if (textRangeSize == 0) {
+                            // under specific circumstance previous symbol can be deleted while inputing new one
+                            // see https://youtrack.jetbrains.com/issue/CMP-8773
+                            add(BackspaceCommand())
+                        }
                     }
                 }
-            }
 
-            "deleteWordBackward" -> buildList {
-                if (lastProcessedKeydown?.isBackspace() != true) return@buildList
+                "deleteWordBackward" -> {
+                    if (lastProcessedKeydown?.isBackspace() != true) return@buildList
 
-                // This would mean event was triggered by long press on mobile device (iOS)
-                if (lastProcessedKeydown?.repeat == true) {
-                    val layoutResult = composeSender.currentTextLayoutResult() ?: return@buildList
+                    // This would mean event was triggered by long press on mobile device (iOS)
+                    if (lastProcessedKeydown?.repeat == true) {
+                        val layoutResult =
+                            currentTextLayoutResult() ?: return@buildList
 
-
-                    val offset = layoutResult.getPrevWordOffset(textRangeStart)
-                    val deleteCommand = DeleteSurroundingTextCommand((textRangeEnd - offset).coerceAtLeast(0), 0)
-                    add(deleteCommand)
-                }
-            }
-
-
-            "insertReplacementText" -> buildList {
-                if (data == null) return@buildList
-                if (textRangeSize > 0) {
-                    add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                        val offset = layoutResult.getPrevWordOffset(
+                            OffsetMapping.Identity.originalToTransformed(textRangeEnd)
+                        )
+                        val deleteCommand = DeleteSurroundingTextCommand(
+                            (textRangeEnd - offset).coerceAtLeast(0),
+                            0
+                        )
+                        add(deleteCommand)
+                    }
                 }
 
-                add(CommitTextCommand(data, 1))
-            }
 
-            "insertText" -> buildList {
-                if (data == null) return@buildList
-                if (textRangeSize > 0 && currentTextFieldValue.selection.collapsed) {
-                    add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                "insertReplacementText" -> {
+                    if (data == null) return@buildList
+                    if (textRangeSize > 0) {
+                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                    }
+
+                    add(CommitTextCommand(data, 1))
                 }
 
-                add(CommitTextCommand(data, 1))
-            }
+                "insertText" -> {
+                    if (data == null) return@buildList
+                    if (textRangeSize > 0 && currentTextFieldValue.selection.collapsed) {
+                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                    }
 
-            "insertCompositionText" -> buildList {
-                if (data == null) return@buildList
-                if (textRangeSize > 0) {
-                    add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                    add(CommitTextCommand(data, 1))
                 }
-                add(SetComposingTextCommand(data, 1))
-            }
 
-            // "insertFromComposition", "deleteCompositionText" are triggered in Safari just before the 'compositionEnd' event.
-            // They're ignored because Safari also sends 'insertCompositionText' which we handle (alongside 'compositionEnd')
-            else -> emptyList()
+                "insertCompositionText" -> {
+                    if (data == null) return@buildList
+                    if (textRangeSize > 0) {
+                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                    }
+                    add(SetComposingTextCommand(data, 1))
+                }
+
+                // "insertFromComposition", "deleteCompositionText" are triggered in Safari just before the 'compositionEnd' event.
+                // They're ignored because Safari also sends 'insertCompositionText' which we handle (alongside 'compositionEnd')
+            }
         }
 
         if (editCommands.isNotEmpty()) {
-            composeSender.sendEditCommand(editCommands)
+            sendEditCommand(editCommands)
         }
     }
 
