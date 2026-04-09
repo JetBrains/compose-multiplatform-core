@@ -93,33 +93,23 @@ fun interface WindowScreenProvider {
  */
 @ExperimentalComposeUiApi
 class WindowGeometryProviderScope internal constructor(
-    /**
-     * The screen on which the window will be placed.
-     */
-    val screen: Screen,
-
-    /**
-     * The window whose geometry is being provided.
-     */
     private val window: ComposeWindow,
 ): Density {
-
-    /**
-     * Makes the window displayable if it is not already so.
-     */
-    private fun ensureWindowIsDisplayable() {
-        if (!window.isDisplayable) {
-            window.pack()
+    init {
+        require(window.isDisplayable) {
+            "Window must be displayable before it can be used in WindowGeometryProviderScope"
         }
     }
 
     /**
+     * The screen on which the window will be placed.
+     */
+    val screen: Screen = Screen(window.graphicsConfiguration.device)
+
+    /**
      * The density of the window.
      */
-    private val windowDensity: Density by lazy {
-        ensureWindowIsDisplayable()
-        window.density
-    }
+    private val windowDensity: Density = window.density
 
     override val density: Float
         get() = windowDensity.density
@@ -130,19 +120,13 @@ class WindowGeometryProviderScope internal constructor(
     /**
      * The insets of the window.
      */
-    val windowInsets: DpInsets by lazy {
-        ensureWindowIsDisplayable()
-        window.insets.toDpInsets()
-    }
+    val windowInsets: DpInsets = window.insets.toDpInsets()
 
     /**
      * Represents the composable content of the window, which can be queried for its preferred size
      * properties.
      */
-    val windowContent: MeasurableRootContent by lazy {
-        ensureWindowIsDisplayable()
-        window.measurableContent
-    }
+    val windowContent: MeasurableRootContent by window::measurableContent
 
     /**
      * Returns the size a window should have, given the size of its content.
