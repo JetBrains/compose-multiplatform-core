@@ -24,7 +24,13 @@ import androidx.compose.ui.*
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.IntrinsicMeasurable
+import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasurePolicy
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.*
@@ -34,6 +40,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.runApplicationTest
+import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.window.toSize
 import androidx.compose.ui.window.v2.Window
 import androidx.compose.ui.window.v2.WindowBoundsProvider
@@ -496,7 +503,10 @@ class WindowTestV2 {
             Window(
                 onCloseRequest = { },
                 state = rememberWindowState(
-                    initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Exact(windowSize))
+                    initialBoundsProvider =
+                        WindowBoundsProvider(
+                            WindowSizeProvider.Fixed(windowSize)
+                        )
                 ),
             ) {
                 window = this.window
@@ -654,7 +664,7 @@ class WindowTestV2 {
         val windowSize = DpSize(800.dp, 800.dp)
         launchTestWindowV2Application(
             state = WindowState(
-                initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Exact(windowSize))
+                initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Fixed(windowSize))
             ),
         ) {
             outerWindow = this.window
@@ -664,7 +674,7 @@ class WindowTestV2 {
                 Window(
                     onCloseRequest = {},
                     state = rememberWindowState(
-                        initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Exact(windowSize))
+                        initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Fixed(windowSize))
                     ),
                 ) {
                     innerWindow = this.window
@@ -887,6 +897,104 @@ class WindowTestV2 {
         assertEquals(DpSize(300.dp, 300.dp), windowState!!.bounds.size)
     }
 
+    private fun runWindowSizeTest(
+        windowSizeProvider: WindowSizeProvider,
+        content: @Composable () -> Unit,
+        expectedWindowSize: (DpInsets) -> DpSize,
+    ) = runApplicationTest {
+        val windowState = WindowState(
+            initialBoundsProvider = WindowBoundsProvider(windowSizeProvider)
+        )
+        lateinit var window: ComposeWindow
+        launchTestApplication {
+            Window(state = windowState, onCloseRequest = {}) {
+                window = this.window
+                content()
+            }
+        }
+        awaitIdle()
+        assertEquals(
+            expectedWindowSize(window.insets.toDpInsets()),
+            windowState.bounds.size
+        )
+   }
+
+    @Test
+    fun windowMinIntrinsicWidth() = runWindowSizeTest(
+        windowSizeProvider = WindowSizeProvider.MinIntrinsicWidth(height = 500.dp),
+        content = {
+            Box(Modifier.widthIn(min = 400.dp))
+        },
+        expectedWindowSize = { insets ->
+            DpSize(400.dp, 500.dp) + insets
+        }
+    )
+
+    @Test
+    fun windowMinIntrinsicHeight() = runWindowSizeTest(
+        windowSizeProvider = WindowSizeProvider.MinIntrinsicHeight(width = 500.dp),
+        content = {
+            Box(Modifier.heightIn(min = 400.dp))
+        },
+        expectedWindowSize = { insets ->
+            DpSize(500.dp, 400.dp) + insets
+        }
+    )
+
+    private abstract class EmptyMeasurePolicy : MeasurePolicy {
+        override fun MeasureScope.measure(
+            measurables: List<Measurable>,
+            constraints: Constraints
+        ): MeasureResult {
+            return layout(1, 1) {}
+        }
+    }
+
+    @Test
+    fun windowMinWidthMatchingHeight() = runWindowSizeTest(
+        windowSizeProvider = WindowSizeProvider.MinWidthMatchingHeight,
+        content = {
+            Box(Modifier.widthIn(min = 400.dp)) {
+                Layout(
+                    measurePolicy = object : EmptyMeasurePolicy() {
+                        override fun IntrinsicMeasureScope.minIntrinsicHeight(
+                            measurables: List<IntrinsicMeasurable>,
+                            width: Int
+                        ): Int {
+                            return width
+                        }
+                    },
+                    content = {}
+                )
+            }
+        },
+        expectedWindowSize = { insets ->
+            DpSize(400.dp, 400.dp) + insets
+        }
+    )
+
+    @Test
+    fun windowMinHeightMatchingWidth() = runWindowSizeTest(
+        windowSizeProvider = WindowSizeProvider.MinHeightMatchingWidth,
+        content = {
+            Box(Modifier.heightIn(min = 400.dp)) {
+                Layout(
+                    measurePolicy = object : EmptyMeasurePolicy() {
+                        override fun IntrinsicMeasureScope.minIntrinsicWidth(
+                            measurables: List<IntrinsicMeasurable>,
+                            height: Int
+                        ): Int {
+                            return height
+                        }
+                    },
+                    content = {}
+                )
+            }
+        },
+        expectedWindowSize = { insets ->
+            DpSize(400.dp, 400.dp) + insets
+        }
+    )
 }
 
 private object CtxElement : CoroutineContext.Element, CoroutineContext.Key<CtxElement> {

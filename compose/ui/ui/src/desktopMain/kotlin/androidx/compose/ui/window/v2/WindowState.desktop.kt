@@ -115,7 +115,7 @@ fun WindowStateWithBounds(
     initiallyMinimized: Boolean = false,
 ): WindowState {
     val sizeProvider =
-        initialSize?.let { WindowSizeProvider.Exact(it) } ?: WindowSizeProvider.Default
+        initialSize?.let { WindowSizeProvider.Fixed(it) } ?: WindowSizeProvider.Default
     val positionProvider =
         initialPosition?.let { WindowPositionProvider.Absolute(it) } ?: WindowPositionProvider.Default
     return WindowState(

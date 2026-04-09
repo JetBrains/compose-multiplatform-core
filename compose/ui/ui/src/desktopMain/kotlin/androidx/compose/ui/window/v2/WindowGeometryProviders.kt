@@ -303,7 +303,8 @@ fun interface WindowSizeProvider {
      * Returns the size of the window.
      *
      * When implementing this function, use the given [WindowGeometryProviderScope] to examine the
-     * geometry of the screen and determine the appropriate position for the window.
+     * geometry of the screen and the size properties of the window's content to determine the
+     * appropriate size for the window.
      *
      * All coordinates in the returned [DpSize] must be [Dp.isSpecified] and [Dp.isFinite].
      * The [DpSize] itself must also be [DpSize.isSpecified].
@@ -313,16 +314,16 @@ fun interface WindowSizeProvider {
     @ExperimentalComposeUiApi
     companion object {
         /**
-         * Returns the default size for a new window.
+         * Sets the size of the window to the default one.
          */
-        val Default = Exact(DpSize(800.dp, 600.dp))
+        val Default = Fixed(DpSize(800.dp, 600.dp))
 
         /**
          * Sets the size of the window to the given [size].
          *
          * @param size The size of the window.
          */
-        fun Exact(size: DpSize): WindowSizeProvider {
+        fun Fixed(size: DpSize): WindowSizeProvider {
             size.requireReal()
             return WindowSizeProvider { size }
         }
@@ -333,7 +334,7 @@ fun interface WindowSizeProvider {
          * @param width The width of the window.
          * @param height The height of the window.
          */
-        fun Exact(width: Dp, height: Dp) = Exact(DpSize(width, height))
+        fun Fixed(width: Dp, height: Dp) = Fixed(DpSize(width, height))
 
         /**
          * Sets the size of the window to its preferred size, constrained only by the size of the
