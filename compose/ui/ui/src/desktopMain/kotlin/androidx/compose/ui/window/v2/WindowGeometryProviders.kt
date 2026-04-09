@@ -18,23 +18,26 @@ package androidx.compose.ui.window.v2
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.scene.MeasuredSceneContent
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpInsets
-import androidx.compose.ui.unit.isSpecified
-import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.isFinite
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.plus
 import androidx.compose.ui.unit.requireReal
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.size
+import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.roundToDimension
 import androidx.compose.ui.window.toDpOffset
@@ -347,6 +350,8 @@ fun interface WindowSizeProvider {
          * Sets the width of the window to its minimum intrinsic width at the given [height].
          *
          * The height of the window is set to [height].
+         *
+         * @see [IntrinsicMeasurable.minIntrinsicWidth]
          */
         fun MinIntrinsicWidth(height: Dp): WindowSizeProvider {
             height.requireReal("height")
@@ -366,6 +371,8 @@ fun interface WindowSizeProvider {
          * Sets the height of the window to its minimum intrinsic height at the given [width].
          *
          * The width of the window is set to [width].
+         *
+         * @see [IntrinsicMeasurable.minIntrinsicHeight]
          */
         fun MinIntrinsicHeight(width: Dp): WindowSizeProvider {
             width.requireReal("width")
@@ -378,6 +385,40 @@ fun interface WindowSizeProvider {
                         )
                     )
                 }
+            }
+        }
+
+        /**
+         * Sets the width of the window to its minimum intrinsic width at unconstrained height, and
+         * the height of the window to its minimum intrinsic height at that width.
+         *
+         * This is useful for cases where the window has a fixed minimum width, but the height is
+         * flexible.
+         */
+        val MinWidthMatchingHeight = WindowSizeProvider {
+            measuringContentWithConstraints(Constraints()) {
+                val width = it.minIntrinsicWidth(screen.availableBounds.height.roundToPx())
+                val height = it.minIntrinsicHeight(width)
+                contentToWindowSize(
+                    DpSize(width.toDp(), height.toDp())
+                )
+            }
+        }
+
+        /**
+         * Sets the height of the window to its minimum intrinsic height at unconstrained width, and
+         * the width of the window to its minimum intrinsic width at that height.
+         *
+         * This is useful for cases where the window has a fixed minimum height, but the width is
+         * flexible.
+         */
+        val MinHeightMatchingWidth = WindowSizeProvider {
+            measuringContentWithConstraints(Constraints()) {
+                val height = it.minIntrinsicHeight(screen.availableBounds.width.roundToPx())
+                val width = it.minIntrinsicWidth(height)
+                contentToWindowSize(
+                    DpSize(width.toDp(), height.toDp())
+                )
             }
         }
     }
