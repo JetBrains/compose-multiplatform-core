@@ -218,7 +218,8 @@ internal class ComposeContainer(
         layers.fastForEach(DesktopComposeSceneLayer::close)
     }
 
-    val measurableSceneContent: MeasurableRootContent by mediator::measurableSceneContent
+    val measurableContent: MeasurableRootContent
+        get() = mediator.measurableSceneContent
 
     override fun windowGainedFocus(event: WindowEvent) = onWindowFocusChanged()
     override fun windowLostFocus(event: WindowEvent) = onWindowFocusChanged()

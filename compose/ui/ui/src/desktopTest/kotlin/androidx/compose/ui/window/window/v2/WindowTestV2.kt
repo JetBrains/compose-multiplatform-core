@@ -391,7 +391,7 @@ class WindowTestV2 {
     }
 
     @Test(timeout = 30000)
-    fun `should draw before window with intrinsic size is visible`() {
+    fun `should draw before window with unconstrained size is visible`() {
         val canvasSize = DpSize(400.dp, 300.dp)
         testDrawingBeforeWindowIsVisible(
             windowState = WindowState(
@@ -461,7 +461,7 @@ class WindowTestV2 {
 
     @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
     @Test
-    fun `undecorated resizable window with unspecified size`() = runApplicationTest {
+    fun `undecorated resizable window with unconstrained size`() = runApplicationTest {
         lateinit var window: ComposeWindow
 
         launchTestApplication {

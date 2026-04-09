@@ -205,12 +205,6 @@ private class CanvasLayersComposeSceneImpl(
             return mainOwner.measurableRootContent
         }
 
-    override val measurableSceneContent: MeasurableRootContent
-        get() {
-            check(!isClosed) { "measurableSceneContent called after ComposeScene is closed" }
-            return mainOwner.measurableRootContent
-        }
-
     override fun invalidatePositionInWindow() {
         check(!isClosed) { "invalidatePositionInWindow called after ComposeScene is closed" }
         mainOwner.invalidatePositionInWindow()

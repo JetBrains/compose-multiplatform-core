@@ -141,12 +141,6 @@ sealed interface ComposeScene : AutoCloseable {
     val measurableContent: MeasurableRootContent
 
     /**
-     * An object through which the composable content of the scene can be queried for its size
-     * properties.
-     */
-    val measurableSceneContent: MeasurableRootContent
-
-    /**
      * Invalidates position of [ComposeScene] in window. It will trigger callbacks like
      * [Modifier.onGloballyPositioned] so they can recalculate actual position in the window.
      *

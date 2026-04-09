@@ -18,6 +18,7 @@ package androidx.compose.ui.window.v2
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.unit.Constraints
@@ -39,7 +40,9 @@ import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowLocationTracker
+import androidx.compose.ui.window.density
 import androidx.compose.ui.window.roundToDimension
+import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.toDpOffset
 import java.awt.GraphicsDevice
 
@@ -96,25 +99,27 @@ class WindowGeometryProviderScope internal constructor(
     val screen: Screen,
 
     /**
-     * Represents the composable content of the window, which can be queried for its preferred size
-     * properties.
+     * The window whose geometry is being provided.
      */
-    val windowContent: MeasurableRootContent,
-
-    /**
-     * Returns the density of the window.
-     */
-    windowDensity: () -> Density,
-
-    /**
-     * Returns the insets of the window.
-     */
-    windowInsets: () -> DpInsets,
+    private val window: ComposeWindow,
 ): Density {
+
+    /**
+     * Makes the window displayable if it is not already so.
+     */
+    private fun ensureWindowIsDisplayable() {
+        if (!window.isDisplayable) {
+            window.pack()
+        }
+    }
+
     /**
      * The density of the window.
      */
-    private val windowDensity: Density by lazy(windowDensity)
+    private val windowDensity: Density by lazy {
+        ensureWindowIsDisplayable()
+        window.density
+    }
 
     override val density: Float
         get() = windowDensity.density
@@ -125,7 +130,19 @@ class WindowGeometryProviderScope internal constructor(
     /**
      * The insets of the window.
      */
-    val windowInsets: DpInsets by lazy(windowInsets)
+    val windowInsets: DpInsets by lazy {
+        ensureWindowIsDisplayable()
+        window.insets.toDpInsets()
+    }
+
+    /**
+     * Represents the composable content of the window, which can be queried for its preferred size
+     * properties.
+     */
+    val windowContent: MeasurableRootContent by lazy {
+        ensureWindowIsDisplayable()
+        window.measurableContent
+    }
 
     /**
      * Returns the size a window should have, given the size of its content.

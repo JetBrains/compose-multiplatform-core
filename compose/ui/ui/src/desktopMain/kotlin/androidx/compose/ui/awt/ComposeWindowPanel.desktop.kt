@@ -117,7 +117,8 @@ internal class ComposeWindowPanel(
         isFocusCycleRoot = true
     }
 
-    val measurableSceneContent: MeasurableRootContent by composeContainer::measurableSceneContent
+    val measurableContent: MeasurableRootContent
+        get() = composeContainer.measurableContent
 
     override fun setBounds(x: Int, y: Int, width: Int, height: Int) {
         super.setBounds(x, y, width, height)

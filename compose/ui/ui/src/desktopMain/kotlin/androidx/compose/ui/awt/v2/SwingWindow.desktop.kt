@@ -46,10 +46,8 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.density
 import androidx.compose.ui.window.resizerThickness
 import androidx.compose.ui.window.roundToDimensionOrNull
-import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.v2.Screen
 import androidx.compose.ui.window.v2.Window
 import androidx.compose.ui.window.v2.WindowBoundsProvider
@@ -310,23 +308,9 @@ private fun ComposeWindow.initializeBounds(state: WindowState) {
 }
 
 private fun ComposeWindow.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
-    fun ensureIsDisplayable() {
-        if (!isDisplayable) {
-            pack()
-        }
-    }
-
     val scope = WindowGeometryProviderScope(
         screen = screen(),
-        windowContent = measurableSceneContent,
-        windowDensity = {
-            ensureIsDisplayable()
-            density
-        },
-        windowInsets = {
-            ensureIsDisplayable()
-            insets.toDpInsets()
-        },
+        window = this,
     )
     with(scope) {
         bounds = boundsProvider.getBounds().requireReal().toAwtRectangleRounded()

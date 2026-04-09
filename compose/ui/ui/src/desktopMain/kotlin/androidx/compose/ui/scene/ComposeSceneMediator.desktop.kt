@@ -367,7 +367,7 @@ internal class ComposeSceneMediator(
         }
 
     val measurableSceneContent: MeasurableRootContent
-        get() = scene.measurableSceneContent
+        get() = scene.measurableContent
 
     /**
      * Keyboard modifiers state might be changed when window is not focused, so window doesn't
