@@ -24,8 +24,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import kotlin.test.Test
@@ -211,5 +213,34 @@ class AccessibilityLiveRegionTest {
         val last = AccessibilityNotification.lastPostedNotificationForTests
         assertEquals(UIAccessibilityAnnouncementNotification, last?.notification)
         assertEquals("Live content", last?.message)
+    }
+
+    @Test
+    fun testLiveRegionAnnouncementContainsLabelBeforeValue() = runUIKitInstrumentedTest {
+        var label by mutableStateOf("Label")
+        var value by mutableStateOf("Value")
+
+        setContent {
+            Text("placeholder", modifier = Modifier.semantics {
+                liveRegion = LiveRegionMode.Polite
+                contentDescription = label
+                stateDescription = value
+            })
+        }
+
+        getAccessibilityTree()
+        waitForIdle()
+
+        var last = AccessibilityNotification.lastPostedNotificationForTests
+        assertEquals(UIAccessibilityAnnouncementNotification, last?.notification)
+        assertEquals("Label, Value", last?.message)
+
+        label = "New Label"
+        value = "New Value"
+        waitForIdle()
+
+        last = AccessibilityNotification.lastPostedNotificationForTests
+        assertEquals(UIAccessibilityAnnouncementNotification, last?.notification)
+        assertEquals("New Label, New Value", last?.message)
     }
 }
