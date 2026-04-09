@@ -197,7 +197,7 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
         return composePanel.saveState()
     }
 
-    @InternalComposeUiApi
+    @ExperimentalComposeUiApi
     val measurableContent: MeasurableRootContent by composePanel::measurableContent
 
     override fun dispose() {
