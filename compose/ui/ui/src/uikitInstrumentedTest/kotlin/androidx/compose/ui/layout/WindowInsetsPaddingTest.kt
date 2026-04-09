@@ -260,7 +260,10 @@ class WindowInsetsPaddingTest {
                 UIKitView(
                     factory = {
                         ComposeUIView(
-                            configure = { opaque = false }
+                            configure = {
+                                enforceStrictPlistSanityCheck = false
+                                opaque = false
+                            }
                         ) {
                             Box(modifier = Modifier
                                 .windowInsetsPadding(WindowInsets.statusBars)
