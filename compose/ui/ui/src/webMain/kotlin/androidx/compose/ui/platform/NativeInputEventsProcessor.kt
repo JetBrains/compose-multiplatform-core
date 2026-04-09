@@ -189,7 +189,7 @@ internal abstract class NativeInputEventsProcessor(
                     val layoutResult = composeSender.currentTextLayoutResult() ?: return@buildList
 
 
-                    val offset = layoutResult.getPrevWordOffset(textRangeStart)
+                    val offset = layoutResult.getPrevWordOffset(textRangeEnd)
                     val deleteCommand = DeleteSurroundingTextCommand((textRangeEnd - offset).coerceAtLeast(0), 0)
                     add(deleteCommand)
                 }
