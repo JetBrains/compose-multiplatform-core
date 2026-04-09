@@ -160,7 +160,11 @@ internal class RootNodeOwner(
             owner.root.layoutDirection = value
         }
 
-    private val rootForTest = PlatformRootForTestImpl()
+    private var _rootForTest: PlatformRootForTest? = null
+    private val rootForTest
+        get() = _rootForTest ?: PlatformRootForTestImpl().also {
+            _rootForTest = it
+        }
     private val ownedLayerManager = OwnedLayerManagerImpl()
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
