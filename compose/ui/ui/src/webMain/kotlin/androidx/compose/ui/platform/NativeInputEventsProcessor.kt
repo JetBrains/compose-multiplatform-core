@@ -65,7 +65,13 @@ internal abstract class NativeInputEventsProcessor(
             return 0
         }
         val text = layoutInput.text
-        val currentWord = getWordBoundary(currentOffset.coerceAtMost(text.length - 1))
+
+        val offset = currentOffset.coerceAtMost(text.length - 1)
+        if (offset <= 0) {
+            return 0
+        }
+
+        val currentWord = getWordBoundary(offset)
         return if (currentWord.start >= currentOffset) {
             getPrevWordOffset(currentOffset - 1)
         } else {
