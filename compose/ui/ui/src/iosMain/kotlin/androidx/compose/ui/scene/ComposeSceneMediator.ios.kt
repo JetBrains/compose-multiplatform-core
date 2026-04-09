@@ -368,7 +368,7 @@ internal class ComposeSceneMediator(
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                scene.update(lastRenderTime)
+                scene.recomposeAndLayout(lastRenderTime)
                 redrawer.setNeedsRedraw()
             },
             view = _overlayView,
