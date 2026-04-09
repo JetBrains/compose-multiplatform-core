@@ -21,10 +21,9 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.scene.MeasuredSceneContent
 import androidx.compose.ui.semantics.SemanticsOwner
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.UndecoratedWindowResizer
@@ -198,12 +197,7 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
         return composePanel.saveState()
     }
 
-    internal fun <T> measuringContentWithConstraints(
-        constraints: Constraints,
-        block: (MeasuredSceneContent) -> T
-    ): T {
-        return composePanel.measuringContentWithConstraints(constraints, block)
-    }
+    val measurableSceneContent: MeasurableRootContent by composePanel::measurableSceneContent
 
     override fun dispose() {
         super.dispose()

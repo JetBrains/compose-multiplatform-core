@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.viewinterop.pointerInteropFilter
 
@@ -142,10 +141,10 @@ sealed interface ComposeScene : AutoCloseable {
     val measurableContent: MeasurableRootContent
 
     /**
-     * Measures the content with the given constraints and returns the result of [block] invoked
-     * on a [MeasuredSceneContent] object that allows querying the content for its size properties.
+     * An object through which the composable content of the scene can be queried for its size
+     * properties.
      */
-    fun <T> measuringContentWithConstraints(constraints: Constraints, block: (MeasuredSceneContent) -> T): T
+    val measurableSceneContent: MeasurableRootContent
 
     /**
      * Invalidates position of [ComposeScene] in window. It will trigger callbacks like
@@ -327,56 +326,5 @@ sealed interface ComposeScene : AutoCloseable {
 fun ComposeScene.unconstrainedSize(): IntSize {
     return measurableContent.measuringIn(Constraints()) {
         IntSize(it.measuredWidth, it.measuredHeight)
-    }
-}
-
-/**
- * The interface through which [ComposeScene.measuringContentWithConstraints] allows querying the
- * scene content for its size properties.
- */
-@InternalComposeUiApi
-interface MeasuredSceneContent {
-    /**
-     * The measured width of the content.
-     */
-    val measuredWidth: Int
-
-    /**
-     * The measured height of the content.
-     */
-    val measuredHeight: Int
-
-    /**
-     * The minimum intrinsic width of the content, at the given height.
-     */
-    fun minIntrinsicWidth(height: Int): Int
-
-    /**
-     * The minimum intrinsic height of the content, at the given width.
-     */
-    fun minIntrinsicHeight(width: Int): Int
-}
-
-internal fun MeasuredSceneContent(rootNode: LayoutNode) : MeasuredSceneContent {
-    return object : MeasuredSceneContent {
-        override val measuredWidth: Int
-            get() = rootNode.outerCoordinator.measuredWidth
-
-        override val measuredHeight: Int
-            get() = rootNode.outerCoordinator.measuredHeight
-
-        override fun minIntrinsicWidth(height: Int): Int {
-            // RootMeasurePolicy has LayoutNode.NoIntrinsicsMeasurePolicy, so we ask the children
-            return rootNode.children.fastMaxOfOrDefault(0) {
-                it.outerCoordinator.minIntrinsicWidth(height)
-            }
-        }
-
-        override fun minIntrinsicHeight(width: Int): Int {
-            // RootMeasurePolicy has LayoutNode.NoIntrinsicsMeasurePolicy, so we ask the children
-            return rootNode.children.fastMaxOfOrDefault(0) {
-                it.outerCoordinator.minIntrinsicHeight(width)
-            }
-        }
     }
 }

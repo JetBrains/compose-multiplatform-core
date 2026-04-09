@@ -318,18 +318,15 @@ private fun ComposeWindow.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
 
     val scope = WindowGeometryProviderScope(
         screen = screen(),
+        windowContent = measurableSceneContent,
+        windowDensity = {
+            ensureIsDisplayable()
+            density
+        },
         windowInsets = {
             ensureIsDisplayable()
             insets.toDpInsets()
         },
-        measuringContentWithConstraints = { constraints, block ->
-            ensureIsDisplayable()
-            measuringContentWithConstraints(constraints) {
-                with(density) {
-                    block(it)
-                }
-            }
-        }
     )
     with(scope) {
         bounds = boundsProvider.getBounds().requireReal().toAwtRectangleRounded()

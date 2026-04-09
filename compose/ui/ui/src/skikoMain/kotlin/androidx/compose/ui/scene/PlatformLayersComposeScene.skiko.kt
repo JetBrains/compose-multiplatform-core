@@ -151,14 +151,11 @@ private class PlatformLayersComposeSceneImpl(
             return mainOwner.measurableRootContent
         }
 
-    override fun <T> measuringContentWithConstraints(
-        constraints: Constraints,
-        block: (MeasuredSceneContent) -> T
-    ): T {
-        return mainOwner.measuringRootWithConstraints(constraints) {
-            block(MeasuredSceneContent(it))
+    override val measurableSceneContent: MeasurableRootContent
+        get() {
+            check(!isClosed) { "measurableSceneContent called after ComposeScene is closed" }
+            return mainOwner.measurableRootContent
         }
-    }
 
     override fun invalidatePositionInWindow() {
         check(!isClosed) { "invalidatePositionInWindow called after ComposeScene is closed" }

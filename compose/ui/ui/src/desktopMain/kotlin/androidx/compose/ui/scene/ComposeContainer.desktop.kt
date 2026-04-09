@@ -25,12 +25,12 @@ import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastAll
@@ -218,9 +218,7 @@ internal class ComposeContainer(
         layers.fastForEach(DesktopComposeSceneLayer::close)
     }
 
-    fun <T> measuringContentWithConstraints(constraints: Constraints, block: (MeasuredSceneContent) -> T): T {
-        return mediator.measuringContentWithConstraints(constraints, block)
-    }
+    val measurableSceneContent: MeasurableRootContent by mediator::measurableSceneContent
 
     override fun windowGainedFocus(event: WindowEvent) = onWindowFocusChanged()
     override fun windowLostFocus(event: WindowEvent) = onWindowFocusChanged()
