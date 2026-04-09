@@ -426,7 +426,7 @@ private fun Project.createTaskForComponent(
             pub = pub,
             libraryGroup = libraryGroup,
             artifactId = artifactId,
-            shaProvider = getHeadShaProvider(project),
+            shaProvider = getHeadShaProvider(),
             shouldPublishDocs = shouldPublishDocs,
             isKmp = isKmp,
             buildTarget = buildTarget,

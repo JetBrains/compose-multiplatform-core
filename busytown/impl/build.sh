@@ -25,8 +25,7 @@ mkdir -p "$DIST_DIR"
 if [ "$CHANGE_INFO" != "" ]; then
   cp "$CHANGE_INFO" "$ORIGINAL_DIST_DIR/"
   if [ "$MANIFEST" == "" ] && [ -f "$ORIGINAL_DIST_DIR/manifest_${BUILD_NUMBER}.xml" ]; then
-    cp "$ORIGINAL_DIST_DIR/manifest_${BUILD_NUMBER}.xml" "$OUT_DIR/manifest.xml"
-    export MANIFEST="$OUT_DIR/manifest.xml"
+    export MANIFEST="$ORIGINAL_DIST_DIR/manifest_${BUILD_NUMBER}.xml"
   fi
 fi
 
