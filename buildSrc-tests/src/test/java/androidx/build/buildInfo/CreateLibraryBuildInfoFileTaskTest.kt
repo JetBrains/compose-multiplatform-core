@@ -98,6 +98,75 @@ class CreateLibraryBuildInfoFileTaskTest {
     }
 
     @Test
+    fun buildInfoTaskCreatesSimpleFileWithAllDependencies() {
+        setupBuildInfoProjectWithAllDependencies()
+        gradleRunner.withArguments("createLibraryBuildInfoFiles").build()
+
+        val buildInfoFile =
+            distDir.root.resolve("build-info/androidx.build_info_test_test_build_info.txt")
+        assertThat(buildInfoFile.exists()).isTrue()
+
+        val buildInfo = parseBuildInfo(buildInfoFile)
+
+        assertThat(buildInfo.allDependencies.map { "${it.groupId}:${it.artifactId}" })
+            .containsExactly(
+                "androidx.activity:activity",
+                "androidx.annotation:annotation",
+                "androidx.annotation:annotation-experimental",
+                "androidx.appcompat:appcompat",
+                "androidx.appcompat:appcompat-resources",
+                "androidx.arch.core:core-common",
+                "androidx.arch.core:core-runtime",
+                "androidx.collection:collection",
+                "androidx.core:core",
+                "androidx.cursoradapter:cursoradapter",
+                "androidx.customview:customview",
+                "androidx.drawerlayout:drawerlayout",
+                "androidx.fragment:fragment",
+                "androidx.interpolator:interpolator",
+                "androidx.lifecycle:lifecycle-common",
+                "androidx.lifecycle:lifecycle-livedata",
+                "androidx.lifecycle:lifecycle-livedata-core",
+                "androidx.lifecycle:lifecycle-runtime",
+                "androidx.lifecycle:lifecycle-viewmodel",
+                "androidx.lifecycle:lifecycle-viewmodel-savedstate",
+                "androidx.loader:loader",
+                "androidx.savedstate:savedstate",
+                "androidx.tracing:tracing",
+                "androidx.vectordrawable:vectordrawable",
+                "androidx.vectordrawable:vectordrawable-animated",
+                "androidx.versionedparcelable:versionedparcelable",
+                "androidx.viewpager:viewpager",
+                "org.jetbrains:annotations",
+                "org.jetbrains.kotlin:kotlin-stdlib",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun buildInfoSelectsCorrectKmpVariant() {
+        setupBuildInfoProjectWithKmpDependency()
+        gradleRunner.withArguments("createLibraryBuildInfoFiles").build()
+
+        val buildInfoFile =
+            distDir.root.resolve("build-info/androidx.build_info_test_test_build_info.txt")
+        assertThat(buildInfoFile.exists()).isTrue()
+
+        val buildInfo = parseBuildInfo(buildInfoFile)
+
+        assertThat(buildInfo.allDependencies.map { "${it.groupId}:${it.artifactId}" })
+            .containsExactly(
+                "androidx.annotation:annotation",
+                "androidx.annotation:annotation-jvm",
+                "androidx.collection:collection",
+                "androidx.collection:collection-jvm",
+                "org.jetbrains:annotations",
+                "org.jetbrains.kotlin:kotlin-stdlib",
+            )
+            .inOrder()
+    }
+
+    @Test
     fun buildInfoTaskAddsTestModuleNames() {
         setupBuildInfoProject()
         gradleRunner.withArguments("createLibraryBuildInfoFiles").build()
@@ -198,6 +267,132 @@ class CreateLibraryBuildInfoFileTaskTest {
                             ["android", "jvm", "jvmStubs", "linuxx64Stubs", "wasmJs"].toSet(),
                             project.provider { ["test.xml"] },
                             it.name,
+                        )
+                    }
+                }
+            }
+            """
+                    .trimIndent(),
+        )
+    }
+
+    private fun setupBuildInfoProjectWithAllDependencies() {
+        File(projectSetup.rootDir, "settings.gradle").writeText("rootProject.name = \"test\"")
+        projectSetup.writeDefaultBuildGradle(
+            prefix =
+                """
+            import androidx.build.buildInfo.CreateLibraryBuildInfoFileTaskKt
+            plugins {
+                id("com.android.library")
+                id("maven-publish")
+            }
+            ext {
+                supportRootFolder = new File("${projectSetup.rootDir}")
+            }
+        """
+                    .trimIndent(),
+            suffix =
+                """
+        version = "0.0.1"
+        dependencies {
+            constraints {
+                implementation("androidx.core:core-ktx:1.1.0")
+            }
+            implementation("androidx.core:core:1.1.0")
+            implementation("androidx.appcompat:appcompat:1.3.0")
+        }
+        android {
+            namespace 'androidx.build_info'
+            publishing {
+                singleVariant('release') { }
+            }
+        }
+        group = "androidx.build_info_test"
+        afterEvaluate {
+            publishing {
+                publications {
+                    maven(MavenPublication) {
+                        groupId = 'androidx.build_info_test'
+                        artifactId = 'test'
+                        version = '0.0.1'
+                        from(components.release)
+                    }
+                }
+                publications.withType(MavenPublication) {
+                    def artifactId = it.artifactId
+                    CreateLibraryBuildInfoFileTaskKt.createBuildInfoTask(
+                        project,
+                        it,
+                        null,
+                        project.provider { artifactId },
+                        project.provider { "fakeSha" },
+                        false,
+                        false,
+                        "androidx",
+                        ["android", "jvm", "jvmStubs", "linuxx64Stubs", "wasmJs"].toSet(),
+                        project.provider { ["test.xml"] },
+                        it.name
+                    )
+                }
+            }
+        }
+        """
+                    .trimIndent(),
+        )
+    }
+
+    private fun setupBuildInfoProjectWithKmpDependency() {
+        File(projectSetup.rootDir, "settings.gradle").writeText("rootProject.name = \"test\"")
+        projectSetup.writeDefaultBuildGradle(
+            prefix =
+                """
+            import androidx.build.buildInfo.CreateLibraryBuildInfoFileTaskKt
+            plugins {
+                id("com.android.library")
+                id("maven-publish")
+            }
+            ext {
+                supportRootFolder = new File("${projectSetup.rootDir}")
+            }
+            """
+                    .trimIndent(),
+            suffix =
+                """
+            version = "0.0.1"
+            dependencies {
+                implementation("androidx.collection:collection:1.5.0")
+            }
+            android {
+                namespace 'androidx.build_info'
+                publishing {
+                    singleVariant('release') { }
+                }
+            }
+            group = "androidx.build_info_test"
+            afterEvaluate {
+                publishing {
+                    publications {
+                        maven(MavenPublication) {
+                            groupId = 'androidx.build_info_test'
+                            artifactId = 'test'
+                            version = '0.0.1'
+                            from(components.release)
+                        }
+                    }
+                    publications.withType(MavenPublication) {
+                        def artifactId = it.artifactId
+                        CreateLibraryBuildInfoFileTaskKt.createBuildInfoTask(
+                            project,
+                            it,
+                            null,
+                            project.provider { artifactId },
+                            project.provider { "fakeSha" },
+                            false,
+                            false,
+                            "androidx",
+                            [].toSet(),
+                            project.provider { [] },
+                            it.name
                         )
                     }
                 }
