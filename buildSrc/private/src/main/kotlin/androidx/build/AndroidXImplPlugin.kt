@@ -255,7 +255,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 versionService.libraryGroupsByGroupId,
                 versionService.overrideLibraryGroupsByProjectPath,
                 listProjectsService.map { it.allPossibleProjects },
-                { getHeadShaProvider(project) },
+                { project.getHeadShaProvider() },
                 { configurationName: String ->
                     configureAarAsJarForConfiguration(project, configurationName)
                 },
