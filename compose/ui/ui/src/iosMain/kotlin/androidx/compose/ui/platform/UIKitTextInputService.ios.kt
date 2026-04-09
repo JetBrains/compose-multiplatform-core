@@ -33,6 +33,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.DeleteSurroundingTextCommand
 import androidx.compose.ui.text.input.EditCommand
+import androidx.compose.ui.text.input.EditProcessor
 import androidx.compose.ui.text.input.FinishComposingTextCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
@@ -104,10 +105,11 @@ internal class UIKitTextInputService(
     private var currentImeActionHandler: ((ImeAction) -> Unit)? = null
     private var textUIView: IntermediateTextInputUIView? = null
     private val scrollView by lazy { IntermediateTextScrollView() }
-    private var textLayoutResult: TextLayoutResult? = null
-    private var currentValue: TextFieldValue? = null
-
     private var currentFocusedRect: Rect? = null
+    private var sessionEditProcessor: EditProcessor? = null
+
+    var getTextLayoutResult : () -> TextLayoutResult? = { null }
+    private val textLayoutResult get() = getTextLayoutResult()
 
     /**
      * Matches DefaultCursorThickness
@@ -144,9 +146,11 @@ internal class UIKitTextInputService(
         value: TextFieldValue,
         imeOptions: ImeOptions,
         onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
+        onImeActionPerformed: (ImeAction) -> Unit,
     ) {
-        currentValue = value
+        sessionEditProcessor = EditProcessor().apply {
+            reset(value, null)
+        }
         currentOnEditCommand = onEditCommand
         currentImeOptions = imeOptions
         usingNativeTextInput = imeOptions.platformImeOptions?.usingNativeTextInput ?: false
@@ -161,10 +165,9 @@ internal class UIKitTextInputService(
     }
 
     override fun stopInput() {
-        currentValue = null
+        sessionEditProcessor = null
         currentImeOptions = null
         currentImeActionHandler = null
-        textLayoutResult = null
 
         hideSoftwareKeyboard()
 
@@ -190,7 +193,7 @@ internal class UIKitTextInputService(
     }
 
     override fun updateState(oldValue: TextFieldValue?, newValue: TextFieldValue) {
-        val internalOldValue = currentValue
+        val internalOldValue = sessionEditProcessor?.toTextFieldValue()
         val textChanged = internalOldValue == null || internalOldValue.text != newValue.text
         val selectionChanged = textChanged || internalOldValue.selection != newValue.selection
         if (textChanged) {
@@ -199,8 +202,8 @@ internal class UIKitTextInputService(
         if (selectionChanged) {
             textUIView?.selectionWillChange()
         }
-        if (currentValue != null) {
-            currentValue = newValue
+        sessionEditProcessor?.let {
+            it.reset(newValue, null)
             _tempCursorPos = null
         }
 
@@ -293,9 +296,9 @@ internal class UIKitTextInputService(
         }
     }
 
-    fun updateTextLayoutResult(textLayoutResult: TextLayoutResult) {
-        this.textLayoutResult = textLayoutResult
-    }
+//    fun updateTextLayoutResult(textLayoutResult: TextLayoutResult) {
+//        this.textLayoutResult = textLayoutResult
+//    }
 
     private fun handleEnterKey(event: KeyEvent): Boolean {
         _tempImeActionIsCalledWithHardwareReturnKey = false
@@ -321,7 +324,7 @@ internal class UIKitTextInputService(
     }
 
     private fun handleEscape(event: KeyEvent): Boolean {
-        return if (textUIView?.isFirstResponder() == true) {
+        return if (sessionEditProcessor != null) {
             if (event.type == KeyEventType.KeyDown) {
                 focusManager()?.releaseFocus()
             }
@@ -333,7 +336,9 @@ internal class UIKitTextInputService(
 
     private fun sendEditCommand(vararg commands: EditCommand) {
         currentOnEditCommand?.let {
-            it.invoke(commands.toList())
+            val commandsList = commands.toList()
+            sessionEditProcessor?.apply(commandsList)
+            it.invoke(commandsList)
             updateView()
         }
     }
@@ -389,7 +394,7 @@ internal class UIKitTextInputService(
 
     val hasInvalidations: Boolean get() = textInputServiceInvalidationsCount > 0
 
-    private fun getState(): TextFieldValue? = currentValue
+    private fun getState(): TextFieldValue? = sessionEditProcessor?.toTextFieldValue()
 
     // Fixes a problem where the menu is shown before the textUIView gets its final layout.
     private var showMenuOrUpdatePosition = {}
@@ -452,7 +457,7 @@ internal class UIKitTextInputService(
             it.hideTextMenu()
             textMenuAppearanceChanged()
         }
-        if (textUIView != null && currentValue == null) { // means that editing context menu shown in selection container
+        if ((textUIView != null) && (sessionEditProcessor == null)) { // means that editing context menu shown in selection container
             textUIView?.resignFirstResponder()
             detachIntermediateTextInputView()
         }

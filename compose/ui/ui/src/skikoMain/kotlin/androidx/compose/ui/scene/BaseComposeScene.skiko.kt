@@ -155,17 +155,13 @@ internal abstract class BaseComposeScene(
             recomposer.performScheduledRecomposerTasks()
         }
 
-    override fun drainPendingWork(nanoTime: Long) {
+    override fun update(nanoTime: Long) {
         if (isClosed) return
         postponeInvalidation("BaseComposeScene:drainPendingWork") {
-            while (recomposer.hasPendingWork) {
-                snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
-                recomposer.performScheduledEffects()
-                recomposer.performScheduledRecomposerTasks()
-                frameClock.sendFrame(nanoTime)
-                doMeasureAndLayout()
-                Snapshot.sendApplyNotifications()
-            }
+            recomposer.performScheduledEffects()
+            recomposer.performScheduledRecomposerTasks()
+            frameClock.sendFrame(nanoTime)
+            doMeasureAndLayout()
         }
     }
 

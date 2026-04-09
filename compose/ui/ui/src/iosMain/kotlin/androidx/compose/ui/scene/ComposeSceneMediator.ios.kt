@@ -364,10 +364,11 @@ internal class ComposeSceneMediator(
         )
     }
 
+    private var lastRenderTime = CACurrentMediaTime().toNanoSeconds()
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                scene.drainPendingWork(CACurrentMediaTime().toNanoSeconds())
+                scene.update(lastRenderTime)
                 redrawer.setNeedsRedraw()
             },
             view = _overlayView,
@@ -590,6 +591,7 @@ internal class ComposeSceneMediator(
     }
 
     fun render(canvas: Canvas, nanoTime: Long) {
+        lastRenderTime = nanoTime
         scene.render(canvas, nanoTime)
     }
 
@@ -744,11 +746,6 @@ internal class ComposeSceneMediator(
                     }
                 }
                 launch {
-                    snapshotFlow { request.textLayoutResult() }.filterNotNull().collect {
-                        textInputService.updateTextLayoutResult(it)
-                    }
-                }
-                launch {
                     snapshotFlow {
                         Triple(
                             request.textFieldRectInRoot(),
@@ -771,15 +768,18 @@ internal class ComposeSceneMediator(
                     }
                 }
                 suspendCancellableCoroutine<Nothing> { continuation ->
+                    textInputService.getTextLayoutResult = {
+                        request.textLayoutResult()
+                    }
                     textInputService.startInput(
                         value = request.value(),
                         imeOptions = request.imeOptions,
                         onEditCommand = request.onEditCommand,
-                        onImeActionPerformed = request.onImeAction ?: {}
+                        onImeActionPerformed = request.onImeAction ?: {},
                     )
-
                     continuation.invokeOnCancellation {
                         textInputService.stopInput()
+                        textInputService.getTextLayoutResult = { null }
                     }
                 }
             }
