@@ -343,13 +343,14 @@ fun interface WindowSizeProvider {
          * [Constraints], and adding the window's insets to that.
          */
         val Unconstrained = WindowSizeProvider {
-            val measured = windowContent.measure(Constraints())
-            contentToWindowSize(
-                DpSize(
-                    width = measured.measuredWidth.toDp(),
-                    height = measured.measuredHeight.toDp()
+            windowContent.measuringIn(Constraints()) {
+                contentToWindowSize(
+                    DpSize(
+                        width = it.measuredWidth.toDp(),
+                        height = it.measuredHeight.toDp()
+                    )
                 )
-            )
+            }
         }
 
         /**
