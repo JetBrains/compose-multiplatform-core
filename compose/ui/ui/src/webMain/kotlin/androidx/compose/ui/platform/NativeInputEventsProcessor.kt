@@ -57,16 +57,19 @@ internal abstract class NativeInputEventsProcessor(
     internal var lastCompositionEndTimestamp = 0.0 // Double because of k/wasm where Number.toLong() leads to a compilation error
     private var lastProcessedKeydown: KeyboardEvent? = null
 
-    private tailrec fun TextLayoutResult.getPrevWordOffset(currentOffset: Int): Int {
+    private tailrec fun TextLayoutResult.getPrevWordOffset(
+        currentOffset: Int,
+        offsetMapping: OffsetMapping = OffsetMapping.Identity
+    ): Int {
         if (currentOffset <= 0) {
             return 0
         }
         val text = layoutInput.text
-        val currentWord = getWordBoundary(currentOffset.coerceIn(0, text.length - 1))
+        val currentWord = getWordBoundary(currentOffset.coerceAtMost(text.length - 1))
         return if (currentWord.start >= currentOffset) {
             getPrevWordOffset(currentOffset - 1)
         } else {
-            OffsetMapping.Identity.transformedToOriginal(currentWord.start)
+            offsetMapping.transformedToOriginal(currentWord.start)
         }
     }
 
