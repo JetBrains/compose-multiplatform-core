@@ -122,26 +122,24 @@ internal class CupertinoSelectionModifierNode(
 ) : DelegatingNode(), CompositionLocalConsumerModifierNode {
 
     private val pointerInputNode = delegate(
-        SuspendingPointerInputModifierNode(
-            pointerInputEventHandler = {
-                val hapticFeedback = currentValueOf(LocalHapticFeedback)
-                val clicksCounter = ClicksCounter(viewConfiguration)
+        SuspendingPointerInputModifierNode {
+            val hapticFeedback = currentValueOf(LocalHapticFeedback)
+            val clicksCounter = ClicksCounter(viewConfiguration)
 
-                awaitEachGesture {
-                    val down = awaitDown()
+            awaitEachGesture {
+                val down = awaitDown()
 
-                    if (
-                        down.isMouseOrTouchPad() &&
-                        down.buttons.isPrimaryPressed &&
-                        down.changes.fastAll { !it.isConsumed }
-                    ) {
-                        mouseSelection(mouseSelectionObserver, clicksCounter, down)
-                    } else if (!down.isMouseOrTouchPad()) {
-                        touchSelection(longPressDragObserver, clicksCounter, down, hapticFeedback)
-                    }
+                if (
+                    down.isMouseOrTouchPad() &&
+                    down.buttons.isPrimaryPressed &&
+                    down.changes.fastAll { !it.isConsumed }
+                ) {
+                    mouseSelection(mouseSelectionObserver, clicksCounter, down)
+                } else if (!down.isMouseOrTouchPad()) {
+                    touchSelection(longPressDragObserver, clicksCounter, down, hapticFeedback)
                 }
             }
-        )
+        }
     )
 
     private val longPressDragObserver = object : CupertinoTextDragObserver {
@@ -218,108 +216,13 @@ internal class CupertinoSelectionModifierNode(
         }
     }
 
-    // The rest of that method copied from SelectionController.kt
-    val mouseSelectionObserver = object : MouseSelectionObserver {
-        var lastPosition = Offset.Zero
+    private fun createMouseSelectionObserver() = selectionRegistrar.skikoMouseSelectionObserver(
+        selectableId = selectableId,
+        layoutCoordinates = layoutCoordinates,
+        bringIntoView = ::bringIntoView
+    )
 
-        override fun onExtend(downPosition: Offset): Boolean {
-            layoutCoordinates()?.let { layoutCoordinates ->
-                if (!layoutCoordinates.isAttached) return false
-                val consumed = selectionRegistrar.notifySelectionUpdate(
-                    layoutCoordinates = layoutCoordinates,
-                    newPosition = downPosition,
-                    previousPosition = lastPosition,
-                    isStartHandle = false,
-                    adjustment = SelectionAdjustment.None,
-                    isInTouchMode = false
-                )
-                if (consumed) {
-                    lastPosition = downPosition
-                }
-
-                bringIntoView(downPosition)
-
-                return selectionRegistrar.hasSelection(selectableId)
-            }
-            return false
-        }
-
-        override fun onExtendDrag(dragPosition: Offset): Boolean {
-            layoutCoordinates()?.let { layoutCoordinates ->
-                if (!layoutCoordinates.isAttached) return false
-                if (!selectionRegistrar.hasSelection(selectableId)) return false
-
-                val consumed = selectionRegistrar.notifySelectionUpdate(
-                    layoutCoordinates = layoutCoordinates,
-                    newPosition = dragPosition,
-                    previousPosition = lastPosition,
-                    isStartHandle = false,
-                    adjustment = SelectionAdjustment.None,
-                    isInTouchMode = false
-                )
-                if (consumed) {
-                    lastPosition = dragPosition
-                }
-
-                bringIntoView(dragPosition)
-            }
-            return true
-        }
-
-        override fun onStart(
-            downPosition: Offset,
-            adjustment: SelectionAdjustment,
-            clickCount: Int,
-        ): Boolean {
-            layoutCoordinates()?.let {
-                if (!it.isAttached) return false
-
-                selectionRegistrar.notifySelectionUpdateStart(
-                    layoutCoordinates = it,
-                    startPosition = downPosition,
-                    adjustment = adjustment,
-                    isInTouchMode = false
-                )
-
-                lastPosition = downPosition
-
-                bringIntoView(downPosition)
-
-                return selectionRegistrar.hasSelection(selectableId)
-            }
-
-            return false
-        }
-
-        override fun onDrag(
-            dragPosition: Offset,
-            adjustment: SelectionAdjustment
-        ): Boolean {
-            layoutCoordinates()?.let {
-                if (!it.isAttached) return false
-                if (!selectionRegistrar.hasSelection(selectableId)) return false
-
-                val consumed = selectionRegistrar.notifySelectionUpdate(
-                    layoutCoordinates = it,
-                    previousPosition = lastPosition,
-                    newPosition = dragPosition,
-                    isStartHandle = false,
-                    adjustment = adjustment,
-                    isInTouchMode = false
-                )
-                if (consumed) {
-                    lastPosition = dragPosition
-                }
-
-                bringIntoView(dragPosition)
-            }
-            return true
-        }
-
-        override fun onDragDone() {
-            selectionRegistrar.notifySelectionUpdateEnd()
-        }
-    }
+    private var mouseSelectionObserver = createMouseSelectionObserver()
 
     private fun bringIntoView(offset: Offset) {
         coroutineScope.launch {
@@ -337,6 +240,8 @@ internal class CupertinoSelectionModifierNode(
         this.selectionRegistrar = selectionRegistrar
         this.selectableId = selectableId
         this.layoutCoordinates = layoutCoordinates
+
+        mouseSelectionObserver = createMouseSelectionObserver()
         pointerInputNode.resetPointerInputHandler()
     }
 }

@@ -189,14 +189,49 @@ internal class SkikoSelectionModifierNode(
         }
     }
 
-    private val mouseSelectionObserver = object : MouseSelectionObserver {
+    private fun createMouseSelectionObserver() = selectionRegistrar.skikoMouseSelectionObserver(
+        selectableId = selectableId,
+        layoutCoordinates = layoutCoordinates,
+        bringIntoView = ::bringIntoView
+    )
+
+    private var mouseSelectionObserver = createMouseSelectionObserver()
+
+    private fun bringIntoView(offset: Offset) {
+        coroutineScope.launch {
+            bringIntoView {
+                Rect(offset = offset, size = Size.Zero)
+            }
+        }
+    }
+
+    fun update(
+        selectionRegistrar: SelectionRegistrar,
+        selectableId: Long,
+        layoutCoordinates: () -> LayoutCoordinates?,
+    ) {
+        this.selectionRegistrar = selectionRegistrar
+        this.selectableId = selectableId
+        this.layoutCoordinates = layoutCoordinates
+
+        mouseSelectionObserver = createMouseSelectionObserver()
+        pointerInputNode.resetPointerInputHandler()
+    }
+}
+
+internal fun SelectionRegistrar.skikoMouseSelectionObserver(
+    selectableId: Long,
+    layoutCoordinates: () -> LayoutCoordinates?,
+    bringIntoView: (Offset) -> Unit,
+) : MouseSelectionObserver {
+    return object : MouseSelectionObserver {
         var lastPosition = Offset.Zero
 
         override fun onExtend(downPosition: Offset): Boolean {
             layoutCoordinates()?.let { layoutCoordinates ->
                 if (!layoutCoordinates.isAttached) return false
                 val consumed =
-                    selectionRegistrar.notifySelectionUpdate(
+                    notifySelectionUpdate(
                         layoutCoordinates = layoutCoordinates,
                         newPosition = downPosition,
                         previousPosition = lastPosition,
@@ -210,7 +245,7 @@ internal class SkikoSelectionModifierNode(
 
                 bringIntoView(downPosition)
 
-                return selectionRegistrar.hasSelection(selectableId)
+                return hasSelection(selectableId)
             }
             return false
         }
@@ -218,10 +253,10 @@ internal class SkikoSelectionModifierNode(
         override fun onExtendDrag(dragPosition: Offset): Boolean {
             layoutCoordinates()?.let { layoutCoordinates ->
                 if (!layoutCoordinates.isAttached) return false
-                if (!selectionRegistrar.hasSelection(selectableId)) return false
+                if (!hasSelection(selectableId)) return false
 
                 val consumed =
-                    selectionRegistrar.notifySelectionUpdate(
+                    notifySelectionUpdate(
                         layoutCoordinates = layoutCoordinates,
                         newPosition = dragPosition,
                         previousPosition = lastPosition,
@@ -246,7 +281,7 @@ internal class SkikoSelectionModifierNode(
             layoutCoordinates()?.let {
                 if (!it.isAttached) return false
 
-                selectionRegistrar.notifySelectionUpdateStart(
+                notifySelectionUpdateStart(
                     layoutCoordinates = it,
                     startPosition = downPosition,
                     adjustment = adjustment,
@@ -257,7 +292,7 @@ internal class SkikoSelectionModifierNode(
 
                 bringIntoView(downPosition)
 
-                return selectionRegistrar.hasSelection(selectableId)
+                return hasSelection(selectableId)
             }
 
             return false
@@ -266,10 +301,10 @@ internal class SkikoSelectionModifierNode(
         override fun onDrag(dragPosition: Offset, adjustment: SelectionAdjustment): Boolean {
             layoutCoordinates()?.let {
                 if (!it.isAttached) return false
-                if (!selectionRegistrar.hasSelection(selectableId)) return false
+                if (!hasSelection(selectableId)) return false
 
                 val consumed =
-                    selectionRegistrar.notifySelectionUpdate(
+                    notifySelectionUpdate(
                         layoutCoordinates = it,
                         previousPosition = lastPosition,
                         newPosition = dragPosition,
@@ -287,26 +322,7 @@ internal class SkikoSelectionModifierNode(
         }
 
         override fun onDragDone() {
-            selectionRegistrar.notifySelectionUpdateEnd()
+            notifySelectionUpdateEnd()
         }
-    }
-
-    private fun bringIntoView(offset: Offset) {
-        coroutineScope.launch {
-            bringIntoView {
-                Rect(offset = offset, size = Size.Zero)
-            }
-        }
-    }
-
-    fun update(
-        selectionRegistrar: SelectionRegistrar,
-        selectableId: Long,
-        layoutCoordinates: () -> LayoutCoordinates?,
-    ) {
-        this.selectionRegistrar = selectionRegistrar
-        this.selectableId = selectableId
-        this.layoutCoordinates = layoutCoordinates
-        pointerInputNode.resetPointerInputHandler()
     }
 }
