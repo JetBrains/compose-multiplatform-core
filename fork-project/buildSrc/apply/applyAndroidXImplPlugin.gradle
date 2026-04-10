@@ -1,0 +1,9 @@
+import androidx.build.AndroidXImplPlugin
+
+buildscript {
+    dependencies {
+        classpath(project.files("${project.ext["outDir"]}/buildSrc/private/build/libs/private.jar"))
+    }
+}
+
+apply plugin: AndroidXImplPlugin
