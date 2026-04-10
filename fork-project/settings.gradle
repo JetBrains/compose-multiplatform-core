@@ -595,6 +595,7 @@ includeProject(":compose:ui:ui-text-lint", "mpp/stub-project")
 includeProject(":compose:material3:adaptive:adaptive-samples", "mpp/stub-project")
 includeProject(":compose:ui:ui-test-manifest:integration-tests:testapp", "mpp/stub-project")
 includeProject(":compose:ui:ui-text-google-fonts", "mpp/stub-project")
+includeProject(":savedstate:savedstate-ktx", "mpp/stub-project")
 
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----
