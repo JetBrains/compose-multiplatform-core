@@ -615,12 +615,14 @@ void includeProjectWithAncestors(String path, File dir) {
     for (int i = 0; i < segments.length; i++) {
         currentPath += ":" + segments[i]
         settings.include(currentPath)
+        def currentProject = project(currentPath)
         if (i == segments.length - 1) {
-            project(currentPath).projectDir = dir
+            currentProject.projectDir = dir
         } else {
-            project(currentPath).projectDir =
+            currentProject.projectDir =
                     new File(aospDir, currentPath.substring(1).replace(":", "/"))
         }
+        currentProject.buildFileName = "build-fork.gradle"
     }
 }
 
