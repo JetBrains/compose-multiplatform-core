@@ -580,6 +580,9 @@ includeProject(":navigation3:navigation3-ui:integration-tests:navigation3-demos"
 includeProject(":paging:paging-compose:integration-tests", "mpp/stub-project")
 includeProject(":paging:paging-compose:integration-tests:paging-demos", "mpp/stub-project")
 includeProject(":paging:paging-compose", "mpp/stub-project")
+includeProject(":paging:paging-common", "mpp/stub-project")
+includeProject(":paging:paging-compose:paging-compose-samples", "mpp/stub-project")
+includeProject(":internal-testutils-paging", "mpp/stub-project")
 includeProject(":activity:activity", "mpp/stub-project")
 includeProject(":activity:activity-compose", "mpp/stub-project")
 includeProject(":compose:integration-tests:demos", "mpp/stub-project")
@@ -591,6 +594,7 @@ includeProject(":compose:material3:material3-adaptive-navigation-suite:material3
 includeProject(":compose:ui:ui-text-lint", "mpp/stub-project")
 includeProject(":compose:material3:adaptive:adaptive-samples", "mpp/stub-project")
 includeProject(":compose:ui:ui-test-manifest:integration-tests:testapp", "mpp/stub-project")
+includeProject(":compose:ui:ui-text-google-fonts", "mpp/stub-project")
 
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----
