@@ -365,6 +365,8 @@ ext.projectDependencyGraph = createProjectDependencyGraph(
 // A set of projects that the user asked to filter to.
 @Field Set<String> filteredProjects = new HashSet<String>()
 filteredProjects.add(":lint-checks")
+// Track explicitly declared project directories so ancestor inclusion keeps remapped paths.
+@Field Map<String, File> declaredProjectDirs = new HashMap<String, File>()
 
 // Calling includeProject(name, filePath) is shorthand for:
 //
@@ -397,6 +399,7 @@ def includeProject(String name, filePath, List<BuildType> filter = []) {
     } else {
         file = new File(aospRootDir, name.substring(1).replace(":", "/"))
     }
+    declaredProjectDirs[name] = file
     projectDependencyGraph.addToAllProjects(name, file)
 }
 
@@ -617,12 +620,19 @@ void includeProjectWithAncestors(String path, File dir) {
     for (int i = 0; i < segments.length; i++) {
         currentPath += ":" + segments[i]
         settings.include(currentPath)
+        def currentProject = project(currentPath)
+        File projectDirForPath
         if (i == segments.length - 1) {
-            project(currentPath).projectDir = dir
+            projectDirForPath = dir
         } else {
-            project(currentPath).projectDir =
+            projectDirForPath = declaredProjectDirs[currentPath] ?:
                     new File(aospDir, currentPath.substring(1).replace(":", "/"))
         }
+        currentProject.projectDir = projectDirForPath
+        currentProject.buildFileName = ["build-fork.gradle", "build.gradle.kts", "build.gradle"]
+                .find {
+                    new File(currentProject.projectDir, it).isFile()
+                }
     }
 }
 
