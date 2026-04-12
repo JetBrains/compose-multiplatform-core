@@ -32,6 +32,7 @@ import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.relocation.bringIntoView
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
 @Suppress("ModifierFactoryExtensionFunction")
@@ -198,7 +199,7 @@ internal class SkikoSelectionModifierNode(
     private var mouseSelectionObserver = createMouseSelectionObserver()
 
     private fun bringIntoView(offset: Offset) {
-        coroutineScope.launch {
+        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             bringIntoView {
                 Rect(offset = offset, size = Size.Zero)
             }
