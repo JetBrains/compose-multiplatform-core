@@ -16,6 +16,7 @@
 
 package org.jetbrains.androidx.build
 
+import androidx.build.KotlinTarget.KOTLIN_2_3
 import androidx.build.KotlinTarget.KOTLIN_2_2
 import org.gradle.api.JavaVersion.VERSION_11
 
