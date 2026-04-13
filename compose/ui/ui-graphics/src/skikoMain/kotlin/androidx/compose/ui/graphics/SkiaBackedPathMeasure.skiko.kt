@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.graphics
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import org.jetbrains.skia.PathMeasure as SkPathMeasure
 
@@ -40,8 +41,9 @@ internal class SkiaBackedPathMeasure(
     internal val internalSkiaPathMeasure: SkPathMeasure = SkPathMeasure()
 ) : PathMeasure {
 
+    @OptIn(InternalComposeUiApi::class)
     override fun setPath(path: Path?, forceClosed: Boolean) {
-        internalSkiaPathMeasure.setPath(path?.asSkiaPath(), forceClosed)
+        internalSkiaPathMeasure.setPath(path?.materializeSkiaPath(), forceClosed)
     }
 
     override fun getSegment(
@@ -49,12 +51,19 @@ internal class SkiaBackedPathMeasure(
         stopDistance: Float,
         destination: Path,
         startWithMoveTo: Boolean
-    ) = internalSkiaPathMeasure.getSegment(
-        startDistance,
-        stopDistance,
-        destination.asSkiaPath(),
-        startWithMoveTo
-    )
+    ): Boolean {
+        requirePrecondition(destination is SkiaBackedPath) {
+            "Getting a segment into a path is only supported for androidx.compose.ui.graphics.SkiaBackedPath instances but received ${destination::class}"
+        }
+        return destination.appendToPathBuilder {
+            internalSkiaPathMeasure.getSegment(
+                startDistance,
+                stopDistance,
+                this,
+                startWithMoveTo
+            )
+        }
+    }
 
     override val length: Float
         get() = internalSkiaPathMeasure.length
