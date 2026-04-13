@@ -42,6 +42,7 @@ internal object WebWakeLockManager {
 
     @VisibleForTesting
     internal var requestingLock = false
+    private var alreadyLoggedWarning = false
 
     private val requests = mutableSetOf<Any>()
 
@@ -55,7 +56,10 @@ internal object WebWakeLockManager {
 
     fun sendWakeLockRequest(client: Any, disabled: Boolean) {
         if (!webWakeLockSupported) {
-            println("Wake Lock API not supported or not in a secure context.")
+            if (!alreadyLoggedWarning) {
+                alreadyLoggedWarning = true
+                println("Wake Lock API not supported or not in a secure context")
+            }
             return
         }
         if (disabled) {
