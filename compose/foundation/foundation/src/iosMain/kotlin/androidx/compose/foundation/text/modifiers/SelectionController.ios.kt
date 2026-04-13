@@ -50,6 +50,7 @@ import androidx.compose.ui.relocation.bringIntoView
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
 private interface CupertinoTextDragObserver {
@@ -225,7 +226,7 @@ internal class CupertinoSelectionModifierNode(
     private var mouseSelectionObserver = createMouseSelectionObserver()
 
     private fun bringIntoView(offset: Offset) {
-        coroutineScope.launch {
+        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             bringIntoView {
                 Rect(offset = offset, size = Size.Zero)
             }
