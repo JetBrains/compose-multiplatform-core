@@ -54,7 +54,7 @@ internal object WebWakeLockManager {
         }
     }
 
-    fun sendWakeLockRequest(client: Any, disabled: Boolean) {
+    fun sendWakeLockRequest(client: Any, keepScreenOn: Boolean) {
         if (!webWakeLockSupported) {
             if (!alreadyLoggedWarning) {
                 alreadyLoggedWarning = true
@@ -62,7 +62,7 @@ internal object WebWakeLockManager {
             }
             return
         }
-        if (disabled) {
+        if (keepScreenOn) {
             requests.add(client)
         } else {
             requests.remove(client)
