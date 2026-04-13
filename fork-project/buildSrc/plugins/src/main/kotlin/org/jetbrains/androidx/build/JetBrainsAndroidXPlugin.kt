@@ -16,16 +16,15 @@
 
 package org.jetbrains.androidx.build
 
-import androidx.build.getSupportRootFolder
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 class JetBrainsAndroidXPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        val supportRoot = project.getSupportRootFolder()
+        val root = project.rootDir
         project.apply(
-            mapOf<String, String>(
-                "from" to "$supportRoot/buildSrc/apply/applyJetBrainsAndroidXImplPlugin.gradle"
+            mapOf(
+                "from" to "$root/buildSrc/apply/applyJetBrainsAndroidXImplPlugin.gradle"
             )
         )
     }
