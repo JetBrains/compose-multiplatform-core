@@ -133,8 +133,8 @@ class GesturesTest : OnCanvasTests {
         awaitIdle()
 
         assertNotNull(lastPointerEvent)
-        assertEquals(1, lastPointerEvent.changes.size)
-        assertEquals(PointerEventType.Move, lastPointerEvent.type)
+        assertEquals(1, lastPointerEvent!!.changes.size)
+        assertEquals(PointerEventType.Move, lastPointerEvent!!.type)
 
         dispatchEvents(
             WebPointerEvent("pointerup", touch(0, 60, 60))
