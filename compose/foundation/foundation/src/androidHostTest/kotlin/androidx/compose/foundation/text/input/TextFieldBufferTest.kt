@@ -495,13 +495,46 @@ class TextFieldBufferTest {
     @Test
     fun replace_withSubSequence_startTooSmall() {
         val buffer = TextFieldBuffer(TextFieldCharSequence(""))
-        assertFailsWith<IllegalArgumentException> { buffer.replace(0, 0, "hi", -1, 0) }
+        buffer.replace(0, 0, "hi", -1, 0)
+        assertThat(buffer.toString()).isEqualTo("")
     }
 
     @Test
     fun replace_withSubSequence_endTooBig() {
         val buffer = TextFieldBuffer(TextFieldCharSequence(""))
-        assertFailsWith<IndexOutOfBoundsException> { buffer.replace(0, 0, "hi", 2, 3) }
+        buffer.replace(0, 0, "hi", 2, 3)
+        assertThat(buffer.toString()).isEqualTo("")
+    }
+
+    @Test
+    fun replace_withSubSequence_indicesCoerced() {
+        val buffer = TextFieldBuffer(TextFieldCharSequence("ABCD"))
+        buffer.replace(-1, 10, "XYZ", -1, 10)
+        assertThat(buffer.toString()).isEqualTo("XYZ")
+        assertThat(buffer.changes.changeCount).isEqualTo(1)
+        assertThat(buffer.changes.getOriginalRange(0)).isEqualTo(TextRange(0, 4))
+        assertThat(buffer.changes.getRange(0)).isEqualTo(TextRange(0, 3))
+
+        val buffer2 = TextFieldBuffer(TextFieldCharSequence("ABCD"))
+        buffer2.replace(1, 3, "XYZ", -1, 2)
+        assertThat(buffer2.toString()).isEqualTo("AXYD")
+        assertThat(buffer2.changes.changeCount).isEqualTo(1)
+        assertThat(buffer2.changes.getOriginalRange(0)).isEqualTo(TextRange(1, 3))
+        assertThat(buffer2.changes.getRange(0)).isEqualTo(TextRange(1, 3))
+    }
+
+    @Test
+    fun replace_throws_whenStartGreaterThanEnd() {
+        val buffer = TextFieldBuffer(TextFieldCharSequence("ABCD"))
+        val error = assertFailsWith<IllegalArgumentException> { buffer.replace(3, 2, "") }
+        assertThat(error).hasMessageThat().contains("Expected start=3 <= end=2")
+    }
+
+    @Test
+    fun replace_throws_whenTextStartGreaterThanTextEnd() {
+        val buffer = TextFieldBuffer(TextFieldCharSequence("ABCD"))
+        val error = assertFailsWith<IllegalArgumentException> { buffer.replace(2, 3, "", 1, 0) }
+        assertThat(error).hasMessageThat().contains("Expected textStart=1 <= textEnd=0")
     }
 
     @Test
