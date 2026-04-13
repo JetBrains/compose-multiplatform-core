@@ -47,7 +47,9 @@ internal object WebWakeLockManager {
 
     init {
         document.addEventListener("visibilitychange") {
-            if (documentIsVisible() && enoughRequestsForLock() && webWakeLockSupported) requestWakeLock()
+            if (documentIsVisible() && enoughRequestsForLock() && webWakeLockSupported) {
+                requestWakeLock()
+            }
         }
     }
 
@@ -61,8 +63,11 @@ internal object WebWakeLockManager {
         } else {
             requests.remove(client)
         }
-        if (enoughRequestsForLock()) requestWakeLock()
-        else releaseWakeLock()
+        if (enoughRequestsForLock()) {
+            requestWakeLock()
+        } else {
+            releaseWakeLock()
+        }
     }
 
 
@@ -83,7 +88,9 @@ internal object WebWakeLockManager {
                     sentinel.addEventListener("release") {
                         wakeLockSentinel = null
                     }
-                } else sentinel.release()
+                } else {
+                    sentinel.release()
+                }
 
                 sentinel
             }
