@@ -18,7 +18,6 @@ package androidx.build
 
 import androidx.benchmark.gradle.BenchmarkPlugin
 import androidx.build.AndroidXImplPlugin.Companion.TASK_TIMEOUT_MINUTES
-import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import androidx.build.Release.DEFAULT_PUBLISH_CONFIG
 import androidx.build.buildInfo.addCreateLibraryBuildInfoFileTasks
 import androidx.build.checkapi.AndroidMultiplatformApiTaskConfig
@@ -50,7 +49,6 @@ import androidx.build.uptodatedness.TaskUpToDateValidator
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.attributes.BuildTypeAttr
-import com.android.build.api.dsl.AarMetadata
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
@@ -58,6 +56,7 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestBuildType
 import com.android.build.api.dsl.TestExtension
+import com.android.build.api.variant.AarMetadata
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.HasDeviceTests
@@ -82,7 +81,6 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.JavaVersion.VERSION_11
-import org.gradle.api.JavaVersion.VERSION_1_8
 import org.gradle.api.JavaVersion.VERSION_17
 import org.gradle.api.JavaVersion.VERSION_1_8
 import org.gradle.api.Plugin
@@ -119,8 +117,6 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
-import org.jetbrains.androidx.build.jetBrainsGetDefaultAndroidBaseJavaVersion
-import org.jetbrains.androidx.build.jetBrainsGetDefaultTargetJavaVersion
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
@@ -284,7 +280,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         anchorTask: TaskProvider<Task>,
         androidXExtension: AndroidXExtension,
     ) {
-        if (isJetBrainsFork(project)) return
         anchorTask.configure { it.dependsOn(task) }
         val xmlReportDestDir = project.getHostTestResultDirectory()
         val testName = "${project.path}:${task.name}"
@@ -435,18 +430,12 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     project.plugins.hasPlugin(KotlinMultiplatformAndroidPlugin::class.java)
             }
         val defaultJavaTargetVersion =
-            androidXExtension.type.map {
-                jetBrainsGetDefaultTargetJavaVersion(it, project).toString()
-            }
+            androidXExtension.type.map { getDefaultTargetJavaVersion(it, project.name).toString() }
         val defaultJvmTarget = defaultJavaTargetVersion.map { JvmTarget.fromTarget(it) }
         if (plugin is KotlinMultiplatformPluginWrapper) {
             project.extensions.getByType<KotlinMultiplatformExtension>().apply {
                 targets.withType<KotlinMultiplatformAndroidLibraryTarget>().configureEach { t ->
                     t.compilations.configureEach { compilation ->
-                        // Replace with compilation.compileJavaTaskProvider?.configure {}
-                        // when b/438995010 is fixed
-                        @Suppress("DEPRECATION")
-                        compilation.compilerOptions.configure { jvmTarget.set(defaultJvmTarget) }
                         compilation.compileTaskProvider.configure {
                             it.compilerOptions.jvmTarget.set(defaultJvmTarget)
                         }
@@ -455,9 +444,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 targets.withType(KotlinJvmTarget::class.java).configureEach { target ->
                     val defaultTargetVersionForNonAndroidTargets =
                         androidXExtension.type.map {
-                            jetBrainsGetDefaultTargetJavaVersion(
+                            getDefaultTargetJavaVersion(
                                     softwareType = it,
-                                    project = project,
+                                    projectName = project.name,
                                     targetName = target.name,
                                 )
                                 .toString()
@@ -676,29 +665,23 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     private fun KotlinSourceSet.includesSourceSet(otherName: String): Boolean =
         name == otherName || dependsOn.any { it.includesSourceSet(otherName) }
 
-    private fun AarMetadata.configure(compileSdk: Int?) {
-        // Taken from
-        // https://developer.android.com/build/releases/gradle-plugin#api-level-support
-        fun mapToMinAgpVersion(compileSdk: Int): String {
-            return when (compileSdk) {
-                33 -> "7.2.0"
-                34 -> "8.1.1"
-                35 -> "8.6.0"
-                36 -> "8.9.1"
-                else -> throw Exception("Unknown compileSdk to minAgpVersion mapping")
+    private fun AarMetadata.configureMinAgpVersion() {
+        @Suppress("UnstableApiUsage") // usage of minAgpVersion
+        minAgpVersion.set(
+            minCompileSdkVersion.map { value ->
+                // Taken from
+                // https://developer.android.com/build/releases/about-agp#api-level-support
+                when (value.apiLevel) {
+                    1 -> "7.2.0"
+                    33 -> "7.2.0"
+                    34 -> "8.1.1"
+                    35 -> "8.6.0"
+                    36 -> "8.9.1"
+                    37 -> "9.1.0"
+                    else -> throw Exception("Unknown compileSdk to minAgpVersion mapping")
+                }
             }
-        }
-
-        // Propagate the compileSdk value into minCompileSdk. Don't propagate
-        // compileSdkExtension, since only one library actually depends on the extension
-        // APIs and they can explicitly declare that in their build.gradle. Note that when
-        // we're using a preview SDK, the value for compileSdk will be null and the
-        // resulting AAR metadata won't have a minCompileSdk --
-        // this is okay because AGP automatically embeds forceCompileSdkPreview in the AAR
-        // metadata and uses it instead of minCompileSdk.
-        if (compileSdk == null) return
-        minCompileSdk = compileSdk
-        minAgpVersion = mapToMinAgpVersion(compileSdk)
+        )
     }
 
     private fun configureWithKotlinMultiplatformAndroidPlugin(
@@ -723,6 +706,14 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         }
 
         kotlinMultiplatformAndroidComponentsExtension.onVariants { variant ->
+            @Suppress("UnstableApiUsage")
+            variant.configureJavaCompileTask { compile ->
+                val defaultTargetJavaVersion =
+                    getDefaultTargetJavaVersion(androidXExtension.type.get(), project.name)
+                        .toString()
+                compile.sourceCompatibility = defaultTargetJavaVersion
+                compile.targetCompatibility = defaultTargetJavaVersion
+            }
             project.configureProjectForApiTasks(
                 AndroidMultiplatformApiTaskConfig(variant),
                 androidXExtension,
@@ -734,6 +725,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.configurePublicResourcesStub(variant)
             project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
             project.configureVerifyELFRegionAlignment(variant)
+            variant.aarMetadata.configureMinAgpVersion()
         }
 
         project.configureVersionFileWriter(project.multiplatformExtension!!, androidXExtension)
@@ -761,8 +753,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     BuildTypeAttr.ATTRIBUTE,
                     project.objects.named<BuildTypeAttr>("release"),
                 )
-                // disable, as it triggers android compilation during IDEA sync
-                if (!isJetBrainsFork(project)) it.outgoing.artifact(project.tasks.named("createFullJarAndroidMain"))
+                it.outgoing.artifact(project.tasks.named("createFullJarAndroidMain"))
             }
         }
     }
@@ -894,6 +885,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 }
             }
             project.configureVerifyELFRegionAlignment(variant)
+            variant.aarMetadata.configureMinAgpVersion()
         }
         project.buildOnServerDependsOnAssembleRelease()
     }
@@ -921,7 +913,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.afterEvaluate {
             javaExtension.apply {
                 val defaultTargetJavaVersion =
-                    jetBrainsGetDefaultTargetJavaVersion(androidXExtension.type.get(), project)
+                    getDefaultTargetJavaVersion(androidXExtension.type.get(), project.name)
                 sourceCompatibility = defaultTargetJavaVersion
                 targetCompatibility = defaultTargetJavaVersion
             }
@@ -970,7 +962,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     }
 
     private fun Project.configureProjectStructureValidation(androidXExtension: AndroidXExtension) {
-        if (isJetBrainsFork(project)) return
         // AndroidXExtension.mavenGroup is not readable until afterEvaluate.
         afterEvaluate {
             val mavenGroup = androidXExtension.mavenGroup
@@ -1004,8 +995,8 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             throw IllegalArgumentException("Unexpected extension: $this")
         }
         compileOptions.apply {
-            sourceCompatibility = jetBrainsGetDefaultAndroidBaseJavaVersion(project)
-            targetCompatibility = jetBrainsGetDefaultAndroidBaseJavaVersion(project)
+            sourceCompatibility = VERSION_1_8
+            targetCompatibility = VERSION_1_8
         }
 
         val defaultMinSdk = project.defaultAndroidConfig.minSdk
@@ -1013,12 +1004,12 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         // Suppress output of android:compileSdkVersion and related attributes (b/277836549).
         androidResources.additionalParameters += "--no-compile-sdk-metadata"
 
-        compileSdk = project.defaultAndroidConfig.compileSdk
+        compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
 
         buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
 
         defaultConfig.ndk.abiFilters.addAll(SUPPORTED_BUILD_ABIS)
-        defaultConfig.minSdk = defaultMinSdk
+        defaultConfig.minSdk { version = release(defaultMinSdk) }
         defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         testOptions.animationsDisabled = !project.isMacrobenchmark()
@@ -1083,12 +1074,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         androidXExtension: AndroidXExtension,
     ) {
         val defaultMinSdkVersion = project.defaultAndroidConfig.minSdk
-        val defaultCompileSdk = project.defaultAndroidConfig.compileSdk
-
-        compileSdk = defaultCompileSdk
+        compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
         buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
-
-        minSdk = defaultMinSdkVersion
+        minSdk { version = release(defaultMinSdkVersion) }
 
         lint.targetSdk = project.defaultAndroidConfig.targetSdk
         compilations
@@ -1400,7 +1388,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     }
 }
 
-internal fun aospGetDefaultTargetJavaVersion(
+internal fun getDefaultTargetJavaVersion(
     softwareType: SoftwareType,
     projectName: String? = null,
     targetName: String? = null,
@@ -1544,7 +1532,6 @@ fun Project.validateMultiplatformPluginHasNotBeenApplied() {
 
 /** Verifies that ProjectParser computes the correct values for this project */
 fun Project.validateProjectParser(androidXExtension: AndroidXExtension) {
-    if (isJetBrainsFork(project)) return
     // If configuration fails, we don't want to validate the ProjectParser
     // (otherwise it could report a confusing, unnecessary error)
     project.gradle.taskGraph.whenReady {

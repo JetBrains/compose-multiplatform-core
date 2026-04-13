@@ -29,8 +29,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -56,11 +54,11 @@ dependencies {
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(36) }
     namespace = "androidx.xr.arcore.projected.testapp"
 
     defaultConfig {
-        minSdk = 36
+        minSdk { version = release(36) }
     }
 
     buildTypes {

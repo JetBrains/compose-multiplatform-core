@@ -23,17 +23,15 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk = 36
+        compileSdk { version = release(36) }
         namespace = "androidx.lifecycle.viewmodel.navigation3"
     }
     desktop()

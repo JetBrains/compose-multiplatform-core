@@ -25,8 +25,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -51,7 +49,7 @@ androidx {
 android {
     defaultConfig {
         // studio pipeline works only starting with Android O
-        minSdk = 26
+        minSdk { version = release(26) }
     }
 
     externalNativeBuild {

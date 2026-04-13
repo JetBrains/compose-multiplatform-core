@@ -17,8 +17,6 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
     id("AndroidXComposePlugin")
 }
 
@@ -47,12 +45,12 @@ dependencies {
 
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
 
-    androidTestImplementation(project(":lifecycle:lifecycle-common"))
+    androidTestImplementation("androidx.lifecycle:lifecycle-common:2.9.4")
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testMonitor)
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(36) { minorApiLevel = 1 }}
     namespace = "androidx.test.uiautomator.testapp"
 }

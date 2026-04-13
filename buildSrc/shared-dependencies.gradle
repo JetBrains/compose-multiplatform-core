@@ -42,13 +42,9 @@ dependencies {
     implementation(libs.androidToolsRepository) // com.android.repository for Stable AIDL plugin
     implementation(libs.androidToolsSdkCommon) // com.android.ide.common for Stable AIDL plugin
     implementation(libs.spdxGradlePluginz)
-    runtimeOnly(libs.androidExperimentalBuiltInKotlinPlugin)
     runtimeOnly(libs.androidKotlinMultiplatform)
     runtimeOnly(libs.androidLegacyKaptPlugin)
     compileOnly(libs.kotlinAbiTools)
-
-    // TODO: keep it in our fork until https://youtrack.jetbrains.com/issue/CMP-9512/Migrate-to-BCV-from-KGP
-    implementation(libs.binaryCompatibilityValidator)
 
     // For Room Gradle Plugin
     implementation(libs.kspGradlePlugin) {

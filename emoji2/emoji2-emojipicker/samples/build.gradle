@@ -19,8 +19,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
 }
 dependencies {
     // You might need to import this to resolve duplicate class in kotlin-stdlib.
@@ -35,7 +33,7 @@ dependencies {
     implementation(project(":compose:foundation:foundation"))
 }
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     namespace = "androidx.emoji2.emojipicker.samples"
 }
 

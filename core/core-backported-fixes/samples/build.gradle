@@ -25,8 +25,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -35,7 +33,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35 // ki452390376 requires VANILLA_ICE_CREAM
+    compileSdk { version = release(35) } // ki452390376 requires VANILLA_ICE_CREAM
     namespace = "androidx.core.backported.fixes.samples"
 }
 

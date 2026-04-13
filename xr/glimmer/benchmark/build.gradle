@@ -20,8 +20,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
@@ -36,11 +34,11 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     namespace = "androidx.xr.glimmer.benchmark"
     defaultConfig {
         // TODO: b/448363874 - Revert to 35 once API 35 devices are available for microbenchmarking.
-        minSdk = 34
+        minSdk { version = release(34) }
     }
 }
 

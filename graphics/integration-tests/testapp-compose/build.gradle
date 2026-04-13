@@ -26,8 +26,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -49,6 +47,6 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     namespace = "androidx.graphics.shapes.testcompose"
 }

@@ -39,14 +39,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
-    sourceSets {
-        main.java.srcDirs += [
-                "common",
-                "kitkat",
-                "api21",
-        ]
-    }
+    compileSdk { version = release(35) }
     namespace = "androidx.leanback"
 }
 

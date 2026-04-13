@@ -27,16 +27,14 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
 
     defaultConfig {
-        minSdk = 25
+        minSdk { version = release(25) }
     }
     buildTypes.configureEach {
         testProguardFile "benchmark-proguard-rules.pro"

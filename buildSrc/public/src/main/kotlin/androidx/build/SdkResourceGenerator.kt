@@ -159,9 +159,8 @@ abstract class SdkResourceGenerator : DefaultTask() {
                 it.repositoryUrls =
                     project.repositories.filterIsInstance<MavenArtifactRepository>().map { repo ->
                         if (repo.url.scheme == "file") {
-                            // Changed to absolutePath compared to AOSP, because it is not possible to have a path
-                            // of "C:\Users\User\.m2\repository" relative to "D:\compose-multiplatform-core" on Windows
-                            File(repo.url.path).absolutePath
+                            // Make file paths relative to projectDir
+                            File(repo.url.path).toRelativeString(project.projectDir)
                         } else {
                             repo.url.toString()
                         }

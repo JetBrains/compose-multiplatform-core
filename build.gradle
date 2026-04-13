@@ -22,18 +22,9 @@
  */
 import androidx.build.AndroidXRootPlugin
 import androidx.build.SdkHelperKt
-import org.jetbrains.androidx.build.JetBrainsAndroidXRootPlugin
 
 buildscript {
     SdkHelperKt.setSupportRootFolder(project, project.projectDir)
-
-    // Needed for atomicfu plugin
-    apply(from: "buildSrc/repos.gradle")
-    repos.addMavenRepositories(repositories)
-    dependencies {
-        classpath(libs.atomicFuGradlePlugin)
-    }
 }
 
 apply plugin: AndroidXRootPlugin
-apply plugin: JetBrainsAndroidXRootPlugin

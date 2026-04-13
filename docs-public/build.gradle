@@ -5,12 +5,9 @@
  * modifying its settings.
  */
 plugins {
-id("com.android.library")
+    id("org.jetbrains.kotlin.multiplatform")
+    id("com.android.kotlin.multiplatform.library")
     id("AndroidXDocsPlugin")
-}
-
-android {
-    namespace = "androidx.docs.publicdocs"
 }
 
 dependencies {

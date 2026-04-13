@@ -23,13 +23,10 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -40,17 +37,14 @@ androidXMultiplatform {
             it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
         }
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain.dependencies {
-            implementation("androidx.collection:collection:1.5.0")
+            implementation("androidx.collection:collection:1.4.3")
             implementation(project(":compose:runtime:runtime"))
         }
 
@@ -69,34 +63,6 @@ androidXMultiplatform {
 
         androidHostTest.dependencies {
             implementation(libs.truth)
-        }
-
-        nonJvmMain {
-            dependencies {
-                // To comply with Klib resolver until https://youtrack.jetbrains.com/issue/KT-61096 is fixed
-                implementation("org.jetbrains.compose.collection-internal:collection:1.10.0")
-            }
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-
-        nativeTest {
-            dependsOn(nonJvmTest)
-        }
-
-        iosMain {
-            dependencies {
-                implementation(project(":compose:ui:ui-uikit"))
-            }
-        }
-
-        desktopTest {
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.truth)
-            }
         }
     }
 }

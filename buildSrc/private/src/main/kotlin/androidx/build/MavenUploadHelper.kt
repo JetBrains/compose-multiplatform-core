@@ -16,7 +16,6 @@
 
 package androidx.build
 
-import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import androidx.build.buildInfo.CreateLibraryBuildInfoFileTask
 import androidx.build.sources.PublishingVariant
 import com.android.build.api.dsl.LibraryExtension
@@ -46,7 +45,6 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.work.DisableCachingByDefault
-import org.jetbrains.androidx.build.JetBrainsPublication
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 
@@ -55,7 +53,6 @@ fun Project.configureMavenArtifactUpload(
     androidXKmpExtension: AndroidXMultiplatformExtension,
     afterConfigure: () -> Unit,
 ) {
-    if (isJetBrainsFork(project) && JetBrainsPublication.shouldPublish(this)) return
     apply(mapOf("plugin" to "maven-publish"))
     var registered = false
     fun registerOnFirstPublishableArtifact(component: SoftwareComponent) {

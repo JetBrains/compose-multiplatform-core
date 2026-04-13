@@ -26,8 +26,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -52,7 +50,7 @@ androidx {
 
 android {
     defaultConfig {
-        compileSdk = 35
+        compileSdk { version = release(35) }
     }
     namespace = "androidx.glance.appwidget.testing.samples"
 }

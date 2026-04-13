@@ -24,7 +24,6 @@
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")

@@ -29,7 +29,7 @@ class SkikoSetup {
                 libs {
                     def skikoOverride = System.getenv("SKIKO_VERSION")
                     if (skikoOverride != null) {
-                        org.gradle.api.logging.Logging.getLogger(SkikoSetup.class).warn("Using custom version ${skikoOverride} of SKIKO due to " +
+                        logger.warn("Using custom version ${skikoOverride} of SKIKO due to " +
                                 "SKIKO_VERSION being set.")
                         version('skiko', skikoOverride)
                     }
