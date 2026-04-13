@@ -623,7 +623,10 @@ void includeProjectWithAncestors(String path, File dir) {
             currentProject.projectDir =
                     new File(aospDir, currentPath.substring(1).replace(":", "/"))
         }
-        currentProject.buildFileName = "build-fork.gradle"
+        currentProject.buildFileName = ["build-fork.gradle", "build.gradle.kts", "build.gradle"]
+                .find {
+                    new File(currentProject.projectDir, it).isFile()
+                }
     }
 }
 
