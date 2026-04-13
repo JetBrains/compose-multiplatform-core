@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemGesturesPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.Text
@@ -36,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -47,6 +50,8 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.viewinterop.UIKitView
+import androidx.compose.ui.window.ComposeUIView
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -58,6 +63,7 @@ import platform.UIKit.UIDevice
 import platform.UIKit.UIInterfaceOrientationMaskLandscapeLeft
 import platform.UIKit.UIInterfaceOrientationMaskLandscapeRight
 import platform.UIKit.UIUserInterfaceIdiomPad
+import platform.UIKit.UIColor
 
 class WindowInsetsPaddingTest {
     @Test
@@ -163,6 +169,101 @@ class WindowInsetsPaddingTest {
         waitForIdle()
 
         assertEquals(false, recomposed.value)
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    @Test
+    fun testWindowInsetsPaddingAppliedToNonFullscreenContent() = runUIKitInstrumentedTest {
+        var innerBoxRect = DpRectZero()
+        var outerBoxRect = DpRectZero()
+
+        setContent {
+            Box(modifier = Modifier.background(Color.Red).fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .background(Color.Blue)
+                        .size(200.dp, 200.dp)
+                        .onGloballyPositioned {
+                            outerBoxRect = it.boundsInWindow().toDpRect(density)
+                        },
+                ) {
+                    Box(modifier = Modifier
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .background(Color.Green)
+                        .fillMaxSize()
+                        .onGloballyPositioned {
+                            innerBoxRect = it.boundsInWindow().toDpRect(density)
+                        }
+                    )
+                }
+            }
+        }
+
+        // WindowInsets.statusBars should only represent the insets at the top in portrait orientation
+        val topSafeAreaInsetsDp = viewController.view.safeAreaInsets.useContents { top }.dp
+
+        assertEquals(
+            DpRect(
+                left = outerBoxRect.left,
+                top = outerBoxRect.top + topSafeAreaInsetsDp,
+                right = outerBoxRect.right,
+                bottom = outerBoxRect.bottom
+            ),
+            innerBoxRect
+        )
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    @Test
+    fun testWindowInsetsPaddingAppliedToNonFullscreenComposeUIViewContent() = runUIKitInstrumentedTest {
+        var innerBoxRect = DpRectZero()
+        var outerBoxRect = DpRectZero()
+
+        setContent {
+            Box(modifier = Modifier.background(Color.Red).fillMaxSize()) {
+                UIKitView(
+                    factory = {
+                        ComposeUIView(
+                            configure = {
+                                enforceStrictPlistSanityCheck = false
+                                opaque = false
+                            }
+                        ) {
+                            Box(modifier = Modifier
+                                .windowInsetsPadding(WindowInsets.statusBars)
+                                .background(Color.Green)
+                                .fillMaxSize()
+                                .onGloballyPositioned {
+                                    innerBoxRect = it.boundsInWindow().toDpRect(density)
+                                }
+                            )
+                        }.apply {
+                            backgroundColor = UIColor.blueColor
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(200.dp, 200.dp)
+                        .onGloballyPositioned {
+                            outerBoxRect = it.boundsInWindow().toDpRect(density)
+                        }
+                )
+            }
+        }
+
+        // WindowInsets.statusBars should only represent the insets at the top in portrait orientation
+        val topSafeAreaInsetsDp = viewController.view.safeAreaInsets.useContents { top }.dp
+
+        assertEquals(
+            DpRect(
+                left = outerBoxRect.left,
+                top = outerBoxRect.top + topSafeAreaInsetsDp,
+                right = outerBoxRect.right,
+                bottom = outerBoxRect.bottom
+            ),
+            innerBoxRect
+        )
     }
 }
 
