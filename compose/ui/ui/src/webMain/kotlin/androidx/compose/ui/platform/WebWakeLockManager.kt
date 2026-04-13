@@ -33,7 +33,7 @@ private val webWakeLockSupported: Boolean by lazy {
  *
  * This class handles requesting and releasing wake locks using the Screen Wake Lock API,
  * which prevents the device screen from turning off while content is being displayed.
- * The API is only available in secure contexts (HTTPS).
+ * The API is only available in secure contexts (such as HTTPS or localhost).
  */
 
 internal object WebWakeLockManager {

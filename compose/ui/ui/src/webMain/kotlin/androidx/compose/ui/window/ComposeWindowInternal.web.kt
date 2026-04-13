@@ -312,7 +312,7 @@ internal class ComposeWindow(
 
             override var isKeepScreenOnEnabled: Boolean
                 get() = WebWakeLockManager.isWakeLockActive()
-                set(value) = WebWakeLockManager.sendWakeLockRequest(this@ComposeWindow,value)
+                set(value) = WebWakeLockManager.sendWakeLockRequest(this@ComposeWindow, value)
 
             override fun setPointerIcon(pointerIcon: PointerIcon) {
                 if (pointerIcon is BrowserCursor) {
