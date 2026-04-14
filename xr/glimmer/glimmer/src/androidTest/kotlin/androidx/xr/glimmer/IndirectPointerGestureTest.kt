@@ -33,7 +33,6 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ExperimentalIndirectPointerApi
 import androidx.compose.ui.Modifier
@@ -42,7 +41,7 @@ import androidx.compose.ui.input.indirect.IndirectPointerEvent
 import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
@@ -50,10 +49,9 @@ import androidx.test.core.view.MotionEventBuilder
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.xr.glimmer.testutils.createGlimmerRule
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -66,21 +64,9 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalIndirectPointerApi::class, ExperimentalComposeUiApi::class)
 class IndirectPointerGestureTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
 
-    @get:Rule val inputModeRule = nonTouchInputModeRule()
-
-    val savedInitialFocusAvailabilityFlag = ComposeUiFlags.isInitialFocusOnFocusableAvailable
-
-    @Before
-    fun setup() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = true
-    }
-
-    @After
-    fun tearDown() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = savedInitialFocusAvailabilityFlag
-    }
+    @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     @Test
     fun gestures_areIgnored_whenDisabled() {
@@ -95,9 +81,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = false,
-                            onClick = { gestureCount++ },
                             onSwipeForward = { gestureCount++ },
                             onSwipeBackward = { gestureCount++ },
+                            onClick = { gestureCount++ },
                         )
                         .focusTarget()
             )
@@ -150,9 +136,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -185,9 +171,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -220,9 +206,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -255,9 +241,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -349,9 +335,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -445,9 +431,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -530,9 +516,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -641,9 +627,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -752,9 +738,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -791,9 +777,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -819,10 +805,10 @@ class IndirectPointerGestureTest {
 
         eventTime += 10L
 
-        val repeatCount = 30
+        val repeatCount = 100
         val eachDragMovement = (touchSlop * 1.4f) / repeatCount
         var lastEvent = p0Down
-        // The resulting X velocity is 76, which is below the 100f threshold.
+        // The resulting X velocity is 23, which is below the 34f threshold.
         repeat(repeatCount) {
             eventTime += 10
             p0Coords.x += eachDragMovement
@@ -873,9 +859,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -954,9 +940,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -1033,9 +1019,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = true,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -1107,9 +1093,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = enabled.value,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -1168,9 +1154,9 @@ class IndirectPointerGestureTest {
                         .size(10.dp)
                         .onIndirectPointerGesture(
                             enabled = enabled.value,
-                            onClick = { onClickCount++ },
                             onSwipeForward = { onSwipeForwardCount++ },
                             onSwipeBackward = { onSwipeBackwardCount++ },
+                            onClick = { onClickCount++ },
                         )
                         .focusTarget()
             )
@@ -1394,6 +1380,95 @@ class IndirectPointerGestureTest {
         rule.onNodeWithTag(ROOT_TEST_TAG).performIndirectClick(rule = rule, durationMillis = 40L)
 
         rule.runOnIdle { assertThat(onClickCount).isEqualTo(1) }
+    }
+
+    @Test
+    fun onClick_innerNullCallback_outerTriggered() {
+        var outerOnClickCount = 0
+
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(enabled = true, onClick = { outerOnClickCount++ })
+            ) {
+                Box(
+                    modifier =
+                        Modifier.size(10.dp)
+                            .onIndirectPointerGesture(enabled = true, onClick = null)
+                            .focusable()
+                )
+            }
+        }
+
+        rule.onNodeWithTag(ROOT_TEST_TAG).performIndirectClick(rule = rule, durationMillis = 40L)
+
+        rule.runOnIdle { assertThat(outerOnClickCount).isEqualTo(1) }
+    }
+
+    @Test
+    fun onSwipeForward_innerNullCallback_outerTriggered() {
+        var outerOnSwipeForwardCount = 0
+        var touchSlop = 0f
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(
+                            enabled = true,
+                            onSwipeForward = { outerOnSwipeForwardCount++ },
+                        )
+            ) {
+                Box(
+                    modifier =
+                        Modifier.size(10.dp)
+                            .onIndirectPointerGesture(enabled = true, onSwipeForward = null)
+                            .focusable()
+                )
+            }
+        }
+
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = touchSlop * 2, moveDuration = 10L)
+
+        rule.runOnIdle { assertThat(outerOnSwipeForwardCount).isEqualTo(1) }
+    }
+
+    @Test
+    fun onSwipeBackward_innerNullCallback_outerTriggered() {
+        var outerOnSwipeBackwardCount = 0
+        var touchSlop = 0f
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(
+                            enabled = true,
+                            onSwipeBackward = { outerOnSwipeBackwardCount++ },
+                        )
+            ) {
+                Box(
+                    modifier =
+                        Modifier.size(10.dp)
+                            .onIndirectPointerGesture(enabled = true, onSwipeBackward = null)
+                            .focusable()
+                )
+            }
+        }
+
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = -(touchSlop * 2), moveDuration = 10L)
+
+        rule.runOnIdle { assertThat(outerOnSwipeBackwardCount).isEqualTo(1) }
     }
 
     private fun buildMotionEvent(

@@ -76,7 +76,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.ImageVectorCache
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -103,7 +103,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class VectorTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<RotationActivity>(StandardTestDispatcher())
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
@@ -1239,11 +1239,9 @@ class VectorTest {
     @Test
     fun testImageVectorCacheCleared() {
         var vectorInCache = false
-        var application: Application? = null
         var theme: Resources.Theme? = null
         var vectorCache: ImageVectorCache? = null
         rule.setContent {
-            application = LocalContext.current.applicationContext as Application
             theme = LocalContext.current.theme
             val imageVectorCache = LocalImageVectorCache.current
             imageVectorCache.clear()
@@ -1255,7 +1253,10 @@ class VectorTest {
             vectorCache = imageVectorCache
         }
 
-        application?.onTrimMemory(0)
+        rule.runOnUiThread {
+            (rule.activity.applicationContext as Application).onTrimMemory(0)
+            rule.activity.onTrimMemory(0)
+        }
 
         val cacheCleared =
             vectorCache?.let { it[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle)] == null }
@@ -1267,42 +1268,29 @@ class VectorTest {
 
     @Test
     fun testImageVectorCacheMissOnConfigChange() {
-        val tag = "testTag"
-        var vectorCache: ImageVectorCache? = null
         var vectorInCache = false
         var theme: Resources.Theme? = null
-        try {
-            rule.setContent {
-                val imageVectorCache = LocalImageVectorCache.current
-                theme = LocalContext.current.theme
-                Image(
-                    painter = painterResource(R.drawable.ic_triangle_config),
-                    contentDescription = null,
-                    modifier = Modifier.testTag(tag),
-                )
+        var vectorCache: ImageVectorCache? = null
 
-                vectorInCache =
-                    imageVectorCache[
-                        ImageVectorCache.Key(theme!!, R.drawable.ic_triangle_config)] != null
-                vectorCache = imageVectorCache
-            }
+        rule.setContent {
+            val imageVectorCache = LocalImageVectorCache.current
+            theme = LocalContext.current.theme
+            Image(
+                painter = painterResource(R.drawable.ic_triangle_config),
+                contentDescription = null,
+            )
+            vectorInCache =
+                imageVectorCache[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle_config)] !=
+                    null
+            vectorCache = imageVectorCache
+        }
 
-            if (!rule.activity.rotate(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)) {
-                Log.w(TAG, "device rotation unsuccessful")
-                return
-            }
-
+        rule.runOnIdle {
+            assertTrue("Vector was not inserted in cache", vectorInCache)
+            vectorCache!!.prune(ActivityInfo.CONFIG_ORIENTATION)
             val cacheMiss =
-                vectorCache?.let {
-                    it[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle_config)] == null
-                } ?: false
-
-            assertTrue("Vector was not inserted in cache after initial creation", vectorInCache)
+                vectorCache[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle_config)] == null
             assertTrue("Vector object was not pruned on configuration change", cacheMiss)
-        } catch (e: InterruptedException) {
-            fail("Unable to verify the image vector cache on configuration (orientation) change")
-        } finally {
-            rule.activity.rotate(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         }
     }
 
@@ -1317,7 +1305,6 @@ class VectorTest {
                 }
 
                 @Deprecated("This callback is superseded by onTrimMemory")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 override fun onLowMemory() {
                     // NO-OP
                 }
@@ -1642,3 +1629,5 @@ class VectorTest {
 
     private val TAG = "VectorTest"
 }
+
+class RotationActivity() : ComponentActivity()

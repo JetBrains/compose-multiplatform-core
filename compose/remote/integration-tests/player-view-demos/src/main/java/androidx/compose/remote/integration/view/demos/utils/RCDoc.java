@@ -47,6 +47,12 @@ public interface RCDoc {
     int size();
 
     /**
+     * size of the document
+     * @return
+     */
+    int zipSize();
+
+    /**
      * Run the doc
      */
     void run();
@@ -73,4 +79,10 @@ public interface RCDoc {
      */
     @Nullable
     RemoteDocument getDoc();
+
+    /**
+     * Return the time to create the document
+     * @return time in ms
+     */
+    float getBuildTime();
 }

@@ -86,8 +86,9 @@ import kotlin.math.roundToInt
  * @param preferredItemWidth The width that large, fully visible items would like to be in the
  *   horizontal axis. This width is a target and will likely be adjusted by carousel in order to fit
  *   a whole number of items within the container. Carousel adjusts small items first (between the
- *   [minSmallItemWidth] and [maxSmallItemWidth]) then medium items when present, and finally large
- *   items if necessary.
+ *   [minSmallItemWidth] and [maxSmallItemWidth]). Then medium items, when present, are adjusted to
+ *   use a width anywhere between the small item width and large item width. Finally, large items
+ *   are adjusted if necessary.
  * @param modifier A modifier instance to be applied to this carousel container
  * @param itemSpacing The amount of space used to separate items in the carousel
  * @param flingBehavior The [TargetedFlingBehavior] to be used for post scroll gestures
@@ -104,7 +105,6 @@ import kotlin.math.roundToInt
  *   last one. Use [itemSpacing] to add spacing between the items.
  * @param content The carousel's content Composable
  */
-@ExperimentalMaterial3Api
 @Composable
 fun HorizontalMultiBrowseCarousel(
     state: CarouselState,
@@ -176,7 +176,6 @@ fun HorizontalMultiBrowseCarousel(
  *   last one. Use [itemSpacing] to add spacing between the items.
  * @param content The carousel's content Composable
  */
-@ExperimentalMaterial3Api
 @Composable
 fun HorizontalUncontainedCarousel(
     state: CarouselState,
@@ -217,15 +216,16 @@ fun HorizontalUncontainedCarousel(
 /**
  * [Material Design Carousel](https://m3.material.io/components/carousel/overview)
  *
- * A horizontal carousel that centers one large item between two small items.
+ * A horizontal carousel that centers at least one large item between two small items.
  *
  * @sample androidx.compose.material3.samples.HorizontalCenteredHeroCarouselSample
  * @param state The state object to be used to control the carousel's state
  * @param modifier A modifier instance to be applied to this carousel container
- * @param maxItemWidth The max width a large item is allowed to be in dp. The default value of
+ * @param maxItemWidth The max width a large item should be in dp. The default value of
  *   [Dp.Unspecified] allows one large item to grow to fill the entire viewport minus space for two
  *   surrounding small items. Values other than unspecified will add additional large items as space
- *   allows.
+ *   allows. To allow items to grow up to a certain aspect ratio, use the carousel's cross axis
+ *   size * a multiplier (e.g. `220.dp * 2` for a max aspect ratio of 2:1).
  * @param itemSpacing The amount of space used to separate items in the carousel
  * @param flingBehavior The [TargetedFlingBehavior] to be used for post scroll gestures
  * @param userScrollEnabled whether the scrolling via the user gestures or accessibility actions is
@@ -307,7 +307,6 @@ fun HorizontalCenteredHeroCarousel(
  * @param content The carousel's content Composable where each call is passed the index, from the
  *   total item count, of the item being composed
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun Carousel(
     state: CarouselState,
@@ -513,7 +512,6 @@ internal value class CarouselAlignment private constructor(internal val value: I
  *   that match the carousel item info's mask rect. Corner radii and other shape customizations can
  *   be done by the client using [CarouselItemScope.maskClip] and [CarouselItemScope.maskBorder].
  */
-@OptIn(ExperimentalMaterial3Api::class)
 internal fun Modifier.carouselItem(
     index: Int,
     state: CarouselState,
@@ -617,6 +615,7 @@ internal fun Modifier.carouselItem(
 
                     // Update carousel item info
                     carouselItemDrawInfo.sizeState = interpolatedKeyline.size
+                    @Suppress("ListIterator")
                     carouselItemDrawInfo.minSizeState = roundedKeylines.minBy { it.size }.size
                     carouselItemDrawInfo.maxSizeState = roundedKeylines.firstFocal.size
                     carouselItemDrawInfo.maskRectState = maskRect
@@ -648,7 +647,6 @@ internal fun Modifier.carouselItem(
 }
 
 /** A modifier to draw keylines and other features over a Carousel to help with debugging. */
-@OptIn(ExperimentalMaterial3Api::class)
 private fun Modifier.drawDebugLines(
     state: CarouselState,
     pageSize: CarouselPageSize,
@@ -672,7 +670,6 @@ private fun Modifier.drawDebugLines(
 }
 
 /** Calculates the current scroll offset given item count, sizing, spacing, and snap position. */
-@OptIn(ExperimentalMaterial3Api::class)
 internal fun calculateCurrentScrollOffset(state: CarouselState, strategy: Strategy): Float {
     val itemSizeWithSpacing = strategy.itemMainAxisSize + strategy.itemSpacing
     val currentItemScrollOffset =
@@ -683,7 +680,6 @@ internal fun calculateCurrentScrollOffset(state: CarouselState, strategy: Strate
 }
 
 /** Returns the max scroll offset given the item count, sizing, and spacing. */
-@OptIn(ExperimentalMaterial3Api::class)
 @VisibleForTesting
 internal fun calculateMaxScrollOffset(state: CarouselState, strategy: Strategy): Float {
     val itemCount = state.pagerState.pageCount.toFloat()
@@ -712,7 +708,6 @@ private fun getProgress(before: Keyline, after: Keyline, unadjustedOffset: Float
 }
 
 /** Contains the default values used by [Carousel]. */
-@ExperimentalMaterial3Api
 object CarouselDefaults {
 
     /**
@@ -739,14 +734,14 @@ object CarouselDefaults {
     }
 
     /**
-     * A [TargetedFlingBehavior] that flings and snaps according to the gesture velocity.
-     * [snapAnimationSpec] and [decayAnimationSpec] can be used to control the animation specs.
+     * A [TargetedFlingBehavior] that flings without a limited distance and snaps to a final item
+     * according to the gesture's velocity.
      *
      * The Carousel may use [decayAnimationSpec] or [snapAnimationSpec] to approach the target item
-     * post-scroll, depending on the gesture velocity. If the gesture has a high enough velocity to
-     * approach the target item, the Carousel will use [decayAnimationSpec] followed by
+     * (calculated using the fling velocity) post-scroll. If the gesture has a high enough velocity
+     * to approach the target item, the Carousel will use [decayAnimationSpec] followed by
      * [snapAnimationSpec] for the final step of the animation. If the gesture doesn't have enough
-     * velocity, it will use [snapAnimationSpec] + [snapAnimationSpec] in a similar fashion.
+     * velocity, it will use [snapAnimationSpec] to reach the snapped position.
      *
      * @param state The [CarouselState] that controls which Carousel this TargetedFlingBehavior will
      *   be applied to.

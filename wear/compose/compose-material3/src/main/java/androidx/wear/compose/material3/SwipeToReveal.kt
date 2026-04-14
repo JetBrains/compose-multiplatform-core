@@ -173,19 +173,20 @@ import kotlinx.coroutines.launch
  *
  * @sample androidx.wear.compose.material3.samples.SwipeToRevealSingleActionCardSample
  *
- * Example of [SwipeToReveal] with a [TransformingLazyColumn], including resetting the [RevealState]
- * to [RevealValue.Covered] when scrolling:
+ * Example of [SwipeToReveal] with a [androidx.wear.compose.foundation.lazy.TransformingLazyColumn],
+ * including resetting the [RevealState] to [RevealValue.Covered] when scrolling:
  *
  * @sample androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnSample
  *
- * Example of [SwipeToReveal] with a [ScalingLazyColumn], including resetting the [RevealState] to
- * [RevealValue.Covered] when scrolling:
+ * Example of [SwipeToReveal] with a [androidx.wear.compose.foundation.lazy.ScalingLazyColumn],
+ * including resetting the [RevealState] to [RevealValue.Covered] when scrolling:
  *
  * @sample androidx.wear.compose.material3.samples.SwipeToRevealWithScalingLazyColumnSample
  *
- * Example of [SwipeToReveal] with a [ScalingLazyColumn] that only executes the primary action when
- * fully swiped (and does not settle after partially revealing the action) by setting
- * [hasPartiallyRevealedState] = false (so [RevealState] does not need to be reset when scrolling):
+ * Example of [SwipeToReveal] with a [androidx.wear.compose.foundation.lazy.ScalingLazyColumn] that
+ * only executes the primary action when fully swiped (and does not settle after partially revealing
+ * the action) by setting [hasPartiallyRevealedState] = false (so [RevealState] does not need to be
+ * reset when scrolling):
  *
  * @sample androidx.wear.compose.material3.samples.SwipeToRevealNoPartialRevealWithScalingLazyColumnSample
  * @param primaryAction The primary action of this component.
@@ -913,7 +914,11 @@ internal fun ActionButton(
             }
         },
         colors = buttonColors(containerColor = containerColor, contentColor = contentColor),
-        contentPadding = PaddingValues(ACTION_BUTTON_CONTENT_PADDING),
+        contentPadding =
+            when (revealActionType) {
+                RevealActionType.UndoAction -> PaddingValues(UNDO_ACTION_BUTTON_CONTENT_PADDING)
+                else -> PaddingValues(ACTION_BUTTON_CONTENT_PADDING)
+            },
         shape = CircleShape,
     ) {
         Row(
@@ -1541,6 +1546,8 @@ private val STANDARD_IN_OUT = CubicBezierEasing(0.20f, 0.0f, 0.0f, 1.00f)
 private val ICON_AND_TEXT_PADDING = 4.dp
 
 private val ACTION_BUTTON_CONTENT_PADDING = 4.dp
+
+private val UNDO_ACTION_BUTTON_CONTENT_PADDING = 14.dp
 
 // Swipe required to start displaying the action buttons.
 private const val BUTTON_VISIBLE_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE = 0.06f

@@ -17,7 +17,7 @@ package androidx.appsearch.app;
 
 import android.os.Parcel;
 import android.os.ParcelFileDescriptor;
-import android.os.Parcelable;
+import android.os.Parcelable.Creator;
 
 import androidx.appsearch.app.aidl.AppSearchBatchResultParcelV2;
 import androidx.appsearch.flags.FlaggedApi;
@@ -51,7 +51,7 @@ import java.io.IOException;
 public final class OpenBlobForReadResponse extends AbstractSafeParcelable implements
         Closeable {
 
-    public static final Parcelable.@NonNull Creator<OpenBlobForReadResponse> CREATOR =
+    public static final @NonNull Creator<OpenBlobForReadResponse> CREATOR =
             new OpenBlobForReadResponseCreator();
 
     @Field(id = 1)

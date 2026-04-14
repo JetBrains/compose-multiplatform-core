@@ -21,11 +21,15 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.os.Build;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.RequiresApi;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -33,6 +37,9 @@ import java.util.Objects;
  */
 public final class ContextUtil {
     private static final int DEVICE_ID_DEFAULT = 0;
+    private static final Object CACHE_LOCK = new Object();
+    @GuardedBy("CACHE_LOCK")
+    private static final Map<String, WeakReference<Context>> CACHED_CONTEXTS = new HashMap<>();
 
     /**
      * Gets the persistent application context.
@@ -41,25 +48,66 @@ public final class ContextUtil {
      * provided {@link Context}.
      *
      * <p>The device ID of the returned {@link Context} will not be changed by the system.
+     *
+     * <p>The returned {@link Context} is guaranteed to be the same object if the application,
+     * device ID and attribution tag are the same.
      */
     public static @NonNull Context getPersistentApplicationContext(@NonNull Context context) {
-        Context resultContext  = context.getApplicationContext();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            int deviceId = Api34Impl.getDeviceId(context);
-            // Call createDeviceContext even if the device IDs are the same. The device ID of a
-            // Context created by createDeviceContext with an explicit device ID will not be
-            // changed by the system when the foreground activity is switched to different display.
-            resultContext = Api34Impl.createDeviceContext(resultContext, deviceId);
+        // Obtains the application context outside the synchronization block.
+        Context resultContext = context.getApplicationContext();
+        String hashKey = getApplicationContextHashKey(context);
+        synchronized (CACHE_LOCK) {
+            // Directly returns the cached context if it can be found. Caching is needed because
+            // consumers of this method, such as CameraExtensionCharacteristics, may rely on object
+            // identity to function correctly.
+            Context cachedContext = getCachedContext(hashKey);
+            if (cachedContext != null) {
+                return cachedContext;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                int deviceId = Api34Impl.getDeviceId(context);
+                // Call createDeviceContext even if the device IDs are the same. The device ID of a
+                // Context created by createDeviceContext with an explicit device ID will not be
+                // changed by the system when the foreground activity is switched to different
+                // display.
+                resultContext = Api34Impl.createDeviceContext(resultContext, deviceId);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                String attributionTagContext = Api30Impl.getAttributionTag(context);
+                String attributionTagResultContext = Api30Impl.getAttributionTag(resultContext);
+                if (!Objects.equals(attributionTagContext, attributionTagResultContext)) {
+                    resultContext = Api30Impl.createAttributionContext(
+                            resultContext, attributionTagContext);
+                }
+            }
+            // Caches the resultContext for the application context + device id + attribution tag.
+            CACHED_CONTEXTS.put(hashKey, new WeakReference<>(resultContext));
+            return resultContext;
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            String attributionTagContext = Api30Impl.getAttributionTag(context);
-            String attributionTagResultContext = Api30Impl.getAttributionTag(resultContext);
-            if (!Objects.equals(attributionTagContext, attributionTagResultContext)) {
-                resultContext = Api30Impl.createAttributionContext(
-                        resultContext, attributionTagContext);
+    }
+
+    @GuardedBy("CACHE_LOCK")
+    private static @Nullable Context getCachedContext(@NonNull String hashKey) {
+        WeakReference<Context> cachedContextReference = CACHED_CONTEXTS.get(hashKey);
+
+        if (cachedContextReference != null) {
+            Context cachedContext = cachedContextReference.get();
+            if (cachedContext != null) {
+                return cachedContext;
+            } else {
+                CACHED_CONTEXTS.remove(hashKey);
             }
         }
-        return resultContext;
+        return null;
+    }
+
+    private static @NonNull String getApplicationContextHashKey(@NonNull Context context) {
+        int applicationHashCode = context.getApplicationContext().hashCode();
+        int deviceId = getDeviceId(context);
+        String attributionTag =
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ? Api30Impl.getAttributionTag(
+                        context) : null;
+        return String.format("%d-%d-%s", applicationHashCode, deviceId, attributionTag);
     }
 
     /**

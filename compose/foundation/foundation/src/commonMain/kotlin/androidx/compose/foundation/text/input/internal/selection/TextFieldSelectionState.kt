@@ -812,6 +812,7 @@ internal class TextFieldSelectionState(
                     adjustment = adjustment,
                     allowPreviousSelectionCollapsed = false,
                     isStartOfSelection = isStartOfSelection,
+                    hapticFeedbackType = null,
                 )
 
             // When drag starts from the end padding, we eventually need to update the start
@@ -870,6 +871,18 @@ internal class TextFieldSelectionState(
         }
     }
 
+    /**
+     * Observer for text drag gestures in a text field.
+     *
+     * Note: During a drag gesture, we accept that the user is interacting with whatever they are
+     * seeing on the screen currently. Any changes that are in
+     * [androidx.compose.foundation.text.input.TextFieldState] might not have had a chance to
+     * produce a layout result yet. For instance, it might be possible that the text you read from
+     * [androidx.compose.foundation.text.input.TextFieldState] has a length of 15 because a
+     * character was added, but the last layout result was created for a text with length 14. Thus,
+     * we should use the text from [TextLayoutState.layoutResult]
+     * (`textLayoutState.layoutResult?.layoutInput?.text`).
+     */
     private inner class TextFieldTextDragObserver(private val requestFocus: () -> Unit) :
         TextDragObserver {
         private var dragBeginOffsetInText = -1
@@ -928,7 +941,7 @@ internal class TextFieldSelectionState(
             if (!textLayoutState.isPositionOnText(startPoint)) {
                 val offset = textLayoutState.getOffsetForPosition(startPoint)
 
-                hapticFeedBack?.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
                 textFieldState.placeCursorBeforeCharAt(offset)
                 showCursorHandle = true
                 isLongPressSelectionOnly = false
@@ -946,6 +959,7 @@ internal class TextFieldSelectionState(
                         endOffset = offset,
                         isStartHandle = false,
                         adjustment = selectionAdjustmentMode,
+                        hapticFeedbackType = HapticFeedbackType.LongPress,
                     )
                 textFieldState.selectCharsIn(newSelection)
                 updateTextToolbarState(Selection)
@@ -995,11 +1009,21 @@ internal class TextFieldSelectionState(
                     }
             } else {
                 startOffset =
-                    dragBeginOffsetInText.takeIf { it >= 0 }
-                        ?: textLayoutState.getOffsetForPosition(
-                            position = dragBeginPosition,
-                            coerceInVisibleBounds = false,
-                        )
+                    if (ComposeFoundationFlags.isConcurrentTextFieldSelectionFixEnabled) {
+                        val textLength =
+                            textLayoutState.layoutResult?.layoutInput?.text?.length ?: 0
+                        dragBeginOffsetInText.takeIf { it in 0..textLength }
+                            ?: textLayoutState.getOffsetForPosition(
+                                position = dragBeginPosition,
+                                coerceInVisibleBounds = false,
+                            )
+                    } else {
+                        dragBeginOffsetInText.takeIf { it >= 0 }
+                            ?: textLayoutState.getOffsetForPosition(
+                                position = dragBeginPosition,
+                                coerceInVisibleBounds = false,
+                            )
+                    }
                 endOffset =
                     textLayoutState.getOffsetForPosition(
                         position = currentDragPosition,
@@ -1025,6 +1049,7 @@ internal class TextFieldSelectionState(
                     isStartHandle = false,
                     adjustment = adjustment,
                     allowPreviousSelectionCollapsed = false,
+                    hapticFeedbackType = HapticFeedbackType.TextHandleMove,
                 )
 
             // When drag starts from the end padding, we eventually need to update the start
@@ -1179,6 +1204,7 @@ internal class TextFieldSelectionState(
                                 endOffset = endOffset,
                                 isStartHandle = isStartHandle,
                                 adjustment = SelectionAdjustment.CharacterWithWordAccelerate,
+                                hapticFeedbackType = HapticFeedbackType.TextHandleMove,
                             )
                         // Do not allow selection to collapse on itself while dragging selection
                         // handles. Selection can reverse but does not collapse.
@@ -1676,6 +1702,7 @@ internal class TextFieldSelectionState(
      *   selection" for selection adjustment. However, in some cases - like starting a selection in
      *   end padding - a collapsed selection may be necessary context to avoid selection flickering.
      * @param isStartOfSelection Whether this is, for certain, the beginning of a selection.
+     * @param hapticFeedbackType Which haptic feedback type to use if selection changes.
      */
     internal fun updateSelection(
         textFieldCharSequence: TextFieldCharSequence,
@@ -1685,6 +1712,7 @@ internal class TextFieldSelectionState(
         adjustment: SelectionAdjustment,
         allowPreviousSelectionCollapsed: Boolean = false,
         isStartOfSelection: Boolean = false,
+        hapticFeedbackType: HapticFeedbackType?,
     ): TextRange {
         val newSelection =
             getTextFieldSelection(
@@ -1698,15 +1726,13 @@ internal class TextFieldSelectionState(
                 adjustment = adjustment,
             )
 
-        if (newSelection == textFieldCharSequence.selection) return newSelection
-
-        val onlyChangeIsReversed =
-            newSelection.reversed != textFieldCharSequence.selection.reversed &&
-                newSelection.run { TextRange(end, start) } == textFieldCharSequence.selection
-
-        // don't haptic if we are using a mouse or if we aren't moving the selection bounds
-        if (isInTouchMode && !onlyChangeIsReversed) {
-            hapticFeedBack?.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        // only trigger haptic feedback if the selection has changed meaningfully
+        if (
+            hapticFeedbackType != null &&
+                (newSelection.min != textFieldCharSequence.selection.min ||
+                    newSelection.max != textFieldCharSequence.selection.max)
+        ) {
+            hapticFeedBack?.performHapticFeedback(hapticFeedbackType)
         }
 
         return newSelection
@@ -1888,7 +1914,7 @@ internal inline fun TextFieldSelectionState.menuItem(
 private const val DEBUG = false
 private const val DEBUG_TAG = "TextFieldSelectionState"
 
-private fun logDebug(text: () -> String) {
+private inline fun logDebug(text: () -> String) {
     if (DEBUG) {
         println("$DEBUG_TAG: ${text()}")
     }

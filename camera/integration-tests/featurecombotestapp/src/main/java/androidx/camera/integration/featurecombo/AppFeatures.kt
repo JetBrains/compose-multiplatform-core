@@ -22,11 +22,13 @@ data class AppFeatures(
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val imageFormat: ImageFormat = ImageFormat.JPEG,
     val recordingQuality: RecordingQuality = RecordingQuality.SD,
+    val effect: Effect = Effect.NONE,
     val unsupportedDynamicRanges: List<DynamicRange> = emptyList(),
     val unsupportedFps: List<Fps> = emptyList(),
     val unsupportedStabilizationModes: List<StabilizationMode> = emptyList(),
     val unsupportedImageFormats: List<ImageFormat> = emptyList(),
     val unsupportedRecordingQualities: List<RecordingQuality> = emptyList(),
+    val unsupportedEffects: List<Effect> = emptyList(),
 )
 
 enum class DynamicRange(val text: String) {
@@ -55,4 +57,9 @@ enum class RecordingQuality(val text: String) {
     FHD("FHD"),
     HD("HD"),
     SD("SD"),
+}
+
+enum class Effect(val text: String) {
+    BOUNCY_LOGO_EFFECT("Bouncy Logo Effect"),
+    NONE("No Effect"),
 }

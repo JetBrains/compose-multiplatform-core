@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -42,7 +41,7 @@ configurations {
 }
 
 dependencies {
-    compileOnly(libs.androidGradlePlugin)
+    compileOnly(libs.androidGradlePluginApi)
     compileOnly(libs.kotlinGradlePlugin)
 
     implementation(gradleApi())
@@ -93,6 +92,7 @@ gradlePlugin {
 androidx {
     name = "Baseline Profile Gradle Plugin"
     type = SoftwareType.GRADLE_PLUGIN
+    minimumGradleVersion = "8.2"
     inceptionYear = "2022"
     description = "Android Baseline Profile Gradle Plugin"
 }

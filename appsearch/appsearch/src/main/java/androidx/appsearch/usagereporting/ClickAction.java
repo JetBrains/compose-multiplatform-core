@@ -69,17 +69,13 @@ public class ClickAction extends TakenAction {
     @Document.LongProperty
     private final long mTimeStayOnResultMillis;
 
-    ClickAction(@NonNull String namespace, @NonNull String id, long documentTtlMillis,
-            long actionTimestampMillis, @TakenAction.ActionType int actionType,
-            @Nullable String query, @Nullable String referencedQualifiedId, int resultRankInBlock,
-            int resultRankGlobal, long timeStayOnResultMillis) {
-        super(namespace, id, documentTtlMillis, actionTimestampMillis, actionType);
-
-        mQuery = query;
-        mReferencedQualifiedId = referencedQualifiedId;
-        mResultRankInBlock = resultRankInBlock;
-        mResultRankGlobal = resultRankGlobal;
-        mTimeStayOnResultMillis = timeStayOnResultMillis;
+    ClickAction(@NonNull BuilderImpl<? extends BuilderImpl<?>> builder) {
+        super(builder);
+        mQuery = builder.mQuery;
+        mReferencedQualifiedId = builder.mReferencedQualifiedId;
+        mResultRankInBlock = builder.mResultRankInBlock;
+        mResultRankGlobal = builder.mResultRankGlobal;
+        mTimeStayOnResultMillis = builder.mTimeStayOnResultMillis;
     }
 
     /**
@@ -191,13 +187,12 @@ public class ClickAction extends TakenAction {
     }
 
     @SuppressWarnings("unchecked")
-    static class BuilderImpl<T extends BuilderImpl<T>> extends
-            TakenAction.BuilderImpl<T> {
-        protected String mQuery;
-        protected String mReferencedQualifiedId;
-        protected int mResultRankInBlock;
-        protected int mResultRankGlobal;
-        protected long mTimeStayOnResultMillis;
+    static class BuilderImpl<T extends BuilderImpl<T>> extends TakenAction.BuilderImpl<T> {
+        private String mQuery;
+        private String mReferencedQualifiedId;
+        private int mResultRankInBlock;
+        private int mResultRankGlobal;
+        private long mTimeStayOnResultMillis;
 
         /**
          * Constructs {@link BuilderImpl} with given {@code namespace}, {@code id},
@@ -300,9 +295,7 @@ public class ClickAction extends TakenAction {
         /** Builds a {@link ClickAction}. */
         @Override
         public @NonNull ClickAction build() {
-            return new ClickAction(mNamespace, mId, mDocumentTtlMillis, mActionTimestampMillis,
-                    mActionType, mQuery, mReferencedQualifiedId, mResultRankInBlock,
-                    mResultRankGlobal, mTimeStayOnResultMillis);
+            return new ClickAction(this);
         }
     }
 }

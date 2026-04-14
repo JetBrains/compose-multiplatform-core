@@ -141,6 +141,7 @@ package androidx.leanback.widget {
     method public final boolean getFadingRightEdge();
     method public final int getFadingRightEdgeLength();
     method public final int getFadingRightEdgeOffset();
+    method public int getNumRows();
     method protected void initAttributes(android.content.Context, android.util.AttributeSet?);
     method public final void setFadingLeftEdge(boolean);
     method public final void setFadingLeftEdgeLength(int);
@@ -190,10 +191,23 @@ package androidx.leanback.widget {
     method public void onChildViewHolderSelectedAndPositioned(androidx.recyclerview.widget.RecyclerView, androidx.recyclerview.widget.RecyclerView.ViewHolder?, int, int);
   }
 
+  public abstract class SpanSizeLookup extends androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup {
+    ctor public SpanSizeLookup();
+    method public int getSpanSize(int, int);
+    field public static final int FILL_ALL_SPANS = -2; // 0xfffffffe
+    field public static final int FILL_ALL_SPANS_AND_PADDINGS = -1; // 0xffffffff
+  }
+
+  public static final class SpanSizeLookup.DefaultSpanSizeLookup extends androidx.leanback.widget.SpanSizeLookup {
+    method public int getSpanSize(int);
+    field public static final androidx.leanback.widget.SpanSizeLookup.DefaultSpanSizeLookup INSTANCE;
+  }
+
   public class VerticalGridView extends androidx.leanback.widget.BaseGridView {
     ctor public VerticalGridView(android.content.Context);
     ctor public VerticalGridView(android.content.Context, android.util.AttributeSet?);
     ctor public VerticalGridView(android.content.Context, android.util.AttributeSet?, int);
+    method public int getNumColumns();
     method protected void initAttributes(android.content.Context, android.util.AttributeSet?);
     method public void setColumnWidth(int);
     method public void setNumColumns(int);

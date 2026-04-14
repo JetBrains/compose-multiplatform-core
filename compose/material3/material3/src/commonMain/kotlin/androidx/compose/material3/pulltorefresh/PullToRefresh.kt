@@ -127,9 +127,48 @@ import kotlinx.coroutines.launch
  * @param contentAlignment The default alignment inside the Box.
  * @param indicator the indicator that will be drawn on top of the content when the user begins a
  *   pull or a refresh is occurring
+ * @param enabled whether nested scroll events should be consumed by this component
+ * @param threshold how much distance can be scrolled down before [onRefresh] is invoked
  * @param content the content of the pull refresh container, typically a scrollable layout such as
- *   [LazyColumn] or a layout using [Modifier.verticalScroll]
+ *   [LazyColumn] or a layout using [androidx.compose.foundation.verticalScroll]
  */
+@Composable
+fun PullToRefreshBox(
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+    state: PullToRefreshState = rememberPullToRefreshState(),
+    contentAlignment: Alignment = Alignment.TopStart,
+    indicator: @Composable BoxScope.() -> Unit = {
+        Indicator(
+            modifier = Modifier.align(Alignment.TopCenter),
+            isRefreshing = isRefreshing,
+            state = state,
+        )
+    },
+    enabled: Boolean = true,
+    threshold: Dp = PullToRefreshDefaults.PositionalThreshold,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    Box(
+        modifier.pullToRefresh(
+            state = state,
+            isRefreshing = isRefreshing,
+            enabled = enabled,
+            threshold = threshold,
+            onRefresh = onRefresh,
+        ),
+        contentAlignment = contentAlignment,
+    ) {
+        content()
+        indicator()
+    }
+}
+
+@Deprecated(
+    message = "Use the PullToRefreshBox that takes enabled and threshold parameters",
+    level = DeprecationLevel.HIDDEN,
+)
 @Composable
 fun PullToRefreshBox(
     isRefreshing: Boolean,
@@ -146,13 +185,17 @@ fun PullToRefreshBox(
     },
     content: @Composable BoxScope.() -> Unit,
 ) {
-    Box(
-        modifier.pullToRefresh(state = state, isRefreshing = isRefreshing, onRefresh = onRefresh),
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        modifier = modifier,
+        state = state,
         contentAlignment = contentAlignment,
-    ) {
-        content()
-        indicator()
-    }
+        indicator = indicator,
+        enabled = true,
+        threshold = PullToRefreshDefaults.PositionalThreshold,
+        content = content,
+    )
 }
 
 /**

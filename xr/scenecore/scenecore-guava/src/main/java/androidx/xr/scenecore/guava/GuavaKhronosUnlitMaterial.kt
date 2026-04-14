@@ -30,8 +30,8 @@ import com.google.common.util.concurrent.ListenableFuture
  *
  * @param session The active [Session] in which to create the material.
  * @param alphaMode The [AlphaMode] to use for the material.
- * @return a ListenableFuture<KhronosUnlitMaterial>. Listeners will be called on the main thread if
- *   Runnable::run is supplied when adding a listener to the [ListenableFuture].
+ * @return a [ListenableFuture<KhronosUnlitMaterial>]. Listeners will be called on the main thread
+ *   if Runnable::run is supplied when adding a listener to the [ListenableFuture].
  */
 @MainThread
 public fun createKhronosUnlitMaterialAsync(

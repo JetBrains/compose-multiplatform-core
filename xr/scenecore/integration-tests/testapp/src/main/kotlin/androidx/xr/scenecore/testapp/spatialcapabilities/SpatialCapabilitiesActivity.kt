@@ -62,6 +62,8 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
             insets
         }
 
+        renderingSession.scene.keyEntity = renderingSession.scene.mainPanelEntity
+
         // toolbar
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {
             setSupportActionBar(it)
@@ -147,6 +149,7 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
                 )
                 return getString(R.string.switch_to_fsm_button_text)
             }
+
             SpatialMode.HSM -> {
                 session.scene.requestFullSpaceMode()
                 spatialMode = SpatialMode.FSM

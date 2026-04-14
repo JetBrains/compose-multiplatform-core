@@ -16,6 +16,7 @@
 
 package androidx.biometric.internal.viewmodel
 
+import androidx.biometric.AuthenticationRequest
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.internal.data.FakeAuthenticationStateRepository
 import androidx.biometric.internal.data.FakePromptConfigRepository
@@ -114,6 +115,22 @@ class AuthenticationViewModelTest {
         }
 
     @Test
+    fun testFallbackOptionPressPending() =
+        runTest(UnconfinedTestDispatcher()) {
+            var actualFallback: AuthenticationRequest.Biometric.Fallback.CustomOption? = null
+            val job = launch {
+                viewModel.isFallbackOptionPressPending.collect { actualFallback = it }
+            }
+
+            val expectedFallback = AuthenticationRequest.Biometric.Fallback.CustomOption("test")
+            authRepository.setFallbackOptionPressPending(expectedFallback)
+            runCurrent()
+
+            assertThat(actualFallback).isEqualTo(expectedFallback)
+            job.cancel()
+        }
+
+    @Test
     fun testMoreOptionsButtonPressPending() =
         runTest(UnconfinedTestDispatcher()) {
             var moreOptionsPressPending = false
@@ -127,4 +144,28 @@ class AuthenticationViewModelTest {
             assertThat(moreOptionsPressPending).isTrue()
             job.cancel()
         }
+
+    @Test
+    fun testGenerateNextManagerKey() {
+        assertThat(viewModel.generateNextManagerKey()).isEqualTo(1)
+        assertThat(viewModel.generateNextManagerKey()).isEqualTo(2)
+    }
+
+    @Test
+    fun testResetManagerKey() {
+        viewModel.generateNextManagerKey()
+        viewModel.generateNextManagerKey()
+
+        viewModel.resetManagerKey()
+
+        assertThat(viewModel.generateNextManagerKey()).isEqualTo(1)
+    }
+
+    @Test
+    fun testCurrentAuthenticationKey() {
+        assertThat(viewModel.currentAuthenticationKey).isEqualTo(0)
+
+        viewModel.currentAuthenticationKey = 1
+        assertThat(viewModel.currentAuthenticationKey).isEqualTo(1)
+    }
 }

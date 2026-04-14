@@ -90,6 +90,7 @@ internal object ExtensionsWindowLayoutInfoAdapter {
                     else -> null
                 }
             }
+
         return WindowLayoutInfo(features)
     }
 

@@ -18,6 +18,7 @@
 
 package androidx.xr.glimmer.benchmark.list
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.scrollBy
@@ -31,43 +32,35 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.runtime.Composable
 import androidx.compose.testutils.LayeredComposeTestCase
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.xr.glimmer.Text
+import androidx.xr.glimmer.benchmark.sendIndirectSwipe
 import androidx.xr.glimmer.list.ListState
 import androidx.xr.glimmer.list.VerticalList
+import androidx.xr.glimmer.testutils.NoFlingBehavior
+import androidx.xr.glimmer.testutils.createGlimmerRule
 import kotlinx.coroutines.runBlocking
-import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-class GlimmerVerticalListScrollingBenchmark() {
+class GlimmerVerticalListScrollingBenchmark {
 
-    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
+    @get:Rule(0) val benchmarkRule = ComposeBenchmarkRule()
 
-    private val savedInitialFocusAvailability = ComposeUiFlags.isInitialFocusOnFocusableAvailable
-
-    @Before
-    fun setUp() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = true
-    }
-
-    @After
-    fun tearDown() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = savedInitialFocusAvailability
-    }
+    @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     @Test
     fun verticalList_measureAndLayoutPhases_afterProgrammaticScroll() {
@@ -76,9 +69,20 @@ class GlimmerVerticalListScrollingBenchmark() {
     }
 
     @Test
+    fun verticalList_measureAndLayoutPhases_afterIndirectScroll() {
+        val listState = ListState(firstVisibleItemIndex = 0)
+        benchmarkRule.toggleStateBenchmark { IndirectTouchScrollTestCase(listState) }
+    }
+
+    /**
+     * Since the draw phase happens after the scroll has finished, the specific scroll method used
+     * is irrelevant. Therefore, there is no need to test both types, as they will yield roughly the
+     * same results.
+     */
+    @Test
     fun verticalList_drawPhase_afterScroll() {
         val listState = ListState(firstVisibleItemIndex = 0)
-        benchmarkRule.toggleStateBenchmarkDraw { ProgrammaticScrollTestCase(listState) }
+        benchmarkRule.toggleStateBenchmarkDraw { IndirectTouchScrollTestCase(listState) }
     }
 }
 
@@ -88,6 +92,29 @@ internal class ProgrammaticScrollTestCase(listState: ListState) :
         // The `setUp()` and `tearDown()` methods are supposed to reset the scroll.
         // So there's no need to scroll it back inside `toggle()`.
         runBlocking { listState.scrollBy(scrollDistance) }
+    }
+}
+
+@SuppressLint("VisibleForTests")
+internal class IndirectTouchScrollTestCase(listState: ListState) :
+    ScrollableGlimmerListTestCase(listState) {
+
+    private var view: ViewRootForTest? = null
+
+    @Composable
+    override fun Content() {
+        super.Content()
+        view = LocalView.current as? ViewRootForTest
+    }
+
+    override fun toggle() {
+        // The `setUp()` and `tearDown()` methods are supposed to reset the scroll.
+        // So there's no need to scroll it back inside `toggle()`.
+        requireNotNull(view)
+            .sendIndirectSwipe(
+                distance = scrollDistance,
+                primaryAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            )
     }
 }
 
@@ -143,6 +170,7 @@ internal abstract class ScrollableGlimmerListTestCase(val listState: ListState) 
             modifier = Modifier.requiredHeight(ListHeight).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(SpacedBy),
             contentPadding = PaddingValues(16.dp),
+            flingBehavior = NoFlingBehavior,
         ) {
             items(300) { index -> FocusableItem(index) }
         }

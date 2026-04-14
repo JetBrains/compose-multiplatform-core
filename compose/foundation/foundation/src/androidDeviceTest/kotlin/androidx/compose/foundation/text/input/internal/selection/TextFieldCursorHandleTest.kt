@@ -48,8 +48,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -61,7 +64,7 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasPerformImeAction
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -276,6 +279,31 @@ class TextFieldCursorHandleTest : FocusedWindowTest {
         focusAndWait()
 
         rule.onNodeWithTag(TAG).performClick()
+        rule.onNode(isSelectionHandle(Handle.Cursor)).assertDoesNotExist()
+    }
+
+    @Test
+    fun cursorHandle_notVisibleInKeyboardInputMode() {
+        val inputModeManager =
+            object : InputModeManager {
+                override val inputMode = InputMode.Keyboard
+
+                override fun requestInputMode(inputMode: InputMode): Boolean = false
+            }
+
+        state = TextFieldState()
+        rule.setTextFieldTestContent {
+            CompositionLocalProvider(LocalInputModeManager provides inputModeManager) {
+                BasicTextField(
+                    state,
+                    textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
+                    modifier = Modifier.testTag(TAG),
+                )
+            }
+        }
+
+        focusAndWait()
+
         rule.onNode(isSelectionHandle(Handle.Cursor)).assertDoesNotExist()
     }
 

@@ -20,10 +20,17 @@ import android.app.Activity
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.view.WindowManager
+import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.xr.projected.ProjectedDisplayController.Companion.create
+import androidx.xr.projected.ProjectedDisplayController.PresentationMode.Companion.VISUALS_ON
+import androidx.xr.projected.binding.ProjectedServiceConnection
+import androidx.xr.projected.binding.ProjectedServiceConnection.ProjectedIntentAction.Companion.ACTION_BIND
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.platform.IProjectedService
+import java.util.Collections
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 import kotlinx.coroutines.Dispatchers
@@ -41,9 +48,17 @@ private constructor(
     private val engagementModeClient: EngagementModeClient,
 ) : AutoCloseable {
 
-    /** Map to convert the provided listener to the one passed to the [EngagementModeClient]. */
-    private val engagementModeListeners =
-        mutableMapOf<Consumer<Set<EngagementMode>>, Consumer<Int>>()
+    /**
+     * Map to convert the provided listener to the one passed to the [EngagementModeClient]. This
+     * should be accessed through the synchronizedPresentationListeners.
+     */
+    @ExperimentalProjectedApi
+    private val presentationModeListeners =
+        mutableMapOf<Consumer<PresentationModeFlags>, Consumer<Int>>()
+
+    @ExperimentalProjectedApi
+    private val synchronizedPresentationListeners =
+        Collections.synchronizedMap(presentationModeListeners)
 
     /**
      * Convenience function to set the flag bits as as per the
@@ -52,11 +67,14 @@ private constructor(
      *
      * Supported flags:
      * - [android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON]
+     *     - Note: Keeping the device's screen on can drain the battery quickly. Ordinarily, you
+     *       should let the device turn the screen off if the user is not interacting with it. If
+     *       you do need to keep the screen on, do so for as short a time as possible.
      *
      * If an unsupported flag is passed, this method does nothing.
      */
     @ExperimentalProjectedApi
-    public fun addLayoutParamsFlags(flags: Int) {
+    public fun addLayoutParamsFlags(@ProjectedLayoutParamsFlags flags: Int) {
         projectedService.addWindowFlags(flags)
     }
 
@@ -70,83 +88,116 @@ private constructor(
      * If an unsupported flag is passed, this method does nothing.
      */
     @ExperimentalProjectedApi
-    public fun removeLayoutParamsFlags(flags: Int) {
+    public fun removeLayoutParamsFlags(@ProjectedLayoutParamsFlags flags: Int) {
         projectedService.clearWindowFlags(flags)
     }
 
     /**
-     * Returns `true` if the currently connected projected device is capable of displaying content
-     * to the user.
-     *
-     * This method does not provide any more details on what type of display it is.
+     * The PresentationMode represents how an app is currently able to present content to the user
+     * on a projected device.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun isDisplayCapable(): Boolean = projectedService.isDisplayCapable()
-
-    /**
-     * An EngagementMode value.
-     *
-     * The EngagementMode represents how a user is interacting with a projected application (e.g.
-     * are visuals on)
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public class EngagementMode internal constructor(private val id: Int) {
+    @ExperimentalProjectedApi
+    public class PresentationMode internal constructor(private val id: Int) {
         override fun toString(): String =
             when (id) {
                 0 -> "VISUALS_ON"
+                1 -> "AUDIO_ON"
                 else -> "UNKNOWN($id)"
             }
 
-        override fun equals(other: Any?): Boolean = (other is EngagementMode) && this.id == other.id
+        override fun equals(other: Any?): Boolean =
+            (other is PresentationMode) && this.id == other.id
 
         override fun hashCode(): Int = id.hashCode()
 
         public companion object {
             /**
-             * Indicates the engagement mode includes a visual presentation. When this mode is
-             * active, the user can visually see the app UI on a visible window.
+             * Indicates the presentation mode includes a visual presentation. When the visual
+             * presentation mode is on, the display on the Projected device is on. When VISUALS_ON
+             * is present, an exercise app could draw UI that indicates how far the user has reached
+             * in their current run. when VISUALS_ON is not present, the app's attempt to draw will
+             * not work.
              */
-            @JvmField public val VISUALS_ON: EngagementMode = EngagementMode(0)
+            @JvmField public val VISUALS_ON: PresentationMode = PresentationMode(0)
+
+            /**
+             * Indicates the presentation mode includes an audio presentation. This can be active
+             * with or without [VISUALS_ON]. When the audio presentation mode is on, the speakers on
+             * the Projected device are on. When AUDIO_ON is present, an exercise app could play
+             * audio that communicates how far the user has reached in their current run. when
+             * AUDIO_ON is not present, the app's attempt to play audio will not work.
+             */
+            @JvmField public val AUDIO_ON: PresentationMode = PresentationMode(1)
         }
     }
 
     /**
-     * Adds a callback to listen for the EngagementMode.
-     *
-     * The EngagementMode represents how a user is interacting with a projected application (e.g.
-     * are visuals on). The callback will be called as soon as it is available.
+     * The PresentationModeFlags represents a collection of PresentationMode values that are
+     * currently active.
      */
-    // TODO: b/457550010 - Make EngagementMode calls thread safe.
+    @ExperimentalProjectedApi
+    public class PresentationModeFlags
+    internal constructor(private val presentationModes: Set<PresentationMode>) {
+
+        override fun equals(other: Any?): Boolean =
+            (other is PresentationModeFlags) && this.presentationModes == other.presentationModes
+
+        override fun hashCode(): Int = presentationModes.hashCode()
+
+        /**
+         * Checks if the provided PresentationMode is present in the PresentationModeFlags.
+         *
+         * @param presentationMode The PresentationMode value to check.
+         * @return `true` if the specified PresentationMode is present, `false` otherwise.
+         */
+        public fun hasPresentationMode(presentationMode: PresentationMode): Boolean =
+            presentationModes.contains(presentationMode)
+
+        /**
+         * Checks if all the provided PresentationModes are present in the PresentationModeFlags.
+         *
+         * @param presentationModes The Set of PresentationMode values to check.
+         * @return `true` if all the specified PresentationModes are present, `false` otherwise.
+         */
+        public fun hasPresentationMode(presentationModes: Set<PresentationMode>): Boolean =
+            presentationModes.containsAll(presentationModes)
+    }
+
+    /**
+     * Adds a callback to listen for updates to the PresentationModeFlags.
+     *
+     * The PresentationMode represents how a content is being presented to a projected application
+     * (e.g. are visuals on). The callback will be called with the current state as soon as it is
+     * available. A listener cannot be added a second time without first being removed.
+     */
+    @ExperimentalProjectedApi
+    @JvmOverloads
     @RequiresApi(Build.VERSION_CODES.N)
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun addEngagementModeChangedListener(
+    public fun addPresentationModeChangedListener(
         executor: Executor = Dispatchers.Main.asExecutor(),
-        listener: Consumer<Set<EngagementMode>>,
+        listener: Consumer<PresentationModeFlags>,
     ) {
-        val convertedListener = Consumer { engagementModeFlags: Int ->
-            listener.accept(convertToEngagementModeSet(engagementModeFlags))
+        val convertedListener = Consumer { PresentationModes: Int ->
+            listener.accept(convertToPresentationModeFlags(PresentationModes))
         }
-        engagementModeListeners[listener] = convertedListener
+        synchronizedPresentationListeners[listener] = convertedListener
         engagementModeClient.addUpdateCallback(executor, convertedListener)
     }
 
     /**
-     * Remove a listener to stop consuming [EngagementMode] values. If the listener has already been
-     * removed then this is a no-op.
+     * Remove a listener to stop consuming [PresentationModeFlags] values. If the listener has
+     * already been removed then this is a no-op.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun removeEngagementModeChangedListener(listener: Consumer<Set<EngagementMode>>) {
-        val convertedListener: Consumer<Int>? = this.engagementModeListeners[listener]
-        convertedListener?.let {
-            engagementModeClient.removeUpdateCallback(it)
-            engagementModeListeners.remove(listener)
+    @ExperimentalProjectedApi
+    public fun removePresentationModeChangedListener(listener: Consumer<PresentationModeFlags>) {
+        this.synchronizedPresentationListeners.remove(listener)?.let { convertedListener ->
+            engagementModeClient.removeUpdateCallback(convertedListener)
         }
     }
 
     /**
      * Disconnects from the service providing features for Projected devices. Methods from the
-     * [ProjectedDisplayController] shouldn't be called after this. All EngagementMode changed
-     * listeners will be removed when this is called.
+     * [ProjectedDisplayController] shouldn't be called after this.
      *
      * This method should be called in [android.app.Activity.onDestroy].
      */
@@ -154,12 +205,16 @@ private constructor(
         connection.disconnect()
     }
 
-    private fun convertToEngagementModeSet(engagementModes: Int): Set<EngagementMode> {
-        val engagementModeSet: MutableSet<EngagementMode> = mutableSetOf()
+    @ExperimentalProjectedApi
+    private fun convertToPresentationModeFlags(engagementModes: Int): PresentationModeFlags {
+        val presentationModeSet: MutableSet<PresentationMode> = mutableSetOf()
         if (engagementModes and EngagementModeClient.ENGAGEMENT_MODE_FLAG_VISUALS_ON != 0) {
-            engagementModeSet.add(EngagementMode.VISUALS_ON)
+            presentationModeSet.add(PresentationMode.VISUALS_ON)
         }
-        return engagementModeSet
+        if (engagementModes and EngagementModeClient.ENGAGEMENT_MODE_FLAG_AUDIO_ON != 0) {
+            presentationModeSet.add(PresentationMode.AUDIO_ON)
+        }
+        return PresentationModeFlags(presentationModeSet)
     }
 
     public companion object {
@@ -181,7 +236,7 @@ private constructor(
                 ProjectedContext.isProjectedDeviceContext(activity),
                 { "Provided Activity is not running on a Projected device." },
             )
-            val serviceConnection = ProjectedServiceConnection(activity)
+            val serviceConnection = ProjectedServiceConnection(activity, ACTION_BIND)
 
             return ProjectedDisplayController(
                 serviceConnection,
@@ -190,4 +245,12 @@ private constructor(
             )
         }
     }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Retention(AnnotationRetention.SOURCE)
+    @IntDef(
+        flag = true, // Indicates these constants can be combined using bitwise ops.
+        value = [WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON],
+    )
+    public annotation class ProjectedLayoutParamsFlags
 }

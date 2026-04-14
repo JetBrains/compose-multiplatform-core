@@ -19,15 +19,10 @@ package androidx.wear.compose.remote.material3
 
 import android.graphics.Typeface
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_HR
-import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_MIN
-import androidx.compose.remote.core.operations.DrawTextOnCircle
-import androidx.compose.remote.core.operations.TextFromFloat
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
-import androidx.compose.remote.creation.compose.layout.RemoteCanvasDrawScope
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.layout.RemoteDrawScope
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clearAndSetSemantics
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
@@ -35,8 +30,14 @@ import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.RemoteTextUnit
+import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.state.rs
+import androidx.compose.remote.creation.compose.state.rsp
+import androidx.compose.remote.creation.compose.text.RemoteTimeDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.GenericFontFamily
 
 /**
  * A remote composable for displaying the time and surrounding text, designed to curve along the top
@@ -59,21 +60,32 @@ import androidx.compose.ui.graphics.nativeCanvas
 @Composable
 public fun RemoteTimeText(
     modifier: RemoteModifier = RemoteModifier,
-    time: RemoteString = RemoteTimeTextDefaults.defaultTimeString(),
+    time: RemoteString = RemoteTimeDefaults.defaultTimeString(),
+    fontSize: RemoteTextUnit = 14.rsp,
+    fontFamily: FontFamily? = null,
     leadingText: RemoteString? = null,
     trailingText: RemoteString? = null,
-    separator: RemoteString = RemoteString("·"),
+    separator: RemoteString = "·".rs,
     color: RemoteColor = RemoteMaterialTheme.colorScheme.onBackground,
 ) {
     val text =
         buildTimeTextString(
             time = time,
-            leadingText = leadingText ?: RemoteString(""),
-            trailingText = trailingText ?: RemoteString(""),
+            leadingText = leadingText ?: "".rs,
+            trailingText = trailingText ?: "".rs,
             separator = separator,
         )
+    val fontSize = fontSize.toPx()
+
     RemoteBox(modifier.clearAndSetSemantics {}) {
-        RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) { drawTimeText(text, color) }
+        RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
+            drawTimeText(
+                text = text,
+                textColor = color,
+                fontSize = fontSize,
+                fontFamily = fontFamily,
+            )
+        }
     }
 }
 
@@ -84,49 +96,47 @@ private fun buildTimeTextString(
     trailingText: RemoteString,
     separator: RemoteString,
 ): RemoteString {
-    val leadingWithSeparator =
-        leadingText.isNotEmpty.select(leadingText + separator, RemoteString(""))
-    val trailingWithSeparator =
-        trailingText.isNotEmpty.select(separator + trailingText, RemoteString(""))
+    val leadingWithSeparator = leadingText.isNotEmpty.select(leadingText + separator, "".rs)
+    val trailingWithSeparator = trailingText.isNotEmpty.select(separator + trailingText, "".rs)
     return leadingWithSeparator + time + trailingWithSeparator
 }
 
-private fun RemoteCanvasDrawScope.drawTimeText(text: RemoteString, color: RemoteColor) {
-    val width = remote.component.width
-    val height = remote.component.height
-    val canvas = drawContext.canvas.nativeCanvas
+private fun RemoteDrawScope.drawTimeText(
+    text: RemoteString,
+    textColor: RemoteColor,
+    fontSize: RemoteFloat,
+    fontFamily: FontFamily?,
+) {
+    val width = width
+    val height = height
 
-    val fontSize = 30f
-    val textPaint =
-        RemotePaint().apply {
-            textSize = fontSize
-            typeface = Typeface.DEFAULT
-            remoteColor = color
+    val fontTypeface =
+        when (fontFamily) {
+            FontFamily.Default -> Typeface.DEFAULT
+            FontFamily.SansSerif -> Typeface.SANS_SERIF
+            FontFamily.Serif -> Typeface.SERIF
+            FontFamily.Monospace -> Typeface.MONOSPACE
+            else -> {
+                if (fontFamily != null && (fontFamily is GenericFontFamily)) {
+                    Typeface.create(fontFamily.name, Typeface.NORMAL)
+                }
+                null
+            }
         }
 
-    if (canvas is RecordingCanvas) {
-        canvas.drawTextOnCircle(
-            text,
-            width / 2f,
-            height / 2f,
-            width / 2f - fontSize,
-            270f,
-            0f,
-            DrawTextOnCircle.Alignment.CENTER,
-            DrawTextOnCircle.Placement.INSIDE,
-            textPaint,
-        )
+    val textPaint = RemotePaint {
+        textSize = fontSize
+        typeface = fontTypeface
+        color = textColor
     }
-}
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public object RemoteTimeTextDefaults {
-
-    @Composable
-    public fun defaultTimeString(): RemoteString {
-        val mins =
-            (RemoteFloat(FLOAT_TIME_IN_MIN) % 60f).toRemoteString(2, 0, TextFromFloat.PAD_PRE_ZERO)
-        val hours = RemoteFloat(FLOAT_TIME_IN_HR).toRemoteString(2, 0, TextFromFloat.PAD_PRE_ZERO)
-        return hours + RemoteString(":") + mins
-    }
+    drawTextOnCircle(
+        text,
+        width / 2f.rf,
+        height / 2f.rf,
+        width / 2f.rf - fontSize,
+        270f.rf,
+        0f.rf,
+        textPaint,
+    )
 }

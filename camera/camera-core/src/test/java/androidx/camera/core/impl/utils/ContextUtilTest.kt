@@ -34,7 +34,9 @@ import org.robolectric.annotation.internal.DoNotInstrument
 class ContextUtilTest {
     companion object {
         const val ATTRIBUTION_TAG = "attributionTag"
+        const val ATTRIBUTION_TAG_2 = "attributionTag2"
         const val VIRTUAL_DEVICE_ID = 2
+        const val VIRTUAL_DEVICE_ID_2 = 3
     }
 
     @Test
@@ -120,6 +122,72 @@ class ContextUtilTest {
         assertThat(resultContext.attributionTag).isNull()
         // Ensures the result context is created from application context.
         assertThat(resultContext.getTag()).isEqualTo(appContext.getTag())
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun testGetPersistentApplicationContext_sameContextDeviceIdAndTag_returnsSameInstance() {
+        val appContext = FakeAppContext("application")
+        val context =
+            FakeContext(
+                "non-application",
+                baseContext = appContext,
+                deviceId = VIRTUAL_DEVICE_ID,
+                attributionTag = ATTRIBUTION_TAG,
+            )
+        val resultContext1 = ContextUtil.getPersistentApplicationContext(context)
+        val resultContext2 = ContextUtil.getPersistentApplicationContext(context)
+        assertThat(resultContext1).isSameInstanceAs(resultContext2)
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun testGetPersistentApplicationContext_differentContext_returnsDifferentInstances() {
+        val appContext1 = FakeAppContext("application1")
+        val context1 =
+            FakeContext("non-application1", baseContext = appContext1, deviceId = VIRTUAL_DEVICE_ID)
+        val appContext2 = FakeAppContext("application2")
+        val context2 =
+            FakeContext("non-application2", baseContext = appContext2, deviceId = VIRTUAL_DEVICE_ID)
+        val resultContext1 = ContextUtil.getPersistentApplicationContext(context1)
+        val resultContext2 = ContextUtil.getPersistentApplicationContext(context2)
+        assertThat(resultContext1).isNotSameInstanceAs(resultContext2)
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun testGetPersistentApplicationContext_differentDeviceId_returnsDifferentInstances() {
+        val appContext = FakeAppContext("application")
+        val context1 =
+            FakeContext("non-application", baseContext = appContext, deviceId = VIRTUAL_DEVICE_ID)
+        val context2 =
+            FakeContext("non-application", baseContext = appContext, deviceId = VIRTUAL_DEVICE_ID_2)
+        val resultContext1 = ContextUtil.getPersistentApplicationContext(context1)
+        val resultContext2 = ContextUtil.getPersistentApplicationContext(context2)
+        assertThat(resultContext1).isNotSameInstanceAs(resultContext2)
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun testGetPersistentApplicationContext_differentAttributionTag_returnsDifferentInstances() {
+        val appContext = FakeAppContext("application")
+        val context1 =
+            FakeContext(
+                "non-application",
+                baseContext = appContext,
+                deviceId = VIRTUAL_DEVICE_ID,
+                attributionTag = ATTRIBUTION_TAG,
+            )
+        val context2 =
+            FakeContext(
+                "non-application",
+                baseContext = appContext,
+                deviceId = VIRTUAL_DEVICE_ID,
+                attributionTag = ATTRIBUTION_TAG_2,
+            )
+        val resultContext1 = ContextUtil.getPersistentApplicationContext(context1)
+        val resultContext2 = ContextUtil.getPersistentApplicationContext(context2)
+        assertThat(resultContext1).isNotSameInstanceAs(resultContext2)
     }
 
     @Test

@@ -53,7 +53,7 @@ import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isRoot
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
@@ -1053,6 +1053,29 @@ class PopupTest {
             assertThat(actualPopupScreenOffset.x).isEqualTo(desiredScreenPos.x)
             assertThat(actualPopupScreenOffset.y).isEqualTo(desiredScreenPos.y)
         }
+    }
+
+    @Test
+    fun customWindowType() {
+        val customType = WindowManager.LayoutParams.TYPE_APPLICATION_PANEL
+
+        rule.setContent {
+            PopupTestTag(testTag) {
+                Popup(properties = PopupProperties(windowType = customType)) {
+                    Box(Modifier.size(50.dp))
+                }
+            }
+        }
+
+        // Ensure the popup is composed and the window is created
+        rule.runOnIdle {}
+        val popupMatcher = PopupLayoutMatcher(testTag)
+        Espresso.onView(instanceOf(Owner::class.java))
+            .inRoot(popupMatcher)
+            .check(matches(isDisplayed()))
+
+        // Verify the window type was correctly passed to the LayoutParams
+        assertThat(popupMatcher.lastSeenWindowParams!!.type).isEqualTo(customType)
     }
 
     private fun matchesSize(width: Int, height: Int): BoundedMatcher<View, View> {

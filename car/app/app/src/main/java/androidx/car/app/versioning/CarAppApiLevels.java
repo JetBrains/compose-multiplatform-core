@@ -113,6 +113,12 @@ public final class CarAppApiLevels {
 
     private static final String CAR_API_LEVEL_FILE = "car-app-api.level";
 
+    /** Cache for the latest API level to avoid repeated I/O. */
+    private static volatile int sLatestCached = UNKNOWN;
+
+    /** Private lock to prevent external deadlock observability. */
+    private static final Object sLock = new Object();
+
     /**
      * Returns whether the given integer is a valid {@link CarAppApiLevel}
      */
@@ -123,9 +129,23 @@ public final class CarAppApiLevels {
 
     /**
      * Returns the highest API level implemented by this library.
+     * * <p>This method handles the thread-safe caching logic.
      */
     @CarAppApiLevel
     public static int getLatest() {
+        synchronized (sLock) {
+            if (sLatestCached == UNKNOWN) {
+                sLatestCached = readLatestFromResource();
+            }
+        }
+
+        return sLatestCached;
+    }
+
+    /**
+     * Performs the I/O and parsing required to find the latest API level.
+     */
+    private static int readLatestFromResource() {
         // The latest Car API level is defined as java resource, generated via build.gradle. This
         // has to be read through the class loader because we do not have access to the context
         // to retrieve an Android resource.

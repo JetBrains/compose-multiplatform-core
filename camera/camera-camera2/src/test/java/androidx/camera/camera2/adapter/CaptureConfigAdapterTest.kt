@@ -22,7 +22,7 @@ import androidx.camera.camera2.compat.quirk.ImageCaptureFailedForVideoSnapshotQu
 import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.compat.workaround.TemplateParamsOverride
 import androidx.camera.camera2.compat.workaround.TemplateParamsQuirkOverride
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.impl.CAMERAX_TAG_BUNDLE
 import androidx.camera.camera2.impl.Camera2ImplConfig
 import androidx.camera.camera2.impl.UseCaseThreads
@@ -341,16 +341,22 @@ class CaptureConfigAdapterTest {
 
     private fun createConfigAdapter(
         templateParamsOverride: TemplateParamsOverride = NoOpTemplateParamsOverride
-    ) =
-        CaptureConfigAdapter(
-            useCaseGraphConfig =
-                UseCaseGraphConfig(
-                    graph = FakeCameraGraph(),
-                    surfaceToStreamMap = mapOf(surface to StreamId(0)),
+    ): CaptureConfigAdapter {
+        val cameraStateAdapter = CameraStateAdapter()
+        return CaptureConfigAdapter(
+            useCaseCameraContext =
+                UseCaseCameraContext(
+                    cameraGraphProvider = { FakeCameraGraph() },
+                    cameraStateAdapter = cameraStateAdapter,
+                    graphStateToCameraStateAdapter =
+                        GraphStateToCameraStateAdapter(cameraStateAdapter),
+                    streamConfigMapProvider = { emptyMap() },
+                    defaultSurfaceToStreamMap = mapOf(surface to StreamId(0)),
                 ),
             cameraProperties = fakeCameraProperties,
             zslControl = ZslControlNoOpImpl(),
             threads = fakeUseCaseThreads,
             templateParamsOverride = templateParamsOverride,
         )
+    }
 }

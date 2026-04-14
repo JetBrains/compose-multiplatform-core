@@ -33,8 +33,10 @@ import com.android.extensions.xr.node.Node;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class MediaUtilsTest {
 
     @Test
@@ -43,12 +45,12 @@ public final class MediaUtilsTest {
 
         AndroidXrEntity entity = mock(AndroidXrEntity.class);
         when(entity.getNode()).thenReturn(expected);
-        PointSourceParams rtParams = new PointSourceParams(entity);
+        PointSourceParams rtParams = new PointSourceParams();
 
         com.android.extensions.xr.media.PointSourceParams result =
-                MediaUtils.convertPointSourceParamsToExtensions(rtParams);
+                MediaUtils.convertPointSourceParamsToExtensions(rtParams, entity);
 
-        assertThat(result.getNode()).isSameInstanceAs(expected);
+        assertThat(result.getNode()).isEqualTo(entity.getNode());
     }
 
     @Test

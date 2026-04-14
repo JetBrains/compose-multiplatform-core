@@ -35,7 +35,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
@@ -536,7 +536,7 @@ class SwipeToRevealScreenshotTest {
             moveTo(Offset(center.x - (screenWidthPx!! * 0.25f), center.y))
         }
 
-        rule.verifyScreenshot(testName, screenshotRule, testTag = TEST_TAG)
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 
     @Test
@@ -553,6 +553,20 @@ class SwipeToRevealScreenshotTest {
         @TestParameter screenSize: ScreenSize
     ) {
         val swipeScreenPercent = 0.11f
+
+        verifyScreenshotAfterSwipe(screenSize, swipeScreenPercent)
+    }
+
+    @Test
+    fun swipeToReveal_actionIcon_isFadingIn_atFullSize(@TestParameter screenSize: ScreenSize) {
+        val swipeScreenPercent = 0.33f
+
+        verifyScreenshotAfterSwipe(screenSize, swipeScreenPercent)
+    }
+
+    @Test
+    fun swipeToReveal_actionIcon_isFullyOpaque_atFullSize(@TestParameter screenSize: ScreenSize) {
+        val swipeScreenPercent = 0.37f
 
         verifyScreenshotAfterSwipe(screenSize, swipeScreenPercent)
     }

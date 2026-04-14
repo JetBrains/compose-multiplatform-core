@@ -18,7 +18,6 @@ package androidx.wear.compose.material3
 
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FiniteAnimationSpec
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -43,14 +42,18 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -130,6 +133,19 @@ public fun RadioButton(
     label: @Composable RowScope.() -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
+    val backgroundColorState = colors.containerColor(enabled, selected)
+
+    val colorPainter =
+        remember(backgroundColorState) {
+            object : Painter() {
+                override val intrinsicSize: Size
+                    get() = Size.Unspecified
+
+                override fun DrawScope.onDraw() {
+                    drawRect(color = backgroundColorState.value)
+                }
+            }
+        }
 
     // Stadium/Pill shaped toggle button
     Row(
@@ -137,14 +153,7 @@ public fun RadioButton(
             modifier
                 .defaultMinSize(minHeight = MIN_HEIGHT)
                 .width(IntrinsicSize.Max)
-                .surface(
-                    painter =
-                        ColorPainter(
-                            colors.containerColor(enabled = enabled, selected = selected).value
-                        ),
-                    shape = shape,
-                    transformation = transformation,
-                )
+                .surface(painter = colorPainter, shape = shape, transformation = transformation)
                 .selectable(
                     enabled = enabled,
                     selected = selected,
@@ -293,7 +302,7 @@ public fun SplitRadioButton(
     secondaryLabel: @Composable (RowScope.() -> Unit)? = null,
     label: @Composable RowScope.() -> Unit,
 ) {
-    val containerColor = colors.containerColor(enabled, selected).value
+    val containerColorState = colors.containerColor(enabled, selected)
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -321,7 +330,7 @@ public fun SplitRadioButton(
                     .semantics { role = Role.Button }
                     .fillMaxHeight()
                     .clip(SPLIT_SECTIONS_SHAPE)
-                    .background(containerColor)
+                    .drawBehind { drawRect(containerColorState.value) }
                     .padding(contentPadding)
                     .weight(1.0f),
             verticalAlignment = Alignment.CenterVertically,
@@ -357,9 +366,7 @@ public fun SplitRadioButton(
 
         Spacer(modifier = Modifier.size(2.dp))
 
-        val splitBackground = if (enabled) containerColor else Color.Black
-        val splitBackgroundOverlay =
-            colors.splitContainerColor(enabled = enabled, selected = selected).value
+        val splitBackgroundOverlayState = colors.splitContainerColor(enabled, selected)
         val hapticFeedback = LocalHapticFeedback.current
 
         Box(
@@ -377,12 +384,12 @@ public fun SplitRadioButton(
                     )
                     .fillMaxHeight()
                     .clip(SPLIT_SECTIONS_SHAPE)
-                    .background(splitBackground)
-                    .drawWithCache {
-                        onDrawWithContent {
-                            drawRect(color = splitBackgroundOverlay)
-                            drawContent()
-                        }
+                    .drawBehind {
+                        drawRect(
+                            splitBackgroundOverlayState.value.compositeOver(
+                                if (enabled) containerColorState.value else Color.Black
+                            )
+                        )
                     }
                     .defaultMinSize(minWidth = SPLIT_MIN_WIDTH)
                     .wrapContentHeight(align = Alignment.CenterVertically)

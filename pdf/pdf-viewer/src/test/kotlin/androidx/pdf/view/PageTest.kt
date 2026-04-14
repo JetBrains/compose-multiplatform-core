@@ -45,6 +45,7 @@ import org.mockito.kotlin.verify
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class PageTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -61,13 +62,13 @@ class PageTest {
                     FakeBitmapSource(invocation.getArgument(0))
                 }
             onBlocking { getPageContent(pageNumber = 0) } doReturn pageContent
-            onBlocking { getFormWidgetInfos(any()) } doReturn UPDATED_PAGE_WIDGET_INFOS
+            onBlocking { getFormWidgetInfos(any(), any()) } doReturn UPDATED_PAGE_WIDGET_INFOS
         }
 
     private val canvasSpy = spy(Canvas())
 
     private var invalidationCounter = 0
-    private val invalidationTracker: () -> Unit = { invalidationCounter++ }
+    private val invalidationTracker: (Int) -> Unit = { invalidationCounter++ }
 
     private var pageTextReadyCounter = 0
     private val onPageTextReady: ((Int) -> Unit) = { _ -> pageTextReadyCounter++ }
@@ -76,6 +77,8 @@ class PageTest {
 
     private val errorFlow = MutableSharedFlow<Throwable>()
 
+    private val pageUpdatedEvents = mutableListOf<PageBitmapState>()
+
     private fun createPage(): Page {
         return Page(
             pageNum = 0,
@@ -83,28 +86,30 @@ class PageTest {
             pdfDocument = pdfDocument,
             backgroundScope = testScope,
             maxBitmapSizePx = MAX_BITMAP_SIZE,
-            onPageUpdate = invalidationTracker,
+            onBitmapReady = { pageUpdatedEvents.add(PageBitmapState.PageBitmapReady(0)) },
+            onFormWidgetReady = invalidationTracker,
             onPageTextReady = onPageTextReady,
             errorFlow = errorFlow,
             isAccessibilityEnabled = true,
             formWidgetInfos =
                 listOf(
-                    FormWidgetInfo(
+                    FormWidgetInfo.createRadioButton(
                         widgetIndex = 0,
-                        widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
                         widgetRect = Rect(10, 10, 20, 20),
                         textValue = "true",
                         accessibilityLabel = "radio",
+                        isReadOnly = false,
                     ),
-                    FormWidgetInfo(
+                    FormWidgetInfo.createRadioButton(
                         widgetIndex = 0,
-                        widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
                         widgetRect = Rect(10, 10, 20, 20),
                         textValue = "false",
                         accessibilityLabel = "radio",
+                        isReadOnly = false,
                     ),
                 ),
             pdfFormFillingConfig = PdfFormFillingConfig({ false }, Color.CYAN),
+            onBitmapCleared = { pageUpdatedEvents.add(PageBitmapState.PageBitmapCleared(0)) },
         )
     }
 
@@ -116,6 +121,24 @@ class PageTest {
         pageTextReadyCounter = 0
 
         page = createPage()
+    }
+
+    @Test
+    fun pageBitmapState_PageBitmapCleared() {
+        assertThat(pageUpdatedEvents.size).isEqualTo(0)
+        page.setVisible(zoom = 1.5F, FULL_PAGE_RECT)
+        testDispatcher.scheduler.runCurrent()
+        assertThat(pageUpdatedEvents.size).isEqualTo(1)
+        val pageUpdatedState = pageUpdatedEvents.first()
+        assertThat(pageUpdatedState is PageBitmapState.PageBitmapReady).isTrue()
+        assertThat((pageUpdatedState as PageBitmapState.PageBitmapReady).pageNum).isEqualTo(0)
+
+        page.setInvisible()
+        testDispatcher.scheduler.runCurrent()
+        assertThat(pageUpdatedEvents.size).isEqualTo(2)
+        val pageClearedState = pageUpdatedEvents.last()
+        assertThat(pageClearedState is PageBitmapState.PageBitmapCleared).isTrue()
+        assertThat((pageClearedState as PageBitmapState.PageBitmapCleared).pageNum).isEqualTo(0)
     }
 
     @Test
@@ -245,18 +268,18 @@ val FULL_PAGE_RECT = RectF(0f, 0f, PAGE_SIZE.x.toFloat(), PAGE_SIZE.y.toFloat())
 val MAX_BITMAP_SIZE = Point(500, 500)
 val UPDATED_PAGE_WIDGET_INFOS =
     listOf(
-        FormWidgetInfo(
+        FormWidgetInfo.createRadioButton(
             widgetIndex = 0,
-            widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
             widgetRect = Rect(10, 10, 20, 20),
             textValue = "false",
             accessibilityLabel = "radio",
+            isReadOnly = false,
         ),
-        FormWidgetInfo(
+        FormWidgetInfo.createRadioButton(
             widgetIndex = 0,
-            widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
             widgetRect = Rect(10, 10, 20, 20),
             textValue = "true",
             accessibilityLabel = "radio",
+            isReadOnly = false,
         ),
     )

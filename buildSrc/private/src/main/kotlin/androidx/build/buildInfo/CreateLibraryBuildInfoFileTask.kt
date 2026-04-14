@@ -215,7 +215,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             mavenGroup: LibraryGroup?,
             variant: VariantPublishPlan,
             shaProvider: Provider<String>,
-            shouldPublishDocs: Boolean,
+            shouldPublishDocs: Provider<Boolean>,
             isKmp: Boolean,
             target: String,
             kmpChildren: Set<String>,
@@ -319,7 +319,10 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
         private fun String?.isAndroidXDependency() =
             this != null &&
                 startsWith("androidx.") &&
-                !startsWith("androidx.test") &&
+                // we are allowing androidx.test.uiautomator because of b/483359994
+                // uiautomator is released with other AndroidX libraries in Jetpad so if another
+                // package depends on it we need to have it in the build info file
+                (startsWith("androidx.test.uiautomator") || !startsWith("androidx.test")) &&
                 !startsWith("androidx.databinding") &&
                 !startsWith("androidx.media3")
 
@@ -415,7 +418,7 @@ private fun Project.createTaskForComponent(
     pub: ProjectComponentPublication,
     libraryGroup: LibraryGroup?,
     artifactId: Provider<String>,
-    shouldPublishDocs: Boolean,
+    shouldPublishDocs: Provider<Boolean>,
     isKmp: Boolean,
     buildTarget: String,
     kmpChildren: Set<String>,
@@ -447,7 +450,7 @@ private fun Project.createBuildInfoTask(
     libraryGroup: LibraryGroup?,
     artifactId: Provider<String>,
     shaProvider: Provider<String>,
-    shouldPublishDocs: Boolean,
+    shouldPublishDocs: Provider<Boolean>,
     isKmp: Boolean,
     buildTarget: String,
     kmpChildren: Set<String>,
@@ -481,7 +484,7 @@ private fun Project.createBuildInfoTask(
         shaProvider = shaProvider,
         // There's a build_info file for each KMP platform, but only the artifact without a platform
         // suffix is listed in docs-public/build.gradle.
-        shouldPublishDocs = shouldPublishDocs && kmpTaskSuffix == "",
+        shouldPublishDocs = shouldPublishDocs.map { it && kmpTaskSuffix == "" },
         isKmp = isKmp,
         target = buildTarget,
         kmpChildren = kmpChildren.map { modifyKmpChildrenForBuildInfo(it) }.toSet(),

@@ -18,11 +18,9 @@ package androidx.xr.arcore
 
 import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
-import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.Face as RuntimeFace
 import androidx.xr.arcore.runtime.Mesh
-import androidx.xr.runtime.Config.FaceTrackingMode
+import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
@@ -33,25 +31,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transform
 
-/** Contains the tracking information of a detected human face. */
+/**
+ * Contains the tracking information of a detected human face.
+ *
+ * @property state the current [State] of this face
+ */
 public class Face
 internal constructor(
     internal val runtimeFace: RuntimeFace,
     internal val xrResourceManager: XrResourcesManager,
-) : Updatable {
+) : Trackable<Face.State>, Updatable {
 
     public companion object {
         /**
          * Returns the Face object that corresponds to the user.
          *
-         * @param session the currently active [Session].
+         * @param session the currently active [Session]
          * @throws [IllegalStateException] if [FaceTrackingMode] is set to
-         *   [FaceTrackingMode.DISABLED].
+         *   [FaceTrackingMode.DISABLED]
          */
         @JvmStatic
         public fun getUserFace(session: Session): Face? {
             val config = session.config
-            check(config.faceTracking == FaceTrackingMode.USER) {
+            check(config.faceTracking == FaceTrackingMode.BLEND_SHAPES) {
                 "Config.FaceTrackingMode must be set to USER to read the user's face."
             }
 
@@ -61,8 +63,11 @@ internal constructor(
             return perceptionStateExtender.xrResourcesManager.userFace
         }
 
-        /** Emits the faces that are currently being tracked in the [Session]. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        /**
+         * Emits the faces that are currently being tracked in the [Session].
+         *
+         * @param session the [Session] to track faces from
+         */
         @JvmStatic
         public fun subscribe(session: Session): StateFlow<Collection<Face>> {
             check(session.config.faceTracking == FaceTrackingMode.MESHES) {
@@ -85,141 +90,147 @@ internal constructor(
 
         internal val blendShapeMapKeys: List<FaceBlendShapeType> =
             listOf(
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_BROW_LOWERER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_BROW_LOWERER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_PUFF_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_PUFF_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_RAISER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_RAISER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_SUCK_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_SUCK_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHIN_RAISER_BOTTOM,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHIN_RAISER_TOP,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_DIMPLER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_DIMPLER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_CLOSED_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_CLOSED_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_DOWN_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_DOWN_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_LEFT_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_LEFT_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_RIGHT_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_RIGHT_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_UP_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_UP_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_INNER_BROW_RAISER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_INNER_BROW_RAISER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_JAW_DROP,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_JAW_SIDEWAYS_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_JAW_SIDEWAYS_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_JAW_THRUST,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LID_TIGHTENER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LID_TIGHTENER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_DEPRESSOR_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_DEPRESSOR_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_PULLER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_PULLER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_FUNNELER_LEFT_BOTTOM,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_FUNNELER_LEFT_TOP,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_FUNNELER_RIGHT_BOTTOM,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_FUNNELER_RIGHT_TOP,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_PRESSOR_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_PRESSOR_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_PUCKER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_PUCKER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_STRETCHER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_STRETCHER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_SUCK_LEFT_BOTTOM,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_SUCK_LEFT_TOP,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_SUCK_RIGHT_BOTTOM,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_SUCK_RIGHT_TOP,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_TIGHTENER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_TIGHTENER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIPS_TOWARD,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LOWER_LIP_DEPRESSOR_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LOWER_LIP_DEPRESSOR_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_MOUTH_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_MOUTH_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_NOSE_WRINKLER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_NOSE_WRINKLER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_OUTER_BROW_RAISER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_OUTER_BROW_RAISER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_UPPER_LID_RAISER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_UPPER_LID_RAISER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_UPPER_LIP_RAISER_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_UPPER_LIP_RAISER_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_OUT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_LEFT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_RIGHT,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_UP,
-                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_DOWN,
+                FaceBlendShapeType.BROW_LOWERER_LEFT,
+                FaceBlendShapeType.BROW_LOWERER_RIGHT,
+                FaceBlendShapeType.CHEEK_PUFF_LEFT,
+                FaceBlendShapeType.CHEEK_PUFF_RIGHT,
+                FaceBlendShapeType.CHEEK_RAISER_LEFT,
+                FaceBlendShapeType.CHEEK_RAISER_RIGHT,
+                FaceBlendShapeType.CHEEK_SUCK_LEFT,
+                FaceBlendShapeType.CHEEK_SUCK_RIGHT,
+                FaceBlendShapeType.CHIN_RAISER_BOTTOM,
+                FaceBlendShapeType.CHIN_RAISER_TOP,
+                FaceBlendShapeType.DIMPLER_LEFT,
+                FaceBlendShapeType.DIMPLER_RIGHT,
+                FaceBlendShapeType.EYES_CLOSED_LEFT,
+                FaceBlendShapeType.EYES_CLOSED_RIGHT,
+                FaceBlendShapeType.EYES_LOOK_DOWN_LEFT,
+                FaceBlendShapeType.EYES_LOOK_DOWN_RIGHT,
+                FaceBlendShapeType.EYES_LOOK_LEFT_LEFT,
+                FaceBlendShapeType.EYES_LOOK_LEFT_RIGHT,
+                FaceBlendShapeType.EYES_LOOK_RIGHT_LEFT,
+                FaceBlendShapeType.EYES_LOOK_RIGHT_RIGHT,
+                FaceBlendShapeType.EYES_LOOK_UP_LEFT,
+                FaceBlendShapeType.EYES_LOOK_UP_RIGHT,
+                FaceBlendShapeType.INNER_BROW_RAISER_LEFT,
+                FaceBlendShapeType.INNER_BROW_RAISER_RIGHT,
+                FaceBlendShapeType.JAW_DROP,
+                FaceBlendShapeType.JAW_SIDEWAYS_LEFT,
+                FaceBlendShapeType.JAW_SIDEWAYS_RIGHT,
+                FaceBlendShapeType.JAW_THRUST,
+                FaceBlendShapeType.LID_TIGHTENER_LEFT,
+                FaceBlendShapeType.LID_TIGHTENER_RIGHT,
+                FaceBlendShapeType.LIP_CORNER_DEPRESSOR_LEFT,
+                FaceBlendShapeType.LIP_CORNER_DEPRESSOR_RIGHT,
+                FaceBlendShapeType.LIP_CORNER_PULLER_LEFT,
+                FaceBlendShapeType.LIP_CORNER_PULLER_RIGHT,
+                FaceBlendShapeType.LIP_FUNNELER_LEFT_BOTTOM,
+                FaceBlendShapeType.LIP_FUNNELER_LEFT_TOP,
+                FaceBlendShapeType.LIP_FUNNELER_RIGHT_BOTTOM,
+                FaceBlendShapeType.LIP_FUNNELER_RIGHT_TOP,
+                FaceBlendShapeType.LIP_PRESSOR_LEFT,
+                FaceBlendShapeType.LIP_PRESSOR_RIGHT,
+                FaceBlendShapeType.LIP_PUCKER_LEFT,
+                FaceBlendShapeType.LIP_PUCKER_RIGHT,
+                FaceBlendShapeType.LIP_STRETCHER_LEFT,
+                FaceBlendShapeType.LIP_STRETCHER_RIGHT,
+                FaceBlendShapeType.LIP_SUCK_LEFT_BOTTOM,
+                FaceBlendShapeType.LIP_SUCK_LEFT_TOP,
+                FaceBlendShapeType.LIP_SUCK_RIGHT_BOTTOM,
+                FaceBlendShapeType.LIP_SUCK_RIGHT_TOP,
+                FaceBlendShapeType.LIP_TIGHTENER_LEFT,
+                FaceBlendShapeType.LIP_TIGHTENER_RIGHT,
+                FaceBlendShapeType.LIPS_TOWARD,
+                FaceBlendShapeType.LOWER_LIP_DEPRESSOR_LEFT,
+                FaceBlendShapeType.LOWER_LIP_DEPRESSOR_RIGHT,
+                FaceBlendShapeType.MOUTH_LEFT,
+                FaceBlendShapeType.MOUTH_RIGHT,
+                FaceBlendShapeType.NOSE_WRINKLER_LEFT,
+                FaceBlendShapeType.NOSE_WRINKLER_RIGHT,
+                FaceBlendShapeType.OUTER_BROW_RAISER_LEFT,
+                FaceBlendShapeType.OUTER_BROW_RAISER_RIGHT,
+                FaceBlendShapeType.UPPER_LID_RAISER_LEFT,
+                FaceBlendShapeType.UPPER_LID_RAISER_RIGHT,
+                FaceBlendShapeType.UPPER_LIP_RAISER_LEFT,
+                FaceBlendShapeType.UPPER_LIP_RAISER_RIGHT,
+                FaceBlendShapeType.TONGUE_OUT,
+                FaceBlendShapeType.TONGUE_LEFT,
+                FaceBlendShapeType.TONGUE_RIGHT,
+                FaceBlendShapeType.TONGUE_UP,
+                FaceBlendShapeType.TONGUE_DOWN,
             )
 
         internal val confidenceRegions: List<FaceConfidenceRegion> =
             listOf(
-                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LOWER,
-                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LEFT_UPPER,
-                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_RIGHT_UPPER,
+                FaceConfidenceRegion.LOWER,
+                FaceConfidenceRegion.LEFT_UPPER,
+                FaceConfidenceRegion.RIGHT_UPPER,
             )
     }
 
     /**
      * The representation of the current state of [Face].
      *
-     * @param trackingState the current [TrackingState] of the face.
+     * @property trackingState the current [TrackingState] of the face.
+     * @property centerPose the pose at the center of the face, defined to have the origin located
+     *   behind the nose and between the two cheek bones
+     *
+     *   Z+ is forward out of the nose, Y+ is upwards, and X+ is towards the left. The units are in
+     *   meters.
+     *
+     *   [centerPose] will be null if the Session is not configured with [FaceTrackingMode.MESHES].
+     *
+     * @property mesh the polygonal representation of the face as observed by the perception system
+     *
+     *   [mesh] will be null if the Session is not configured with [FaceTrackingMode.MESHES].
      */
     public class State
     internal constructor(
-        public val trackingState: TrackingState,
-        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val centerPose: Pose? = null,
-        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val mesh: Mesh? = null,
+        public override val trackingState: TrackingState,
+        public val centerPose: Pose? = null,
+        public val mesh: Mesh? = null,
         internal val blendShapeValues: FloatArray? = null,
         internal val confidenceValues: FloatArray? = null,
         internal val noseTipPose: Pose? = null,
         internal val foreheadLeftPose: Pose? = null,
         internal val foreheadRightPose: Pose? = null,
-    ) {
+    ) : Trackable.State {
 
-        /**
-         * Represents the blend shapes of the face.
-         *
-         * @return a map of [FaceBlendShapeType] to the corresponding blend shape value in the range
-         *   `[0.0, 1.0]`. If the face does not provide blend shape values, this will be an empty
-         *   map.
-         */
         public val blendShapes: Map<FaceBlendShapeType, Float> =
             blendShapeMapKeys.zip(blendShapeValues?.toList() ?: emptyList()).toMap()
 
         /**
          * Gets the confidence value of the face tracker for the given region.
          *
-         * @param region the [FaceConfidenceRegion] to get the confidence value for.
+         * @param region the [FaceConfidenceRegion] to get the confidence value for
          * @return the confidence value in the range `[0.0, 1.0]` of the face tracker for the given
-         *   region.
-         * @throws IllegalArgumentException if the region does not exist.
-         * @throws IllegalStateException if the Face does not provide confidence values.
+         *   region
+         * @throws IllegalArgumentException if the region does not exist
+         * @throws IllegalStateException if the Face does not provide confidence values
          */
         @FloatRange(from = 0.0, to = 1.0, fromInclusive = true, toInclusive = true)
         public fun getConfidence(region: FaceConfidenceRegion): Float {
             check(confidenceValues != null) { "The Face does not contain confidenceValues." }
             return when (region) {
-                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LOWER -> confidenceValues[0]
-                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LEFT_UPPER -> confidenceValues[1]
-                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_RIGHT_UPPER -> confidenceValues[2]
+                FaceConfidenceRegion.LOWER -> confidenceValues[0]
+                FaceConfidenceRegion.LEFT_UPPER -> confidenceValues[1]
+                FaceConfidenceRegion.RIGHT_UPPER -> confidenceValues[2]
                 else -> throw IllegalArgumentException("Unknown confidence for region ${region}.")
             }
         }
 
-        /** Map of [Pose] values on the Face for each [FaceMeshRegion] */
-        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public val regionPoses: Map<FaceMeshRegion, Pose>? =
-            if (noseTipPose == null || foreheadLeftPose == null || foreheadRightPose == null) null
-            else
-                mapOf(
-                    FaceMeshRegion.NOSE_TIP to noseTipPose,
-                    FaceMeshRegion.FOREHEAD_LEFT to foreheadLeftPose,
-                    FaceMeshRegion.FOREHEAD_RIGHT to foreheadRightPose,
-                )
+        /**
+         * Map of [Pose] values on the Face for each [FaceMeshRegion]
+         *
+         * Each [Pose] value in the Map will be null if the Session is not configured with
+         * [FaceTrackingMode.MESHES].
+         */
+        public val regionPoses: Map<FaceMeshRegion, Pose?> =
+            mapOf(
+                FaceMeshRegion.NOSE_TIP to noseTipPose,
+                FaceMeshRegion.FOREHEAD_LEFT to foreheadLeftPose,
+                FaceMeshRegion.FOREHEAD_RIGHT to foreheadRightPose,
+            )
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -263,24 +274,9 @@ internal constructor(
         )
 
     /** The current [State] of this Face. */
-    public val state: StateFlow<State> = _state.asStateFlow()
+    public override val state: StateFlow<State> = _state.asStateFlow()
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun createAnchor(pose: Pose): AnchorCreateResult {
-        val runtimeAnchor: RuntimeAnchor
-        try {
-            runtimeAnchor = runtimeFace.createAnchor(pose)
-        } catch (e: AnchorResourcesExhaustedException) {
-            return AnchorCreateResourcesExhausted()
-        } catch (e: IllegalStateException) {
-            throw UnsupportedOperationException("The Face does not support anchors.", e)
-        }
-        val anchor = Anchor(runtimeAnchor, xrResourceManager)
-        xrResourceManager.addUpdatable(anchor)
-        return AnchorCreateSuccess(anchor)
-    }
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public override suspend fun update() {
         if (!runtimeFace.isValid) return
         _state.emit(

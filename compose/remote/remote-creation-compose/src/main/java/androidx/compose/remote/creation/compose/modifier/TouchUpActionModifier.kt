@@ -13,32 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.clickable
 import androidx.compose.remote.creation.compose.action.Action
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.modifiers.TouchActionModifier
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class TouchUpActionModifier(public val actions: List<Action>) : RemoteModifier.Element {
-    override fun toRemoteComposeElement(): RecordingModifier.Element {
+internal class TouchUpActionModifier(public val actions: List<Action>) : RemoteModifier.Element {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
         return androidx.compose.remote.creation.modifiers.TouchActionModifier(
             TouchActionModifier.UP,
-            actions.map { it.toRemoteAction() },
+            @Suppress("ListIterator") actions.map { action -> with(action) { toRemoteAction() } },
         )
-    }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        val previewActions = actions.map { it.toComposeUiAction() }
-
-        return clickable { previewActions.forEach { action -> action.invoke() } }
     }
 }
 

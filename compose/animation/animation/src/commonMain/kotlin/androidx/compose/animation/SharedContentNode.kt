@@ -16,14 +16,13 @@
 
 package androidx.compose.animation
 
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.layout.ApproachLayoutModifierNode
@@ -37,17 +36,27 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.modifier.ModifierLocalModifierNode
 import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.modifier.modifierLocalOf
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ObserverModifierNode
+import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.requireGraphicsContext
 import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toSize
@@ -75,13 +84,15 @@ internal data class SharedBoundsNodeElement(val sharedElementState: SharedElemen
  * visible. Once the target bounds are calculated, the bounds animation will happen during the
  * approach pass.
  */
+@OptIn(ExperimentalLookaheadAnimationVisualDebugApi::class)
 internal class SharedBoundsNode(state: SharedElementEntry) :
     ApproachLayoutModifierNode,
     Modifier.Node(),
     DrawModifierNode,
     ModifierLocalModifierNode,
     ObserverModifierNode,
-    BoundsProvider {
+    BoundsProvider,
+    CompositionLocalConsumerModifierNode {
 
     private var boundsBeforeDetached: Rect? = null
     override val lastBoundsInSharedTransitionScope: Rect?
@@ -158,6 +169,7 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
         sharedElementEntry.boundsProvider = this
     }
 
+    @Suppress("SuspiciousCompositionLocalModifierRead")
     override fun onAttach() {
         super.onAttach()
         observeReads(sharedElement.observingVisibilityChange)
@@ -215,6 +227,12 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
         }
     }
 
+    private var textMeasurer: TextMeasurer? = null
+    private var lookaheadAnimationVisualDebugHelper: LookaheadAnimationVisualDebugHelper? = null
+    private var currentResolver: FontFamily.Resolver? = null
+    private var currentDensity: Density? = null
+    private var currentLayoutDirection: LayoutDirection? = null
+
     // Match outlives transition. i.e. user didn't remove the not-visible shared element from
     // the tree. In this case, the not visible shared element follows the visible shared
     // element layout.
@@ -264,14 +282,39 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
         // structural offset changes. When MFR (e.g. scrolling) changes, we will track the
         // current MFR, and apply the total offset incurred since the start of the animation
         // (i.e. currentMfr - initialMfr) directly to the animated value.
+        val targetBounds = targetData.targetBounds
+        var spec: FiniteAnimationSpec<Rect>? = null
+        var actualIsLookaheadAnimationVisualDebuggingEnabled = false
+        if (isLookaheadAnimationVisualDebuggingEnabled) {
+            actualIsLookaheadAnimationVisualDebuggingEnabled =
+                currentValueOf(LocalLookaheadAnimationVisualDebugConfig).isEnabled
+        }
         if (activeMatchRemoved) {
+            if (actualIsLookaheadAnimationVisualDebuggingEnabled) {
+                val boundsTransform = BoundsTransform { _, _ ->
+                    spring(visibilityThreshold = Rect.VisibilityThreshold)
+                }
+                spec = boundsTransform.createAnimationSpec(currentBounds, targetBounds)
+            }
             boundsAnimation.animate(
                 currentBounds,
                 targetData.targetBounds,
                 BoundsTransform { _, _ -> spring(visibilityThreshold = Rect.VisibilityThreshold) },
             )
         } else {
+            if (actualIsLookaheadAnimationVisualDebuggingEnabled) {
+                spec = spring()
+            }
             boundsAnimation.animate(currentBounds, targetData.targetBounds)
+        }
+        if (actualIsLookaheadAnimationVisualDebuggingEnabled) {
+            if (lookaheadAnimationVisualDebugHelper != null) {
+                lookaheadAnimationVisualDebugHelper!!.calculatePath(
+                    spec!!,
+                    currentBounds,
+                    targetBounds,
+                )
+            }
         }
 
         val animatedBounds = boundsAnimation.value
@@ -292,13 +335,11 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
                 }
 
             sharedElement.state.updateBounds(bounds)
-            if (SharedTransitionDebug) {
-                println(
-                    "SharedTransition, animated bounds: $bounds," +
-                        " target: ${targetData.targetBounds}," +
-                        " scope size: ${sharedElement.scope.lookaheadRoot.size}," +
-                        " ${sharedElement.state}"
-                )
+            sharedTransitionDebug {
+                "animated bounds: $bounds," +
+                    " target: ${targetData.targetBounds}," +
+                    " scope size: ${sharedElement.scope.lookaheadRoot.size}," +
+                    " ${sharedElement.state}"
             }
         } else {
             topLeft = animatedTopLeft ?: currentBounds.topLeft
@@ -377,24 +418,21 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
                 }
                 Constraints.fixed(width.coerceAtLeast(0), height.coerceAtLeast(0))
             } ?: constraints
-        if (SharedTransitionDebug) {
-            println(
-                "SharedTransition, approach measure constraints: $resolvedConstraints," +
-                    " key = ${sharedElement.key}, state: ${sharedElement.state}"
-            )
+        sharedTransitionDebug {
+            "approach measure constraints: $resolvedConstraints," +
+                " key = ${sharedElement.key}, state: ${sharedElement.state}"
         }
         val placeable = measurable.measure(resolvedConstraints)
         return approachPlace(placeable)
     }
 
     override fun ContentDrawScope.draw() {
+        val sharedElement = sharedElement
         val matchState = sharedElement.state
         val bounds = matchState.currentBounds
-        if (SharedTransitionDebug) {
-            println(
-                "SharedTransition, ContentDrawScope.draw() invoked. Bounds size: ${bounds?.size}" +
-                    " for key = ${sharedElement.key}"
-            )
+        sharedTransitionDebug {
+            "ContentDrawScope.draw() invoked. Bounds size: ${bounds?.size}" +
+                " for key = ${sharedElement.key}"
         }
         // Update clipPath
         sharedElementEntry.clipPathInOverlay =
@@ -414,35 +452,112 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
                     "target: ${sharedElementEntry.boundsAnimation.target}, is attached: $isAttached"
             }
 
-        layer.record {
-            if (SharedTransitionDebug) {
-                println(
-                    "SharedTransition, record layer at size: ${bounds?.size} for" +
-                        " key = ${sharedElement.key}"
-                )
+        val visualDebugConfig =
+            if (isLookaheadAnimationVisualDebuggingEnabled) {
+                currentValueOf(LocalLookaheadAnimationVisualDebugConfig)
+            } else {
+                null
             }
 
-            this@draw.drawContent()
-            if (
-                VisualDebugging &&
-                    sharedElement.boundsTransformIsActive &&
-                    sharedElementEntry.isEnabled
-            ) {
-                // TODO: also draw border of the clip path
-                drawRect(Color.Green, style = Stroke(3f))
+        if (visualDebugConfig == null || !visualDebugConfig.isEnabled) {
+            layer.record {
+                sharedTransitionDebug {
+                    "record layer at size: ${bounds?.size} for" + " key = ${sharedElement.key}"
+                }
+
+                this@draw.drawContent()
             }
+        } else {
+            drawContentWithLookaheadAnimationDebug(layer, bounds, visualDebugConfig)
         }
         if (sharedElementEntry.shouldRenderInPlace) {
-            if (SharedTransitionDebug) {
-                println("SharedTransition, drawing in place. key = ${sharedElement.key}")
-            }
+            sharedTransitionDebug { "drawing in place. key = ${sharedElement.key}" }
             drawLayer(layer)
+        }
+    }
+
+    private fun ContentDrawScope.drawContentWithLookaheadAnimationDebug(
+        layer: GraphicsLayer,
+        bounds: Rect?,
+        visualDebugConfig: LookaheadAnimationVisualDebugConfig,
+    ) {
+
+        if (lookaheadAnimationVisualDebugHelper == null) {
+            lookaheadAnimationVisualDebugHelper = LookaheadAnimationVisualDebugHelper()
+        }
+        if (currentDensity == null) {
+            currentDensity = currentValueOf(LocalDensity)
+            currentLayoutDirection = currentValueOf(LocalLayoutDirection)
+        }
+        val lookaheadAnimationVisualDebugColor =
+            currentValueOf(LocalLookaheadAnimationVisualDebugColor)
+        val strokeWeight = 2.5.dp.toPx()
+        val targetData = sharedElement.state.targetData
+        updateTextMeasurer(currentValueOf(LocalFontFamilyResolver))
+        layer.record {
+            val drawScope = this@drawContentWithLookaheadAnimationDebug
+            drawScope.drawContent()
+
+            if (!sharedElementEntry.isEnabled) return@record
+
+            with(lookaheadAnimationVisualDebugHelper!!) {
+                if (sharedElement.scope.isTransitionActive) {
+                    if (sharedElement.boundsTransformIsActive) {
+                        if (sharedElement.enabledEntries.size > 2) {
+                            drawScope.drawMultipleMatchesElement(
+                                visualDebugConfig.multipleMatchesColor,
+                                visualDebugConfig.isShowKeyLabelEnabled,
+                                sharedElement.key,
+                                sharedElement.enabledEntries.size - 1,
+                                textMeasurer!!,
+                                strokeWeight * 3,
+                            )
+                        } else if (targetData != null && bounds != null) {
+                            drawScope.drawLocalVisualizations(
+                                lookaheadAnimationVisualDebugColor,
+                                targetData.targetBounds.topLeft,
+                                targetData.size,
+                                bounds,
+                                center,
+                                visualDebugConfig.isShowKeyLabelEnabled,
+                                strokeWeight,
+                                sharedElement.key,
+                                textMeasurer,
+                            )
+                        }
+                    } else {
+                        drawScope.drawUnmatchedElement(
+                            visualDebugConfig.unmatchedElementColor,
+                            visualDebugConfig.isShowKeyLabelEnabled,
+                            sharedElement.key,
+                            textMeasurer!!,
+                            strokeWeight,
+                        )
+                    }
+                } else {
+                    drawScope.drawInactiveVisualizations(
+                        lookaheadAnimationVisualDebugColor,
+                        visualDebugConfig.isShowKeyLabelEnabled,
+                        strokeWeight,
+                        sharedElement.key,
+                        textMeasurer,
+                    )
+                }
+            }
         }
     }
 
     override fun onObservedReadsChanged() {
         sharedElement.updateMatch()
         observeReads(sharedElement.observingVisibilityChange)
+    }
+
+    private fun updateTextMeasurer(fontFamilyResolver: FontFamily.Resolver) {
+        if (textMeasurer == null || currentResolver != fontFamilyResolver) {
+            textMeasurer =
+                TextMeasurer(fontFamilyResolver, currentDensity!!, currentLayoutDirection!!)
+            currentResolver = fontFamilyResolver
+        }
     }
 }
 

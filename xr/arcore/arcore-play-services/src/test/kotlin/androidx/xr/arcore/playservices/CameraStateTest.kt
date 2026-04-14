@@ -328,7 +328,7 @@ class CameraStateTest {
                     outputVertices
                 },
             )
-        val other = Object()
+        val other = Any()
 
         assertThat(cameraState1).isNotEqualTo(other)
     }

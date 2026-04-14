@@ -17,7 +17,6 @@
 package androidx.xr.glimmer.stack
 
 import android.os.Build
-import android.os.SystemClock.uptimeMillis
 import android.view.MotionEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -28,40 +27,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.GenericShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.ExperimentalIndirectPointerApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.FocusState
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusTarget
-import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toPixelMap
-import androidx.compose.ui.input.indirect.IndirectPointerEvent
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotDisplayed
-import androidx.compose.ui.test.assertIsNotFocused
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
-import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -71,13 +55,15 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.size
-import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.xr.glimmer.Text
-import androidx.xr.glimmer.nonTouchInputModeRule
-import androidx.xr.glimmer.performIndirectPointerEvent
+import androidx.xr.glimmer.performIndirectMove
+import androidx.xr.glimmer.performIndirectPress
+import androidx.xr.glimmer.performIndirectRelease
 import androidx.xr.glimmer.performIndirectSwipe
+import androidx.xr.glimmer.testutils.captureToImage
+import androidx.xr.glimmer.testutils.createGlimmerRule
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.CoroutineScope
@@ -87,7 +73,6 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -101,20 +86,10 @@ class VerticalStackTest {
 
     @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
 
-    @get:Rule(1) val inputModeRule = nonTouchInputModeRule()
-
-    private val focusRequester = FocusRequester()
-    private val savedInitialFocusAvailabilityFlag =
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable
-
-    @Before
-    fun setup() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = true
-    }
+    @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     @After
     fun tearDown() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = savedInitialFocusAvailabilityFlag
         rule.mainClock.autoAdvance = true
     }
 
@@ -143,7 +118,7 @@ class VerticalStackTest {
     }
 
     @Test
-    fun multipleItems_displaysFirstTwoItems() {
+    fun multipleItems_displaysFirstThreeItems() {
         val state = StackState()
         rule.setContent {
             VerticalStack(state = state) { items(5) { index -> StackItem("Item $index") } }
@@ -151,8 +126,49 @@ class VerticalStackTest {
 
         rule.onNodeWithText("Item 0").assertIsDisplayed()
         rule.onNodeWithText("Item 1").assertIsDisplayed()
-        rule.onNodeWithText("Item 2").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
         rule.onNodeWithText("Item 5").assertDoesNotExist()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
+    }
+
+    @Test
+    fun multipleItems_withKeys_displaysFirstThreeItems() {
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                item(key = 0) { StackItem("Item 0") }
+                item(key = 1) { StackItem("Item 1") }
+                item(key = 2) { StackItem("Item 2") }
+                item(key = 3) { StackItem("Item 3") }
+            }
+        }
+
+        rule.onNodeWithText("Item 0").assertIsDisplayed()
+        rule.onNodeWithText("Item 1").assertIsDisplayed()
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
+    }
+
+    @Test
+    fun multipleItems_withNullAndIntKey_displaysFirstThreeItems() {
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                item(key = null) { StackItem("Item 0") }
+                item(key = 0) { StackItem("Item 1") }
+                item(key = 1) { StackItem("Item 2") }
+                item(key = 3) { StackItem("Item 3") }
+            }
+        }
+
+        rule.onNodeWithText("Item 0").assertIsDisplayed()
+        rule.onNodeWithText("Item 1").assertIsDisplayed()
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
         assertThat(state.topItem).isEqualTo(0)
         assertThat(state.topItemOffsetFraction).isEqualTo(0f)
     }
@@ -167,7 +183,8 @@ class VerticalStackTest {
         rule.onNodeWithText("Item 0").assertIsNotDisplayed()
         rule.onNodeWithText("Item 1").assertIsDisplayed()
         rule.onNodeWithText("Item 2").assertIsDisplayed()
-        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 3").assertIsDisplayed()
+        rule.onNodeWithText("Item 4").assertIsNotDisplayed()
         assertThat(state.topItem).isEqualTo(1)
         assertThat(state.topItemOffsetFraction).isEqualTo(0f)
     }
@@ -212,7 +229,7 @@ class VerticalStackTest {
     }
 
     @Test
-    fun swipeUp_pointerInput_displaysOnlyNextTwoItems() {
+    fun swipeUp_pointerInput_displaysOnlyNextThreeItems() {
         var itemHeight = 0
         val state = StackState()
         rule.setContent {
@@ -222,7 +239,8 @@ class VerticalStackTest {
         }
         rule.onNodeWithText("Item 0").assertIsDisplayed()
         rule.onNodeWithText("Item 1").assertIsDisplayed()
-        rule.onNodeWithText("Item 2").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
 
         rule.onNodeWithText("Item 0").performTouchInput {
             swipe(
@@ -234,29 +252,32 @@ class VerticalStackTest {
         rule.onNodeWithText("Item 0").assertIsNotDisplayed()
         rule.onNodeWithText("Item 1").assertIsDisplayed()
         rule.onNodeWithText("Item 2").assertIsDisplayed()
-        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 3").assertIsDisplayed()
+        rule.onNodeWithText("Item 4").assertIsNotDisplayed()
         assertThat(state.topItem).isEqualTo(1)
     }
 
     @Test
-    fun swipeForward_displaysOnlyNextTwoItems() {
+    fun swipeForward_displaysOnlyNextThreeItems() {
         var itemHeight = 0
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state) {
                 items(5) { index -> StackItem("Item $index") { itemHeight = it } }
             }
         }
         rule.onNodeWithText("Item 0").assertIsDisplayed()
         rule.onNodeWithText("Item 1").assertIsDisplayed()
-        rule.onNodeWithText("Item 2").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
 
         performIndirectSwipe(itemHeight)
 
         rule.onNodeWithText("Item 0").assertIsNotDisplayed()
         rule.onNodeWithText("Item 1").assertIsDisplayed()
         rule.onNodeWithText("Item 2").assertIsDisplayed()
-        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 3").assertIsDisplayed()
+        rule.onNodeWithText("Item 4").assertIsNotDisplayed()
         assertThat(state.topItem).isEqualTo(1)
     }
 
@@ -264,29 +285,95 @@ class VerticalStackTest {
     fun swipeForward_almostItemHeight_snapsToNextItem() {
         var itemHeight = 0
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state) {
                 items(5) { index -> StackItem("Item $index") { itemHeight = it } }
             }
         }
         rule.onNodeWithText("Item 0").assertIsDisplayed()
         rule.onNodeWithText("Item 1").assertIsDisplayed()
-        rule.onNodeWithText("Item 2").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
 
         performIndirectSwipe((itemHeight * 0.9f).toInt())
 
         rule.onNodeWithText("Item 0").assertIsNotDisplayed()
         rule.onNodeWithText("Item 1").assertIsDisplayed()
         rule.onNodeWithText("Item 2").assertIsDisplayed()
-        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 3").assertIsDisplayed()
+        rule.onNodeWithText("Item 4").assertIsNotDisplayed()
         assertThat(state.topItem).isEqualTo(1)
+    }
+
+    @Test
+    fun swipeForwardAndBackward_singleGesture_pointerInput_returnsToOriginalPosition() {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
+
+        rule.onRoot().performTouchInput {
+            down(Offset(x = centerX, y = itemHeight / 2f))
+            moveTo(Offset(x = centerX, y = 0f))
+        }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isGreaterThan(0.3f)
+
+        rule.onRoot().performTouchInput { moveTo(Offset(x = centerX, y = itemHeight / 2f)) }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
+
+        rule.onRoot().performTouchInput { up() }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
+    }
+
+    @Test
+    fun swipeForwardAndBackward_singleGesture_returnsToOriginalPosition() {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
+
+        val press = performIndirectPress()
+        val moveForward =
+            performIndirectMove(distancePx = itemHeight / 2f, previousMotionEvent = press)
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isGreaterThan(0.3f)
+
+        val moveBackward =
+            performIndirectMove(distancePx = -itemHeight / 2f, previousMotionEvent = moveForward)
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isLessThan(0.1f)
+
+        performIndirectRelease(previousMotionEvent = moveBackward)
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
     }
 
     @Test
     fun swipeBackward_almostItemHeight_snapsToPreviousItem() {
         var itemHeight = 0
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state) {
                 items(5) { index -> StackItem("Item $index") { itemHeight = it } }
             }
@@ -295,13 +382,15 @@ class VerticalStackTest {
         rule.onNodeWithText("Item 0").assertIsNotDisplayed()
         rule.onNodeWithText("Item 1").assertIsDisplayed()
         rule.onNodeWithText("Item 2").assertIsDisplayed()
-        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 3").assertIsDisplayed()
+        rule.onNodeWithText("Item 4").assertIsNotDisplayed()
 
         performIndirectSwipe(-(itemHeight * 0.9f).toInt())
 
         rule.onNodeWithText("Item 0").assertIsDisplayed()
         rule.onNodeWithText("Item 1").assertIsDisplayed()
-        rule.onNodeWithText("Item 2").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
         assertThat(state.topItem).isEqualTo(0)
     }
 
@@ -309,7 +398,7 @@ class VerticalStackTest {
     fun scrollToEndAndBack_displaysItemsInCorrectOrder() {
         var itemHeight = 0
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state) {
                 items(3) { index -> StackItem("Item $index") { itemHeight = it } }
             }
@@ -340,7 +429,7 @@ class VerticalStackTest {
     fun mixedDsl_displaysItemsInCorrectOrder() {
         var itemHeight = 0
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state) {
                 item { StackItem("First") { itemHeight = it } }
                 items(3) { StackItem("Middle $it") }
@@ -351,7 +440,8 @@ class VerticalStackTest {
         rule.onNodeWithText("First").assertIsDisplayed()
         assertThat(state.topItem).isEqualTo(0)
         rule.onNodeWithText("Middle 0").assertIsDisplayed()
-        rule.onNodeWithText("Middle 1").assertIsNotDisplayed()
+        rule.onNodeWithText("Middle 1").assertIsDisplayed()
+        rule.onNodeWithText("Middle 2").assertIsNotDisplayed()
 
         repeat(6) { index ->
             performIndirectSwipe(itemHeight)
@@ -359,7 +449,6 @@ class VerticalStackTest {
             rule.onNodeWithText("Middle $index").assertIsDisplayed()
             rule.onNodeWithText("Middle ${(index + 1).coerceAtMost(5)}").assertIsDisplayed()
             assertThat(state.topItem).isEqualTo(index + 1)
-            rule.onNodeWithText("Middle ${index + 2}").assertIsNotDisplayed()
         }
 
         performIndirectSwipe(itemHeight)
@@ -368,16 +457,16 @@ class VerticalStackTest {
     }
 
     @Test
-    fun increaseItemCount_updatesItems() {
+    fun increaseItemCount_updatesItems() = runTest {
         var itemHeight = 0
         val state = StackState()
         var itemCount by mutableStateOf(3)
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state) {
                 items(itemCount) { index -> StackItem("Item $index") { itemHeight = it } }
             }
         }
-        performIndirectSwipe(itemHeight * 2)
+        runOnUiThread { state.scrollToItem(2) }
         rule.onNodeWithText("Item 2").assertIsDisplayed()
         assertThat(state.topItem).isEqualTo(2)
         performIndirectSwipe(itemHeight)
@@ -397,16 +486,16 @@ class VerticalStackTest {
     }
 
     @Test
-    fun decreaseItemCount_updatesItems() {
+    fun decreaseItemCount_updatesItems() = runTest {
         var itemHeight = 0
         val state = StackState()
         var itemCount by mutableStateOf(3)
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state) {
                 items(itemCount) { index -> StackItem("Item $index") { itemHeight = it } }
             }
         }
-        performIndirectSwipe(itemHeight * 2)
+        runOnUiThread { state.scrollToItem(2) }
         rule.onNodeWithText("Item 2").assertIsDisplayed()
         assertThat(state.topItem).isEqualTo(2)
         performIndirectSwipe(itemHeight)
@@ -423,18 +512,18 @@ class VerticalStackTest {
     }
 
     @Test
-    fun reorderItems_withKeys_preservesScrollPosition() {
+    fun reorderItems_withKeys_preservesScrollPosition() = runTest {
         var itemHeight = 0
         val state = StackState()
         var items by mutableStateOf(listOf("A", "B", "C", "D"))
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(modifier = Modifier.size(100.dp), state = state) {
                 item(key = "First", content = { StackItem("First") { itemHeight = it } })
                 items(items, key = { it }) { StackItem(it) }
                 items(1, key = { "Last" }) { StackItem("Last") }
             }
         }
-        performIndirectSwipe(itemHeight * 2)
+        runOnUiThread { state.scrollToItem(2) }
         rule.onNodeWithText("B").assertIsDisplayed()
         assertThat(state.topItem).isEqualTo(2)
 
@@ -484,16 +573,16 @@ class VerticalStackTest {
 
         // Verify the initial state
         rule.onNodeWithText("Item 0").assertIsDisplayed()
-        rule.onNodeWithText("Item 2").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
         assertThat(state.topItem).isEqualTo(0)
 
         // Scroll to a new item
-        rule.runOnIdle { targetItem = 2 }
+        rule.runOnIdle { targetItem = 3 }
         rule.waitForIdle()
 
         rule.onNodeWithText("Item 0").assertIsNotDisplayed()
-        rule.onNodeWithText("Item 2").assertIsDisplayed()
-        assertThat(state.topItem).isEqualTo(2)
+        rule.onNodeWithText("Item 3").assertIsDisplayed()
+        assertThat(state.topItem).isEqualTo(3)
 
         // Simulate recreation
         restorationTester.emulateSavedInstanceStateRestore()
@@ -501,8 +590,8 @@ class VerticalStackTest {
 
         // Verify the restored state
         rule.onNodeWithText("Item 0").assertIsNotDisplayed()
-        rule.onNodeWithText("Item 2").assertIsDisplayed()
-        assertThat(state.topItem).isEqualTo(2)
+        rule.onNodeWithText("Item 3").assertIsDisplayed()
+        assertThat(state.topItem).isEqualTo(3)
     }
 
     @Test
@@ -510,7 +599,7 @@ class VerticalStackTest {
         var itemHeight = 0
         val state = StackState()
         lateinit var scope: CoroutineScope
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             scope = rememberCoroutineScope()
             VerticalStack(modifier = Modifier.size(100.dp), state = state) {
                 items(5) { index -> StackItem("Item $index") { itemHeight = it } }
@@ -661,7 +750,7 @@ class VerticalStackTest {
     }
 
     @Test
-    fun positioningAndScale_smallItems_centeredInViewport() {
+    fun positioningAndScale_smallItems_bottomAlignedInViewport() {
         val stackSize = 100.dp
         val itemHeight = 10.dp
         val state = StackState()
@@ -677,14 +766,14 @@ class VerticalStackTest {
         val topItemBounds = rule.onNodeWithTag("Item 0").getBoundsInRoot()
         val nextItemBounds = rule.onNodeWithTag("Item 1").getBoundsInRoot()
 
-        // Calculate the expected position based on the centering logic.
-        val expectedTopOffset = (stackBounds.height - topItemBounds.height) / 2
+        // Calculate the expected position based on the bottom alignment logic.
+        val expectedTopOffset = stackBounds.height - topItemBounds.height - RevealAreaSize
         assertThat(topItemBounds.left).isEqualTo(stackBounds.left)
         assertThat(topItemBounds.top.value).isWithin(1f).of(expectedTopOffset.value)
         assertThat(topItemBounds.right).isEqualTo(stackBounds.right)
         assertThat(topItemBounds.bottom.value)
             .isWithin(1f)
-            .of(stackBounds.bottom.value - expectedTopOffset.value)
+            .of(stackBounds.height.value - RevealAreaSize.value)
 
         assertThat(nextItemBounds.left).isGreaterThan(topItemBounds.left)
         assertThat(nextItemBounds.top).isGreaterThan(topItemBounds.top)
@@ -693,801 +782,9 @@ class VerticalStackTest {
     }
 
     @Test
-    fun itemDecoration_setsSizeAndShapeOnItemScope() = runTest {
-        val state = StackState()
-        val triangleShape = GenericShape { size, _ ->
-            lineTo(size.width, 0f)
-            lineTo(size.width, size.height)
-            close()
-        }
-        var itemScope0: StackItemScopeImpl? = null
-        var itemScope1: StackItemScopeImpl? = null
-        var itemScope2: StackItemScopeImpl? = null
-        rule.setContentWithInitialFocus {
-            VerticalStack(state = state) {
-                repeat(10) { index ->
-                    item {
-                        itemScope0 = this as StackItemScopeImpl
-                        StackItem(
-                            "Item ${index * 3}",
-                            Modifier.height(10.dp).itemDecoration(RectangleShape),
-                        )
-                    }
-                    item {
-                        itemScope1 = this as StackItemScopeImpl
-                        StackItem(
-                            "Item ${index * 3 + 1}",
-                            Modifier.height(20.dp).itemDecoration(RoundedCornerShape(2.dp)),
-                        )
-                    }
-                    item {
-                        itemScope2 = this as StackItemScopeImpl
-                        StackItem(
-                            "Item ${index * 3 + 2}",
-                            Modifier.height(30.dp).itemDecoration(triangleShape),
-                        )
-                    }
-                }
-            }
-        }
-        val initialItemScope0 = itemScope0
-        val initialItemScope1 = itemScope1
-        val initialItemScope2 = itemScope2
-
-        rule.runOnIdle {
-            val itemDecoration0 = itemScope0?.firstDecoration()
-            val itemDecoration1 = itemScope1?.firstDecoration()
-            val itemDecoration2 = itemScope2?.firstDecoration()
-
-            with(rule.density) {
-                assertThat(itemDecoration0?.size?.height).isEqualTo(10.dp.roundToPx())
-                assertThat(itemDecoration1?.size?.height).isEqualTo(20.dp.roundToPx())
-                assertThat(itemDecoration2?.size?.height).isEqualTo(30.dp.roundToPx())
-            }
-
-            assertThat(itemDecoration0?.shape).isEqualTo(RectangleShape)
-            assertThat(itemDecoration1?.shape).isEqualTo(RoundedCornerShape(2.dp))
-            assertThat(itemDecoration2?.shape).isSameInstanceAs(triangleShape)
-        }
-
-        repeat(30) { index -> runOnUiThread { state.scrollToItem(index) } }
-
-        rule.runOnIdle {
-            assertThat(state.topItem).isEqualTo(29)
-            assertThat(itemScope0).isNotSameInstanceAs(initialItemScope0)
-            assertThat(itemScope1).isNotSameInstanceAs(initialItemScope1)
-            assertThat(itemScope2).isNotSameInstanceAs(initialItemScope2)
-
-            val itemDecoration0 = itemScope0?.firstDecoration()
-            val itemDecoration1 = itemScope1?.firstDecoration()
-            val itemDecoration2 = itemScope2?.firstDecoration()
-
-            with(rule.density) {
-                assertThat(itemDecoration0?.size?.height).isEqualTo(10.dp.roundToPx())
-                assertThat(itemDecoration1?.size?.height).isEqualTo(20.dp.roundToPx())
-                assertThat(itemDecoration2?.size?.height).isEqualTo(30.dp.roundToPx())
-            }
-
-            assertThat(itemDecoration0?.shape).isEqualTo(RectangleShape)
-            assertThat(itemDecoration1?.shape).isEqualTo(RoundedCornerShape(2.dp))
-            assertThat(itemDecoration2?.shape).isSameInstanceAs(triangleShape)
-        }
-    }
-
-    @Test
-    fun itemDecoration_shapeChange_updatesShapeOnItemScope() {
-        val state = StackState()
-        val triangleShape = GenericShape { size, _ ->
-            lineTo(size.width, 0f)
-            lineTo(size.width, size.height)
-            close()
-        }
-        var itemShape0: Shape by mutableStateOf(RectangleShape)
-        var itemShape1: Shape by mutableStateOf(RoundedCornerShape(2.dp))
-        var itemShape2: Shape by mutableStateOf(triangleShape)
-        var itemScope0: StackItemScopeImpl? = null
-        var itemScope1: StackItemScopeImpl? = null
-        var itemScope2: StackItemScopeImpl? = null
-        rule.setContent {
-            VerticalStack(state = state) {
-                item {
-                    itemScope0 = this as StackItemScopeImpl
-                    StackItem("Item 0", Modifier.itemDecoration(itemShape0))
-                }
-                item {
-                    itemScope1 = this as StackItemScopeImpl
-                    StackItem("Item 1", Modifier.itemDecoration(itemShape1))
-                }
-                item {
-                    itemScope2 = this as StackItemScopeImpl
-                    StackItem("Item 2", Modifier.itemDecoration(itemShape2))
-                }
-            }
-        }
-        rule.runOnIdle {
-            assertThat(itemScope0?.firstDecoration()?.shape).isEqualTo(RectangleShape)
-            assertThat(itemScope1?.firstDecoration()?.shape).isEqualTo(RoundedCornerShape(2.dp))
-            assertThat(itemScope2?.firstDecoration()?.shape).isEqualTo(triangleShape)
-        }
-
-        rule.runOnIdle {
-            itemShape0 = RoundedCornerShape(2.dp)
-            itemShape1 = triangleShape
-            itemShape2 = RectangleShape
-        }
-
-        rule.runOnIdle {
-            assertThat(itemScope0?.firstDecoration()?.shape).isEqualTo(RoundedCornerShape(2.dp))
-            assertThat(itemScope1?.firstDecoration()?.shape).isEqualTo(triangleShape)
-            assertThat(itemScope2?.firstDecoration()?.shape).isEqualTo(RectangleShape)
-        }
-    }
-
-    @Test
-    fun itemDecoration_sizeChange_updatesSizeOnItemScope() {
-        val state = StackState()
-        var itemScope0: StackItemScopeImpl? = null
-        var itemScope1: StackItemScopeImpl? = null
-        var itemScope2: StackItemScopeImpl? = null
-        var itemHeight0 by mutableStateOf(10.dp)
-        var itemHeight1 by mutableStateOf(20.dp)
-        var itemHeight2 by mutableStateOf(30.dp)
-        rule.setContent {
-            VerticalStack(state = state) {
-                item {
-                    itemScope0 = this as StackItemScopeImpl
-                    StackItem("Item 0", Modifier.height(itemHeight0).itemDecoration(RectangleShape))
-                }
-                item {
-                    itemScope1 = this as StackItemScopeImpl
-                    StackItem("Item 1", Modifier.height(itemHeight1).itemDecoration(RectangleShape))
-                }
-                item {
-                    itemScope2 = this as StackItemScopeImpl
-                    StackItem("Item 2", Modifier.height(itemHeight2).itemDecoration(RectangleShape))
-                }
-            }
-        }
-        rule.runOnIdle {
-            with(rule.density) {
-                assertThat(itemScope0?.firstDecoration()?.size?.height).isEqualTo(10.dp.roundToPx())
-                assertThat(itemScope1?.firstDecoration()?.size?.height).isEqualTo(20.dp.roundToPx())
-                assertThat(itemScope2?.firstDecoration()?.size?.height).isEqualTo(30.dp.roundToPx())
-            }
-        }
-
-        rule.runOnIdle {
-            itemHeight0 = 20.dp
-            itemHeight1 = 30.dp
-            itemHeight2 = 40.dp
-        }
-
-        rule.runOnIdle {
-            with(rule.density) {
-                assertThat(itemScope0?.firstDecoration()?.size?.height).isEqualTo(20.dp.roundToPx())
-                assertThat(itemScope1?.firstDecoration()?.size?.height).isEqualTo(30.dp.roundToPx())
-                assertThat(itemScope2?.firstDecoration()?.size?.height).isEqualTo(40.dp.roundToPx())
-            }
-        }
-    }
-
-    @Test
-    fun masking_largerNextItem_clipsNextItemToTopItemShape() {
-        val stackSize = 100.dp
-        val state = StackState()
-        rule.setContent {
-            VerticalStack(state = state, modifier = Modifier.size(stackSize)) {
-                item {
-                    StackItem(
-                        "Item 0",
-                        Modifier.fillMaxWidth()
-                            .height(10.dp)
-                            .itemDecoration(RectangleShape)
-                            .background(Color.Red),
-                    )
-                }
-                item {
-                    StackItem(
-                        "Item 1",
-                        Modifier.fillMaxWidth()
-                            .height(50.dp)
-                            .itemDecoration(RectangleShape)
-                            .background(Color.Green),
-                    )
-                }
-            }
-        }
-
-        val topItemBounds = rule.onNodeWithTag("Item 0").getBoundsInRoot()
-        val nextItemBounds = rule.onNodeWithTag("Item 1").getBoundsInRoot()
-
-        rule.onRoot().captureToImage().run {
-            val pixels = toPixelMap()
-            val topItemTop = with(rule.density) { topItemBounds.top.roundToPx() }
-            // The top of the top item is between the top and bottom of the next item
-            assertThat(topItemTop).isGreaterThan(0)
-            assertThat(topItemTop).isLessThan(pixels.height - 1)
-
-            // The part of the next item above the top item is clipped
-            for (x in 0 until pixels.width) {
-                for (y in 0 until topItemTop) {
-                    assertWithMessage("Pixel at ($x, $y) should not have the next item's color")
-                        .that(pixels[x, y].toOpaque())
-                        .isNotEqualTo(Color.Green)
-                }
-            }
-
-            // The bottom of the next item is visible below the top item
-            val nextItemBottom = with(rule.density) { nextItemBounds.bottom.roundToPx() }
-            val x = (pixels.width / 2)
-            val y = nextItemBottom - 1
-            val nextItemColor = pixels[x, y]
-            assertWithMessage("Pixel at ($x, $y) should have the next item's color")
-                .that(nextItemColor.red)
-                .isEqualTo(0)
-            assertWithMessage("Pixel at ($x, $y) should have the next item's color")
-                .that(nextItemColor.green)
-                .isGreaterThan(0)
-            assertWithMessage("Pixel at ($x, $y) should have the next item's color")
-                .that(nextItemColor.blue)
-                .isEqualTo(0)
-        }
-    }
-
-    @Test
-    fun masking_largerNextNextItem_clipsNextNextItemToNextItemShape() = runTest {
-        var topItemHeight = 0
-        val stackSize = 100.dp
-        val state = StackState()
-        rule.setContent {
-            VerticalStack(state = state, modifier = Modifier.size(stackSize)) {
-                item {
-                    StackItem(
-                        "Item 0",
-                        Modifier.fillMaxWidth()
-                            .height(80.dp)
-                            .itemDecoration(RectangleShape)
-                            .background(Color.Red),
-                    ) {
-                        topItemHeight = it
-                    }
-                }
-                item {
-                    StackItem(
-                        "Item 1",
-                        Modifier.fillMaxWidth()
-                            .height(10.dp)
-                            .itemDecoration(RectangleShape)
-                            .background(Color.Green),
-                    )
-                }
-                item {
-                    StackItem(
-                        "Item 2",
-                        Modifier.fillMaxWidth()
-                            .height(80.dp)
-                            .itemDecoration(RectangleShape)
-                            .background(Color.Blue),
-                    )
-                }
-            }
-        }
-
-        // Scroll almost fully to the next item to reveal the next-next item.
-        rule.mainClock.autoAdvance = false
-        rule.runOnIdle { state.dispatchRawDelta(topItemHeight * 0.99f) }
-        rule.waitForIdle()
-
-        val topItemBounds = rule.onNodeWithTag("Item 0").getBoundsInRoot()
-        val nextItemBounds = rule.onNodeWithTag("Item 1").getBoundsInRoot()
-        val nextNextItemBounds = rule.onNodeWithTag("Item 2").getBoundsInRoot()
-
-        rule.onRoot().captureToImage().run {
-            val pixels = toPixelMap()
-
-            val topItemBottom = with(rule.density) { topItemBounds.bottom.roundToPx() }
-            // The bottom of the top item is visible at the top of the next-next item bounds
-            assertThat(topItemBottom).isGreaterThan(0)
-
-            val nextItemTop = with(rule.density) { nextItemBounds.top.roundToPx() }
-            val nextItemBottom = with(rule.density) { nextItemBounds.bottom.roundToPx() }
-            // The top of the next item is between the top and bottom of the next-next item
-            assertThat(nextItemTop).isGreaterThan(0)
-            assertThat(nextItemTop).isLessThan(nextItemBottom)
-            // The top of the next item is below the bottom of the top item
-            assertThat(nextItemTop).isGreaterThan(topItemBottom)
-
-            // The part of the next-next item above the next item and below the top item is clipped
-            for (x in 0 until pixels.width) {
-                for (y in topItemBottom + 1 until nextItemTop) {
-                    assertWithMessage(
-                            "Pixel at ($x, $y) should not have the next-next item's color"
-                        )
-                        .that(pixels[x, y].toOpaque())
-                        .isNotEqualTo(Color.Blue)
-                }
-            }
-
-            // The bottom of the next-next item is visible below the next item
-            val nextNextItemBottom = with(rule.density) { nextNextItemBounds.bottom.roundToPx() }
-            assertThat(nextNextItemBottom).isGreaterThan(nextItemBottom)
-            val x = (pixels.width / 2)
-            val y = nextNextItemBottom - 1
-            val nextNextItemColor = pixels[x, y]
-            assertWithMessage("Pixel at ($x, $y) should have the next-next item's color")
-                .that(nextNextItemColor.red)
-                .isEqualTo(0)
-            assertWithMessage("Pixel at ($x, $y) should have the next-next item's color")
-                .that(nextNextItemColor.green)
-                .isEqualTo(0)
-            assertWithMessage("Pixel at ($x, $y) should have the next-next item's color")
-                .that(nextNextItemColor.blue)
-                .isGreaterThan(0)
-        }
-    }
-
-    @Test
-    fun swipeForward_movesFocusForward() {
-        val item0FocusEvents = mutableListOf<FocusState>()
-        val item1FocusEvents = mutableListOf<FocusState>()
-        val item2FocusEvents = mutableListOf<FocusState>()
-        var itemHeight = 0
-        val state = StackState()
-        rule.setContentWithInitialFocus {
-            VerticalStack(state = state) {
-                item {
-                    StackItem(
-                        "Item 0",
-                        modifier = Modifier.onFocusEvent { item0FocusEvents.add(it) },
-                    ) {
-                        itemHeight = it
-                    }
-                }
-                item {
-                    StackItem(
-                        "Item 1",
-                        modifier = Modifier.onFocusEvent { item1FocusEvents.add(it) },
-                    )
-                }
-                item {
-                    StackItem(
-                        "Item 2",
-                        modifier = Modifier.onFocusEvent { item2FocusEvents.add(it) },
-                    )
-                }
-            }
-        }
-        rule.onNodeWithTag("Item 0").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(2)
-            assertThat(item0FocusEvents[0].isFocused).isFalse()
-            assertThat(item0FocusEvents[1].isFocused).isTrue()
-
-            assertThat(item1FocusEvents).hasSize(1)
-            assertThat(item1FocusEvents[0].isFocused).isFalse()
-
-            assertThat(item2FocusEvents).hasSize(1)
-            assertThat(item2FocusEvents[0].isFocused).isFalse()
-        }
-
-        item0FocusEvents.clear()
-        item1FocusEvents.clear()
-        item2FocusEvents.clear()
-        performIndirectSwipe(itemHeight)
-
-        rule.onNodeWithTag("Item 1").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(1)
-            assertThat(item0FocusEvents[0].isFocused).isFalse()
-
-            assertThat(item1FocusEvents).hasSize(1)
-            assertThat(item1FocusEvents[0].isFocused).isTrue()
-
-            assertThat(item2FocusEvents).isEmpty()
-        }
-
-        item0FocusEvents.clear()
-        item1FocusEvents.clear()
-        item2FocusEvents.clear()
-        performIndirectSwipe(itemHeight)
-
-        rule.onNodeWithTag("Item 2").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).isEmpty()
-
-            assertThat(item1FocusEvents).hasSize(1)
-            assertThat(item1FocusEvents[0].isFocused).isFalse()
-
-            assertThat(item2FocusEvents).hasSize(1)
-            assertThat(item2FocusEvents[0].isFocused).isTrue()
-        }
-    }
-
-    @Test
-    fun swipeBackward_movesFocusBackward() = runTest {
-        val item0FocusEvents = mutableListOf<FocusState>()
-        val item1FocusEvents = mutableListOf<FocusState>()
-        val item2FocusEvents = mutableListOf<FocusState>()
-        var itemHeight = 0
-        val state = StackState()
-        rule.setContentWithInitialFocus {
-            VerticalStack(state = state) {
-                item {
-                    StackItem(
-                        "Item 0",
-                        modifier = Modifier.onFocusEvent { item0FocusEvents.add(it) },
-                    ) {
-                        itemHeight = it
-                    }
-                }
-                item {
-                    StackItem(
-                        "Item 1",
-                        modifier = Modifier.onFocusEvent { item1FocusEvents.add(it) },
-                    )
-                }
-                item {
-                    StackItem(
-                        "Item 2",
-                        modifier = Modifier.onFocusEvent { item2FocusEvents.add(it) },
-                    )
-                }
-            }
-        }
-        runOnUiThread { state.scrollToItem(2) }
-        rule.onNodeWithTag("Item 2").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(3)
-            assertThat(item0FocusEvents[0].isFocused).isFalse()
-            assertThat(item0FocusEvents[1].isFocused).isTrue()
-            assertThat(item0FocusEvents[2].isFocused).isFalse()
-
-            assertThat(item1FocusEvents).hasSize(1)
-            assertThat(item1FocusEvents[0].isFocused).isFalse()
-
-            assertThat(item2FocusEvents).hasSize(2)
-            assertThat(item2FocusEvents[0].isFocused).isFalse()
-            assertThat(item2FocusEvents[1].isFocused).isTrue()
-        }
-
-        item0FocusEvents.clear()
-        item1FocusEvents.clear()
-        item2FocusEvents.clear()
-        performIndirectSwipe(-itemHeight)
-
-        rule.onNodeWithTag("Item 1").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).isEmpty()
-
-            assertThat(item1FocusEvents).hasSize(1)
-            assertThat(item1FocusEvents[0].isFocused).isTrue()
-
-            assertThat(item2FocusEvents).hasSize(1)
-            assertThat(item2FocusEvents[0].isFocused).isFalse()
-        }
-
-        item0FocusEvents.clear()
-        item1FocusEvents.clear()
-        item2FocusEvents.clear()
-        performIndirectSwipe(-itemHeight)
-
-        rule.onNodeWithTag("Item 0").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(1)
-            assertThat(item0FocusEvents[0].isFocused).isTrue()
-
-            assertThat(item1FocusEvents).hasSize(1)
-            assertThat(item1FocusEvents[0].isFocused).isFalse()
-
-            assertThat(item2FocusEvents).isEmpty()
-        }
-    }
-
-    @Test
-    fun swipeForwardShortDistance_doesNotMoveFocus() {
-        val item0FocusEvents = mutableListOf<FocusState>()
-        val item1FocusEvents = mutableListOf<FocusState>()
-        var itemHeight = 0
-        val state = StackState()
-        rule.setContentWithInitialFocus {
-            VerticalStack(state = state) {
-                item {
-                    StackItem(
-                        "Item 0",
-                        modifier = Modifier.onFocusEvent { item0FocusEvents.add(it) },
-                    ) {
-                        itemHeight = it
-                    }
-                }
-                item {
-                    StackItem(
-                        "Item 1",
-                        modifier = Modifier.onFocusEvent { item1FocusEvents.add(it) },
-                    )
-                }
-            }
-        }
-        rule.onNodeWithTag("Item 0").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(2)
-            assertThat(item0FocusEvents[0].isFocused).isFalse()
-            assertThat(item0FocusEvents[1].isFocused).isTrue()
-
-            assertThat(item1FocusEvents).hasSize(1)
-            assertThat(item1FocusEvents[0].isFocused).isFalse()
-        }
-
-        item0FocusEvents.clear()
-        item1FocusEvents.clear()
-        performIndirectSwipe((itemHeight * 0.1f).toInt())
-
-        rule.onNodeWithTag("Item 0").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).isEmpty()
-            assertThat(item1FocusEvents).isEmpty()
-        }
-    }
-
-    @Test
-    fun swipeBackwardShortDistance_doesNotMoveFocus() = runTest {
-        val item0FocusEvents = mutableListOf<FocusState>()
-        val item1FocusEvents = mutableListOf<FocusState>()
-        var itemHeight = 0
-        val state = StackState()
-        rule.setContentWithInitialFocus {
-            VerticalStack(state = state) {
-                item {
-                    StackItem(
-                        "Item 0",
-                        modifier = Modifier.onFocusEvent { item0FocusEvents.add(it) },
-                    ) {
-                        itemHeight = it
-                    }
-                }
-                item {
-                    StackItem(
-                        "Item 1",
-                        modifier = Modifier.onFocusEvent { item1FocusEvents.add(it) },
-                    )
-                }
-            }
-        }
-        runOnUiThread { state.scrollToItem(1) }
-        rule.onNodeWithTag("Item 1").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(3)
-            assertThat(item0FocusEvents[0].isFocused).isFalse()
-            assertThat(item0FocusEvents[1].isFocused).isTrue()
-            assertThat(item0FocusEvents[2].isFocused).isFalse()
-
-            assertThat(item1FocusEvents).hasSize(2)
-            assertThat(item1FocusEvents[0].isFocused).isFalse()
-            assertThat(item1FocusEvents[1].isFocused).isTrue()
-        }
-
-        item0FocusEvents.clear()
-        item1FocusEvents.clear()
-        performIndirectSwipe(-(itemHeight * 0.1f).toInt())
-
-        rule.onNodeWithTag("Item 1").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).isEmpty()
-            assertThat(item1FocusEvents).isEmpty()
-        }
-    }
-
-    @Test
-    fun swipeForwardAlmostItemHeight_movesFocusToNextItem() {
-        val item0FocusEvents = mutableListOf<FocusState>()
-        val item1FocusEvents = mutableListOf<FocusState>()
-        var itemHeight = 0
-        val state = StackState()
-        rule.setContentWithInitialFocus {
-            VerticalStack(state = state) {
-                item {
-                    StackItem(
-                        "Item 0",
-                        modifier = Modifier.onFocusEvent { item0FocusEvents.add(it) },
-                    ) {
-                        itemHeight = it
-                    }
-                }
-                item {
-                    StackItem(
-                        "Item 1",
-                        modifier = Modifier.onFocusEvent { item1FocusEvents.add(it) },
-                    )
-                }
-            }
-        }
-        rule.onNodeWithTag("Item 0").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(2)
-            assertThat(item0FocusEvents[0].isFocused).isFalse()
-            assertThat(item0FocusEvents[1].isFocused).isTrue()
-
-            assertThat(item1FocusEvents).hasSize(1)
-            assertThat(item1FocusEvents[0].isFocused).isFalse()
-        }
-
-        item0FocusEvents.clear()
-        item1FocusEvents.clear()
-        performIndirectSwipe((itemHeight * 0.9f).toInt())
-
-        rule.onNodeWithTag("Item 1").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(1)
-            assertThat(item0FocusEvents[0].isFocused).isFalse()
-
-            assertThat(item1FocusEvents).hasSize(1)
-            assertThat(item1FocusEvents[0].isFocused).isTrue()
-        }
-    }
-
-    @Test
-    fun swipeBackwardAlmostItemHeight_movesFocusToPreviousItem() = runTest {
-        val item0FocusEvents = mutableListOf<FocusState>()
-        val item1FocusEvents = mutableListOf<FocusState>()
-        var itemHeight = 0
-        val state = StackState()
-        rule.setContentWithInitialFocus {
-            VerticalStack(state = state) {
-                item {
-                    StackItem(
-                        "Item 0",
-                        modifier = Modifier.onFocusEvent { item0FocusEvents.add(it) },
-                    ) {
-                        itemHeight = it
-                    }
-                }
-                item {
-                    StackItem(
-                        "Item 1",
-                        modifier = Modifier.onFocusEvent { item1FocusEvents.add(it) },
-                    )
-                }
-            }
-        }
-        runOnUiThread { state.scrollToItem(1) }
-        rule.onNodeWithTag("Item 1").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(3)
-            assertThat(item0FocusEvents[0].isFocused).isFalse()
-            assertThat(item0FocusEvents[1].isFocused).isTrue()
-            assertThat(item0FocusEvents[2].isFocused).isFalse()
-
-            assertThat(item1FocusEvents).hasSize(2)
-            assertThat(item1FocusEvents[0].isFocused).isFalse()
-            assertThat(item1FocusEvents[1].isFocused).isTrue()
-        }
-
-        item0FocusEvents.clear()
-        item1FocusEvents.clear()
-        performIndirectSwipe(-(itemHeight * 0.9f).toInt())
-
-        rule.onNodeWithTag("Item 0").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(1)
-            assertThat(item0FocusEvents[0].isFocused).isTrue()
-
-            assertThat(item1FocusEvents).hasSize(1)
-            assertThat(item1FocusEvents[0].isFocused).isFalse()
-        }
-    }
-
-    @Test
-    fun swipeForward_stackIsNotFocused_doesNotMoveFocus() {
-        val nonStackFocusRequester = FocusRequester()
-        val item0FocusEvents = mutableListOf<FocusState>()
-        val item1FocusEvents = mutableListOf<FocusState>()
-        val item2FocusEvents = mutableListOf<FocusState>()
-        var itemHeight = 0
-        val state = StackState()
-        rule.setContentWithInitialFocus {
-            VerticalStack(state = state) {
-                item {
-                    StackItem(
-                        "Item 0",
-                        modifier = Modifier.onFocusEvent { item0FocusEvents.add(it) },
-                    ) {
-                        itemHeight = it
-                    }
-                }
-                item {
-                    StackItem(
-                        "Item 1",
-                        modifier = Modifier.onFocusEvent { item1FocusEvents.add(it) },
-                    )
-                }
-                item {
-                    StackItem(
-                        "Item 2",
-                        modifier = Modifier.onFocusEvent { item2FocusEvents.add(it) },
-                    )
-                }
-            }
-            Box(modifier = Modifier.focusRequester(nonStackFocusRequester).focusTarget())
-        }
-        rule.runOnIdle { nonStackFocusRequester.requestFocus() }
-        item0FocusEvents.clear()
-        item1FocusEvents.clear()
-        item2FocusEvents.clear()
-
-        performIndirectSwipe(itemHeight)
-
-        rule.onNodeWithTag("Item 0").assertIsNotFocused()
-        rule.onNodeWithTag("Item 1").assertIsNotFocused()
-        rule.onNodeWithTag("Item 2").assertIsNotFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).isEmpty()
-            assertThat(item1FocusEvents).isEmpty()
-            assertThat(item2FocusEvents).isEmpty()
-        }
-    }
-
-    @Test
-    fun scrollToItem_movesFocus() = runTest {
-        val item0FocusEvents = mutableListOf<FocusState>()
-        val item1FocusEvents = mutableListOf<FocusState>()
-        val item2FocusEvents = mutableListOf<FocusState>()
-        val state = StackState()
-        rule.setContentWithInitialFocus {
-            VerticalStack(state = state) {
-                item {
-                    StackItem(
-                        "Item 0",
-                        modifier = Modifier.onFocusEvent { item0FocusEvents.add(it) },
-                    )
-                }
-                item {
-                    StackItem(
-                        "Item 1",
-                        modifier = Modifier.onFocusEvent { item1FocusEvents.add(it) },
-                    )
-                }
-                item {
-                    StackItem(
-                        "Item 2",
-                        modifier = Modifier.onFocusEvent { item2FocusEvents.add(it) },
-                    )
-                }
-            }
-        }
-        rule.onNodeWithTag("Item 0").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(2)
-            assertThat(item0FocusEvents[0].isFocused).isFalse()
-            assertThat(item0FocusEvents[1].isFocused).isTrue()
-
-            assertThat(item1FocusEvents).hasSize(1)
-            assertThat(item1FocusEvents[0].isFocused).isFalse()
-
-            assertThat(item2FocusEvents).hasSize(1)
-            assertThat(item2FocusEvents[0].isFocused).isFalse()
-        }
-
-        item0FocusEvents.clear()
-        item1FocusEvents.clear()
-        item2FocusEvents.clear()
-
-        runOnUiThread { state.scrollToItem(2) }
-
-        rule.onNodeWithTag("Item 2").assertIsFocused()
-        rule.runOnIdle {
-            assertThat(item0FocusEvents).hasSize(1)
-            assertThat(item0FocusEvents[0].isFocused).isFalse()
-
-            assertThat(item1FocusEvents).isEmpty()
-
-            assertThat(item2FocusEvents).hasSize(1)
-            assertThat(item2FocusEvents[0].isFocused).isTrue()
-        }
-    }
-
-    @Test
     fun edgeScrim_onIndirectPressAndRelease_drawsScrim() {
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state, modifier = Modifier.background(Color.Red)) {
                 item { Box(Modifier.focusable().fillMaxSize().background(Color.Green)) }
                 item { Box(Modifier.focusable().fillMaxSize().background(Color.Blue)) }
@@ -1503,7 +800,7 @@ class VerticalStackTest {
                 .isEqualTo(Color.Green)
         }
 
-        performIndirectPress()
+        val press = performIndirectPress()
 
         rule.onRoot().captureToImage().run {
             val pixels = toPixelMap()
@@ -1519,7 +816,7 @@ class VerticalStackTest {
                 .isZero()
         }
 
-        performIndirectRelease()
+        performIndirectRelease(previousMotionEvent = press)
 
         rule.onRoot().captureToImage().run {
             val pixels = toPixelMap()
@@ -1532,7 +829,7 @@ class VerticalStackTest {
     @Test
     fun edgeScrim_onPointerPressAndRelease_drawsScrim() {
         val state = StackState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             VerticalStack(state = state, modifier = Modifier.background(Color.Red)) {
                 item { Box(Modifier.focusable().fillMaxSize().background(Color.Green)) }
                 item { Box(Modifier.focusable().fillMaxSize().background(Color.Blue)) }
@@ -1574,6 +871,183 @@ class VerticalStackTest {
         }
     }
 
+    @Test
+    fun swipeForward_largeDistance_stopsAtNextItem() {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        assertThat(state.topItem).isEqualTo(0)
+
+        performIndirectSwipe(itemHeight * 3)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(1)
+        rule.onNodeWithText("Item 0").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 1").assertIsDisplayed()
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 3").assertIsDisplayed()
+        rule.onNodeWithText("Item 4").assertIsNotDisplayed()
+    }
+
+    @Test
+    fun swipeBackward_largeDistance_stopsAtPreviousItem() = runTest {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        runOnUiThread { state.scrollToItem(3) }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(3)
+
+        performIndirectSwipe(-itemHeight * 3)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(2)
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 1").assertIsNotDisplayed()
+    }
+
+    @Test
+    fun flingForward_highVelocity_stopsAtNextItem() {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(10) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+
+        performIndirectSwipe(itemHeight, durationMillis = FlingDuration)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(1)
+        rule.onNodeWithText("Item 1").assertIsDisplayed()
+    }
+
+    @Test
+    fun twoFlingsForward_stopsAtNextNextItem() {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(10) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+
+        performIndirectSwipe(itemHeight, durationMillis = FlingDuration)
+        performIndirectSwipe(itemHeight, durationMillis = FlingDuration)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(2)
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+    }
+
+    @Test
+    fun flingBackward_highVelocity_stopsAtPreviousItem() = runTest {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(10) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        runOnUiThread { state.scrollToItem(3) }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(3)
+
+        performIndirectSwipe(-itemHeight, durationMillis = FlingDuration)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(2)
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 1").assertIsNotDisplayed()
+    }
+
+    @Test
+    fun dragForwardAndBackward_sameGesture_canReachPreviousItem() = runTest {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        runOnUiThread { state.scrollToItem(2) }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(2)
+
+        val press = performIndirectPress()
+        val moveForward =
+            performIndirectMove(distancePx = itemHeight.toFloat() * 3, previousMotionEvent = press)
+        val moveBackward =
+            performIndirectMove(
+                distancePx = -itemHeight.toFloat() * 2,
+                previousMotionEvent = moveForward,
+            )
+        performIndirectRelease(previousMotionEvent = moveBackward)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(1)
+        rule.onNodeWithText("Item 1").assertIsDisplayed()
+    }
+
+    @Test
+    fun recompositions_afterInitialComposition_doesNotRecompose() {
+        var recompositionCount = 0
+        rule.setContent {
+            VerticalStack {
+                item {
+                    StackItem("Item 0")
+                    SideEffect { recompositionCount++ }
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(recompositionCount).isEqualTo(1) }
+    }
+
+    @Test
+    fun recompositions_afterScroll_doesNotRecompose() {
+        val stackHeight = 100.dp
+        val stackHeightPx = with(rule.density) { stackHeight.roundToPx() }
+        var item0RecompositionCount = 0
+        var item1RecompositionCount = 0
+        var item2RecompositionCount = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(modifier = Modifier.size(stackHeight), state = state) {
+                item {
+                    StackItem("Item 0")
+                    SideEffect { item0RecompositionCount++ }
+                }
+                item {
+                    StackItem("Item 1")
+                    SideEffect { item1RecompositionCount++ }
+                }
+                item {
+                    StackItem("Item 2")
+                    SideEffect { item2RecompositionCount++ }
+                }
+            }
+        }
+
+        performIndirectSwipe(stackHeightPx)
+
+        rule.runOnIdle {
+            assertThat(state.topItem).isEqualTo(1)
+            assertThat(item0RecompositionCount).isEqualTo(1)
+            assertThat(item1RecompositionCount).isEqualTo(1)
+            assertThat(item2RecompositionCount).isEqualTo(1)
+        }
+    }
+
     @Composable
     private fun StackItem(
         text: String,
@@ -1591,51 +1065,32 @@ class VerticalStackTest {
         }
     }
 
-    private fun ComposeContentTestRule.setContentWithInitialFocus(content: @Composable () -> Unit) {
-        setContent { Box(Modifier.focusRequester(focusRequester)) { content() } }
-    }
+    private fun performIndirectPress() = rule.onRoot().performIndirectPress(rule)
 
-    @OptIn(ExperimentalIndirectPointerApi::class)
-    private fun performIndirectPress() {
-        val currentTime = uptimeMillis()
-        val down =
-            MotionEvent.obtain(
-                /* downTime = */ currentTime,
-                /* eventTime = */ currentTime,
-                /* action = */ MotionEvent.ACTION_DOWN,
-                /* x = */ 0f,
-                /* y = */ 0f,
-                /* metaState = */ 0,
+    private fun performIndirectMove(distancePx: Float, previousMotionEvent: MotionEvent) =
+        rule
+            .onRoot()
+            .performIndirectMove(
+                rule = rule,
+                distancePx = distancePx,
+                previousMotionEvent = previousMotionEvent,
             )
-        down.source = SOURCE_TOUCH_NAVIGATION
-        rule.onRoot().performIndirectPointerEvent(rule, IndirectPointerEvent(motionEvent = down))
-    }
 
-    @OptIn(ExperimentalIndirectPointerApi::class)
-    private fun performIndirectRelease() {
-        val currentTime = uptimeMillis()
-        val up =
-            MotionEvent.obtain(
-                /* downTime = */ currentTime,
-                /* eventTime = */ currentTime,
-                /* action = */ MotionEvent.ACTION_UP,
-                /* x = */ 0f,
-                /* y = */ 0f,
-                /* metaState = */ 0,
-            )
-        up.source = SOURCE_TOUCH_NAVIGATION
-        rule.onRoot().performIndirectPointerEvent(rule, IndirectPointerEvent(motionEvent = up))
-    }
+    private fun performIndirectRelease(previousMotionEvent: MotionEvent) =
+        rule.onRoot().performIndirectRelease(rule, previousMotionEvent)
 
-    private fun performIndirectSwipe(distancePx: Int) {
+    private fun performIndirectSwipe(distancePx: Int, durationMillis: Long = 200L) {
         require(distancePx != 0)
-        rule.onRoot().performIndirectSwipe(rule, distancePx.toFloat())
+        rule
+            .onRoot()
+            .performIndirectSwipe(rule, distancePx.toFloat(), moveDuration = durationMillis)
     }
 
     suspend fun runOnUiThread(action: suspend () -> Unit) {
         rule.waitForIdle()
         withContext(Dispatchers.Main) { action() }
     }
-
-    private fun Color.toOpaque(): Color = copy(alpha = 1.0f)
 }
+
+/** A short swipe duration to trigger a fling. */
+private const val FlingDuration: Long = 50L

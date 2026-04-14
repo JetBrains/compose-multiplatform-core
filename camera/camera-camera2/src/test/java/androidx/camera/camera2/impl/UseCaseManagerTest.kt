@@ -33,7 +33,6 @@ import android.util.Size
 import androidx.camera.camera2.adapter.CameraCoordinatorAdapter
 import androidx.camera.camera2.adapter.CameraStateAdapter
 import androidx.camera.camera2.adapter.CameraUseCaseAdapter
-import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.adapter.TestDeferrableSurface
@@ -435,12 +434,7 @@ class UseCaseManagerTest {
 
         // Act
         val graphConfig =
-            useCaseManager
-                .createCameraGraphConfig(
-                    sessionConfigAdapter,
-                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
-                )
-                .config
+            useCaseManager.createUseCaseCameraConfig(sessionConfigAdapter, null).cameraGraphConfig
 
         // Assert
         assertThat(graphConfig.sessionMode).isEqualTo(HIGH_SPEED)
@@ -473,12 +467,7 @@ class UseCaseManagerTest {
 
         // Act
         val graphConfig =
-            useCaseManager
-                .createCameraGraphConfig(
-                    sessionConfigAdapter,
-                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
-                )
-                .config
+            useCaseManager.createUseCaseCameraConfig(sessionConfigAdapter, null).cameraGraphConfig
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -512,12 +501,7 @@ class UseCaseManagerTest {
 
         // Act
         val graphConfig =
-            useCaseManager
-                .createCameraGraphConfig(
-                    sessionConfigAdapter,
-                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
-                )
-                .config
+            useCaseManager.createUseCaseCameraConfig(sessionConfigAdapter, null).cameraGraphConfig
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -568,12 +552,7 @@ class UseCaseManagerTest {
 
         // Act
         val graphConfig =
-            useCaseManager
-                .createCameraGraphConfig(
-                    sessionConfigAdapter,
-                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
-                )
-                .config
+            useCaseManager.createUseCaseCameraConfig(sessionConfigAdapter, null).cameraGraphConfig
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -601,12 +580,7 @@ class UseCaseManagerTest {
 
         // Act
         val graphConfig =
-            useCaseManager
-                .createCameraGraphConfig(
-                    sessionConfigAdapter,
-                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
-                )
-                .config
+            useCaseManager.createUseCaseCameraConfig(sessionConfigAdapter, null).cameraGraphConfig
 
         // Assert
         assertThat(graphConfig.sessionTemplate).isEqualTo(RequestTemplate(TEMPLATE_PREVIEW))
@@ -639,12 +613,7 @@ class UseCaseManagerTest {
 
         // Act.
         val cameraGraphConfig =
-            useCaseManager
-                .createCameraGraphConfig(
-                    sessionConfigAdapter,
-                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
-                )
-                .config
+            useCaseManager.createUseCaseCameraConfig(sessionConfigAdapter, null).cameraGraphConfig
 
         // Assert
         assertThat(cameraGraphConfig.sessionParameters[CONTROL_CAPTURE_INTENT])
@@ -714,10 +683,7 @@ class UseCaseManagerTest {
         val sessionConfigAdapter = SessionConfigAdapter(setOf(fakeUseCase))
 
         // Act.
-        useCaseManager.createCameraGraphConfig(
-            sessionConfigAdapter,
-            GraphStateToCameraStateAdapter(CameraStateAdapter()),
-        )
+        useCaseManager.createUseCaseCameraConfig(sessionConfigAdapter, null).cameraGraphConfig
 
         // Assert.
         assertThat(resultFpsRange).isEqualTo(fpsRange)
@@ -752,7 +718,7 @@ class UseCaseManagerTest {
         lowLightBoostControl =
             LowLightBoostControl(
                 fakeCameraMetadata,
-                State3AControl(cameraProperties, NoOpAutoFlashAEModeDisabler),
+                State3AControl(cameraProperties, NoOpAutoFlashAEModeDisabler, useCaseThreads),
                 useCaseThreads,
                 ComboRequestListener(),
             )
@@ -770,6 +736,7 @@ class UseCaseManagerTest {
                 zslControl = ZslControlNoOpImpl(),
                 templateParamsOverride = templateParamsOverride,
                 cameraMetadata = fakeCameraMetadata,
+                cameraXConfig = cameraXConfig,
             )
         return UseCaseManager(
                 cameraPipe = cameraPipe,

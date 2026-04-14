@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.xr.compose.subspace.layout
 
 import androidx.compose.material3.Text
@@ -27,16 +28,17 @@ import androidx.xr.compose.spatial.LocalSubspaceRootNode
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialPanel
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.assertPositionIsEqualTo
 import androidx.xr.compose.testing.assertRotationInRootIsEqualTo
 import androidx.xr.compose.testing.assertRotationIsEqualTo
-import androidx.xr.compose.testing.createFakeSession
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
-import androidx.xr.scenecore.GroupEntity
+import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.Space
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Ignore
@@ -47,7 +49,13 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class GravityAlignedTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun gravityAligned_parentIsLevel_appliesNoRotation() {
@@ -342,9 +350,8 @@ class GravityAlignedTest {
     @Test
     @Ignore("b/448989958 - The SceneCore Fakes need to be updated to support this test.")
     fun gravityAligned_onSubspace_alignsTiltedRootToWorld() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        val tiltedRootNode =
-            GroupEntity.create(checkNotNull(composeTestRule.session), "tiltedRootNode")
+        composeTestRule.configureFakeSession()
+        val tiltedRootNode = Entity.create(checkNotNull(composeTestRule.session), "tiltedRootNode")
         val tiltedRootRotation = Quaternion.fromEulerAngles(pitch = 20f, yaw = 60f, roll = -25f)
         tiltedRootNode.setPose(
             relativeTo = Space.REAL_WORLD,

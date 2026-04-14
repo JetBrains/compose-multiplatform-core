@@ -58,6 +58,7 @@ import org.robolectric.util.ReflectionHelpers
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 @DoNotInstrument
 // TOD: b/456085770 - Add @Config(sdk = [Config.ALL_SDKS]) when resolved
 class CameraFactoryAdapterTest {
@@ -336,5 +337,7 @@ class CameraFactoryAdapterTest {
         ): androidx.camera.camera2.pipe.CameraMetadata? {
             return dynamicMetadataMap[cameraId]
         }
+
+        override fun awaitCameraMetadata(cameraId: CameraId) = awaitCameraMetadata(cameraId, null)
     }
 }

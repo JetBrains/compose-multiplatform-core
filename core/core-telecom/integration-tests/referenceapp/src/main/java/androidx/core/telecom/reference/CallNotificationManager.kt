@@ -217,7 +217,7 @@ class CallNotificationManager(
                     callState != CallState.DISCONNECTED && callState != CallState.UNKNOWN
                 )
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // Show on lock screen
-                .setSilent(true) // We handle sound/vibration elsewhere (Telecom or app logic)
+                .setSilent(false) // allow sound/vibration AND display as heads up alert
 
         val callStyle: NotificationCompat.CallStyle? =
             when (callState) {

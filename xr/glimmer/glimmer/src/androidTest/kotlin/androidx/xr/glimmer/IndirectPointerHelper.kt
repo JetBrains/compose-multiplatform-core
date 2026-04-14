@@ -25,6 +25,7 @@ import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectional
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
+import kotlin.math.absoluteValue
 
 /** Synthetic indirect swipe. */
 @OptIn(ExperimentalIndirectPointerApi::class)
@@ -126,6 +127,102 @@ internal fun SemanticsNodeInteraction.performIndirectClick(
             motionEvent = up,
             primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             previousMotionEvent = down,
+        ),
+    )
+}
+
+@OptIn(ExperimentalIndirectPointerApi::class)
+internal fun SemanticsNodeInteraction.performIndirectPress(rule: ComposeTestRule): MotionEvent {
+    val currentTime = SystemClock.uptimeMillis()
+    val down =
+        MotionEvent.obtain(
+            /* downTime = */ currentTime,
+            /* eventTime = */ currentTime,
+            /* action = */ MotionEvent.ACTION_DOWN,
+            /* x = */ 0f,
+            /* y = */ 0f,
+            /* metaState = */ 0,
+        )
+    down.source = SOURCE_TOUCH_NAVIGATION
+    performIndirectPointerEvent(
+        rule,
+        IndirectPointerEvent(
+            motionEvent = down,
+            primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+        ),
+    )
+    return down
+}
+
+@OptIn(ExperimentalIndirectPointerApi::class)
+internal fun SemanticsNodeInteraction.performIndirectMove(
+    rule: ComposeTestRule,
+    distancePx: Float,
+    previousMotionEvent: MotionEvent,
+    durationMillis: Long = 200L,
+    steps: Int = 10, // Default to 10 to ensure smoother buffer saturation
+): MotionEvent {
+    var currentPreviousEvent = previousMotionEvent
+    val stepDistance = distancePx / steps
+    val stepDuration = durationMillis / steps
+
+    require(stepDistance.absoluteValue > 2f) {
+        "Step distance ($stepDistance) is <= 2px. Events may be ignored by the system."
+    }
+
+    // Simulate a move gesture in smaller steps to make it more realistic and make sure that the
+    // OffsetSmoother logic is not truncating the move distance.
+    repeat(steps) {
+        val nextTime = currentPreviousEvent.eventTime + stepDuration
+        val nextX = currentPreviousEvent.x + stepDistance
+
+        val move =
+            MotionEvent.obtain(
+                /* downTime = */ currentPreviousEvent.downTime,
+                /* eventTime = */ nextTime,
+                /* action = */ MotionEvent.ACTION_MOVE,
+                /* x = */ nextX,
+                /* y = */ 0f,
+                /* metaState = */ 0,
+            )
+        move.source = SOURCE_TOUCH_NAVIGATION
+
+        performIndirectPointerEvent(
+            rule,
+            IndirectPointerEvent(
+                motionEvent = move,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                previousMotionEvent = currentPreviousEvent,
+            ),
+        )
+
+        currentPreviousEvent = move
+    }
+
+    return currentPreviousEvent
+}
+
+@OptIn(ExperimentalIndirectPointerApi::class)
+internal fun SemanticsNodeInteraction.performIndirectRelease(
+    rule: ComposeTestRule,
+    previousMotionEvent: MotionEvent,
+) {
+    val up =
+        MotionEvent.obtain(
+            /* downTime = */ previousMotionEvent.downTime,
+            /* eventTime = */ previousMotionEvent.eventTime + 20,
+            /* action = */ MotionEvent.ACTION_UP,
+            /* x = */ previousMotionEvent.x,
+            /* y = */ 0f,
+            /* metaState = */ 0,
+        )
+    up.source = SOURCE_TOUCH_NAVIGATION
+    performIndirectPointerEvent(
+        rule,
+        IndirectPointerEvent(
+            motionEvent = up,
+            primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            previousMotionEvent = previousMotionEvent,
         ),
     )
 }

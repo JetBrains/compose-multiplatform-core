@@ -17,14 +17,13 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
     buildFeatures {
         viewBinding = true
     }
-    compileSdk = 35
+    compileSdk { version = release(35) }
     namespace = "androidx.metrics.performance.janktest"
 }
 

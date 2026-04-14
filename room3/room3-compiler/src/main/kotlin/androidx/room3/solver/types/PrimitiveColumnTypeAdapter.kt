@@ -16,7 +16,6 @@
 
 package androidx.room3.solver.types
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.codegen.XTypeName.Companion.PRIMITIVE_BYTE
@@ -26,7 +25,6 @@ import androidx.room3.compiler.codegen.XTypeName.Companion.PRIMITIVE_FLOAT
 import androidx.room3.compiler.codegen.XTypeName.Companion.PRIMITIVE_INT
 import androidx.room3.compiler.codegen.XTypeName.Companion.PRIMITIVE_LONG
 import androidx.room3.compiler.codegen.XTypeName.Companion.PRIMITIVE_SHORT
-import androidx.room3.compiler.codegen.buildCodeBlock
 import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.XType
 import androidx.room3.parser.SQLTypeAffinity
@@ -43,17 +41,16 @@ class PrimitiveColumnTypeAdapter(
 
         enum class Primitive(
             val typeName: XTypeName,
-            val cursorGetter: String,
             val stmtGetter: String,
             val stmtSetter: String,
         ) {
-            INT(PRIMITIVE_INT, "getInt", "getLong", "bindLong"),
-            SHORT(PRIMITIVE_SHORT, "getShort", "getLong", "bindLong"),
-            BYTE(PRIMITIVE_BYTE, "getShort", "getLong", "bindLong"),
-            LONG(PRIMITIVE_LONG, "getLong", "getLong", "bindLong"),
-            CHAR(PRIMITIVE_CHAR, "getInt", "getLong", "bindLong"),
-            FLOAT(PRIMITIVE_FLOAT, "getFloat", "getDouble", "bindDouble"),
-            DOUBLE(PRIMITIVE_DOUBLE, "getDouble", "getDouble", "bindDouble"),
+            INT(PRIMITIVE_INT, "getLong", "bindLong"),
+            SHORT(PRIMITIVE_SHORT, "getLong", "bindLong"),
+            BYTE(PRIMITIVE_BYTE, "getLong", "bindLong"),
+            LONG(PRIMITIVE_LONG, "getLong", "bindLong"),
+            CHAR(PRIMITIVE_CHAR, "getLong", "bindLong"),
+            FLOAT(PRIMITIVE_FLOAT, "getDouble", "bindDouble"),
+            DOUBLE(PRIMITIVE_DOUBLE, "getDouble", "bindDouble"),
         }
 
         private fun getAffinity(primitive: Primitive) =
@@ -70,7 +67,7 @@ class PrimitiveColumnTypeAdapter(
         fun createPrimitiveAdapters(
             processingEnvironment: XProcessingEnv
         ): List<PrimitiveColumnTypeAdapter> {
-            return Primitive.values().map {
+            return Primitive.entries.map {
                 PrimitiveColumnTypeAdapter(
                     out = processingEnvironment.requireType(it.typeName),
                     typeAffinity = getAffinity(it),
@@ -80,7 +77,6 @@ class PrimitiveColumnTypeAdapter(
         }
     }
 
-    private val cursorGetter = primitive.cursorGetter
     private val stmtGetter = primitive.stmtGetter
     private val stmtSetter = primitive.stmtSetter
 
@@ -91,30 +87,21 @@ class PrimitiveColumnTypeAdapter(
         scope: CodeGenScope,
     ) {
         // These primitives don't have an exact statement setter.
-        val castFunction =
+        val castFunctionCall =
             when (primitive) {
                 Primitive.INT,
                 Primitive.SHORT,
                 Primitive.BYTE,
-                Primitive.CHAR -> "toLong"
-                Primitive.FLOAT -> "toDouble"
+                Primitive.CHAR -> ".toLong()"
+                Primitive.FLOAT -> ".toDouble()"
                 else -> null
             }
-        val valueExpr = buildCodeBlock { language ->
-            when (language) {
-                // For Java, with the language's primitive type casting, value variable can be
-                // used as bind argument directly.
-                CodeLanguage.JAVA -> add("%L", valueVarName)
-                // For Kotlin, a converter function is emitted when a cast is needed.
-                CodeLanguage.KOTLIN -> {
-                    if (castFunction != null) {
-                        add("%L.%L()", valueVarName, castFunction)
-                    } else {
-                        add("%L", valueVarName)
-                    }
-                }
+        val valueExpr =
+            if (castFunctionCall != null) {
+                XCodeBlock.of("%L%L", valueVarName, castFunctionCall)
+            } else {
+                XCodeBlock.of("%L", valueVarName)
             }
-        }
         scope.builder.addStatement("%L.%L(%L, %L)", stmtName, stmtSetter, indexVarName, valueExpr)
     }
 
@@ -124,29 +111,24 @@ class PrimitiveColumnTypeAdapter(
         indexVarName: String,
         scope: CodeGenScope,
     ) {
-        scope.builder.addStatement(
-            "%L = %L",
-            outVarName,
+        // These primitives don't have an exact cursor / statement getter.
+        val castFunctionCall =
+            when (primitive) {
+                Primitive.INT -> ".toInt()"
+                Primitive.SHORT -> ".toShort()"
+                Primitive.BYTE -> ".toByte()"
+                Primitive.CHAR -> ".toInt().toChar()"
+                Primitive.FLOAT -> ".toFloat()"
+                else -> null
+            }
+        val valueExpr =
             XCodeBlock.of("%L.%L(%L)", stmtVarName, stmtGetter, indexVarName).let {
-                // These primitives don't have an exact cursor / statement getter.
-                val castFunction =
-                    when (primitive) {
-                        Primitive.INT -> "toInt"
-                        Primitive.SHORT -> "toShort"
-                        Primitive.BYTE -> "toByte"
-                        Primitive.CHAR -> "toChar"
-                        Primitive.FLOAT -> "toFloat"
-                        else -> null
-                    } ?: return@let it
-                buildCodeBlock { language ->
-                    when (language) {
-                        // For Java a cast will suffice
-                        CodeLanguage.JAVA -> add(XCodeBlock.ofCast(out.asTypeName(), it))
-                        // For Kotlin a converter function is emitted
-                        CodeLanguage.KOTLIN -> add(XCodeBlock.of("%L.%L()", it, castFunction))
-                    }
+                if (castFunctionCall != null) {
+                    XCodeBlock.of("%L%L", it, castFunctionCall)
+                } else {
+                    it
                 }
-            },
-        )
+            }
+        scope.builder.addStatement("%L = %L", outVarName, valueExpr)
     }
 }
