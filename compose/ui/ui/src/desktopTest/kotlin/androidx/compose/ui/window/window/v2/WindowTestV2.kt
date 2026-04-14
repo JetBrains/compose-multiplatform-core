@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
 import androidx.compose.ui.graphics.Color
@@ -44,6 +45,7 @@ import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.window.toSize
 import androidx.compose.ui.window.v2.Window
 import androidx.compose.ui.window.v2.WindowBoundsProvider
+import androidx.compose.ui.window.v2.WindowIntrinsicSize
 import androidx.compose.ui.window.v2.WindowSizeProvider
 import androidx.compose.ui.window.v2.rememberWindowStateWithBounds
 import androidx.compose.ui.window.v2.WindowState
@@ -921,7 +923,7 @@ class WindowTestV2 {
 
     @Test
     fun windowMinIntrinsicWidth() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.MinIntrinsicWidth(height = 500.dp),
+        windowSizeProvider = WindowSizeProvider.IntrinsicWidth(WindowIntrinsicSize.Min, height = 500.dp),
         content = {
             Box(Modifier.widthIn(min = 400.dp))
         },
@@ -932,7 +934,7 @@ class WindowTestV2 {
 
     @Test
     fun windowMinIntrinsicHeight() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.MinIntrinsicHeight(width = 500.dp),
+        windowSizeProvider = WindowSizeProvider.IntrinsicHeight(WindowIntrinsicSize.Min, width = 500.dp),
         content = {
             Box(Modifier.heightIn(min = 400.dp))
         },
@@ -951,16 +953,27 @@ class WindowTestV2 {
     }
 
     @Test
-    fun windowMinWidthMatchingHeight() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.MinWidthMatchingHeight,
+    fun windowMinWidthWithMatchingMinHeight() = runWindowSizeTest(
+        windowSizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
+            intrinsicWidth = WindowIntrinsicSize.Min,
+            intrinsicHeight = WindowIntrinsicSize.Min,
+        ),
         content = {
-            Box(Modifier.widthIn(min = 400.dp)) {
+            Box {
                 Layout(
                     measurePolicy = object : EmptyMeasurePolicy() {
+                        override fun IntrinsicMeasureScope.minIntrinsicWidth(
+                            measurables: List<IntrinsicMeasurable>,
+                            height: Int
+                        ): Int {
+                            return 400.dp.roundToPx()
+                        }
+
                         override fun IntrinsicMeasureScope.minIntrinsicHeight(
                             measurables: List<IntrinsicMeasurable>,
                             width: Int
                         ): Int {
+                            // Return width to make it a square
                             return width
                         }
                     },
@@ -974,16 +987,27 @@ class WindowTestV2 {
     )
 
     @Test
-    fun windowMinHeightMatchingWidth() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.MinHeightMatchingWidth,
+    fun windowMaxHeightWithMatchingMaxWidth() = runWindowSizeTest(
+        windowSizeProvider = WindowSizeProvider.IntrinsicHeightWithMatchingIntrinsicWidth(
+            intrinsicWidth = WindowIntrinsicSize.Max,
+            intrinsicHeight = WindowIntrinsicSize.Max,
+        ),
         content = {
-            Box(Modifier.heightIn(min = 400.dp)) {
+            Box {
                 Layout(
                     measurePolicy = object : EmptyMeasurePolicy() {
-                        override fun IntrinsicMeasureScope.minIntrinsicWidth(
+                        override fun IntrinsicMeasureScope.maxIntrinsicHeight(
+                            measurables: List<IntrinsicMeasurable>,
+                            width: Int
+                        ): Int {
+                            return 400.dp.roundToPx()
+                        }
+
+                        override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                             measurables: List<IntrinsicMeasurable>,
                             height: Int
                         ): Int {
+                            // Return height to make it a square
                             return height
                         }
                     },

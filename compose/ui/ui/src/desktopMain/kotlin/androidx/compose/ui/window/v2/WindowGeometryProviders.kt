@@ -355,18 +355,22 @@ fun interface WindowSizeProvider {
         }
 
         /**
-         * Sets the width of the window to its minimum intrinsic width at the given [height].
+         * Sets the width of the window to its intrinsic width at the given [height].
          *
          * The height of the window is set to [height].
          *
+         * @param intrinsicWidth The intrinsic width to measure.
+         * @param height The height of the window.
+         *
          * @see [IntrinsicMeasurable.minIntrinsicWidth]
+         * @see [IntrinsicMeasurable.maxIntrinsicWidth]
          */
-        fun MinIntrinsicWidth(height: Dp): WindowSizeProvider {
+        fun IntrinsicWidth(intrinsicWidth: WindowIntrinsicSize, height: Dp): WindowSizeProvider {
             height.requireReal("height")
             return WindowSizeProvider {
                 contentToWindowSize(
                     DpSize(
-                        width = windowContent.minIntrinsicWidth(height.roundToPx()).toDp(),
+                        width = intrinsicWidth.widthOf(windowContent, height.roundToPx()).toDp(),
                         height = height
                     )
                 )
@@ -374,52 +378,118 @@ fun interface WindowSizeProvider {
         }
 
         /**
-         * Sets the height of the window to its minimum intrinsic height at the given [width].
+         * Sets the height of the window to its intrinsic height at the given [width].
          *
          * The width of the window is set to [width].
          *
+         * @param intrinsicHeight The intrinsic height to measure.
+         * @param width The width of the window.
+         *
          * @see [IntrinsicMeasurable.minIntrinsicHeight]
          */
-        fun MinIntrinsicHeight(width: Dp): WindowSizeProvider {
+        fun IntrinsicHeight(intrinsicHeight: WindowIntrinsicSize, width: Dp): WindowSizeProvider {
             width.requireReal("width")
             return WindowSizeProvider {
                 contentToWindowSize(
                     DpSize(
                         width = width,
-                        height = windowContent.minIntrinsicHeight(width.roundToPx()).toDp(),
+                        height = intrinsicHeight.heightOf(windowContent, width.roundToPx()).toDp(),
                     )
                 )
             }
         }
 
         /**
-         * Sets the width of the window to its minimum intrinsic width at unconstrained height, and
-         * the height of the window to its minimum intrinsic height at that width.
+         * Sets the width of the window to its intrinsic width at unconstrained height, and
+         * the height of the window to its intrinsic height at that width.
          *
-         * This is useful for cases where the window has a fixed minimum width, but the height is
-         * flexible.
+         * This is useful for cases where the window has a fixed width, but the height is flexible.
+         *
+         * @param intrinsicWidth The intrinsic width to measure.
+         * @param intrinsicHeight The intrinsic height to measure.
          */
-        val MinWidthMatchingHeight = WindowSizeProvider {
-            val width = windowContent.minIntrinsicWidth(screen.availableBounds.height.roundToPx())
-            val height = windowContent.minIntrinsicHeight(width)
+        fun IntrinsicWidthWithMatchingIntrinsicHeight(
+            intrinsicWidth: WindowIntrinsicSize,
+            intrinsicHeight: WindowIntrinsicSize,
+        ) = WindowSizeProvider {
+            val width = intrinsicWidth.widthOf(windowContent, screen.availableBounds.height.roundToPx())
+            val height = intrinsicHeight.heightOf(windowContent, width)
             contentToWindowSize(
-                DpSize(width.toDp(), height.toDp())
+                DpSize(
+                    width = width.toDp(),
+                    height = height.toDp()
+                )
             )
         }
 
+
         /**
-         * Sets the height of the window to its minimum intrinsic height at unconstrained width, and
-         * the width of the window to its minimum intrinsic width at that height.
+         * Sets the height of the window to its intrinsic height at unconstrained width, and
+         * the width of the window to its intrinsic width at that height.
          *
-         * This is useful for cases where the window has a fixed minimum height, but the width is
-         * flexible.
+         * This is useful for cases where the window has a fixed height, but the width is flexible.
+         *
+         * @param intrinsicWidth The intrinsic width to measure.
+         * @param intrinsicHeight The intrinsic height to measure.
          */
-        val MinHeightMatchingWidth = WindowSizeProvider {
-            val height = windowContent.minIntrinsicHeight(screen.availableBounds.width.roundToPx())
-            val width = windowContent.minIntrinsicWidth(height)
+        fun IntrinsicHeightWithMatchingIntrinsicWidth(
+            intrinsicHeight: WindowIntrinsicSize,
+            intrinsicWidth: WindowIntrinsicSize,
+        ) = WindowSizeProvider {
+            val height = intrinsicHeight.heightOf(windowContent, screen.availableBounds.width.roundToPx())
+            val width = intrinsicWidth.widthOf(windowContent, height)
             contentToWindowSize(
-                DpSize(width.toDp(), height.toDp())
+                DpSize(
+                    width = width.toDp(),
+                    height = height.toDp()
+                )
             )
+        }
+    }
+}
+
+
+/**
+ * The kinds of intrinsic sizes that can be used with [WindowSizeProvider].
+ */
+@ExperimentalComposeUiApi
+abstract class WindowIntrinsicSize internal constructor() {
+
+    /**
+     * Returns the intrinsic width (min or max) of the given [measurable] at the given [height].
+     */
+    abstract fun widthOf(measurable: IntrinsicMeasurable, height: Int): Int
+
+    /**
+     * Returns the intrinsic height (min or max) of the given [measurable] at the given [width].
+     */
+    abstract fun heightOf(measurable: IntrinsicMeasurable, width: Int): Int
+
+    /**
+     * Measures minimum intrinsic size.
+     */
+    @ExperimentalComposeUiApi
+    data object Min: WindowIntrinsicSize() {
+        override fun widthOf(measurable: IntrinsicMeasurable, height: Int): Int {
+            return measurable.minIntrinsicWidth(height)
+        }
+
+        override fun heightOf(measurable: IntrinsicMeasurable, width: Int): Int {
+            return measurable.minIntrinsicHeight(width)
+        }
+    }
+
+    /**
+     * Measures maximum intrinsic size.
+     */
+    @ExperimentalComposeUiApi
+    data object Max: WindowIntrinsicSize() {
+        override fun widthOf(measurable: IntrinsicMeasurable, height: Int): Int {
+            return measurable.maxIntrinsicWidth(height)
+        }
+
+        override fun heightOf(measurable: IntrinsicMeasurable, width: Int): Int {
+            return measurable.maxIntrinsicHeight(width)
         }
     }
 }
