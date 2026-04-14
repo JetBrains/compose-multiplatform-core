@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.size
 import androidx.compose.ui.util.fastRoundToInt
 import java.awt.Component
 import java.awt.EventQueue
@@ -75,6 +76,20 @@ internal fun DpRect.toAwtRectangleRounded(): Rectangle {
     val right = this.right.value.fastRoundToInt()
     val bottom = this.bottom.value.fastRoundToInt()
     return Rectangle(left, top, right - left, bottom - top)
+}
+
+/**
+ * Returns a [java.awt.Rectangle] corresponding to this [DpRect], in the given density.
+ *
+ * The size of the rectangle is rounded up to the nearest integer.
+ */
+internal fun DpRect.toAwtRectangleSizeRoundedUp(): Rectangle {
+    val left = this.left.value.fastRoundToInt()
+    val top = this.top.value.fastRoundToInt()
+    val size = this.size
+    val width = ceil(size.width.value).toInt()
+    val height = ceil(size.height.value).toInt()
+    return Rectangle(left, top, width, height)
 }
 
 /**

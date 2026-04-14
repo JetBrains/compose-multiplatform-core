@@ -17,11 +17,9 @@
 package androidx.compose.ui.util
 
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.awt.toAwtRectangleRounded
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toAwtImage
-import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -71,24 +69,6 @@ internal fun Window.setPositionSafely(
 ) {
     if (!isVisible || (placement == WindowPlacement.Floating)) {
         setPositionImpl(position, platformDefaultPosition)
-    }
-}
-
-/**
- * Sets the bounds of the window.
- *
- * If the window is already visible, then change the position only if it's floating to
- * avoid resetting the maximized / fullscreen state.
- *
- * If the window is not visible yet, we _do_ set its size so that it will have an "un-maximized"
- * position to go to when the user un-maximizes the window.
- */
-internal fun Window.setBoundsSafely(
-    bounds: DpRect,
-    placement: WindowPlacement,
-) {
-    if (!isVisible || (placement == WindowPlacement.Floating)) {
-        setBounds(bounds.toAwtRectangleRounded())
     }
 }
 

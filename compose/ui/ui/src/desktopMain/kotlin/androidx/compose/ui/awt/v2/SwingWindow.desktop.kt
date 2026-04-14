@@ -28,7 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
-import androidx.compose.ui.awt.toAwtRectangleRounded
+import androidx.compose.ui.awt.toAwtRectangleSizeRoundedUp
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.DpRect
@@ -42,13 +42,11 @@ import androidx.compose.ui.util.windowListenerRef
 import androidx.compose.ui.util.windowStateListenerRef
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.UndecoratedWindowDecoration
-import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.resizerThickness
 import androidx.compose.ui.window.roundToDimensionOrNull
-import androidx.compose.ui.window.v2.Window
 import androidx.compose.ui.window.v2.WindowBoundsProvider
 import androidx.compose.ui.window.v2.WindowGeometryProviderScope
 import androidx.compose.ui.window.v2.WindowScreenProvider
@@ -300,7 +298,7 @@ private fun ComposeWindow.initializeBounds(state: WindowState) {
 
     // Prioritize requests, then currentBounds
     if ((boundsRequest == null) && (currentBounds != null)) {
-        bounds = currentBounds.toAwtRectangleRounded()
+        bounds = currentBounds.toAwtRectangleSizeRoundedUp()
     } else {
         setBoundsFrom(boundsRequest ?: WindowBoundsProvider.Default)
     }
@@ -316,6 +314,6 @@ private fun ComposeWindow.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
 
     val scope = WindowGeometryProviderScope(window = this)
     with(scope) {
-        bounds = boundsProvider.getBounds().requireReal().toAwtRectangleRounded()
+        bounds = boundsProvider.getBounds().requireReal().toAwtRectangleSizeRoundedUp()
     }
 }

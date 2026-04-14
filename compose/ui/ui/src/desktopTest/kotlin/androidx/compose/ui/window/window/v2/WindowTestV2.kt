@@ -902,7 +902,7 @@ class WindowTestV2 {
     private fun runWindowSizeTest(
         windowSizeProvider: WindowSizeProvider,
         content: @Composable () -> Unit,
-        expectedWindowSize: (DpInsets) -> DpSize,
+        expectedWindowSizeSansInsets: DpSize,
     ) = runApplicationTest {
         val windowState = WindowState(
             initialBoundsProvider = WindowBoundsProvider(windowSizeProvider)
@@ -916,7 +916,7 @@ class WindowTestV2 {
         }
         awaitIdle()
         assertEquals(
-            expectedWindowSize(window.insets.toDpInsets()),
+            expectedWindowSizeSansInsets + window.insets.toDpInsets(),
             windowState.bounds.size
         )
     }
@@ -982,9 +982,7 @@ class WindowTestV2 {
                 minWidth = { 400.dp.roundToPx() }
             )
         },
-        expectedWindowSize = { insets ->
-            DpSize(400.dp, 500.dp) + insets
-        }
+        expectedWindowSizeSansInsets = DpSize(400.dp, 500.dp)
     )
 
     @Test
@@ -995,9 +993,7 @@ class WindowTestV2 {
                 maxWidth = { 400.dp.roundToPx() }
             )
         },
-        expectedWindowSize = { insets ->
-            DpSize(400.dp, 500.dp) + insets
-        }
+        expectedWindowSizeSansInsets = DpSize(400.dp, 500.dp)
     )
 
     @Test
@@ -1008,9 +1004,7 @@ class WindowTestV2 {
                 minHeight = { 400.dp.roundToPx() }
             )
         },
-        expectedWindowSize = { insets ->
-            DpSize(500.dp, 400.dp) + insets
-        }
+        expectedWindowSizeSansInsets = DpSize(500.dp, 400.dp)
     )
 
     @Test
@@ -1021,9 +1015,7 @@ class WindowTestV2 {
                 maxHeight = { 400.dp.roundToPx() }
             )
         },
-        expectedWindowSize = { insets ->
-            DpSize(500.dp, 400.dp) + insets
-        }
+        expectedWindowSizeSansInsets = DpSize(500.dp, 400.dp)
     )
 
     @Test
@@ -1038,9 +1030,7 @@ class WindowTestV2 {
                 minHeight = { it }  // Return width to make it a square
             )
         },
-        expectedWindowSize = { insets ->
-            DpSize(400.dp, 400.dp) + insets
-        }
+        expectedWindowSizeSansInsets = DpSize(400.dp, 400.dp)
     )
 
     @Test
@@ -1055,9 +1045,22 @@ class WindowTestV2 {
                 maxWidth = { it }  // Return height to make it a square
             )
         },
-        expectedWindowSize = { insets ->
-            DpSize(400.dp, 400.dp) + insets
-        }
+        expectedWindowSizeSansInsets = DpSize(400.dp, 400.dp)
+    )
+
+    @Test
+    fun `requested size is rounded up`() = runWindowSizeTest(
+        windowSizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
+            intrinsicWidth = WindowIntrinsicSize.Min,
+            intrinsicHeight = WindowIntrinsicSize.Min,
+        ),
+        content = {
+            BoxWithIntrinsicSize(
+                minWidth = { (density * 100 + 1).toInt() },
+                minHeight = { it }
+            )
+        },
+        expectedWindowSizeSansInsets = DpSize(101.dp, 101.dp)
     )
 }
 
