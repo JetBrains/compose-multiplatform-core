@@ -921,6 +921,16 @@ class WindowTestV2 {
         )
     }
 
+    private abstract class EmptyMeasurePolicy : MeasurePolicy {
+        override fun MeasureScope.measure(
+            measurables: List<Measurable>,
+            constraints: Constraints
+        ): MeasureResult {
+            return layout(1, 1) {}
+        }
+    }
+
+
     @Composable
     private fun BoxWithIntrinsicSize(
         minWidth: (IntrinsicMeasureScope.(Int) -> Int)? = null,
@@ -1016,15 +1026,6 @@ class WindowTestV2 {
         }
     )
 
-    private abstract class EmptyMeasurePolicy : MeasurePolicy {
-        override fun MeasureScope.measure(
-            measurables: List<Measurable>,
-            constraints: Constraints
-        ): MeasureResult {
-            return layout(1, 1) {}
-        }
-    }
-
     @Test
     fun windowMinWidthWithMatchingMinHeight() = runWindowSizeTest(
         windowSizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
@@ -1032,27 +1033,10 @@ class WindowTestV2 {
             intrinsicHeight = WindowIntrinsicSize.Min,
         ),
         content = {
-            Box {
-                Layout(
-                    measurePolicy = object : EmptyMeasurePolicy() {
-                        override fun IntrinsicMeasureScope.minIntrinsicWidth(
-                            measurables: List<IntrinsicMeasurable>,
-                            height: Int
-                        ): Int {
-                            return 400.dp.roundToPx()
-                        }
-
-                        override fun IntrinsicMeasureScope.minIntrinsicHeight(
-                            measurables: List<IntrinsicMeasurable>,
-                            width: Int
-                        ): Int {
-                            // Return width to make it a square
-                            return width
-                        }
-                    },
-                    content = {}
-                )
-            }
+            BoxWithIntrinsicSize(
+                minWidth = { 400.dp.roundToPx() },
+                minHeight = { it }  // Return width to make it a square
+            )
         },
         expectedWindowSize = { insets ->
             DpSize(400.dp, 400.dp) + insets
@@ -1066,27 +1050,10 @@ class WindowTestV2 {
             intrinsicHeight = WindowIntrinsicSize.Max,
         ),
         content = {
-            Box {
-                Layout(
-                    measurePolicy = object : EmptyMeasurePolicy() {
-                        override fun IntrinsicMeasureScope.maxIntrinsicHeight(
-                            measurables: List<IntrinsicMeasurable>,
-                            width: Int
-                        ): Int {
-                            return 400.dp.roundToPx()
-                        }
-
-                        override fun IntrinsicMeasureScope.maxIntrinsicWidth(
-                            measurables: List<IntrinsicMeasurable>,
-                            height: Int
-                        ): Int {
-                            // Return height to make it a square
-                            return height
-                        }
-                    },
-                    content = {}
-                )
-            }
+            BoxWithIntrinsicSize(
+                maxHeight = { 400.dp.roundToPx() },
+                maxWidth = { it }  // Return height to make it a square
+            )
         },
         expectedWindowSize = { insets ->
             DpSize(400.dp, 400.dp) + insets
