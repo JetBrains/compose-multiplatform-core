@@ -365,7 +365,10 @@ fun interface WindowSizeProvider {
          * @see [IntrinsicMeasurable.minIntrinsicWidth]
          * @see [IntrinsicMeasurable.maxIntrinsicWidth]
          */
-        fun IntrinsicWidth(intrinsicWidth: WindowIntrinsicSize, height: Dp): WindowSizeProvider {
+        private fun IntrinsicWidth(
+            intrinsicWidth: WindowIntrinsicSize,
+            height: Dp
+        ): WindowSizeProvider {
             height.requireReal("height")
             return WindowSizeProvider {
                 contentToWindowSize(
@@ -378,6 +381,28 @@ fun interface WindowSizeProvider {
         }
 
         /**
+         * Sets the width of the window to its minimum intrinsic width at the given [height].
+         *
+         * The height of the window is set to [height].
+         *
+         * @param height The height of the window.
+         *
+         * @see [IntrinsicMeasurable.minIntrinsicWidth]
+         */
+        fun MinIntrinsicWidth(height: Dp) = IntrinsicWidth(WindowIntrinsicSize.Min, height)
+
+        /**
+         * Sets the width of the window to its maximum intrinsic width at the given [height].
+         *
+         * The height of the window is set to [height].
+         *
+         * @param height The height of the window.
+         *
+         * @see [IntrinsicMeasurable.maxIntrinsicWidth]
+         */
+        fun MaxIntrinsicWidth(height: Dp) = IntrinsicWidth(WindowIntrinsicSize.Max, height)
+
+        /**
          * Sets the height of the window to its intrinsic height at the given [width].
          *
          * The width of the window is set to [width].
@@ -387,7 +412,10 @@ fun interface WindowSizeProvider {
          *
          * @see [IntrinsicMeasurable.minIntrinsicHeight]
          */
-        fun IntrinsicHeight(intrinsicHeight: WindowIntrinsicSize, width: Dp): WindowSizeProvider {
+        private fun IntrinsicHeight(
+            intrinsicHeight: WindowIntrinsicSize,
+            width: Dp
+        ): WindowSizeProvider {
             width.requireReal("width")
             return WindowSizeProvider {
                 contentToWindowSize(
@@ -398,6 +426,28 @@ fun interface WindowSizeProvider {
                 )
             }
         }
+
+        /**
+         * Sets the height of the window to its minimum intrinsic height at the given [width].
+         *
+         * The width of the window is set to [width].
+         *
+         * @param width The width of the window.
+         *
+         * @see [IntrinsicMeasurable.minIntrinsicHeight]
+         */
+        fun MinIntrinsicHeight(width: Dp) = IntrinsicHeight(WindowIntrinsicSize.Min, width)
+
+        /**
+         * Sets the height of the window to its maximum intrinsic height at the given [width].
+         *
+         * The width of the window is set to [width].
+         *
+         * @param width The width of the window.
+         *
+         * @see [IntrinsicMeasurable.maxIntrinsicHeight]
+         */
+        fun MaxIntrinsicHeight(width: Dp) = IntrinsicHeight(WindowIntrinsicSize.Max, width)
 
         /**
          * Sets the width of the window to its intrinsic width at unconstrained height, and
@@ -421,7 +471,6 @@ fun interface WindowSizeProvider {
                 )
             )
         }
-
 
         /**
          * Sets the height of the window to its intrinsic height at unconstrained width, and

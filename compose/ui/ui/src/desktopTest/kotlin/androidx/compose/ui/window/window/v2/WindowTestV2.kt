@@ -919,13 +919,71 @@ class WindowTestV2 {
             expectedWindowSize(window.insets.toDpInsets()),
             windowState.bounds.size
         )
-   }
+    }
+
+    @Composable
+    private fun BoxWithIntrinsicSize(
+        minWidth: (IntrinsicMeasureScope.(Int) -> Int)? = null,
+        maxWidth: (IntrinsicMeasureScope.(Int) -> Int)? = null,
+        minHeight: (IntrinsicMeasureScope.(Int) -> Int)? = null,
+        maxHeight: (IntrinsicMeasureScope.(Int) -> Int)? = null,
+    ) {
+        Box {
+            Layout(
+                measurePolicy = object : EmptyMeasurePolicy() {
+                    override fun IntrinsicMeasureScope.minIntrinsicWidth(
+                        measurables: List<IntrinsicMeasurable>,
+                        height: Int
+                    ): Int {
+                        return minWidth?.invoke(this, height) ?: 0
+                    }
+
+                    override fun IntrinsicMeasureScope.maxIntrinsicWidth(
+                        measurables: List<IntrinsicMeasurable>,
+                        height: Int
+                    ): Int {
+                        return maxWidth?.invoke(this, height) ?: 0
+                    }
+
+                    override fun IntrinsicMeasureScope.minIntrinsicHeight(
+                        measurables: List<IntrinsicMeasurable>,
+                        width: Int
+                    ): Int {
+                        return minHeight?.invoke(this, width) ?: 0
+                    }
+
+                    override fun IntrinsicMeasureScope.maxIntrinsicHeight(
+                        measurables: List<IntrinsicMeasurable>,
+                        width: Int
+                    ): Int {
+                        return maxHeight?.invoke(this, width) ?: 0
+                    }
+                },
+                content = {}
+            )
+        }
+    }
 
     @Test
     fun windowMinIntrinsicWidth() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.IntrinsicWidth(WindowIntrinsicSize.Min, height = 500.dp),
+        windowSizeProvider = WindowSizeProvider.MinIntrinsicWidth(height = 500.dp),
         content = {
-            Box(Modifier.widthIn(min = 400.dp))
+            BoxWithIntrinsicSize(
+                minWidth = { 400.dp.roundToPx() }
+            )
+        },
+        expectedWindowSize = { insets ->
+            DpSize(400.dp, 500.dp) + insets
+        }
+    )
+
+    @Test
+    fun windowMaxIntrinsicWidth() = runWindowSizeTest(
+        windowSizeProvider = WindowSizeProvider.MaxIntrinsicWidth(height = 500.dp),
+        content = {
+            BoxWithIntrinsicSize(
+                maxWidth = { 400.dp.roundToPx() }
+            )
         },
         expectedWindowSize = { insets ->
             DpSize(400.dp, 500.dp) + insets
@@ -934,9 +992,24 @@ class WindowTestV2 {
 
     @Test
     fun windowMinIntrinsicHeight() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.IntrinsicHeight(WindowIntrinsicSize.Min, width = 500.dp),
+        windowSizeProvider = WindowSizeProvider.MinIntrinsicHeight(width = 500.dp),
         content = {
-            Box(Modifier.heightIn(min = 400.dp))
+            BoxWithIntrinsicSize(
+                minHeight = { 400.dp.roundToPx() }
+            )
+        },
+        expectedWindowSize = { insets ->
+            DpSize(500.dp, 400.dp) + insets
+        }
+    )
+
+    @Test
+    fun windowMaxIntrinsicHeight() = runWindowSizeTest(
+        windowSizeProvider = WindowSizeProvider.MaxIntrinsicHeight(width = 500.dp),
+        content = {
+            BoxWithIntrinsicSize(
+                maxHeight = { 400.dp.roundToPx() }
+            )
         },
         expectedWindowSize = { insets ->
             DpSize(500.dp, 400.dp) + insets
