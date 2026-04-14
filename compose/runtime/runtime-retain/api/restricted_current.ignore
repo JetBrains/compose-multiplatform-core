@@ -3,12 +3,6 @@ AddedAbstractMethod: androidx.compose.runtime.retain.RetainedValuesStore#consume
     Binary breaking change: Added method androidx.compose.runtime.retain.RetainedValuesStore.consumeExitedValueOrDefault(Object,Object)
 
 
-AddedMethod: androidx.compose.runtime.retain.ForgetfulRetainedValuesStore#consumeExitedValueOrDefault(Object, Object):
-    Added method androidx.compose.runtime.retain.ForgetfulRetainedValuesStore.consumeExitedValueOrDefault(Object,Object)
-AddedMethod: androidx.compose.runtime.retain.ManagedRetainedValuesStore#consumeExitedValueOrDefault(Object, Object):
-    Added method androidx.compose.runtime.retain.ManagedRetainedValuesStore.consumeExitedValueOrDefault(Object,Object)
-
-
 RemovedMethod: androidx.compose.runtime.retain.ForgetfulRetainedValuesStore#getExitedValueOrElse(Object, Object):
     Binary breaking change: Removed method androidx.compose.runtime.retain.ForgetfulRetainedValuesStore.getExitedValueOrElse(Object,Object)
 RemovedMethod: androidx.compose.runtime.retain.ManagedRetainedValuesStore#getExitedValueOrElse(Object, Object):

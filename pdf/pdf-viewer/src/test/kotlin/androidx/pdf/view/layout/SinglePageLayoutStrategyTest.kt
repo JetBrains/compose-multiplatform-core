@@ -26,6 +26,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SinglePageLayoutStrategyTest {
     private lateinit var singlePageLayoutStrategy: SinglePageLayoutStrategy
 
@@ -65,6 +66,47 @@ class SinglePageLayoutStrategyTest {
         singlePageLayoutStrategy.setPagePositions(1, dimension2)
         assertThat(singlePageLayoutStrategy.lastKnownPage).isEqualTo(1)
         assertThat(singlePageLayoutStrategy.maxWidth).isEqualTo(120f)
+    }
+
+    @Test
+    fun testSetPagePositions_jumpForward_approximatesLayout() {
+        // Load the first page.
+        singlePageLayoutStrategy.setPagePositions(0, Dimension(100, 200))
+
+        // Jump forward to page 3, creating a gap for pages 1 and 2.
+        val dimension3 = Dimension(100, 250)
+        singlePageLayoutStrategy.setPagePositions(3, dimension3)
+
+        // Verify the layout for the intermediate pages is approximated.
+        // The approximation should use the height of the newly loaded page (page 3).
+        val viewport = RectF(0f, 0f, 100f, 600f)
+        val expectedPage0Location = RectF(0f, 5f, 100f, 205f)
+        assertThat(singlePageLayoutStrategy.getPageLocation(viewport, 0, Dimension(100, 200)))
+            .isEqualTo(expectedPage0Location)
+
+        val expectedPage3Location = RectF(0f, 735f, 100f, 985f)
+        assertThat(singlePageLayoutStrategy.getPageLocation(viewport, 3, Dimension(100, 250)))
+            .isEqualTo(expectedPage3Location)
+    }
+
+    @Test
+    fun testSetPagePositions_lateLoadForPreviousPage_correctsLayout() {
+        // Create an approximated layout by loading page 3 first.
+        singlePageLayoutStrategy.setPagePositions(3, Dimension(110, 250))
+
+        // Load page 1 out of order with a different, taller dimension.
+        singlePageLayoutStrategy.setPagePositions(1, Dimension(110, 300))
+
+        // Verify the layout of page 0 is the same.
+        val viewport = RectF(0f, 0f, 110f, 600f)
+        val expectedPage0Location = RectF(0f, 5f, 110f, 255f)
+        assertThat(singlePageLayoutStrategy.getPageLocation(viewport, 0, Dimension(110, 250)))
+            .isEqualTo(expectedPage0Location)
+
+        // Verify the layout of page 3 is corrected.
+        val expectedPage3Location = RectF(0f, 835f, 110f, 1085f)
+        assertThat(singlePageLayoutStrategy.getPageLocation(viewport, 3, Dimension(110, 250)))
+            .isEqualTo(expectedPage3Location)
     }
 
     @Test
@@ -108,6 +150,173 @@ class SinglePageLayoutStrategyTest {
         // So this page should not be scrolled.
         val location = singlePageLayoutStrategy.getPageLocation(viewport, 0, pageDimensions[0])
         assertThat(location.left).isEqualTo(0f)
+    }
+
+    @Test
+    fun getVisiblePages_viewportAboveAllPages() {
+        val pageSize = Dimension(100, 200)
+        singlePageLayoutStrategy.setPagePositions(0, pageSize)
+        singlePageLayoutStrategy.setPagePositions(1, pageSize)
+        singlePageLayoutStrategy.setPagePositions(2, pageSize)
+
+        val visiblePages =
+            singlePageLayoutStrategy.getVisiblePages(RectF(0f, -100f, 100f, 0f), true)
+
+        // When the viewport is above the top of this model, we expect an empty range at the
+        // beginning of this model
+        assertThat(visiblePages.pages.upper).isEqualTo(0)
+        assertThat(visiblePages.pages.lower).isEqualTo(0)
+    }
+
+    @Test
+    fun getVisiblePages_viewportBelowAllPages() {
+        val pageSize = Dimension(100, 200)
+        singlePageLayoutStrategy.setPagePositions(0, pageSize)
+        singlePageLayoutStrategy.setPagePositions(1, pageSize)
+        singlePageLayoutStrategy.setPagePositions(2, pageSize)
+        val contentBottom = 200 * 3 + 10 * 5
+
+        val visiblePages =
+            singlePageLayoutStrategy.getVisiblePages(RectF(0f, 660f, 100f, 750f), true)
+
+        // When the viewport is below the end of this model, we expect an empty range at the last
+        // known page
+        assertThat(visiblePages.pages.upper).isEqualTo(2)
+        assertThat(visiblePages.pages.lower).isEqualTo(2)
+    }
+
+    @Test
+    fun getVisiblePages_allPagesVisible() {
+        val pageSize = Dimension(100, 200)
+        singlePageLayoutStrategy.setPagePositions(0, pageSize)
+        singlePageLayoutStrategy.setPagePositions(1, pageSize)
+        singlePageLayoutStrategy.setPagePositions(2, pageSize)
+
+        val visiblePages = singlePageLayoutStrategy.getVisiblePages(RectF(0f, 0f, 100f, 660f), true)
+
+        assertThat(visiblePages.pages.upper).isEqualTo(2)
+        assertThat(visiblePages.pages.lower).isEqualTo(0)
+    }
+
+    @Test
+    fun getVisiblePages_onePagePartiallyVisible() {
+        val pageSize = Dimension(100, 200)
+        singlePageLayoutStrategy.setPagePositions(0, pageSize)
+        singlePageLayoutStrategy.setPagePositions(1, pageSize)
+        singlePageLayoutStrategy.setPagePositions(2, pageSize)
+
+        val visiblePages =
+            singlePageLayoutStrategy.getVisiblePages(RectF(0f, 235f, 100f, 335f), true)
+
+        assertThat(visiblePages.pages.upper).isEqualTo(1)
+        assertThat(visiblePages.pages.lower).isEqualTo(1)
+    }
+
+    @Test
+    fun getVisiblePages_twoPagesPartiallyVisible() {
+        val pageSize = Dimension(100, 200)
+        singlePageLayoutStrategy.setPagePositions(0, pageSize)
+        singlePageLayoutStrategy.setPagePositions(1, pageSize)
+        singlePageLayoutStrategy.setPagePositions(2, pageSize)
+
+        val visiblePages =
+            singlePageLayoutStrategy.getVisiblePages(RectF(0f, 235f, 100f, 455f), true)
+
+        assertThat(visiblePages.pages.upper).isEqualTo(2)
+        assertThat(visiblePages.pages.lower).isEqualTo(1)
+    }
+
+    @Test
+    fun getVisiblePages_multiplePagesVisible() {
+        val pageSize = Dimension(100, 200)
+        singlePageLayoutStrategy.setPagePositions(0, pageSize)
+        singlePageLayoutStrategy.setPagePositions(1, pageSize)
+        singlePageLayoutStrategy.setPagePositions(2, pageSize)
+        singlePageLayoutStrategy.setPagePositions(3, pageSize)
+
+        val visiblePages =
+            singlePageLayoutStrategy.getVisiblePages(RectF(0f, 210f, 100f, 840f), true)
+
+        assertThat(visiblePages.pages.upper).isEqualTo(3)
+        assertThat(visiblePages.pages.lower).isEqualTo(1)
+    }
+
+    /**
+     * Add 3 pages of differing sizes to the model. Set the visible area to cover the whole model.
+     * Largest page should span (0, model width). Smaller pages should be placed in the middle of
+     * the model horizontally. Pages should get consistent vertical spacing.
+     */
+    @Test
+    fun getPageLocation_viewportCoversAllPages() {
+        val smallSize = Dimension(200, 100)
+        val mediumSize = Dimension(400, 200)
+        val largeSize = Dimension(800, 400)
+        singlePageLayoutStrategy.setPagePositions(0, smallSize)
+        singlePageLayoutStrategy.setPagePositions(1, mediumSize)
+        singlePageLayoutStrategy.setPagePositions(2, largeSize)
+        val viewport = RectF(0f, 0f, 800f, 800f)
+
+        val expectedSmLocation = RectF(300f, 5f, 500f, 105f)
+        assertThat(singlePageLayoutStrategy.getPageLocation(viewport, 0, smallSize))
+            .isEqualTo(expectedSmLocation)
+
+        val expectedMdLocation = RectF(200f, 115f, 600f, 315f)
+        assertThat(singlePageLayoutStrategy.getPageLocation(viewport, 1, mediumSize))
+            .isEqualTo(expectedMdLocation)
+
+        val expectedLgLocation = RectF(0f, 325f, 800f, 725f)
+        assertThat(singlePageLayoutStrategy.getPageLocation(viewport, 2, largeSize))
+            .isEqualTo(expectedLgLocation)
+    }
+
+    /**
+     * Add 3 pages of differing sizes to the model. Set the visible area to the bottom left corner
+     * of this model. Page 0 is not visible, page 1 should shift left to fit the maximum amount of
+     * content on-screen, and page 2 should span [0, model width]
+     */
+    @Test
+    fun getPageLocation_shiftPagesLargerThanViewportLeft() {
+        val smallSize = Dimension(200, 100)
+        val mediumSize = Dimension(400, 200)
+        val largeSize = Dimension(800, 400)
+        singlePageLayoutStrategy.setPagePositions(0, smallSize)
+        singlePageLayoutStrategy.setPagePositions(1, mediumSize)
+        singlePageLayoutStrategy.setPagePositions(2, largeSize)
+        // A 300x200 section in the bottom-left corner of this model
+        val viewport = RectF(0f, 250f, 200f, 800f)
+
+        val expectedMdLocation = RectF(0f, 115f, 400f, 315f)
+        assertThat(singlePageLayoutStrategy.getPageLocation(viewport, 1, mediumSize))
+            .isEqualTo(expectedMdLocation)
+
+        val expectedLgLocation = RectF(0f, 325f, 800f, 725f)
+        assertThat(singlePageLayoutStrategy.getPageLocation(viewport, 2, largeSize))
+            .isEqualTo(expectedLgLocation)
+    }
+
+    /**
+     * Add 3 pages of differing sizes to the model. Set the visible area to the bottom right corner
+     * of this model. Page 0 is not visible, page 1 should shift right to fit the maximum amount of
+     * content on-screen, and page 2 should span [0, model width]
+     */
+    @Test
+    fun getPageLocation_shiftPagesLargerThanViewportRight() {
+        val smallSize = Dimension(200, 100)
+        val mediumSize = Dimension(400, 200)
+        val largeSize = Dimension(800, 400)
+        singlePageLayoutStrategy.setPagePositions(0, smallSize)
+        singlePageLayoutStrategy.setPagePositions(1, mediumSize)
+        singlePageLayoutStrategy.setPagePositions(2, largeSize)
+        // A 300x200 section in the bottom-right corner of this model
+        val viewport = RectF(600f, 250f, 800f, 800f)
+
+        val expectedMdLocation = RectF(400f, 115f, 800f, 315f)
+        assertThat(singlePageLayoutStrategy.getPageLocation(viewport, 1, mediumSize))
+            .isEqualTo(expectedMdLocation)
+
+        val expectedLgLocation = RectF(0f, 325f, 800f, 725f)
+        assertThat(singlePageLayoutStrategy.getPageLocation(viewport, 2, largeSize))
+            .isEqualTo(expectedLgLocation)
     }
 
     @Test

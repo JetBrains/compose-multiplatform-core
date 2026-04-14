@@ -46,8 +46,8 @@ import androidx.xr.scenecore.createBundleForFullSpaceModeLaunch
 import androidx.xr.scenecore.createBundleForFullSpaceModeLaunchWithEnvironmentInherited
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
 import androidx.xr.scenecore.testapp.common.format
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import java.nio.file.Paths
@@ -78,22 +78,25 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_fsm_hsm_transition)
 
-        session = createSession(this)
-        if (session == null) this.finish()
-
-        if (savedInstanceState != null) {
-            val width = savedInstanceState.getFloat("defaultPanelSizeWidth")
-            val height = savedInstanceState.getFloat("defaultPanelSizeHeight")
-            defaultPanelSize = FloatSize2d(width, height)
+        session = SessionManager(this).createSession()
+        if (session == null) {
+            this.finish()
         } else {
-            defaultPanelSize = session!!.scene.mainPanelEntity.size
+            if (savedInstanceState != null) {
+                val width = savedInstanceState.getFloat("defaultPanelSizeWidth")
+                val height = savedInstanceState.getFloat("defaultPanelSizeHeight")
+                defaultPanelSize = FloatSize2d(width, height)
+            } else {
+                defaultPanelSize = session!!.scene.mainPanelEntity.size
+            }
+            Log.d(
+                TAG,
+                "defaultPanelSize: " +
+                    "w ${defaultPanelSize.width.format(2)} x " +
+                    "h ${defaultPanelSize.height.format(2)}",
+            )
         }
-        Log.d(
-            TAG,
-            "defaultPanelSize: " +
-                "w ${defaultPanelSize.width.format(2)} x " +
-                "h ${defaultPanelSize.height.format(2)}",
-        )
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // Set visibility of components per mode
         componentVisibility()
@@ -153,6 +156,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
                     true ->
                         movableActive =
                             session!!.scene.mainPanelEntity.addComponent(movableComponent)
+
                     false ->
                         movableActive.let {
                             session!!.scene.mainPanelEntity.removeComponent(movableComponent)
@@ -184,6 +188,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
                     true ->
                         resizableActive =
                             session!!.scene.mainPanelEntity.addComponent(resizableComponent)
+
                     false -> {
                         if (resizableActive) {
                             session!!.scene.mainPanelEntity.removeComponent(resizableComponent)

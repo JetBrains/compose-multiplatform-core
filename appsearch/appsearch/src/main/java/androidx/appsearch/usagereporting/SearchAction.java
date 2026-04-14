@@ -50,13 +50,10 @@ public class SearchAction extends TakenAction {
     @Document.LongProperty
     private final int mFetchedResultCount;
 
-    SearchAction(@NonNull String namespace, @NonNull String id, long documentTtlMillis,
-            long actionTimestampMillis, @TakenAction.ActionType int actionType,
-            @Nullable String query, int fetchedResultCount) {
-        super(namespace, id, documentTtlMillis, actionTimestampMillis, actionType);
-
-        mQuery = query;
-        mFetchedResultCount = fetchedResultCount;
+    SearchAction(@NonNull BuilderImpl<? extends BuilderImpl<?>> builder) {
+        super(builder);
+        mQuery = builder.mQuery;
+        mFetchedResultCount = builder.mFetchedResultCount;
     }
 
     /** Returns the user-entered search input (without any operators or rewriting). */
@@ -115,10 +112,9 @@ public class SearchAction extends TakenAction {
     }
 
     @SuppressWarnings("unchecked")
-    static class BuilderImpl<T extends BuilderImpl<T>> extends
-            TakenAction.BuilderImpl<T> {
-        protected String mQuery;
-        protected int mFetchedResultCount;
+    static class BuilderImpl<T extends BuilderImpl<T>> extends TakenAction.BuilderImpl<T> {
+        private String mQuery;
+        private int mFetchedResultCount;
 
         /**
          * Constructs {@link BuilderImpl} with given {@code namespace}, {@code id},
@@ -172,8 +168,7 @@ public class SearchAction extends TakenAction {
         /** Builds a {@link SearchAction}. */
         @Override
         public @NonNull SearchAction build() {
-            return new SearchAction(mNamespace, mId, mDocumentTtlMillis, mActionTimestampMillis,
-                    mActionType, mQuery, mFetchedResultCount);
+            return new SearchAction(this);
         }
     }
 }

@@ -77,6 +77,7 @@ import java.util.concurrent.Executor;
  *
  * <p>This camera info can be constructed with fake values.
  */
+@SuppressWarnings("HiddenSuperclass")
 public final class FakeCameraInfoInternal implements CameraInfoInternal {
     private static final String TAG = "FakeCameraInfoInternal";
     private static final Set<Range<Integer>> FAKE_FPS_RANGES = Collections.unmodifiableSet(
@@ -113,6 +114,7 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
     private boolean mIsFocusMeteringSupported = false;
     private boolean mIsHighSpeedSupported = false;
     private boolean mIsPreviewStabilizationSupported = false;
+    private boolean mIsVideoStabilizationSupported = false;
 
     private ExposureState mExposureState = new FakeExposureState();
     private final @NonNull List<Quirk> mCameraQuirks = new ArrayList<>();
@@ -226,6 +228,14 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void setIsPreviewStabilizationSupported(boolean supported) {
         mIsPreviewStabilizationSupported = supported;
+    }
+
+    /**
+     * Sets the return value for {@link #isVideoStabilizationSupported()}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void setVideoStabilizationSupported(boolean supported) {
+        mIsVideoStabilizationSupported = supported;
     }
 
     @Override
@@ -459,7 +469,7 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
 
     @Override
     public boolean isVideoStabilizationSupported() {
-        return false;
+        return mIsVideoStabilizationSupported;
     }
 
     /** Adds a quirk to the list of this camera's quirks. */

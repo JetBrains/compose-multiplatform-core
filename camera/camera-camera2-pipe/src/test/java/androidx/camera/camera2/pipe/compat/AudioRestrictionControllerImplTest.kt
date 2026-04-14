@@ -38,6 +38,7 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 class AudioRestrictionControllerImplTest {
     private val testScope = TestScope()
     private val threads = FakeThreads.fromTestScope(testScope)

@@ -39,7 +39,7 @@ object IntrospectionHelper {
     object AppFunctionAnnotation {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_SERVICE_PACKAGE_NAME, "AppFunction")
         const val PROPERTY_IS_ENABLED = "isEnabled"
-        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKdoc"
+        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKDoc"
     }
 
     object AppFunctionSchemaDefinitionAnnotation {
@@ -51,7 +51,7 @@ object IntrospectionHelper {
 
     object AppFunctionSerializableAnnotation {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionSerializable")
-        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKdoc"
+        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKDoc"
     }
 
     object AppFunctionSerializableInterfaceAnnotation {
@@ -142,6 +142,8 @@ object IntrospectionHelper {
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionAllOfTypeMetadata")
     val APP_FUNCTION_ONE_OF_TYPE_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionOneOfTypeMetadata")
+    val APP_FUNCTION_PARCELABLE_TYPE_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionParcelableTypeMetadata")
     val APP_FUNCTION_COMPONENTS_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionComponentsMetadata")
     val APP_FUNCTION_RESPONSE_METADATA_CLASS =
@@ -277,4 +279,6 @@ object IntrospectionHelper {
         AnnotationSpec.builder(ClassName("androidx.annotation", "RequiresApi"))
             .addMember("%L", 33)
             .build()
+
+    val PARCELABLE_CLASS_NAME = ClassName("android.os", "Parcelable")
 }

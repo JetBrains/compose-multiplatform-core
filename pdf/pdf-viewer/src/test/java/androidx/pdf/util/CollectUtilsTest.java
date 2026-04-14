@@ -26,11 +26,13 @@ import android.util.SparseArray;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class CollectUtilsTest {
 
     @Test

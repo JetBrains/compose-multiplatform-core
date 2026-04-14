@@ -24,7 +24,6 @@ import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.params.MeteringRectangle
 import android.util.Rational
 import androidx.camera.camera2.adapter.asListenableFuture
-import androidx.camera.camera2.adapter.propagateTo
 import androidx.camera.camera2.compat.ZoomCompat
 import androidx.camera.camera2.compat.workaround.MeteringRegionCorrection
 import androidx.camera.camera2.config.CameraScope
@@ -172,7 +171,7 @@ constructor(
                 return signal.asListenableFuture()
             }
             if (afRectangles.isNotEmpty()) {
-                state3AControl.preferredFocusMode = CaptureRequest.CONTROL_AF_MODE_AUTO
+                state3AControl.setPreferredFocusModeAsync(CaptureRequest.CONTROL_AF_MODE_AUTO)
             }
 
             val aeRegions =
@@ -369,7 +368,9 @@ constructor(
             autoCancelJob?.cancel()
             cancelSignal?.setCancelException("Cancelled by another cancelFocusAndMetering()")
             cancelSignal = signal
-            cancelFocusAndMeteringNowAsync(requestControl, updateSignal).propagateTo(signal)
+            cancelFocusAndMeteringNowAsync(requestControl, updateSignal).invokeOnCompletion {
+                signal.complete(null)
+            }
         }
             ?: run {
                 signal.completeExceptionally(OperationCanceledException("Camera is not active."))
@@ -383,7 +384,7 @@ constructor(
         signalToCancel: CompletableDeferred<FocusMeteringResult>?,
     ): Deferred<Result3A> {
         signalToCancel?.setCancelException("Cancelled by cancelFocusAndMetering()")
-        state3AControl.preferredFocusMode = null
+        state3AControl.setPreferredFocusModeAsync(null)
         return requestControl.cancelFocusAndMeteringAsync()
     }
 

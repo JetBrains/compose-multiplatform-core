@@ -20,6 +20,7 @@ package androidx.compose.remote.creation
 import android.graphics.Bitmap
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.RcPlatformServices
+import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 
@@ -32,6 +33,23 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
             }
             return (mRemoteWriter as RemoteComposeWriterAndroid).painter
         }
+
+    public constructor(
+        creationDisplayInfo: CreationDisplayInfo,
+        contentDescription: String,
+        profile: Profile,
+        content: RemoteComposeContextAndroid.() -> Unit,
+    ) : super(RemoteComposeWriterAndroid(creationDisplayInfo, contentDescription, profile, null)) {
+        content()
+    }
+
+    public constructor(
+        profile: Profile,
+        vararg tags: RemoteComposeWriter.HTag,
+        content: RemoteComposeContextAndroid.() -> Unit,
+    ) : super(RemoteComposeWriterAndroid(profile, *tags)) {
+        content()
+    }
 
     public constructor(
         width: Int,
@@ -75,6 +93,15 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
         content()
     }
 
+    public constructor(
+        platform: RcPlatformServices,
+        apiLevel: Int,
+        vararg tags: RemoteComposeWriter.HTag,
+        content: RemoteComposeContextAndroid.() -> Unit,
+    ) : super(RemoteComposeWriterAndroid(platform, apiLevel, *tags)) {
+        content()
+    }
+
     public fun addBitmap(image: Bitmap): Int {
         return mRemoteWriter.addBitmap(image)
     }
@@ -103,6 +130,10 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
             radX.toFloat(),
             radY.toFloat(),
         )
+    }
+
+    public fun drawRect(x: Number, y: Number, w: Number, h: Number) {
+        drawRect(x.toFloat(), y.toFloat(), w.toFloat(), h.toFloat())
     }
 
     public fun drawLine(x1: Number, y1: Number, x2: Number, y2: Number) {
@@ -172,5 +203,66 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
         flags: Int,
     ) {
         drawTextAnchored(id, x.toFloat(), y.toFloat(), panX.toFloat(), panY.toFloat(), flags)
+    }
+
+    public fun drawTextAnchored(
+        str: String,
+        x: Number,
+        y: Number,
+        panX: Number,
+        panY: Number,
+        flags: Int,
+    ) {
+        drawTextAnchored(str, x.toFloat(), y.toFloat(), panX.toFloat(), panY.toFloat(), flags)
+    }
+
+    public fun loop(from: Float, step: Float, until: Float, content: RcFloatArgumentCallback) {
+        val indexId = createID(0)
+        mRemoteWriter.startLoop(indexId, from, step, until)
+        content.run(rf(Utils.asNan(indexId)))
+        endLoop()
+    }
+
+    public fun loop(
+        fromN: Number,
+        stepN: Number,
+        untilN: Number,
+        content: RcFloatArgumentCallback,
+    ) {
+        val from = fromN as? Float ?: fromN.toFloat()
+        val step = stepN as? Float ?: stepN.toFloat()
+        val until = untilN as? Float ?: untilN.toFloat()
+
+        val indexId = createID(0)
+        mRemoteWriter.startLoop(indexId, from, step, until)
+        content.run(rf(Utils.asNan(indexId)))
+        endLoop()
+    }
+
+    public fun createTextFromFloat(value: RFloat, before: Int, after: Int, flags: Int): Int {
+        return mRemoteWriter.createTextFromFloat(value.toFloat(), before, after, flags)
+    }
+
+    /** Begin a global scope The section is moved above the root in the doc */
+    public fun beginGlobal() {
+        mRemoteWriter.beginGlobal()
+    }
+
+    /** End a global scope The section is moved above the root in the doc */
+    public fun endGlobal() {
+        mRemoteWriter.endGlobal()
+    }
+
+    /**
+     * This support skipping sections of code if a condition is true The bytes between are never
+     * seen by the parser
+     *
+     * @param type the type of condition
+     * @param value the value to compare against
+     */
+    public fun skip(type: Short, value: Int, content: RemoteComposeContextAndroid.() -> Unit) {
+        val pos = mRemoteWriter.beginSkip(type, value)
+        content()
+        mRemoteWriter.endSkip(pos)
     }
 }

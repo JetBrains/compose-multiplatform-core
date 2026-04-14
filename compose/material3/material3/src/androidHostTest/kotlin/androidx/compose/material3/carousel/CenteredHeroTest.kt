@@ -77,6 +77,29 @@ class CenteredHeroTest {
     }
 
     @Test
+    fun oneItemOnly_shouldGoFullscreen() {
+        val keylineList =
+            heroKeylineList(
+                density = Density,
+                carouselMainAxisSize = 40f + 40f + 40f,
+                maxItemSize = null,
+                itemSpacing = 0f,
+                itemCount = 1,
+                isCentered = true,
+            )
+        val strategy =
+            Strategy(
+                defaultKeylines = keylineList,
+                availableSpace = 40f + 40f + 40f,
+                itemSpacing = 0f,
+                beforeContentPadding = 0f,
+                afterContentPadding = 0f,
+            )
+
+        assertThat(strategy.itemMainAxisSize).isEqualTo(120f)
+    }
+
+    @Test
     fun lessThanFullscreenThreshold_shouldGoFullscreen() {
         val keylineList =
             heroKeylineList(
@@ -97,5 +120,91 @@ class CenteredHeroTest {
             )
 
         assertThat(strategy.itemMainAxisSize).isEqualTo(120f)
+    }
+
+    @Test
+    fun maxItemWidth_withoutItemSpacing_firstAndLastDefaultItemsShouldAlignToStartAndEnd() {
+        val keylineList =
+            heroKeylineList(
+                density = Density,
+                carouselMainAxisSize = 300f + 300f + 300f + 40f + 40f,
+                maxItemSize = 300f,
+                itemSpacing = 0f,
+                itemCount = 7,
+                isCentered = true,
+            )
+
+        val strategy =
+            Strategy(
+                defaultKeylines = keylineList,
+                availableSpace = 300f + 300f + 300f + 40f + 40f,
+                itemSpacing = 0f,
+                beforeContentPadding = 0f,
+                afterContentPadding = 0f,
+            )
+
+        assertThat(strategy.defaultKeylines.firstNonAnchor.offset).isEqualTo(20f)
+        assertThat(strategy.defaultKeylines.lastNonAnchor.offset)
+            .isEqualTo((300f + 300f + 300f + 40f + 40f) - 20f)
+    }
+
+    @Test
+    fun maxItemWidth_withItemSpacing_firstAndLastDefaultItemsShouldAlignToStartAndEnd() {
+        // Create a keyline list with 3 large and 2 small items. The resulting
+        // small items should have a size of 40f
+        val keylineList =
+            heroKeylineList(
+                density = Density,
+                carouselMainAxisSize = 300f + 300f + 300f + 40f + 40f,
+                maxItemSize = 300f,
+                itemSpacing = 12f,
+                itemCount = 7,
+                isCentered = true,
+            )
+
+        val strategy =
+            Strategy(
+                defaultKeylines = keylineList,
+                availableSpace = 300f + 300f + 300f + 40f + 40f,
+                itemSpacing = 12f,
+                beforeContentPadding = 0f,
+                afterContentPadding = 0f,
+            )
+
+        // Small items in the default keyline list will be at the start and end of the list.
+        // They should be flush against the container (same as when there is no item spacing).
+        assertThat(strategy.defaultKeylines.firstNonAnchor.offset).isEqualTo(20f)
+        assertThat(strategy.defaultKeylines.lastNonAnchor.offset)
+            .isEqualTo((300f + 300f + 300f + 40f + 40f) - 20f)
+    }
+
+    @Test
+    fun maxItemWidth_withItemSpacing_evenCount_firstAndLastDefaultItemsShouldAlignToStartAndEnd() {
+        // Create a keyline list with 3 large and 2 small items. The resulting
+        // small items should have a size of 40f
+        val keylineList =
+            heroKeylineList(
+                density = Density,
+                carouselMainAxisSize = 300f + 300f + 300f + 40f + 40f,
+                maxItemSize = 300f,
+                itemSpacing = 12f,
+                itemCount = 10,
+                isCentered = true,
+            )
+
+        val strategy =
+            Strategy(
+                defaultKeylines = keylineList,
+                availableSpace = 300f + 300f + 300f + 40f + 40f,
+                itemSpacing = 12f,
+                beforeContentPadding = 0f,
+                afterContentPadding = 0f,
+            )
+
+        // Small items in the default keyline list will be at the start and end of the list.
+        // They should be flush against the container (same as when there is no item spacing).
+        assertThat(strategy.defaultKeylines.firstNonAnchor.offset).isEqualTo(20f)
+        assertThat(strategy.defaultKeylines.lastNonAnchor.offset)
+            .isEqualTo((300f + 300f + 300f + 40f + 40f) - 20f)
     }
 }

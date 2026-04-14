@@ -23,11 +23,13 @@ import android.os.Bundle;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.util.Map;
 
 /** Tests for {@link BundleUtils}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class BundleUtilsTest {
 
     private static final String KEY_1 = "Key1";

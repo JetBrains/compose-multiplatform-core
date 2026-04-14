@@ -18,7 +18,6 @@ package androidx.xr.glimmer.samples
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -37,14 +36,12 @@ import androidx.xr.glimmer.surface
 @Composable
 fun ColorsSample() {
     val colors = GlimmerTheme.colors
-    VerticalList(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
+    VerticalList {
         item { ColorItem(colors.primary, colorName = "primary") }
         item { ColorItem(colors.secondary, colorName = "secondary") }
         item { ColorItem(colors.negative, colorName = "negative") }
         item { ColorItem(colors.positive, colorName = "positive") }
+        item { ColorItem(colors.background, colorName = "background") }
         item { ColorItem(colors.surface, colorName = "surface") }
         item { ColorItem(colors.outline, colorName = "outline") }
         item { ColorItem(colors.outlineVariant, colorName = "outlineVariant") }

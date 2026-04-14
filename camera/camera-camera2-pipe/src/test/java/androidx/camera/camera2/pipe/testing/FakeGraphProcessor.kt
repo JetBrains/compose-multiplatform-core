@@ -57,6 +57,7 @@ internal class FakeGraphProcessor(
 
     private var graphParameters: Map<*, Any?> = emptyMap<Any, Any?>()
     private var graph3AParameters: Map<*, Any?> = emptyMap<Any, Any?>()
+    private var requestListeners: List<Request.Listener> = emptyList()
 
     val requestQueue: List<List<Request>>
         get() = _requestQueue
@@ -93,7 +94,7 @@ internal class FakeGraphProcessor(
                 defaultParameters = defaultParameters,
                 graphParameters = graphParameters,
                 requiredParameters = requiredParameters,
-                listeners = defaultListeners,
+                listeners = (defaultListeners + requestListeners).distinct(),
             )
         }
         return true
@@ -114,6 +115,14 @@ internal class FakeGraphProcessor(
         for (burst in requests) {
             for (request in burst) {
                 for (listener in request.listeners) {
+                    listener.onAborted(request)
+                }
+            }
+        }
+
+        for (burst in requests) {
+            for (request in burst) {
+                for (listener in requestListeners) {
                     listener.onAborted(request)
                 }
             }
@@ -184,6 +193,11 @@ internal class FakeGraphProcessor(
         updateRepeatingRequest()
     }
 
+    override fun updateRequestListeners(listeners: List<Request.Listener>) {
+        requestListeners = listeners
+        updateRepeatingRequest()
+    }
+
     private fun updateRepeatingRequest() {
         if (closed) {
             return
@@ -202,7 +216,7 @@ internal class FakeGraphProcessor(
             defaultParameters = defaultParameters,
             graphParameters = graphParameters,
             requiredParameters = graph3AParameters,
-            listeners = defaultListeners,
+            listeners = (requestListeners + defaultListeners).toList(),
         )
     }
 }

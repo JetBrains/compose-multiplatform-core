@@ -38,6 +38,7 @@ import androidx.camera.camera2.pipe.compat.Camera2Quirks
 import androidx.camera.camera2.pipe.core.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /** A [CameraGraph] represents the combined configuration and state of a camera. */
@@ -237,7 +238,8 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
          * - Device(s): Depends on the situation and the use case.
          * - API levels: All
          */
-        val closeCaptureSessionOnDisconnect: Boolean = false,
+        val closeCaptureSessionOnDisconnect: Boolean =
+            Camera2Quirks.shouldCloseCaptureSessionOnDisconnect(),
 
         /**
          * Flag to close the camera device when the CameraGraph is closed. This is needed on devices
@@ -352,6 +354,14 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface Session : CameraControls3A, AutoCloseable {
         /**
+         * The currently configured repeating request. If there's no active repeating request, the
+         * method would return null.
+         *
+         * Setting this value to null will attempt to call stopRepeating on the Camera.
+         */
+        public var repeatingRequest: Request?
+
+        /**
          * Causes the CameraGraph to start or update the current repeating request with the provided
          * [Request] object. The [Request] object may be cached, and may be used for other
          * interactions with the camera (such as updating 3A, or issuing 3A triggers).
@@ -400,6 +410,41 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
          * request can be submitted multiple times.
          */
         public fun submit(request: Request)
+
+        /**
+         * Takes the 3A state machine to a converged state. We can specify if we want to converge on
+         * the values after the ongoing scan or if we want to start a fresh scan before converging.
+         *
+         * @param aeRegions the new regions for Ae before requesting convergence.
+         * @param afRegions the new regions for Af before requesting convergence.
+         * @param awbRegions the new regions for Awb before requesting convergence.
+         * @param aeBehavior if not null then the ae will be converged.
+         * @param afBehavior if not null then the af will be converged.
+         * @param awbBehavior if not null then the awb will be converged.
+         * @param convergedCondition an optional function can be used to identify if the result
+         *   frame with correct 3A converge state is received.
+         * @param frameLimit the maximum number of frames to wait before we give up waiting for this
+         *   convergence to complete.
+         * @param timeLimitNs the maximum time limit in ns we wait before we give up waiting for
+         *   convergence to complete.
+         * @return [Result3A] for the latest frame number at which the convergence was reached or
+         *   the frame at which the method returned early because either frame limit or time limit
+         *   was reached.
+         */
+        public fun converge3A(
+            aeRegions: List<MeteringRectangle>? = null,
+            afRegions: List<MeteringRectangle>? = null,
+            awbRegions: List<MeteringRectangle>? = null,
+            aeBehavior: Converge3ABehavior? = null,
+            afBehavior: Converge3ABehavior? = null,
+            awbBehavior: Converge3ABehavior? = null,
+            convergedCondition: ((FrameMetadata) -> Boolean)? = null,
+            frameLimit: Int? = DEFAULT_FRAME_LIMIT,
+            timeLimitNs: Long? = DEFAULT_TIME_LIMIT_NS,
+        ): Deferred<Result3A> =
+            throw UnsupportedOperationException(
+                "converge3a is not supported for this implementation."
+            )
 
         /**
          * Locks the auto-exposure, auto-focus and auto-whitebalance as per the given desired
@@ -579,6 +624,11 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
      */
     public val parameters: Parameters
 
+    /*
+     * This enables setting listeners directly. The listeners would receive callbacks similar to ones added in a [Request]. For detailed usage see [Listeners].
+     */
+    public val listeners: RequestListeners
+
     /** The [StreamGraph] for this camera graph instance. */
     public val streams: StreamGraph
 
@@ -587,6 +637,12 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
      * including when a camera graph is stopped, starting or started.
      */
     public val graphState: StateFlow<GraphState>
+
+    /** Conflated flow of the most recent [FrameNumber]s emitted by this CameraGraph. */
+    public val latestFrameNumber: Flow<FrameNumber>
+
+    /** Conflated flow of the most recent [FrameInfo] instances emitted by this CameraGraph. */
+    public val latestFrameInfo: Flow<FrameInfo>
 
     /**
      * This is a hint an app can give to a camera graph to indicate whether the camera is being used

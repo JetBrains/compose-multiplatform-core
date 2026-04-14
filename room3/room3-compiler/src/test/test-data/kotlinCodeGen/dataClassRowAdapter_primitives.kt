@@ -3,6 +3,8 @@ import androidx.room3.RoomDatabase
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performBlocking
 import androidx.sqlite.SQLiteStatement
+import androidx.sqlite.prepare
+import androidx.sqlite.step
 import javax.`annotation`.processing.Generated
 import kotlin.Byte
 import kotlin.Char
@@ -18,7 +20,7 @@ import kotlin.collections.List
 import kotlin.reflect.KClass
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
 internal class MyDao_Impl(
   __db: RoomDatabase,
 ) : MyDao {
@@ -69,7 +71,7 @@ internal class MyDao_Impl(
           val _tmpLong: Long
           _tmpLong = _stmt.getLong(_columnIndexOfLong)
           val _tmpChar: Char
-          _tmpChar = _stmt.getLong(_columnIndexOfChar).toChar()
+          _tmpChar = _stmt.getLong(_columnIndexOfChar).toInt().toChar()
           val _tmpFloat: Float
           _tmpFloat = _stmt.getDouble(_columnIndexOfFloat).toFloat()
           val _tmpDouble: Double

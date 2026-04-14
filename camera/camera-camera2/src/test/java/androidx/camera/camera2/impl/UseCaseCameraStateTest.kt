@@ -20,12 +20,14 @@ import android.hardware.camera2.CameraDevice.TEMPLATE_RECORD
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureRequest.CONTROL_CAPTURE_INTENT
 import android.hardware.camera2.CaptureRequest.CONTROL_CAPTURE_INTENT_PREVIEW
+import androidx.camera.camera2.adapter.CameraStateAdapter
+import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.adapter.asListenableFuture
 import androidx.camera.camera2.compat.quirk.CaptureIntentPreviewQuirk
 import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.compat.workaround.TemplateParamsQuirkOverride
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestTemplate
@@ -87,12 +89,19 @@ class UseCaseCameraStateTest {
 
     private val fakeCameraGraphSession = FakeCameraGraphSession()
     private val fakeCameraGraph = FakeCameraGraph(fakeCameraGraphSession)
-    private val fakeUseCaseGraphConfig =
-        UseCaseGraphConfig(graph = fakeCameraGraph, surfaceToStreamMap = surfaceToStreamMap)
+    val cameraStateAdapter = CameraStateAdapter()
+    val fakeUseCaseCameraContext =
+        UseCaseCameraContext(
+            cameraGraphProvider = { fakeCameraGraph },
+            cameraStateAdapter = cameraStateAdapter,
+            graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+            streamConfigMapProvider = { emptyMap() },
+            defaultSurfaceToStreamMap = surfaceToStreamMap,
+        )
 
     private val useCaseCameraState =
         UseCaseCameraState(
-            useCaseGraphConfig = fakeUseCaseGraphConfig,
+            useCaseCameraContext = fakeUseCaseCameraContext,
             templateParamsOverride = NoOpTemplateParamsOverride,
         )
 
@@ -207,7 +216,7 @@ class UseCaseCameraStateTest {
     fun updateAsync_overrideTemplateParams(): Unit = runBlocking {
         val useCaseCameraState =
             UseCaseCameraState(
-                useCaseGraphConfig = fakeUseCaseGraphConfig,
+                useCaseCameraContext = fakeUseCaseCameraContext,
                 templateParamsOverride =
                     TemplateParamsQuirkOverride(
                         Quirks(listOf(object : CaptureIntentPreviewQuirk {}))
@@ -237,8 +246,17 @@ class UseCaseCameraStateTest {
         // --- Setup ---
         val fakeSession = ControllableFakeCameraGraphSession()
         val fakeGraph = FakeCameraGraph(fakeSession)
-        val useCaseGraphConfig = UseCaseGraphConfig(fakeGraph, surfaceToStreamMap)
-        val useCaseCameraState = UseCaseCameraState(useCaseGraphConfig, NoOpTemplateParamsOverride)
+        val cameraStateAdapter = CameraStateAdapter()
+        val useCaseCameraContext =
+            UseCaseCameraContext(
+                cameraGraphProvider = { fakeGraph },
+                cameraStateAdapter = cameraStateAdapter,
+                graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+                streamConfigMapProvider = { emptyMap() },
+                defaultSurfaceToStreamMap = surfaceToStreamMap,
+            )
+        val useCaseCameraState =
+            UseCaseCameraState(useCaseCameraContext, NoOpTemplateParamsOverride)
 
         // --- Act ---
         val jobCount = 500
@@ -274,9 +292,17 @@ class UseCaseCameraStateTest {
         val fakeSession =
             ControllableFakeCameraGraphSession().apply { startRepeatingBlocker = blocker }
         val fakeGraph = FakeCameraGraph(fakeSession)
-
-        val useCaseGraphConfig = UseCaseGraphConfig(fakeGraph, surfaceToStreamMap)
-        val useCaseCameraState = UseCaseCameraState(useCaseGraphConfig, NoOpTemplateParamsOverride)
+        val cameraStateAdapter = CameraStateAdapter()
+        val useCaseCameraContext =
+            UseCaseCameraContext(
+                cameraGraphProvider = { fakeGraph },
+                cameraStateAdapter = cameraStateAdapter,
+                graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+                streamConfigMapProvider = { emptyMap() },
+                defaultSurfaceToStreamMap = surfaceToStreamMap,
+            )
+        val useCaseCameraState =
+            UseCaseCameraState(useCaseCameraContext, NoOpTemplateParamsOverride)
         // --- Act ---
         val lockHoldingJob =
             launch(testIoDispatcher) {

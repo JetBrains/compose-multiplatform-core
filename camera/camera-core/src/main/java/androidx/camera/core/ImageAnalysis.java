@@ -397,7 +397,7 @@ public final class ImageAnalysis extends UseCase {
         boolean isYuv2Nv21 = getImageFormat() == ImageFormat.YUV_420_888
                 && getOutputImageFormat() == OUTPUT_IMAGE_FORMAT_NV21;
         boolean isYuvRotationOrPixelShift = getImageFormat() == ImageFormat.YUV_420_888
-                && ((getCamera() != null && getRelativeRotation(getCamera()) != 0)
+                && (isOutputImageRotationEnabled()
                 || Boolean.TRUE.equals(getOnePixelShiftEnabled()));
 
         // TODO(b/195021586): to support RGB format input for image analysis for devices already
@@ -630,6 +630,12 @@ public final class ImageAnalysis extends UseCase {
         if (setTargetRotationInternal(rotation)) {
             tryUpdateRelativeRotation();
         }
+    }
+
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Override
+    protected void onProviderRotationChanged(int rotation) {
+        setTargetRotation(rotation);
     }
 
     /**
@@ -904,6 +910,17 @@ public final class ImageAnalysis extends UseCase {
                         getRelativeRotation(cameraInternal));
             }
         }
+    }
+
+    /**
+     * Returns whether the use case supports auto-rotation.
+     *
+     * @return true if the use case supports auto-rotation, false otherwise.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Override
+    public boolean isAutoRotationSupported() {
+        return true;
     }
 
     /**

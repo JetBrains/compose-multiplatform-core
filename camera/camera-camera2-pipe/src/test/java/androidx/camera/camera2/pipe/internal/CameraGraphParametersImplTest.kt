@@ -20,14 +20,13 @@ import android.hardware.camera2.CaptureRequest
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraId
-import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.compat.Camera2Quirks
 import androidx.camera.camera2.pipe.graph.GraphProcessorImpl
 import androidx.camera.camera2.pipe.graph.GraphRequestProcessor
 import androidx.camera.camera2.pipe.graph.Listener3A
-import androidx.camera.camera2.pipe.graph.SessionLock
 import androidx.camera.camera2.pipe.testing.FakeCamera2MetadataProvider
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor
@@ -53,11 +52,12 @@ import org.junit.runner.RunWith
 /** Tests for [CameraGraphParametersImpl] */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class CameraGraphParametersImplTest {
     private val testScope = TestScope()
 
     private var parameters =
-        CameraGraphParametersImpl(SessionLock(), FakeGraphProcessor(), testScope)
+        CameraGraphParametersImpl(GraphSessionLock(), FakeGraphProcessor(), testScope)
 
     private val graphProcessor =
         GraphProcessorImpl(
@@ -71,7 +71,7 @@ class CameraGraphParametersImplTest {
                     FakeCamera2MetadataProvider(
                         mapOf(CameraId("0") to FakeCameraMetadata(cameraId = CameraId("0")))
                     ),
-                cameraPipeFlags = CameraPipe.Flags(),
+                strictMode = StrictMode(false),
             ),
         )
     private val surfaceMap = mapOf(StreamId(0) to Surface(SurfaceTexture(1)))
@@ -127,7 +127,8 @@ class CameraGraphParametersImplTest {
             graphProcessor.onGraphStarted(grp1)
             graphProcessor.repeatingRequest = request1
 
-            val parameters = CameraGraphParametersImpl(SessionLock(), graphProcessor, testScope)
+            val parameters =
+                CameraGraphParametersImpl(GraphSessionLock(), graphProcessor, testScope)
             parameters[TEST_KEY] = 42
             advanceUntilIdle()
 
@@ -135,6 +136,68 @@ class CameraGraphParametersImplTest {
             assertEquals(csp1.events.size, 2)
             assertTrue(csp1.events[1].isRepeating)
             assertThat(csp1.events[1].graphParameters).containsExactly(TEST_KEY, 42)
+        }
+
+    @Test
+    fun setMultipleTimes_invokesUpdate() =
+        testScope.runTest {
+            graphProcessor.onGraphStarted(grp1)
+            graphProcessor.repeatingRequest = request1
+
+            val parameters =
+                CameraGraphParametersImpl(GraphSessionLock(), graphProcessor, testScope)
+
+            parameters[TEST_KEY] = 1
+            parameters[TEST_KEY] = 2
+            parameters[TEST_KEY] = 3
+
+            advanceUntilIdle()
+
+            // Verify that the final applied parameter is 3
+            val lastEvent = csp1.events.last()
+            assertThat(lastEvent.graphParameters[TEST_KEY]).isEqualTo(3)
+        }
+
+    @Test
+    fun flush_applyUpdates() =
+        testScope.runTest {
+            graphProcessor.onGraphStarted(grp1)
+            graphProcessor.repeatingRequest = request1
+
+            val parameters =
+                CameraGraphParametersImpl(GraphSessionLock(), graphProcessor, testScope)
+            parameters[TEST_KEY] = 42
+
+            parameters.flush()
+
+            advanceUntilIdle()
+
+            assertThat(csp1.events.last().graphParameters[TEST_KEY]).isEqualTo(42)
+        }
+
+    @Test
+    fun flush_updatesWithoutSessionLockToken() =
+        testScope.runTest {
+            graphProcessor.onGraphStarted(grp1)
+            graphProcessor.repeatingRequest = request1
+            advanceUntilIdle()
+
+            val lock = GraphSessionLock()
+            val token = lock.tryAcquireToken()!!
+            val parameters = CameraGraphParametersImpl(lock, graphProcessor, testScope)
+
+            val eventsBeforeFlush = csp1.events.size
+
+            parameters[TEST_KEY] = 42
+
+            parameters.flush()
+
+            advanceUntilIdle()
+
+            assertThat(csp1.events.size).isGreaterThan(eventsBeforeFlush)
+            assertThat(csp1.events.last().graphParameters[TEST_KEY]).isEqualTo(42)
+
+            token.release()
         }
 
     companion object {

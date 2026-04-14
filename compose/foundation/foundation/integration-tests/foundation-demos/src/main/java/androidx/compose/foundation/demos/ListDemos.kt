@@ -91,6 +91,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -112,7 +113,6 @@ import androidx.compose.ui.graphics.Color.Companion.Red
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.layout.LayoutBoundsHolder
 import androidx.compose.ui.layout.layoutBounds
-import androidx.compose.ui.layout.onFirstVisible
 import androidx.compose.ui.layout.onVisibilityChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -180,12 +180,14 @@ private fun LazyColumnImpressionsDemo() {
                         Text("Impression count: $impressions")
 
                         Box(
-                            Modifier.onFirstVisible(
+                            Modifier.onVisibilityChanged(
                                     minDurationMs = 500,
                                     minFractionVisible = 1f,
                                     viewportBounds = viewport,
-                                ) {
-                                    impressions++
+                                ) { visible ->
+                                    if (visible) {
+                                        impressions++
+                                    }
                                 }
                                 .border(1.dp, Color.Black)
                                 .background(Color.Blue)
@@ -1186,3 +1188,5 @@ private class DragAndDropListState(val targetListState: LazyListState) {
             }
         }
 }
+
+@Immutable private data class ListItem(val name: String)

@@ -28,8 +28,10 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 class RemoteBooleanTest {
     val context =
         AndroidRemoteContext().apply {
@@ -657,9 +659,50 @@ class RemoteBooleanTest {
         assertThat((RemoteInt(10) gt RemoteInt(5)).constantValue).isTrue()
 
         assertThat(
-                (RemoteFloat(100f) gt RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)).constantValue
+                (RemoteFloat(100f) gt RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC))
+                    .constantValueOrNull
             )
             .isNull()
+    }
+
+    @Test
+    fun select_complexExpression() {
+        // Create a complex float expression
+        var complexFloat = RemoteFloat(0f)
+        for (i in 1..50) {
+            complexFloat += RemoteFloat(i.toFloat())
+        }
+
+        val bool = RemoteBoolean.createNamedRemoteBoolean("testBool", true)
+        // usage of select with complex expression
+        val result = bool.select(complexFloat, RemoteFloat(0f))
+
+        // Assertions similar to longExpression_usesReferences
+        val finalArray = result.arrayProvider(creationState)
+        assertThat(finalArray.size < 20).isTrue()
+
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+        val expected = (50 * 51) / 2f
+        assertThat(context.getFloat(resultId)).isEqualTo(expected)
+    }
+
+    @Test
+    fun cacheKeys() {
+        val constant = RemoteBoolean(true)
+        // implemented as RemoteInt
+        assertThat(constant.cacheKey).isEqualTo(RemoteConstantCacheKey(1))
+
+        val named = RemoteBoolean.createNamedRemoteBoolean("test", false)
+        val op = constant and named
+        assertThat(op.cacheKey)
+            .isEqualTo(
+                RemoteOperationCacheKey.create(
+                    RemoteInt.OperationKey.And,
+                    constant.intValue,
+                    named.intValue,
+                )
+            )
     }
 
     private fun makeAndPaintCoreDocument() =

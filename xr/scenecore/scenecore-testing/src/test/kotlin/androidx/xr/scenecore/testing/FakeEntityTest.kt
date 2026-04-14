@@ -25,12 +25,14 @@ import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.Space
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FakeEntityTest {
     private lateinit var underTest: FakeEntity
 
@@ -42,6 +44,12 @@ class FakeEntityTest {
     @Test
     fun initial_State() {
         assertThat(underTest.contentDescription).isEqualTo("")
+        assertThat(underTest.name).isEqualTo("")
+    }
+
+    @Test
+    fun name_isSet() {
+        assertThat(FakeEntity("test").name).isEqualTo("test")
     }
 
     @Test
@@ -71,23 +79,29 @@ class FakeEntityTest {
         assertThat(underTest.children).containsExactly(child)
         assertThat(child.parent).isEqualTo(underTest)
 
-        val poseActivity = Pose(Vector3.Left, Quaternion.Identity)
-        underTest.setPose(poseActivity, Space.ACTIVITY)
-        assertPose(poseActivity, underTest.getPose(Space.ACTIVITY))
-
         val poseWorld = Pose(Vector3.Right, Quaternion.Identity)
         underTest.setPose(poseWorld, Space.REAL_WORLD)
         assertPose(poseWorld, underTest.getPose(Space.REAL_WORLD))
 
-        var poseChild = child.getPose(Space.ACTIVITY)
-        assertPose(poseChild, underTest.getPose(Space.ACTIVITY))
-
-        poseChild = child.getPose(Space.REAL_WORLD)
+        val poseChild = child.getPose(Space.REAL_WORLD)
         assertPose(poseChild, underTest.getPose(Space.REAL_WORLD))
 
         child.parent = null
         assertThat(underTest.children).isEmpty()
         assertThat(child.parent).isNull()
+    }
+
+    @Test
+    fun setPoseInActivitySpace_throwsException() {
+        val poseActivity = Pose(Vector3.Left, Quaternion.Identity)
+        Assert.assertThrows(IllegalStateException::class.java) {
+            underTest.setPose(poseActivity, Space.ACTIVITY)
+        }
+    }
+
+    @Test
+    fun getPoseInActivitySpace_throwsException() {
+        Assert.assertThrows(IllegalStateException::class.java) { underTest.getPose(Space.ACTIVITY) }
     }
 
     @Test
@@ -125,28 +139,16 @@ class FakeEntityTest {
 
     @Test
     fun setPose_withDifferentSpaces() {
-        check(underTest.getPose(Space.PARENT) == Pose.Identity)
-        check(underTest.getPose(Space.ACTIVITY) == Pose.Identity)
-        check(underTest.getPose(Space.REAL_WORLD) == Pose.Identity)
+        assertThat(underTest.getPose(Space.PARENT)).isEqualTo(Pose.Identity)
+        assertThat(underTest.getPose(Space.REAL_WORLD)).isEqualTo(Pose.Identity)
 
         val poseParent = Pose(Vector3.One, Quaternion.Identity)
         underTest.setPose(poseParent, Space.PARENT)
         assertPose(poseParent, underTest.getPose(Space.PARENT))
 
-        val poseActivity = Pose(Vector3.Left, Quaternion.Identity)
-        underTest.setPose(poseActivity, Space.ACTIVITY)
-        assertPose(poseActivity, underTest.getPose(Space.ACTIVITY))
-
         val poseWorld = Pose(Vector3.Right, Quaternion.Identity)
         underTest.setPose(poseWorld, Space.REAL_WORLD)
         assertPose(poseWorld, underTest.getPose(Space.REAL_WORLD))
-    }
-
-    @Test
-    fun getGravityAlignedPose_getsPoseCorrectly() {
-        val pose = Pose(Vector3.One, Quaternion.Identity)
-
-        assertThat(underTest.getGravityAlignedPose(pose)).isEqualTo(pose)
     }
 
     @Test
@@ -182,29 +184,19 @@ class FakeEntityTest {
     }
 
     @Test
-    fun setAlpha_withDifferentSpaces() {
+    fun setAlpha_getsAlphaCorrectly() {
         assertThat(underTest.getAlpha(Space.PARENT)).isEqualTo(1.0f)
-        assertThat(underTest.getAlpha(Space.ACTIVITY)).isEqualTo(1.0f)
-        assertThat(underTest.getAlpha(Space.REAL_WORLD)).isEqualTo(1.0f)
 
         val alphaParent = 0.1f
-        underTest.setAlpha(alphaParent, Space.PARENT)
+        underTest.setAlpha(alphaParent)
         assertThat(underTest.getAlpha(Space.PARENT)).isEqualTo(alphaParent)
-
-        val alphaActivity = 0.2f
-        underTest.setAlpha(alphaActivity, Space.ACTIVITY)
-        assertThat(underTest.getAlpha(Space.ACTIVITY)).isEqualTo(alphaActivity)
-
-        val alphaWorld = 0.3f
-        underTest.setAlpha(alphaWorld, Space.REAL_WORLD)
-        assertThat(underTest.getAlpha(Space.REAL_WORLD)).isEqualTo(alphaWorld)
 
         // Alpha value range = coerceIn(0f, 1f)
         val invalidAlphaNegative = -0.1f
         val invalidAlphaMoreThanOne = 1.1f
-        underTest.setAlpha(invalidAlphaNegative, Space.REAL_WORLD)
+        underTest.setAlpha(invalidAlphaNegative)
         assertThat(underTest.getAlpha(Space.REAL_WORLD)).isEqualTo(0f)
-        underTest.setAlpha(invalidAlphaMoreThanOne, Space.REAL_WORLD)
+        underTest.setAlpha(invalidAlphaMoreThanOne)
         assertThat(underTest.getAlpha(Space.REAL_WORLD)).isEqualTo(1f)
     }
 

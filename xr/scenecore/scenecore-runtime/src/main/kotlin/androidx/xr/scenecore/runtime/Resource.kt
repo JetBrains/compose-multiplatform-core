@@ -35,3 +35,9 @@ import androidx.annotation.RestrictTo
 
 /** Interface for a material resource. This can be used to override materials on meshes. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface MaterialResource : Resource {}
+
+/** Interface for a MeshBuffer resource. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface MeshBufferResource : Resource {}
+
+/** Interface for a CustomMesh resource. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface CustomMeshResource : Resource {}

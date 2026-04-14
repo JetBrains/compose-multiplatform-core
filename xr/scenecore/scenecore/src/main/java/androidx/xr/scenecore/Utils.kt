@@ -27,6 +27,7 @@ import androidx.xr.runtime.math.Ray
 import androidx.xr.scenecore.HitTestResult.SurfaceType
 import androidx.xr.scenecore.InputEvent.HitInfo
 import androidx.xr.scenecore.ScenePose.HitTestFilter
+import androidx.xr.scenecore.SurfaceEntity.Shape.TriangleMesh
 import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
 import androidx.xr.scenecore.runtime.AnchorPlacement as RtAnchorPlacement
 import androidx.xr.scenecore.runtime.Dimensions as RtDimensions
@@ -48,6 +49,7 @@ import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilitie
 import androidx.xr.scenecore.runtime.SpatialPointerIcon as RtSpatialPointerIcon
 import androidx.xr.scenecore.runtime.SpatialPointerIconType as RtSpatialPointerIconType
 import androidx.xr.scenecore.runtime.SpatialVisibility as RtSpatialVisibility
+import androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh as RtTriangleMesh
 import androidx.xr.scenecore.runtime.TextureSampler as RtTextureSampler
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Executor
@@ -112,8 +114,7 @@ internal fun RtPixelDimensions.toIntSize2d(): IntSize2d {
 }
 
 /**
- * Extension function that converts [Int] to
- * [androidx.xr.scenecore.runtime.SceneRuntime.planeOrientation].
+ * Extension function that converts [PlaneOrientation] to [androidx.xr.scenecore.runtime.PlaneType].
  */
 internal fun Int.toRtPlaneType(): RtPlaneType {
     return when (this) {
@@ -125,8 +126,8 @@ internal fun Int.toRtPlaneType(): RtPlaneType {
 }
 
 /**
- * Extension function that converts [Int] to
- * [androidx.xr.scenecore.runtime.SceneRuntime.PlaneSemantic].
+ * Extension function that converts [PlaneSemanticType] to
+ * [androidx.xr.scenecore.runtime.PlaneSemantic].
  */
 internal fun Int.toRtPlaneSemantic(): RtPlaneSemantic {
     return when (this) {
@@ -140,8 +141,7 @@ internal fun Int.toRtPlaneSemantic(): RtPlaneSemantic {
 }
 
 /**
- * Extension function that converts [Space] value to
- * [androidx.xr.scenecore.runtime.SceneRuntime.Space] value.
+ * Extension function that converts [Space] value to [androidx.xr.scenecore.runtime.Space] value.
  */
 internal fun Space.toRtSpace(): Int {
     return when (this) {
@@ -155,9 +155,9 @@ internal fun Space.toRtSpace(): Int {
 /**
  * Extension function that converts a [androidx.xr.scenecore.runtime.MoveEvent] to a [MoveEvent].
  */
-internal fun RtMoveEvent.toMoveEvent(entityManager: EntityManager): MoveEvent {
+internal fun RtMoveEvent.toMoveEvent(entityRegistry: EntityRegistry): MoveEvent {
 
-    disposedEntity?.let { entityManager.removeEntity(it) }
+    disposedEntity?.let { entityRegistry.removeEntity(it) }
     return MoveEvent(
         moveState.toMoveState(),
         Ray(initialInputRay.origin, initialInputRay.direction),
@@ -166,18 +166,18 @@ internal fun RtMoveEvent.toMoveEvent(entityManager: EntityManager): MoveEvent {
         currentPose,
         previousScale.x,
         currentScale.x,
-        entityManager.getEntityForRtEntity(initialParent)!!,
+        entityRegistry.getEntityForRtEntity(initialParent)!!,
         updatedParent?.let {
-            entityManager.getEntityForRtEntity(it)
-                ?: AnchorEntity.create(it as RtAnchorEntity, entityManager)
+            entityRegistry.getEntityForRtEntity(it)
+                ?: AnchorEntity.create(it as RtAnchorEntity, entityRegistry)
         },
     )
 }
 
 /** Extension function that converts a [RtHitInfo] to a [HitInfo]. */
-internal fun RtHitInfo.toHitInfo(entityManager: EntityManager): HitInfo? {
+internal fun RtHitInfo.toHitInfo(entityRegistry: EntityRegistry): HitInfo? {
     // TODO: b/377541143 - Replace instance equality check in EntityManager.
-    val hitEntity = entityManager.getEntityForRtEntity(inputEntity)
+    val hitEntity = entityRegistry.getEntityForRtEntity(inputEntity)
     return if (hitEntity == null) {
         null
     } else {
@@ -188,9 +188,9 @@ internal fun RtHitInfo.toHitInfo(entityManager: EntityManager): HitInfo? {
 /**
  * Extension function that converts a [androidx.xr.scenecore.runtime.InputEvent] to a [InputEvent].
  */
-internal fun RtInputEvent.toInputEvent(entityManager: EntityManager): InputEvent {
+internal fun RtInputEvent.toInputEvent(entityRegistry: EntityRegistry): InputEvent {
     val hitInfos = mutableListOf<HitInfo>()
-    hitInfoList.forEach { it.toHitInfo(entityManager)?.let { element -> hitInfos.add(element) } }
+    hitInfoList.forEach { it.toHitInfo(entityRegistry)?.let { element -> hitInfos.add(element) } }
     return InputEvent(
         source.toInputEventSource(),
         pointerType.toInputEventPointer(),
@@ -251,7 +251,7 @@ internal fun RtResizeEvent.toResizeEvent(entity: Entity): ResizeEvent {
 
 /**
  * Extension function that converts a [Set] of [AnchorPlacement] to a [Set] of
- * [androidx.xr.scenecore.runtime.SceneRuntime.AnchorPlacement].
+ * [androidx.xr.scenecore.runtime.AnchorPlacement].
  */
 internal fun Set<AnchorPlacement>.toRtAnchorPlacement(
     sceneRuntime: SceneRuntime
@@ -533,8 +533,8 @@ internal fun RtPerceivedResolutionResult.toPerceivedResolutionResult(): Perceive
         is RtPerceivedResolutionResult.Success ->
             PerceivedResolutionResult.Success(this.perceivedResolution.toIntSize2d())
         is RtPerceivedResolutionResult.EntityTooClose -> PerceivedResolutionResult.EntityTooClose()
-        is RtPerceivedResolutionResult.InvalidCameraView ->
-            PerceivedResolutionResult.InvalidCameraView()
+        is RtPerceivedResolutionResult.InvalidRenderViewpoint ->
+            PerceivedResolutionResult.InvalidRenderViewpoint()
     }
 }
 
@@ -561,4 +561,12 @@ internal object DirectExecutor : Executor {
     override fun execute(command: Runnable) {
         command.run()
     }
+}
+
+internal fun RtTriangleMesh.toTriangleMesh(): TriangleMesh {
+    return TriangleMesh(positions = positions, texCoords = texCoords, indices = indices)
+}
+
+internal fun TriangleMesh.toRtTriangleMesh(): RtTriangleMesh {
+    return RtTriangleMesh(positions = positions, texCoords = texCoords, indices = indices)
 }

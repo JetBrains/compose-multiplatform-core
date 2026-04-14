@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.lazy.list
 
+import androidx.compose.foundation.ComposeFoundationFlags.isCacheWindowRefillFixEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
@@ -45,6 +46,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.junit.Assume
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -186,6 +188,7 @@ class LazyListCacheWindowTest(orientation: Orientation) :
 
     @Test
     fun datasetChanged_shouldMakeSureNestedItemsChanged_afterScroll() {
+        Assume.assumeTrue(isCacheWindowRefillFixEnabled)
         val items = mutableStateOf(listOf("a", "b", "c", "d", "e"))
 
         rule.setContent {
@@ -266,6 +269,7 @@ class LazyListCacheWindowTest(orientation: Orientation) :
 
     @Test
     fun datasetChanged_shouldMakeSureNestedItemsChanged_noScroll() {
+        Assume.assumeTrue(isCacheWindowRefillFixEnabled)
         val items = mutableStateOf(listOf("a", "b", "c", "d"))
 
         rule.setContent {
@@ -326,7 +330,7 @@ class LazyListCacheWindowTest(orientation: Orientation) :
         rule.onNodeWithTag("b").assertIsDisplayed() // fully visible
         rule.onNodeWithTag("c").assertExists() // part of the window
         rule.onNodeWithTag("d").assertExists() // part of the window
-        println("Changing Dataset")
+
         rule.runOnIdle { items.value = listOf("a", "b", "e", "f", "g", "h") }
         rule.waitForIdle()
 
@@ -370,6 +374,36 @@ class LazyListCacheWindowTest(orientation: Orientation) :
         // when we scroll back, this should not crash because we will update the windowEndIndex
         // correctly.
         rule.runOnIdle { runBlocking { state.scrollBy(-4 * itemsSizePx.toFloat()) } }
+    }
+
+    @Test
+    fun datasetChanged_scrollForward_shouldKeepAroundWithinBounds_notCrash() {
+        val numItems = mutableStateOf(40)
+
+        composeList(
+            firstItem = 20,
+            numItems = numItems,
+            cacheWindow = viewportWindow,
+            numberOfItemsInTheList = 5f,
+        )
+
+        rule.runOnIdle { runBlocking { state.scrollBy(-4 * itemsSizePx.toFloat()) } }
+
+        // now the dataset changes
+        rule.runOnIdle {
+            assertThat(state.firstVisibleItemIndex).isNotEqualTo(0)
+            numItems.value = 33
+        }
+
+        // when we forward  and then change the dataset again (simulates PS)
+        rule.runOnIdle {
+            runBlocking { state.scrollBy(4 * itemsSizePx.toFloat()) }
+            numItems.value = 20
+        }
+
+        rule.runOnIdle { runBlocking { state.scrollBy(4 * itemsSizePx.toFloat()) } }
+
+        rule.waitForIdle()
     }
 
     @Test

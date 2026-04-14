@@ -20,7 +20,11 @@ import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.unit.VolumeConstraints
 
-/** Creates a node that allows changing how the wrapped element is measured and laid out. */
+/**
+ * Creates a node that allows changing how the wrapped element is measured and laid out.
+ *
+ * @param measure function that defines the measurement and placement logic.
+ */
 public fun SubspaceModifier.layout(
     measure: SubspaceMeasureScope.(SubspaceMeasurable, VolumeConstraints) -> SubspaceMeasureResult
 ): SubspaceModifier = this then LayoutElement(measure)

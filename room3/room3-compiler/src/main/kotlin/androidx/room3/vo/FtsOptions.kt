@@ -16,20 +16,25 @@
 
 package androidx.room3.vo
 
+import androidx.room3.FtsOptions.Detail
 import androidx.room3.FtsOptions.MatchInfo
 import androidx.room3.FtsOptions.Order
 import androidx.room3.migration.bundle.FtsOptionsBundle
+import androidx.room3.parser.FtsVersion
 import java.util.Locale
 
 data class FtsOptions(
     val tokenizer: String,
     val tokenizerArgs: List<String>,
     val contentEntity: Entity?,
-    val languageIdColumnName: String,
-    val matchInfo: MatchInfo,
-    val notIndexedColumns: List<String>,
-    val prefixSizes: List<Int>,
-    val preferredOrder: Order,
+    val languageIdColumnName: String, // v4
+    val matchInfo: MatchInfo, // v4
+    val notIndexedColumns: List<String>, // v4 and v5
+    val prefixSizes: List<Int>, // v4 and v5
+    val preferredOrder: Order, // v4
+    val contentRowId: String?, // v5
+    val columnSize: Boolean?, // v5
+    val detail: Detail?, // v5
 ) : HasSchemaIdentity {
 
     override fun getIdKey(): String {
@@ -42,18 +47,34 @@ data class FtsOptions(
         identityKey.append(notIndexedColumns.joinToString())
         identityKey.append(prefixSizes.joinToString { it.toString() })
         identityKey.append(preferredOrder.name)
+        if (contentRowId != null) {
+            identityKey.append(contentRowId)
+        }
+        if (columnSize != null) {
+            identityKey.append(columnSize.toString())
+        }
+        if (detail != null) {
+            identityKey.append(detail.name)
+        }
         return identityKey.hash()
     }
 
-    fun databaseDefinition(includeTokenizer: Boolean = true): List<String> {
-        return mutableListOf<String>().apply {
-            if (
-                includeTokenizer &&
-                    (tokenizer != androidx.room3.FtsOptions.TOKENIZER_SIMPLE ||
-                        tokenizerArgs.isNotEmpty())
-            ) {
-                val tokenizeAndArgs = listOf("tokenize=$tokenizer") + tokenizerArgs.map { "`$it`" }
-                add(tokenizeAndArgs.joinToString(separator = " "))
+    fun databaseDefinition(includeTokenizer: Boolean = true, ftsVersion: FtsVersion): List<String> {
+        return buildList {
+            if (includeTokenizer) {
+                if (ftsVersion == FtsVersion.FTS5) {
+                    val tokenizeAndArgs = listOf(tokenizer) + tokenizerArgs
+                    add("tokenize=`${tokenizeAndArgs.joinToString(separator = " ")}`")
+                } else {
+                    val hasNonDefaultTokenizer =
+                        tokenizer != androidx.room3.FtsOptions.TOKENIZER_SIMPLE ||
+                            tokenizerArgs.isNotEmpty()
+                    if (hasNonDefaultTokenizer) {
+                        val tokenizeAndArgs =
+                            listOf("tokenize=$tokenizer") + tokenizerArgs.map { "`$it`" }
+                        add(tokenizeAndArgs.joinToString(separator = " "))
+                    }
+                }
             }
 
             if (contentEntity != null) {
@@ -68,14 +89,29 @@ data class FtsOptions(
                 add("matchinfo=${matchInfo.name.lowercase(Locale.US)}")
             }
 
-            notIndexedColumns.forEach { add("notindexed=`$it`") }
+            if (ftsVersion == FtsVersion.FTS4 && notIndexedColumns.isNotEmpty()) {
+                notIndexedColumns.forEach { add("notindexed=`$it`") }
+            }
 
             if (prefixSizes.isNotEmpty()) {
-                add("prefix=`${prefixSizes.joinToString(separator = ",") { it.toString() }}`")
+                val separator = if (ftsVersion == FtsVersion.FTS5) " " else ","
+                add("prefix=`${prefixSizes.joinToString(separator) { it.toString() }}`")
             }
 
             if (preferredOrder != Order.ASC) {
                 add("order=$preferredOrder")
+            }
+
+            if (!contentRowId.isNullOrEmpty()) {
+                add("content_rowid=`$contentRowId`")
+            }
+
+            if (columnSize != null && !columnSize) {
+                add("columnsize=0")
+            }
+
+            if (detail != null && detail != Detail.FULL) {
+                add("detail=${detail.name.lowercase(Locale.US)}")
             }
         }
     }
@@ -90,6 +126,9 @@ data class FtsOptions(
             notIndexedColumns,
             prefixSizes,
             preferredOrder.name,
+            contentRowId,
+            columnSize,
+            detail?.name,
         )
 
     companion object {
@@ -99,10 +138,11 @@ data class FtsOptions(
                 androidx.room3.FtsOptions.TOKENIZER_PORTER,
                 // Even though ICU is one of the default tokenizer in Room's API and in Android, the
                 // SQLite JDBC library is not compiled with ICU turned ON and Room will fail to
-                // create
-                // the table, therefore treat it as a custom tokenizer. b/201753224
+                // create the table, therefore treat it as a custom tokenizer. b/201753224
                 // androidx.room3.FtsOptions.TOKENIZER_ICU,
                 androidx.room3.FtsOptions.TOKENIZER_UNICODE61,
+                androidx.room3.FtsOptions.TOKENIZER_ASCII,
+                androidx.room3.FtsOptions.TOKENIZER_TRIGRAM,
             )
     }
 }

@@ -58,8 +58,10 @@ internal class Page(
      * threshold for tiled rendering
      */
     private val maxBitmapSizePx: Point,
-    /** A function to call when the [PdfView] hosting this [Page] ought to invalidate itself */
-    private val onPageUpdate: () -> Unit,
+    /** A function to call when the bitmap of the page is ready (invoked with page number). */
+    private val onBitmapReady: (Int) -> Unit,
+    /** A function to call when form widgets are ready (invoked with page number). */
+    private val onFormWidgetReady: (Int) -> Unit,
     /** A function to call when page text is ready (invoked with page number). */
     private val onPageTextReady: ((Int) -> Unit),
     /** Error flow for propagating error occurred while processing to [PdfView]. */
@@ -68,6 +70,7 @@ internal class Page(
     /** A list represent the [FormWidgetInfo] present on the page. */
     formWidgetInfos: List<FormWidgetInfo>? = null,
     private val pdfFormFillingConfig: PdfFormFillingConfig,
+    private val onBitmapCleared: (Int) -> Unit,
 ) {
     init {
         require(pageNum >= 0) { "Invalid negative page" }
@@ -144,7 +147,7 @@ internal class Page(
                     pdfDocument,
                     backgroundScope,
                     maxBitmapSizePx,
-                    onPageUpdate,
+                    onBitmapReady,
                     errorFlow,
                 )
         }
@@ -179,6 +182,11 @@ internal class Page(
 
     /** Puts this page into an "invisible" state, i.e. retaining only the minimum data required */
     fun setInvisible() {
+        if (bitmapFetcher != null) {
+            // Bitmaps are managed by BitmapFetcher; only signal clearing if it was active for this
+            // page.
+            onBitmapCleared(pageNum)
+        }
         bitmapFetcher?.close()
         bitmapFetcher = null
         pageText = null
@@ -228,7 +236,7 @@ internal class Page(
                 previousJob?.cancelAndJoin()
                 ensureActive()
                 formWidgetInfos = formWidgetMetadataLoader.loadFormWidgetInfos(pageNum)
-                onPageUpdate()
+                onFormWidgetReady(pageNum)
             }
     }
 
@@ -258,7 +266,7 @@ internal class Page(
 
         if (pdfFormFillingConfig.isFormFillingEnabled()) {
             formWidgetInfos
-                ?.filter { !it.readOnly }
+                ?.filter { !it.isReadOnly }
                 ?.forEach {
                     formWidgetHighlightRect.set(it.widgetRect)
                     formWidgetHighlightRect.offset(locationInView.left, locationInView.top)

@@ -17,7 +17,6 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
     id("AndroidXComposePlugin")
 }
 
@@ -42,6 +41,7 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":kruth:kruth"))
 
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
@@ -52,6 +52,6 @@ dependencies {
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(36) { minorApiLevel = 1 }}
     namespace = "androidx.test.uiautomator.testapp"
 }

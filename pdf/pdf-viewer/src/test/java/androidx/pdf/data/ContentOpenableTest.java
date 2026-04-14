@@ -26,9 +26,11 @@ import androidx.pdf.models.Dimensions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 /** Tests for {@link ContentOpenable}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class ContentOpenableTest {
 
     private ContentOpenable mContentOpenable;

@@ -19,18 +19,17 @@ import androidx.build.SoftwareType
 
 plugins {
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
     id("AndroidXComposePlugin")
     id("AndroidXPlugin")
 }
 
 android {
     namespace = "androidx.wear.tiles.samples"
-    compileSdk = 35
+    compileSdk { version = release(35) }
 
     defaultConfig {
         applicationId = "androidx.wear.tiles.samples"
-        minSdk = 30
+        minSdk { version = release(30) }
     }
 
     buildTypes {
@@ -64,5 +63,5 @@ androidx {
     type = SoftwareType.SAMPLES
     inceptionYear = "2024"
     description = "Contains the sample code and demo for Tiles using ProtoLayout."
-    kotlinTarget = KotlinTarget.KOTLIN_2_2
+    kotlinTarget = KotlinTarget.KOTLIN_2_3
 }

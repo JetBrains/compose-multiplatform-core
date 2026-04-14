@@ -18,6 +18,7 @@ package androidx.xr.projected
 
 import androidx.annotation.RestrictTo
 import androidx.collection.MutableIntObjectMap
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import java.util.Objects
 
 /**
@@ -25,12 +26,13 @@ import java.util.Objects
  *
  * @property inputAction The action of this input event.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@ExperimentalProjectedApi
 public class ProjectedInputEvent
 internal constructor(public val inputAction: ProjectedInputAction) {
 
     /** Supported Projected input actions. */
-    public class ProjectedInputAction private constructor(internal val code: Int) {
+    public class ProjectedInputAction
+    private constructor(@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val code: Int) {
         /**
          * Sent to apps from the Projected device when the user requests to toggle the app camera.
          * Apps should use the signal to start / stop the camera if relevant.
