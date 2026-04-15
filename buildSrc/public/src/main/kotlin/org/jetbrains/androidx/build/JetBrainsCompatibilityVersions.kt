@@ -17,7 +17,8 @@
 package org.jetbrains.androidx.build
 
 import androidx.build.KotlinTarget.KOTLIN_2_2
+import org.gradle.api.JavaVersion
 import org.gradle.api.JavaVersion.VERSION_11
 
-val JETBRAINS_MINIMAL_JAVA_VERSION = VERSION_11
+val JETBRAINS_MINIMAL_JAVA_VERSION = JavaVersion.VERSION_21
 val JETBRAINS_COMPILE_KOTLIN_VERSION = KOTLIN_2_2

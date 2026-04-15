@@ -31,12 +31,11 @@ unsplitPackage {
     splitPackageModule(project(":compose:ui:ui-util"))
 
     dependency(libs.androidx.annotation)
-    dependency(libs.androidx.collection)
+    dependency("androidx.collection:collection:1.5.0")
     dependency(libs.kotlinStdlib)
-    dependency(libs.kotlinStdlibJdk8)
     dependency(libs.kotlinCoroutinesCore)
 
-    dependency(libs.skikoCommon)
+    dependency(libs.skiko)
     dependency(libs.atomicFu)
 
     dependency(project(":compose:runtime:runtime"))
