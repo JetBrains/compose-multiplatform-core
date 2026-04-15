@@ -105,11 +105,9 @@ internal class UIKitTextInputService(
     private var currentImeActionHandler: ((ImeAction) -> Unit)? = null
     private var textUIView: IntermediateTextInputUIView? = null
     private val scrollView by lazy { IntermediateTextScrollView() }
-    private var currentFocusedRect: Rect? = null
-    private var sessionEditProcessor: EditProcessor? = null
+    private var textLayoutResult: TextLayoutResult? = null
 
-    var getTextLayoutResult : () -> TextLayoutResult? = { null }
-    private val textLayoutResult get() = getTextLayoutResult()
+    private var currentFocusedRect: Rect? = null
 
     /**
      * Matches DefaultCursorThickness
@@ -117,6 +115,29 @@ internal class UIKitTextInputService(
      * Must be at least 1.dp to make caret interactable
      */
     private val cursorThickness = 2.dp
+
+    /**
+     * Workaround to prevent calling textWillChange, textDidChange, selectionWillChange, and
+     * selectionDidChange when the value of the current input is changed by the system (i.e., by the user
+     * input) not by the state change of the Compose side. These 4 functions call methods of
+     * UITextInputDelegateProtocol, which notifies the system that the text or the selection of the
+     * current input has changed.
+     *
+     * This is to properly handle multi-stage input methods that depend on text selection, required by
+     * languages such as Korean (Chinese and Japanese input methods depend on text marking). The writing
+     * system of these languages contains letters that can be broken into multiple parts, and each keyboard
+     * key corresponds to those parts. Therefore, the input system holds an internal state to combine these
+     * parts correctly. However, the methods of UITextInputDelegateProtocol reset this state, resulting in
+     * incorrect input. (e.g., 컴포즈 becomes ㅋㅓㅁㅍㅗㅈㅡ when not handled properly)
+     *
+     * @see sessionEditProcessor holds the same text and selection of the current input. It is used
+     * instead of the old value passed to updateState. When the current value change is due to the
+     * user input, updateState is not effective because _tempCurrentInputSession holds the same value.
+     * However, when the current value change is due to the change of the user selection or to the
+     * state change in the Compose side, updateState calls the 4 methods because the new value holds
+     * these changes.
+     */
+    private var sessionEditProcessor: EditProcessor? = null
 
     /**
      * Workaround to prevent IME action from being called multiple times with hardware keyboards.
@@ -146,7 +167,7 @@ internal class UIKitTextInputService(
         value: TextFieldValue,
         imeOptions: ImeOptions,
         onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit,
+        onImeActionPerformed: (ImeAction) -> Unit
     ) {
         sessionEditProcessor = EditProcessor().apply {
             reset(value, null)
@@ -165,9 +186,11 @@ internal class UIKitTextInputService(
     }
 
     override fun stopInput() {
+        flushEditCommandsIfNeeded(force = true)
         sessionEditProcessor = null
         currentImeOptions = null
         currentImeActionHandler = null
+        textLayoutResult = null
 
         hideSoftwareKeyboard()
 
@@ -212,6 +235,9 @@ internal class UIKitTextInputService(
         }
         if (selectionChanged) {
             textUIView?.selectionDidChange()
+        }
+        if (!usingNativeTextInput && (textChanged || selectionChanged)) {
+            updateView()
         }
     }
 
@@ -296,9 +322,9 @@ internal class UIKitTextInputService(
         }
     }
 
-//    fun updateTextLayoutResult(textLayoutResult: TextLayoutResult) {
-//        this.textLayoutResult = textLayoutResult
-//    }
+    fun updateTextLayoutResult(textLayoutResult: TextLayoutResult) {
+        this.textLayoutResult = textLayoutResult
+    }
 
     private fun handleEnterKey(event: KeyEvent): Boolean {
         _tempImeActionIsCalledWithHardwareReturnKey = false
@@ -334,12 +360,34 @@ internal class UIKitTextInputService(
         }
     }
 
+    private val editCommandsBatch = mutableListOf<EditCommand>()
+    private var editBatchDepth: Int = 0
+        set(value) {
+            field = value
+            flushEditCommandsIfNeeded()
+        }
+
     private fun sendEditCommand(vararg commands: EditCommand) {
-        currentOnEditCommand?.let {
-            val commandsList = commands.toList()
-            sessionEditProcessor?.apply(commandsList)
-            it.invoke(commandsList)
-            updateView()
+        sessionEditProcessor?.apply(commands.toList())
+
+        editCommandsBatch.addAll(commands)
+        flushEditCommandsIfNeeded()
+
+        if (usingNativeTextInput) {
+            // For Native Text Input it's essential to trigger view update right after send edit command,
+            // otherwise UIKit calls may use an invalid layout state
+            coroutineScope.launch {
+                updateView()
+            }
+        }
+    }
+
+    fun flushEditCommandsIfNeeded(force: Boolean = false) {
+        if ((force || editBatchDepth == 0) && editCommandsBatch.isNotEmpty()) {
+            val commandList = editCommandsBatch.toList()
+            editCommandsBatch.clear()
+
+            currentOnEditCommand?.invoke(commandList)
         }
     }
 
@@ -430,6 +478,7 @@ internal class UIKitTextInputService(
                 // then it means that showMenu() called in SelectionContainer without any textfields,
                 // and IntermediateTextInputView must be created to show an editing menu
                 attachIntermediateTextInputView()
+                updateView()
             }
             showMenuOrUpdatePosition = {
                 textUIView?.let { textUIView ->
@@ -515,6 +564,7 @@ internal class UIKitTextInputService(
             textUIView = IntermediateTextInputUIView(
                 doubleTapTimeoutMillis = viewConfiguration.doubleTapTimeoutMillis,
                 usingNativeTextInput = usingNativeTextInput,
+                coroutineScope = coroutineScope
             ).also {
                 view.addSubview(scrollView)
                 scrollView.textView = it
@@ -533,6 +583,7 @@ internal class UIKitTextInputService(
             textUIView = IntermediateTextInputUIView(
                 doubleTapTimeoutMillis = viewConfiguration.doubleTapTimeoutMillis,
                 usingNativeTextInput = usingNativeTextInput,
+                coroutineScope = coroutineScope
             ).also {
                 it.setAutoresizingMask(
                     UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight
@@ -633,6 +684,14 @@ internal class UIKitTextInputService(
 
         override fun endFloatingCursor() {
             floatingCursorTranslation = null
+        }
+
+        override fun beginEditBatch() {
+            editBatchDepth++
+        }
+
+        override fun endEditBatch() {
+            editBatchDepth--
         }
 
         /**

@@ -64,7 +64,6 @@ import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -106,6 +105,7 @@ import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.QuartzCore.CACurrentMediaTime
+import platform.QuartzCore.CATransaction
 import platform.UIKit.UIEvent
 import platform.UIKit.UIEventButtonMaskPrimary
 import platform.UIKit.UIEventButtonMaskSecondary
@@ -367,12 +367,19 @@ internal class ComposeSceneMediator(
         )
     }
 
-    private var lastRenderTime = CACurrentMediaTime().toNanoSeconds()
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                scene.recomposeAndLayout(lastRenderTime)
-                redrawer.setNeedsRedraw()
+                if (usingNativeTextInput) {
+                    // Too heavy method for this purpose
+                    // we actually do not need to re-render the scene -
+                    // just flush all events and update its state.
+                    // https://youtrack.jetbrains.com/issue/CMP-9767
+                    redrawer.draw(false)
+                } else {
+                    redrawer.setNeedsRedraw()
+                }
+                CATransaction.flush()
             },
             view = _overlayView,
             viewConfiguration = viewConfiguration,
@@ -594,7 +601,7 @@ internal class ComposeSceneMediator(
     }
 
     fun render(canvas: Canvas, nanoTime: Long) {
-        lastRenderTime = nanoTime
+        textInputService.flushEditCommandsIfNeeded(force = true)
         scene.render(canvas, nanoTime)
     }
 
@@ -749,6 +756,11 @@ internal class ComposeSceneMediator(
                     }
                 }
                 launch {
+                    snapshotFlow { request.textLayoutResult() }.filterNotNull().collect {
+                        textInputService.updateTextLayoutResult(it)
+                    }
+                }
+                launch {
                     snapshotFlow {
                         Triple(
                             request.textFieldRectInRoot(),
@@ -771,18 +783,15 @@ internal class ComposeSceneMediator(
                     }
                 }
                 suspendCancellableCoroutine<Nothing> { continuation ->
-                    textInputService.getTextLayoutResult = {
-                        request.textLayoutResult()
-                    }
                     textInputService.startInput(
                         value = request.value(),
                         imeOptions = request.imeOptions,
                         onEditCommand = request.onEditCommand,
-                        onImeActionPerformed = request.onImeAction ?: {},
+                        onImeActionPerformed = request.onImeAction ?: {}
                     )
+
                     continuation.invokeOnCancellation {
                         textInputService.stopInput()
-                        textInputService.getTextLayoutResult = { null }
                     }
                 }
             }

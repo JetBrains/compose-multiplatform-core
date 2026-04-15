@@ -32,6 +32,16 @@ internal interface IOSSkikoInput {
     fun endFloatingCursor()
 
     /**
+     * Delays all edit commands until [endEditBatch] is being called.
+     */
+    fun beginEditBatch()
+
+    /**
+     * Performs all editing commands, starting from the [beginEditBatch] call.
+     */
+    fun endEditBatch()
+
+    /**
      * A Boolean value that indicates whether the text-entry object has any text.
      * https://developer.apple.com/documentation/uikit/uikeyinput/1614457-hastext
      */

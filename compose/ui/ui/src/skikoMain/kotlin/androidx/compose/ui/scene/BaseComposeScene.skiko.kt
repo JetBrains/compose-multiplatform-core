@@ -155,14 +155,6 @@ internal abstract class BaseComposeScene(
             recomposer.performScheduledRecomposerTasks()
         }
 
-    override fun recomposeAndLayout(nanoTime: Long) {
-        if (isClosed) return
-        postponeInvalidation("BaseComposeScene:drainPendingWork") {
-            recompose(nanoTime)
-            doMeasureAndLayout()
-        }
-    }
-
     override fun render(canvas: Canvas, nanoTime: Long) {
         // This is a no-op if the scene is closed, this situation can happen if the scene is
         // in the list for rendering, but recomposition in another scene from the same list
@@ -172,9 +164,15 @@ internal abstract class BaseComposeScene(
 
         postponeInvalidation("BaseComposeScene:render") {
             // We try to run the phases here in the same order Android does.
-            recompose(nanoTime)
 
-            doMeasureAndLayout()
+            // Flush composition effects (e.g. LaunchedEffect, coroutines launched in
+            // rememberCoroutineScope()) before everything else
+            recomposer.performScheduledEffects()
+
+            recomposer.performScheduledRecomposerTasks()
+            frameClock.sendFrame(nanoTime) // withFrameMillis/Nanos and recomposition
+
+            doMeasureAndLayout()  // Layout
 
             // Schedule synthetic events to be sent after `render` completes
             if (inputHandler.needUpdatePointerPosition) {
@@ -294,15 +292,6 @@ internal abstract class BaseComposeScene(
         withContext(monotonicFrameClock) {
             block()
         }
-    }
-
-    private fun recompose(nanoTime: Long) {
-        // Flush composition effects (e.g. LaunchedEffect, coroutines launched in
-        // rememberCoroutineScope()) before everything else
-        recomposer.performScheduledEffects()
-
-        recomposer.performScheduledRecomposerTasks()
-        frameClock.sendFrame(nanoTime) // withFrameMillis/Nanos and recomposition
     }
 
     protected fun doMeasureAndLayout() {
