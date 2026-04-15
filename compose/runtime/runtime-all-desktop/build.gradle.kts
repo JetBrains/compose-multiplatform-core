@@ -28,7 +28,7 @@ unsplitPackage {
 
     dependency(libs.kotlinStdlib)
     dependency(libs.androidx.annotation)
-    dependency(libs.androidx.collection)
+    dependency("androidx.collection:collection:1.5.0")
     dependency(libs.atomicFu)
     dependency(project(":lifecycle:lifecycle-runtime-compose"))
     dependency(project(":savedstate:savedstate-compose"))
