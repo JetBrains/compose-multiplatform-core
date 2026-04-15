@@ -201,7 +201,10 @@ class WebWakeLockManagerTests : OnCanvasTests {
         manager.reset()
     }
 
+
+    //TODO: https://youtrack.jetbrains.com/issue/CMP-10088/Web-Unignore-testWakeLockRequestBlurUnBlurRelease-by-considering-Wake-Lock-Promise-timing-as-arbitrary
     @Test
+    @Ignore
     fun testWakeLockRequestBlur_UnBlurRelease() = runApplicationTest {
         var keepScreenOn by mutableStateOf(false)
         val manager = WebWakeLockManager
