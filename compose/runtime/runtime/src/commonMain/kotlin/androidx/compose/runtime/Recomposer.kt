@@ -1680,7 +1680,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
          * [running][runRecomposeAndApplyChanges] [Recomposer]s. Emitted sets are immutable.
          */
         public val runningRecomposers: StateFlow<Set<RecomposerInfo>>
-            get() = _runningRecomposers
+            get() {
+                println("CMP_RUNTIME_SOURCE: Recomposer.runningRecomposers")
+                return _runningRecomposers
+            }
 
         internal fun setHotReloadEnabled(value: Boolean) {
             _hotReloadEnabled.set(value)

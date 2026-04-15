@@ -559,6 +559,14 @@ includeProject(":internal-testutils-xctest", "testutils/testutils-xctest")
 // Workaround for b/203825166
 includeBuild("../placeholder")
 
+// Use real runtime sources from the parent build instead of the compatibility stub artifact.
+includeBuild("..") {
+    name = "supportRoot"
+    dependencySubstitution {
+        substitute module("androidx.compose.runtime:runtime") using project(":compose:runtime:runtime")
+    }
+}
+
 includeProject(":mpp")
 
 // stubs needed for android source sets (Android currently doesn't work in the fork)
@@ -637,3 +645,4 @@ void includeProjectWithAncestors(String path, File dir) {
 
 includeRequestedProjectsAndDependencies()
 gradle.ext.allProjectConsumers = allProjectsConsumers(projectDependencyGraph)
+

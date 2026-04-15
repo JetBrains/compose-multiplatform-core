@@ -73,6 +73,7 @@ import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -153,15 +154,8 @@ val dispatchedFonts = FontFamily(
 
 private val isCtrlPressed = mutableStateOf(false)
 
-fun main() = singleWindowApplication(
-    title = title,
-    state = WindowState(width = 1024.dp, height = 850.dp),
-    onPreviewKeyEvent = {
-        isCtrlPressed.value = it.isCtrlPressed
-        false
-    }
-) {
-    App()
+fun main() {
+    Recomposer.runningRecomposers
 }
 
 @Composable
