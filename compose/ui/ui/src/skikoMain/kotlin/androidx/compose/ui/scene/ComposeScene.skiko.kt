@@ -189,8 +189,6 @@ sealed interface ComposeScene : AutoCloseable {
      */
     fun render(canvas: Canvas, nanoTime: Long)
 
-    fun recomposeAndLayout(nanoTime: Long)
-
     /**
      * Send pointer event to the content.
      *
