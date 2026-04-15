@@ -25,11 +25,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.keepScreenOn
+import kotlin.js.JsAny
+import kotlin.js.Promise
+import kotlin.js.js
+import kotlin.js.unsafeCast
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.browser.window
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 class WebWakeLockManagerTests : OnCanvasTests {
 
@@ -196,9 +201,6 @@ class WebWakeLockManagerTests : OnCanvasTests {
         manager.reset()
     }
 
-    //After closing new tab, the request is working but the test fails before finishing Promise resolution. If left enough time,
-    // the test will pass. (small delay, but it is not consistent)
-    @Ignore
     @Test
     fun testWakeLockRequestBlur_UnBlurRelease() = runApplicationTest {
         var keepScreenOn by mutableStateOf(false)
@@ -235,8 +237,14 @@ class WebWakeLockManagerTests : OnCanvasTests {
         )
 
         anotherWindow.close()
-        awaitAnimationFrame()
-        awaitIdle()
+
+
+        //Workaround to avoid request lock Promise timeout due to new tabs and their arbitrary timing of Promises
+        var waitingIterations = 100
+        do {
+            awaitAnimationFrame()
+        } while (!manager.isWakeLockActive() && waitingIterations-- > 0)
+
         assertTrue(
             manager.isWakeLockActive(),
             "Wake lock should be active again when window is focused"
