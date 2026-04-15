@@ -228,7 +228,7 @@ class WebWakeLockManagerTests : OnCanvasTests {
 
         assertTrue(manager.isWakeLockActive(), "Wake lock should be active after requesting")
 
-        val anotherWindow = window.open("about:config")
+        val anotherWindow = window.open("https://www.google.com/")
         assertTrue(anotherWindow != null)
         awaitIdle()
         assertFalse(
