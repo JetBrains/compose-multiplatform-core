@@ -83,6 +83,7 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.JavaVersion.VERSION_11
 import org.gradle.api.JavaVersion.VERSION_17
 import org.gradle.api.JavaVersion.VERSION_1_8
+import org.gradle.api.JavaVersion.VERSION_21
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -1409,7 +1410,7 @@ internal fun aospGetDefaultTargetJavaVersion(
     return when {
         // TODO(b/353328300): Move room-compiler-processing to Java 17 once Dagger is ready.
         projectName != null && projectName.contains("room3-compiler-processing") -> VERSION_11
-        projectName != null && projectName.contains("desktop") -> VERSION_11
+        projectName != null && projectName.contains("desktop") -> VERSION_21
         targetName != null && (targetName == "desktop" || targetName == "jvmStubs") -> VERSION_11
         softwareType.compilationTarget == CompilationTarget.HOST -> VERSION_17
         else -> VERSION_1_8

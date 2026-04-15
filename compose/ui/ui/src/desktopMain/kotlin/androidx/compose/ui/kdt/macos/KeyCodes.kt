@@ -132,7 +132,7 @@ internal fun KeyCode.toComposeKey(): Key {
 
         // Navigation keys
         KeyCode.Help -> Key.Help
-        KeyCode.Home -> Key.Home
+        KeyCode.Home -> Key.MoveHome
         KeyCode.PageUp -> Key.PageUp
         KeyCode.End -> Key.MoveEnd
         KeyCode.PageDown -> Key.PageDown

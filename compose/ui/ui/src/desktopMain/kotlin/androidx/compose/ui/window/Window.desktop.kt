@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.util.setPositionSafely
 import androidx.compose.ui.util.setSizeSafely
 import javax.swing.JMenuBar
-import noria.ClosureContext
 import noria.ui.core.WindowData
 
 // TODO(demin): support focus management

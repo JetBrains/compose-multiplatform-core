@@ -68,7 +68,7 @@ class ComposeWindowMacOs(
         density = Density(window.scaleFactor().toFloat()),
         // layoutDirection = ,
         size = window.contentSize.toIntSize(),
-        platformContext = PlatformContext.Empty, // todo[ps]
+        platformContext = PlatformContext.Empty(), // todo[ps]
         coroutineContext = ComposeUIDispatcher,
         invalidate = {
             isFrameScheduled = true
@@ -349,7 +349,7 @@ internal fun Event.toComposeKeyEvent(): ComposeKeyEvent? {
                 nativeKeyEvent = androidx.compose.ui.input.key.InternalKeyEvent(
                     key = keyCode.toComposeKey(),
                     type = KeyEventType.KeyDown,
-                    codePoint = keyWithModifiers.firstOrNull()?.code ?: 0,
+                    codePoint = keyWithModifiers.toString().firstOrNull()?.code ?: 0,
                     modifiers = modifiers.toPointerKeyboardModifiers(),
                     nativeEvent = this
                 )
@@ -360,7 +360,7 @@ internal fun Event.toComposeKeyEvent(): ComposeKeyEvent? {
                 nativeKeyEvent = androidx.compose.ui.input.key.InternalKeyEvent(
                     key = keyCode.toComposeKey(),
                     type = KeyEventType.KeyUp,
-                    codePoint = keyWithModifiers.firstOrNull()?.code ?: 0,
+                    codePoint = keyWithModifiers.toString().firstOrNull()?.code ?: 0,
                     modifiers = modifiers.toPointerKeyboardModifiers(),
                     nativeEvent = this
                 )

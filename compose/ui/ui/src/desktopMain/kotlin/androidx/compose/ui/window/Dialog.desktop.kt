@@ -272,7 +272,7 @@ fun DialogWindow(
     visible: Boolean = true,
     title: String = "Untitled",
     icon: Painter? = null,
-    decoration: WindowDecoration = WindowDecoration.SystemDefault,
+    decoration: WindowDecoration = WindowDecoration.Decorated,
     transparent: Boolean = false,
     resizable: Boolean = true,
     enabled: Boolean = true,
