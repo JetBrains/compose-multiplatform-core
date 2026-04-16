@@ -191,6 +191,7 @@ fun singleWindowApplication(
     enabled: Boolean = true,
     focusable: Boolean = true,
     alwaysOnTop: Boolean = false,
+    sizeLimits: WindowSizeLimits = WindowSizeLimits.Unlimited,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
     exitProcessOnExit: Boolean = true,
@@ -208,6 +209,7 @@ fun singleWindowApplication(
         enabled = enabled,
         focusable = focusable,
         alwaysOnTop = alwaysOnTop,
+        sizeLimits = sizeLimits,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
         content = {
