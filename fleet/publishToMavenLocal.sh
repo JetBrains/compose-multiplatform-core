@@ -18,9 +18,9 @@
 ../gradlew \
   -Pcompose.platforms=desktop \
   -Pjetbrains.publication.libraries=COMPOSE,LIFECYCLE,SAVEDSTATE \
-  -Pjetbrains.publication.version.COMPOSE=1.9.0-0-fleet-SNAPSHOT \
-  -Pjetbrains.publication.version.LIFECYCLE=2.9.2-0-fleet-SNAPSHOT \
-  -Pjetbrains.publication.version.SAVEDSTATE=1.3.0-0-fleet-SNAPSHOT \
+  -Pjetbrains.publication.version.COMPOSE=1.11.0-0-fleet-SNAPSHOT \
+  -Pjetbrains.publication.version.LIFECYCLE=2.11.0-0-fleet-SNAPSHOT \
+  -Pjetbrains.publication.version.SAVEDSTATE=1.5.0-0-fleet-SNAPSHOT \
   :mpp:publishComposeJbToMavenLocal \
   :fleet:lifecycle:lifecycle-all-desktop:publishToMavenLocal \
   :fleet:compose:runtime:runtime-all-desktop:publishToMavenLocal \
