@@ -74,6 +74,7 @@ androidXMultiplatform {
         def composeVersion = project.findProperty('artifactRedirection.version.androidx.compose')
         commonMain.dependencies {
             implementation(libs.kotlinCoroutinesCore)
+            implementation(libs.kotlinxIo)
             api("androidx.annotation:annotation:1.9.1")
             implementation("androidx.collection:collection:1.5.0")
             // when updating the runtime version please also update the runtime-saveable version
