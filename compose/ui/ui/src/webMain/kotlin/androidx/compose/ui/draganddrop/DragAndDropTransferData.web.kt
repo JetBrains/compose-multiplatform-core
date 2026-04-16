@@ -8,7 +8,8 @@ import org.w3c.dom.DataTransfer
  * rich text data on the clip board, a local file, or more.
  */
 actual class DragAndDropTransferData @ExperimentalComposeUiApi constructor(
-    internal val nativeTransferData: DataTransfer? = null
+    internal val nativeTransferData: DataTransfer? = null,
+    internal val onTransferCompleted: ((Boolean) -> Unit)? = null,
 )
 
 /**
