@@ -481,3 +481,11 @@ tasks.register("generateNotoFontFallbackData", GenerateNotoFontFallbackDataTask.
         "src/webMain/kotlin/androidx/compose/ui/platform/NotoFontFallbackData.web.kt"
     )
 }
+
+kotlin {
+    sourceSets {
+        all {
+            languageSettings.enableLanguageFeature("ContextParameters")
+        }
+    }
+}

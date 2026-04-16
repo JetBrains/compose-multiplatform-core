@@ -190,4 +190,16 @@ private fun TextEditingScope(commands: MutableList<EditCommand>) = object : Text
             FinishComposingTextCommand()
         )
     }
+
+    override fun setComposition(composition: TextRange) {
+        commands.add(
+            SetComposingRegionCommand(composition.start, composition.end)
+        )
+    }
+
+    override fun setSelection(selection: TextRange) {
+        commands.add(
+            SetSelectionCommand(selection.start, selection.end)
+        )
+    }
 }

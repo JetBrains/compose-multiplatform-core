@@ -282,111 +282,111 @@ private fun keyFromAsciiSymbols(text: String, modifiers: KeyModifiersSet): Key? 
  */
 private fun keyFromInternationalSymbols(text: String): Key? {
     return when (text) {
-        "á" -> Key.AAcute
-        "ă" -> Key.ABreve
-        "â" -> Key.ACircumflex
-        "æ" -> Key.Ae
-        "à" -> Key.AGrave
-        "ą" -> Key.AOgonek
-        "å" -> Key.ARing
-        "ä" -> Key.AUmlaut
-        "ć" -> Key.CAcute
-        "č" -> Key.CCaron
-        "ç" -> Key.CCedilla
-        "đ" -> Key.DStroke
-        "é" -> Key.EAcute
-        "ě" -> Key.ECaron
-        "ê" -> Key.ECircumflex
-        "ë" -> Key.EDiaeresis
-        "ė" -> Key.EDot
-        "è" -> Key.EGrave
-        "ŋ" -> Key.Eng
-        "ę" -> Key.EOgonek
-        "ð" -> Key.Eth
-        "ğ" -> Key.GBreve
-        "ġ" -> Key.GDot
-        "ħ" -> Key.HStroke
-        "í" -> Key.IAcute
-        "î" -> Key.ICircumflex
-        "ı" -> Key.IDotless
-        "ì" -> Key.IGrave
-        "į" -> Key.IOgonek
-        "ľ" -> Key.LCaron
-        "ł" -> Key.LStroke
-        "ň" -> Key.NCaron
-        "ñ" -> Key.NTilde
-        "ó" -> Key.OAcute
-        "ô" -> Key.OCircumflex
-        "ő" -> Key.ODoubleAcute
-        "ò" -> Key.OGrave
-        "ơ" -> Key.OHorn
-        "ö" -> Key.OUmlaut
-        "ø" -> Key.OStroke
-        "õ" -> Key.OTilde
-        "ř" -> Key.RCaron
-        "š" -> Key.SCaron
-        "ş" -> Key.SCedilla
-        "ə" -> Key.Schwa
-        "ș" -> Key.SComma
-        "ß" -> Key.SharpS
-        "ť" -> Key.TCaron
-        "ț" -> Key.TComma
-        "þ" -> Key.Thorn
-        "ŧ" -> Key.TStroke
-        "ú" -> Key.UAcute
-        "û" -> Key.UCircumflex
-        "ű" -> Key.UDoubleAcute
-        "ù" -> Key.UGrave
-        "ư" -> Key.UHorn
-        "ū" -> Key.UMacron
-        "ų" -> Key.UOgonek
-        "ů" -> Key.URing
-        "ü" -> Key.UUmlaut
-        "ý" -> Key.YAcute
-        "ž" -> Key.ZCaron
-        "ż" -> Key.ZDot
-
-        "\u00B4" -> Key.AcuteAccent // ´
-        "&" -> Key.Ampersand
-        "*" -> Key.Asterisk
+//        "á" -> Key.AAcute
+//        "ă" -> Key.ABreve
+//        "â" -> Key.ACircumflex
+//        "æ" -> Key.Ae
+//        "à" -> Key.AGrave
+//        "ą" -> Key.AOgonek
+//        "å" -> Key.ARing
+//        "ä" -> Key.AUmlaut
+//        "ć" -> Key.CAcute
+//        "č" -> Key.CCaron
+//        "ç" -> Key.CCedilla
+//        "đ" -> Key.DStroke
+//        "é" -> Key.EAcute
+//        "ě" -> Key.ECaron
+//        "ê" -> Key.ECircumflex
+//        "ë" -> Key.EDiaeresis
+//        "ė" -> Key.EDot
+//        "è" -> Key.EGrave
+//        "ŋ" -> Key.Eng
+//        "ę" -> Key.EOgonek
+//        "ð" -> Key.Eth
+//        "ğ" -> Key.GBreve
+//        "ġ" -> Key.GDot
+//        "ħ" -> Key.HStroke
+//        "í" -> Key.IAcute
+//        "î" -> Key.ICircumflex
+//        "ı" -> Key.IDotless
+//        "ì" -> Key.IGrave
+//        "į" -> Key.IOgonek
+//        "ľ" -> Key.LCaron
+//        "ł" -> Key.LStroke
+//        "ň" -> Key.NCaron
+//        "ñ" -> Key.NTilde
+//        "ó" -> Key.OAcute
+//        "ô" -> Key.OCircumflex
+//        "ő" -> Key.ODoubleAcute
+//        "ò" -> Key.OGrave
+//        "ơ" -> Key.OHorn
+//        "ö" -> Key.OUmlaut
+//        "ø" -> Key.OStroke
+//        "õ" -> Key.OTilde
+//        "ř" -> Key.RCaron
+//        "š" -> Key.SCaron
+//        "ş" -> Key.SCedilla
+//        "ə" -> Key.Schwa
+//        "ș" -> Key.SComma
+//        "ß" -> Key.SharpS
+//        "ť" -> Key.TCaron
+//        "ț" -> Key.TComma
+//        "þ" -> Key.Thorn
+//        "ŧ" -> Key.TStroke
+//        "ú" -> Key.UAcute
+//        "û" -> Key.UCircumflex
+//        "ű" -> Key.UDoubleAcute
+//        "ù" -> Key.UGrave
+//        "ư" -> Key.UHorn
+//        "ū" -> Key.UMacron
+//        "ų" -> Key.UOgonek
+//        "ů" -> Key.URing
+//        "ü" -> Key.UUmlaut
+//        "ý" -> Key.YAcute
+//        "ž" -> Key.ZCaron
+//        "ż" -> Key.ZDot
+//
+//        "\u00B4" -> Key.AcuteAccent // ´
+//        "&" -> Key.Ampersand
+//        "*" -> Key.Asterisk
         "@" -> Key.At
-        "\u02D8" -> Key.Breve // ˘
-        "\u02C7" -> Key.Caron // ˇ
-        "\u00B8" -> Key.Cedilla // ¸
-        "^" -> Key.CircumflexAccent
-        ":" -> Key.Colon
-        "\u00A8" -> Key.Diaeresis // ¨
-        "$" -> Key.DollarSign
-        "\u20AB" -> Key.DongSign // ₫
-        "\u02D9" -> Key.DotAbove // ˙
-        // MacOS prepends some symbols with Space
-        "\u0020\u0323" -> Key.DotBelow //  ̣
-        "\u02DD" -> Key.DoubleAcuteAccent // ˝
-        "!" -> Key.ExclamationMark
-        ">" -> Key.GreaterSign
-        "\u0020\u0309" -> Key.HookAbove // ̉
-        "\u00A1" -> Key.InvertedExclamationMark // ¡
-        "\u00BF" -> Key.InvertedQuestionMark // ¿
-        "{" -> Key.LeftBrace
-        "(" -> Key.LeftParenthesis
-        "<" -> Key.LessSign
-        "\u201E" -> Key.LowQuotationMark // „
-        "\u00AF" -> Key.Macron // ¯
-        "\u00BA" -> Key.MasculineOrdinalIndicator // º
-        "#" -> Key.NumberSign
-        "\u02DB" -> Key.Ogonek // ˛
-        "+" -> Key.Plus
-        "\u00A3" -> Key.PoundSign // £
-        "\"" -> Key.QuotationMark
-        "\u0020\u05BF" -> Key.Rafe // ֿ
-        "}" -> Key.RightBrace
-        ")" -> Key.RightParenthesis
-        "\u02DA" -> Key.RingAbove // ˚
-        "\u00A7" -> Key.SectionSign // §
-        "\u00B2" -> Key.SuperscriptTwo // ²
-        "~" -> Key.Tilde
-        "_" -> Key.Underscore
-        "|" -> Key.VerticalLine
+//        "\u02D8" -> Key.Breve // ˘
+//        "\u02C7" -> Key.Caron // ˇ
+//        "\u00B8" -> Key.Cedilla // ¸
+//        "^" -> Key.CircumflexAccent
+//        ":" -> Key.Colon
+//        "\u00A8" -> Key.Diaeresis // ¨
+//        "$" -> Key.DollarSign
+//        "\u20AB" -> Key.DongSign // ₫
+//        "\u02D9" -> Key.DotAbove // ˙
+//        // MacOS prepends some symbols with Space
+//        "\u0020\u0323" -> Key.DotBelow //  ̣
+//        "\u02DD" -> Key.DoubleAcuteAccent // ˝
+//        "!" -> Key.ExclamationMark
+//        ">" -> Key.GreaterSign
+//        "\u0020\u0309" -> Key.HookAbove // ̉
+//        "\u00A1" -> Key.InvertedExclamationMark // ¡
+//        "\u00BF" -> Key.InvertedQuestionMark // ¿
+//        "{" -> Key.LeftBrace
+//        "(" -> Key.LeftParenthesis
+//        "<" -> Key.LessSign
+//        "\u201E" -> Key.LowQuotationMark // „
+//        "\u00AF" -> Key.Macron // ¯
+//        "\u00BA" -> Key.MasculineOrdinalIndicator // º
+//        "#" -> Key.NumberSign
+//        "\u02DB" -> Key.Ogonek // ˛
+//        "+" -> Key.Plus
+//        "\u00A3" -> Key.PoundSign // £
+//        "\"" -> Key.QuotationMark
+//        "\u0020\u05BF" -> Key.Rafe // ֿ
+//        "}" -> Key.RightBrace
+//        ")" -> Key.RightParenthesis
+//        "\u02DA" -> Key.RingAbove // ˚
+//        "\u00A7" -> Key.SectionSign // §
+//        "\u00B2" -> Key.SuperscriptTwo // ²
+//        "~" -> Key.Tilde
+//        "_" -> Key.Underscore
+//        "|" -> Key.VerticalLine
         else -> null
     }
 }
