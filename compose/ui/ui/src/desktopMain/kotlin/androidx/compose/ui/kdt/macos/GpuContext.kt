@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.kdt.macos
 
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.thread
+import kotlin.concurrent.withLock
 import org.jetbrains.desktop.macos.MetalCommandQueue
 import org.jetbrains.desktop.macos.MetalDevice
 import org.jetbrains.desktop.macos.MetalView
@@ -23,10 +26,13 @@ import org.jetbrains.desktop.macos.PhysicalSize
 import org.jetbrains.desktop.macos.QualityOfService
 import org.jetbrains.desktop.macos.setQualityOfServiceForCurrentThread
 import org.jetbrains.desktop.macos.withAutoReleasePool
-import org.jetbrains.skia.*
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.thread
-import kotlin.concurrent.withLock
+import org.jetbrains.skia.BackendRenderTarget
+import org.jetbrains.skia.ColorSpace
+import org.jetbrains.skia.DirectContext
+import org.jetbrains.skia.Picture
+import org.jetbrains.skia.Surface
+import org.jetbrains.skia.SurfaceColorFormat
+import org.jetbrains.skia.SurfaceOrigin
 
 
 data class MetalViewContext(
@@ -67,7 +73,7 @@ data class MetalViewContext(
         break
       }
       catch (e: Throwable) {
-          println("Error during rendering: $e")
+          println("Error during rendering")
       } finally {
         renderTaskLock.withLock {
           pendingTask?.onComplete?.invoke()
