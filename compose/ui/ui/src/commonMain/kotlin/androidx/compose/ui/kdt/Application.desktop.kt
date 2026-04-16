@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import fleet.util.multiplatform.linkToActual
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -58,24 +57,24 @@ suspend fun awaitApplication(
     application.stopAndJoin()
 }
 
-fun initializeApplication(
+expect fun initializeApplication(
     identifier: String,
     openUrls: (List<String>) -> Unit,
     libraryFolder: Path,
     logFolder: Path,
     uriHandler: UriHandler = defaultUriHandler(),
     customQuit: (() -> Boolean)? = null,
-): Unit = linkToActual()
+)
 
-internal fun currentApplication(): Application = linkToActual()
+internal expect fun currentApplication(): Application
 
-internal fun defaultUriHandler(): UriHandler = linkToActual()
+internal expect fun defaultUriHandler(): UriHandler
 
-internal fun activateApplication(application: Application): Unit = linkToActual()
+internal expect fun activateApplication(application: Application)
 
-internal fun deactivateApplication(application: Application): Unit = linkToActual()
+internal expect fun deactivateApplication(application: Application)
 
-internal fun removeApplication(application: Application): Unit = linkToActual()
+internal expect fun removeApplication(application: Application)
 
 interface Application : Clipboard, UriHandler {
     companion object {

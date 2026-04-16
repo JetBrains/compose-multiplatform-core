@@ -27,7 +27,6 @@ import androidx.compose.ui.kdt.windows.WindowsApplication
 import androidx.compose.ui.kdt.windows.WindowsUriHandler
 import androidx.compose.ui.platform.DesktopPlatform
 import androidx.compose.ui.platform.UriHandler
-import fleet.util.multiplatform.Actual
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlinx.coroutines.runBlocking
@@ -44,8 +43,7 @@ fun runApplicationBlocking(
     }
 }
 
-@Actual
-fun initializeApplicationJvm(
+actual fun initializeApplication(
     identifier: String,
     openUrls: (List<String>) -> Unit,
     libraryFolder: kotlinx.io.files.Path = defaultLibraryFolder(),
@@ -63,14 +61,12 @@ fun initializeApplicationJvm(
         uriHandler = uriHandler,
         customQuit = customQuit,
     )
-    activateApplicationJvm(application)
+    activateApplication(application)
 }
 
-@Actual
-internal fun currentApplicationJvm(): Application = currentJvmApplication()
+internal actual fun currentApplication(): Application = currentJvmApplication()
 
-@Actual
-internal fun defaultUriHandlerJvm(): UriHandler =
+internal actual fun defaultUriHandler(): UriHandler =
     when (DesktopPlatform.Current) {
         DesktopPlatform.MacOS -> MacOsUriHandler()
         DesktopPlatform.Linux -> when (currentLinuxWindowSystem()) {
@@ -93,18 +89,15 @@ internal fun defaultLogFolder(): kotlinx.io.files.Path = kotlinx.io.files.Path(
     },
 )
 
-@Actual
-internal fun activateApplicationJvm(application: Application) {
+internal actual fun activateApplication(application: Application) {
     JvmApplicationRegistry.activate(application)
 }
 
-@Actual
-internal fun deactivateApplicationJvm(application: Application) {
+internal actual fun deactivateApplication(application: Application) {
     JvmApplicationRegistry.deactivate(application)
 }
 
-@Actual
-internal fun removeApplicationJvm(application: Application) {
+internal actual fun removeApplication(application: Application) {
     JvmApplicationRegistry.remove(application)
 }
 
