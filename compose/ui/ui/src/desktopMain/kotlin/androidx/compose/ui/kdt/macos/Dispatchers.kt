@@ -22,8 +22,8 @@ import kotlinx.coroutines.Runnable
 import org.jetbrains.desktop.macos.GrandCentralDispatch
 
 
-sealed class UiDispatcherBase : MainCoroutineDispatcher() {
-    override val immediate by lazy { ImmediateUiDispatcher() }
+sealed class MacOsKdtMainDispatcherBase : MainCoroutineDispatcher() {
+    override val immediate: ImmediateMacOsKdtMainDispatcher by lazy { ImmediateMacOsKdtMainDispatcher() }
 
     override fun dispatch(context: CoroutineContext, block: Runnable) {
         GrandCentralDispatch.dispatchOnMain {
@@ -32,7 +32,7 @@ sealed class UiDispatcherBase : MainCoroutineDispatcher() {
     }
 }
 
-class ImmediateUiDispatcher : UiDispatcherBase() {
+class ImmediateMacOsKdtMainDispatcher : MacOsKdtMainDispatcherBase() {
     override fun isDispatchNeeded(context: CoroutineContext): Boolean {
         return !GrandCentralDispatch.isMainThread()
     }
@@ -42,18 +42,8 @@ class ImmediateUiDispatcher : UiDispatcherBase() {
     }
 }
 
-class KDTUiDispatcher : UiDispatcherBase() {
+class MacOsKdtMainDispatcher : MacOsKdtMainDispatcherBase() {
     override fun toString(): String {
         return "Dispatchers.MainKDT"
     }
 }
-
-//@OptIn(InternalCoroutinesApi::class)
-//class UiDispatcherFactory : MainDispatcherFactory {
-//    override val loadPriority: Int
-//        get() = 10000
-//
-//    override fun createDispatcher(allFactories: List<MainDispatcherFactory>): MainCoroutineDispatcher {
-//        return UiDispatcher()
-//    }
-//}
