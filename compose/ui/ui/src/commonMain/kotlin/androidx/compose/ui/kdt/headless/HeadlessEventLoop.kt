@@ -1,9 +1,8 @@
 package androidx.compose.ui.kdt.headless
 
 
-import fleet.util.multiplatform.linkToActual
 
-fun createHeadlessEventLoop(): HeadlessEventLoop = linkToActual()
+expect fun createHeadlessEventLoop(): HeadlessEventLoop
 
 interface HeadlessEventLoop : AutoCloseable {
     fun dispatch(block: () -> Unit)

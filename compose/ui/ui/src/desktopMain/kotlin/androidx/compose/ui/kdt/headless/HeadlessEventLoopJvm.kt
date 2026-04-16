@@ -1,7 +1,6 @@
 package androidx.compose.ui.kdt.headless
 
 import fleet.util.logging.logger
-import fleet.util.multiplatform.Actual
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
@@ -83,5 +82,4 @@ internal class HeadlessEventLoopJvm : HeadlessEventLoop {
     }
 }
 
-@Actual
-fun createHeadlessEventLoopJvm(): HeadlessEventLoop = HeadlessEventLoopJvm()
+actual fun createHeadlessEventLoop(): HeadlessEventLoop = HeadlessEventLoopJvm()
