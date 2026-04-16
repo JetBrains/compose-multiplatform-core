@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.Constraints
  * Provides [Selection] information for a composable to SelectionContainer. Composables who can be
  * selected should subscribe to [SelectionRegistrar] using this interface.
  */
-internal interface Selectable {
+/* internal */ interface Selectable {
     /**
      * An ID used by [SelectionRegistrar] to identify this [Selectable]. This value should not be
      * [SelectionRegistrar.InvalidSelectableId]. When a [Selectable] is created, it can request an

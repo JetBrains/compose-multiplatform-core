@@ -27,7 +27,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-internal interface TextDragObserver {
+/* internal */ interface TextDragObserver {
     /**
      * Called as soon as a down event is received. If the pointer eventually moves while remaining
      * down, a drag gesture may be started. After this method:

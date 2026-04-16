@@ -707,7 +707,7 @@ internal enum class HandleState {
  *
  * @see LegacyTextFieldState.handleState
  */
-internal enum class Handle {
+/* internal */ enum class Handle {
     Cursor,
     SelectionStart,
     SelectionEnd,
