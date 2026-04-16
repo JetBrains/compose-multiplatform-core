@@ -60,6 +60,7 @@ kotlinGradlePluginAnnotations = "2.3.10"
 kotlinGradlePluginApi = "2.3.0"
 kotlinCompileTesting = "1.4.9"
 kotlinCoroutines = "1.9.0"
+kotlinxIo = "0.6.0"
 kotlinDesktopToolkit = "0.0.35"
 kotlinNativeUtils = "2.3.10"
 kotlinSerialization = "1.8.0"
@@ -237,6 +238,7 @@ kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlinPoet = { module = "com.squareup:kotlinpoet", version = "2.1.0" }
 kotlinPoetJavaPoet = { module = "com.squareup:kotlinpoet-javapoet", version = "2.1.0" }
+kotlinxIo = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinxIo" }
 kotlinXHtml = { module = "org.jetbrains.kotlinx:kotlinx-html-jvm", version = "0.7.3" }
 kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.5.0" }
 ksp = { module = "com.google.devtools.ksp:symbol-processing", version.ref = "ksp" }
