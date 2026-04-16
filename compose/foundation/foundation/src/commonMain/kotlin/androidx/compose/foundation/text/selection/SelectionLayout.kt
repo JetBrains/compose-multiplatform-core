@@ -71,7 +71,7 @@ import androidx.compose.ui.util.fastForEachIndexed
  * max-slot index = (slot - 1) / 2
  * ```
  */
-internal interface SelectionLayout {
+/* internal */ interface SelectionLayout {
     /** The number of [SelectableInfo]s in this [SelectionLayout]. */
     val size: Int
 
@@ -450,7 +450,7 @@ internal fun getTextFieldSelectionLayout(
     )
 
 /** Whether something is crossed as determined by the position of the start/end. */
-internal enum class CrossStatus {
+/* internal */ enum class CrossStatus {
     /** The start comes after the end. */
     CROSSED,
 
@@ -485,7 +485,7 @@ internal const val UNASSIGNED_SLOT = -1
  * @param allowSelectionBetweenSelectables whether selection in the "empty" area where there are no
  *   selectables is allowed.
  */
-internal class SelectionLayoutBuilder(
+/* internal */ class SelectionLayoutBuilder(
     val currentPosition: Offset,
     val previousHandlePosition: Offset,
     val containerCoordinates: LayoutCoordinates,
@@ -613,7 +613,7 @@ internal class SelectionLayoutBuilder(
 }
 
 /** Where the position of a cursor/press is compared to a selectable. */
-internal enum class Direction {
+/* internal */ enum class Direction {
     /** The cursor/press is before the selectable */
     BEFORE,
 
@@ -642,7 +642,7 @@ internal fun resolve2dDirection(x: Direction, y: Direction): Direction =
     }
 
 /** Data about a specific selectable within a [SelectionLayout]. */
-internal class SelectableInfo(
+/* internal */ class SelectableInfo(
     val selectableId: Long,
     val slot: Int,
     val rawStartHandleOffset: Int,

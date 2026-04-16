@@ -31,7 +31,7 @@ import androidx.compose.ui.util.fastForEach
 import kotlin.math.max
 import kotlin.math.min
 
-internal class SelectionRegistrarImpl private constructor(initialIncrementId: Long) :
+/* internal */ class SelectionRegistrarImpl private constructor(initialIncrementId: Long) :
     SelectionRegistrar {
     companion object {
         val Saver =

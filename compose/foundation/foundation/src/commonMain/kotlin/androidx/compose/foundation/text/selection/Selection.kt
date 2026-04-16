@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.ResolvedTextDirection
 
 /** Information about the current Selection. */
 @Immutable
-internal data class Selection(
+/* internal */ data class Selection(
     /** Information about the start of the selection. */
     val start: AnchorInfo,
 
@@ -41,7 +41,7 @@ internal data class Selection(
 ) {
     /** Contains information about an anchor (start/end) of selection. */
     @Immutable
-    internal data class AnchorInfo(
+    /* internal */ data class AnchorInfo(
         /** Text direction of the character in selection edge. */
         val direction: ResolvedTextDirection,
 
