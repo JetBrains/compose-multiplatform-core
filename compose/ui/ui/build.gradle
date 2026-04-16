@@ -207,6 +207,9 @@ androidXMultiplatform {
                 api(libs.skiko)
                 implementation(libs.atomicFu)
 
+                implementation(libs.kotlinSerializationCore)
+                implementation(libs.kotlinSerializationJson)
+
                 implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
                 implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
                 implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycleVersion")
