@@ -19,10 +19,7 @@ package androidx.compose.ui.kdt
 import androidx.compose.ui.kdt.macos.macOsClipboardEntry
 import androidx.compose.ui.kdt.windows.windowsClipboardEntry
 import androidx.compose.ui.platform.DesktopPlatform
-import fleet.util.multiplatform.Actual
-
-@Actual
-internal fun clipboardEntryJvm(vararg items: ClipboardItem): ClipboardEntry {
+actual fun clipboardEntry(vararg items: ClipboardItem): ClipboardEntry {
     return when (DesktopPlatform.Current) {
         DesktopPlatform.MacOS -> macOsClipboardEntry(*items)
         DesktopPlatform.Linux -> fixedMimeTransferClipboardEntry(*items)

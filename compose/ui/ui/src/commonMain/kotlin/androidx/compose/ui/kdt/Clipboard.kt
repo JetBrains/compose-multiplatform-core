@@ -1,10 +1,9 @@
 package androidx.compose.ui.kdt
 
-import fleet.util.multiplatform.linkToActual
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 
-fun clipboardEntry(vararg items: ClipboardItem): ClipboardEntry = linkToActual()
+expect fun clipboardEntry(vararg items: ClipboardItem): ClipboardEntry
 
 fun clipboardEntry(block: ClipboardEntryBuilderScope.() -> Unit): ClipboardEntry {
     val builder = ClipboardEntryBuilderImpl().apply(block)
