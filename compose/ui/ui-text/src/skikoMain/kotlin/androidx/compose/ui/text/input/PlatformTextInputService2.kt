@@ -72,4 +72,19 @@ interface TextEditingScope {
      * This intends to replicate [FinishComposingTextCommand].
      */
     fun finishComposingText()
+
+    /**
+     * Sets the composing text range.
+     *
+     * This intends to replicate [SetComposingRegionCommand].
+     */
+    fun setComposition(composition: TextRange)
+
+
+    /**
+     * Sets the selected text range.
+     *
+     * This intends to replicate [SetSelectionCommand].
+     */
+    fun setSelection(selection: TextRange)
 }

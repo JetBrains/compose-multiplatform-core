@@ -482,3 +482,10 @@ tasks.desktopTest {
     }
     jvmArgs("--add-opens=java.desktop/javax.swing=ALL-UNNAMED")
 }
+kotlin {
+    sourceSets {
+        all {
+            languageSettings.enableLanguageFeature("ContextParameters")
+        }
+    }
+}

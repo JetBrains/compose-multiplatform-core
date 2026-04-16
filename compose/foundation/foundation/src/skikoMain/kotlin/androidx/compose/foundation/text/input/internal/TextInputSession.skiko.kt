@@ -225,6 +225,14 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
     override fun finishComposingText() {
         buffer.commitComposition()
     }
+
+    override fun setComposition(composition: TextRange) {
+        buffer.setComposition(composition.start, composition.end)
+    }
+
+    override fun setSelection(selection: TextRange) {
+        buffer.setSelectionCoerced(selection.start, selection.end)
+    }
 }
 
 @OptIn(ExperimentalComposeUiApi::class)

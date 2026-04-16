@@ -32,7 +32,9 @@ import androidx.compose.ui.text.input.FinishComposingTextCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.SetComposingRegionCommand
 import androidx.compose.ui.text.input.SetComposingTextCommand
+import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextEditingScope
 import androidx.compose.ui.text.input.TextEditorState
 import androidx.compose.ui.text.input.TextFieldValue
@@ -173,6 +175,18 @@ private fun TextEditingScope(commands: MutableList<EditCommand>) = object : Text
     override fun finishComposingText() {
         commands.add(
             FinishComposingTextCommand()
+        )
+    }
+
+    override fun setComposition(composition: TextRange) {
+        commands.add(
+            SetComposingRegionCommand(composition.start, composition.end)
+        )
+    }
+
+    override fun setSelection(selection: TextRange) {
+        commands.add(
+            SetSelectionCommand(selection.start, selection.end)
         )
     }
 }
