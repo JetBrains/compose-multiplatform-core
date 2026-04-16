@@ -86,6 +86,7 @@ abstract class JetBrainsVerifyDependencyVersionsTask : DefaultTask() {
     }
 
     private fun releasePhase(versionString: String): Int {
+        if (versionString.endsWith("-SNAPSHOT")) return 0
         val version = Version(versionString)
         return when {
             version.isStable() -> 4
