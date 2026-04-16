@@ -61,6 +61,7 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WebOutOfFrameExecutor
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
+import androidx.compose.ui.platform.WebWakeLockManager
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.isPostingTasksSupported
@@ -315,6 +316,10 @@ internal class ComposeWindow(
                         //https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/core/java/android/view/ViewConfiguration.java;l=240;drc=733537294b158d22f2ae383f2ed77c93741798e9
                         get() = with(density) { 8000.dp.toPx() }
                 }
+
+            override var isKeepScreenOnEnabled: Boolean
+                get() = WebWakeLockManager.isWakeLockActive()
+                set(value) = WebWakeLockManager.sendWakeLockRequest(this@ComposeWindow, value)
 
             override fun setPointerIcon(pointerIcon: PointerIcon) {
                 if (pointerIcon is BrowserCursor) {
@@ -651,6 +656,16 @@ internal class ComposeWindow(
             if (eventType == PointerEventType.Release) {
                 activeTouchPointers.remove(event.pointerId)
             }
+
+            if (result != null && result.anyChangeConsumed && event.cancelable) {
+                event.preventDefault()
+
+                // Since we call preventDefault, the browser will not focus the canvas automatically,
+                // but it should be focused to receive key events.
+                if (!canvasFocused && !isTouchEvent && eventType == PointerEventType.Press) {
+                    canvas.focus()
+                }
+            }
         } else {
             keyboardModeState = KeyboardModeState.Hardware
 
@@ -686,16 +701,6 @@ internal class ComposeWindow(
                 nativeEvent = event,
                 button = event.composeButton,
             )
-        }
-
-        if (result != null && result.anyChangeConsumed && event.cancelable) {
-            event.preventDefault()
-
-            // Since we call preventDefault, the browser will not focus the canvas automatically,
-            // but it should be focused to receive key events.
-            if (!canvasFocused && !isTouchEvent && eventType == PointerEventType.Press) {
-                canvas.focus()
-            }
         }
     }
 
@@ -747,7 +752,7 @@ internal class ComposeWindow(
 }
 
 //https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState
-private fun documentIsVisible(): Boolean = js("document.visibilityState === 'visible'")
+internal fun documentIsVisible(): Boolean = js("document.visibilityState === 'visible'")
 
 // In K/JS target, an application can't start right away. We should wait until skiko.wasm is ready.
 // We'll do it implicitly, rather than asking the app developers to call it.
