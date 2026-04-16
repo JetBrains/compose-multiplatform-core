@@ -97,7 +97,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
 /** A bridge class between user interaction to the text composables for text selection. */
-internal class SelectionManager(private val selectionRegistrar: SelectionRegistrarImpl) :
+/* internal */ class SelectionManager(private val selectionRegistrar: SelectionRegistrarImpl) :
     RememberObserver {
 
     private val _selection: MutableState<Selection?> = mutableStateOf(null)
@@ -1014,7 +1014,7 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
     }
 
     /** Returns currently selected text concatenated by newline characters. */
-    internal fun getSelectedText(): AnnotatedString? {
+    /* internal */ fun getSelectedText(): AnnotatedString? {
         if (selection == null || selectionRegistrar.subselections.isEmpty()) {
             return null
         }

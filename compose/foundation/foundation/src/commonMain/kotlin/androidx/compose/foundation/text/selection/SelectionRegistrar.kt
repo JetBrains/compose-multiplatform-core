@@ -23,7 +23,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 
 /** An interface allowing a composable to subscribe and unsubscribe to selection changes. */
-internal interface SelectionRegistrar {
+/* internal */ interface SelectionRegistrar {
     /**
      * The map stored current selection information on each [Selectable]. A selectable can query its
      * selected range using its [Selectable.selectableId]. This field is backed by a [MutableState].
@@ -152,4 +152,4 @@ internal fun SelectionRegistrar?.hasSelection(selectableId: Long): Boolean {
  * CompositionLocal to get a [SelectionRegistrar] in order to subscribe and unsubscribe to
  * [SelectionRegistrar].
  */
-internal val LocalSelectionRegistrar = compositionLocalOf<SelectionRegistrar?> { null }
+/* internal */ val LocalSelectionRegistrar = compositionLocalOf<SelectionRegistrar?> { null }

@@ -28,7 +28,7 @@ import androidx.compose.ui.text.TextRange
  *
  * @see [SelectionRegistrar.notifySelectionUpdate]
  */
-internal fun interface SelectionAdjustment {
+/* internal */ fun interface SelectionAdjustment {
 
     /**
      * The callback function that is called once a new selection arrives, the return value of this
