@@ -53,8 +53,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.SuspendingPointerInputFilter
-import androidx.compose.ui.kdt.Application
 import androidx.compose.ui.kdt.InteractiveMoveInitiator
 import androidx.compose.ui.kdt.KdtDragAndDropManager
 import androidx.compose.ui.kdt.KdtDragAndDropTransferable
@@ -96,7 +94,7 @@ import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
 import fleet.fastutil.ints.Int2ObjectOpenHashMap
 import fleet.reporting.shared.tracing.span
-import fleet.util.logging.logger
+import androidx.compose.ui.kdt.logging.logger
 import fleet.util.singleOrNullOrThrow
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.TimeSource
