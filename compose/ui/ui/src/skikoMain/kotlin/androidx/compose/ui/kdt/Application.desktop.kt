@@ -125,17 +125,6 @@ interface Application : Clipboard, UriHandler {
 
     val nativeApplication: Any
 
-    fun CoroutineScope.launchScene(content: @Composable () -> Unit): SceneHandle {
-        return launchScene(EmptyCoroutineContext, {}, {}, content)
-    }
-
-    fun <T> CoroutineScope.launchScene(
-        applyCoroutineContext: CoroutineContext,
-        prepareMainThread: () -> T,
-        restoreMainThread: (T) -> Unit,
-        content: @Composable () -> Unit,
-    ): SceneHandle
-
     suspend fun resetForReuse() {
         stopAndJoin()
     }
@@ -150,8 +139,3 @@ interface IconDecoratedApplication : Application {
 
 internal val DefaultDragThreshold = 8.dp
 internal val DefaultDoubleClickDistance = 5.dp
-
-data class SceneHandle(
-    val renderLoop: RenderLoop,
-    val broadcastFrameClock: BroadcastFrameClock,
-)

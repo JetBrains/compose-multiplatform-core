@@ -1,14 +1,27 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@file:OptIn(ExperimentalTime::class)
+
 package androidx.compose.ui.kdt.headless
 
-import androidx.compose.runtime.BroadcastFrameClock
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalMap
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -22,68 +35,34 @@ import androidx.compose.ui.input.pointer.PointerIconService
 import androidx.compose.ui.kdt.Application
 import androidx.compose.ui.kdt.KdtMainDispatcherFactory
 import androidx.compose.ui.kdt.LightweightWindowId
-import androidx.compose.ui.kdt.ProvidableLocalScene
 import androidx.compose.ui.kdt.Scene
-import androidx.compose.ui.kdt.SceneHandle
 import androidx.compose.ui.kdt.Screen
 import androidx.compose.ui.kdt.Window
 import androidx.compose.ui.kdt.activateApplication
 import androidx.compose.ui.kdt.deactivateApplication
+import androidx.compose.ui.kdt.logging.logger
 import androidx.compose.ui.kdt.removeApplication
 import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalFontFamilyResolver
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalInputModeManager
-import androidx.compose.ui.platform.LocalPointerIconService
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.platform.makeSynchronizedObject
+import androidx.compose.ui.platform.synchronized
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.DpOffset
-import fleet.multiplatform.shims.SynchronizedObject
-import fleet.multiplatform.shims.synchronized
-import fleet.reporting.shared.runtime.currentSpan
-import fleet.reporting.shared.tracing.span
-import fleet.reporting.shared.tracing.spannedScope
-import fleet.reporting.shared.tracing.withCurrentSpan
-import fleet.util.logging.logger
-import fleet.util.async.Resource
-import fleet.util.async.resource
-import fleet.util.async.withSupervisor
-import kotlin.concurrent.atomics.AtomicReference
-import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
-import kotlin.time.measureTime
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.coroutines.withContext
-import noria.DrainableUpdateQueue
-import noria.impl.EffectCoroutineContextCompositionLocal
-import noria.noria
-import noria.ui.core.RenderPerfMetrics
-import noria.ui.loop.FrameCompletionCallbacks
-import noria.ui.loop.FrameCompletionCallbacksCompositionLocal
-import noria.ui.loop.FrameInvalidationCallbacks
-import noria.ui.loop.FrameInvalidationCallbacksCompositionLocal
-import noria.ui.loop.RenderLoop
-import noria.ui.loop.internal.LocalRenderPerfMetrics
-import noria.ui.platform.DrainableCoroutineDispatcher
 
+@ExperimentalTime
 object HeadlessApplication : Application {
-    private val lock = SynchronizedObject()
+    private val lock = makeSynchronizedObject()
     private var shutdown = false
     private var initialized = false
     private var lastClosedEventLoopPendingTasksCount = 0
@@ -158,9 +137,10 @@ object HeadlessApplication : Application {
 
     val fontFamilyResolver: FontFamily.Resolver by lazy { createFontFamilyResolver() }
 
-    val pointerIconService: PointerIconService = HeadlessPointerIconService
-    val inputModeManager: InputModeManager = InputModeManagerImpl(InputMode.Touch) {
+    private val pointerIconService: HeadlessPointerIconService = HeadlessPointerIconService
+    internal val inputModeManager: InputModeManager = InputModeManagerImpl(InputMode.Touch) {
         pointerIconService.setHiddenUntilPointerMoves(it == InputMode.Keyboard)
+        true
     }
 
     val hapticFeedback: HapticFeedback = NoopHapticFeedback()
@@ -244,186 +224,6 @@ object HeadlessApplication : Application {
     override val nativeApplication: Any
         get() = Unit
 
-    private val renderLoops = mutableListOf<RenderLoop>()
-
-    @OptIn(ExperimentalComposeUiApi::class)
-    override fun <T> CoroutineScope.launchScene(
-        applyCoroutineContext: CoroutineContext,
-        prepareMainThread: () -> T,
-        restoreMainThread: (T) -> Unit,
-        content: @Composable () -> Unit,
-    ): SceneHandle {
-        val sceneEventLoop = eventLoop
-        val drainableDispatcher = DrainableCoroutineDispatcher(Dispatchers.Main)
-        lateinit var reconcile: () -> Unit
-        lateinit var scene: Scene<T>
-        val renderPerfMetrics = RenderPerfMetrics()
-        var frameRequested = false
-        var stopping = false
-        fun requestFrame() {
-            if (!stopping && !frameRequested) {
-                frameRequested = true
-                sceneEventLoop.dispatch {
-                    if (stopping) {
-                        frameRequested = false
-                        return@dispatch
-                    }
-                    scene.withPreparedMainThread {
-                        withoutReentrancy {
-                            scene.reconcile()
-                        }
-                    }
-                }
-            }
-        }
-
-        val drainableUpdateQueue = DrainableUpdateQueue(::requestFrame)
-        val broadcastFrameClock = BroadcastFrameClock(::requestFrame)
-
-        val framesFlow = MutableSharedFlow<RenderLoop.FrameInfo>(
-            replay = 1,
-            onBufferOverflow = BufferOverflow.DROP_OLDEST,
-        )
-        val terminationSignal = Job()
-        val sceneJob = launch {
-            try {
-                withSupervisor(
-                    applyCoroutineContext +
-                        broadcastFrameClock +
-                        drainableDispatcher +
-                        CoroutineName("SceneCoroutine"),
-                ) { sceneCoroutineScope ->
-                    scene = Scene(sceneCoroutineScope, prepareMainThread, restoreMainThread) {
-                        reconcile()
-                    }
-                    val frameInvalidationCallbacks: FrameInvalidationCallbacks =
-                        AtomicReference(null)
-                    val frameCompletionCallbacks: FrameCompletionCallbacks = AtomicReference(null)
-
-                    fun noriaResource(content: @Composable () -> Unit): Resource<Unit> {
-                        return resource { consumer ->
-                            val noria = withContext(Dispatchers.Main.immediate) {
-                                scene.withPreparedMainThread {
-                                    val noria = noria(
-                                        drainableUpdateQueue,
-                                        CompositionLocalMap.Empty,
-                                    ) { content() }
-                                    val renderLoopSpan = currentSpan
-                                    reconcile = {
-                                        renderPerfMetrics.startReconcile()
-                                        drainableDispatcher.drain()
-                                        val reconcileTime = measureTime {
-                                            broadcastFrameClock.sendFrame(initialTimestamp.elapsedNow().inWholeNanoseconds)
-
-                                            frameInvalidationCallbacks.exchange(null)
-                                                ?.forEach { it() }
-                                            withCurrentSpan(renderLoopSpan) {
-                                                span("frame") {
-                                                    frameRequested = false
-                                                    noria.reconcile()
-                                                    frameInvalidationCallbacks.exchange(null)
-                                                        ?.let { invalidationCallbacks ->
-                                                            var shouldReconcileAgain = false
-                                                            invalidationCallbacks.forEach { callback ->
-                                                                val requestedReconcile = callback()
-                                                                shouldReconcileAgain =
-                                                                    shouldReconcileAgain || requestedReconcile
-                                                            }
-                                                            if (shouldReconcileAgain) {
-                                                                noria.reconcile()
-                                                            }
-                                                        }
-                                                    frameInvalidationCallbacks.exchange(null)
-                                                        ?.let { invalidationCallbacks ->
-                                                            invalidationCallbacks.forEach { callback ->
-                                                                val requestedReconcile = callback()
-                                                                if (requestedReconcile) {
-                                                                    requestFrame()
-                                                                }
-                                                            }
-                                                        }
-                                                }
-                                            }
-                                        }
-                                        val frameInfo =
-                                            RenderLoop.FrameInfo(reconcileTime.inWholeNanoseconds)
-                                        frameCompletionCallbacks.exchange(null)
-                                            ?.let { completionCallbacks ->
-                                                for (completionCallback in completionCallbacks) {
-                                                    completionCallback(frameInfo)
-                                                }
-                                            }
-                                        framesFlow.tryEmit(frameInfo)
-                                        renderPerfMetrics.endReconcile()
-                                    }
-                                    withoutReentrancy { reconcile() }
-                                    noria
-                                }
-                            }
-                            try {
-                                consumer(Unit)
-                            } finally {
-                                withContext(NonCancellable) {
-                                    spannedScope("destroy noria") {
-                                        val destroyCompletion = Job()
-                                        sceneEventLoop.dispatch {
-                                            scene.withPreparedMainThread {
-                                                noria.destroy()
-                                            }
-                                            destroyCompletion.complete()
-                                        }
-                                        destroyCompletion.join()
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    noriaResource {
-                        CompositionLocalProvider(
-                            ProvidableLocalScene provides scene,
-                            LocalRenderPerfMetrics provides renderPerfMetrics,
-                            EffectCoroutineContextCompositionLocal provides sceneCoroutineScope.coroutineContext,
-                            FrameInvalidationCallbacksCompositionLocal provides frameInvalidationCallbacks,
-                            FrameCompletionCallbacksCompositionLocal provides frameCompletionCallbacks,
-                            LocalUriHandler provides this@HeadlessApplication,
-                            LocalClipboard provides this@HeadlessApplication,
-                            LocalFontFamilyResolver provides fontFamilyResolver,
-                            LocalHapticFeedback provides hapticFeedback,
-                            LocalPointerIconService provides pointerIconService,
-                            LocalInputModeManager provides inputModeManager,
-                        ) {
-                            content()
-                        }
-                    }.use {
-                        terminationSignal.join()
-                    }
-                }
-            } finally {
-                withContext(NonCancellable) {
-                    span("complete and join drainable dispatcher") {
-                        drainableDispatcher.completeAndJoin()
-                    }
-                }
-            }
-        }
-        val renderLoop = object : RenderLoop {
-            override suspend fun stopAndJoin() {
-                stopping = true
-                terminationSignal.complete()
-                sceneJob.join()
-                renderLoops.remove(this)
-            }
-
-            override val framesFlow: Flow<RenderLoop.FrameInfo>
-                get() = framesFlow
-
-        }
-        return SceneHandle(renderLoop, broadcastFrameClock).also {
-            renderLoops.add(it.renderLoop)
-        }
-    }
-
     override suspend fun stopAndJoin() {
         try {
             resetState()
@@ -473,9 +273,9 @@ object HeadlessApplication : Application {
     private suspend fun resetState() {
         quitHandlers.clear()
         windows.values.toList().forEach { it.dispose() }
-        while (renderLoops.isNotEmpty()) {
-            renderLoops.first().stopAndJoin()
-        }
+//        while (renderLoops.isNotEmpty()) {
+//            renderLoops.first().stopAndJoin()
+//        }
         clipboardContent = null
         isActive = true
         reconcileInProgress = false
@@ -597,9 +397,11 @@ private val logger = logger<HeadlessApplication>()
 private object HeadlessPointerIconService : PointerIconService {
     override fun getIcon(): PointerIcon = PointerIcon.Default
     override fun setIcon(value: PointerIcon?) {}
-    override fun setHiddenUntilPointerMoves(hidden: Boolean) {}
-    override fun pushHide() {}
-    override fun popHide() {}
+    override fun getStylusHoverIcon(): PointerIcon? = null
+    override fun setStylusHoverIcon(value: PointerIcon?) {}
+    fun setHiddenUntilPointerMoves(hidden: Boolean) {}
+    fun pushHide() {}
+    fun popHide() {}
 }
 
 object FakeBrowser {
