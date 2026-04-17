@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.kdt.headless
+package androidx.compose.ui.text.input
 
-import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.input.key.KeyEvent
 
-class HeadlessUriHandler : UriHandler {
-    override fun openUri(uri: String) {
-        // No-op in headless mode.
-    }
+interface TextInputContext {
+    fun handleKeyEvent(event: KeyEvent): Boolean
 }

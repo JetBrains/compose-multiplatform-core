@@ -1,25 +1,23 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
 package androidx.compose.ui.kdt.macos
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.pointer.KeyboardModifierMasks
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.PointerId
-import androidx.compose.ui.input.pointer.PointerInputEvent
-import androidx.compose.ui.input.pointer.PointerInputEventData
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
-import androidx.compose.ui.input.pointer.areAnyPressed
 import androidx.compose.ui.input.pointer.copy
 import androidx.compose.ui.input.pointer.isAltPressed
 import androidx.compose.ui.input.pointer.isBack
@@ -36,11 +34,11 @@ import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.isTertiary
 import androidx.compose.ui.input.pointer.isTertiaryPressed
 import androidx.compose.ui.node.InternalCoreApi
+import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import kotlin.time.Clock
-import noria.ui.input.pointer.ProcessResult
 import org.jetbrains.desktop.macos.Event
 import org.jetbrains.desktop.macos.EventHandlerResult
 import org.jetbrains.desktop.macos.KeyModifiersSet
@@ -48,11 +46,30 @@ import org.jetbrains.desktop.macos.LogicalPoint
 import org.jetbrains.desktop.macos.MouseButton
 import org.jetbrains.desktop.macos.WindowEvent
 
+/**
+ * Callback signature mirroring [androidx.compose.ui.scene.ComposeScene.sendPointerEvent].
+ */
+@InternalComposeUiApi
+internal fun interface SendPointerEvent {
+    fun invoke(
+        eventType: PointerEventType,
+        position: Offset,
+        scrollDelta: Offset,
+        timeMillis: Long,
+        type: PointerType,
+        buttons: PointerButtons?,
+        keyboardModifiers: PointerKeyboardModifiers?,
+        nativeEvent: Any?,
+        button: PointerButton?,
+    ): PointerEventResult
+}
+
 @ExperimentalComposeUiApi
 @InternalCoreApi
+@InternalComposeUiApi
 internal class InputStateTracker(
     private val inputModeManager: InputModeManager,
-    private val sendPointerInputEvent: (PointerInputEvent) -> ProcessResult,
+    private val sendPointerEvent: SendPointerEvent,
     private val sendKeyEvent: (KeyEvent) -> Boolean,
 ) {
     /**
@@ -82,15 +99,21 @@ internal class InputStateTracker(
                     )
                 }
                 pointerButtons += windowEvent.button.toPointerButton()
-                val processResult = sendPointerInputEvent(
-                    windowEvent.toPointerInputEvent(
-                        pointerButtons,
-                        keyboardModifiers,
-                        density,
-                    ),
-                )
+                val processResult = density.run {
+                    sendPointerEvent.invoke(
+                        eventType = PointerEventType.Press,
+                        position = windowEvent.locationInWindow.toDpOffset().toPxOffset(this),
+                        scrollDelta = Offset.Zero,
+                        timeMillis = uptime,
+                        type = PointerType.Mouse,
+                        buttons = pointerButtons,
+                        keyboardModifiers = keyboardModifiers,
+                        nativeEvent = windowEvent,
+                        button = windowEvent.button.toPointerButton(),
+                    )
+                }
                 when {
-                    processResult.anyPressOrReleaseConsumed -> EventHandlerResult.Stop
+                    processResult.anyChangeConsumed -> EventHandlerResult.Stop
                     sendKeyEvent(windowEvent.toKeyEvent(keyboardModifiers)) -> EventHandlerResult.Stop
                     else -> EventHandlerResult.Continue
                 }
@@ -110,15 +133,21 @@ internal class InputStateTracker(
                     )
                 }
                 pointerButtons -= windowEvent.button.toPointerButton()
-                val processResult = sendPointerInputEvent(
-                    windowEvent.toPointerInputEvent(
-                        pointerButtons,
-                        keyboardModifiers,
-                        density,
-                    ),
-                )
+                val processResult = density.run {
+                    sendPointerEvent.invoke(
+                        eventType = PointerEventType.Release,
+                        position = windowEvent.locationInWindow.toDpOffset().toPxOffset(this),
+                        scrollDelta = Offset.Zero,
+                        timeMillis = uptime,
+                        type = PointerType.Mouse,
+                        buttons = pointerButtons,
+                        keyboardModifiers = keyboardModifiers,
+                        nativeEvent = windowEvent,
+                        button = windowEvent.button.toPointerButton(),
+                    )
+                }
                 when {
-                    processResult.anyPressOrReleaseConsumed -> EventHandlerResult.Stop
+                    processResult.anyChangeConsumed -> EventHandlerResult.Stop
                     sendKeyEvent(windowEvent.toKeyEvent(keyboardModifiers)) -> EventHandlerResult.Stop
                     else -> EventHandlerResult.Continue
                 }
@@ -206,7 +235,7 @@ internal class InputStateTracker(
             is Event.ScrollWheel -> {
                 val uptime = windowEvent.timestamp.toDuration().inWholeMilliseconds
                 lastNativeEventUptimeMillis = uptime
-                var processResult = density.run {
+                val moveResult = density.run {
                     updatePointerPosition(
                         windowEvent.locationInWindow,
                         PointerEventType.Move,
@@ -214,16 +243,21 @@ internal class InputStateTracker(
                         windowEvent,
                     )
                 }
-                processResult += sendPointerInputEvent(
-                    windowEvent.toPointerInputEvent(
+                val scrollResult = density.run {
+                    sendPointerEvent.invoke(
+                        eventType = PointerEventType.Scroll,
+                        position = windowEvent.locationInWindow.toDpOffset().toPxOffset(this),
+                        scrollDelta = windowEvent.delta().toPxOffset(this),
+                        timeMillis = uptime,
+                        type = PointerType.Mouse,
                         buttons = pointerButtons,
                         keyboardModifiers = keyboardModifiers,
-                        density = density,
-                        windowEvent = windowEvent,
-                    ),
-                )
+                        nativeEvent = windowEvent,
+                        button = null,
+                    )
+                }
                 when {
-                    processResult.anyScrollingConsumed -> {
+                    scrollResult.anyChangeConsumed || moveResult.anyChangeConsumed -> {
                         sendPointerInputEventWithCurrentStateIfNecessary(PointerEventType.Move)
                         EventHandlerResult.Stop
                     }
@@ -243,24 +277,14 @@ internal class InputStateTracker(
                 lastNativeEventUptimeMillis = uptime
                 updateModifierState(windowEvent.modifiers, windowEvent)
                 val keyEvent = windowEvent.toKeyEvent()
-                val handled = sendKeyEvent(keyEvent)
-                if (handled) {
-                    EventHandlerResult.Stop
-                } else {
-                    EventHandlerResult.Continue
-                }
+                if (sendKeyEvent(keyEvent)) EventHandlerResult.Stop else EventHandlerResult.Continue
             }
             is Event.KeyUp -> {
                 val uptime = windowEvent.timestamp.toDuration().inWholeMilliseconds
                 lastNativeEventUptimeMillis = uptime
                 updateModifierState(windowEvent.modifiers, windowEvent)
                 val keyEvent = windowEvent.toKeyEvent()
-                val handled = sendKeyEvent(keyEvent)
-                if (handled) {
-                    EventHandlerResult.Stop
-                } else {
-                    EventHandlerResult.Continue
-                }
+                if (sendKeyEvent(keyEvent)) EventHandlerResult.Stop else EventHandlerResult.Continue
             }
             is Event.ModifiersChanged -> {
                 val uptime = windowEvent.timestamp.toDuration().inWholeMilliseconds
@@ -296,28 +320,27 @@ internal class InputStateTracker(
         pointerEventType: PointerEventType,
         uptime: Long,
         nativeEvent: WindowEvent,
-    ): ProcessResult {
+    ): PointerEventResult {
         val previousPointerPosition = pointerPosition
-        pointerPosition = locationInWindow.toDpOffset().toOffset()
+        pointerPosition = locationInWindow.toDpOffset().toPxOffset(this)
         return if (
             previousPointerPosition != pointerPosition ||
             pointerEventType == PointerEventType.Enter ||
             pointerEventType == PointerEventType.Exit
         ) {
-            sendPointerInputEvent(
-                mousePointerInputEvent(
-                    type = pointerEventType,
-                    uptime = uptime,
-                    position = pointerPosition!!,
-                    buttons = pointerButtons,
-                    scrollDelta = Offset.Zero,
-                    keyboardModifiers = keyboardModifiers,
-                    button = null,
-                    nativeEvent = nativeEvent,
-                ),
+            sendPointerEvent.invoke(
+                eventType = pointerEventType,
+                position = pointerPosition!!,
+                scrollDelta = Offset.Zero,
+                timeMillis = uptime,
+                type = PointerType.Mouse,
+                buttons = pointerButtons,
+                keyboardModifiers = keyboardModifiers,
+                nativeEvent = nativeEvent,
+                button = null,
             )
         } else {
-            ProcessResult(0)
+            PointerEventResult()
         }
     }
 
@@ -347,112 +370,24 @@ internal class InputStateTracker(
         scrollDelta: Offset = Offset.Zero,
         nativeEvent: Any? = null,
         button: PointerButton? = null,
-    ): ProcessResult {
+    ): PointerEventResult {
         return if (!pointerInWindow || pointerPosition == null) {
-            ProcessResult(0)
+            PointerEventResult()
         } else {
-            sendPointerInputEvent(
-                pointerInputEventWithCurrentState(
-                    type,
-                    uptime,
-                    scrollDelta,
-                    nativeEvent,
-                    button,
-                ),
+            sendPointerEvent.invoke(
+                eventType = type,
+                position = pointerPosition!!,
+                scrollDelta = if (type == PointerEventType.Scroll) scrollDelta else Offset.Zero,
+                timeMillis = uptime,
+                type = PointerType.Mouse,
+                buttons = pointerButtons,
+                keyboardModifiers = keyboardModifiers,
+                nativeEvent = nativeEvent,
+                button = button,
             )
         }
     }
-
-    private fun pointerInputEventWithCurrentState(
-        type: PointerEventType,
-        uptime: Long,
-        scrollDelta: Offset,
-        nativeEvent: Any?,
-        button: PointerButton?,
-    ): PointerInputEvent {
-        return mousePointerInputEvent(
-            type = type,
-            uptime = uptime,
-            position = pointerPosition!!,
-            scrollDelta = if (type == PointerEventType.Scroll) scrollDelta else Offset.Zero,
-            buttons = pointerButtons,
-            keyboardModifiers = keyboardModifiers,
-            nativeEvent = nativeEvent,
-            button = button,
-        )
-    }
 }
-
-@OptIn(InternalCoreApi::class)
-private fun Event.MouseDown.toPointerInputEvent(
-    buttons: PointerButtons,
-    keyboardModifiers: PointerKeyboardModifiers,
-    density: Density,
-): PointerInputEvent {
-    return mousePointerInputEvent(
-        type = PointerEventType.Press,
-        uptime = timestamp.toDuration().inWholeMilliseconds,
-        position = density.run { locationInWindow.toDpOffset().toOffset() },
-        buttons = buttons,
-        scrollDelta = Offset.Zero,
-        keyboardModifiers = keyboardModifiers,
-        button = button.toPointerButton(),
-        nativeEvent = this,
-    )
-}
-
-@OptIn(InternalCoreApi::class)
-private fun Event.MouseUp.toPointerInputEvent(
-    buttons: PointerButtons,
-    keyboardModifiers: PointerKeyboardModifiers,
-    density: Density,
-): PointerInputEvent {
-    return mousePointerInputEvent(
-        type = PointerEventType.Release,
-        uptime = timestamp.toDuration().inWholeMilliseconds,
-        position = density.run { locationInWindow.toDpOffset().toOffset() },
-        buttons = buttons,
-        scrollDelta = Offset.Zero,
-        keyboardModifiers = keyboardModifiers,
-        button = button.toPointerButton(),
-        nativeEvent = this,
-    )
-}
-
-@OptIn(InternalCoreApi::class, ExperimentalComposeUiApi::class)
-private fun mousePointerInputEvent(
-    type: PointerEventType,
-    uptime: Long,
-    position: Offset,
-    buttons: PointerButtons,
-    scrollDelta: Offset,
-    keyboardModifiers: PointerKeyboardModifiers,
-    button: PointerButton?,
-    nativeEvent: Any?,
-): PointerInputEvent {
-    return PointerInputEvent(
-        eventType = type,
-        uptime = uptime,
-        pointers = listOf(
-            PointerInputEventData(
-                id = DefaultPointerId,
-                uptime = uptime,
-                positionOnScreen = Offset.Unspecified,
-                position = position,
-                down = buttons.areAnyPressed,
-                pressure = 1f,
-                type = PointerType.Mouse,
-                scrollDelta = scrollDelta,
-            ),
-        ),
-        buttons = buttons,
-        keyboardModifiers = keyboardModifiers,
-        nativeEvent = nativeEvent,
-        button = button,
-    )
-}
-
-private val DefaultPointerId = PointerId(0)
 
 private fun MouseButton.toPointerButton(): PointerButton = when (this) {
     MouseButton.LEFT -> PointerButton.Primary
@@ -461,11 +396,34 @@ private fun MouseButton.toPointerButton(): PointerButton = when (this) {
     else -> PointerButton(value)
 }
 
+/**
+ * Local copy of the bit-mask layout used by [PointerKeyboardModifiers.packedValue] in
+ * `PointerEvent.skiko.kt` (that [ModifierMasks] object is file-private there). Kept in sync with
+ * that file.
+ */
+private object ModifierMasks {
+    const val CtrlPressed = 1 shl 0
+    const val MetaPressed = 1 shl 1
+    const val AltPressed = 1 shl 2
+    const val AltGraphPressed = 1 shl 3
+    const val SymPressed = 1 shl 4
+    const val ShiftPressed = 1 shl 5
+    const val FunctionPressed = 1 shl 6
+    const val CapsLockOn = 1 shl 7
+    const val ScrollLockOn = 1 shl 8
+    const val NumLockOn = 1 shl 9
+
+    val all = intArrayOf(
+        CtrlPressed, MetaPressed, AltPressed, AltGraphPressed, ShiftPressed,
+        FunctionPressed, CapsLockOn, ScrollLockOn, NumLockOn,
+    )
+}
+
 private fun PointerKeyboardModifiers.forEachPressOrReleaseTo(
     result: PointerKeyboardModifiers,
     block: (KeyEventType, Key) -> Unit,
 ) {
-    for (modifierMask in KeyboardModifierMasks.all) {
+    for (modifierMask in ModifierMasks.all) {
         when {
             (packedValue and modifierMask) == 0 && (result.packedValue and modifierMask) != 0 -> {
                 block(KeyEventType.KeyDown, modifierMask.toKey())
@@ -478,15 +436,15 @@ private fun PointerKeyboardModifiers.forEachPressOrReleaseTo(
 }
 
 private fun Int.toKey(): Key = when (this) {
-    KeyboardModifierMasks.CtrlPressed -> Key.CtrlLeft
-    KeyboardModifierMasks.MetaPressed -> Key.MetaLeft
-    KeyboardModifierMasks.AltPressed -> Key.AltLeft
-    KeyboardModifierMasks.AltGraphPressed -> Key.AltRight
-    KeyboardModifierMasks.ShiftPressed -> Key.ShiftLeft
-    KeyboardModifierMasks.FunctionPressed -> Key.Function
-    KeyboardModifierMasks.CapsLockOn -> Key.CapsLock
-    KeyboardModifierMasks.ScrollLockOn -> Key.ScrollLock
-    KeyboardModifierMasks.NumLockOn -> Key.NumLock
+    ModifierMasks.CtrlPressed -> Key.CtrlLeft
+    ModifierMasks.MetaPressed -> Key.MetaLeft
+    ModifierMasks.AltPressed -> Key.AltLeft
+    ModifierMasks.AltGraphPressed -> Key.AltRight
+    ModifierMasks.ShiftPressed -> Key.ShiftLeft
+    ModifierMasks.FunctionPressed -> Key.Function
+    ModifierMasks.CapsLockOn -> Key.CapsLock
+    ModifierMasks.ScrollLockOn -> Key.ScrollLock
+    ModifierMasks.NumLockOn -> Key.NumLock
     else -> throw IllegalArgumentException("Unknown modifier mask: $this")
 }
 
@@ -522,25 +480,6 @@ private operator fun PointerButtons.minus(other: PointerButton): PointerButtons 
     isBackPressed = isBackPressed && !other.isBack,
     isForwardPressed = isForwardPressed && !other.isForward,
 )
-
-@OptIn(InternalCoreApi::class)
-private fun Event.ScrollWheel.toPointerInputEvent(
-    buttons: PointerButtons,
-    keyboardModifiers: PointerKeyboardModifiers,
-    density: Density,
-    windowEvent: WindowEvent,
-): PointerInputEvent {
-    return mousePointerInputEvent(
-        type = PointerEventType.Scroll,
-        uptime = timestamp.toDuration().inWholeMilliseconds,
-        position = density.run { locationInWindow.toDpOffset().toOffset() },
-        buttons = buttons,
-        scrollDelta = density.run { delta().toOffset() },
-        keyboardModifiers = keyboardModifiers,
-        button = null,
-        nativeEvent = windowEvent,
-    )
-}
 
 private fun Event.ScrollWheel.delta(): DpOffset {
     val directionMultiplier = -1f // scroll is inverted on macos

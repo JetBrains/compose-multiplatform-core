@@ -42,10 +42,12 @@ import androidx.compose.ui.window.ApplicationScope
 import java.nio.file.Path
 import kotlin.IllegalStateException
 import kotlin.concurrent.thread
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
+import org.jetbrains.skiko.MainUIDispatcher
 
 fun runApplicationBlocking(
     identifier: String,
@@ -102,68 +104,34 @@ suspend fun awaitApplication(
                 }
             }
 
-            launch {
-                recomposer.runRecomposeAndApplyChanges()
-            }
+            coroutineScope {
+                val scene = Scene<Unit>(coroutineScope = this)
 
-            launch {
-                val applier = ApplicationApplier()
-                val composition = Composition(applier, recomposer)
-                try {
-                    composition.setContent {
-                        if (isOpen) {
-                            applicationScope.content()
+                launch {
+                    recomposer.runRecomposeAndApplyChanges()
+                }
+
+                launch {
+                    val applier = ApplicationApplier()
+                    val composition = Composition(applier, recomposer)
+                    try {
+                        composition.setContent {
+                            CompositionLocalProvider(ProvidableLocalScene provides scene) {
+                                if (isOpen) {
+                                    applicationScope.content()
+                                }
+                            }
                         }
+                        recomposer.close()
+                        recomposer.join()
+                    } finally {
+                        composition.dispose()
                     }
-                    recomposer.close()
-                    recomposer.join()
-                } finally {
-                    composition.dispose()
                 }
             }
         }
     }
 }
-
-private object YieldFrameClock : MonotonicFrameClock {
-    override suspend fun <R> withFrameNanos(
-        onFrame: (frameTimeNanos: Long) -> R
-    ): R {
-        // We call `yield` to avoid blocking UI thread. If we don't call this then application
-        // can be frozen for the user in some cases as it will not receive any input events.
-        //
-        // Swing dispatcher will process all pending events and resume after `yield`.
-        yield()
-        return onFrame(System.nanoTime())
-    }
-}
-
-private class ApplicationApplier : Applier<Any> {
-    override val current: Any = Unit
-    override fun down(node: Any) = Unit
-    override fun up() = Unit
-    override fun insertTopDown(index: Int, instance: Any) {
-        if (instance !is Unit) {
-            throw IllegalStateException(
-                "Composable content may not be added directly into " +
-                    ApplicationScope::class.simpleName
-            )
-        }
-    }
-    override fun insertBottomUp(index: Int, instance: Any) {
-        if (instance !is Unit) {
-            throw IllegalStateException(
-                "Composable content may not be added directly into " +
-                    ApplicationScope::class.simpleName
-            )
-        }
-    }
-    override fun remove(index: Int, count: Int) = Unit
-    override fun move(from: Int, to: Int, count: Int) = Unit
-    override fun clear() = Unit
-    override fun onEndChanges() = Unit
-}
-
 
 internal actual fun currentApplication(): Application = currentJvmApplication()
 

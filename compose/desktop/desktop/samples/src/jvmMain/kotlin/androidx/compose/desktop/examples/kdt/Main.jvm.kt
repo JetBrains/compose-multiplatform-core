@@ -23,15 +23,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.kdt.Window
-import androidx.compose.ui.kdt.initApplication
-import androidx.compose.ui.kdt.runApplication
+import androidx.compose.ui.kdt.runApplicationBlocking
 
 fun main() {
-    initApplication().use { application ->
-        runApplication(application) {
-            AppWindow()
-            AppWindow()
-        }
+    runApplicationBlocking(
+        identifier = System.getProperty("kdt.application.identifier") ?: "compose-application",
+    ) {
+        AppWindow()
+        AppWindow()
     }
 }
 

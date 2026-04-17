@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.kdt.macos.MacOsClipboard
 import androidx.compose.ui.text.AnnotatedString
 import java.awt.HeadlessException
 import java.awt.Toolkit
@@ -74,32 +75,32 @@ internal class AwtClipboardManager : ClipboardManager {
     }
 }
 
-internal class AwtPlatformClipboard internal constructor() : Clipboard {
-    override suspend fun getClipEntry(): ClipEntry? {
-        val transferable = systemClipboard?.getContents(null) ?: return null
-        val flavors = transferable.transferDataFlavors
-        if (flavors?.size == 0) return null
-        return ClipEntry(transferable)
-    }
-
-    override suspend fun setClipEntry(clipEntry: ClipEntry?) {
-        val transferable = clipEntry?.asAwtTransferable
-        try {
-            systemClipboard?.setContents(
-                /* contents = */ transferable ?: EmptyTransferable,
-                /* owner = */ transferable as? ClipboardOwner,
-            )
-        } catch (_: IllegalStateException) { }  // thrown when clipboard is unavailable
-    }
-
-    /**
-     * Provides an instance of a platform clipboard.
-     * The actual implementation may vary depending on the underlying GUI toolkit.
-     * See [awtClipboard] to access [java.awt.datatransfer.Clipboard].
-     */
-    override val nativeClipboard: NativeClipboard
-        get() = systemClipboard ?: NoClipboard
-}
+//internal class AwtPlatformClipboard internal constructor() : Clipboard {
+//    override suspend fun getClipEntry(): ClipEntry? {
+//        val transferable = systemClipboard?.getContents(null) ?: return null
+//        val flavors = transferable.transferDataFlavors
+//        if (flavors?.size == 0) return null
+//        return ClipEntry(transferable)
+//    }
+//
+//    override suspend fun setClipEntry(clipEntry: ClipEntry?) {
+//        val transferable = clipEntry?.asAwtTransferable
+//        try {
+//            systemClipboard?.setContents(
+//                /* contents = */ transferable ?: EmptyTransferable,
+//                /* owner = */ transferable as? ClipboardOwner,
+//            )
+//        } catch (_: IllegalStateException) { }  // thrown when clipboard is unavailable
+//    }
+//
+//    /**
+//     * Provides an instance of a platform clipboard.
+//     * The actual implementation may vary depending on the underlying GUI toolkit.
+//     * See [awtClipboard] to access [java.awt.datatransfer.Clipboard].
+//     */
+//    override val nativeClipboard: NativeClipboard
+//        get() = systemClipboard ?: NoClipboard
+//}
 
 /**
  * The object returned as the [NativeClipboard] when [AwtPlatformClipboard.nativeClipboard] is null.
@@ -156,5 +157,6 @@ private object EmptyTransferable : Transferable {
 @Suppress("DEPRECATION")
 internal actual fun createPlatformClipboardManager(): ClipboardManager = AwtClipboardManager()
 
-internal actual fun createPlatformClipboard(): Clipboard = AwtPlatformClipboard()
+internal actual fun createPlatformClipboard(): Clipboard = MacOsClipboard
+//internal actual fun createPlatformClipboard(): Clipboard = AwtPlatformClipboard()
 

@@ -17,5 +17,5 @@
 package noria.ui
 
 fun interface ResourceReader {
-  fun read(resourcePath: String): ByteArray?
+    suspend fun read(resourcePath: String): ByteArray?
 }

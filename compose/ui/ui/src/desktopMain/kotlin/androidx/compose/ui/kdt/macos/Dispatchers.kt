@@ -46,4 +46,9 @@ class MacOsKdtMainDispatcher : MacOsKdtMainDispatcherBase() {
     override fun toString(): String {
         return "Dispatchers.MainKDT"
     }
+
+    companion object {
+        /** Process-wide instance so call sites can avoid constructing one each time. */
+        val INSTANCE: MacOsKdtMainDispatcher = MacOsKdtMainDispatcher()
+    }
 }

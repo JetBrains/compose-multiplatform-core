@@ -14,12 +14,22 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.kdt.headless
+package androidx.compose.ui.platform
 
-import androidx.compose.ui.platform.UriHandler
+import kotlin.coroutines.CoroutineContext
+import kotlinx.io.files.Path
 
-class HeadlessUriHandler : UriHandler {
-    override fun openUri(uri: String) {
-        // No-op in headless mode.
-    }
+interface FileManager {
+    val name: String
+    fun revealFileOrFolder(path: Path)
+    fun openFileOrFolder(path: Path)
+}
+
+val CoroutineContext.fileManager: FileManager?
+    get() = this[FileManagerCoroutineContextElement]?.fileManager
+
+data class FileManagerCoroutineContextElement(val fileManager: FileManager) : CoroutineContext.Element {
+    companion object : CoroutineContext.Key<FileManagerCoroutineContextElement>
+
+    override val key: CoroutineContext.Key<*> get() = FileManagerCoroutineContextElement
 }

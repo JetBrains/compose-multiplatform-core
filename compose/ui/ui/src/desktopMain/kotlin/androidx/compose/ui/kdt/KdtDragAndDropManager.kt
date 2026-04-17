@@ -2,14 +2,14 @@ package androidx.compose.ui.kdt
 
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
-import androidx.compose.ui.draganddrop.DragAndDropTransferDataJvm
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.kdt.gtk.GtkWindow
-import androidx.compose.ui.kdt.linux.LinuxWindow
 import androidx.compose.ui.kdt.macos.MacOsWindow
-import androidx.compose.ui.kdt.windows.WindowsWindow
+// import androidx.compose.ui.draganddrop.DragAndDropTransferDataJvm
+// import androidx.compose.ui.kdt.gtk.GtkWindow
+// import androidx.compose.ui.kdt.linux.LinuxWindow
+// import androidx.compose.ui.kdt.windows.WindowsWindow
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformDragAndDropSource
 
@@ -54,27 +54,22 @@ internal class KdtDragAndDropManager(
         drawDragDecoration: DrawScope.() -> Unit,
     ) {
         when (window) {
-            is GtkWindow -> window.startDragSession(
-                offset,
-                transferData as DragAndDropTransferDataJvm,
-                decorationSize,
-                drawDragDecoration,
-            )
-            is LinuxWindow -> window.startDragSession(
-                offset,
-                transferData as DragAndDropTransferDataJvm,
-                decorationSize,
-                drawDragDecoration,
-            )
             is MacOsWindow -> window.startDragSession(
                 offset,
-                transferData as DragAndDropTransferDataJvm,
+                transferData,
                 decorationSize,
                 drawDragDecoration,
             )
-            is WindowsWindow -> {
-                // Drag source is not supported on Windows
-            }
+            // TODO: re-enable when the Gtk / Linux / Windows backends land
+            // is GtkWindow -> window.startDragSession(
+            //     offset, transferData as DragAndDropTransferDataJvm, decorationSize, drawDragDecoration,
+            // )
+            // is LinuxWindow -> window.startDragSession(
+            //     offset, transferData as DragAndDropTransferDataJvm, decorationSize, drawDragDecoration,
+            // )
+            // is WindowsWindow -> {
+            //     // Drag source is not supported on Windows
+            // }
             else -> error("Unsupported drag source window: ${window::class.qualifiedName}")
         }
     }

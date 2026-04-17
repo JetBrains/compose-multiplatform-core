@@ -18,7 +18,8 @@ object MacOsClipboard : Clipboard {
 
     override suspend fun getClipEntry(): ClipEntry? = getClipEntrySync()
 
-    override suspend fun setClipEntry(clipEntry: ClipEntry) {
+    override suspend fun setClipEntry(clipEntry: ClipEntry?) {
+        clipEntry ?: return
         require(clipEntry.nativeClipEntry is MacOsClipboardEntry.Items)
         Pasteboard.clear()
         Pasteboard.writeObjects(clipEntry.nativeClipEntry.items)

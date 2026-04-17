@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.node.Owner
+import androidx.compose.ui.text.input.TextInputContext
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Density
@@ -213,6 +214,10 @@ public val LocalTextInputService:
     computedNullableDefaultOf {
         LocalOwner.currentValue.textInputService
     }
+
+val LocalTextInputContext = staticCompositionLocalOf<TextInputContext?> { null }
+
+val LocalFileManager = staticCompositionLocalOf<FileManager?> { null }
 
 /**
  * The [CompositionLocal] to provide a [SoftwareKeyboardController] that can control the current
