@@ -48,6 +48,7 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
 
         private var textFieldValue by mutableStateOf(TextFieldValue())
         private var textLayoutResult by mutableStateOf<TextLayoutResult?>(null)
+        private var textToRootMatrix by mutableStateOf(Matrix())
         private var focusedRectInRoot by mutableStateOf(Rect.Zero)
         private var textFieldRectInRoot by mutableStateOf(Rect.Zero)
         private var textClippingRectInRoot by mutableStateOf(Rect.Zero)
@@ -95,6 +96,7 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
             this.textLayoutResult = textLayoutResult
 
             val matrix = Matrix().also { textFieldToRootTransform(it) }
+            textToRootMatrix = matrix
             textFieldRectInRoot = matrix.map(decorationBoxBounds)
             textClippingRectInRoot = matrix.map(innerTextFieldBounds)
             val cursorOffset = offsetMapping.originalToTransformed(textFieldValue.selection.max)
@@ -126,6 +128,34 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
                 }
             }
 
+            fun firstTextRangeAndRectInRoot(range: TextRange): Pair<TextRange, Rect> {
+                val layoutResult = textLayoutResult ?: return range to Rect.Zero
+                val line = layoutResult.getLineForOffset(range.start)
+                val lineEnd = layoutResult.getLineEnd(line, visibleEnd = true)
+                val clampedEnd = range.end.coerceAtMost(lineEnd)
+                val firstRange = TextRange(range.start, clampedEnd)
+                val rect = Rect(
+                    left = layoutResult.getHorizontalPosition(
+                        offset = range.start,
+                        usePrimaryDirection = true,
+                    ),
+                    top = layoutResult.getLineTop(line),
+                    right = layoutResult.getHorizontalPosition(
+                        offset = clampedEnd,
+                        usePrimaryDirection = true,
+                    ),
+                    bottom = layoutResult.getLineBottom(line),
+                )
+                return firstRange to textToRootMatrix.map(rect)
+            }
+
+            fun characterIndexAtOffsetInRoot(offsetInRoot: Offset): Int {
+                val layoutResult = textLayoutResult ?: return 0
+                val inverse = Matrix(textToRootMatrix.values.copyOf()).also { it.invert() }
+                val local = inverse.map(offsetInRoot)
+                return layoutResult.getOffsetForPosition(local)
+            }
+
             return SkikoPlatformTextInputMethodRequest(
                 value = { textFieldValue },
                 state = textEditorState,
@@ -137,6 +167,8 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
                 textFieldRectInRoot = { textFieldRectInRoot },
                 textClippingRectInRoot = { textClippingRectInRoot },
                 unclippedTextOffsetInRoot = { unclippedTextOffsetInRoot },
+                firstTextRangeAndRectInRoot = ::firstTextRangeAndRectInRoot,
+                characterIndexAtOffsetInRoot = ::characterIndexAtOffsetInRoot,
                 editText = editBlock
             )
         }

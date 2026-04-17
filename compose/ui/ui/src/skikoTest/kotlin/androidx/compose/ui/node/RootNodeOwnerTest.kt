@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
@@ -228,4 +229,7 @@ private class TestInputRequest: PlatformTextInputMethodRequest {
     override val textClippingRectInRoot: () -> Rect? get() = error("Test method")
     override val editText: (TextEditingScope.() -> Unit) -> Unit get() = error("Test method")
     override val unclippedTextOffsetInRoot: () -> Offset? get() = error("Test method")
+    override val firstTextRangeAndRectInRoot: (TextRange) -> Pair<TextRange, Rect>
+        get() = error("Test method")
+    override val characterIndexAtOffsetInRoot: (Offset) -> Int get() = error("Test method")
 }

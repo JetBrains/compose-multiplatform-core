@@ -26,6 +26,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSession
@@ -103,6 +104,35 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
 
         fun unclippedTextOffsetInRoot() = layoutState.textLayoutNodeCoordinates?.positionInRoot()
 
+        fun firstTextRangeAndRectInRoot(range: TextRange): Pair<TextRange, Rect> {
+            val layoutResult = layoutState.layoutResult
+            val layoutCoords = layoutState.textLayoutNodeCoordinates
+            if (layoutResult == null || layoutCoords == null) {
+                return range to Rect.Zero
+            }
+            val line = layoutResult.getLineForOffset(range.start)
+            val lineEnd = layoutResult.getLineEnd(line, visibleEnd = true)
+            val clampedEnd = range.end.coerceAtMost(lineEnd)
+            val firstRange = TextRange(range.start, clampedEnd)
+            val rect = Rect(
+                left = layoutResult.getHorizontalPosition(range.start, usePrimaryDirection = true),
+                top = layoutResult.getLineTop(line),
+                right = layoutResult.getHorizontalPosition(clampedEnd, usePrimaryDirection = true),
+                bottom = layoutResult.getLineBottom(line),
+            )
+            return firstRange to rect.translate(layoutCoords.localToRoot(Offset.Zero))
+        }
+
+        fun characterIndexAtOffsetInRoot(offsetInRoot: Offset): Int {
+            val layoutResult = layoutState.layoutResult ?: return 0
+            val layoutCoords = layoutState.textLayoutNodeCoordinates ?: return 0
+            val local = layoutCoords.localPositionOf(
+                sourceCoordinates = layoutCoords.findRootCoordinates(),
+                relativeToSource = offsetInRoot,
+            )
+            return layoutResult.getOffsetForPosition(local)
+        }
+
         startInputMethod(
             SkikoPlatformTextInputMethodRequest(
                 value = { state.untransformedText.toTextFieldValue() },
@@ -115,6 +145,8 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
                 textFieldRectInRoot = ::textFieldRectInRoot,
                 textClippingRectInRoot = ::textClippingRectInRoot,
                 unclippedTextOffsetInRoot = ::unclippedTextOffsetInRoot,
+                firstTextRangeAndRectInRoot = ::firstTextRangeAndRectInRoot,
+                characterIndexAtOffsetInRoot = ::characterIndexAtOffsetInRoot,
                 editText = ::editText
             )
         )
@@ -247,5 +279,7 @@ internal data class SkikoPlatformTextInputMethodRequest(
     override val textFieldRectInRoot: () -> Rect?,
     override val textClippingRectInRoot: () -> Rect?,
     override val unclippedTextOffsetInRoot: () -> Offset?,
+    override val firstTextRangeAndRectInRoot: (TextRange) -> Pair<TextRange, Rect>,
+    override val characterIndexAtOffsetInRoot: (Offset) -> Int,
     override val editText: (block: TextEditingScope.() -> Unit) -> Unit
 ): PlatformTextInputMethodRequest
