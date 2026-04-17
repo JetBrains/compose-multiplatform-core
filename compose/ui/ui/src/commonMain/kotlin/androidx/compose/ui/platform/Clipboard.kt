@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.runtime.NoriaOnly
+
 interface Clipboard {
 
     /**
@@ -26,12 +28,24 @@ interface Clipboard {
      *
      * It returns null when the clipboard is empty.
      *
-     * Calling this function on Android will access the Clipboard's contents, and the first time it
-     * happens this will trigger a warning that says "App pasted from Clipboard". Use
-     * [nativeClipboard] and `primaryClipDescription` on Android to circumvent this issue if you are
-     * only interested in querying what is available in the clipboard.
+     * It's safe to call this function without triggering Clipboard access warnings on mobile
+     * platforms.
      */
     suspend fun getClipEntry(): ClipEntry?
+
+    /**
+     * Returns the clipboard entry that's provided by the platform's ClipboardManager.
+     *
+     * This item can include arbitrary content like text, images, videos, or any data that may be
+     * provided through a mediator. Returned entry may contain multiple items with different types.
+     *
+     * It returns null when the clipboard is empty.
+     *
+     * It's safe to call this function without triggering Clipboard access warnings on mobile
+     * platforms.
+     */
+    @NoriaOnly
+    fun getClipEntrySync(): ClipEntry? = null
 
     /**
      * Puts the given [clipEntry] in platform's ClipboardManager.
@@ -39,8 +53,41 @@ interface Clipboard {
      * @param clipEntry Platform specific clip object that either holds data or links to it. Pass
      *   null to clear the clipboard.
      */
-    suspend fun setClipEntry(clipEntry: ClipEntry?)
+    suspend fun setClipEntry(clipEntry: ClipEntry)
+
+    /**
+     * Returns Primary selection clipboard content
+     * See: https://unix.stackexchange.com/questions/139191/whats-the-difference-between-primary-selection-and-clipboard-buffer
+     * It's Linux specific freature
+     * TODO(pavel.sergeev) extract to separate interface
+     */
+    @NoriaOnly
+    suspend fun systemSelection(): String? {
+        return null
+    }
+
+    /**
+     * Updates the Primary selection clipboard content.
+     * See: https://unix.stackexchange.com/questions/139191/whats-the-difference-between-primary-selection-and-clipboard-buffer
+     * This is a Linux specific feature.
+     * TODO(pavel.sergeev) extract to separate interface
+     */
+    @NoriaOnly
+    suspend fun setSystemSelection(text: String?) {}
 
     /** Returns the native clipboard that exposes the full functionality of platform clipboard. */
-    val nativeClipboard: NativeClipboard
+    val nativeClipboard: Any
+}
+
+/** Platform specific protocol that expresses an item in the native Clipboard. */
+class ClipEntry(val nativeClipEntry: Any) {
+
+    /**
+     * Returns a [ClipMetadata] which describes the contents of this [ClipEntry]. This is an ideal
+     * way to check whether to accept or reject what may be pasted from the clipboard without
+     * explicitly reading the content.
+     *
+     * Calling this function does not trigger any content access warnings on any platform.
+     */
+    //    val clipMetadata: ClipMetadata
 }

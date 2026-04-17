@@ -14,7 +14,14 @@ internal object MacOsPointerIconService : PointerIconService {
         Cursor.icon = (value as? MacOsPointerIcon)?.icon ?: Cursor.Icon.ArrowCursor
     }
 
-    override fun setHiddenUntilPointerMoves(hidden: Boolean) {
+    override fun getStylusHoverIcon(): PointerIcon? {
+        return null
+    }
+
+    override fun setStylusHoverIcon(value: PointerIcon?) {
+    }
+
+    fun setHiddenUntilPointerMoves(hidden: Boolean) {
         // todo[unterhofer] Hook this up to setHiddenUntilMouseMoves:
         //  https://developer.apple.com/documentation/appkit/nscursor/sethiddenuntilmousemoves(_:)
         when {
@@ -22,6 +29,7 @@ internal object MacOsPointerIconService : PointerIconService {
                 isHiddenUntilPointerMoves = true
                 Cursor.pushHide()
             }
+
             !hidden && isHiddenUntilPointerMoves -> {
                 isHiddenUntilPointerMoves = false
                 Cursor.popHide()
@@ -29,7 +37,7 @@ internal object MacOsPointerIconService : PointerIconService {
         }
     }
 
-    override fun pushHide() {
+    fun pushHide() {
         if (isHiddenUntilPointerMoves) {
             isHiddenUntilPointerMoves = false
         } else {
@@ -37,7 +45,7 @@ internal object MacOsPointerIconService : PointerIconService {
         }
     }
 
-    override fun popHide() {
+    fun popHide() {
         Cursor.popHide()
     }
 }

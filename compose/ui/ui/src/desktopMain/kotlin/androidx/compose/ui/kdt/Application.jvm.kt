@@ -16,20 +16,36 @@
 
 package androidx.compose.ui.kdt
 
+import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.kdt.gtk.GtkApplication
-import androidx.compose.ui.kdt.gtk.GtkUriHandler
-import androidx.compose.ui.kdt.linux.LinuxApplication
-import androidx.compose.ui.kdt.linux.LinuxUriHandler
+import androidx.compose.runtime.Composition
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MonotonicFrameClock
+import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+//import androidx.compose.ui.kdt.gtk.GtkApplication
+//import androidx.compose.ui.kdt.gtk.GtkUriHandler
+//import androidx.compose.ui.kdt.linux.LinuxApplication
+//import androidx.compose.ui.kdt.linux.LinuxUriHandler
 import androidx.compose.ui.kdt.macos.MacOsApplication
 import androidx.compose.ui.kdt.macos.MacOsUriHandler
-import androidx.compose.ui.kdt.windows.WindowsApplication
-import androidx.compose.ui.kdt.windows.WindowsUriHandler
+//import androidx.compose.ui.kdt.windows.WindowsApplication
+//import androidx.compose.ui.kdt.windows.WindowsUriHandler
 import androidx.compose.ui.platform.DesktopPlatform
+import androidx.compose.ui.platform.GlobalSnapshotManager
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.window.ApplicationScope
 import java.nio.file.Path
+import kotlin.IllegalStateException
 import kotlin.concurrent.thread
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 
 fun runApplicationBlocking(
     identifier: String,
@@ -39,17 +55,23 @@ fun runApplicationBlocking(
     content: @Composable () -> Unit,
 ) {
     runBlocking {
-        awaitApplication(identifier, openUrls, libraryFolder, logFolder, content)
+        awaitApplication(
+            identifier,
+            openUrls,
+            libraryFolder,
+            logFolder,
+            content
+        )
     }
 }
 
 actual fun initializeApplication(
     identifier: String,
     openUrls: (List<String>) -> Unit,
-    libraryFolder: kotlinx.io.files.Path = defaultLibraryFolder(),
-    logFolder: kotlinx.io.files.Path = defaultLogFolder(),
-    uriHandler: UriHandler = defaultUriHandler(),
-    customQuit: (() -> Boolean)? = null,
+    libraryFolder: kotlinx.io.files.Path,
+    logFolder: kotlinx.io.files.Path,
+    uriHandler: UriHandler,
+    customQuit: (() -> Boolean)?,
 ) {
     val libraryFolderPath = Path.of(libraryFolder.toString())
     val logFolderPath = Path.of(logFolder.toString())
@@ -64,16 +86,98 @@ actual fun initializeApplication(
     activateApplication(application)
 }
 
+suspend fun awaitApplication(
+    content: @Composable ApplicationScope.() -> Unit
+) {
+    withContext(MainUIDispatcher) {
+        withContext(YieldFrameClock) {
+            GlobalSnapshotManager.ensureStarted()
+
+            val recomposer = Recomposer(coroutineContext)
+            var isOpen by mutableStateOf(true)
+
+            val applicationScope = object : ApplicationScope {
+                override fun exitApplication() {
+                    isOpen = false
+                }
+            }
+
+            launch {
+                recomposer.runRecomposeAndApplyChanges()
+            }
+
+            launch {
+                val applier = ApplicationApplier()
+                val composition = Composition(applier, recomposer)
+                try {
+                    composition.setContent {
+                        if (isOpen) {
+                            applicationScope.content()
+                        }
+                    }
+                    recomposer.close()
+                    recomposer.join()
+                } finally {
+                    composition.dispose()
+                }
+            }
+        }
+    }
+}
+
+private object YieldFrameClock : MonotonicFrameClock {
+    override suspend fun <R> withFrameNanos(
+        onFrame: (frameTimeNanos: Long) -> R
+    ): R {
+        // We call `yield` to avoid blocking UI thread. If we don't call this then application
+        // can be frozen for the user in some cases as it will not receive any input events.
+        //
+        // Swing dispatcher will process all pending events and resume after `yield`.
+        yield()
+        return onFrame(System.nanoTime())
+    }
+}
+
+private class ApplicationApplier : Applier<Any> {
+    override val current: Any = Unit
+    override fun down(node: Any) = Unit
+    override fun up() = Unit
+    override fun insertTopDown(index: Int, instance: Any) {
+        if (instance !is Unit) {
+            throw IllegalStateException(
+                "Composable content may not be added directly into " +
+                    ApplicationScope::class.simpleName
+            )
+        }
+    }
+    override fun insertBottomUp(index: Int, instance: Any) {
+        if (instance !is Unit) {
+            throw IllegalStateException(
+                "Composable content may not be added directly into " +
+                    ApplicationScope::class.simpleName
+            )
+        }
+    }
+    override fun remove(index: Int, count: Int) = Unit
+    override fun move(from: Int, to: Int, count: Int) = Unit
+    override fun clear() = Unit
+    override fun onEndChanges() = Unit
+}
+
+
 internal actual fun currentApplication(): Application = currentJvmApplication()
 
 internal actual fun defaultUriHandler(): UriHandler =
     when (DesktopPlatform.Current) {
         DesktopPlatform.MacOS -> MacOsUriHandler()
         DesktopPlatform.Linux -> when (currentLinuxWindowSystem()) {
-            LinuxWindowSystem.Wayland -> LinuxUriHandler()
-            LinuxWindowSystem.Gtk -> GtkUriHandler()
+//            LinuxWindowSystem.Wayland -> LinuxUriHandler()
+//            LinuxWindowSystem.Gtk -> GtkUriHandler()
+            LinuxWindowSystem.Wayland -> TODO()
+            LinuxWindowSystem.Gtk -> TODO()
         }
-        DesktopPlatform.Windows -> WindowsUriHandler()
+//        DesktopPlatform.Windows -> WindowsUriHandler()
+        DesktopPlatform.Windows -> TODO()
         DesktopPlatform.Unknown -> error("Unsupported desktop platform: ${DesktopPlatform.Current}")
     }
 
@@ -112,10 +216,13 @@ private fun initializeJvmApplication(
     return when (DesktopPlatform.Current) {
         DesktopPlatform.MacOS -> MacOsApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { MacOsApplication.current() }
         DesktopPlatform.Linux -> when (currentLinuxWindowSystem()) {
-            LinuxWindowSystem.Wayland -> LinuxApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { LinuxApplication.current() }
-            LinuxWindowSystem.Gtk -> GtkApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { GtkApplication.current() }
+//            LinuxWindowSystem.Wayland -> LinuxApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { LinuxApplication.current() }
+//            LinuxWindowSystem.Gtk -> GtkApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { GtkApplication.current() }
+            LinuxWindowSystem.Wayland -> TODO()
+            LinuxWindowSystem.Gtk -> TODO()
         }
-        DesktopPlatform.Windows -> WindowsApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { WindowsApplication.current() }
+//        DesktopPlatform.Windows -> WindowsApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { WindowsApplication.current() }
+        DesktopPlatform.Windows -> TODO()
         DesktopPlatform.Unknown -> error("Unsupported desktop platform: ${DesktopPlatform.Current}")
     }
 }

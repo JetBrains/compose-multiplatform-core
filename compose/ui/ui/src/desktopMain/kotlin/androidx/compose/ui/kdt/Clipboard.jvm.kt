@@ -17,13 +17,13 @@
 package androidx.compose.ui.kdt
 
 import androidx.compose.ui.kdt.macos.macOsClipboardEntry
-import androidx.compose.ui.kdt.windows.windowsClipboardEntry
 import androidx.compose.ui.platform.DesktopPlatform
 actual fun clipboardEntry(vararg items: ClipboardItem): ClipboardEntry {
     return when (DesktopPlatform.Current) {
         DesktopPlatform.MacOS -> macOsClipboardEntry(*items)
         DesktopPlatform.Linux -> fixedMimeTransferClipboardEntry(*items)
-        DesktopPlatform.Windows -> windowsClipboardEntry(*items)
+        DesktopPlatform.Windows -> TODO()
+//        DesktopPlatform.Windows -> windowsClipboardEntry(*items)
         DesktopPlatform.Unknown -> error("Unsupported desktop platform: ${DesktopPlatform.Current}")
     }
 }

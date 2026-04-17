@@ -1,10 +1,13 @@
+@file:OptIn(ExperimentalAtomicApi::class)
+
 package androidx.compose.ui.kdt
 
-import fleet.util.logging.logger
+import androidx.compose.ui.kdt.logging.logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.channels.Channel
 import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
@@ -23,7 +26,7 @@ internal class DrainableCoroutineDispatcher(private val dispatcher: CoroutineDis
     check(!disposed.load())
     tasks.trySend(block)
     if (drainingScheduled.compareAndSet(false, true)) {
-      dispatcher.dispatch(EmptyCoroutineContext, ::drain)
+      dispatcher.dispatch(EmptyCoroutineContext, Runnable { drain() })
       check(!disposed.load())
     }
   }

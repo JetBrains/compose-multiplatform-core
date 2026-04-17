@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,30 +18,36 @@ package androidx.compose.ui.kdt
 
 import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Composition
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.platform.GlobalSnapshotManager
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.WindowDecoration
-import androidx.compose.ui.window.WindowPlacement
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.io.files.Path
-import noria.currentNoriaContext
 import noria.impl.NoriaState
 import noria.lambda
-import noria.ui.core.WindowData
 
 interface WindowScope {
     val application: Application
@@ -85,18 +91,18 @@ interface Window {
     @MainThread
     fun requestFocusAndBringToFront()
 
-    @ExperimentalComposeUiApi
-    val decoration: WindowDecoration
+//    @ExperimentalComposeUiApi
+//    val decoration: WindowDecoration
 
-    @MainThread
-    @ExperimentalComposeUiApi
-    fun requestDecoration(vararg decorations: WindowDecoration)
+//    @MainThread
+//    @ExperimentalComposeUiApi
+//    fun requestDecoration(vararg decorations: WindowDecoration)
 
     val customTitleBarInsets: Pair<Dp, Dp>?
 
-    @ExperimentalComposeUiApi
-    val customTitleBarLayout: Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>>?
-        get() = null
+//    @ExperimentalComposeUiApi
+//    val customTitleBarLayout: Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>>?
+//        get() = null
 
     val systemTheme: SystemTheme
 
@@ -105,10 +111,10 @@ interface Window {
 
     @MainThread
     fun requestMinimized(minimized: Boolean)
-    val placement: WindowPlacement
+//    val placement: WindowPlacement
 
-    @MainThread
-    fun requestPlacement(placement: WindowPlacement)
+//    @MainThread
+//    fun requestPlacement(placement: WindowPlacement)
 
     @MainThread
     fun showOpenSingleDialog(
@@ -168,15 +174,15 @@ interface Window {
         dispose()
     }
 
-    @MainThread
-    fun requestTitleBarDoubleClickAction(pointerEvent: PointerEvent) {
-        when (placement) {
-            WindowPlacement.Floating, WindowPlacement.Fullscreen -> {
-                requestPlacement(WindowPlacement.Maximized)
-            }
-            WindowPlacement.Maximized -> requestPlacement(WindowPlacement.Floating)
-        }
-    }
+//    @MainThread
+//    fun requestTitleBarDoubleClickAction(pointerEvent: PointerEvent) {
+//        when (placement) {
+//            WindowPlacement.Floating, WindowPlacement.Fullscreen -> {
+//                requestPlacement(WindowPlacement.Maximized)
+//            }
+//            WindowPlacement.Maximized -> requestPlacement(WindowPlacement.Floating)
+//        }
+//    }
 
     @MainThread
     fun requestTitleBarTertiaryClickAction(pointerEvent: PointerEvent) {}
@@ -198,7 +204,8 @@ interface Window {
     )
 
     @Composable
-    fun Content(onLayout: (WindowData) -> Unit)
+    fun Content(onLayout: () -> Unit)
+//    fun Content(onLayout: (WindowData) -> Unit)
 }
 
 interface PositionAwareWindow : Window {
@@ -251,7 +258,8 @@ fun Window(
     configure: Window.() -> Unit = {},
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
-    onLayout: (WindowData) -> Unit = {},
+//    onLayout: (WindowData) -> Unit = {},
+    onLayout: () -> Unit = {},
     content: @Composable WindowScope.() -> Unit,
 ) {
     val currentOnCloseRequest by rememberUpdatedState(onCloseRequest)
@@ -290,7 +298,8 @@ fun Window(
     create: () -> Window,
     dispose: (Window) -> Unit,
     update: (Window) -> Unit,
-    onLayout: (WindowData) -> Unit,
+//    onLayout: (WindowData) -> Unit,
+    onLayout: () -> Unit,
     content: @Composable WindowScope.() -> Unit,
 ) {
     //    val compositionLocalContext by rememberUpdatedState(currentCompositionLocalContext)
