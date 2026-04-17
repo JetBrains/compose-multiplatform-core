@@ -33,7 +33,6 @@ import androidx.compose.ui.draganddrop.DragAndDropTransferAction
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.InputModeManagerImpl
-import androidx.compose.ui.input.pointer.PointerIconService
 import androidx.compose.ui.kdt.Application
 import androidx.compose.ui.kdt.IconDecoratedApplication
 import androidx.compose.ui.kdt.LightweightWindowId
@@ -61,7 +60,7 @@ import fleet.reporting.shared.tracing.withCurrentSpan
 import fleet.util.async.Resource
 import fleet.util.async.resource
 import fleet.util.async.withSupervisor
-import fleet.util.logging.logger
+import androidx.compose.ui.kdt.logging.logger
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.atomics.AtomicReference
