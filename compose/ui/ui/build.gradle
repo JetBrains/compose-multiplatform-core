@@ -73,6 +73,7 @@ androidXMultiplatform {
     sourceSets {
         def composeVersion = project.findProperty('artifactRedirection.version.androidx.compose')
         commonMain.dependencies {
+            implementation(libs.kotlinSerializationJson)
             implementation(libs.kotlinCoroutinesCore)
             implementation(libs.kotlinxIo)
             api("androidx.annotation:annotation:1.9.1")
@@ -208,7 +209,6 @@ androidXMultiplatform {
                 implementation(libs.atomicFu)
 
                 implementation(libs.kotlinSerializationCore)
-                implementation(libs.kotlinSerializationJson)
 
                 implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
                 implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")

@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.kdt.headless
+package androidx.compose.ui.kdt
 
-import androidx.compose.ui.platform.UriHandler
+import kotlin.jvm.JvmInline
 
-class HeadlessUriHandler : UriHandler {
-    override fun openUri(uri: String) {
-        // No-op in headless mode.
-    }
-}
+@JvmInline
+value class LightweightWindowId(val value: Long)

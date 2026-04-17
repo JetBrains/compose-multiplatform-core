@@ -53,7 +53,7 @@ interface Clipboard {
      * @param clipEntry Platform specific clip object that either holds data or links to it. Pass
      *   null to clear the clipboard.
      */
-    suspend fun setClipEntry(clipEntry: ClipEntry)
+    suspend fun setClipEntry(clipEntry: ClipEntry?)
 
     /**
      * Returns Primary selection clipboard content
@@ -76,18 +76,5 @@ interface Clipboard {
     suspend fun setSystemSelection(text: String?) {}
 
     /** Returns the native clipboard that exposes the full functionality of platform clipboard. */
-    val nativeClipboard: Any
-}
-
-/** Platform specific protocol that expresses an item in the native Clipboard. */
-class ClipEntry(val nativeClipEntry: Any) {
-
-    /**
-     * Returns a [ClipMetadata] which describes the contents of this [ClipEntry]. This is an ideal
-     * way to check whether to accept or reject what may be pasted from the clipboard without
-     * explicitly reading the content.
-     *
-     * Calling this function does not trigger any content access warnings on any platform.
-     */
-    //    val clipMetadata: ClipMetadata
+    val nativeClipboard: NativeClipboard
 }

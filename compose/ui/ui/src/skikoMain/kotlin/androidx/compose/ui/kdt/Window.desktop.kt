@@ -18,45 +18,33 @@ package androidx.compose.ui.kdt
 
 import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Composition
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.RememberObserver
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerEvent
-import androidx.compose.ui.platform.GlobalSnapshotManager
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.io.files.Path
-import noria.impl.NoriaState
-import noria.lambda
 
 interface WindowScope {
     val application: Application
         get() = Application.current
     val window: Window
 }
-
-@kotlin.jvm.JvmInline
-value class LightweightWindowId(val value: Long)
 
 interface Window {
     val id: LightweightWindowId
@@ -198,14 +186,11 @@ interface Window {
     fun setContent(
         onPreviewKeyEvent: (KeyEvent) -> Boolean,
         onKeyEvent: (KeyEvent) -> Boolean,
-        // todo[unterhofer] Replace this with a Composer or something
-        noriaState: NoriaState?,
         content: @Composable WindowScope.() -> Unit,
     )
 
     @Composable
-    fun Content(onLayout: () -> Unit)
-//    fun Content(onLayout: (WindowData) -> Unit)
+    fun Content(onLayout: (LightweightWindowId) -> Unit)
 }
 
 interface PositionAwareWindow : Window {
@@ -254,15 +239,14 @@ interface IconDecoratedWindow : Window {
 @OptIn(InternalComposeUiApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun Window(
-    onCloseRequest: () -> Unit,
+    onCloseRequested: () -> Unit,
     configure: Window.() -> Unit = {},
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
-//    onLayout: (WindowData) -> Unit = {},
-    onLayout: () -> Unit = {},
+    onLayout: (LightweightWindowId) -> Unit = {},
     content: @Composable WindowScope.() -> Unit,
 ) {
-    val currentOnCloseRequest by rememberUpdatedState(onCloseRequest)
+    val currentOnCloseRequest by rememberUpdatedState(onCloseRequested)
     val application = Application.current
     val scene = LocalScene.current
     val window = remember {
@@ -284,9 +268,15 @@ fun Window(
         }
     }.window
 
-    lambda { window.configure() }
+    SideEffect { window.configure() }
 
-    window.setContent(onPreviewKeyEvent, onKeyEvent, currentNoriaContext.noriaState, content)
+    // Keep the composition — and therefore the host Recomposer — alive while the window is live.
+    // setContent must also happen inside a LaunchedEffect so that the suspending child coroutine
+    // can await cancellation until the window is removed from the composition.
+    LaunchedEffect(window) {
+        window.setContent(onPreviewKeyEvent, onKeyEvent, content)
+        awaitCancellation()
+    }
 
     window.Content(onLayout)
 }
@@ -299,28 +289,19 @@ fun Window(
     dispose: (Window) -> Unit,
     update: (Window) -> Unit,
 //    onLayout: (WindowData) -> Unit,
-    onLayout: () -> Unit,
+    onLayout: (LightweightWindowId) -> Unit,
     content: @Composable WindowScope.() -> Unit,
 ) {
-    //    val compositionLocalContext by rememberUpdatedState(currentCompositionLocalContext)
-    //    val windowExceptionHandlerFactory by rememberUpdatedState(
-    //        LocalWindowExceptionHandlerFactory.current
-    //    )
-    //    val parentPlatformContext = LocalComposeSceneContext.current?.platformContext
-    //    val layoutDirection = LocalLayoutDirection.current
-    val noriaState = currentNoriaContext.noriaState
-    val window = remember { create() }.apply {
-        //            this.rootForTestListener = parentPlatformContext?.rootForTestListener
-        //            this.compositionLocalContext = compositionLocalContext
-        //            this.exceptionHandler = windowExceptionHandlerFactory.exceptionHandler(this)
-        setContent(onPreviewKeyEvent, onKeyEvent, noriaState, content)
+    val window = remember { create() }
+    SideEffect {
+        window.setContent(onPreviewKeyEvent, onKeyEvent, content)
     }
     DisposableEffect(window) {
         onDispose {
             dispose(window)
         }
     }
-    lambda {
+    SideEffect {
         update(window)
     }
     window.Content(onLayout)

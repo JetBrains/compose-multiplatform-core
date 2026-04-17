@@ -43,6 +43,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.TextInputContext
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
@@ -171,6 +172,10 @@ val LocalLocale: CompositionLocal<Locale> = compositionLocalWithComputedDefaultO
 /** The CompositionLocal to provide communication with platform text input service. */
 @Deprecated("Use PlatformTextInputModifierNode instead.")
 val LocalTextInputService = staticCompositionLocalOf<TextInputService?> { null }
+
+val LocalTextInputContext = staticCompositionLocalOf<TextInputContext?> { null }
+
+val LocalFileManager = staticCompositionLocalOf<FileManager?> { null }
 
 /**
  * The [CompositionLocal] to provide a [SoftwareKeyboardController] that can control the current

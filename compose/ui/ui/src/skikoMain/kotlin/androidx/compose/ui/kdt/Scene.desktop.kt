@@ -1,6 +1,21 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package androidx.compose.ui.kdt
 
-import androidx.annotation.MainThread
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
 import kotlin.contracts.ExperimentalContracts
@@ -12,20 +27,11 @@ import kotlinx.coroutines.CoroutineScope
 // TODO[wojciech.krystyniak] This should be internal, but we need it for TestWindow
 class Scene<T> /* internal */ constructor(
     internal val coroutineScope: CoroutineScope,
-    private val prepareMainThread: () -> T,
-    private val restoreMainThread: (T) -> Unit,
-    internal val reconcile: () -> Unit,
 ) {
     @OptIn(ExperimentalContracts::class)
-    @MainThread
-    internal inline fun <T> withPreparedMainThread(block: () -> T): T {
+    inline fun <R> withPreparedMainThread(block: () -> R): R {
         contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
-        val previousMainThreadState = prepareMainThread()
-        try {
-            return block()
-        } finally {
-            restoreMainThread(previousMainThreadState)
-        }
+        return block()
     }
 }
 
@@ -34,11 +40,3 @@ class Scene<T> /* internal */ constructor(
 }
 
 val LocalScene: CompositionLocal<Scene<*>> = ProvidableLocalScene
-
-//internal data class SceneContextElement(val scene: Scene<*>) : CoroutineContext.Element {
-//    override val key: CoroutineContext.Key<*> get() = SceneContextElement
-//
-//    companion object : CoroutineContext.Key<SceneContextElement>
-//}
-//
-//internal suspend fun currentScene(): Scene<*>? = currentCoroutineContext()[SceneContextElement]?.scene

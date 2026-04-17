@@ -46,11 +46,9 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CompletableJob
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import noria.ui.loop.RenderLoop
 import org.jetbrains.desktop.macos.AppMenuManager
 import org.jetbrains.desktop.macos.AppMenuStructure
 import org.jetbrains.desktop.macos.Appearance
@@ -132,9 +130,11 @@ object MacOsApplication : Application,
         libraryFolderPath: Path,
         logFolderPath: Path,
     ) {
-        // todo[unterhofer] Remove this as soon as we don't rely on this property anywhere anymore
-        System.setProperty("skiko.library.path", libraryFolderPath.toString())
+        // Do NOT force `skiko.library.path` to the KDT-extracted folder — skiko only ships its own
+        // native dylib inside its runtime jar on the classpath, not inside `kdt-extracted`.
         val logFilePath = logFolderPath.resolve("MacOsApplication").resolve("MacOsApplication.log")
+        // Native logger init fails if the parent directory doesn't exist yet, so make sure it's there.
+        java.nio.file.Files.createDirectories(logFilePath.parent)
         KotlinDesktopToolkit.init(libraryFolderPath, logFilePath)
         didFinishLaunchingCompletableJob = Job()
         eventLoopThread = startEventLoopThread()
@@ -323,7 +323,7 @@ object MacOsApplication : Application,
 
     val notificationCenter: MacOsNotificationCenter = MacOsNotificationCenter(this)
 
-    val sound: Sound = Sound
+//    val sound: Sound = Sound
 
     private val fontFamilyResolver: FontFamily.Resolver by lazy { createFontFamilyResolver() }
 
@@ -360,12 +360,11 @@ object MacOsApplication : Application,
     override val nativeApplication: org.jetbrains.desktop.macos.Application
         get() = org.jetbrains.desktop.macos.Application
 
-    private val renderLoops = mutableListOf<RenderLoop>()
     override suspend fun stopAndJoin() {
         try {
             resetState()
         } finally {
-            withContext(Dispatchers.Main.immediate) {
+            withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
                 nativeApplication.stopEventLoop()
             }
             eventLoopThread?.join()
@@ -420,16 +419,13 @@ object MacOsApplication : Application,
     }
 
     private suspend fun resetState() {
-        withContext(Dispatchers.Main.immediate) {
+        withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
             windows.values.toList().forEach { it.dispose() }
             reusableNativeWindowResources.values.forEach { (nativeWindow, viewContext) ->
                 nativeWindow.close()
                 desktopGpuContext.destroyMetalViewContext(viewContext)
             }
             reusableNativeWindowResources.clear()
-            while (renderLoops.isNotEmpty()) {
-                renderLoops.first().stopAndJoin()
-            }
             quitHandlers.clear()
         }
     }
@@ -437,16 +433,8 @@ object MacOsApplication : Application,
     override var systemTheme: SystemTheme by mutableStateOf(SystemTheme.Unknown)
         private set
 
-    private var reconcileInProgress = false
-    internal fun withoutReentrancy(block: () -> Unit) {
-        if (!reconcileInProgress) {
-            reconcileInProgress = true
-            try {
-                block()
-            } finally {
-                reconcileInProgress = false
-            }
-        }
+    override fun close() {
+        runBlocking { stopAndJoin() }
     }
 }
 

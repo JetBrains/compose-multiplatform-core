@@ -2,7 +2,6 @@ package androidx.compose.ui.kdt.macos
 
 import androidx.compose.ui.kdt.LightweightWindowId
 import androidx.compose.ui.kdt.logging.logger
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.jetbrains.desktop.macos.AuthorizationStatus
@@ -55,7 +54,7 @@ class MacOsNotificationCenter(private val application: MacOsApplication) {
     }
 
     suspend fun isNotificationsAllowed(): Boolean {
-        return withContext(Dispatchers.Main.immediate) {
+        return withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
             when (getAuthorizationStatus()) {
                 AuthorizationStatus.NotDetermined -> {
                     requestAuthorization()
@@ -152,7 +151,7 @@ class MacOsNotificationCenter(private val application: MacOsApplication) {
         sound: Sound,
         vararg actions: Action,
     ): NotificationId? {
-        return withContext(Dispatchers.Main.immediate) {
+        return withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
             if (isNotificationsAllowed().not()) return@withContext null
 
             val categoryId = cachedCategoryId(actions)
@@ -180,7 +179,7 @@ class MacOsNotificationCenter(private val application: MacOsApplication) {
     }
 
     suspend fun removeNotification(notificationId: NotificationId) {
-        withContext(Dispatchers.Main.immediate) {
+        withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
             actionCallbacks.remove(notificationId)
             NotificationCenter.removeNotification(NotificationCenter.NotificationId(notificationId.value))
         }
