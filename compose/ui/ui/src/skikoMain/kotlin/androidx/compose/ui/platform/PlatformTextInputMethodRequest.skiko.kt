@@ -20,6 +20,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
@@ -95,6 +96,24 @@ actual interface PlatformTextInputMethodRequest {
      */
     @ExperimentalComposeUiApi
     val unclippedTextOffsetInRoot: () -> Offset?
+
+    /**
+     * For an input [TextRange], returns the first on-screen sub-range and its bounding [Rect] in
+     * root coordinates. Used by platform IMEs (e.g. macOS `firstRectForCharacterRange`) to position
+     * candidate / reconversion windows next to the requested text.
+     *
+     * If the requested range spans multiple lines, implementations should return the portion on
+     * the first visible line.
+     */
+    @ExperimentalComposeUiApi
+    val firstTextRangeAndRectInRoot: (TextRange) -> Pair<TextRange, Rect>
+
+    /**
+     * Returns the character index closest to [offset] in root coordinates. Used by platform IMEs
+     * (e.g. macOS `characterIndexForPoint`) for hit-testing screen locations against the text.
+     */
+    @ExperimentalComposeUiApi
+    val characterIndexAtOffsetInRoot: (Offset) -> Int
 
     /**
      * Allows the text input service to edit the text.
