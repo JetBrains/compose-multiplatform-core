@@ -32,6 +32,7 @@ import java.awt.Window
 import javax.swing.JMenuBar
 
 // TODO(demin): support focus management
+//   https://youtrack.jetbrains.com/issue/CMP-10092/Window-API.-Support-focus-management
 /**
  * Composes platform window in the current composition. When [Window] enters the composition,
  * a new platform window will be created and receive focus. When [Window] leaves the composition,
