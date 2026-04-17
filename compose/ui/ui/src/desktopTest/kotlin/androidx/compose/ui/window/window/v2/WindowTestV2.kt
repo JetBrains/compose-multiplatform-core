@@ -46,6 +46,7 @@ import androidx.compose.ui.window.window.toSize
 import androidx.compose.ui.window.v2.Window
 import androidx.compose.ui.window.v2.WindowBoundsProvider
 import androidx.compose.ui.window.v2.WindowIntrinsicSize
+import androidx.compose.ui.window.v2.WindowPositionProvider
 import androidx.compose.ui.window.v2.WindowSizeProvider
 import androidx.compose.ui.window.v2.rememberWindowStateWithBounds
 import androidx.compose.ui.window.v2.WindowState
@@ -65,6 +66,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import org.junit.Assume.assumeFalse
@@ -664,11 +666,10 @@ class WindowTestV2 {
         lateinit var innerWindow: Window
         var showInnerWindow by mutableStateOf(false)
         val windowSize = DpSize(800.dp, 800.dp)
-        launchTestWindowV2Application(
-            state = WindowState(
-                initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Fixed(windowSize))
-            ),
-        ) {
+        val outerWindowState = WindowState(
+            initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Fixed(windowSize))
+        )
+        launchTestWindowV2Application(outerWindowState) {
             outerWindow = this.window
             Box(Modifier.fillMaxSize().background(Color.Black))
 
@@ -676,8 +677,10 @@ class WindowTestV2 {
                 Window(
                     onCloseRequest = {},
                     state = rememberWindowState(
-                        initialBoundsProvider = WindowBoundsProvider(WindowSizeProvider.Fixed(windowSize))
-                    ),
+                        initialBoundsProvider = WindowBoundsProvider.Absolute(
+                            outerWindowState.bounds
+                        )
+                    )
                 ) {
                     innerWindow = this.window
                     Box(Modifier.fillMaxSize().background(Color.Black))
@@ -691,7 +694,6 @@ class WindowTestV2 {
 
         showInnerWindow = true
         awaitIdle()
-        delay(1000)
 
         var nonBlackPixelDetected: java.awt.Color? = null
         val testLocation = innerWindow.bounds.let {
@@ -709,9 +711,10 @@ class WindowTestV2 {
             }
         }
 
-        innerWindow.dispose()
-        awaitIdle()
-        delay(1000)
+        delay(500.milliseconds)
+        showInnerWindow = false
+        delay(500.milliseconds)
+        assertFalse(innerWindow.isVisible)
 
         stopThread.getAndSet(true)
         t.join()
