@@ -355,25 +355,30 @@ fun interface WindowSizeProvider {
         }
 
         /**
-         * Sets the width of the window to its intrinsic width at the given [height].
-         *
-         * The height of the window is set to [height].
-         *
-         * @param intrinsicWidth The intrinsic width to measure.
-         * @param height The height of the window.
-         *
-         * @see [IntrinsicMeasurable.minIntrinsicWidth]
-         * @see [IntrinsicMeasurable.maxIntrinsicWidth]
+         * Sets one dimension of the window to its intrinsic size at the given [otherDimensionSize]
+         * on the other dimension.
          */
-        private fun IntrinsicWidth(
-            intrinsicWidth: WindowIntrinsicSize,
-            height: Dp
+        private fun IntrinsicDimension(
+            isWidth: Boolean,
+            intrinsicSize: WindowIntrinsicSize,
+            otherDimensionSize: Dp,
+            otherDimensionName: String,
         ): WindowSizeProvider {
-            height.requireReal("height")
+            otherDimensionSize.requireReal(otherDimensionName)
             return WindowSizeProvider {
+                val otherDimensionPx = otherDimensionSize.roundToPx()
+                val width: Dp
+                val height: Dp
+                if (isWidth) {
+                    width = intrinsicSize.widthOf(windowContent, otherDimensionPx).toDp()
+                    height = otherDimensionSize
+                } else {
+                    width = otherDimensionSize
+                    height = intrinsicSize.heightOf(windowContent, otherDimensionPx).toDp()
+                }
                 contentToWindowSize(
                     DpSize(
-                        width = intrinsicWidth.widthOf(windowContent, height.roundToPx()).toDp(),
+                        width = width,
                         height = height
                     )
                 )
@@ -389,7 +394,12 @@ fun interface WindowSizeProvider {
          *
          * @see [IntrinsicMeasurable.minIntrinsicWidth]
          */
-        fun MinIntrinsicWidth(height: Dp) = IntrinsicWidth(WindowIntrinsicSize.Min, height)
+        fun MinIntrinsicWidth(height: Dp) = IntrinsicDimension(
+            isWidth = true,
+            intrinsicSize = WindowIntrinsicSize.Min,
+            otherDimensionSize = height,
+            otherDimensionName = "height"
+        )
 
         /**
          * Sets the width of the window to its maximum intrinsic width at the given [height].
@@ -400,32 +410,12 @@ fun interface WindowSizeProvider {
          *
          * @see [IntrinsicMeasurable.maxIntrinsicWidth]
          */
-        fun MaxIntrinsicWidth(height: Dp) = IntrinsicWidth(WindowIntrinsicSize.Max, height)
-
-        /**
-         * Sets the height of the window to its intrinsic height at the given [width].
-         *
-         * The width of the window is set to [width].
-         *
-         * @param intrinsicHeight The intrinsic height to measure.
-         * @param width The width of the window.
-         *
-         * @see [IntrinsicMeasurable.minIntrinsicHeight]
-         */
-        private fun IntrinsicHeight(
-            intrinsicHeight: WindowIntrinsicSize,
-            width: Dp
-        ): WindowSizeProvider {
-            width.requireReal("width")
-            return WindowSizeProvider {
-                contentToWindowSize(
-                    DpSize(
-                        width = width,
-                        height = intrinsicHeight.heightOf(windowContent, width.roundToPx()).toDp(),
-                    )
-                )
-            }
-        }
+        fun MaxIntrinsicWidth(height: Dp) = IntrinsicDimension(
+            isWidth = true,
+            intrinsicSize = WindowIntrinsicSize.Max,
+            otherDimensionSize = height,
+            otherDimensionName = "height"
+        )
 
         /**
          * Sets the height of the window to its minimum intrinsic height at the given [width].
@@ -436,7 +426,12 @@ fun interface WindowSizeProvider {
          *
          * @see [IntrinsicMeasurable.minIntrinsicHeight]
          */
-        fun MinIntrinsicHeight(width: Dp) = IntrinsicHeight(WindowIntrinsicSize.Min, width)
+        fun MinIntrinsicHeight(width: Dp) = IntrinsicDimension(
+            isWidth = false,
+            intrinsicSize = WindowIntrinsicSize.Min,
+            otherDimensionSize = width,
+            otherDimensionName = "width"
+        )
 
         /**
          * Sets the height of the window to its maximum intrinsic height at the given [width].
@@ -447,7 +442,47 @@ fun interface WindowSizeProvider {
          *
          * @see [IntrinsicMeasurable.maxIntrinsicHeight]
          */
-        fun MaxIntrinsicHeight(width: Dp) = IntrinsicHeight(WindowIntrinsicSize.Max, width)
+        fun MaxIntrinsicHeight(width: Dp) = IntrinsicDimension(
+            isWidth = false,
+            intrinsicSize = WindowIntrinsicSize.Max,
+            otherDimensionSize = width,
+            otherDimensionName = "width"
+        )
+
+        /**
+         * Sets the primary dimension of the window to its intrinsic size, unconstrained at the
+         * secondary dimension, and the secondary dimension to its intrinsic size at the size of
+         * the primary dimension.
+         *
+         * This is useful for cases where the window is fixed on one dimension, but the one is
+         * flexible.
+         *
+         * @param isWidth Whether the primary dimension is width.
+         * @param intrinsicPrimary The intrinsic width to measure.
+         * @param intrinsicSecondary The intrinsic height to measure.
+         */
+        private fun IntrinsicDimensionWithMatchingOtherDimension(
+            isWidth: Boolean,
+            intrinsicPrimary: WindowIntrinsicSize,
+            intrinsicSecondary: WindowIntrinsicSize,
+        ) = WindowSizeProvider {
+            val availableScreenBounds = screen.availableBounds
+            val width: Int
+            val height: Int
+            if (isWidth) {
+                width = intrinsicPrimary.widthOf(windowContent, availableScreenBounds.height.roundToPx())
+                height = intrinsicSecondary.heightOf(windowContent, width)
+            } else {
+                height = intrinsicPrimary.heightOf(windowContent, availableScreenBounds.width.roundToPx())
+                width = intrinsicSecondary.widthOf(windowContent, height)
+            }
+            contentToWindowSize(
+                DpSize(
+                    width = width.toDp(),
+                    height = height.toDp()
+                )
+            )
+        }
 
         /**
          * Sets the width of the window to its intrinsic width at unconstrained height, and
@@ -461,16 +496,11 @@ fun interface WindowSizeProvider {
         fun IntrinsicWidthWithMatchingIntrinsicHeight(
             intrinsicWidth: WindowIntrinsicSize,
             intrinsicHeight: WindowIntrinsicSize,
-        ) = WindowSizeProvider {
-            val width = intrinsicWidth.widthOf(windowContent, screen.availableBounds.height.roundToPx())
-            val height = intrinsicHeight.heightOf(windowContent, width)
-            contentToWindowSize(
-                DpSize(
-                    width = width.toDp(),
-                    height = height.toDp()
-                )
-            )
-        }
+        ): WindowSizeProvider = IntrinsicDimensionWithMatchingOtherDimension(
+            isWidth = true,
+            intrinsicPrimary = intrinsicWidth,
+            intrinsicSecondary = intrinsicHeight,
+        )
 
         /**
          * Sets the height of the window to its intrinsic height at unconstrained width, and
@@ -484,16 +514,11 @@ fun interface WindowSizeProvider {
         fun IntrinsicHeightWithMatchingIntrinsicWidth(
             intrinsicHeight: WindowIntrinsicSize,
             intrinsicWidth: WindowIntrinsicSize,
-        ) = WindowSizeProvider {
-            val height = intrinsicHeight.heightOf(windowContent, screen.availableBounds.width.roundToPx())
-            val width = intrinsicWidth.widthOf(windowContent, height)
-            contentToWindowSize(
-                DpSize(
-                    width = width.toDp(),
-                    height = height.toDp()
-                )
-            )
-        }
+        ) = IntrinsicDimensionWithMatchingOtherDimension(
+            isWidth = false,
+            intrinsicPrimary = intrinsicHeight,
+            intrinsicSecondary = intrinsicWidth,
+        )
     }
 }
 
