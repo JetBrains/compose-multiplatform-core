@@ -17,20 +17,26 @@
 package androidx.compose.ui.kdt
 
 import androidx.annotation.MainThread
-import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Composition
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MonotonicFrameClock
+import androidx.compose.runtime.Recomposer
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import kotlinx.io.files.Path
-import noria.ui.loop.RenderLoop
+import androidx.compose.runtime.Applier
+import kotlinx.coroutines.withContext
 
 suspend fun awaitApplication(
     identifier: String,
@@ -49,12 +55,69 @@ suspend fun awaitApplication(
     val application = Application.current
     application.awaitWhenReady()
     coroutineScope {
-        application.run {
-            launchScene(content)
-        }
+        launchScene(content)
         terminationSignal.join()
+        // Cancel the composition/recomposition coroutines so this function returns.
+        this.coroutineContext.cancel()
     }
     application.stopAndJoin()
+}
+
+internal suspend fun launchScene(content: @Composable () -> Unit) {
+    withContext(getComposeDispatcher() + YieldFrameClock) {
+        GlobalSnapshotManager.ensureStarted()
+        val recomposer = Recomposer(coroutineContext)
+        val scene = Scene<Unit>(coroutineScope = this)
+
+        launch {
+            recomposer.runRecomposeAndApplyChanges()
+        }
+
+        launch {
+            val composition = Composition(ApplicationApplier(), recomposer)
+            try {
+                composition.setContent {
+                    CompositionLocalProvider(ProvidableLocalScene provides scene) {
+                        content()
+                    }
+                }
+                recomposer.close()
+                recomposer.join()
+            } finally {
+                composition.dispose()
+            }
+        }
+    }
+}
+
+@OptIn(kotlin.time.ExperimentalTime::class)
+internal object YieldFrameClock : MonotonicFrameClock {
+    private val origin = kotlin.time.TimeSource.Monotonic.markNow()
+
+    override suspend fun <R> withFrameNanos(
+        onFrame: (frameTimeNanos: Long) -> R
+    ): R {
+        // We call `yield` to avoid blocking UI thread. If we don't call this then application
+        // can be frozen for the user in some cases as it will not receive any input events.
+        yield()
+        return onFrame(origin.elapsedNow().inWholeNanoseconds)
+    }
+}
+
+internal class ApplicationApplier : Applier<Any> {
+    override val current: Any = Unit
+    override fun down(node: Any) = Unit
+    override fun up() = Unit
+    override fun insertTopDown(index: Int, instance: Any) {
+        check(instance is Unit) { "Composable content may not be added directly into the Application scope" }
+    }
+    override fun insertBottomUp(index: Int, instance: Any) {
+        check(instance is Unit) { "Composable content may not be added directly into the Application scope" }
+    }
+    override fun remove(index: Int, count: Int) = Unit
+    override fun move(from: Int, to: Int, count: Int) = Unit
+    override fun clear() = Unit
+    override fun onEndChanges() = Unit
 }
 
 expect fun initializeApplication(
@@ -76,11 +139,17 @@ internal expect fun deactivateApplication(application: Application)
 
 internal expect fun removeApplication(application: Application)
 
-interface Application : Clipboard, UriHandler {
+interface Application : Clipboard, UriHandler, AutoCloseable {
     companion object {
         val current: Application
             get() = currentApplication()
     }
+
+    /**
+     * [AutoCloseable] hook; synchronously drains the application main loop via [stopAndJoin].
+     * This lets callers write `initApplication().use { application -> runApplication(application) { … } }`.
+     */
+    override fun close()
 
     val systemTheme: SystemTheme
     val dragThreshold: Dp

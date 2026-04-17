@@ -21,40 +21,32 @@
 package androidx.compose.ui.kdt.macos
 
 import androidx.annotation.MainThread
-import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.SnapshotMutableStateImpl
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.kdt.draganddrop.DragAndDropImage
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
-import androidx.compose.ui.draganddrop.LocalDragAndDropManager
-import androidx.compose.ui.focus.FocusOwnerImpl
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.renderWithLayerScope
-import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.InternalKeyEvent
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEvent
-import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.kdt.InteractiveMoveInitiator
 import androidx.compose.ui.kdt.KdtDragAndDropManager
 import androidx.compose.ui.kdt.KdtDragAndDropTransferable
@@ -66,26 +58,22 @@ import androidx.compose.ui.kdt.WindowScope
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.platform.DefaultTextToolbar
 import androidx.compose.ui.platform.InterceptPlatformTextInput
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalTextInputContext
 import androidx.compose.ui.platform.LocalTextToolbar
-import androidx.compose.ui.platform.LocalViewConfiguration
-import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputInterceptor
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
+import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.text.input.TextInputContext
-import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -95,21 +83,14 @@ import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.kdt.logging.logger
-import androidx.compose.ui.node.DragAndDropOwner
+import androidx.compose.ui.scene.CanvasLayersComposeScene
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.enableSavedStateHandles
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.TimeSource
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
-import noria.CallbackInterceptorCompositionLocal
-import noria.ID
-import noria.activeCell
-import noria.cell
-import noria.impl.NoriaState
-import noria.memo
-import noria.ui.core.LocalWindow
-import noria.ui.core.WindowData
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.desktop.macos.AppMenuManager
 import org.jetbrains.desktop.macos.Appearance
@@ -130,7 +111,6 @@ import org.jetbrains.desktop.macos.TextDirection
 import org.jetbrains.desktop.macos.TextInputClient
 import org.jetbrains.desktop.macos.TitlebarConfiguration
 import org.jetbrains.desktop.macos.WindowEvent
-import org.jetbrains.skia.Canvas
 import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Rect
 
@@ -157,27 +137,9 @@ class MacOsWindow internal constructor(
     internal var isFrameRequested = false
 
     private val pictureRecorder = PictureRecorder()
-    private var drawContent: (Canvas.() -> Unit)? = null
     private var displayLink: DisplayLink? = null
     private val displayLinkFrameStartTimeMark: AtomicReference<TimeMarkWrapper?> =
         AtomicReference(null)
-
-    init {
-        nativeWindow.registerForDraggedTypes(
-            listOf(
-                Pasteboard.FILE_URL_TYPE,
-                UniformTypeIdentifiers.windowLocalDrag,
-            ),
-        )
-        nativeWindow.attachView(viewContext.view)
-        viewContext.onDisplayLayer = {
-            repaintSynchronously()
-        }
-        if (nativeWindow.isVisible) {
-            setupDisplayLink()
-        }
-        application.windows += id to this
-    }
 
     // todo[unterhofer] Make reactive
     override var title: String
@@ -283,7 +245,7 @@ class MacOsWindow internal constructor(
         }
     }
 
-    override fun requestPlacement(placement: WindowPlacement) {
+    fun requestPlacement(placement: WindowPlacement) {
         if (!isDisposed) {
             when (placement) {
                 WindowPlacement.Floating if nativeWindow.isMaximized -> nativeWindow.toggleMaximize()
@@ -324,11 +286,11 @@ class MacOsWindow internal constructor(
     }
 
     @ExperimentalComposeUiApi
-    override var decoration: WindowDecoration by mutableStateOf(WindowDecoration.Decorated)
+    var decoration: WindowDecoration by mutableStateOf(WindowDecoration.Decorated)
         private set
 
     @ExperimentalComposeUiApi
-    override fun requestDecoration(vararg decorations: WindowDecoration) {
+    fun requestDecoration(vararg decorations: WindowDecoration) {
         for (decoration in decorations) {
             if (decoration == this.decoration) break
             if (!decoration.isDecorated) continue // Not supported for now
@@ -382,7 +344,7 @@ class MacOsWindow internal constructor(
         else -> WindowPlacement.Floating
     }
 
-    override var placement: WindowPlacement by mutableStateOf(placement())
+    var placement: WindowPlacement by mutableStateOf(placement())
         private set
 
     override fun requestMinimized(minimized: Boolean) {
@@ -400,7 +362,6 @@ class MacOsWindow internal constructor(
         private set
 
     private var mouseOffset = DpOffset.Zero
-    private val dragAndDropOwner = DragAndDropOwner(KdtDragAndDropManager(this))
     internal var macOsDragAndDropManager: MacOsDragAndDropManager? = null
 
     override var screen: MacOsScreen by mutableStateOf(
@@ -428,24 +389,105 @@ class MacOsWindow internal constructor(
         override val isWindowFocused: Boolean
             get() = isFocused
 
-        override fun requestWindowFocus() {
-            nativeWindow.makeKeyAndOrderFront()
-        }
-
         @OptIn(InternalCoreApi::class)
         override val keyboardModifiers: PointerKeyboardModifiers
             get() = inputStateTracker.keyboardModifiers
 
         @ExperimentalComposeUiApi
         override val containerSize: IntSize
-            get() = density.run {
-                contentSize.run {
-                    IntSize(
-                        width.roundToPx(),
-                        height.roundToPx(),
+            get() = contentSizeInPx()
+    }
+
+    private fun contentSizeInPx(): IntSize = density.run {
+        IntSize(contentSize.width.roundToPx(), contentSize.height.roundToPx())
+    }
+
+    // ----- Compose scene wiring -----
+
+    private val positionCalculator = object {
+        fun screenToLocal(positionOnScreen: Offset): Offset {
+            return positionOnScreen - density().run {
+                nativeWindow.origin.run {
+                    Offset(
+                        x.dp.toPx(),
+                        y.dp.toPx(),
                     )
                 }
             }
+        }
+
+        fun localToScreen(localPosition: Offset): Offset {
+            return localPosition + density().run {
+                nativeWindow.origin.run {
+                    Offset(
+                        x.dp.toPx(),
+                        y.dp.toPx(),
+                    )
+                }
+            }
+        }
+    }
+
+    private val frameClock = BroadcastFrameClock { isFrameRequested = true }
+
+    private val architectureComponentsOwner = DefaultArchitectureComponentsOwner().apply {
+        enableSavedStateHandles()
+        setLifecycleState(Lifecycle.State.RESUMED)
+    }
+
+    private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty() {
+        override val windowInfo: WindowInfo
+            get() = this@MacOsWindow.windowInfo
+        override val viewConfiguration: ViewConfiguration
+            get() = this@MacOsWindow.viewConfiguration
+        override val inputModeManager: InputModeManager
+            get() = application.inputModeManager
+        override val architectureComponentsOwner = this@MacOsWindow.architectureComponentsOwner
+        override val textToolbar = DefaultTextToolbar()
+        override val dragAndDropManager: PlatformDragAndDropManager =
+            KdtDragAndDropManager(this@MacOsWindow)
+
+        override fun convertLocalToWindowPosition(localPosition: Offset): Offset =
+            calculatePositionInWindow(localPosition)
+        override fun convertWindowToLocalPosition(positionInWindow: Offset): Offset =
+            calculateLocalPosition(positionInWindow)
+        override fun convertLocalToScreenPosition(localPosition: Offset): Offset =
+            positionCalculator.localToScreen(calculatePositionInWindow(localPosition))
+        override fun convertScreenToLocalPosition(positionOnScreen: Offset): Offset =
+            calculateLocalPosition(positionCalculator.screenToLocal(positionOnScreen))
+    }
+
+    private val composeScene: ComposeScene = CanvasLayersComposeScene(
+        density = density,
+        layoutDirection = layoutDirection,
+        size = contentSizeInPx(),
+        coroutineContext = scene.coroutineScope.coroutineContext +
+            MacOsKdtMainDispatcher.INSTANCE.immediate +
+            frameClock,
+        platformContext = this@MacOsWindow.platformContext,
+        invalidate = { isFrameRequested = true },
+    )
+
+    init {
+        nativeWindow.registerForDraggedTypes(
+            listOf(
+                Pasteboard.FILE_URL_TYPE,
+                UniformTypeIdentifiers.windowLocalDrag,
+            ),
+        )
+        nativeWindow.attachView(viewContext.view)
+        viewContext.onDisplayLayer = {
+            repaintSynchronously()
+        }
+        macOsDragAndDropManager = MacOsDragAndDropManager(
+            { composeScene.rootDragAndDropNode },
+            density,
+        )
+        if (nativeWindow.isVisible) {
+            setupDisplayLink()
+        }
+        // Registration with the application event loop must happen after inputStateTracker is
+        // initialized; see the init block at the bottom of the class.
     }
 
     override fun showOpenSingleDialog(
@@ -480,7 +522,15 @@ class MacOsWindow internal constructor(
                 resolveAliases = resolvesAliases,
                 allowsMultipleSelections = false,
             ),
-        ).singleOrNullOrThrow()?.let { Path(it) }
+        ).let { results ->
+            when (results.size) {
+                0 -> null
+                1 -> results.single()
+                else -> throw IllegalStateException(
+                    "Open-single dialog returned ${results.size} results",
+                )
+            }
+        }?.let { Path(it) }
     }
 
     override fun showOpenMultipleDialog(
@@ -608,19 +658,9 @@ class MacOsWindow internal constructor(
                 close()
             }
             displayLink = null
-            val hadPendingFrame = isFrameRequested
             application.windows -= id
-            // If this was the last window in the scene and a frame was pending,
-            // schedule a reconcile as a replacement for the DisplayLink from here
-            if (hadPendingFrame && application.windows.values.none { it.scene == scene }) {
-                GrandCentralDispatch.dispatchOnMain(highPriority = false) {
-                    scene.withPreparedMainThread {
-                        application.withoutReentrancy {
-                            scene.reconcile()
-                        }
-                    }
-                }
-            }
+            composeScene.close()
+            architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
             if (id !in application.reusableNativeWindowResources) {
                 nativeWindow.close()
                 application.desktopGpuContext.destroyMetalViewContext(viewContext)
@@ -629,21 +669,24 @@ class MacOsWindow internal constructor(
         }
     }
 
-    override fun calculatePositionInWindow(localPosition: Offset): Offset {
+    fun calculatePositionInWindow(localPosition: Offset): Offset {
         return contentPosition() + localPosition
     }
 
-    override fun calculateLocalPosition(positionInWindow: Offset): Offset {
+    fun calculateLocalPosition(positionInWindow: Offset): Offset {
         return positionInWindow - contentPosition()
     }
 
     /**
      * Relative to window
      */
-    private fun contentPosition(): Offset = density().run {
+    private fun contentPosition(): Offset {
+        val d = density()
         val windowOrigin = nativeWindow.origin.toDpOffset()
         val contentOrigin = nativeWindow.contentOrigin.toDpOffset()
-        (contentOrigin - windowOrigin).toOffset()
+        val deltaX = contentOrigin.x - windowOrigin.x
+        val deltaY = contentOrigin.y - windowOrigin.y
+        return with(d) { Offset(deltaX.toPx(), deltaY.toPx()) }
     }
 
     private val textInputContext = object : TextInputContext {
@@ -710,175 +753,23 @@ class MacOsWindow internal constructor(
             }
         }
 
-    @OptIn(ExperimentalComposeUiApi::class, InternalCoreApi::class)
     @Composable
     @ApiStatus.Internal
-    override fun Content(onLayout: (WindowData) -> Unit) {
-//        val renderPerfMetrics = LocalRenderPerfMetrics.current
-
-        CompositionLocalProvider(
-            LocalSystemTheme provides systemTheme,
-            //        LocalAccessibilityManager provides owner.accessibilityManager,
-            //        LocalAutofill provides owner.autofill,
-            //        LocalAutofillTree provides owner.autofillTree,
-            LocalDensity provides density,
-            LocalFocusManager provides focusOwner,
-            //        @Suppress("DEPRECATION") LocalFontLoader
-            //            providesDefault @Suppress("DEPRECATION") owner.fontLoader,
-            LocalLayoutDirection provides layoutDirection,
-            //        LocalTextInputService provides owner.textInputService,
-            LocalTextInputContext provides textInputContext,
-            //        LocalPlatformTextInputPluginRegistry provides
-            // owner.platformTextInputPluginRegistry,
-            LocalTextToolbar provides remember { DefaultTextToolbar() },
-            LocalViewConfiguration provides viewConfiguration,
-            LocalWindowInfo provides windowInfo,
-            LocalWindow provides this,
-            LocalDragAndDropManager provides dragAndDropOwner,
-        ) {
-            InterceptPlatformTextInput(platformTextInputInterceptor) {
-                cell {
-                    withLayoutBuilderStack {
-                        val uiRootCell = cell {
-                            uiRoot(focusOwner.focusRoot) {
-                                Box(
-                                    Modifier.then(dragAndDropOwner.modifier),
-                                    propagateMinConstraints = true,
-                                ) {
-                                    val windowScope = remember(this@MacOsWindow) {
-                                        object : WindowScope {
-                                            override val window: Window
-                                                get() = this@MacOsWindow
-                                        }
-                                    }
-                                    contentState.value?.let { windowScope.it() }
-                                }
-                            }
-                        }
-
-                        val rootLayoutThunkCell = cell {
-                            val rootLayoutBuilder =
-                                uiRootCell.read().layoutBuilder ?: rememberEmptyLayoutBuilder()
-                            density.run {
-                                rootLayoutBuilder.measure(
-                                    Constraints.fixed(
-                                        contentSize.width.roundToPx(),
-                                        contentSize.height.roundToPx(),
-                                    ),
-                                )
-                            }
-                        }
-
-                        activeCell {
-                            //                            renderPerfMetrics.startLayout(window.windowId)
-                            latestRootLayoutNode = memo {
-                                LayoutScope(currentNoriaContext).run {
-                                    rootLayoutThunkCell.read()
-                                        .realize(
-                                            density.run {
-                                                IntRect(
-                                                    0,
-                                                    0,
-                                                    contentSize.width.roundToPx(),
-                                                    contentSize.height.roundToPx(),
-                                                )
-                                            },
-                                        )
-                                        .apply {
-                                            // todo[unterhofer] Activate this when there is time to fix the offenders
-                                            // check(overlays.read().isEmpty()) {
-                                            // "Overlays were emitted into a non-existent OverlayHost: ${overlays.read()}\nWrap the subtree in an OverlayHost for each key"
-                                            // }
-                                            node.place(IntOffset.Zero)
-                                        }.node
-                                }
-                            }.also {
-                                dragAndDropOwner.updateCoordinates(it.coordinates)
-                            }
-
-                            // todo[unterhofer] make this synchronous again once we have the new version of
-                            //  SuspendingPointerInputFilter:
-                            //  https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/input/pointer/SuspendingPointerInputFilter.kt;l=575
-                            /**
-                             * Send [PointerEventType.Enter] events to [LayoutNode]s which appeared under the
-                             * cursor, so that the user doesn't have to move their mouse to trigger hovering.
-                             * This has to run in a coroutine dispatched on the effect dispatcher because new
-                             * [SuspendingPointerInputFilter]s will schedule their blocks there as well, and
-                             * otherwise they won't be waiting for events yet.
-                             */
-                            rememberCoroutineScope().launch {
-                                inputStateTracker.sendPointerInputEventWithCurrentStateIfNecessary(
-                                    if (application.inputModeManager.inputMode == InputMode.Touch) {
-                                        PointerEventType.Move
-                                    } else {
-                                        PointerEventType.Exit
-                                    },
-                                )
-                            }
-
-                            //                            renderPerfMetrics.endLayout(window.windowId)
-
-                            onLayout(WindowData(id, uiRootCell.read(), latestRootLayoutNode!!))
-
-                            val callbackInterceptor = CallbackInterceptorCompositionLocal.current
-                            DisposableEffect(
-                                dragAndDropOwner,
-                                density,
-                                callbackInterceptor,
-                            ) {
-                                macOsDragAndDropManager = MacOsDragAndDropManager(
-                                    ComposeSceneDragAndDropNode { dragAndDropOwner },
-                                    density,
-                                    callbackInterceptor,
-                                )
-                                onDispose {
-                                    macOsDragAndDropManager = null
-                                }
-                            }
-
-                            DisposableEffect(callbackInterceptor) {
-                                drawContent = {
-                                    span("drawing") {
-                                        callbackInterceptor.execute {
-                                            RenderContext(this).renderWithLayerScope(
-                                                latestRootLayoutNode!!,
-                                                density.run {
-                                                    IntRect(
-                                                        0,
-                                                        0,
-                                                        contentSize.width.roundToPx(),
-                                                        contentSize.height.roundToPx(),
-                                                    )
-                                                },
-                                            )
-                                        }
-                                    }
-                                }
-                                onDispose {
-                                    drawContent = null
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    override fun Content(onLayout: (LightweightWindowId) -> Unit) {
+        // ComposeScene drives its own composition; nothing to host here.
+        onLayout(id)
     }
 
     private fun preparePicture(): PresentablePicture? {
-        if (!isDisposed) {
-            application.withoutReentrancy { scene.reconcile() }
-            return drawContent?.let { drawContent ->
-                val size = viewContext.view.size()
-                val bounds = Rect.makeWH(size.width.toFloat(), size.height.toFloat())
-                val canvas = pictureRecorder.beginRecording(bounds)
-                canvas.clear(org.jetbrains.skia.Color.TRANSPARENT)
-                canvas.drawContent()
-                PresentablePicture(pictureRecorder.finishRecordingAsPicture(), size)
-            }
-        } else {
-            return null
-        }
+        if (isDisposed) return null
+        val size = viewContext.view.size()
+        val bounds = Rect.makeWH(size.width.toFloat(), size.height.toFloat())
+        val canvas = pictureRecorder.beginRecording(bounds)
+        canvas.clear(org.jetbrains.skia.Color.TRANSPARENT)
+        val now = System.nanoTime()
+        frameClock.sendFrame(now)
+        composeScene.render(canvas.asComposeCanvas(), now)
+        return PresentablePicture(pictureRecorder.finishRecordingAsPicture(), size)
     }
 
     private class TimeMarkWrapper(val timeMark: TimeSource.Monotonic.ValueTimeMark)
@@ -938,15 +829,15 @@ class MacOsWindow internal constructor(
     @OptIn(ExperimentalComposeUiApi::class, InternalCoreApi::class)
     private val inputStateTracker = InputStateTracker(
         inputModeManager = application.inputModeManager,
-        sendPointerInputEvent = { pointerInputEvent ->
+        sendPointerEvent = { eventType, position, scrollDelta, timeMillis, type, buttons, modifiers, nativeEvent, button ->
             // The IME popups respond to the mouse event by committing/discarding composition and
             // dismissing the popup, which is why we need to give it priority if it's active
-            val textInputContextHandlingResult = if (
+            val imeConsumed = if (
                 currentTextInputClient?.hasMarkedText() == true ||
                 currentTextInputClient?.silentlyConsumedEvent == true
             ) {
                 logger.debug {
-                    "handleEvent: forwarding MouseDown to IME " +
+                    "handleEvent: forwarding pointer event to IME " +
                         "(hasMarkedText=${currentTextInputClient?.hasMarkedText() == true}, " +
                         "silentlyConsumedEvent=${currentTextInputClient?.silentlyConsumedEvent == true})"
                 }
@@ -957,25 +848,30 @@ class MacOsWindow internal constructor(
                     "  IME result=$result" +
                         " (silentlyConsumedEvent=${currentTextInputClient?.silentlyConsumedEvent == true})"
                 }
-                when (result) {
-                    EventHandlerResult.Stop -> ProcessResult(true, true, true, true, true)
-                    EventHandlerResult.Continue -> null
-                }
+                result == EventHandlerResult.Stop
             } else {
-                null
+                false
             }
 
-            textInputContextHandlingResult
-                ?: latestRootLayoutNode?.let { rootLayoutNode ->
-                    scene.withPreparedMainThread {
-                        pointerInputEventProcessor.process(
-                            pointerInputEvent,
-                            rootLayoutNode,
-                            positionCalculator,
-                        )
-                    }
-                }
-                ?: ProcessResult(0)
+            if (imeConsumed) {
+                PointerEventResult(
+                    anyMovementConsumed = true,
+                    anyChangeConsumed = true,
+                    dispatchedToAPointerInputModifier = true,
+                )
+            } else {
+                composeScene.sendPointerEvent(
+                    eventType = eventType,
+                    position = position,
+                    scrollDelta = scrollDelta,
+                    timeMillis = timeMillis,
+                    type = type,
+                    buttons = buttons,
+                    keyboardModifiers = modifiers,
+                    nativeEvent = nativeEvent,
+                    button = button,
+                )
+            }
         },
         sendKeyEvent =
             { keyEvent ->
@@ -1002,15 +898,10 @@ class MacOsWindow internal constructor(
                         false
                     }
 
-                val finalResult =
-                    textInputContextConsumedEvent || scene.withPreparedMainThread {
-                        val previewHandled = onPreviewKeyEventState.value(keyEvent)
-                        val focusHandled =
-                            !previewHandled && focusOwner.dispatchKeyEvent(keyEvent)
-                        val keyEventHandled =
-                            !previewHandled && !focusHandled && onKeyEventState.value(keyEvent)
-                        previewHandled || focusHandled || keyEventHandled
-                    }
+                val finalResult = textInputContextConsumedEvent ||
+                    onPreviewKeyEvent(keyEvent) ||
+                    composeScene.sendKeyEvent(keyEvent) ||
+                    onKeyEvent(keyEvent)
                 logger.debug { "  sendKeyEvent final result=$finalResult" }
                 finalResult
             },
@@ -1023,6 +914,8 @@ class MacOsWindow internal constructor(
                 setupDisplayLink()
                 screen = MacOsScreen(Screen.allScreens().findById(nativeWindow.screenId()))
                 density = density()
+                composeScene.density = density
+                composeScene.size = contentSizeInPx()
                 EventHandlerResult.Stop
             }
             is Event.WindowMove -> {
@@ -1032,13 +925,12 @@ class MacOsWindow internal constructor(
             is Event.WindowResize -> {
                 size = nativeWindow.size.toDpSize()
                 contentSize = nativeWindow.contentSize.toDpSize()
+                composeScene.size = contentSizeInPx()
+                isFrameRequested = true
                 EventHandlerResult.Stop
             }
             is Event.WindowFocusChange -> {
                 isFocused = event.isKeyWindow
-                // todo[unterhofer]
-//                isActive = event.isActiveWindow
-//                isMain = event.isMainWindow
                 inputStateTracker.updateStateAndSendEvents(event, density)
                 EventHandlerResult.Stop
             }
@@ -1125,68 +1017,51 @@ class MacOsWindow internal constructor(
 
     internal var activeDragAndDropTransferData: DragAndDropTransferData? = null
 
-    private val positionCalculator = object : PositionCalculator {
-        override fun screenToLocal(positionOnScreen: Offset): Offset {
-            return positionOnScreen - density().run {
-                nativeWindow.origin.run {
-                    Offset(
-                        x.dp.toPx(),
-                        y.dp.toPx(),
-                    )
+    private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
+    private var onKeyEvent: (KeyEvent) -> Boolean = { false }
+
+    private var contentState = mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
+    private var sceneContentInstalled = false
+
+    private fun installSceneContentIfNeeded() {
+        if (sceneContentInstalled) return
+        sceneContentInstalled = true
+        val windowScope = object : WindowScope {
+            override val window: Window get() = this@MacOsWindow
+        }
+        composeScene.setContent {
+            CompositionLocalProvider(
+                LocalSystemTheme provides systemTheme,
+                LocalTextToolbar provides remember { DefaultTextToolbar() },
+                LocalTextInputContext provides textInputContext,
+            ) {
+                InterceptPlatformTextInput(platformTextInputInterceptor) {
+                    contentState.value?.invoke(windowScope)
                 }
             }
         }
-
-        override fun localToScreen(localPosition: Offset): Offset {
-            return localPosition + density().run {
-                nativeWindow.origin.run {
-                    Offset(
-                        x.dp.toPx(),
-                        y.dp.toPx(),
-                    )
-                }
-            }
-        }
-
-        override val rootPositionOnScreen: Offset
-            get() = density().run {
-                nativeWindow.origin.run {
-                    Offset(
-                        x.dp.toPx(),
-                        y.dp.toPx(),
-                    )
-                }
-            }
     }
-
-    private val focusOwner = FocusOwnerImpl(
-        { scene.coroutineScope },
-        DebugLocation(this::class),
-    ) { isFocused }
-
-    private val onPreviewKeyEventState =
-        SnapshotMutableStateImpl<(KeyEvent) -> Boolean>({ false })
-    private val onKeyEventState = SnapshotMutableStateImpl<(KeyEvent) -> Boolean>({ false })
-
-    private var contentState =
-        SnapshotMutableStateImpl<(@Composable WindowScope.() -> Unit)?>(null)
 
     override fun setContent(
         onPreviewKeyEvent: (KeyEvent) -> Boolean,
         onKeyEvent: (KeyEvent) -> Boolean,
-        noriaState: NoriaState?,
         content: @Composable WindowScope.() -> Unit,
     ) {
-        onPreviewKeyEventState.setValueAndScheduleDependantsRightAway(
-            noriaState,
-            onPreviewKeyEvent,
-        )
-        onKeyEventState.setValueAndScheduleDependantsRightAway(noriaState, onKeyEvent)
-        contentState.setValueAndScheduleDependantsRightAway(noriaState, content)
+        this.onPreviewKeyEvent = onPreviewKeyEvent
+        this.onKeyEvent = onKeyEvent
+        contentState.value = content
+        installSceneContentIfNeeded()
+        isFrameRequested = true
     }
 
     override fun startInteractiveMove(pointerEvent: PointerEvent) {
         nativeWindow.startDragWindow()
+    }
+
+    init {
+        // Registered here so that `inputStateTracker` is guaranteed to be initialized before
+        // any event dispatched by the application event loop can reach `handleEvent`.
+        application.windows += id to this
     }
 }
 

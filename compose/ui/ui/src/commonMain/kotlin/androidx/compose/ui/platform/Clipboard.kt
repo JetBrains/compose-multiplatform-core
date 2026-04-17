@@ -53,7 +53,7 @@ interface Clipboard {
      * @param clipEntry Platform specific clip object that either holds data or links to it. Pass
      *   null to clear the clipboard.
      */
-    suspend fun setClipEntry(clipEntry: ClipEntry)
+    suspend fun setClipEntry(clipEntry: ClipEntry?)
 
     /**
      * Returns Primary selection clipboard content

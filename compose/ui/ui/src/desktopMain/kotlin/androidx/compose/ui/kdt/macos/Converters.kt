@@ -49,6 +49,10 @@ internal fun Offset.toLogicalPoint(density: Density): LogicalPoint {
 internal fun DpOffset.toLogicalPoint(): LogicalPoint =
     LogicalPoint(x.value.toDouble(), y.value.toDouble())
 
+internal fun DpOffset.toPxOffset(density: Density): Offset = with(density) {
+    Offset(x.toPx(), y.toPx())
+}
+
 internal fun Size.toLogicalSize(density: Density): LogicalSize {
     return with(density) {
         LogicalSize(
