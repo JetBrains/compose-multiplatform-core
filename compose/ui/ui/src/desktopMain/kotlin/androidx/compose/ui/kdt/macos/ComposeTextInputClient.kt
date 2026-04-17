@@ -285,7 +285,7 @@ internal class ComposeTextInputClient(
     override fun characterIndexForPoint(point: LogicalPoint): Long? {
         logger.debug { "characterIndexForPoint(point=$point)" }
         return scene.withPreparedMainThread {
-            val offset = density().run { point.toDpOffset().toOffset() }
+            val offset = point.toDpOffset().toOffset(density())
             val result =
                 platformTextInputMethodRequest.characterIndexAtOffsetInRoot(offset).toLong()
             logger.debug { "  returning $result" }

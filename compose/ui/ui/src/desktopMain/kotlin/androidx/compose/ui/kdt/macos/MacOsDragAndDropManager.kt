@@ -4,7 +4,7 @@ package androidx.compose.ui.kdt.macos
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.draganddrop.DragAndDropEventJvm
+import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
@@ -61,7 +61,7 @@ internal class MacOsDragAndDropManager(
     }
 
     fun onDragExited() {
-        val dndEvent = DragAndDropEventJvm(
+        val dndEvent = DragAndDropEvent(
             action = null, nativeEvent = null, positionInRootImpl = Offset.Zero,
         )
 
@@ -84,7 +84,7 @@ internal class MacOsDragAndDropManager(
         return consumed
     }
 
-    private fun DragInfo.toDragAndDropEvent(): DragAndDropEventJvm {
+    private fun DragInfo.toDragAndDropEvent(): DragAndDropEvent {
         val selectedAction = when {
             DragOperation.MOVE in allowedOperations -> DragAndDropTransferAction.Move
             DragOperation.COPY in allowedOperations -> DragAndDropTransferAction.Copy
@@ -92,7 +92,7 @@ internal class MacOsDragAndDropManager(
             else -> null
         }
 
-        return DragAndDropEventJvm(
+        return DragAndDropEvent(
             action = selectedAction,
             nativeEvent = this,
             positionInRootImpl = locationInWindow.toDpOffset().toOffset(),

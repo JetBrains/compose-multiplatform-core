@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class, InternalComposeUiApi::class)
+@file:OptIn(ExperimentalComposeUiApi::class, InternalComposeUiApi::class,
+    ExperimentalAtomicApi::class
+)
 
 package androidx.compose.ui.kdt.macos
 
@@ -34,9 +36,8 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SystemTheme
-import androidx.compose.ui.draganddrop.DragAndDropImage
-import androidx.compose.ui.draganddrop.DragAndDropOwner
-import androidx.compose.ui.draganddrop.DragAndDropTransferDataJvm
+import androidx.compose.ui.kdt.draganddrop.DragAndDropImage
+import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.draganddrop.LocalDragAndDropManager
 import androidx.compose.ui.focus.FocusOwnerImpl
 import androidx.compose.ui.geometry.Offset
@@ -53,6 +54,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.kdt.InteractiveMoveInitiator
 import androidx.compose.ui.kdt.KdtDragAndDropManager
 import androidx.compose.ui.kdt.KdtDragAndDropTransferable
@@ -92,11 +94,10 @@ import androidx.compose.ui.unit.takeOrElse
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
-import fleet.fastutil.ints.Int2ObjectOpenHashMap
-import fleet.reporting.shared.tracing.span
 import androidx.compose.ui.kdt.logging.logger
-import fleet.util.singleOrNullOrThrow
+import androidx.compose.ui.node.DragAndDropOwner
 import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.TimeSource
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -105,22 +106,10 @@ import noria.CallbackInterceptorCompositionLocal
 import noria.ID
 import noria.activeCell
 import noria.cell
-import noria.currentNoriaContext
 import noria.impl.NoriaState
 import noria.memo
 import noria.ui.core.LocalWindow
 import noria.ui.core.WindowData
-import noria.ui.core.uiRoot
-import noria.ui.draw.internal.RenderContext
-import noria.ui.input.pointer.NoriaPointerInputEventProcessor
-import noria.ui.input.pointer.PositionCalculator
-import noria.ui.input.pointer.ProcessResult
-import noria.ui.layout.internal.DebugLocation
-import noria.ui.layout.internal.LayoutNode
-import noria.ui.layout.internal.LayoutOwner
-import noria.ui.layout.internal.LayoutScope
-import noria.ui.layout.internal.rememberEmptyLayoutBuilder
-import noria.ui.layout.internal.withLayoutBuilderStack
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.desktop.macos.AppMenuManager
 import org.jetbrains.desktop.macos.Appearance
@@ -152,7 +141,7 @@ class MacOsWindow internal constructor(
     val viewContext: MetalViewContext = application.desktopGpuContext.createMetalViewContext(),
     private val onCloseRequest: () -> Unit,
 ) :
-    PositionAwareWindow, InteractiveMoveInitiator, LayoutOwner {
+    PositionAwareWindow, InteractiveMoveInitiator {
     private var backingNativeWindow: org.jetbrains.desktop.macos.Window? = nativeWindow
     override val nativeWindow: org.jetbrains.desktop.macos.Window
         get() = checkNotNull(backingNativeWindow) {
@@ -559,7 +548,7 @@ class MacOsWindow internal constructor(
 
     fun startDragSession(
         offset: Offset,
-        transferData: DragAndDropTransferDataJvm,
+        transferData: DragAndDropTransferData,
         decorationSize: Size,
         drawDragDecoration: DrawScope.() -> Unit,
     ) {
@@ -638,32 +627,6 @@ class MacOsWindow internal constructor(
             }
             backingNativeWindow = null
         }
-    }
-
-
-    internal var latestRootLayoutNode: LayoutNode? = null
-        set(value) {
-            field?.let {
-                if (it.owner != null && value?.id != it.id) {
-                    it.detach()
-                }
-            }
-            if (value != null && value.owner != this) {
-                value.attach(this)
-            }
-            field = value
-        }
-
-    override fun onAttach(node: LayoutNode) {
-        if (node.id != ID.NULL) {
-            latestLayoutNodes[node.id.id] = node
-        }
-    }
-
-    override fun get(id: ID): LayoutNode? = latestLayoutNodes[id.id]
-
-    override fun onDetach(node: LayoutNode) {
-        latestLayoutNodes.remove(node.id.id)
     }
 
     override fun calculatePositionInWindow(localPosition: Offset): Offset {
@@ -1160,10 +1123,7 @@ class MacOsWindow internal constructor(
         }
     }
 
-    private val latestLayoutNodes = Int2ObjectOpenHashMap<noria.ui.node.LayoutNode>()
-    internal var activeDragAndDropTransferData: DragAndDropTransferDataJvm? = null
-    private val pointerInputEventProcessor =
-        NoriaPointerInputEventProcessor { latestLayoutNodes[it.id] }
+    internal var activeDragAndDropTransferData: DragAndDropTransferData? = null
 
     private val positionCalculator = object : PositionCalculator {
         override fun screenToLocal(positionOnScreen: Offset): Offset {
