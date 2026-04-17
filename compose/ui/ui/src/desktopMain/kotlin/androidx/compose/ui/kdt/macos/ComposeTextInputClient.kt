@@ -6,7 +6,7 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.text.substring
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.toOffset
-import fleet.util.logging.logger
+import androidx.compose.ui.kdt.logging.logger
 import org.jetbrains.desktop.macos.LogicalPoint
 import org.jetbrains.desktop.macos.LogicalRect
 import org.jetbrains.desktop.macos.LogicalSize

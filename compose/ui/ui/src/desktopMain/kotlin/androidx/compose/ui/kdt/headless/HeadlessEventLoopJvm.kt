@@ -1,6 +1,6 @@
 package androidx.compose.ui.kdt.headless
 
-import fleet.util.logging.logger
+import androidx.compose.ui.kdt.logging.logger
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread

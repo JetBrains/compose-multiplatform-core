@@ -1,7 +1,7 @@
 package androidx.compose.ui.kdt.macos
 
 import androidx.compose.ui.kdt.LightweightWindowId
-import fleet.util.logging.logger
+import androidx.compose.ui.kdt.logging.logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
