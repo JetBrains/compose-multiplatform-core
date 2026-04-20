@@ -197,6 +197,10 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
         return composePanel.saveState()
     }
 
+    /**
+     * Returns an object through which the composable content of the window can be queried for its
+     * size preferences, such as its intrinsic size.
+     */
     @ExperimentalComposeUiApi
     val measurableContent: MeasurableRootContent by composePanel::measurableContent
 

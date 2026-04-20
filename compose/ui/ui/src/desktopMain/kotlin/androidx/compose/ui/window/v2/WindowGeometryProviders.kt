@@ -18,7 +18,6 @@ package androidx.compose.ui.window.v2
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.unit.Constraints
@@ -93,7 +92,8 @@ fun interface WindowScreenProvider {
  */
 @ExperimentalComposeUiApi
 class WindowGeometryProviderScope internal constructor(
-    private val window: ComposeWindow,
+    window: java.awt.Window,
+    private val measurableContentProvider: () -> MeasurableRootContent,
 ): Density {
     init {
         require(window.isDisplayable) {
@@ -123,12 +123,6 @@ class WindowGeometryProviderScope internal constructor(
     val windowInsets: DpInsets = window.insets.toDpInsets()
 
     /**
-     * Represents the composable content of the window, which can be queried for its preferred size
-     * properties.
-     */
-    val windowContent: MeasurableRootContent by window::measurableContent
-
-    /**
      * Returns the size a window should have, given the size of its content.
      *
      * The content size is expanded by [windowInsets] and then constrained to
@@ -136,6 +130,13 @@ class WindowGeometryProviderScope internal constructor(
      */
     fun contentToWindowSize(contentSize: DpSize): DpSize =
         (contentSize + windowInsets).coerceAtMost(screen.availableBounds.size)
+
+    /**
+     * Represents the composable content of the window, which can be queried for its preferred size
+     * properties.
+     */
+    val windowContent: MeasurableRootContent
+        get() = measurableContentProvider()
 
     /**
      * Evaluates the given [WindowSizeProvider] in this scope.

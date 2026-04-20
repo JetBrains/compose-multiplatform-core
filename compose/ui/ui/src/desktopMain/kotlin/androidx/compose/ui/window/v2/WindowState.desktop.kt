@@ -147,7 +147,7 @@ fun WindowState(
 
 /**
  * A state object that can be hoisted to control and observe window attributes
- * (size/position/state).
+ * (size, position, etc.).
  */
 @Stable
 @ExperimentalComposeUiApi
