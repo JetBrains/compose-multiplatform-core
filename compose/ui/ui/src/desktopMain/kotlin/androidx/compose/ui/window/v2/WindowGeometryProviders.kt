@@ -196,36 +196,6 @@ interface WindowBoundsProvider {
         )
 
         /**
-         * Aligns the window within the screen according to [alignment] and [offset].
-         *
-         * @param alignment The alignment of the window relative to the screen.
-         * @param offset An additional absolute offset added after aligning.
-         * @param sizeProvider Provides the size of the window.
-         */
-        fun AlignedToScreen(
-            alignment: Alignment,
-            offset: DpOffset = DpOffset.Zero,
-            sizeProvider: WindowSizeProvider = WindowSizeProvider.Default
-        ): WindowBoundsProvider = WindowBoundsProvider {
-            val size = sizeProvider.getSize().requireReal()
-            val availableBounds = screen.availableBounds
-
-            val position = alignment.align(
-                size = size.roundToIntSize(),
-                space = availableBounds.size.roundToIntSize(),
-                layoutDirection = LayoutDirection.Ltr
-            )
-            val left = availableBounds.left + position.x.dp + offset.x
-            val top = availableBounds.top + position.y.dp + offset.y
-            DpRect(
-                left = left,
-                top = top,
-                right = left + size.width,
-                bottom = top + size.height
-            )
-        }
-
-        /**
          * Positions the window at the given [bounds].
          *
          * @param bounds The bounds of the window.
@@ -304,6 +274,29 @@ fun interface WindowPositionProvider {
         fun Absolute(position: DpOffset): WindowPositionProvider {
             position.requireReal()
             return WindowPositionProvider { position }
+        }
+
+        /**
+         * Aligns the window within the screen according to [alignment] and [offset].
+         *
+         * @param alignment The alignment of the window relative to the screen.
+         * @param offset An additional absolute offset added after aligning.
+         */
+        fun AlignedToScreen(
+            alignment: Alignment,
+            offset: DpOffset = DpOffset.Zero,
+        ): WindowPositionProvider = WindowPositionProvider { size ->
+            val availableBounds = screen.availableBounds
+
+            val position = alignment.align(
+                size = size.roundToIntSize(),
+                space = availableBounds.size.roundToIntSize(),
+                layoutDirection = LayoutDirection.Ltr
+            )
+            DpOffset(
+                x = availableBounds.left + position.x.dp + offset.x,
+                y = availableBounds.top + position.y.dp + offset.y
+            )
         }
     }
 }
