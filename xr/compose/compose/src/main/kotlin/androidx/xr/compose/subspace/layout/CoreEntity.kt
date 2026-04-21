@@ -41,6 +41,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.Component
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.ExperimentalGltfComposeMethod
 import androidx.xr.scenecore.GltfAnimation
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.GltfModelNode
@@ -168,6 +169,14 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
             // When the Compose-level parent is set to null, restore the original parent
             // (saved during the initial creation)
             entityActionQueue.executeWhenAvailable { it.parent = value?.entity ?: originalParent }
+        }
+
+    open var contentDescription: String?
+        get() = entity?.contentDescription.toString().takeIf { it.isNotEmpty() }
+        set(value) {
+            if (contentDescription == value) return
+
+            entityActionQueue.executeWhenAvailable { it.contentDescription = value ?: "" }
         }
 
     fun updatePoseFromLayout() {
@@ -547,9 +556,10 @@ internal class CoreModelEntity() : CoreEntity() {
 
     val intrinsicSize: IntVolumeSize
         get() =
+            @OptIn(ExperimentalGltfComposeMethod::class)
             density?.let { density ->
                 (entity as? GltfModelEntity)
-                    ?.gltfModelBoundingBox
+                    ?.getGltfModelBoundingBox()
                     ?.halfExtents
                     ?.times(2)
                     ?.toIntVolumeSize(density)

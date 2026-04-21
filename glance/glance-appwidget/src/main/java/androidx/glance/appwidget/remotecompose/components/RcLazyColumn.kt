@@ -23,8 +23,10 @@ import androidx.compose.remote.creation.Rc
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.RemoteComposeWriterAndroid
 import androidx.compose.remote.creation.actions.ValueFloatExpressionChange
+import androidx.compose.remote.creation.minus
 import androidx.compose.remote.creation.modifiers.DrawWithContentModifier
 import androidx.compose.remote.creation.modifiers.RecordingModifier
+import androidx.compose.remote.creation.times
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.glance.Emittable
@@ -33,10 +35,12 @@ import androidx.glance.appwidget.lazy.VerticalScrollMode
 import androidx.glance.appwidget.remotecompose.GlanceRemoteComposeTranslator
 import androidx.glance.appwidget.remotecompose.RemoteComposeConstants.DebugRemoteCompose
 import androidx.glance.appwidget.remotecompose.TranslationContext
+import androidx.glance.appwidget.remotecompose.components.Pagination.maxDots
 import androidx.glance.appwidget.remotecompose.convertGlanceModifierToRemoteComposeModifier
 import androidx.glance.appwidget.remotecompose.custom.CustomScrollModifier
 import androidx.glance.appwidget.remotecompose.toColumnLayoutEnum
 import androidx.glance.appwidget.toPixels
+import androidx.glance.unit.ColorProvider
 
 internal class RcLazyColumn(
     emittable: EmittableLazyColumn,
@@ -53,21 +57,16 @@ internal class RcLazyColumn(
     // workaround for match-parent sizing of snap scrollable children
     private val heightVariableId: Float
 
-    private val visFloatExpId: Float
-    private val notVisFloatExpId: Float
     private var touchPositionVariable: Float = 0f
     private var scrollPositionExpr: Float = 0f // needs assignment
+
+    private val paginationDotColorPrimary: ColorProvider? = emittable.paginationDotColorPrimary
+    private val paginationDotColorSecondary: ColorProvider? = emittable.paginationDotColorSecondary
 
     // end workaround
     // TODO ^^^^^^
 
     init {
-        // ------------ variables to toggle two canvas to force refresh
-        val doc = translationContext.remoteComposeContext.mRemoteWriter
-        visFloatExpId = doc.floatExpression(1f)
-        notVisFloatExpId = doc.floatExpression(1f, visFloatExpId, Rc.FloatExpression.SUB)
-
-        // -----------------------------------------
 
         @Suppress("ListIterator")
         for (child: Emittable in emittable.children) {
@@ -126,9 +125,6 @@ internal class RcLazyColumn(
             val computedHeight =
                 writer.floatExpression(scrollColumnDynamicHeightId, 1f, Rc.FloatExpression.MUL)
 
-            // Force refresh when height changes
-            refreshOnHeightChange(computedHeight)
-
             // vvvv Update the scroll view height vvvv
             val action =
                 ValueFloatExpressionChange(
@@ -151,7 +147,11 @@ internal class RcLazyColumn(
             // expression
             //                // TODO: ^^^^^^^^^^
             if (verticalScrollMode !is VerticalScrollMode.Normal) {
-                drawDots(computedHeight = computedHeight)
+                drawDots(
+                    computedHeight = computedHeight,
+                    mainColor = paginationDotColorPrimary?.getColor(translationContext.context),
+                    fadedColor = paginationDotColorSecondary?.getColor(translationContext.context),
+                )
 
                 writer.endCanvasOperations()
                 // ^^^^ end: height hack ^^^^
@@ -178,33 +178,6 @@ internal class RcLazyColumn(
                 child.writeComponent(translationContext)
             }
         } // end column
-
-        //  TODO: snap scrolling  workaround (continued)
-        if (verticalScrollMode !is VerticalScrollMode.Normal) {
-            rcContext.startCanvas(
-                RecordingModifier().visibility(visFloatExpId.toIntId()).height(1).width(1)
-            )
-            rcContext.endCanvas()
-            rcContext.startCanvas(
-                RecordingModifier().visibility(notVisFloatExpId.toIntId()).height(1).width(1)
-            )
-            rcContext.endCanvas()
-        }
-    }
-
-    /** If the currently computed height does not match the cached height, do a refresh action. */
-    private fun RemoteComposeContext.refreshOnHeightChange(computedHeight: Float) {
-        conditionalOperations(Rc.Condition.NEQ, heightVariableId, computedHeight)
-        if (DebugRemoteCompose) {
-            addDebugMessage(" REFRESH ")
-        }
-        startRunActions()
-        val notCalc =
-            floatExpression(visFloatExpId, 1f, Rc.FloatExpression.ADD, 2f, Rc.FloatExpression.MOD)
-        val refresh = ValueFloatExpressionChange(visFloatExpId.toIntId(), notCalc.toIntId())
-        addAction(refresh)
-        endRunActions()
-        endConditionalOperations()
     }
 
     private fun makeCustomSnapScrollModifier(
@@ -250,11 +223,23 @@ internal class RcLazyColumn(
         return customScrollModifier
     }
 
-    private fun RemoteComposeContext.drawDots(computedHeight: Float) {
+    private fun RemoteComposeContext.drawDots(
+        computedHeight: Float,
+        mainColor: Color?,
+        fadedColor: Color?,
+    ) {
+        if (mainColor == null || fadedColor == null) {
+            return
+        }
+
+        // todo: this is required to make the dot fadeout animation run. Can this be removed
+        //   in future versions and does it have any negative perf effects?
+        writer.floatExpression(Rc.Time.TIME_IN_SEC)
+
         val widthVariableId = writer.addComponentWidthValue()
         val writer: RemoteComposeWriterAndroid = writer as RemoteComposeWriterAndroid
 
-        val startingAlpha = 2f // this gives us 1 second of solid alpha before fading
+        val startingAlpha = 1.5f // this gives us 500ms of solid alpha before fading
 
         // time since last touch coerced to (0,2)
         val touchEventTimeExpr =
@@ -280,46 +265,56 @@ internal class RcLazyColumn(
             writer.addDebugMessage("alpha clamped", clampedAlpha)
         }
 
-        val dimenScale = 2f // TODO: do actual dp to px scaling, not this
-
-        val maxDots = 5f
         val numDots = Math.min(maxDots, children.size.toFloat())
-        val dotRadius = 3f * dimenScale
 
-        val dotColumnXOffset = 3f * dimenScale * 4 // 4 is arbitrary
-        val dotVPad = 4f * dimenScale
-        val pillHeight = 6f * dimenScale // todo, change back to 12f
-        val centerX =
-            writer.floatExpression(widthVariableId, dotColumnXOffset, Rc.FloatExpression.SUB)
+        val density = rf(Rc.System.DENSITY)
+        val dotRadius: RFloat = Pagination.dotRadius * density
+        val dotDiameter = dotRadius * 2f
+        val dotColumnXPadding: RFloat = Pagination.dotColumnXPadding * density
+        val dotYPadding = Pagination.dotYPadding * density
+
+        val centerX: RFloat = (widthVariableId - dotColumnXPadding).flush()
         val scrollSectionHeight =
-            ((numDots - 1) * (2 * dotRadius) + (numDots - 1) * dotVPad + pillHeight)
-        val scrollSectionY0: RFloat = ((rf(computedHeight) / rf(2f)) - (scrollSectionHeight / 2f))
+            ((numDots - 1f) * dotDiameter + (numDots - 1) * dotYPadding + dotDiameter).flush()
+
+        val scrollSectionY0: RFloat =
+            ((rf(computedHeight) / rf(2f)) - (scrollSectionHeight / 2f)).flush()
+
+        val centerXVariableId = centerX.toFloat()
 
         for (child in 0 until children.size) {
             // now, we can draw an overlay
-            writer.painter.setColor(Color.Magenta.toArgb()).setAlpha(clampedAlpha).commit()
+            writer.painter.setColor(fadedColor.toArgb()).setAlpha(clampedAlpha).commit()
             writer.drawCircle(
-                centerX,
-                (scrollSectionY0 + child * (2 * dotRadius + dotVPad)).toFloat(),
-                dotRadius,
+                centerXVariableId,
+                (scrollSectionY0 + child.toFloat() * (dotDiameter + dotYPadding)).toFloat(),
+                dotRadius.toFloat(),
             )
         }
 
         // Next, draw the pill at the right spot
-        writer.painter.setColor(Color.Cyan.toArgb()).setAlpha(clampedAlpha).commit()
+        writer.painter.setColor(mainColor.toArgb()).setAlpha(clampedAlpha).commit()
         val pillYExpr =
-            (scrollSectionY0 + (rf(touchPositionVariable) * rf((2 * dotRadius + dotVPad))))
+            (scrollSectionY0 + (rf(touchPositionVariable) * rf((dotDiameter + dotYPadding))))
                 .toFloat()
         if (DebugRemoteCompose) {
             addDebugMessage("RcLazyColumn: pillYExpr ", pillYExpr)
         }
-        writer.drawCircle(centerX, pillYExpr, dotRadius)
+        writer.drawCircle(centerXVariableId, pillYExpr, dotRadius.toFloat())
         writer.painter.setAlpha(1f).commit() // reset alpha to a normal value
-        //                writer.floatExpression(
-        //                    Rc.Time.CONTINUOUS_SEC
-        //                ) // force repaint // TODO: without this, the fade out animation
-        // doesn't run
+
+        writer.conditionalOperations(Rc.Condition.GT, alphaExpr, 0f) {
+            writer.wakeIn(1f / 30f) // schedule next paint
+        }
     }
 }
 
 private fun Float.toIntId() = Utils.idFromNan(this)
+
+/** Constants for drawing the pagination dots */
+private object Pagination {
+    const val maxDots = 7f
+    const val dotRadius = 3f
+    const val dotColumnXPadding = 12f
+    const val dotYPadding = 4f
+}

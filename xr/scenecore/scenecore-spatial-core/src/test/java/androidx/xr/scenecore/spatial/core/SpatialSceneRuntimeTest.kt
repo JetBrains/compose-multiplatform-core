@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.spatial.core
 
 import android.annotation.SuppressLint
@@ -51,7 +54,6 @@ import androidx.xr.scenecore.runtime.PlaneType
 import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.runtime.SpatialModeChangeListener
 import androidx.xr.scenecore.runtime.SpatialVisibility
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
 import androidx.xr.scenecore.testing.FakeComponent
 import androidx.xr.scenecore.testing.FakeGltfFeature.Companion.createWithMockFeature
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
@@ -76,7 +78,6 @@ import com.android.extensions.xr.space.ShadowSpatialState
 import com.android.extensions.xr.space.SpatialCapabilities
 import com.android.extensions.xr.space.VisibilityState
 import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableSet
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
 import java.util.function.Consumer
@@ -104,7 +105,7 @@ import org.robolectric.annotation.Config
 class SpatialSceneRuntimeTest {
     private val sceneNodeRegistry = SceneNodeRegistry()
     private val nodeRepository = NodeRepository.getInstance()
-    private val xrExtensions = requireNotNull(getXrExtensions())
+    private val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
     private val fakeExecutor = FakeScheduledExecutorService()
     private val mockGltfFeature = mock<GltfFeature>()
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
@@ -985,8 +986,8 @@ class SpatialSceneRuntimeTest {
     fun createAnchorPlacement_returnsAnchorPlacement() {
         val anchorPlacement =
             testRuntime.createAnchorPlacementForPlanes(
-                ImmutableSet.of<@JvmSuppressWildcards PlaneType>(PlaneType.ANY),
-                ImmutableSet.of<@JvmSuppressWildcards PlaneSemantic>(PlaneSemantic.ANY),
+                PlaneType.entries.toSet(),
+                PlaneSemantic.entries.toSet(),
             )
 
         assertThat(anchorPlacement).isNotNull()

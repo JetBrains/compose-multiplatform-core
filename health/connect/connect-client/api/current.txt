@@ -1,10 +1,15 @@
 // Signature format: 4.0
 package androidx.health.connect.client {
 
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental Matchmaking API and is likely to change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalMatchmakingApi {
+  }
+
   @kotlin.jvm.JvmDefaultWithCompatibility public interface HealthConnectClient {
     method public suspend Object? aggregate(androidx.health.connect.client.request.AggregateRequest request, kotlin.coroutines.Continuation<? super androidx.health.connect.client.aggregate.AggregationResult>);
     method public suspend Object? aggregateGroupByDuration(androidx.health.connect.client.request.AggregateGroupByDurationRequest request, kotlin.coroutines.Continuation<? super java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration>>);
     method public suspend Object? aggregateGroupByPeriod(androidx.health.connect.client.request.AggregateGroupByPeriodRequest request, kotlin.coroutines.Continuation<? super java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod>>);
+    method @SuppressCompatibility @androidx.health.connect.client.ExperimentalMatchmakingApi public default suspend Object? checkIfMatchmakingIsPossible(androidx.health.connect.client.matchmaking.MatchmakingRequest request, kotlin.coroutines.Continuation<? super androidx.health.connect.client.matchmaking.MatchmakingResponse>);
+    method @SuppressCompatibility @androidx.health.connect.client.ExperimentalMatchmakingApi public default android.content.Intent createMatchmakingIntent(androidx.health.connect.client.matchmaking.MatchmakingRequest request);
     method @SuppressCompatibility @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA") @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public default suspend Object? createMedicalDataSource(androidx.health.connect.client.request.CreateMedicalDataSourceRequest request, kotlin.coroutines.Continuation<? super androidx.health.connect.client.records.MedicalDataSource>);
     method @SuppressCompatibility @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA") @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public default suspend Object? deleteMedicalDataSourceWithData(String id, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @SuppressCompatibility @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA") @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public default suspend Object? deleteMedicalResources(androidx.health.connect.client.request.DeleteMedicalResourcesRequest request, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -72,6 +77,7 @@ package androidx.health.connect.client {
     field public static final int FEATURE_ACTIVITY_INTENSITY = 7; // 0x7
     field public static final int FEATURE_EXERCISE_SESSION_IMPROVEMENTS = 9; // 0x9
     field public static final int FEATURE_EXTENDED_DEVICE_TYPES = 8; // 0x8
+    field @SuppressCompatibility @androidx.health.connect.client.ExperimentalMatchmakingApi public static final int FEATURE_MATCHMAKING = 10; // 0xa
     field public static final int FEATURE_MINDFULNESS_SESSION = 5; // 0x5
     field @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static final int FEATURE_PERSONAL_HEALTH_RECORD = 6; // 0x6
     field public static final int FEATURE_PLANNED_EXERCISE = 3; // 0x3
@@ -86,6 +92,7 @@ package androidx.health.connect.client {
     property public static int FEATURE_ACTIVITY_INTENSITY;
     property public static int FEATURE_EXERCISE_SESSION_IMPROVEMENTS;
     property public static int FEATURE_EXTENDED_DEVICE_TYPES;
+    property @SuppressCompatibility @androidx.health.connect.client.ExperimentalMatchmakingApi public static int FEATURE_MATCHMAKING;
     property public static int FEATURE_MINDFULNESS_SESSION;
     property @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static int FEATURE_PERSONAL_HEALTH_RECORD;
     property public static int FEATURE_PLANNED_EXERCISE;
@@ -97,6 +104,7 @@ package androidx.health.connect.client {
     field public static final int FEATURE_ACTIVITY_INTENSITY = 7; // 0x7
     field public static final int FEATURE_EXERCISE_SESSION_IMPROVEMENTS = 9; // 0x9
     field public static final int FEATURE_EXTENDED_DEVICE_TYPES = 8; // 0x8
+    field public static final int FEATURE_MATCHMAKING = 10; // 0xa
     field public static final int FEATURE_MINDFULNESS_SESSION = 5; // 0x5
     field public static final int FEATURE_PERSONAL_HEALTH_RECORD = 6; // 0x6
     field public static final int FEATURE_PLANNED_EXERCISE = 3; // 0x3
@@ -195,6 +203,28 @@ package androidx.health.connect.client.contracts {
 package @SuppressCompatibility androidx.health.connect.client.feature {
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This is a part of the Personal Health Record experimental Health Connect APIs and could change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalPersonalHealthRecordApi {
+  }
+
+}
+
+package @SuppressCompatibility androidx.health.connect.client.matchmaking {
+
+  @SuppressCompatibility @androidx.health.connect.client.ExperimentalMatchmakingApi public final class MatchmakingRequest {
+    ctor public MatchmakingRequest();
+    ctor @BytecodeOnly public MatchmakingRequest(java.util.Set!, java.util.Set!, java.util.Set!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public MatchmakingRequest(optional java.util.Set<? extends kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record>> recordTypes, optional java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin> includedDataSources, optional java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin> excludedDataSources);
+    method @InaccessibleFromKotlin public java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin> getExcludedDataSources();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin> getIncludedDataSources();
+    method @InaccessibleFromKotlin public java.util.Set<kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record>> getRecordTypes();
+    property public java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin> excludedDataSources;
+    property public java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin> includedDataSources;
+    property public java.util.Set<kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record>> recordTypes;
+  }
+
+  @SuppressCompatibility @androidx.health.connect.client.ExperimentalMatchmakingApi public final class MatchmakingResponse {
+    ctor public MatchmakingResponse(boolean isMatchmakingPossible);
+    method @InaccessibleFromKotlin public boolean isMatchmakingPossible();
+    property public boolean isMatchmakingPossible;
   }
 
 }
@@ -2544,22 +2574,22 @@ package androidx.health.connect.client.units {
     method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getKilojoules(float);
     method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getKilojoules(int);
     method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getKilojoules(long);
-    property public static androidx.health.connect.client.units.Energy double.calories;
-    property public static androidx.health.connect.client.units.Energy long.calories;
-    property public static androidx.health.connect.client.units.Energy float.calories;
-    property public static androidx.health.connect.client.units.Energy int.calories;
-    property public static androidx.health.connect.client.units.Energy double.joules;
-    property public static androidx.health.connect.client.units.Energy long.joules;
-    property public static androidx.health.connect.client.units.Energy float.joules;
-    property public static androidx.health.connect.client.units.Energy int.joules;
-    property public static androidx.health.connect.client.units.Energy double.kilocalories;
-    property public static androidx.health.connect.client.units.Energy long.kilocalories;
-    property public static androidx.health.connect.client.units.Energy float.kilocalories;
-    property public static androidx.health.connect.client.units.Energy int.kilocalories;
-    property public static androidx.health.connect.client.units.Energy double.kilojoules;
-    property public static androidx.health.connect.client.units.Energy long.kilojoules;
-    property public static androidx.health.connect.client.units.Energy float.kilojoules;
-    property public static androidx.health.connect.client.units.Energy int.kilojoules;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy double.calories;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy long.calories;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy float.calories;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy int.calories;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy double.joules;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy long.joules;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy float.joules;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy int.joules;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy double.kilocalories;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy long.kilocalories;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy float.kilocalories;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy int.kilocalories;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy double.kilojoules;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy long.kilojoules;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy float.kilojoules;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Energy int.kilojoules;
   }
 
   public final class Length implements java.lang.Comparable<androidx.health.connect.client.units.Length> {
@@ -2611,26 +2641,26 @@ package androidx.health.connect.client.units {
     method @BytecodeOnly public static androidx.health.connect.client.units.Length! getMiles(float);
     method @BytecodeOnly public static androidx.health.connect.client.units.Length! getMiles(int);
     method @BytecodeOnly public static androidx.health.connect.client.units.Length! getMiles(long);
-    property public static androidx.health.connect.client.units.Length double.feet;
-    property public static androidx.health.connect.client.units.Length float.feet;
-    property public static androidx.health.connect.client.units.Length long.feet;
-    property public static androidx.health.connect.client.units.Length int.feet;
-    property public static androidx.health.connect.client.units.Length double.inches;
-    property public static androidx.health.connect.client.units.Length float.inches;
-    property public static androidx.health.connect.client.units.Length long.inches;
-    property public static androidx.health.connect.client.units.Length int.inches;
-    property public static androidx.health.connect.client.units.Length double.kilometers;
-    property public static androidx.health.connect.client.units.Length float.kilometers;
-    property public static androidx.health.connect.client.units.Length long.kilometers;
-    property public static androidx.health.connect.client.units.Length int.kilometers;
-    property public static androidx.health.connect.client.units.Length double.meters;
-    property public static androidx.health.connect.client.units.Length long.meters;
-    property public static androidx.health.connect.client.units.Length float.meters;
-    property public static androidx.health.connect.client.units.Length int.meters;
-    property public static androidx.health.connect.client.units.Length double.miles;
-    property public static androidx.health.connect.client.units.Length float.miles;
-    property public static androidx.health.connect.client.units.Length long.miles;
-    property public static androidx.health.connect.client.units.Length int.miles;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length double.feet;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length float.feet;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length long.feet;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length int.feet;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length double.inches;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length float.inches;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length long.inches;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length int.inches;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length double.kilometers;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length float.kilometers;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length long.kilometers;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length int.kilometers;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length double.meters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length long.meters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length float.meters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length int.meters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length double.miles;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length float.miles;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length long.miles;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Length int.miles;
   }
 
   public final class Mass implements java.lang.Comparable<androidx.health.connect.client.units.Mass> {
@@ -2690,30 +2720,30 @@ package androidx.health.connect.client.units {
     method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getPounds(float);
     method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getPounds(int);
     method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getPounds(long);
-    property public static androidx.health.connect.client.units.Mass double.grams;
-    property public static androidx.health.connect.client.units.Mass float.grams;
-    property public static androidx.health.connect.client.units.Mass long.grams;
-    property public static androidx.health.connect.client.units.Mass int.grams;
-    property public static androidx.health.connect.client.units.Mass double.kilograms;
-    property public static androidx.health.connect.client.units.Mass float.kilograms;
-    property public static androidx.health.connect.client.units.Mass long.kilograms;
-    property public static androidx.health.connect.client.units.Mass int.kilograms;
-    property public static androidx.health.connect.client.units.Mass double.micrograms;
-    property public static androidx.health.connect.client.units.Mass float.micrograms;
-    property public static androidx.health.connect.client.units.Mass long.micrograms;
-    property public static androidx.health.connect.client.units.Mass int.micrograms;
-    property public static androidx.health.connect.client.units.Mass double.milligrams;
-    property public static androidx.health.connect.client.units.Mass float.milligrams;
-    property public static androidx.health.connect.client.units.Mass long.milligrams;
-    property public static androidx.health.connect.client.units.Mass int.milligrams;
-    property public static androidx.health.connect.client.units.Mass double.ounces;
-    property public static androidx.health.connect.client.units.Mass float.ounces;
-    property public static androidx.health.connect.client.units.Mass long.ounces;
-    property public static androidx.health.connect.client.units.Mass int.ounces;
-    property public static androidx.health.connect.client.units.Mass double.pounds;
-    property public static androidx.health.connect.client.units.Mass float.pounds;
-    property public static androidx.health.connect.client.units.Mass long.pounds;
-    property public static androidx.health.connect.client.units.Mass int.pounds;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass double.grams;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass float.grams;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass long.grams;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass int.grams;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass double.kilograms;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass float.kilograms;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass long.kilograms;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass int.kilograms;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass double.micrograms;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass float.micrograms;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass long.micrograms;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass int.micrograms;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass double.milligrams;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass float.milligrams;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass long.milligrams;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass int.milligrams;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass double.ounces;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass float.ounces;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass long.ounces;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass int.ounces;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass double.pounds;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass float.pounds;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass long.pounds;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Mass int.pounds;
   }
 
   public final class Percentage implements java.lang.Comparable<androidx.health.connect.client.units.Percentage> {
@@ -2728,10 +2758,10 @@ package androidx.health.connect.client.units {
     method @BytecodeOnly public static androidx.health.connect.client.units.Percentage! getPercent(float);
     method @BytecodeOnly public static androidx.health.connect.client.units.Percentage! getPercent(int);
     method @BytecodeOnly public static androidx.health.connect.client.units.Percentage! getPercent(long);
-    property public static androidx.health.connect.client.units.Percentage double.percent;
-    property public static androidx.health.connect.client.units.Percentage long.percent;
-    property public static androidx.health.connect.client.units.Percentage float.percent;
-    property public static androidx.health.connect.client.units.Percentage int.percent;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Percentage double.percent;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Percentage long.percent;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Percentage float.percent;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Percentage int.percent;
   }
 
   public final class Power implements java.lang.Comparable<androidx.health.connect.client.units.Power> {
@@ -2759,14 +2789,14 @@ package androidx.health.connect.client.units {
     method @BytecodeOnly public static androidx.health.connect.client.units.Power! getWatts(float);
     method @BytecodeOnly public static androidx.health.connect.client.units.Power! getWatts(int);
     method @BytecodeOnly public static androidx.health.connect.client.units.Power! getWatts(long);
-    property public static androidx.health.connect.client.units.Power double.kilocaloriesPerDay;
-    property public static androidx.health.connect.client.units.Power long.kilocaloriesPerDay;
-    property public static androidx.health.connect.client.units.Power float.kilocaloriesPerDay;
-    property public static androidx.health.connect.client.units.Power int.kilocaloriesPerDay;
-    property public static androidx.health.connect.client.units.Power double.watts;
-    property public static androidx.health.connect.client.units.Power long.watts;
-    property public static androidx.health.connect.client.units.Power float.watts;
-    property public static androidx.health.connect.client.units.Power int.watts;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Power double.kilocaloriesPerDay;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Power long.kilocaloriesPerDay;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Power float.kilocaloriesPerDay;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Power int.kilocaloriesPerDay;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Power double.watts;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Power long.watts;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Power float.watts;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Power int.watts;
   }
 
   public final class Pressure implements java.lang.Comparable<androidx.health.connect.client.units.Pressure> {
@@ -2786,10 +2816,10 @@ package androidx.health.connect.client.units {
     method @BytecodeOnly public static androidx.health.connect.client.units.Pressure! getMillimetersOfMercury(float);
     method @BytecodeOnly public static androidx.health.connect.client.units.Pressure! getMillimetersOfMercury(int);
     method @BytecodeOnly public static androidx.health.connect.client.units.Pressure! getMillimetersOfMercury(long);
-    property public static androidx.health.connect.client.units.Pressure double.millimetersOfMercury;
-    property public static androidx.health.connect.client.units.Pressure long.millimetersOfMercury;
-    property public static androidx.health.connect.client.units.Pressure float.millimetersOfMercury;
-    property public static androidx.health.connect.client.units.Pressure int.millimetersOfMercury;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Pressure double.millimetersOfMercury;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Pressure long.millimetersOfMercury;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Pressure float.millimetersOfMercury;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Pressure int.millimetersOfMercury;
   }
 
   public final class Temperature implements java.lang.Comparable<androidx.health.connect.client.units.Temperature> {
@@ -2833,14 +2863,14 @@ package androidx.health.connect.client.units {
     method @BytecodeOnly public static androidx.health.connect.client.units.Temperature! getFahrenheit(float);
     method @BytecodeOnly public static androidx.health.connect.client.units.Temperature! getFahrenheit(int);
     method @BytecodeOnly public static androidx.health.connect.client.units.Temperature! getFahrenheit(long);
-    property public static androidx.health.connect.client.units.Temperature double.celsius;
-    property public static androidx.health.connect.client.units.Temperature long.celsius;
-    property public static androidx.health.connect.client.units.Temperature float.celsius;
-    property public static androidx.health.connect.client.units.Temperature int.celsius;
-    property public static androidx.health.connect.client.units.Temperature double.fahrenheit;
-    property public static androidx.health.connect.client.units.Temperature long.fahrenheit;
-    property public static androidx.health.connect.client.units.Temperature float.fahrenheit;
-    property public static androidx.health.connect.client.units.Temperature int.fahrenheit;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Temperature double.celsius;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Temperature long.celsius;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Temperature float.celsius;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Temperature int.celsius;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Temperature double.fahrenheit;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Temperature long.fahrenheit;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Temperature float.fahrenheit;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Temperature int.fahrenheit;
   }
 
   public final class Velocity implements java.lang.Comparable<androidx.health.connect.client.units.Velocity> {
@@ -2876,18 +2906,18 @@ package androidx.health.connect.client.units {
     method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getMilesPerHour(float);
     method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getMilesPerHour(int);
     method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getMilesPerHour(long);
-    property public static androidx.health.connect.client.units.Velocity double.kilometersPerHour;
-    property public static androidx.health.connect.client.units.Velocity long.kilometersPerHour;
-    property public static androidx.health.connect.client.units.Velocity float.kilometersPerHour;
-    property public static androidx.health.connect.client.units.Velocity int.kilometersPerHour;
-    property public static androidx.health.connect.client.units.Velocity double.metersPerSecond;
-    property public static androidx.health.connect.client.units.Velocity long.metersPerSecond;
-    property public static androidx.health.connect.client.units.Velocity float.metersPerSecond;
-    property public static androidx.health.connect.client.units.Velocity int.metersPerSecond;
-    property public static androidx.health.connect.client.units.Velocity double.milesPerHour;
-    property public static androidx.health.connect.client.units.Velocity long.milesPerHour;
-    property public static androidx.health.connect.client.units.Velocity float.milesPerHour;
-    property public static androidx.health.connect.client.units.Velocity int.milesPerHour;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity double.kilometersPerHour;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity long.kilometersPerHour;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity float.kilometersPerHour;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity int.kilometersPerHour;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity double.metersPerSecond;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity long.metersPerSecond;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity float.metersPerSecond;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity int.metersPerSecond;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity double.milesPerHour;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity long.milesPerHour;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity float.milesPerHour;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Velocity int.milesPerHour;
   }
 
   public final class Volume implements java.lang.Comparable<androidx.health.connect.client.units.Volume> {
@@ -2923,18 +2953,18 @@ package androidx.health.connect.client.units {
     method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getMilliliters(float);
     method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getMilliliters(int);
     method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getMilliliters(long);
-    property public static androidx.health.connect.client.units.Volume double.fluidOuncesUs;
-    property public static androidx.health.connect.client.units.Volume long.fluidOuncesUs;
-    property public static androidx.health.connect.client.units.Volume float.fluidOuncesUs;
-    property public static androidx.health.connect.client.units.Volume int.fluidOuncesUs;
-    property public static androidx.health.connect.client.units.Volume double.liters;
-    property public static androidx.health.connect.client.units.Volume long.liters;
-    property public static androidx.health.connect.client.units.Volume float.liters;
-    property public static androidx.health.connect.client.units.Volume int.liters;
-    property public static androidx.health.connect.client.units.Volume double.milliliters;
-    property public static androidx.health.connect.client.units.Volume long.milliliters;
-    property public static androidx.health.connect.client.units.Volume float.milliliters;
-    property public static androidx.health.connect.client.units.Volume int.milliliters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume double.fluidOuncesUs;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume long.fluidOuncesUs;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume float.fluidOuncesUs;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume int.fluidOuncesUs;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume double.liters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume long.liters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume float.liters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume int.liters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume double.milliliters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume long.milliliters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume float.milliliters;
+    property @kotlin.jvm.JvmSynthetic public static androidx.health.connect.client.units.Volume int.milliliters;
   }
 
 }

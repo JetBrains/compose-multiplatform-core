@@ -165,8 +165,8 @@ class TransformationActivity : AppCompatActivity() {
             AnchorEntity.create(
                 session!!,
                 FloatSize2d(0.1f, 0.1f),
-                PlaneOrientation.ANY,
-                PlaneSemanticType.ANY,
+                PlaneOrientation.ALL,
+                PlaneSemanticType.ALL,
             )
         GltfModelEntity.create(
                 session!!,
@@ -185,7 +185,7 @@ class TransformationActivity : AppCompatActivity() {
                     "onAnchorSpaceUpdatedCount",
                     (++onAnchorSpaceUpdatedCount).toString(),
                 )
-                anchor!!.setOnOriginChangedListener({
+                anchor!!.addOnOriginChangedListener({
                     panel.view.setLine(
                         "onAnchorSpaceUpdatedCount",
                         (++onAnchorSpaceUpdatedCount).toString(),
@@ -221,6 +221,8 @@ class TransformationActivity : AppCompatActivity() {
         entity: Entity,
         labelDimensions: FloatSize3d,
     ) {
+        // TODO - b/415320653: Remove use of deprecated Space.REAL_WORLD
+        @Suppress("DEPRECATION", "RestrictedApiAndroidX")
         val entityScale = entity.getScale(Space.REAL_WORLD)
         if (entityScale > 0) {
             val newPixelWidth = (labelDimensions.width * entityScale).toInt().coerceAtLeast(10)
@@ -234,6 +236,8 @@ class TransformationActivity : AppCompatActivity() {
         }
     }
 
+    // TODO - b/415320653: Remove use of deprecated Space.REAL_WORLD
+    @Suppress("DEPRECATION", "RestrictedApiAndroidX")
     private fun updateDebugTextPanel(
         view: DebugTextLinearView,
         trackedEntity: Entity,
@@ -441,7 +445,7 @@ class TransformationActivity : AppCompatActivity() {
             DebugTextPanel(
                 this,
                 session!!,
-                session!!.scene.activitySpace,
+                session!!.scene.mainPanelEntity,
                 name = name,
                 pose = panelPose,
             )

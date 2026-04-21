@@ -38,11 +38,12 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * @property state the current [State] of the render viewpoint
  */
+@SuppressWarnings("HiddenSuperclass")
 public class RenderViewpoint
 internal constructor(
     internal val runtimeRenderViewpoint: RuntimeRenderViewpoint,
     internal val runtimeArDevice: RuntimeArDevice,
-) : Updatable {
+) : Updatable() {
 
     public companion object {
         /**
@@ -108,6 +109,7 @@ internal constructor(
      *
      * @property localPose a local offset from the device's central tracking point
      * @property fieldOfView the camera's [FieldOfView] in radians
+     * @property owner self-reference to the object that owns this state.
      */
     public class State
     internal constructor(
@@ -115,35 +117,41 @@ internal constructor(
         public val localPose: Pose,
         @Deprecated(message = "Convert to androidx.xr.runtime.math.FieldOfView")
         public val fieldOfView: FieldOfView,
+        public val owner: RenderViewpoint,
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is State) return false
             return pose == other.pose &&
                 localPose == other.localPose &&
-                fieldOfView == other.fieldOfView
+                fieldOfView == other.fieldOfView &&
+                owner == other.owner
         }
 
         override fun hashCode(): Int {
             var result = pose.hashCode()
             result = 31 * result + localPose.hashCode()
             result = 31 * result + fieldOfView.hashCode()
+            result = 31 * result + owner.hashCode()
             return result
         }
     }
 
-    private val _state = MutableStateFlow<State>(State(Pose(), Pose(), FieldOfView(0f, 0f, 0f, 0f)))
+    private val _state =
+        MutableStateFlow<State>(State(Pose(), Pose(), FieldOfView(0f, 0f, 0f, 0f), owner = this))
 
     public val state: StateFlow<State> = _state.asStateFlow()
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override suspend fun update() {
+    // TODO b/482646486: Remove public visibility and unrestrict when no longer used in G3
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public override suspend fun update() {
         val poseInPerceptionSpace = runtimeArDevice.devicePose.compose(runtimeRenderViewpoint.pose)
         _state.emit(
             State(
                 poseInPerceptionSpace,
                 runtimeRenderViewpoint.pose,
                 runtimeRenderViewpoint.fieldOfView,
+                owner = this,
             )
         )
     }

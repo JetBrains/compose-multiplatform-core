@@ -41,7 +41,7 @@ dependencies {
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
-    implementation("androidx.media3:media3-exoplayer:1.9.0-beta01")
+    implementation("androidx.media3:media3-exoplayer:1.10.0")
     implementation(libs.androidx.core)
 
     testImplementation(libs.junit)
@@ -80,7 +80,7 @@ android {
 }
 
 androidComponents {
-    def nativeTestPath = new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/androidTest")
+    def nativeTestPath = new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/scenecore-spatial/androidTest")
             .absolutePath
 
     onVariants(selector().all()) { variant ->

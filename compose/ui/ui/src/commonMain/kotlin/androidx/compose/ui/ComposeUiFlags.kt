@@ -85,12 +85,6 @@ object ComposeUiFlags {
     // TODO: b/485962036
     @field:Suppress("MutableBareField") @JvmField var isFocusRestorationEnabled: Boolean = false
 
-    /** Flag for enabling indirect pointer event navigation gestures in Compose. */
-    // TODO: b/455601135
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isIndirectPointerNavigationGestureDetectorEnabled: Boolean = true
-
     /** Flag enables optimized focus change dispatching logic. */
     // TODO: b/455603009
     @field:Suppress("MutableBareField")
@@ -108,20 +102,6 @@ object ComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     var isAccessibilityShouldIncludeOffscreenChildrenEnabled: Boolean = true
-
-    /**
-     * If enabled, [androidx.compose.ui.graphics.vector.VectorPainter] will use a shared
-     * [androidx.compose.ui.platform.GraphicsResourceCache] to reuse
-     * [androidx.compose.ui.graphics.vector.DrawCache] instances across different painters using the
-     * same [androidx.compose.ui.graphics.vector.ImageVector].
-     *
-     * This reduces redundant Texture uploads and improves performance when the same vector is used
-     * multiple times within a composition tree, such as in a LazyColumn.
-     */
-    // TODO: b/493138866
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isVectorDrawCacheSharingEnabled: Boolean = true
 
     /**
      * Enable the integration of [LocalUiMediaScope] at the root compose view which provides various

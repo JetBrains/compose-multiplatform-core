@@ -20,13 +20,11 @@ package androidx.xr.arcore
 import androidx.activity.ComponentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.runtime.AnchorNotAuthorizedException
-import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
-import androidx.xr.arcore.runtime.AnchorUnsupportedLocationException
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException as RtAnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.Geospatial as RuntimeGeospatial
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
-import androidx.xr.arcore.testing.FakeLifecycleManager
 import androidx.xr.arcore.testing.FakePerceptionManager
+import androidx.xr.arcore.testing.FakePerceptionRuntime
 import androidx.xr.arcore.testing.FakeRuntimeGeospatial
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.GeospatialMode
@@ -200,7 +198,7 @@ class GeospatialTest {
     fun createAnchor_resourceExhausted_returnsResourcesExhaustedResult() =
         createTestSessionAndRunTest {
             val underTest = Geospatial.getInstance(session)
-            getFakeRuntimeGeospatial().nextException = AnchorResourcesExhaustedException()
+            getFakeRuntimeGeospatial().nextException = RtAnchorResourcesExhaustedException()
 
             val result = underTest.createAnchor(LATITUDE, LONGITUDE, ALTITUDE, EUS_QUATERNION)
 
@@ -221,9 +219,9 @@ class GeospatialTest {
     @Test
     fun createPoseFromGeospatialPose_withVpsDisabled_throwsIllegalStateException() {
         val newConfig = Config(geospatial = GeospatialMode.DISABLED)
-        val fakeLifecycleManager = FakeLifecycleManager()
-        fakeLifecycleManager.config = newConfig
-        xrResourcesManager.lifecycleManager = fakeLifecycleManager
+        val fakePerceptionRuntime = FakePerceptionRuntime(FakePerceptionManager())
+        fakePerceptionRuntime.config = newConfig
+        xrResourcesManager.lifecycleManager = fakePerceptionRuntime.lifecycleManager
         val underTest = Geospatial(runtimeGeospatial, xrResourcesManager)
         val geospatialPose = GeospatialPose(1.0, 2.0, 3.0, Quaternion(0.1f, 0.2f, 0.3f, 0.4f))
 
@@ -267,7 +265,7 @@ class GeospatialTest {
         createTestSessionAndRunTest {
             doBlocking {
                 val underTest = Geospatial.getInstance(session)
-                getFakeRuntimeGeospatial().nextException = AnchorResourcesExhaustedException()
+                getFakeRuntimeGeospatial().nextException = RtAnchorResourcesExhaustedException()
 
                 val result =
                     underTest.createAnchorOnSurface(
@@ -283,13 +281,13 @@ class GeospatialTest {
         }
 
     @Test
-    fun createAnchorOnSurface_notAuthorized_returnsNotAuthorizedResult() =
+    fun createAnchorOnSurface_notAuthorized_throwsAnchorNotAuthorizedException() =
         createTestSessionAndRunTest {
             doBlocking {
                 val underTest = Geospatial.getInstance(session)
                 getFakeRuntimeGeospatial().nextException = AnchorNotAuthorizedException()
 
-                val result =
+                assertFailsWith<AnchorNotAuthorizedException> {
                     underTest.createAnchorOnSurface(
                         LATITUDE,
                         LONGITUDE,
@@ -297,8 +295,7 @@ class GeospatialTest {
                         EUS_QUATERNION,
                         GeospatialSurface.TERRAIN,
                     )
-
-                assertThat(result).isInstanceOf(AnchorCreateNotAuthorized::class.java)
+                }
             }
         }
 
@@ -307,9 +304,9 @@ class GeospatialTest {
         createTestSessionAndRunTest {
             doBlocking {
                 val underTest = Geospatial.getInstance(session)
-                getFakeRuntimeGeospatial().nextException = AnchorUnsupportedLocationException()
+                getFakeRuntimeGeospatial().nextException = IllegalArgumentException()
 
-                val result =
+                assertFailsWith<IllegalArgumentException> {
                     underTest.createAnchorOnSurface(
                         LATITUDE,
                         LONGITUDE,
@@ -317,8 +314,7 @@ class GeospatialTest {
                         EUS_QUATERNION,
                         GeospatialSurface.TERRAIN,
                     )
-
-                assertThat(result).isInstanceOf(AnchorCreateUnsupportedLocation::class.java)
+                }
             }
         }
 

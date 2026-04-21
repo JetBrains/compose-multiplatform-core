@@ -16,7 +16,6 @@
 
 package androidx.xr.arcore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.Plane as RuntimePlane
@@ -38,11 +37,12 @@ import kotlinx.coroutines.flow.transform
  * @property state the current [State] of the plane
  * @property type the [Type] of the plane
  */
+@SuppressWarnings("HiddenSuperclass")
 public class Plane
 internal constructor(
     internal val runtimePlane: RuntimePlane,
     private val xrResourceManager: XrResourcesManager,
-) : Anchorable<Plane.State>, Updatable {
+) : Anchorable<Plane.State>, Updatable() {
 
     public companion object {
         /**
@@ -69,14 +69,20 @@ internal constructor(
             return session.state
                 .transform { state ->
                     state.perceptionState?.let { perceptionState ->
-                        emit(perceptionState.trackables.filterIsInstance<Plane>())
+                        emit(
+                            perceptionState.trackableStates.filterIsInstance<Plane.State>().map {
+                                it.owner
+                            }
+                        )
                     }
                 }
                 .stateIn(
                     session.coroutineScope,
                     SharingStarted.Eagerly,
-                    session.state.value.perceptionState?.trackables?.filterIsInstance<Plane>()
-                        ?: emptyList(),
+                    session.state.value.perceptionState
+                        ?.trackableStates
+                        ?.filterIsInstance<Plane.State>()
+                        ?.map { it.owner } ?: emptyList(),
                 )
         }
     }
@@ -99,6 +105,8 @@ internal constructor(
      *
      * If the subsuming plane is also subsumed by another plane, this plane will continue to be
      * subsumed by the former.
+     *
+     * @property owner self-reference to the object that owns this state.
      */
     public class State
     internal constructor(
@@ -110,6 +118,7 @@ internal constructor(
         public val extents: FloatSize2d,
         public val vertices: List<Vector2>,
         public val subsumedBy: Plane?,
+        public val owner: Plane,
     ) : Trackable.State {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -119,7 +128,8 @@ internal constructor(
                 centerPose == other.centerPose &&
                 extents == other.extents &&
                 subsumedBy == other.subsumedBy &&
-                vertices == other.vertices
+                vertices == other.vertices &&
+                owner == other.owner
         }
 
         override fun hashCode(): Int {
@@ -129,6 +139,7 @@ internal constructor(
             result = 31 * result + extents.hashCode()
             result = 31 * result + subsumedBy.hashCode()
             result = 31 * result + vertices.hashCode()
+            result = 31 * result + owner.hashCode()
             return result
         }
     }
@@ -197,6 +208,7 @@ internal constructor(
                 runtimePlane.extents,
                 runtimePlane.vertices,
                 subsumedByFromRuntimePlane(),
+                owner = this,
             )
         )
 
@@ -214,7 +226,7 @@ internal constructor(
      * @param pose the initial [Pose] of the [Anchor]
      * @throws [IllegalStateException] if [Session.config] is set to [PlaneTrackingMode.DISABLED]
      */
-    override fun createAnchor(pose: Pose): AnchorCreateResult {
+    override fun createAnchor(pose: Pose): AnchorResult {
         check(
             xrResourceManager.lifecycleManager.config.planeTracking != PlaneTrackingMode.DISABLED
         ) {
@@ -232,7 +244,6 @@ internal constructor(
         return AnchorCreateSuccess(anchor)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(
             State(
@@ -242,6 +253,7 @@ internal constructor(
                 extents = runtimePlane.extents,
                 vertices = runtimePlane.vertices,
                 subsumedBy = subsumedByFromRuntimePlane(),
+                owner = this,
             )
         )
     }

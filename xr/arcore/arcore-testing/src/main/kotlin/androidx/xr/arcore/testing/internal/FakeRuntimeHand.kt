@@ -17,11 +17,17 @@
 package androidx.xr.arcore.testing.internal
 
 import androidx.xr.arcore.runtime.Hand as RuntimeHand
+import androidx.xr.arcore.runtime.HandJointType
 import androidx.xr.arcore.runtime.TrackingState
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 
 internal class FakeRuntimeHand(
     override var trackingState: TrackingState = TrackingState.PAUSED,
-    override var handJointsBuffer: FloatBuffer = ByteBuffer.allocate(0).asFloatBuffer(),
-) : RuntimeHand
+    override var handJointsBuffer: FloatBuffer = ByteBuffer.allocate(bufferSize).asFloatBuffer(),
+) : RuntimeHand {
+
+    companion object {
+        internal val bufferSize: Int = HandJointType.entries.size * 7 * Float.SIZE_BYTES
+    }
+}

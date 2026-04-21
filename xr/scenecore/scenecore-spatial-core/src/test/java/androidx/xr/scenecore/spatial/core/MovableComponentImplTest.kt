@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
@@ -37,7 +40,6 @@ import androidx.xr.scenecore.runtime.MoveEventListener
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.SurfaceEntity
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
 import androidx.xr.scenecore.testing.FakeGltfFeature.Companion.createWithMockFeature
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import androidx.xr.scenecore.testing.FakeSurfaceFeature
@@ -88,7 +90,7 @@ class MovableComponentImplTest {
     @Rule @JvmField val expect: Expect = Expect.create()
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
     private val fakeExecutor = FakeScheduledExecutorService()
-    private val xrExtensions = getXrExtensions()!!
+    private val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
     private val sceneNodeRegistry = SceneNodeRegistry()
     private val mockPanelShadowRenderer = mock<EntityShadowRenderer>()
     private val nodeRepository: NodeRepository = NodeRepository.getInstance()

@@ -61,7 +61,7 @@ class HitTestActivity : AppCompatActivity() {
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
         session!!.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN))
-        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
+        session?.scene?.keyEntity = null
         device = ArDevice.getInstance(session!!)
 
         // toolbar
@@ -90,7 +90,7 @@ class HitTestActivity : AppCompatActivity() {
                 panelContentView,
                 IntSize2d(640, 480),
                 "panel",
-                Pose(Vector3(0f, -0.5f, .5f)),
+                Pose(Vector3(0f, -0.85f, .5f)),
                 parent = session!!.scene.activitySpace,
             )
         panelEntity.parent = session!!.scene.activitySpace

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.list.VerticalList
 
 @Composable
-fun TypographySample() {
+fun TypographyDefaultUsage() {
     val typography = GlimmerTheme.typography
     VerticalList {
         item { TypeItem("titleLarge", style = typography.titleLarge) }
@@ -47,8 +47,8 @@ fun TypographySample() {
 
 @Preview
 @Composable
-private fun TypographyPreview() {
-    GlimmerTheme { TypographySample() }
+private fun TypographyDefaultPreview() {
+    TypographyDefaultUsage()
 }
 
 @Composable

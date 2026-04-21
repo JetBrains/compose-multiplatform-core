@@ -46,11 +46,11 @@ androidXMultiplatform {
         }
     }
     desktop()
-    mac()
     linux()
-    ios()
+    mac()
     watchos()
     tvos()
+    ios()
     js()
     wasmJs()
 

@@ -123,13 +123,26 @@ private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
      *   [BoundingBox.halfExtents] defines the distance from the center to each face. The total size
      *   of the box is twice the half-extent. All values are in meters.
      */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public val gltfModelBoundingBox: BoundingBox
+    internal val gltfModelBoundingBox: BoundingBox
         @MainThread
         get() {
             checkNotDisposed()
             return rtEntity!!.gltfModelBoundingBox
         }
+
+    /**
+     * Retrieves the axis-aligned bounding box (AABB) of an instanced glTF model in meters in the
+     * model's local coordinate space.
+     *
+     * @return A [BoundingBox] object representing the model's bounding box. The
+     *   [BoundingBox.center] defines the geometric center of the box, and the
+     *   [BoundingBox.halfExtents] defines the distance from the center to each face. The total size
+     *   of the box is twice the half-extent. All values are in meters.
+     */
+    // TODO - b/501059605: Make the property public and remove this getter.
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @ExperimentalGltfComposeMethod
+    public fun getGltfModelBoundingBox(): BoundingBox = gltfModelBoundingBox
 
     public companion object {
         /**
@@ -178,20 +191,16 @@ private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
          * @param model The [GltfModel] this [Entity] is referencing.
          * @param pose The initial [Pose] of the [Entity]. The default value is [Pose.Identity].
          * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is
-         *   [Scene]'s [ActivitySpace].
+         *   scene graph and will not be visible until a parent is set. The default value is `null`.
          */
         @MainThread
         @JvmOverloads
         @JvmStatic
-        // TODO: b/493469066 - Once internal clients explicitly set the parent parameter at all call
-        //  sites, change the default parent value to null in the entity factory and update the
-        //  release notes accordingly.
         public fun create(
             session: Session,
             model: GltfModel,
             pose: Pose = Pose.Identity,
-            parent: Entity? = session.scene.activitySpace,
+            parent: Entity? = null,
         ): GltfModelEntity =
             create(
                 session.sceneRuntime,
@@ -203,3 +212,12 @@ private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
             )
     }
 }
+
+// Annotation for Gltf-specific restricted LIBRARY_GROUP_PREFIX APIs that have not been finalized.
+// The annotation itself is also restricted, to match the methods being annotated.
+@RequiresOptIn(
+    "This API is experimental and used exclusively by XR Compose. It is not supported for general use. (b/501059605)"
+)
+@Retention(AnnotationRetention.BINARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public annotation class ExperimentalGltfComposeMethod

@@ -27,7 +27,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    //id("com.android.experimental.built-in-kotlin")
     id("org.jetbrains.kotlin.android")
 }
 
@@ -37,6 +36,7 @@ dependencies {
     compileOnly(project(":annotation:annotation-sampled"))
 
     implementation(project(":xr:glimmer:glimmer"))
+    implementation(project(":xr:glimmer:glimmer-google-fonts"))
 }
 
 androidx {

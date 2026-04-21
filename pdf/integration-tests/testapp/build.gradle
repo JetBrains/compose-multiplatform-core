@@ -2,7 +2,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    //id("com.android.experimental.built-in-kotlin")
     id("org.jetbrains.kotlin.android")
 }
 
@@ -13,7 +12,6 @@ android {
         applicationId = "androidx.pdf.testapp"
         minSdk = 31
         compileSdk = 36
-        compileSdkExtension = 19
     }
 
     viewBinding {

@@ -18,7 +18,6 @@ package androidx.xr.arcore
 
 import android.content.ContentResolver
 import android.provider.Settings.System
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Hand as RuntimeHand
 import androidx.xr.arcore.runtime.HandJointType as RuntimeHandJoint
 import androidx.xr.runtime.HandTrackingMode
@@ -37,8 +36,9 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * @property state the current [State] of this hand
  */
+@SuppressWarnings("HiddenSuperclass")
 public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
-    Trackable<Hand.State>, Updatable {
+    Trackable<Hand.State>, Updatable() {
     /** * Companion object holding info to the left and right hands. */
     public companion object {
 
@@ -127,11 +127,13 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
      * @property handJointsBuffer the [FloatBuffer] containing the current state of the hand
      * @property handJoints a map of [HandJointType] to [Pose] representing the current pose of each
      *   joint in the hand
+     * @property owner self-reference to the object that owns this state.
      */
     public class State
     internal constructor(
         public override val trackingState: TrackingState,
         public val handJointsBuffer: FloatBuffer,
+        public val owner: Hand,
     ) : Trackable.State {
 
         private class JointsMap(
@@ -210,12 +212,14 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
             if (this === other) return true
             if (other !is State) return false
             return trackingState == other.trackingState &&
-                handJointsBuffer == other.handJointsBuffer
+                handJointsBuffer == other.handJointsBuffer &&
+                owner == other.owner
         }
 
         override fun hashCode(): Int {
             var result = trackingState.hashCode()
             result = 31 * result + handJointsBuffer.hashCode()
+            result = 31 * result + owner.hashCode()
             return result
         }
 
@@ -225,15 +229,20 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
     }
 
     private val _state =
-        MutableStateFlow<State>(State(TrackingState.PAUSED, ByteBuffer.allocate(0).asFloatBuffer()))
+        MutableStateFlow<State>(
+            State(TrackingState.PAUSED, ByteBuffer.allocate(0).asFloatBuffer(), owner = this)
+        )
 
     /** The current [State] of this hand. */
     public override val state: StateFlow<State> = _state.asStateFlow()
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(
-            State(runtimeHand.trackingState.toTrackingState(), runtimeHand.handJointsBuffer)
+            State(
+                runtimeHand.trackingState.toTrackingState(),
+                runtimeHand.handJointsBuffer,
+                owner = this,
+            )
         )
     }
 

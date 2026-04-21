@@ -35,11 +35,12 @@ import kotlinx.coroutines.flow.transform
  *
  * @property state the current [State] of this face
  */
+@SuppressWarnings("HiddenSuperclass")
 public class Face
 internal constructor(
     internal val runtimeFace: RuntimeFace,
     internal val xrResourceManager: XrResourcesManager,
-) : Trackable<Face.State>, Updatable {
+) : Trackable<Face.State>, Updatable() {
 
     public companion object {
         /**
@@ -68,6 +69,8 @@ internal constructor(
          * @param session the [Session] to track faces from
          */
         @JvmStatic
+        @ExperimentalFaceApi
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun subscribe(session: Session): StateFlow<Collection<Face>> {
             check(session.config.faceTracking == FaceTrackingMode.MESHES) {
                 "Config.FaceTrackingMode must be set to MESHES to track face meshes."
@@ -76,14 +79,20 @@ internal constructor(
             return session.state
                 .transform { state ->
                     state.perceptionState?.let { perceptionState ->
-                        emit(perceptionState.trackables.filterIsInstance<Face>())
+                        emit(
+                            perceptionState.trackableStates.filterIsInstance<Face.State>().map {
+                                it.owner
+                            }
+                        )
                     }
                 }
                 .stateIn(
                     session.coroutineScope,
                     SharingStarted.Eagerly,
-                    session.state.value.perceptionState?.trackables?.filterIsInstance<Face>()
-                        ?: emptyList(),
+                    session.state.value.perceptionState
+                        ?.trackableStates
+                        ?.filterIsInstance<Face.State>()
+                        ?.map { it.owner } ?: emptyList(),
                 )
         }
 
@@ -170,33 +179,48 @@ internal constructor(
     /**
      * The representation of the current state of [Face].
      *
-     * @property trackingState the current [androidx.xr.runtime.TrackingState] of the face.
-     * @property centerPose the pose at the center of the face, defined to have the origin located
-     *   behind the nose and between the two cheek bones
-     *
-     *   Z+ is forward out of the nose, Y+ is upwards, and X+ is towards the left. The units are in
-     *   meters.
-     *
-     *   [centerPose] will be null if the Session is not configured with [FaceTrackingMode.MESHES].
-     *
-     * @property mesh the polygonal representation of the face as observed by the perception system
-     *
-     *   [mesh] will be null if the Session is not configured with [FaceTrackingMode.MESHES].
+     * @property trackingState the current [androidx.xr.runtime.TrackingState] of the face
+     * @property owner self-reference to the object that owns this state.
      */
     public class State
     internal constructor(
         public override val trackingState: TrackingState,
-        public val centerPose: Pose? = null,
-        public val mesh: Mesh? = null,
+        internal val centerPose: Pose? = null,
+        internal val mesh: Mesh? = null,
         internal val blendShapeValues: FloatArray? = null,
         internal val confidenceValues: FloatArray? = null,
         internal val noseTipPose: Pose? = null,
         internal val foreheadLeftPose: Pose? = null,
         internal val foreheadRightPose: Pose? = null,
+        public val owner: Face,
     ) : Trackable.State {
 
         public val blendShapes: Map<FaceBlendShapeType, Float> =
             blendShapeMapKeys.zip(blendShapeValues?.toList() ?: emptyList()).toMap()
+
+        /**
+         * Retrieves the main [Pose] of a Face [Mesh], defined to have the origin located behind the
+         * nose and between the two cheek bones.
+         *
+         * Z+ is forward out of the nose, Y+ is upwards, and X+ is towards the left. The units are
+         * in meters and are relative to perception space.
+         *
+         * @return the [Pose] at the center of the face mesh in perception space, or `null` if the
+         *   Session is not configured with [FaceTrackingMode.MESHES]
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @ExperimentalFaceApi
+        public fun getMeshCenterPose(): Pose? = centerPose
+
+        /**
+         * Get the polygonal representation of the face as observed by the perception system.
+         *
+         * @return the Face's [Mesh], or `null` if the Session is not configured with
+         *   [FaceTrackingMode.MESHES]
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @ExperimentalFaceApi
+        public fun getMeshData(): Mesh? = mesh
 
         /**
          * Gets the confidence value of the face tracker for the given region.
@@ -219,18 +243,21 @@ internal constructor(
         }
 
         /**
-         * Map of [Pose] values on the Face for each [FaceMeshRegion]
+         * Retrieve the [Pose] value associated with each [FaceMeshRegion]. Each Pose is relative to
+         * perception space.
          *
-         * Each [Pose] value in the Map will be null if the Session is not configured with
-         * [FaceTrackingMode.MESHES].
+         * @return a [Map] of [FaceMeshRegion] to [Pose]
          */
-        public val regionPoses: Map<FaceMeshRegion, Pose?> =
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @ExperimentalFaceApi
+        public fun getRegionPoseMap(): Map<FaceMeshRegion, Pose?> =
             mapOf(
                 FaceMeshRegion.NOSE_TIP to noseTipPose,
                 FaceMeshRegion.FOREHEAD_LEFT to foreheadLeftPose,
                 FaceMeshRegion.FOREHEAD_RIGHT to foreheadRightPose,
             )
 
+        @OptIn(ExperimentalFaceApi::class)
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is State) return false
@@ -241,9 +268,11 @@ internal constructor(
                 mesh == other.mesh &&
                 noseTipPose == other.noseTipPose &&
                 foreheadLeftPose == other.foreheadLeftPose &&
-                foreheadRightPose == other.foreheadRightPose
+                foreheadRightPose == other.foreheadRightPose &&
+                owner == other.owner
         }
 
+        @OptIn(ExperimentalFaceApi::class)
         override fun hashCode(): Int {
             var result = trackingState.hashCode()
             result = 31 * result + blendShapeValues.contentHashCode()
@@ -253,6 +282,7 @@ internal constructor(
             result = 31 * result + noseTipPose.hashCode()
             result = 31 * result + foreheadLeftPose.hashCode()
             result = 31 * result + foreheadRightPose.hashCode()
+            result = 31 * result + owner.hashCode()
             return result
         }
 
@@ -269,6 +299,7 @@ internal constructor(
                 TrackingState.PAUSED,
                 blendShapeValues = FloatArray(blendShapeMapKeys.size),
                 confidenceValues = FloatArray(confidenceRegions.size),
+                owner = this,
             )
         )
 
@@ -288,6 +319,7 @@ internal constructor(
                 runtimeFace.noseTipPose,
                 runtimeFace.foreheadLeftPose,
                 runtimeFace.foreheadRightPose,
+                owner = this,
             )
         )
     }
@@ -302,3 +334,12 @@ internal constructor(
 
     override fun toString(): String = "Face(runtimeFace=$runtimeFace, state=${state.value})"
 }
+
+/**
+ * Marks experimental properties of the [Face] API.
+ *
+ * These properties are subject to change or removal in a future release.
+ */
+@RequiresOptIn(message = "This is an experimental API. It may be changed or removed in the future.")
+@Retention(AnnotationRetention.BINARY)
+public annotation class ExperimentalFaceApi

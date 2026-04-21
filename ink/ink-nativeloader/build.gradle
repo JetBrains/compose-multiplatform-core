@@ -30,15 +30,15 @@ def nativeHeadersDir = new File(nativePrebuiltsDir, "headers").path
 
 androidXMultiplatform {
   jvm()
-  ios()
   androidLibrary {
     namespace = "androidx.ink.nativeloader"
     optimization {
       it.consumerKeepRules.publish = true
-      it.consumerKeepRules.files.add(file("ink_jni.pgcfg"))
     }
     androidResources.enable = true
   }
+  // TODO: b/462064872 - Turn on ios() support and enable BuildType.KMP
+  // ios()
 
   defaultPlatform(PlatformIdentifier.JVM)
 
@@ -59,6 +59,8 @@ androidXMultiplatform {
 
   sourceSets {
     commonMain.dependencies {
+      implementation(libs.kotlinCoroutinesCore)
+      implementation(libs.kotlinCoroutinesTest)
       implementation("androidx.annotation:annotation:1.8.0")
     }
 
@@ -66,9 +68,13 @@ androidXMultiplatform {
       resources.srcDir(new File(prebuiltsRoot, "androidx/ink/jvm"))
     }
 
+    commonTest.dependencies {
+      implementation(project(":kruth:kruth"))
+      implementation(libs.kotlinTest)
+    }
+
     jvmAndAndroidTest.dependencies {
       implementation(libs.junit)
-      implementation(libs.kotlinTest)
     }
 
     androidDeviceTest.dependencies {
@@ -91,4 +97,12 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "Native dependencies for Ink"
+    usePlatformSpecificCacheForJvmTests = true
+}
+
+// TODO: b/374774638 - Run tests on host as well as device.
+afterEvaluate {
+    project.tasks.named("testAndroidHostTest").configure {
+        it.enabled = false
+    }
 }

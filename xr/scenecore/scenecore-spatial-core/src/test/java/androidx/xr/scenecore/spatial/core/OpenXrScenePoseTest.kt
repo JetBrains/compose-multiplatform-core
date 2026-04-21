@@ -27,10 +27,9 @@ import androidx.xr.runtime.testing.math.assertVector3
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.HitTestResult
 import androidx.xr.scenecore.runtime.ScenePose
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
 import androidx.xr.scenecore.runtime.impl.BaseScenePose
 import androidx.xr.scenecore.runtime.impl.OpenXrScenePose
-import androidx.xr.scenecore.testing.FakeGltfFeature
+import androidx.xr.scenecore.testing.FakeGltfFeature.Companion.createWithMockFeature
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
@@ -53,8 +52,8 @@ import org.robolectric.annotation.Config
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.TARGET_SDK])
-class OpenXrScenePoseTest() {
-    private val xrExtensions: XrExtensions? = XrExtensionsProvider.getXrExtensions()
+class OpenXrScenePoseTest {
+    private val xrExtensions: XrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
     private val executor = FakeScheduledExecutorService()
     private val sceneNodeRegistry = SceneNodeRegistry()
     private val activity: Activity =
@@ -62,7 +61,7 @@ class OpenXrScenePoseTest() {
 
     private val activitySpace =
         ActivitySpaceImpl(
-            xrExtensions!!.createNode(),
+            xrExtensions.createNode(),
             activity,
             xrExtensions,
             sceneNodeRegistry,
@@ -75,8 +74,10 @@ class OpenXrScenePoseTest() {
 
     /** Creates a generic glTF entity. */
     private fun createGltfEntity(): GltfEntityImpl {
-        val nodeHolder = NodeHolder(xrExtensions!!.createNode(), Node::class.java)
-        val fakeGltfFeature = FakeGltfFeature.createWithMockFeature(mockGltfFeature, nodeHolder)
+        val activityController = Robolectric.buildActivity(Activity::class.java)
+        val activity = activityController.create().start().get()
+        val nodeHolder = NodeHolder<Node>(xrExtensions!!.createNode(), Node::class.java)
+        val fakeGltfFeature = createWithMockFeature(mockGltfFeature, nodeHolder)
 
         return GltfEntityImpl(
             activity,

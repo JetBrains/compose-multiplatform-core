@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
@@ -25,7 +27,6 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.testing.FakeSpatialApiVersionProvider.Companion.testSpatialApiVersion
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.PointSourceParams
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
 import androidx.xr.scenecore.testing.FakeAudioTrackExtensionsWrapper
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.google.common.truth.Truth.assertThat
@@ -46,7 +47,7 @@ class PositionalAudioComponentImplTest {
         Robolectric.buildActivity(Activity::class.java)
     private val activity: Activity = activityController.create().start().get()
     private val fakeExecutor = FakeScheduledExecutorService()
-    private val xrExtensions = getXrExtensions()
+    private val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
     private lateinit var fakeRuntime: SpatialSceneRuntime
 
     @Before

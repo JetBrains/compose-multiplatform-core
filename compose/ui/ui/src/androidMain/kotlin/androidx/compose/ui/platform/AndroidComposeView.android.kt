@@ -86,7 +86,6 @@ import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ComposeUiFlags.isIndirectPointerNavigationGestureDetectorEnabled
 import androidx.compose.ui.ComposeUiFlags.isOptimizedFocusEventDispatchEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ExperimentalIndirectPointerApi
@@ -836,24 +835,34 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         get() = composeViewContext.hapticFeedback
 
     /** Provide an instance of [InputModeManager] which is available as a CompositionLocal. */
-    private val _inputModeManager =
-        InputModeManagerImpl(
-            initialInputMode = if (isInTouchMode) Touch else Keyboard,
-            onRequestInputModeChange = {
-                when (it) {
-                    // Android doesn't support programmatically switching to touch mode, so we
-                    // don't do anything, but just return true if we are already in touch mode.
-                    Touch -> isInTouchMode
+    private var _inputModeManager: InputModeManagerImpl? = null
+    override val inputModeManager: InputModeManagerImpl
+        get() {
+            var instance = _inputModeManager
+            if (instance == null) {
+                instance =
+                    InputModeManagerImpl(
+                        initialInputMode = if (isInTouchMode) Touch else Keyboard,
+                        onRequestInputModeChange = {
+                            when (it) {
+                                // Android doesn't support programmatically switching to touch mode,
+                                // so we
+                                // don't do anything, but just return true if we are already in
+                                // touch mode.
+                                Touch -> isInTouchMode
 
-                    // If we are already in keyboard mode, we return true, otherwise, we call
-                    // requestFocusFromTouch, which puts the system in non-touch mode.
-                    Keyboard -> if (isInTouchMode) requestFocusFromTouch() else true
-                    else -> false
-                }
-            },
-        )
-    override val inputModeManager: InputModeManager
-        get() = _inputModeManager
+                                // If we are already in keyboard mode, we return true, otherwise, we
+                                // call
+                                // requestFocusFromTouch, which puts the system in non-touch mode.
+                                Keyboard -> if (isInTouchMode) requestFocusFromTouch() else true
+                                else -> false
+                            }
+                        },
+                    )
+                _inputModeManager = instance
+            }
+            return instance
+        }
 
     override val modifierLocalManager: ModifierLocalManager = ModifierLocalManager(this)
 
@@ -1035,7 +1044,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         ViewCompat.setAccessibilityDelegate(this, composeAccessibilityDelegate)
         ViewRootForTest.onViewCreatedCallback?.invoke(this)
         setOnDragListener(dragAndDropManager)
-        root.attach(this)
 
         // Support for this feature in Compose is tracked here: b/207654434
         if (SDK_INT >= Q) AndroidComposeViewForceDarkModeQ.disallowForceDark(this)
@@ -2281,6 +2289,13 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+
+        // It is important to only attach it when view is attached, as attaching view invalidates
+        // caches for accessibility service lookups that are used for semantics.
+        if (!root.isAttached) {
+            root.attach(this)
+        }
+
         isAttached = true
         if (SDK_INT < 30) {
             showLayoutBounds = getIsShowingLayoutBounds()
@@ -2302,8 +2317,8 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                 _autofill?.let { AutofillLoggingCallback.register(it) }
             }
         }
-        // Moving this work outside of frame this callback is not trivial. The initial value will be
-        // requested and read synchronously anyway.
+        // Moving this work outside of frame, as this callback is not trivial. The initial value
+        // will be requested and read synchronously anyway.
         val outOfFrameExecutor =
             outOfFrameExecutor ?: error("Expected the view to be attached to window.")
         outOfFrameExecutor.schedule { addNotificationForSysPropsChange(this) }
@@ -2322,7 +2337,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         val lifecycle = composeViewContext.lifecycleOwner.lifecycle
         lifecycle.addObserver(this)
         lifecycle.addObserver(contentCaptureManager)
-        _inputModeManager.inputMode = if (isInTouchMode) Touch else Keyboard
+        inputModeManager.inputMode = if (isInTouchMode) Touch else Keyboard
         viewTreeObserver.addOnGlobalLayoutListener(this)
         viewTreeObserver.addOnScrollChangedListener(this)
         viewTreeObserver.addOnTouchModeChangeListener(this)
@@ -2491,17 +2506,14 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     private fun handleIndirectPointerEvent(indirectPointerEvent: IndirectPointerEvent): Boolean {
         val isConsumed = focusOwner.dispatchIndirectPointerEvent(indirectPointerEvent)
 
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (isIndirectPointerNavigationGestureDetectorEnabled) {
-            indirectPointerNavigationGestureDetector.onIndirectPointerEvent(
-                indirectPointerEvent = indirectPointerEvent,
-                isConsumed = isConsumed,
-            )
+        indirectPointerNavigationGestureDetector.onIndirectPointerEvent(
+            indirectPointerEvent = indirectPointerEvent,
+            isConsumed = isConsumed,
+        )
 
-            return true
-        }
-
-        return isConsumed
+        // Either an owner will handle the indirect event or the default gesture handler will in
+        // this class.
+        return true
     }
 
     // TODO(shepshapard): Test this method.
@@ -3314,7 +3326,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     // executed whenever the touch mode changes.
     override fun onTouchModeChanged(isInTouchMode: Boolean) {
-        _inputModeManager.inputMode = if (isInTouchMode) Touch else Keyboard
+        inputModeManager.inputMode = if (isInTouchMode) Touch else Keyboard
     }
 
     override fun executeDelayed(delayMillis: Long, block: () -> Unit): Any {

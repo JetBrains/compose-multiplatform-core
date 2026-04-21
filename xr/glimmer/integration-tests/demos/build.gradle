@@ -26,7 +26,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    //id("com.android.experimental.built-in-kotlin")
     id("org.jetbrains.kotlin.android")
 }
 
@@ -42,6 +41,7 @@ dependencies {
     implementation(project(":navigation3:navigation3-runtime"))
     implementation(project(":navigation3:navigation3-ui"))
     implementation(project(":xr:glimmer:glimmer"))
+    implementation(project(":xr:glimmer:glimmer-google-fonts"))
     implementation(project(":xr:glimmer:glimmer:glimmer-samples"))
     implementation(project(":xr:projected:projected"))
 }

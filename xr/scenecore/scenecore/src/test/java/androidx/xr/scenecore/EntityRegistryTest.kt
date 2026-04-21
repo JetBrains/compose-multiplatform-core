@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore
 
 import android.os.Build
@@ -218,8 +220,8 @@ class EntityRegistryTest {
                 session,
                 entityRegistry,
                 FloatSize2d(),
-                PlaneOrientation.ANY,
-                PlaneSemanticType.ANY,
+                PlaneOrientation.ALL,
+                PlaneSemanticType.ALL,
                 10.seconds.toJavaDuration(),
             )
     }

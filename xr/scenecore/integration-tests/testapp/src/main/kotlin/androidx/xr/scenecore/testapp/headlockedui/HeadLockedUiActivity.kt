@@ -89,7 +89,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
             )
         )
-        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
+        session?.scene?.keyEntity = null
         device = ArDevice.getInstance(session!!)
         cameraLeft = RenderViewpoint.left(session!!)
         cameraRight = RenderViewpoint.right(session!!)
@@ -180,7 +180,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
             DebugTextPanel(
                 context = this,
                 session = session!!,
-                parent = session!!.scene.activitySpace,
+                parent = session!!.scene.mainPanelEntity,
                 name = "DebugPanel",
                 pose = Pose(Vector3(0f, -0.8f, -0.05f)),
             )
@@ -264,6 +264,8 @@ class HeadLockedUiActivity : AppCompatActivity() {
         if (projectionSource != null) {
             // Since the panel is parented by the activitySpace, we need to inverse its scale
             // so that the panel stays at a fixed size in the view even when ActivitySpace scales.
+            // TODO - b/415320653: Remove use of deprecated Space.REAL_WORLD
+            @Suppress("DEPRECATION", "RestrictedApiAndroidX")
             this.mHeadLockedPanel.setScale(
                 0.5f / session!!.scene.activitySpace.getScale(Space.REAL_WORLD)
             )
@@ -277,6 +279,8 @@ class HeadLockedUiActivity : AppCompatActivity() {
         mHeadLockedPanelView.postOnAnimation(animationRunnable)
     }
 
+    // TODO - b/415320653: Remove use of deprecated Space.REAL_WORLD
+    @Suppress("DEPRECATION", "RestrictedApiAndroidX")
     private fun updateDebugPanel(projectedPose: Pose) {
         mDebugPanel.view.setLine(
             "ActivitySpace ActivityPose",

@@ -84,8 +84,8 @@ class MovableActivity : AppCompatActivity() {
 
     private var movableComponent: MovableComponent? = null
     private val executor = Executors.newSingleThreadExecutor()
-    private var planeOrientationFilter: MutableSet<Int> = mutableSetOf()
-    private var planeSemanticFilter: MutableSet<Int> = mutableSetOf()
+    private var planeOrientationFilter: MutableSet<PlaneOrientation> = mutableSetOf()
+    private var planeSemanticFilter: MutableSet<PlaneSemanticType> = mutableSetOf()
 
     companion object {
         private const val TAG = "MovableActivity"
@@ -110,7 +110,7 @@ class MovableActivity : AppCompatActivity() {
             return false
         }
         session!!.configure(Config(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
-        session!!.scene.keyEntity = session!!.scene.mainPanelEntity
+        session!!.scene.keyEntity = null
 
         // Enable passthrough by default to allow interaction with the real world,
         // which is necessary for testing anchoring functionality.
@@ -149,9 +149,8 @@ class MovableActivity : AppCompatActivity() {
                 IntSize2d(640, 550),
                 "stationaryPanel",
                 Pose(Vector3(0.9f, 0f, 0f)),
-                parent = session!!.scene.activitySpace,
+                parent = session!!.scene.mainPanelEntity,
             )
-        stationaryPanelEntity.parent = session!!.scene.keyEntity
         return stationaryPanelEntity
     }
 
@@ -175,9 +174,8 @@ class MovableActivity : AppCompatActivity() {
                 IntSize2d(750, 1200),
                 "panel",
                 Pose(Vector3(0f, 0f, 0.1f)),
-                parent = session!!.scene.activitySpace,
+                parent = session!!.scene.mainPanelEntity,
             )
-        movablePanelEntity.parent = session!!.scene.keyEntity
         val enableMovableSwitch =
             movablePanelContentView.findViewById<MaterialSwitch>(R.id.enable_movable_switch)
         val movableOptionsContainer =
@@ -222,7 +220,7 @@ class MovableActivity : AppCompatActivity() {
         parentSwitch.setOnCheckedChangeListener { _, isChecked: Boolean ->
             when (isChecked) {
                 true -> movablePanelEntity.parent = stationaryPanelEntity
-                false -> movablePanelEntity.parent = session!!.scene.keyEntity
+                false -> movablePanelEntity.parent = session!!.scene.mainPanelEntity
             }
             movablePanelEntity.setPose(Pose(Vector3(0f, 0f, 0.1f)))
         }
@@ -233,6 +231,7 @@ class MovableActivity : AppCompatActivity() {
             movablePanelContentView.findViewById<RadioGroup>(R.id.custom_behavior_group)
     }
 
+    @Suppress("RestrictedApiAndroidX", "DEPRECATION")
     private fun setupAnchorPlacementCheckboxes(view: View, movablePanelEntity: Entity) {
         val planeOrientationCheckboxMap =
             mapOf(
@@ -337,7 +336,7 @@ class MovableActivity : AppCompatActivity() {
         movablePanelEntity.addComponent(movableComponent!!)
     }
 
-    @SuppressLint("ExceptionMessage")
+    @Suppress("ExceptionMessage", "RestrictedApiAndroidX", "DEPRECATION")
     private fun createAnchorableGltfEntity() {
         lifecycleScope.launch {
             val gltfModel =

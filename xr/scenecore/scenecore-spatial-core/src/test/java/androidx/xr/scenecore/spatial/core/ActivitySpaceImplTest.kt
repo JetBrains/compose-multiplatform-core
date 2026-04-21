@@ -32,9 +32,8 @@ import androidx.xr.scenecore.runtime.HitTestResult
 import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.Space
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
+import androidx.xr.scenecore.runtime.SpatialModeChangeListener
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
-import androidx.xr.scenecore.testing.FakeSpatialModeChangeListener
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.environment.EnvironmentVisibilityState
@@ -89,8 +88,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
 
     @Before
     fun setUp() {
-        xrExtensions = XrExtensionsProvider.getXrExtensions()!!
-
+        xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
         testRuntime = createTestSceneRuntime()
 
         activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
@@ -272,9 +270,21 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
         }
     }
 
+    private class TestSpatialModeChangeListener : SpatialModeChangeListener {
+        var lastRecommendedPose: Pose? = null
+        var lastRecommendedScale: Vector3? = null
+        var updateCount = 0
+
+        override fun onSpatialModeChanged(recommendedPose: Pose, recommendedScale: Vector3) {
+            lastRecommendedPose = recommendedPose
+            lastRecommendedScale = recommendedScale
+            updateCount++
+        }
+    }
+
     @Test
     fun handleOriginUpdate_unscaledGravityAlignedFalse_handlerCalled() {
-        val handler = FakeSpatialModeChangeListener()
+        val handler = TestSpatialModeChangeListener()
         activitySpace.setSpatialModeChangeListener(handler)
 
         val initialRotation = Quaternion.fromEulerAngles(30f, 0f, 0f)
@@ -290,7 +300,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
 
     @Test
     fun handleOriginUpdate_unscaledGravityAlignedTrue_scaleAndRotationApplied_handlerCalled() {
-        val handler = FakeSpatialModeChangeListener()
+        val handler = TestSpatialModeChangeListener()
         testRuntime = createTestSceneRuntime()
         activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
         activitySpace.setSpatialModeChangeListener(handler)
@@ -323,7 +333,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
 
     @Test
     fun handleOriginUpdate_unscaledGravityAlignedTrue_preservesYaw() {
-        val handler = FakeSpatialModeChangeListener()
+        val handler = TestSpatialModeChangeListener()
         testRuntime = createTestSceneRuntime()
         activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
         activitySpace.setSpatialModeChangeListener(handler)
@@ -366,7 +376,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
 
     @Test
     fun handleOriginUpdate_noHandler_doesNotCallHandler() {
-        val handler = FakeSpatialModeChangeListener()
+        val handler = TestSpatialModeChangeListener()
         testRuntime = createTestSceneRuntime()
         activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
         activitySpace.setSpatialModeChangeListener(null)
@@ -520,7 +530,6 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
     override fun setPoseInOpenXrReferenceSpace_updatesScale() {
         val systemSpaceEntity = this.systemSpaceEntityImpl
         val matrix = Matrix4.fromScale(3.3f)
-        val scale = Vector3(3.3f, 3.3f, 3.3f)
         systemSpaceEntity.setOpenXrReferenceSpaceTransform(matrix)
         assertVector3(systemSpaceEntity.activitySpaceScale, Vector3.One)
         // ActivitySpace always returns Vector3.One

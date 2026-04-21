@@ -33,6 +33,7 @@ import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageImageContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
+import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.models.FormWidgetInfo
 import java.io.Closeable
 import java.util.concurrent.Executor
@@ -140,6 +141,24 @@ public interface PdfDocument : Closeable {
         pageNumber: Int,
         start: PointF,
         stop: PointF,
+    ): PageSelection?
+
+    /**
+     * Asynchronously retrieves the selection bounds (in PDF coordinates) for the specified text
+     * selection.
+     *
+     * @param pageNumber The page on which text to be selected.
+     * @param start The starting boundary of the text selection.
+     * @param stop The ending boundary of the text selection.
+     * @return A [PageSelection] object representing the selection bounds on the page.
+     *
+     * TODO: b/500570239 Expose it as public api
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public suspend fun getSelectionBounds(
+        pageNumber: Int,
+        start: SelectionBoundary,
+        stop: SelectionBoundary,
     ): PageSelection?
 
     /**
@@ -251,6 +270,24 @@ public interface PdfDocument : Closeable {
     public fun removeOnPdfContentInvalidatedListener(listener: OnPdfContentInvalidatedListener)
 
     /**
+     * Adds a listener to be notified when an edit is applied on the document. Remove the listener
+     * using [removeOnEditsAppliedListener].
+     *
+     * @param executor The executor on which the listener's methods will be called.
+     * @param listener the listener to add.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public fun addOnEditsAppliedListener(executor: Executor, listener: OnEditsAppliedListener) {}
+
+    /**
+     * Remove a listener for applied edits.
+     *
+     * @param listener the listener for notification of applied edit.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public fun removeOnEditsAppliedListener(listener: OnEditsAppliedListener) {}
+
+    /**
      * Represents information about a single page in the PDF document.
      *
      * @property pageNum The page number (0-based).
@@ -328,6 +365,18 @@ public interface PdfDocument : Closeable {
         public override val cause: Throwable? = null,
     ) : CancellationException()
 
+    /**
+     * Returns true if the given feature is supported by this document implementation.
+     *
+     * This API allows clients (like PdfView) to dynamically check feature availability without
+     * relying on hardcoded SDK versions or backend implementation assumptions.
+     *
+     * @param feature the [PdfFeature] being queried
+     * @return true if supported, false otherwise
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun isFeatureSupported(feature: PdfFeature): Boolean
+
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
         PDF_FORM_TYPE_NONE,
@@ -369,6 +418,23 @@ public interface PdfDocument : Closeable {
     )
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public annotation class LinearizationStatus
+
+    /**
+     * Interface definition for a callback that notifies when an edit is applied using the
+     * [EditablePdfDocument.applyEdits] method.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public interface OnEditsAppliedListener {
+        /**
+         * Called when an edit is applied on the document. The order of the callback is preserved
+         * according to the order of the sorted list returned by
+         * [EditsDraft.getOperationsSortedByPage].
+         *
+         * @param pageNum page number where the annotation is applied.
+         * @param editId id of the annotation that was applied.
+         */
+        public fun onEditApplied(pageNum: Int, editId: String)
+    }
 
     public companion object {
         /** Represents a PDF with no form fields */

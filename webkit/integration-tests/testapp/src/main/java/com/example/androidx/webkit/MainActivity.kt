@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<MenuListView>(R.id.top_level_list)
             .setItems(
-                arrayOf(
+                listOf(
                     MenuListView.MenuItem(
                         getResources().getString(R.string.safebrowsing_activity_title),
                         Intent(this, SafeBrowsingActivity::class.java),
@@ -110,6 +110,10 @@ class MainActivity : AppCompatActivity() {
                     MenuListView.MenuItem(
                         getResources().getString(R.string.custom_header_activity_title),
                         Intent(this, CustomHeaderActivity::class.java),
+                    ),
+                    MenuListView.MenuItem(
+                        getResources().getString(R.string.prefetch_activity_title),
+                        Intent(this, PrefetchActivity::class.java),
                     ),
                 )
             )

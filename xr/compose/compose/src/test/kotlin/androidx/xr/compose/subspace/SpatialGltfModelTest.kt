@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.compose.subspace
 
 import android.annotation.TargetApi
@@ -114,52 +116,6 @@ class SpatialGltfModelTest {
         }
 
         assertThat(loadedAssets).containsExactly("asset.glb")
-    }
-
-    @Test
-    fun spatialModel_fromData_loadsAndRenders() {
-        // Verify that a model is successfully loaded and rendered when using
-        // `SpatialModelSource.fromData` with a `ByteArray`.
-
-        val loadedAssetData = mutableListOf<ByteArray>()
-        val loadedAssetKeys = mutableListOf<String>()
-
-        composeTestRule.configureFakeSession(
-            renderingRuntime = {
-                object : RenderingRuntime by it {
-                    override suspend fun loadGltfByByteArray(
-                        assetData: ByteArray,
-                        assetKey: String,
-                    ): GltfModelResource {
-                        loadedAssetData.add(assetData)
-                        loadedAssetKeys.add(assetKey)
-                        return it.loadGltfByByteArray(assetData, assetKey)
-                    }
-                }
-            }
-        )
-
-        val testAssetData = ByteArray(0)
-
-        composeTestRule.setContent {
-            Subspace {
-                SpatialGltfModel(
-                    state =
-                        rememberSpatialGltfModelState(
-                            source =
-                                SpatialGltfModelSource.fromData(
-                                    assetData = testAssetData,
-                                    assetKey = "testAsset",
-                                )
-                        ),
-                    modifier = SubspaceModifier.testTag("model"),
-                )
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("model").assertExists()
-        assertThat(loadedAssetData).containsExactly(testAssetData)
-        assertThat(loadedAssetKeys).containsExactly("testAsset")
     }
 
     @Test

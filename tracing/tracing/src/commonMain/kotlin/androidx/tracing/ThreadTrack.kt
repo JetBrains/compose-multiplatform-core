@@ -23,14 +23,14 @@ import androidx.annotation.RestrictTo.Scope
 @RestrictTo(Scope.LIBRARY_GROUP)
 public open class ThreadTrack(
     /** The thread id. */
-    public val id: Int,
+    public val id: Long,
     /** The name of the thread. */
     public val name: String,
     /** The process track that the thread belongs to. */
     public val process: ProcessTrack,
 ) : SliceTrack(context = process.context, uuid = monotonicId()) {
 
-    init {
+    override fun preamblePacket(): TraceEvent? {
         val event = obtainTraceEvent()
         event?.setPreamble(
             TrackDescriptor(
@@ -42,14 +42,14 @@ public open class ThreadTrack(
                 type = TRACK_DESCRIPTOR_TYPE_THREAD,
             )
         )
-        dispatchTraceEvent(event, immediateDispatch = true)
+        return event
     }
 }
 
 // An empty thread track when tracing is disabled
 
-private const val EMPTY_THREAD_ID = -1
+private const val EMPTY_THREAD_ID = -1L
 private const val EMPTY_THREAD_NAME = "Empty Thread"
 
 internal class EmptyThreadTrack(process: EmptyProcessTrack) :
-    ThreadTrack(id = EMPTY_THREAD_ID, name = EMPTY_THREAD_NAME, process = process) {}
+    ThreadTrack(id = EMPTY_THREAD_ID, name = EMPTY_THREAD_NAME, process = process)

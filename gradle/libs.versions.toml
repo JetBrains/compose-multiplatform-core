@@ -67,7 +67,7 @@ kotlinCoroutines = "1.9.0"
 kotlinNativeUtils = "2.3.10"
 kotlinSerialization = "1.8.0"
 kotlinToolingCore = "2.3.10"
-ksp = "2.3.4"
+ksp = "2.3.6"
 ktfmt = "0.61"
 # Version format is: 1.KOTLIN_MAJOR_VERSION.0.KTFMT_VERSION
 # When updated, the id and checksum in StudioTask needs to be updated too
@@ -189,6 +189,7 @@ jsr250 = { module = "javax.annotation:javax.annotation-api", version = "1.2" }
 junit = { module = "junit:junit", version = "4.13.2" }
 gcmNetworkManager = { module = "com.google.android.gms:play-services-gcm", version = "17.0.0" }
 googleCompileTesting = { module = "com.google.testing.compile:compile-testing", version = "0.22.0" }
+gradlePluginCompatibility = { module = "org.gradle.plugin:compatibility-plugin", version = "1.0.0" }
 grpcAndroid = { module = "io.grpc:grpc-android", version.ref = "grpc" }
 grpcBinder = { module = "io.grpc:grpc-binder", version.ref = "grpc" }
 grpcProtobufCompiler = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc" }
@@ -319,6 +320,7 @@ testMonitor = { module = "androidx.test:monitor", version.ref = "androidxTestMon
 testParameterInjector = { module = "com.google.testparameterinjector:test-parameter-injector", version = "1.9" }
 testRules = { module = "androidx.test:rules", version.ref = "androidxTestRules" }
 testRunner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
+testOrchestrator = { module = "androidx.test:orchestrator", version = "1.6.1" }
 testUiautomator = { module = "androidx.test.uiautomator:uiautomator", version = "2.2.0" }
 tink = { module = "com.google.crypto.tink:tink", version.ref = "tink" }
 tinkAndroid = { module = "com.google.crypto.tink:tink-android", version.ref = "tink" }

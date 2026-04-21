@@ -36,6 +36,7 @@ import androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.TextureSampler
 import com.google.ar.imp.view.View
+import java.io.IOException
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import kotlin.coroutines.resume
@@ -389,6 +390,27 @@ public class ImpressApiImpl : ImpressApi {
             enabled,
             systemMovable,
         )
+
+    /**
+     * Enables reform affordance on a custom mesh.
+     *
+     * @param node The integer ID of the impress node for the custom mesh
+     * @param enableAffordance A boolean indicated whether to add or remove the reform affordance
+     *   for the custom mesh.
+     * @param systemMovable A boolean indicating whether to handle the move input events or not.
+     */
+    override fun setCustomMeshReformAffordanceEnabled(
+        node: ImpressNode,
+        enableAffordance: Boolean,
+        systemMovable: Boolean,
+    ) {
+        nSetCustomMeshReformAffordanceEnabled(
+            getViewNativeHandle(view),
+            node.handle,
+            enableAffordance,
+            systemMovable,
+        )
+    }
 
     /**
      * Starts an animation on an instanced glTF model on a specific channel.
@@ -885,7 +907,7 @@ public class ImpressApiImpl : ImpressApi {
                         if (message.contains("CANCELLED")) {
                             onCancelled(message)
                         } else {
-                            continuation.resumeWithException(Exception(message))
+                            continuation.resumeWithException(IOException(message))
                         }
                     }
 
@@ -1712,12 +1734,14 @@ public class ImpressApiImpl : ImpressApi {
         customMeshHandle: Long,
         materialHandles: LongArray,
         boneCount: Int,
+        enableCollider: Boolean,
     ): Int =
         nCreateCustomMeshNode(
             getViewNativeHandle(view),
             customMeshHandle,
             materialHandles,
             boneCount,
+            enableCollider,
         )
 
     override fun setCustomMeshNodeMaterial(
@@ -1730,6 +1754,23 @@ public class ImpressApiImpl : ImpressApi {
             impressNode.handle,
             submeshIndex,
             materialHandle,
+        )
+    }
+
+    override fun setBoneTransforms(impressNode: ImpressNode, transforms: List<Matrix4>) {
+        val floatArray = FloatArray(transforms.size * 16)
+        var i = 0
+        for (transform in transforms) {
+            val elements = transform.data
+            for (j in 0 until 16) {
+                floatArray[i++] = elements[j]
+            }
+        }
+        nUpdateCustomMeshNodeBoneTransforms(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            /* offset= */ 0,
+            floatArray,
         )
     }
 
@@ -1787,6 +1828,13 @@ public class ImpressApiImpl : ImpressApi {
         view: Long,
         impressNode: Int,
         enabled: Boolean,
+        systemMovable: Boolean,
+    )
+
+    private external fun nSetCustomMeshReformAffordanceEnabled(
+        view: Long,
+        impressNode: Int,
+        enableAffordance: Boolean,
         systemMovable: Boolean,
     )
 
@@ -2502,6 +2550,7 @@ public class ImpressApiImpl : ImpressApi {
         customMeshHandle: Long,
         materialHandles: LongArray,
         boneCount: Int,
+        enableCollider: Boolean,
     ): Int
 
     private external fun nSetCustomMeshNodeMaterial(
@@ -2509,5 +2558,12 @@ public class ImpressApiImpl : ImpressApi {
         nodeId: Int,
         submeshIndex: Int,
         materialHandle: Long,
+    )
+
+    private external fun nUpdateCustomMeshNodeBoneTransforms(
+        view: Long,
+        nodeId: Int,
+        offset: Int,
+        transforms: FloatArray,
     )
 }

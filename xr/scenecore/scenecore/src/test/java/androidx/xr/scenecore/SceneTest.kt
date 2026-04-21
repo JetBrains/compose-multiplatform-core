@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore
 
 import android.os.Looper
@@ -142,7 +144,7 @@ class SceneTest {
                 parent = session.scene.activitySpace,
             )
         val anchorEntity =
-            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
+            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ALL, PlaneSemanticType.ALL)
 
         assertThat(session.scene.getEntitiesOfType(Entity::class.java))
             .containsAtLeast(panelEntity, anchorEntity)
@@ -412,7 +414,7 @@ class SceneTest {
     @Test
     fun keyEntity_setWithAnchorEntity_throwsIllegalArgumentException() {
         val anchorEntity =
-            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
+            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ALL, PlaneSemanticType.ALL)
 
         val exception =
             assertFailsWith<IllegalArgumentException> { session.scene.keyEntity = anchorEntity }

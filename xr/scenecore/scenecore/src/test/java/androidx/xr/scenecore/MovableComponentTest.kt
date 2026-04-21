@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore
 
 import android.os.SystemClock
@@ -309,7 +311,7 @@ class MovableComponentTest {
     fun addMovableComponentToAnchorEntity_returnsFalse() {
         createCustomSession()
         val anchorEntity =
-            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
+            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ALL, PlaneSemanticType.ALL)
         assertThat(anchorEntity).isNotNull()
         val movableComponent = MovableComponent.createSystemMovable(session)
 
@@ -2252,7 +2254,7 @@ class MovableComponentTest {
 
             assertThat(exception.message)
                 .isEqualTo(
-                    "Movable component can be applied to either a PanelEntity or GltfModelEntity"
+                    "Movable component can be applied to either a PanelEntity, GltfModelEntity, or MeshEntity"
                 )
         }
     }

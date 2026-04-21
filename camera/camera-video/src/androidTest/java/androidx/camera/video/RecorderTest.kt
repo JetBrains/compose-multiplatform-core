@@ -335,6 +335,34 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
+    fun canSetTargetAudioEncodingBitrate() {
+        val recorder = createRecorder(targetAudioBitrate = 128_000)
+
+        assertThat(recorder.targetAudioEncodingBitRate).isEqualTo(128_000)
+    }
+
+    @Test
+    fun recordingWithNegativeAudioBitRate() {
+        assertThrows(IllegalArgumentException::class.java) {
+            createRecorder(targetAudioBitrate = -5)
+        }
+    }
+
+    @Test
+    fun canSetTargetAudioChannelCount() {
+        val recorder = createRecorder(targetAudioChannelCount = 2)
+
+        assertThat(recorder.targetAudioChannelCount).isEqualTo(2)
+    }
+
+    @Test
+    fun recordingWithNegativeAudioChannelCount() {
+        assertThrows(IllegalArgumentException::class.java) {
+            createRecorder(targetAudioChannelCount = -5)
+        }
+    }
+
+    @Test
     fun canRecordToMediaStore() {
         assumeTrue(
             "Ignore the test since the MediaStore.Video has compatibility issues.",
@@ -1436,6 +1464,8 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         muxerFactory: MuxerFactory? = null,
         outputStorageFactory: OutputStorage.Factory? = null,
         targetBitrate: Int? = null,
+        targetAudioBitrate: Int? = null,
+        targetAudioChannelCount: Int? = null,
         retrySetupVideoMaxCount: Int? = null,
         retrySetupVideoDelayMs: Long? = null,
         audioSource: Int? = null,
@@ -1456,6 +1486,8 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
                     muxerFactory?.let { setMuxerFactory(it) }
                     outputStorageFactory?.let { setOutputStorageFactory(it) }
                     targetBitrate?.let { setTargetVideoEncodingBitRate(it) }
+                    targetAudioBitrate?.let { setTargetAudioEncodingBitRate(it) }
+                    targetAudioChannelCount?.let { setTargetAudioChannelCount(it) }
                     audioSource?.let { setAudioSource(it) }
                     requiredFreeStorageBytes?.let { setRequiredFreeStorageBytes(it) }
                 }

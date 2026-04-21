@@ -156,7 +156,7 @@ internal open class FakeEditablePdfDocument(
                 }
                 is RemoveDraftEditOperation -> {
                     val pageEdits = edits[operation.pageNum]
-                    val removed = pageEdits?.removeIf { it.key == operation.id } ?: false
+                    val removed = pageEdits?.removeAll { it.key == operation.id } ?: false
                     if (removed) {
                         results.add(operation.id)
                     }
@@ -195,6 +195,21 @@ internal open class FakeEditablePdfDocument(
             SelectionBoundary(0),
             selectedTextContents,
         )
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    override suspend fun getSelectionBounds(
+        pageNumber: Int,
+        start: SelectionBoundary,
+        stop: SelectionBoundary,
+    ): PageSelection {
+        val selectedTextContents =
+            if (textContents.isEmpty()) {
+                listOf(PdfPageTextContent(listOf(RectF(0f, 0f, 10f, 10f)), "test"))
+            } else {
+                listOf(textContents[pageNumber])
+            }
+        return PageSelection(pageNumber, start, stop, selectedTextContents)
     }
 
     override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
@@ -288,14 +303,12 @@ internal open class FakeEditablePdfDocument(
 
     override fun addOnEditsAppliedListener(
         executor: Executor,
-        listener: EditablePdfDocument.OnEditsAppliedListener,
+        listener: PdfDocument.OnEditsAppliedListener,
     ) {
         TODO("Not yet implemented")
     }
 
-    override fun removeOnEditsAppliedListener(
-        listener: EditablePdfDocument.OnEditsAppliedListener
-    ) {
+    override fun removeOnEditsAppliedListener(listener: PdfDocument.OnEditsAppliedListener) {
         TODO("Not yet implemented")
     }
 
@@ -307,6 +320,10 @@ internal open class FakeEditablePdfDocument(
     override fun removeOnPdfContentInvalidatedListener(
         listener: PdfDocument.OnPdfContentInvalidatedListener
     ) {}
+
+    override fun isFeatureSupported(feature: PdfFeature): Boolean {
+        return true
+    }
 
     override fun createWriteHandle(): PdfWriteHandle {
         return object : PdfWriteHandle {

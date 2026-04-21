@@ -59,12 +59,14 @@ package androidx.camera.video {
   public final class GroupableFeatures {
     property public androidx.camera.core.featuregroup.GroupableFeature FHD_RECORDING;
     property public androidx.camera.core.featuregroup.GroupableFeature HD_RECORDING;
+    property public androidx.camera.core.featuregroup.GroupableFeature QHD_RECORDING;
     property public androidx.camera.core.featuregroup.GroupableFeature SD_RECORDING;
     property public androidx.camera.core.featuregroup.GroupableFeature UHD_RECORDING;
     property public androidx.camera.core.featuregroup.GroupableFeature VIDEO_STABILIZATION;
     field public static final androidx.camera.core.featuregroup.GroupableFeature FHD_RECORDING;
     field public static final androidx.camera.core.featuregroup.GroupableFeature HD_RECORDING;
     field public static final androidx.camera.video.GroupableFeatures INSTANCE;
+    field public static final androidx.camera.core.featuregroup.GroupableFeature QHD_RECORDING;
     field public static final androidx.camera.core.featuregroup.GroupableFeature SD_RECORDING;
     field public static final androidx.camera.core.featuregroup.GroupableFeature UHD_RECORDING;
     field public static final androidx.camera.core.featuregroup.GroupableFeature VIDEO_STABILIZATION;
@@ -134,6 +136,7 @@ package androidx.camera.video {
     field public static final androidx.camera.video.Quality HD;
     field public static final androidx.camera.video.Quality HIGHEST;
     field public static final androidx.camera.video.Quality LOWEST;
+    field public static final androidx.camera.video.Quality QHD;
     field public static final androidx.camera.video.Quality SD;
     field public static final androidx.camera.video.Quality UHD;
   }
@@ -156,7 +159,9 @@ package androidx.camera.video {
     method public androidx.camera.video.QualitySelector getQualitySelector();
     method @SuppressCompatibility @androidx.camera.video.ExperimentalMimeTypeApi public static java.util.List<java.lang.String!> getSupportedAudioMimeTypes();
     method @SuppressCompatibility @androidx.camera.video.ExperimentalMimeTypeApi public static java.util.List<java.lang.String!> getSupportedVideoMimeTypes();
-    method public int getTargetVideoEncodingBitRate();
+    method @IntRange(from=0) public int getTargetAudioChannelCount();
+    method @IntRange(from=0) public int getTargetAudioEncodingBitRate();
+    method @IntRange(from=0) public int getTargetVideoEncodingBitRate();
     method public static androidx.camera.video.VideoCapabilities getVideoCapabilities(androidx.camera.core.CameraInfo);
     method public static androidx.camera.video.VideoCapabilities getVideoCapabilities(androidx.camera.core.CameraInfo, int);
     method public static androidx.camera.video.VideoCapabilities? getVideoCapabilities(androidx.camera.core.CameraInfo, String);
@@ -178,6 +183,8 @@ package androidx.camera.video {
     method public androidx.camera.video.Recorder.Builder setAudioMimeType(String);
     method public androidx.camera.video.Recorder.Builder setExecutor(java.util.concurrent.Executor);
     method public androidx.camera.video.Recorder.Builder setQualitySelector(androidx.camera.video.QualitySelector);
+    method public androidx.camera.video.Recorder.Builder setTargetAudioChannelCount(@IntRange(from=1) int);
+    method public androidx.camera.video.Recorder.Builder setTargetAudioEncodingBitRate(@IntRange(from=1) int);
     method public androidx.camera.video.Recorder.Builder setTargetVideoEncodingBitRate(@IntRange(from=1) int);
     method public androidx.camera.video.Recorder.Builder setVideoCapabilitiesSource(int);
     method public androidx.camera.video.Recorder.Builder setVideoMimeType(String);

@@ -119,6 +119,7 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
+import org.jetbrains.androidx.build.jetBrainsGetDefaultTargetJavaVersion
 import org.jetbrains.androidx.build.jetBrainsGetDefaultAndroidBaseJavaVersion
 import org.jetbrains.androidx.build.jetBrainsGetDefaultTargetJavaVersion
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
@@ -291,6 +292,12 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.addToModuleInfo(testName, buildFeatures.isIsolatedProjectsEnabled())
         androidXExtension.testModuleNames.add(testName)
         val archiveName = "$testName.zip"
+        project.afterEvaluate {
+            if (androidXExtension.usePlatformSpecificCacheForJvmTests.get()) {
+                task.inputs.property("os.name", System.getProperty("os.name"))
+                task.inputs.property("os.arch", System.getProperty("os.arch"))
+            }
+        }
         if (project.isDisplayTestOutput()) {
             // Enable tracing to see results in command line
             task.testLogging.apply {
@@ -452,34 +459,44 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                         }
                     }
                 }
-                targets.withType(KotlinJvmTarget::class.java).configureEach { target ->
-                    val defaultTargetVersionForNonAndroidTargets =
-                        androidXExtension.type.map {
-                            jetBrainsGetDefaultTargetJavaVersion(
-                                    softwareType = it,
-                                    project = project,
-                                    targetName = target.name,
-                                )
-                                .toString()
-                        }
-                    val defaultJvmTargetForNonAndroidTargets =
-                        defaultTargetVersionForNonAndroidTargets.map { JvmTarget.fromTarget(it) }
+                targets.withType<KotlinJvmTarget>().configureEach { target ->
+                    val resolvedJvmVersion =
+                        targetsAndroid
+                            .zip(defaultJavaTargetVersion) { hasAndroid, androidVer ->
+                                hasAndroid to androidVer
+                            }
+                            .zip(androidXExtension.type) { (hasAndroid, androidVer), softwareType ->
+                                val targetVer =
+                                    jetBrainsGetDefaultTargetJavaVersion(
+                                        softwareType = softwareType,
+                                        project = project,
+                                        targetName = target.name,
+                                    )
+                                // Use the higher of the Android version and the target-specific
+                                // version. This respects target overrides (like Desktop needing
+                                // 11) while aligning with Android when Android requires a
+                                // higher version.
+                                if (hasAndroid && JavaVersion.toVersion(androidVer) > targetVer) {
+                                    androidVer
+                                } else {
+                                    targetVer.toString()
+                                }
+                            }
+
+                    val jvmTargetEnum = resolvedJvmVersion.map { JvmTarget.fromTarget(it) }
+
+                    val jdkReleaseArgs =
+                        resolvedJvmVersion.map { version -> listOf("-Xjdk-release=$version") }
+
                     target.compilations.configureEach { compilation ->
                         compilation.compileJavaTaskProvider?.configure { javaCompile ->
-                            javaCompile.targetCompatibility =
-                                defaultTargetVersionForNonAndroidTargets.get()
-                            javaCompile.sourceCompatibility =
-                                defaultTargetVersionForNonAndroidTargets.get()
+                            javaCompile.targetCompatibility = resolvedJvmVersion.get()
+                            javaCompile.sourceCompatibility = resolvedJvmVersion.get()
                         }
                         compilation.compileTaskProvider.configure { kotlinCompile ->
                             kotlinCompile.compilerOptions {
-                                jvmTarget.set(defaultJvmTargetForNonAndroidTargets)
-                                // Set jdk-release version for non-Android KMP targets
-                                freeCompilerArgs.add(
-                                    defaultTargetVersionForNonAndroidTargets.map {
-                                        "-Xjdk-release=$it"
-                                    }
-                                )
+                                jvmTarget.set(jvmTargetEnum)
+                                freeCompilerArgs.addAll(jdkReleaseArgs)
                             }
                         }
                     }

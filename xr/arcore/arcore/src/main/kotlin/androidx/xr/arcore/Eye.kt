@@ -16,7 +16,6 @@
 
 package androidx.xr.arcore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Eye as RuntimeEye
 import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.Session
@@ -31,8 +30,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * An [Eye] instance provides the state of the eye (shut or gazing), as well as a [Pose] indicating
  * where the user is currently looking.
  */
+@SuppressWarnings("HiddenSuperclass")
 public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
-    Trackable<Eye.State>, Updatable {
+    Trackable<Eye.State>, Updatable() {
 
     public companion object {
         /**
@@ -84,17 +84,20 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
      * @property isOpen a flag indicating whether the eye is open
      * @property pose the [Pose] of the eye
      * @property trackingState the [androidx.xr.runtime.TrackingState] of the eye
+     * @property owner self-reference to the object that owns this state.
      */
     public class State
     internal constructor(
         public val isOpen: Boolean,
         public val pose: Pose,
         public override val trackingState: TrackingState,
+        public val owner: Eye,
     ) : Trackable.State {
         override fun hashCode(): Int {
             var result = isOpen.hashCode()
             result = 31 * result + pose.hashCode()
             result = 31 * result + trackingState.hashCode()
+            result = 31 * result + owner.hashCode()
             return result
         }
 
@@ -103,13 +106,19 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
             if (other !is State) return false
             return isOpen == other.isOpen &&
                 pose == other.pose &&
-                trackingState == other.trackingState
+                trackingState == other.trackingState &&
+                owner == other.owner
         }
     }
 
     private var _state =
         MutableStateFlow(
-            State(runtimeEye.isOpen, runtimeEye.pose, runtimeEye.trackingState.toTrackingState())
+            State(
+                runtimeEye.isOpen,
+                runtimeEye.pose,
+                runtimeEye.trackingState.toTrackingState(),
+                owner = this,
+            )
         )
 
     /** A [StateFlow] that contains the latest [State] of an [Eye]. */
@@ -119,10 +128,14 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
      * This function is used by the runtime to propagate internal state changes. It is not intended
      * to be called directly by a developer.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(
-            State(runtimeEye.isOpen, runtimeEye.pose, runtimeEye.trackingState.toTrackingState())
+            State(
+                runtimeEye.isOpen,
+                runtimeEye.pose,
+                runtimeEye.trackingState.toTrackingState(),
+                owner = this,
+            )
         )
     }
 }

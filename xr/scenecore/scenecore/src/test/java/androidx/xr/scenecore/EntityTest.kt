@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore
 
 import android.content.Intent
@@ -84,7 +86,7 @@ class EntityTest {
     private lateinit var entity: Entity
     private lateinit var surfaceEntity: SurfaceEntity
 
-    private class TestComponent(val canBeAttached: Boolean) : Component {
+    private class TestComponent(val canBeAttached: Boolean) : Component() {
         var onAttached: Int = 0
             private set
 
@@ -101,7 +103,7 @@ class EntityTest {
         }
     }
 
-    private open class FakeComponent(open val canBeAttached: Boolean) : Component {
+    private open class FakeComponent(open val canBeAttached: Boolean) : Component() {
         var onAttached: Int = 0
             private set
 
@@ -163,8 +165,8 @@ class EntityTest {
             AnchorEntity.create(
                 session,
                 FloatSize2d(),
-                PlaneOrientation.ANY,
-                PlaneSemanticType.ANY,
+                PlaneOrientation.ALL,
+                PlaneSemanticType.ALL,
                 10.seconds.toJavaDuration(),
             )
         activityPanelEntity =
@@ -328,7 +330,7 @@ class EntityTest {
     @Test
     fun anchorEntityCreateWithNullTimeout_passesNullToImpl() {
         anchorEntity =
-            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
+            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ALL, PlaneSemanticType.ALL)
 
         assertThat(anchorEntity).isNotNull()
     }
@@ -338,7 +340,7 @@ class EntityTest {
         session.configure(Config(planeTracking = PlaneTrackingMode.DISABLED))
 
         assertFailsWith<IllegalStateException> {
-            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
+            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ALL, PlaneSemanticType.ALL)
         }
     }
 
@@ -415,6 +417,7 @@ class EntityTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // TODO - b/415320653: Space.REAL_WORLD
     fun allEntitySetPose_allEntityGetPose_poseSetCorrectly() {
         val pose = Pose.Identity
 
@@ -514,6 +517,7 @@ class EntityTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // TODO - b/415320653: Space.REAL_WORLD
     fun allEntitySetScale_float_allEntityGetScale_scaleSetCorrectly() {
         val scale = 0.1f
 
@@ -537,6 +541,7 @@ class EntityTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // TODO - b/415320653: Space.REAL_WORLD
     fun allEntitySetScale_vector_allEntityGetScale_scaleSetCorrectly() {
         val scale = Vector3(0.1f, 0.1f, 0.1f)
         val sdkScale = 0.1f
@@ -561,6 +566,7 @@ class EntityTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // TODO - b/415320653: Space.REAL_WORLD
     fun allEntitySetScale_float_allEntityGetNonUniformScale_scaleSetCorrectly() {
         val scale = Vector3(0.1f, 0.1f, 0.1f)
 
@@ -585,6 +591,7 @@ class EntityTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // TODO - b/415320653: Space.REAL_WORLD
     fun allEntitySetScale_vector_allEntityGetNonUniformScale_scaleSetCorrectly() {
         val scale = Vector3(0.1f, 0.1f, 0.1f)
 

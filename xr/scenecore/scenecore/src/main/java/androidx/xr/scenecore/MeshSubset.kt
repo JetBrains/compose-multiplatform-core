@@ -13,28 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.scenecore
 
-import androidx.annotation.RestrictTo
+import androidx.annotation.IntRange
 
 /**
  * Defines the topology of the indices in a [MeshSubset].
  *
  * This specifies how the index buffer maps vertices to geometric primitives.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@ExperimentalCustomMeshApi
 public class MeshSubsetTopology private constructor(private val name: String) {
     public companion object {
         /** Every three indices form a separate triangle. */
         @JvmField public val TRIANGLES: MeshSubsetTopology = MeshSubsetTopology("TRIANGLES")
-
         /** Every index after the first two forms a triangle with the previous two indices. */
         @JvmField
         public val TRIANGLE_STRIP: MeshSubsetTopology = MeshSubsetTopology("TRIANGLE_STRIP")
     }
 
     public override fun toString(): String = name
+
+    public override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MeshSubsetTopology) return false
+        return name == other.name
+    }
+
+    public override fun hashCode(): Int = name.hashCode()
 }
 
 /**
@@ -47,13 +53,19 @@ public class MeshSubsetTopology private constructor(private val name: String) {
  * @param indexOffset The offset (in number of indices, not bytes) to the first index in the index
  *   buffer.
  * @param indexCount The number of indices to draw.
+ * @throws IllegalArgumentException if [indexOffset] or [indexCount] is negative.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@ExperimentalCustomMeshApi
 public class MeshSubset(
     public val topology: MeshSubsetTopology,
-    public val indexOffset: Int,
-    public val indexCount: Int,
+    @IntRange(from = 0) public val indexOffset: Int,
+    @IntRange(from = 0) public val indexCount: Int,
 ) {
+    init {
+        require(indexOffset >= 0) { "indexOffset must not be negative." }
+        require(indexCount >= 0) { "indexCount must not be negative." }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is MeshSubset) return false
