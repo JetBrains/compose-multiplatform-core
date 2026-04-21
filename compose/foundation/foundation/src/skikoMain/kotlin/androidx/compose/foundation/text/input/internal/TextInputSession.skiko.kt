@@ -180,6 +180,10 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
         )
     }
 
+    override fun selectText(start: Int, end: Int) {
+        buffer.setSelectionCoerced(start, end)
+    }
+
     override fun commitText(text: CharSequence, newCursorPosition: Int) {
         // API description says replace ongoing composition text if there. Then, if there is no
         // composition text, insert text into the cursor position or replace selection.
@@ -188,7 +192,7 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
 
         // After replace function is called, the editing buffer places the cursor at the end of the
         // modified range.
-        val newCursor = buffer.cursor
+        val newCursor = replacementRange.min + text.length
 
         // See API description for the meaning of newCursorPosition.
         val newCursorInBuffer =
@@ -200,6 +204,10 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
         buffer.setSelectionCoerced(newCursorInBuffer, newCursorInBuffer)
     }
 
+    override fun selectComposingText(start: Int, end: Int) {
+        buffer.setComposition(start, end)
+    }
+
     override fun setComposingText(text: CharSequence, newCursorPosition: Int) {
         val replacementRange = buffer.composition ?: buffer.selection
         // API doc says, if there is ongoing composing text, replace it with new text.
@@ -207,12 +215,12 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
         // removing selected text if any.
         buffer.replace(replacementRange.min, replacementRange.max, text)
         if (text.isNotEmpty()) {
-            buffer.setComposition(replacementRange.min, replacementRange.max + text.length)
+            buffer.setComposition(replacementRange.min, replacementRange.min + text.length)
         }
 
         // After replace function is called, the editing buffer places the cursor at the end of the
         // modified range.
-        val newCursor = buffer.cursor
+        val newCursor = replacementRange.min + text.length
 
         // See API description for the meaning of newCursorPosition.
         val newCursorInBuffer =

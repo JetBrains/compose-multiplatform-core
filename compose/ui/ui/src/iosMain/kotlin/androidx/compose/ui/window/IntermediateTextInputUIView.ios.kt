@@ -38,8 +38,6 @@ import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
@@ -117,7 +115,6 @@ private val NoOpOnKeyboardPresses: (Set<*>) -> Unit = {}
 internal class IntermediateTextInputUIView(
     private val doubleTapTimeoutMillis: Long,
     private val usingNativeTextInput: Boolean,
-    private val coroutineScope: CoroutineScope
 ) : CMPEditMenuView(frame = CGRectZero.readValue()),
     UIKeyInputProtocol, UITextInputProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
@@ -287,9 +284,7 @@ internal class IntermediateTextInputUIView(
      */
     override fun replaceRange(range: UITextRange, withText: String) {
         val textRange = range.toTextRange() ?: return
-        input?.withBatch {
-            input?.replaceRange(textRange, withText)
-        }
+        input?.replaceRange(textRange, withText)
     }
 
     override fun setSelectedTextRange(selectedTextRange: UITextRange?) {
@@ -303,17 +298,13 @@ internal class IntermediateTextInputUIView(
                 if (notifySelectionChanges) {
                     selectionWillChange()
                 }
-                input?.withBatch {
-                    input?.setSelectedTextRange(range)
-                }
+                input?.setSelectedTextRange(range)
                 if (notifySelectionChanges) {
                     selectionDidChange()
                 }
             }
         } else {
-            input?.withBatch {
-                input?.setSelectedTextRange(range)
-            }
+            input?.setSelectedTextRange(range)
         }
     }
 
@@ -362,18 +353,7 @@ internal class IntermediateTextInputUIView(
             location.toInt() to length.toInt()
         }
         val relativeTextRange = TextRange(locationRelative, locationRelative + lengthRelative)
-
-        // Due to iOS specifics, [setMarkedText] can be called several times in a row. Batching
-        // helps to avoid text input problems, when Composables use parameters set during
-        // recomposition instead of the current ones. Example:
-        // 1. State "1" -> TextField(text = "1")
-        // 2. setMarkedText "12" -> Not equal to TextField(text = "1") -> State "12"
-        // 3. setMarkedText "1" -> Equal to TextField(text = "1") -> State remains "12"
-        // scene.render() - Recomposes TextField
-        // 4. State "12" -> TextField(text = "12") - Invalid state. Should be TextField(text = "1")
-        input?.withBatch {
-            input?.setMarkedText(markedText, relativeTextRange)
-        }
+        input?.setMarkedText(markedText, relativeTextRange)
     }
 
     /**
@@ -787,14 +767,6 @@ internal class IntermediateTextInputUIView(
 
     fun resetOnKeyboardPressesCallback() {
         onKeyboardPresses = NoOpOnKeyboardPresses
-    }
-
-    private fun IOSSkikoInput.withBatch(update: () -> Unit) {
-        beginEditBatch()
-        update()
-        coroutineScope.launch {
-            endEditBatch()
-        }
     }
 
     private fun UITextRange.isValid(): Boolean {

@@ -23,7 +23,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.draganddrop.UIKitDragAndDropManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -63,7 +63,7 @@ import androidx.compose.ui.uikit.LocalNativeTextInputContext
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
-import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -89,17 +89,13 @@ import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.OverlayInputView
 import androidx.compose.ui.window.TouchesEventKind
-import kotlin.Float
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -370,23 +366,13 @@ internal class ComposeSceneMediator(
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                if (usingNativeTextInput) {
-                    // Too heavy method for this purpose
-                    // we actually do not need to re-render the scene -
-                    // just flush all events and update its state.
-                    // https://youtrack.jetbrains.com/issue/CMP-9767
-                    redrawer.draw(false)
-                } else {
-                    redrawer.setNeedsRedraw()
-                }
+                scene.recomposeAndLayout(lastRenderTime)
                 CATransaction.flush()
             },
             view = _overlayView,
             viewConfiguration = viewConfiguration,
             focusedViewsList = focusedViewsList,
-            onInputStarted = {
-                animateKeyboardOffsetChanges = true
-            },
+            onInputStarted = { animateKeyboardOffsetChanges = true },
             onKeyboardPresses = ::onKeyboardPresses,
             focusManager = { scene.focusManager },
             coroutineContext = coroutineContext
@@ -394,6 +380,11 @@ internal class ComposeSceneMediator(
             KeyboardVisibilityListener.initialize()
         }
     }
+
+    private val textInputServiceAdapter = UIKitTextInputServiceAdapter(
+        textInputService,
+        CoroutineScope(coroutineContext)
+    )
 
     val hasInvalidations: Boolean
         get() = scene.hasInvalidations() ||
@@ -600,8 +591,9 @@ internal class ComposeSceneMediator(
         }
     }
 
+    private var lastRenderTime = CACurrentMediaTime().toNanoSeconds()
     fun render(canvas: Canvas, nanoTime: Long) {
-        textInputService.flushEditCommandsIfNeeded(force = true)
+        lastRenderTime = nanoTime
         scene.render(canvas, nanoTime)
     }
 
@@ -645,7 +637,6 @@ internal class ComposeSceneMediator(
         onKeyEvent = { false }
 
         _overlayView.dispose()
-        textInputService.stopInput()
         keyboardManager.dispose()
         _backgroundView.dispose()
 
@@ -731,7 +722,7 @@ internal class ComposeSceneMediator(
 
         override val viewConfiguration get() = this@ComposeSceneMediator.viewConfiguration
         override val inputModeManager = DefaultInputModeManager(InputMode.Touch)
-        override val textInputService get() = this@ComposeSceneMediator.textInputService
+        override val textInputService get() = this@ComposeSceneMediator.textInputServiceAdapter
         override val textToolbar get() = this@ComposeSceneMediator.textInputService
         override val semanticsOwnerListener get() = this@ComposeSceneMediator.semanticsOwnerListener
         override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
@@ -748,53 +739,7 @@ internal class ComposeSceneMediator(
         }
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
-            // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7832/iOS-Adopt-PlatformTextInputService2)
-            coroutineScope {
-                launch {
-                    snapshotFlow { request.value() }.collect {
-                        textInputService.updateState(oldValue = null, newValue = it)
-                    }
-                }
-                launch {
-                    snapshotFlow { request.textLayoutResult() }.filterNotNull().collect {
-                        textInputService.updateTextLayoutResult(it)
-                    }
-                }
-                launch {
-                    snapshotFlow {
-                        Triple(
-                            request.textFieldRectInRoot(),
-                            request.textClippingRectInRoot(),
-                            request.unclippedTextOffsetInRoot()
-                        )
-                    }.collect { (textFieldRect, clippingRect, unclippedTextOffset) ->
-                        if (textFieldRect != null && clippingRect != null && unclippedTextOffset != null) {
-                            textInputService.updateTextFieldGeometry(
-                                textFieldFrame = textFieldRect,
-                                clippingTextFrame = clippingRect,
-                                unclippedTextPosition = unclippedTextOffset
-                            )
-                        }
-                    }
-                }
-                launch {
-                    snapshotFlow { request.focusedRectInRoot() }.filterNotNull().collect {
-                        textInputService.updateFocusedRect(it)
-                    }
-                }
-                suspendCancellableCoroutine<Nothing> { continuation ->
-                    textInputService.startInput(
-                        value = request.value(),
-                        imeOptions = request.imeOptions,
-                        onEditCommand = request.onEditCommand,
-                        onImeActionPerformed = request.onImeAction ?: {}
-                    )
-
-                    continuation.invokeOnCancellation {
-                        textInputService.stopInput()
-                    }
-                }
-            }
+            this@ComposeSceneMediator.textInputService.startInputMethod(request)
         }
     }
 }
