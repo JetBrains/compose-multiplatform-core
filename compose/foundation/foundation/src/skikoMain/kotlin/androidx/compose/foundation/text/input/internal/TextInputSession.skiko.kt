@@ -180,7 +180,7 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
         )
     }
 
-    override fun selectText(start: Int, end: Int) {
+    override fun setSelection(start: Int, end: Int) {
         buffer.setSelectionCoerced(start, end)
     }
 
@@ -204,7 +204,7 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
         buffer.setSelectionCoerced(newCursorInBuffer, newCursorInBuffer)
     }
 
-    override fun selectComposingText(start: Int, end: Int) {
+    override fun setComposingRegion(start: Int, end: Int) {
         buffer.setComposition(start, end)
     }
 

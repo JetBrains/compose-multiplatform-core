@@ -139,7 +139,7 @@ class TextInputSessionTest {
         initialSelection = TextRange(0, 0),
     ) { state, request ->
         request.editText {
-            selectText(start = 1, end = 4)
+            setSelection(start = 1, end = 4)
         }
 
         assertThat(state.selection).isEqualTo(TextRange(1, 4))
@@ -151,7 +151,7 @@ class TextInputSessionTest {
         initialSelection = TextRange(0, 0),
     ) { state, request ->
         request.editText {
-            selectText(start = 3, end = 3)
+            setSelection(start = 3, end = 3)
         }
 
         assertThat(state.selection).isEqualTo(TextRange(3, 3))
@@ -163,7 +163,7 @@ class TextInputSessionTest {
         initialSelection = TextRange(0, 0),
     ) { state, request ->
         request.editText {
-            selectText(start = 4, end = 1)
+            setSelection(start = 4, end = 1)
         }
 
         assertThat(state.selection).isEqualTo(TextRange(4, 1))
@@ -175,7 +175,7 @@ class TextInputSessionTest {
         initialSelection = TextRange(0, 0),
     ) { state, request ->
         request.editText {
-            selectText(start = -5, end = 100)
+            setSelection(start = -5, end = 100)
         }
 
         assertThat(state.selection).isEqualTo(TextRange(0, 6))
@@ -214,7 +214,7 @@ class TextInputSessionTest {
         initialSelection = TextRange(0, 6),
     ) { state, request ->
         request.editText {
-            selectComposingText(start = 2, end = 4)
+            setComposingRegion(start = 2, end = 4)
         }
 
         request.editText {
@@ -289,7 +289,7 @@ class TextInputSessionTest {
         initialSelection = TextRange(0, 0),
     ) { state, request ->
         request.editText {
-            selectComposingText(start = 1, end = 4)
+            setComposingRegion(start = 1, end = 4)
         }
 
         assertThat(state.composition).isEqualTo(TextRange(1, 4))
@@ -315,7 +315,7 @@ class TextInputSessionTest {
         initialSelection = TextRange(0, 0),
     ) { state, request ->
         request.editText {
-            selectComposingText(start = 2, end = 4) // compose "cd"
+            setComposingRegion(start = 2, end = 4) // compose "cd"
         }
 
         request.editText {
@@ -348,7 +348,7 @@ class TextInputSessionTest {
         initialSelection = TextRange(0, 0),
     ) { state, request ->
         request.editText {
-            selectComposingText(start = 2, end = 4)
+            setComposingRegion(start = 2, end = 4)
         }
 
         request.editText {
@@ -412,7 +412,7 @@ class TextInputSessionTest {
         initialSelection = TextRange(0, 0),
     ) { state, request ->
         request.editText {
-            selectComposingText(start = 2, end = 4)
+            setComposingRegion(start = 2, end = 4)
         }
 
         assertThat(state.composition).isEqualTo(TextRange(2, 4))
@@ -487,7 +487,7 @@ class TextInputSessionTest {
         initialSelection = TextRange(5, 5), // cursor after the composition range
     ) { state, request ->
         request.editText {
-            selectComposingText(start = 2, end = 4) // "cd"
+            setComposingRegion(start = 2, end = 4) // "cd"
         }
 
         request.editText {
@@ -506,7 +506,7 @@ class TextInputSessionTest {
         initialSelection = TextRange(0, 0),
     ) { state, request ->
         request.editText {
-            selectComposingText(start = 2, end = 4)
+            setComposingRegion(start = 2, end = 4)
         }
 
         request.editText {
@@ -570,7 +570,7 @@ class TextInputSessionTest {
             initialSelection = TextRange(5, 5),
         ) { state, request ->
             request.editText {
-                selectComposingText(start = 2, end = 4)
+                setComposingRegion(start = 2, end = 4)
             }
 
             request.editText {

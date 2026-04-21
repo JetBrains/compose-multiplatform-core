@@ -612,7 +612,7 @@ internal class UIKitTextInputService(
                 ?.getOffsetForPosition(offsetPx + translation) ?: return
 
             edit(requireUpdateView = false) {
-                selectText(pos, pos)
+                setSelection(pos, pos)
             }
         }
 
@@ -652,16 +652,16 @@ internal class UIKitTextInputService(
         override fun setSelectedTextRange(range: TextRange?) {
             edit(requireUpdateView = false) {
                 if (range != null) {
-                    selectText(range.start, range.end)
+                    setSelection(range.start, range.end)
                 } else {
-                    selectText(endOfDocument(), endOfDocument())
+                    setSelection(endOfDocument(), endOfDocument())
                 }
             }
         }
 
         override fun selectAll() {
             edit {
-                selectText(0, endOfDocument())
+                setSelection(0, endOfDocument())
             }
         }
 
@@ -675,7 +675,7 @@ internal class UIKitTextInputService(
 
         override fun replaceRange(range: TextRange, text: String) {
             edit {
-                selectComposingText(range.start, range.end)
+                setComposingRegion(range.start, range.end)
                 setComposingText(text, 1)
                 finishComposingText()
             }

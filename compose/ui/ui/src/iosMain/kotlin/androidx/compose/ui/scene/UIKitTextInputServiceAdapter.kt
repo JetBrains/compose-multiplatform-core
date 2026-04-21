@@ -161,7 +161,7 @@ private fun TextEditingScope(commands: MutableList<EditCommand>) = object : Text
         commands.add(DeleteSurroundingTextCommand(lengthBeforeCursor, lengthAfterCursor))
     }
 
-    override fun selectText(start: Int, end: Int) {
+    override fun setSelection(start: Int, end: Int) {
         commands.add(SetSelectionCommand(start, end))
     }
 
@@ -169,7 +169,7 @@ private fun TextEditingScope(commands: MutableList<EditCommand>) = object : Text
         commands.add(CommitTextCommand(text.toString(), newCursorPosition))
     }
 
-    override fun selectComposingText(start: Int, end: Int) {
+    override fun setComposingRegion(start: Int, end: Int) {
         commands.add(SetComposingRegionCommand(start, end))
     }
 

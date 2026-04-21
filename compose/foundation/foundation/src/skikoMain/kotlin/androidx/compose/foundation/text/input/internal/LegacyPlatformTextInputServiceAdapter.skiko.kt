@@ -154,7 +154,7 @@ private fun TextEditingScope(commands: MutableList<EditCommand>) = object : Text
         )
     }
 
-    override fun selectText(start: Int, end: Int) {
+    override fun setSelection(start: Int, end: Int) {
         commands.add(
             SetSelectionCommand(start, end)
         )
@@ -169,7 +169,7 @@ private fun TextEditingScope(commands: MutableList<EditCommand>) = object : Text
         )
     }
 
-    override fun selectComposingText(start: Int, end: Int) {
+    override fun setComposingRegion(start: Int, end: Int) {
         commands.add(
             SetComposingRegionCommand(start, end)
         )

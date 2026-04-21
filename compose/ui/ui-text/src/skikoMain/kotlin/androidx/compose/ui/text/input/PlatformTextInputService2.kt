@@ -60,7 +60,7 @@ interface TextEditingScope {
      * @param start The starting index of the text selection.
      * @param end The ending index of the text selection.
      */
-    fun selectText(start: Int, end: Int)
+    fun setSelection(start: Int, end: Int)
 
     /**
      * Commits text and repositions the cursor.
@@ -78,7 +78,7 @@ interface TextEditingScope {
      * @param start The start index of the composing text range.
      * @param end The end index of the composing text range.
      */
-    fun selectComposingText(start: Int, end: Int)
+    fun setComposingRegion(start: Int, end: Int)
 
     /**
      * Sets the composing text and repositions the cursor.
