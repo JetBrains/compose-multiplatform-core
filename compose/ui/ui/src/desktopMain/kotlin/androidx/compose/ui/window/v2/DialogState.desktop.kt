@@ -27,14 +27,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.toAwtRectangleRounded
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.isSpecified
-import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.isFinite
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.requireReal
-import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.WindowPlacement.Floating
+import androidx.compose.ui.window.v2.DialogState.Companion.Saver
 import java.awt.Rectangle
 import kotlinx.coroutines.channels.Channel
 
