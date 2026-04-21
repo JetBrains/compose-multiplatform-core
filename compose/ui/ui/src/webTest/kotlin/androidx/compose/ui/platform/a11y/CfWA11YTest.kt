@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.window.Dialog
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -480,5 +481,49 @@ class CfWA11YTest : OnCanvasTests {
 
         assertEquals("textbox", textField.getAttribute("role"))
         assertEquals("Hello, World!", textField.innerText)
+    }
+
+    @Test
+    fun rootA11yKeepsSyncingAfterPopupOwnerIsRemoved() = runApplicationTest {
+        // Regression test: `ComposeWebSemanticsListener` tracks a single `semanticsOwner`
+        // field. A popup (e.g. Dialog) creates its own SemanticsOwner that overwrites the
+        // field, and popup removal clears it to null even while the root owner is still
+        // alive. Without the fix, subsequent `onSemanticsChange` / `onLayoutChange` events
+        // trip the invalidation channel but `syncSemanticsWithWebA11Y` early-returns on
+        // the null field, so the root destination's a11y tree stops updating.
+        var showDialog by mutableStateOf(false)
+        var rootVersion by mutableStateOf(0)
+
+        createComposeWindow {
+            Text("root-$rootVersion", modifier = Modifier.testTag("rootTag"))
+            if (showDialog) {
+                Dialog(onDismissRequest = { showDialog = false }) {
+                    Text("dialog content")
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        assertNotNull(getShadowRoot().getElementById("rootTag") as? HTMLElement)
+
+        // Open and close a Dialog (spawns and then removes a second SemanticsOwner).
+        showDialog = true
+        awaitA11YChanges()
+        showDialog = false
+        awaitA11YChanges()
+
+        // Mutate the root content. With the fix, this publishes to the a11y DOM; without
+        // it, the listener's stored owner is null and the sync never runs - the Text
+        // "root-1" would never appear in the a11y tree.
+        rootVersion = 1
+        awaitA11YChanges()
+
+        val a11yContainer = getA11YContainer()
+        assertNotNull(a11yContainer)
+        assertTrue(
+            a11yContainer.innerHTML.contains("root-1"),
+            "Root a11y tree must keep syncing after a popup owner is removed; " +
+                "got innerHTML=${a11yContainer.innerHTML}",
+        )
     }
 }

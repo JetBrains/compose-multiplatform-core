@@ -133,12 +133,17 @@ internal class ComposeWebSemanticsListener(
     }
 
     override fun onSemanticsChange(semanticsOwner: SemanticsOwner) {
+        // Restore the tracked owner: popups (e.g. Dialog) overwrite and then null it on
+        // removal, leaving the field dangling while the root owner is still alive. Using
+        // the parameter self-heals that state on any real event.
+        this.semanticsOwner = semanticsOwner
         invalidationChannel.trySend(Unit)
     }
 
     override fun onLayoutChange(
         semanticsOwner: SemanticsOwner, semanticsNodeId: Int
     ) {
+        this.semanticsOwner = semanticsOwner
         invalidationChannel.trySend(Unit)
     }
 
