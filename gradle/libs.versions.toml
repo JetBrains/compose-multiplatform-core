@@ -67,7 +67,7 @@ kotlinCoroutines = "1.9.0"
 kotlinNativeUtils = "2.3.10"
 kotlinSerialization = "1.8.0"
 kotlinToolingCore = "2.3.10"
-ksp = "2.3.6"
+ksp = "2.3.4"
 ktfmt = "0.61"
 # Version format is: 1.KOTLIN_MAJOR_VERSION.0.KTFMT_VERSION
 # When updated, the id and checksum in StudioTask needs to be updated too
