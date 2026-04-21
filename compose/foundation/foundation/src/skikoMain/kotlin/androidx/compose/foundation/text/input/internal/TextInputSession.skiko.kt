@@ -149,12 +149,6 @@ private inline fun (() -> TextFieldCharSequence).asTextEditorState() = object : 
 
 @OptIn(ExperimentalComposeUiApi::class)
 private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScope {
-    private var TextFieldBuffer.cursor: Int
-        get() = if (selection.collapsed) selection.end else -1
-        set(value) {
-            setSelectionCoerced(value, value)
-        }
-
     // Be careful about using TextRange.start/end, as the selection can be reversed (start > end).
     // Prefer to use TextRange.min/max.
 
@@ -190,8 +184,6 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
         val replacementRange = buffer.composition ?: buffer.selection
         buffer.replace(replacementRange.min, replacementRange.max, text)
 
-        // After replace function is called, the editing buffer places the cursor at the end of the
-        // modified range.
         val newCursor = replacementRange.min + text.length
 
         // See API description for the meaning of newCursorPosition.
@@ -218,8 +210,6 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
             buffer.setComposition(replacementRange.min, replacementRange.min + text.length)
         }
 
-        // After replace function is called, the editing buffer places the cursor at the end of the
-        // modified range.
         val newCursor = replacementRange.min + text.length
 
         // See API description for the meaning of newCursorPosition.
@@ -230,7 +220,7 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
                 newCursor + newCursorPosition - text.length
             }
 
-        buffer.cursor = newCursorInBuffer
+        buffer.setSelectionCoerced(newCursorInBuffer, newCursorInBuffer)
     }
 
     override fun finishComposingText() {
