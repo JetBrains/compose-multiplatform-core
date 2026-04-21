@@ -66,7 +66,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.delay
 
-class DialogWindowTest {
+class DialogWindowV2Test {
     @Test
     fun `open and close dialog`() = runApplicationTest {
         var window: ComposeDialog? = null

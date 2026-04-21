@@ -204,19 +204,6 @@ fun SwingDialog(
             it.dispose()
         },
         update = { dialog ->
-            if (!dialog.isDisplayable) {
-                dialog.initializeBounds(currentState)
-
-                // Need to make the dialog displayable, to make awt.SwingDialog render the first
-                // frame before the dialog is visible.
-                // Check window.isDisplayable again because initializeBounds could have already
-                // called pack(), and we don't need to do it twice
-                if (!dialog.isDisplayable) {
-                    dialog.preferredSize = dialog.size
-                    dialog.pack()  // Sizes to preferred size
-                }
-            }
-
             updater.update {
                 set(currentTitle, dialog::setTitle)
                 set(currentIcon, dialog::setIcon)
@@ -228,6 +215,19 @@ fun SwingDialog(
                 set(currentAlwaysOnTop, dialog::setAlwaysOnTop)
                 set(currentModalityType, dialog::setModalityType)
                 set(currentDecoration.resizerThickness, dialog::undecoratedResizerThickness::set)
+            }
+
+            if (!dialog.isDisplayable) {
+                dialog.initializeBounds(currentState)
+
+                // Need to make the dialog displayable, to make awt.SwingDialog render the first
+                // frame before the dialog is visible.
+                // Check window.isDisplayable again because initializeBounds could have already
+                // called pack(), and we don't need to do it twice
+                if (!dialog.isDisplayable) {
+                    dialog.preferredSize = dialog.size
+                    dialog.pack()  // Sizes to preferred size
+                }
             }
         },
         content = content

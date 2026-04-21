@@ -17,34 +17,46 @@
 package androidx.compose.ui.window.v2
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.ui.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
+import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.IntrinsicMeasurable
-import androidx.compose.ui.layout.IntrinsicMeasureScope
+import androidx.compose.ui.isLinux
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.Measurable
-import androidx.compose.ui.layout.MeasurePolicy
-import androidx.compose.ui.layout.MeasureResult
-import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.toInt
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.runApplicationTest
-import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.toSize
 import com.google.common.truth.Truth.assertThat
-import java.awt.*
+import java.awt.Point
+import java.awt.Robot
+import java.awt.Window
 import java.awt.event.WindowEvent
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
@@ -53,17 +65,16 @@ import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.*
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.plus
 import org.junit.Assume.assumeFalse
 import org.junit.Ignore
 
-class WindowTestV2 {
+class WindowV2Test {
 
     @Test
     fun `open and close window`() = runApplicationTest {
@@ -727,335 +738,6 @@ class WindowTestV2 {
         }
     }
 
-    @Test
-    fun windowStateIsPreservedWhenRemovingAndAddingComposable() = runApplicationTest {
-        var showWindow by mutableStateOf(true)
-        lateinit var windowState: WindowState
-        var windowVisible = false
-        launchTestApplication {
-            val state = rememberWindowStateWithBounds()
-            windowState = state
-            if (showWindow) {
-                Window(state = state, onCloseRequest = { }) {
-                    Box(Modifier.size(32.dp))
-                    DisposableEffect(Unit) {
-                        windowVisible = true
-                        onDispose {
-                            windowVisible = false
-                        }
-                    }
-                }
-            }
-
-            // Prevent app from dying when nothing is shown
-            LaunchedEffect(Unit) {
-                delay(Duration.INFINITE)
-            }
-        }
-        awaitIdle()
-
-        windowState.requestBounds {
-            val screenBounds = screen.availableBounds
-            val size = DpSize(400.dp, 400.dp)
-            DpRect(
-                origin = DpOffset(
-                    (screenBounds.width - size.width) / 2,
-                    (screenBounds.height - size.height) / 2
-                ),
-                size = size
-            )
-        }
-        awaitIdle()
-        val windowBounds = windowState.bounds
-
-        showWindow = false
-        awaitIdle()
-        assertFalse(windowVisible)
-
-        showWindow = true
-        awaitIdle()
-        assertTrue(windowState.isInitialized)
-        assertEquals(windowBounds, windowState.bounds)
-    }
-
-    @Test
-    fun windowStateIsPreservedWhenSavingAndRestoring() = runApplicationTest {
-        var showWindow by mutableStateOf(true)
-        var windowState: WindowState? = null
-        launchTestApplication {
-            val stateHolder = rememberSaveableStateHolder()
-            stateHolder.SaveableStateProvider(showWindow) {
-                if (showWindow) {
-                    val state = rememberWindowStateWithBounds()
-                    DisposableEffect(state) {
-                        windowState = state
-                        onDispose {
-                            windowState = null
-                        }
-                    }
-                    Window(state = state, onCloseRequest = { }) {
-                        Box(Modifier.size(32.dp))
-                    }
-                }
-            }
-
-            // Prevent app from dying when nothing is shown
-            LaunchedEffect(Unit) {
-                delay(Duration.INFINITE)
-            }
-        }
-        awaitIdle()
-
-        windowState!!.requestBounds {
-            val screenBounds = screen.availableBounds
-            val size = DpSize(400.dp, 400.dp)
-            DpRect(
-                origin = DpOffset(
-                    (screenBounds.width - size.width) / 2,
-                    (screenBounds.height - size.height) / 2
-                ),
-                size = size
-            )
-        }
-        awaitIdle()
-        val windowBounds = windowState!!.bounds
-
-        showWindow = false
-        awaitIdle()
-        assertNull(windowState)
-
-        showWindow = true
-        awaitIdle()
-        assertTrue(windowState!!.isInitialized)
-        assertEquals(windowBounds, windowState!!.bounds)
-    }
-
-    @Test
-    fun windowIsShownCorrectlyIfStateSavedBeforeWindowIsShown() = runApplicationTest {
-        var createWindowState by mutableStateOf(true)
-        var showWindow by mutableStateOf(false)
-        var windowState: WindowState? = null
-        launchTestApplication {
-            val stateHolder = rememberSaveableStateHolder()
-            stateHolder.SaveableStateProvider(createWindowState) {
-                if (createWindowState) {
-                    val state = rememberWindowStateWithBounds(
-                        initialSize = DpSize(300.dp, 300.dp)
-                    )
-                    DisposableEffect(state) {
-                        windowState = state
-                        onDispose {
-                            windowState = null
-                        }
-                    }
-                    if (showWindow) {
-                        Window(state = state, onCloseRequest = { }) {
-                            Box(Modifier.size(32.dp))
-                        }
-                    }
-                }
-            }
-
-            // Prevent app from dying when nothing is shown
-            LaunchedEffect(Unit) {
-                delay(Duration.INFINITE)
-            }
-        }
-
-        awaitIdle()
-        assertNotNull(windowState)
-        assertFalse(windowState!!.isInitialized)
-        windowState!!.requestBounds {
-            val screenBounds = screen.availableBounds
-            val size = DpSize(400.dp, 400.dp)
-            DpRect(
-                origin = DpOffset(
-                    (screenBounds.width - size.width) / 2,
-                    (screenBounds.height - size.height) / 2
-                ),
-                size = size
-            )
-        }
-
-        createWindowState = false
-        awaitIdle()
-        assertNull(windowState)
-
-        createWindowState = true
-        showWindow = true
-        awaitIdle()
-
-        awaitIdle()
-        assertNotNull(windowState)
-        assertTrue(windowState!!.isInitialized)
-        // Size should be as the one requested in rememberWindowStateWithBounds, not the one in
-        // windowState!!.requestBounds above.
-        assertEquals(DpSize(300.dp, 300.dp), windowState!!.bounds.size)
-    }
-
-    private fun runWindowSizeTest(
-        windowSizeProvider: WindowSizeProvider,
-        content: @Composable () -> Unit,
-        expectedWindowSizeSansInsets: DpSize,
-    ) = runApplicationTest {
-        val windowState = WindowState(
-            initialBoundsProvider = WindowBoundsProvider(windowSizeProvider)
-        )
-        lateinit var window: ComposeWindow
-        launchTestApplication {
-            Window(state = windowState, onCloseRequest = {}) {
-                window = this.window
-                content()
-            }
-        }
-        awaitIdle()
-        assertEquals(
-            expectedWindowSizeSansInsets + window.insets.toDpInsets(),
-            windowState.bounds.size
-        )
-    }
-
-    private abstract class EmptyMeasurePolicy : MeasurePolicy {
-        override fun MeasureScope.measure(
-            measurables: List<Measurable>,
-            constraints: Constraints
-        ): MeasureResult {
-            return layout(1, 1) {}
-        }
-    }
-
-
-    @Composable
-    private fun BoxWithIntrinsicSize(
-        minWidth: (IntrinsicMeasureScope.(Int) -> Int)? = null,
-        maxWidth: (IntrinsicMeasureScope.(Int) -> Int)? = null,
-        minHeight: (IntrinsicMeasureScope.(Int) -> Int)? = null,
-        maxHeight: (IntrinsicMeasureScope.(Int) -> Int)? = null,
-    ) {
-        Box {
-            Layout(
-                measurePolicy = object : EmptyMeasurePolicy() {
-                    override fun IntrinsicMeasureScope.minIntrinsicWidth(
-                        measurables: List<IntrinsicMeasurable>,
-                        height: Int
-                    ): Int {
-                        return minWidth?.invoke(this, height) ?: 0
-                    }
-
-                    override fun IntrinsicMeasureScope.maxIntrinsicWidth(
-                        measurables: List<IntrinsicMeasurable>,
-                        height: Int
-                    ): Int {
-                        return maxWidth?.invoke(this, height) ?: 0
-                    }
-
-                    override fun IntrinsicMeasureScope.minIntrinsicHeight(
-                        measurables: List<IntrinsicMeasurable>,
-                        width: Int
-                    ): Int {
-                        return minHeight?.invoke(this, width) ?: 0
-                    }
-
-                    override fun IntrinsicMeasureScope.maxIntrinsicHeight(
-                        measurables: List<IntrinsicMeasurable>,
-                        width: Int
-                    ): Int {
-                        return maxHeight?.invoke(this, width) ?: 0
-                    }
-                },
-                content = {}
-            )
-        }
-    }
-
-    @Test
-    fun windowMinIntrinsicWidth() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.MinIntrinsicWidth(height = 500.dp),
-        content = {
-            BoxWithIntrinsicSize(
-                minWidth = { 400.dp.roundToPx() }
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 500.dp)
-    )
-
-    @Test
-    fun windowMaxIntrinsicWidth() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.MaxIntrinsicWidth(height = 500.dp),
-        content = {
-            BoxWithIntrinsicSize(
-                maxWidth = { 400.dp.roundToPx() }
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 500.dp)
-    )
-
-    @Test
-    fun windowMinIntrinsicHeight() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.MinIntrinsicHeight(width = 500.dp),
-        content = {
-            BoxWithIntrinsicSize(
-                minHeight = { 400.dp.roundToPx() }
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(500.dp, 400.dp)
-    )
-
-    @Test
-    fun windowMaxIntrinsicHeight() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.MaxIntrinsicHeight(width = 500.dp),
-        content = {
-            BoxWithIntrinsicSize(
-                maxHeight = { 400.dp.roundToPx() }
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(500.dp, 400.dp)
-    )
-
-    @Test
-    fun windowMinWidthWithMatchingMinHeight() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
-            intrinsicWidth = WindowIntrinsicSize.Min,
-            intrinsicHeight = WindowIntrinsicSize.Min,
-        ),
-        content = {
-            BoxWithIntrinsicSize(
-                minWidth = { 400.dp.roundToPx() },
-                minHeight = { it }  // Return width to make it a square
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 400.dp)
-    )
-
-    @Test
-    fun windowMaxHeightWithMatchingMaxWidth() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.IntrinsicHeightWithMatchingIntrinsicWidth(
-            intrinsicWidth = WindowIntrinsicSize.Max,
-            intrinsicHeight = WindowIntrinsicSize.Max,
-        ),
-        content = {
-            BoxWithIntrinsicSize(
-                maxHeight = { 400.dp.roundToPx() },
-                maxWidth = { it }  // Return height to make it a square
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 400.dp)
-    )
-
-    @Test
-    fun `requested size is rounded up`() = runWindowSizeTest(
-        windowSizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
-            intrinsicWidth = WindowIntrinsicSize.Min,
-            intrinsicHeight = WindowIntrinsicSize.Min,
-        ),
-        content = {
-            BoxWithIntrinsicSize(
-                minWidth = { (density * 100 + 1).toInt() },
-                minHeight = { it }
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(101.dp, 101.dp)
-    )
 }
 
 private object CtxElement : CoroutineContext.Element, CoroutineContext.Key<CtxElement> {

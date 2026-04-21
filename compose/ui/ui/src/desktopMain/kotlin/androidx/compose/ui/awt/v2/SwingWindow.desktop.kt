@@ -220,20 +220,6 @@ fun SwingWindow(
             it.dispose()
         },
         update = { window ->
-            if (!window.isDisplayable) {
-                window.initializePlacement(currentState)
-                window.initializeBounds(currentState)
-
-                // Need to make the window displayable, to make awt.SwingWindow render the first
-                // frame before the window is visible.
-                // Check window.isDisplayable again because initializeBounds could have already
-                // called pack(), and we don't need to do it twice
-                if (!window.isDisplayable) {
-                    window.preferredSize = window.size
-                    window.pack()  // Sizes to preferred size
-                }
-            }
-
             updater.update {
                 set(currentTitle, window::setTitle)
                 set(currentIcon, window::setIcon)
@@ -246,6 +232,20 @@ fun SwingWindow(
                 set(currentSizeLimits.min) { window.minimumSize = it.roundToDimensionOrNull() }
                 set(currentSizeLimits.max) { window.maximumSize = it.roundToDimensionOrNull() }
                 set(currentDecoration.resizerThickness, window::undecoratedResizerThickness::set)
+            }
+
+            if (!window.isDisplayable) {
+                window.initializePlacement(currentState)
+                window.initializeBounds(currentState)
+
+                // Need to make the window displayable, to make awt.SwingWindow render the first
+                // frame before the window is visible.
+                // Check window.isDisplayable again because initializeBounds could have already
+                // called pack(), and we don't need to do it twice
+                if (!window.isDisplayable) {
+                    window.preferredSize = window.size
+                    window.pack()  // Sizes to preferred size
+                }
             }
         },
         content = content
