@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,24 +22,20 @@ plugins {
 }
 
 unsplitPackage {
-    splitPackageModule(project(":compose:runtime:runtime"))
-    splitPackageModule(project(":compose:runtime:runtime-annotation"))
-    splitPackageModule(project(":compose:runtime:runtime-retain"))
-    splitPackageModule(project(":compose:runtime:runtime-saveable"))
+    val originalNavigationEventVersion = properties["artifactRedirection.version.androidx.navigationevent"]
+    splitPackageModule("androidx.navigationevent:navigationevent:$originalNavigationEventVersion")
+    splitPackageModule("androidx.navigationevent:navigationevent-compose:$originalNavigationEventVersion")
 
     dependency(libs.kotlinStdlib)
+    dependency(libs.kotlinCoroutinesCore)
     dependency(libs.androidx.annotation)
-    dependency("androidx.collection:collection:1.5.0")
-    dependency(libs.atomicFu)
-    dependency(project(":lifecycle:lifecycle-runtime-compose"))
-    dependency(project(":savedstate:savedstate-compose"))
+    dependency(project(":compose:runtime:runtime"))
 }
 
 configure<PublishingExtension> {
     publications.withType<MavenPublication> {
-        groupId = "org.jetbrains.compose.runtime"
-        version = providers.environmentVariable("COMPOSE_CUSTOM_VERSION").getOrNull()
-            ?: properties["jetbrains.publication.version.COMPOSE"] as String?
+        groupId = "org.jetbrains.androidx.navigationevent"
+        version = properties["jetbrains.publication.version.NAVIGATION_EVENT"] as String?
                 ?: "0.0.0-SNAPSHOT"
     }
 }

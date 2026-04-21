@@ -605,6 +605,7 @@ includeProject(":compose:ui:ui-test-manifest:integration-tests:testapp", "mpp/st
 include(":fleet:compose:runtime:runtime-all-desktop")
 include(":fleet:compose:ui:ui-all-desktop")
 include(":fleet:lifecycle:lifecycle-all-desktop")
+include(":fleet:navigationevent:navigationevent-all-desktop")
 
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----

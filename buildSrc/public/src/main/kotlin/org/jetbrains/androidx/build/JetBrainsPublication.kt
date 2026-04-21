@@ -45,6 +45,7 @@ object JetBrainsPublication {
             ComposeComponent(":compose:material:material-navigation"),
             ComposeComponent(":compose:material:material-ripple"),
             ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
+            ComposeComponent(":compose:runtime:runtime-retain", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":compose:ui:ui"),
             ComposeComponent(":compose:ui:ui-geometry"),
