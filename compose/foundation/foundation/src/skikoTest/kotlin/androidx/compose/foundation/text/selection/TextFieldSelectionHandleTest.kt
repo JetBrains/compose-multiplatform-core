@@ -45,20 +45,16 @@ import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.unit.sp
-import kotlin.math.pow
 import kotlin.test.Test
 import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreWasmTarget
 
+@Suppress("DEPRECATION")
 @OptIn(ExperimentalTestApi::class)
 class BasicTextFieldSelectionHandleTest {
-    private val textPadding = 14.dp
+    private val textPadding = 30.dp
     private val selectionColor = TextSelectionColors(
         handleColor = Color.Red,
         backgroundColor = Color.White
@@ -198,44 +194,7 @@ class BasicTextFieldSelectionHandleTest {
     private fun SkikoComposeUiTest.TestHandleShape(
         cursor: Rect,
         isStartHandler: Boolean,
-        lineWidth: Dp = 2.dp,
-        circleRadius: Dp = 6.dp,
-    ) = density.run {
-        val lineRect = cursor.copy(
-            left = cursor.bottomCenter.x - lineWidth.toPx() / 2,
-            right = cursor.bottomCenter.x + lineWidth.toPx() / 2,
-        )
-        val circleCenter = Offset(
-            x = cursor.bottomCenter.x,
-            y = if (isStartHandler) {
-                cursor.top - circleRadius.toPx()
-            } else {
-                cursor.bottom + circleRadius.toPx()
-            }
-        )
-        val circleRect = Rect(center = circleCenter, radius = circleRadius.toPx())
-
-        SelectionHandleShape(lineRect, circleRect)
-    }
-
-    private data class SelectionHandleShape(
-        val lineRect: Rect,
-        val circleRect: Rect
-    ) {
-        fun containsInner(point: IntOffset): Boolean =
-            lineRect.roundToIntRect().contains(point) ||
-                circleRect.roundToIntRect().deflate(1).containsInOval(point)
-
-        fun containsOuter(point: IntOffset): Boolean =
-            lineRect.roundToIntRect().contains(point) ||
-                circleRect.roundToIntRect().inflate(1).containsInOval(point)
-
-        private fun IntRect.containsInOval(point: IntOffset): Boolean {
-            val normX = (point.x + 0.5 - center.x) / (width / 2)
-            val normY = (point.y + 0.5 - center.y) / (height / 2)
-            return normX.pow(2) + normY.pow(2) <= 1.0
-        }
-    }
+    ) = PlatformSelectionHandleShape(density, cursor, isStartHandler)
 
     private fun ImageBitmap.assertHandlers(
         left: SelectionHandleShape,

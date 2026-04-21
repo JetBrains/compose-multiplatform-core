@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import kotlin.math.floor
+import kotlin.math.roundToInt
 import org.jetbrains.skia.FilterBlurMode
 import org.jetbrains.skia.MaskFilter
 import org.jetbrains.skiko.OS
@@ -167,12 +169,24 @@ private fun Modifier.drawIosSelectionHandle(
         drawContent()
         if (!iconVisible()) return@onDrawWithContent
 
-        val cx = size.width / 2
+        val stemWidthInt = stemWidthPx.roundToInt().toFloat()
+        val stemLeftX = floor((size.width - stemWidthInt) / 2f)
+        val stemCenterX = stemLeftX + stemWidthInt / 2f
         val dotCenterY = if (isLeft) paddingPx + dotRadiusPx else lineHeight + dotRadiusPx
+
+        val stemTopY: Float
+        val stemBottomY: Float
+        if (isLeft) {
+            stemTopY = dotCenterY
+            stemBottomY = size.height
+        } else {
+            stemTopY = 0f
+            stemBottomY = dotCenterY
+        }
 
         if (shadowPaint != null) {
             drawContext.canvas.drawCircle(
-                center = Offset(cx, dotCenterY),
+                center = Offset(stemCenterX, dotCenterY),
                 radius = dotRadiusPx,
                 paint = shadowPaint,
             )
@@ -181,17 +195,14 @@ private fun Modifier.drawIosSelectionHandle(
         // Vertical stem
         drawRect(
             color = handleColor,
-            topLeft = Offset(
-                x = cx - stemWidthPx / 2,
-                y = if (isLeft) paddingPx + dotRadiusPx else 0f
-            ),
-            size = Size(stemWidthPx, lineHeight + dotRadiusPx)
+            topLeft = Offset(stemLeftX, stemTopY),
+            size = Size(stemWidthInt, stemBottomY - stemTopY)
         )
         // Dot
         drawCircle(
             color = handleColor,
             radius = dotRadiusPx,
-            center = Offset(cx, dotCenterY)
+            center = Offset(stemCenterX, dotCenterY)
         )
     }
 }
