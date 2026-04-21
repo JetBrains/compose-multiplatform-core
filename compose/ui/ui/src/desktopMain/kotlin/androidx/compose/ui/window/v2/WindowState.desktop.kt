@@ -331,6 +331,84 @@ class WindowState private constructor(
         )
     }
 
+    /**
+     * Requests to set the position of the window via a [WindowPositionProvider].
+     *
+     * Note that the actual position is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't position as requested).
+     *
+     * Setting the position when the window placement is not [WindowPlacement.Floating] will change
+     * the placement to floating.
+     *
+     * @param positionProvider Provides the position to apply to the window.
+     */
+    fun requestPosition(positionProvider: WindowPositionProvider) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                positionProvider = positionProvider,
+            )
+        )
+    }
+
+    /**
+     * Requests to set the position of the window.
+     *
+     * Note that the actual position is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't position as requested).
+     *
+     * Setting the position when the window placement is not [WindowPlacement.Floating] will change
+     * the placement to floating.
+     *
+     * @param position The position to apply to the window. The value must be [DpOffset.isSpecified]
+     * and all the coordinates must be [Dp.isSpecified] and [Dp.isFinite].
+     */
+    fun requestPosition(position: DpOffset) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                positionProvider = WindowPositionProvider.Absolute(position),
+            )
+        )
+    }
+
+    /**
+     * Requests to set the size of the window via a [WindowSizeProvider].
+     *
+     * Note that the actual size is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't size as requested).
+     *
+     * Setting the size when the window placement is not [WindowPlacement.Floating] will change
+     * the placement to floating.
+     *
+     * @param sizeProvider Provides the size to apply to the window.
+     */
+    fun requestSize(sizeProvider: WindowSizeProvider) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                sizeProvider = sizeProvider,
+            )
+        )
+    }
+
+    /**
+     * Requests to set the size of the window.
+     *
+     * Note that the actual size is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't size as requested).
+     *
+     * Setting the size when the window placement is not [WindowPlacement.Floating] will change
+     * the placement to floating.
+     *
+     * @param size The position to apply to the window. The value must be [DpSize.isSpecified]
+     * and all the coordinates must be [Dp.isSpecified] and [Dp.isFinite].
+     */
+    fun requestSize(size: DpSize) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                sizeProvider = WindowSizeProvider.Fixed(size),
+            )
+        )
+    }
+
     @ExperimentalComposeUiApi
     companion object {
         /**

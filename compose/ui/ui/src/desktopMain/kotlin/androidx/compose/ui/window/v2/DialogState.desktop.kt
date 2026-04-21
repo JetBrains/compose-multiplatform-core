@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.requireReal
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowPlacement.Floating
 import java.awt.Rectangle
 import kotlinx.coroutines.channels.Channel
 
@@ -87,17 +89,17 @@ fun rememberDialogState(
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
  *
- * @param initialPosition The initial position of the dialog; default if `null`. All the
- * coordinates must be [Dp.isSpecified] and [Dp.isFinite], and the [DpOffset] object itself must be
- * [DpOffset.isSpecified].
  * @param initialSize The initial size of the dialog; default if `null`. All the
  * coordinates must be [Dp.isSpecified] and [Dp.isFinite], and the [DpSize] object itself must be
+ * [DpOffset.isSpecified].
+ * @param initialPosition The initial position of the dialog; default if `null`. All the
+ * coordinates must be [Dp.isSpecified] and [Dp.isFinite], and the [DpOffset] object itself must be
  * [DpOffset.isSpecified].
  */
 @ExperimentalComposeUiApi
 fun DialogStateWithBounds(
-    initialPosition: DpOffset? = null,
     initialSize: DpSize? = null,
+    initialPosition: DpOffset? = null,
 ): DialogState {
     val sizeProvider =
         initialSize?.let { WindowSizeProvider.Fixed(it) } ?: WindowSizeProvider.Default
@@ -109,13 +111,13 @@ fun DialogStateWithBounds(
 }
 
 /**
- * Creates a [DialogState] with the specified initial values.
+ * Creates a [DialogState] with the specified initial bounds provider.
  *
  * @param initialBoundsProvider Provides the initial bounds of the dialog.
  */
 @ExperimentalComposeUiApi
 fun DialogState(
-    initialBoundsProvider: WindowBoundsProvider = WindowBoundsProvider.Default,
+    initialBoundsProvider: WindowBoundsProvider,
 ): DialogState = DialogState().apply {
     requestBounds(initialBoundsProvider)
 }
@@ -209,6 +211,72 @@ class DialogState private constructor(
     fun requestBounds(bounds: DpRect) {
         boundsRequests.trySend(
             WindowBoundsProvider.Absolute(bounds)
+        )
+    }
+
+    /**
+     * Requests to set the position of the dialog via a [WindowPositionProvider].
+     *
+     * Note that the actual position is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't position as requested).
+     *
+     * @param positionProvider Provides the position to apply to the dialog.
+     */
+    fun requestPosition(positionProvider: WindowPositionProvider) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                positionProvider = positionProvider,
+            )
+        )
+    }
+
+    /**
+     * Requests to set the position of the dialog.
+     *
+     * Note that the actual position is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't position as requested).
+     *
+     * @param position The position to apply to the dialog. The value must be [DpOffset.isSpecified]
+     * and all the coordinates must be [Dp.isSpecified] and [Dp.isFinite].
+     */
+    fun requestPosition(position: DpOffset) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                positionProvider = WindowPositionProvider.Absolute(position),
+            )
+        )
+    }
+
+    /**
+     * Requests to set the size of the dialog via a [WindowSizeProvider].
+     *
+     * Note that the actual size is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't size as requested).
+     *
+     * @param sizeProvider Provides the size to apply to the dialog.
+     */
+    fun requestSize(sizeProvider: WindowSizeProvider) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                sizeProvider = sizeProvider,
+            )
+        )
+    }
+
+    /**
+     * Requests to set the size of the dialog.
+     *
+     * Note that the actual size is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't size as requested).
+     *
+     * @param size The position to apply to the dialog. The value must be [DpSize.isSpecified]
+     * and all the coordinates must be [Dp.isSpecified] and [Dp.isFinite].
+     */
+    fun requestSize(size: DpSize) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                sizeProvider = WindowSizeProvider.Fixed(size),
+            )
         )
     }
 

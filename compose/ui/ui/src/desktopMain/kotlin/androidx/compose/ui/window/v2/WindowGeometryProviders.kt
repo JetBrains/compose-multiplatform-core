@@ -37,12 +37,14 @@ import androidx.compose.ui.unit.plus
 import androidx.compose.ui.unit.requireReal
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.size
+import androidx.compose.ui.unit.topLeft
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.roundToDimension
 import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.toDpOffset
+import androidx.compose.ui.window.toDpRect
 import java.awt.GraphicsDevice
 
 
@@ -92,7 +94,7 @@ fun interface WindowScreenProvider {
  */
 @ExperimentalComposeUiApi
 class WindowGeometryProviderScope internal constructor(
-    window: java.awt.Window,
+    private val window: java.awt.Window,
     private val measurableContentProvider: () -> MeasurableRootContent,
 ): Density {
     init {
@@ -109,7 +111,8 @@ class WindowGeometryProviderScope internal constructor(
     /**
      * The density of the window.
      */
-    private val windowDensity: Density = window.density
+    private val windowDensity: Density
+        get() = window.density
 
     override val density: Float
         get() = windowDensity.density
@@ -118,9 +121,16 @@ class WindowGeometryProviderScope internal constructor(
         get() = windowDensity.fontScale
 
     /**
+     * The current bounds of the window.
+     */
+    val windowBounds: DpRect
+        get() = window.bounds.toDpRect()
+
+    /**
      * The insets of the window.
      */
-    val windowInsets: DpInsets = window.insets.toDpInsets()
+    val windowInsets: DpInsets
+        get() = window.insets.toDpInsets()
 
     /**
      * Returns the size a window should have, given the size of its content.
@@ -243,8 +253,8 @@ fun WindowBoundsProvider(
  */
 @ExperimentalComposeUiApi
 fun WindowBoundsProvider(
-    sizeProvider: WindowSizeProvider = WindowSizeProvider.Default,
-    positionProvider: WindowPositionProvider = WindowPositionProvider.Default,
+    sizeProvider: WindowSizeProvider = WindowSizeProvider.Current,
+    positionProvider: WindowPositionProvider = WindowPositionProvider.Current,
 ): WindowBoundsProvider = WindowBoundsProvider {
     val size = sizeProvider.getSize().requireReal()
     val position = positionProvider.getPosition(size)
@@ -280,6 +290,11 @@ fun interface WindowPositionProvider {
                 windowSize = size.roundToDimension()
             ).toDpOffset()
         }
+
+        /**
+         * Returns the current position of the window.
+         */
+        val Current = WindowPositionProvider { windowBounds.topLeft }
 
         /**
          * Positions the window at the given [position].
@@ -318,6 +333,11 @@ fun interface WindowSizeProvider {
          * Sets the size of the window to the default one.
          */
         val Default = Fixed(DpSize(800.dp, 600.dp))
+
+        /**
+         * Returns the current size of the window.
+         */
+        val Current = WindowSizeProvider { windowBounds.size }
 
         /**
          * Sets the size of the window to the given [size].
