@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.requireReal
+import androidx.compose.ui.unit.size
+import androidx.compose.ui.unit.topLeft
 import androidx.compose.ui.window.WindowPlacement
 import java.awt.Rectangle
 import kotlinx.coroutines.channels.Channel
@@ -138,7 +140,7 @@ fun WindowState(
     initialPlacement: WindowPlacement = WindowPlacement.Floating,
     initialBoundsProvider: WindowBoundsProvider = WindowBoundsProvider.Default,
     initiallyMinimized: Boolean = false,
-): WindowState = WindowState().apply {
+): WindowState = WindowState.createUninitialized().apply {
     requestScreen(initialScreenProvider)
     requestPlacement(initialPlacement)
     requestBounds(initialBoundsProvider)
@@ -158,17 +160,6 @@ class WindowState private constructor(
     isMinimized: Boolean?,
     bounds: DpRect?,
 ) {
-    /**
-     * Creates a new [WindowState] that is not yet initialized.
-     */
-    constructor() : this(
-        isInitialized = false,
-        screenId = null,
-        placement = null,
-        isMinimized = null,
-        bounds = null
-    )
-
     /**
      * Creates a new [WindowState] that is initialized with the specified values.
      */
@@ -332,6 +323,13 @@ class WindowState private constructor(
     }
 
     /**
+     * The current position of the window; throws [IllegalStateException] if the window is not yet
+     * [isInitialized].
+     */
+    val position: DpOffset
+        get() = _bounds?.topLeft ?: windowNotInitializedError("position")
+
+    /**
      * Requests to set the position of the window via a [WindowPositionProvider].
      *
      * Note that the actual position is set asynchronously and may be different from the requested
@@ -369,6 +367,14 @@ class WindowState private constructor(
             )
         )
     }
+
+
+    /**
+     * The current size of the window; throws [IllegalStateException] if the window is not yet
+     * [isInitialized].
+     */
+    val size: DpSize
+        get() = _bounds?.size ?: windowNotInitializedError("size")
 
     /**
      * Requests to set the size of the window via a [WindowSizeProvider].
@@ -411,6 +417,18 @@ class WindowState private constructor(
 
     @ExperimentalComposeUiApi
     companion object {
+        /**
+         * Creates a new [WindowState] that is not yet initialized.
+         */
+        internal fun createUninitialized() =
+            WindowState(
+                isInitialized = false,
+                screenId = null,
+                placement = null,
+                isMinimized = null,
+                bounds = null
+            )
+
         /**
          * A [Saver] implementation for [WindowState].
          */

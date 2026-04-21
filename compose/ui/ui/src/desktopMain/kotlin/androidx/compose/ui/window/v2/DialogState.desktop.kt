@@ -33,7 +33,8 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.requireReal
-import androidx.compose.ui.window.v2.DialogState.Companion.Saver
+import androidx.compose.ui.unit.size
+import androidx.compose.ui.unit.topLeft
 import java.awt.Rectangle
 import kotlinx.coroutines.channels.Channel
 
@@ -117,7 +118,7 @@ fun DialogStateWithBounds(
 @ExperimentalComposeUiApi
 fun DialogState(
     initialBoundsProvider: WindowBoundsProvider,
-): DialogState = DialogState().apply {
+): DialogState = DialogState.createUninitialized().apply {
     requestBounds(initialBoundsProvider)
 }
 
@@ -131,14 +132,6 @@ class DialogState private constructor(
     isInitialized: Boolean,
     bounds: DpRect?,
 ) {
-    /**
-     * Creates a new [DialogState] that is not yet initialized.
-     */
-    constructor() : this(
-        isInitialized = false,
-        bounds = null
-    )
-
     /**
      * Creates a new [DialogState] that is initialized with the specified values.
      */
@@ -214,6 +207,13 @@ class DialogState private constructor(
     }
 
     /**
+     * The current position of the dialog; throws [IllegalStateException] if the dialog is not yet
+     * [isInitialized].
+     */
+    val position: DpOffset
+        get() = _bounds?.topLeft ?: dialogNotInitializedError("position")
+
+    /**
      * Requests to set the position of the dialog via a [WindowPositionProvider].
      *
      * Note that the actual position is set asynchronously and may be different from the requested
@@ -245,6 +245,13 @@ class DialogState private constructor(
             )
         )
     }
+
+    /**
+     * The current size of the dialog; throws [IllegalStateException] if the dialog is not yet
+     * [isInitialized].
+     */
+    val size: DpSize
+        get() = _bounds?.size ?: dialogNotInitializedError("size")
 
     /**
      * Requests to set the size of the dialog via a [WindowSizeProvider].
@@ -281,6 +288,15 @@ class DialogState private constructor(
 
     @ExperimentalComposeUiApi
     companion object {
+        /**
+         * Creates a new [DialogState] that is not yet initialized.
+         */
+        internal fun createUninitialized() =
+            DialogState(
+                isInitialized = false,
+                bounds = null
+            )
+
         /**
          * A [Saver] implementation for [DialogState].
          */
