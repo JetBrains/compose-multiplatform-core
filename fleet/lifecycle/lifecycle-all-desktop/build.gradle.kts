@@ -23,14 +23,16 @@ plugins {
 
 unsplitPackage {
     val originalLifecycleVersion = properties["artifactRedirection.version.androidx.lifecycle"]
+    val originalSavedStateVersion = properties["artifactRedirection.version.androidx.savedstate"]
     splitPackageModule("androidx.lifecycle:lifecycle-common:$originalLifecycleVersion")
     splitPackageModule("androidx.lifecycle:lifecycle-runtime:$originalLifecycleVersion")
-    splitPackageModule(project(":lifecycle:lifecycle-runtime-compose"))
+    splitPackageModule("androidx.lifecycle:lifecycle-runtime-compose:$originalLifecycleVersion")
 //    splitPackageModule(project(":lifecycle:lifecycle-runtime-ktx"))
     splitPackageModule("androidx.lifecycle:lifecycle-viewmodel:$originalLifecycleVersion")
-    splitPackageModule(project(":lifecycle:lifecycle-viewmodel-compose"))
+    splitPackageModule("androidx.lifecycle:lifecycle-viewmodel-compose:$originalLifecycleVersion")
 //    splitPackageModule(project(":lifecycle:lifecycle-viewmodel-navigation3"))
     splitPackageModule("androidx.lifecycle:lifecycle-viewmodel-savedstate:$originalLifecycleVersion")
+    splitPackageModule("androidx.savedstate:savedstate-compose:$originalSavedStateVersion")
 
     dependency(libs.kotlinStdlib)
     dependency(libs.kotlinCoroutinesCore)
@@ -43,7 +45,6 @@ unsplitPackage {
     dependency(project(":compose:ui:ui"))
 //    dependency(project(":navigation:navigation3"))
     dependency(project(":savedstate:savedstate"))
-//    dependency(project(":savedstate:savedstate-compose"))
     dependency(libs.jspecify)
 }
 

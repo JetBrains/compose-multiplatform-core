@@ -18,10 +18,12 @@ package androidx.compose.ui.kdt
 
 import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
@@ -270,11 +272,17 @@ fun Window(
 
     SideEffect { window.configure() }
 
+    val parentLocals by rememberUpdatedState(currentCompositionLocalContext)
+
     // Keep the composition — and therefore the host Recomposer — alive while the window is live.
     // setContent must also happen inside a LaunchedEffect so that the suspending child coroutine
     // can await cancellation until the window is removed from the composition.
     LaunchedEffect(window) {
-        window.setContent(onPreviewKeyEvent, onKeyEvent, content)
+        window.setContent(onPreviewKeyEvent, onKeyEvent) {
+            CompositionLocalProvider(parentLocals) {
+                content()
+            }
+        }
         awaitCancellation()
     }
 
@@ -293,8 +301,13 @@ fun Window(
     content: @Composable WindowScope.() -> Unit,
 ) {
     val window = remember { create() }
+    val parentLocals by rememberUpdatedState(currentCompositionLocalContext)
     SideEffect {
-        window.setContent(onPreviewKeyEvent, onKeyEvent, content)
+        window.setContent(onPreviewKeyEvent, onKeyEvent) {
+            CompositionLocalProvider(parentLocals) {
+                content()
+            }
+        }
     }
     DisposableEffect(window) {
         onDispose {
