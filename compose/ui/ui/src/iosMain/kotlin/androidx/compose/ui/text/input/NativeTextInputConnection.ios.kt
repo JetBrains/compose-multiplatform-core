@@ -99,10 +99,8 @@ internal class NativeTextInputConnection(
             textView.onKeyboardPresses = NoOpOnKeyboardPresses
             coroutineScope.launch {
                 delay(CLEAR_FOCUS_DELAY)
-                if (scrollView.textView == textView) {
-                    scrollView.textView = null
-                    textView.removeFromSuperview()
-                }
+                scrollView.textView = null
+                textView.removeFromSuperview()
             }
         }
         scrollView.removeFromSuperview()
