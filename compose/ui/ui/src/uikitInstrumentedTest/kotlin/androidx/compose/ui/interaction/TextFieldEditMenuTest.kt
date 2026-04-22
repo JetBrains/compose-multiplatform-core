@@ -502,7 +502,7 @@ class TextFieldEditMenuTest {
                     node.element?.let { it::class.simpleName } == menuClassName
                 } != null
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("Actual accessibility tree:")
             println(getAccessibilityTree().printTree())
             throw e
