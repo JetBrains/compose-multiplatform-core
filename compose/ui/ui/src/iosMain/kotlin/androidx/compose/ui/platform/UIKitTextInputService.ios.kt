@@ -96,8 +96,12 @@ internal class UIKitTextInputService(
 
     private var postponeSelectionUpdate: Boolean = false
     private var currentRequest: PlatformTextInputMethodRequest? = null
-    private var currentTextFieldValue: TextFieldValue? = null
     private var usingNativeTextInput by mutableStateOf(false)
+
+    // We have to keep the text field state as a snapshot parameter for the following reasons:
+    // - We should to notify UITextInputDelegate about text and selection changes coming from Compose.
+    // - Some heavily used methods (like positionFromPosition) require text state as a String to operate properly.
+    private var currentTextFieldValue: TextFieldValue? = null
 
     private val textLayoutResult get() = currentRequest?.textLayoutResult()
     private val currentImeOptions get() = currentRequest?.imeOptions
@@ -947,7 +951,7 @@ internal class UIKitTextInputService(
 }
 
 private fun PlatformTextInputMethodRequest.stateSnapshot() =
-    TextFieldValue(state.subSequence(0, state.length).toString(), state.selection, state.composition)
+    TextFieldValue(state.toString(), state.selection, state.composition)
 
 internal data class TextSelectionRect(
     val dpRect: DpRect,
