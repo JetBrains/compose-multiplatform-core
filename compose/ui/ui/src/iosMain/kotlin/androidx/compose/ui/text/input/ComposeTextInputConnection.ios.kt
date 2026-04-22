@@ -60,7 +60,7 @@ internal open class ComposeTextInputConnection(
     focusManager
 ), TextToolbar {
 
-    override val textUIView =
+    override val textInputView =
         ComposeTextInputView(
             doubleTapTimeoutMillis = viewConfiguration.doubleTapTimeoutMillis,
             coroutineScope = coroutineScope
@@ -74,19 +74,19 @@ internal open class ComposeTextInputConnection(
         }
 
     override fun attachInputToView(imeOptions: ImeOptions) {
-        textUIView.input = this
-        textUIView.inputTraits = getUITextInputTraits(imeOptions)
+        textInputView.input = this
+        textInputView.inputTraits = getUITextInputTraits(imeOptions)
     }
 
     override fun detachView() {
         // Out-of-bounds non-empty frame is required to hide text keyboard focus frame
         val outOfBoundsFrame = CGRectMake(-100000.0, 0.0, 1.0, 1.0)
 
-        textUIView.input = null
-        textUIView.inputTraits = EmptyInputTraits
+        textInputView.input = null
+        textInputView.inputTraits = EmptyInputTraits
 
         showMenuOrUpdatePosition = {}
-        textUIView.let { view ->
+        textInputView.let { view ->
             view.setFrame(outOfBoundsFrame)
             view.onKeyboardPresses = NoOpOnKeyboardPresses
             coroutineScope.launch {
@@ -98,19 +98,19 @@ internal open class ComposeTextInputConnection(
 
     override fun stateWillChange(textChanged: Boolean, selectionChanged: Boolean) {
         if (textChanged) {
-            textUIView.textWillChange()
+            textInputView.textWillChange()
         }
         if (selectionChanged) {
-            textUIView.selectionWillChange()
+            textInputView.selectionWillChange()
         }
     }
 
     override fun stateDidChange(textChanged: Boolean, selectionChanged: Boolean) {
         if (textChanged) {
-            textUIView.textDidChange()
+            textInputView.textDidChange()
         }
         if (selectionChanged) {
-            textUIView.selectionDidChange()
+            textInputView.selectionDidChange()
         }
         if (textChanged || selectionChanged) {
             updateView()
@@ -127,7 +127,7 @@ internal open class ComposeTextInputConnection(
 
     override fun updateTextViewPosition(unclippedTextPosition: Offset) {
         val rect = textFieldFrameInRoot ?: return
-        textUIView.setFrame(rect.toDpRect(view.density).asCGRect())
+        textInputView.setFrame(rect.toDpRect(view.density).asCGRect())
     }
 
     override fun beginFloatingCursor(offset: DpOffset) {
@@ -144,11 +144,11 @@ internal open class ComposeTextInputConnection(
             textInputServiceInvalidationsCount--
         }
     }
-    // Fixes a problem where the menu is shown before the textUIView gets its final layout.
+    // Fixes a problem where the menu is shown before the textInputView gets its final layout.
     private var showMenuOrUpdatePosition = {}
 
     override val status: TextToolbarStatus
-        get() = if (textUIView.isTextMenuShown())
+        get() = if (textInputView.isTextMenuShown())
             TextToolbarStatus.Shown
         else
             TextToolbarStatus.Hidden
@@ -161,11 +161,11 @@ internal open class ComposeTextInputConnection(
         onSelectAllRequested: (() -> Unit)?
     ) {
         showMenuOrUpdatePosition = {
-            textUIView.let { textUIView ->
+            textInputView.let { textInputView ->
                 val density = view.density
-                val offset = textUIView.frame.useContents { origin.asDpOffset().toOffset(density) }
+                val offset = textInputView.frame.useContents { origin.asDpOffset().toOffset(density) }
                 val target = rect.translate(-offset).toDpRect(density).asCGRect()
-                textUIView.showEditMenuAtRect(
+                textInputView.showEditMenuAtRect(
                     targetRect = target,
                     copy = onCopyRequested,
                     cut = onCutRequested,
@@ -182,7 +182,7 @@ internal open class ComposeTextInputConnection(
 
     override fun hide() {
         showMenuOrUpdatePosition = {}
-        textUIView.let {
+        textInputView.let {
             it.hideTextMenu()
             textMenuAppearanceChanged()
         }
@@ -204,7 +204,7 @@ internal class SelectionContainerConnection(
     focusManager
 ) {
     override fun close() {
-        textUIView.resignFirstResponder()
+        textInputView.resignFirstResponder()
         super.close()
     }
 }

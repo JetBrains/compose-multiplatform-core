@@ -67,7 +67,7 @@ internal class NativeTextInputConnection(
 ), NativeTextEditingDelegate {
     private val scrollView by lazy { IntermediateTextScrollView() }
 
-    override val textUIView = NativeTextInputView(
+    override val textInputView = NativeTextInputView(
         coroutineScope = coroutineScope
     ).also {
         view.addSubview(scrollView)
@@ -78,11 +78,11 @@ internal class NativeTextInputConnection(
     }
 
     override fun attachInputToView(imeOptions: ImeOptions) {
-        textUIView.input = this
-        textUIView.inputTraits = getUITextInputTraits(imeOptions)
+        textInputView.input = this
+        textInputView.inputTraits = getUITextInputTraits(imeOptions)
         // The view frame will be set later via updateTextViewPosition;
-        textUIView.resignFirstResponder()
-        textUIView.becomeFirstResponder()
+        textInputView.resignFirstResponder()
+        textInputView.becomeFirstResponder()
         setupTintColor()
     }
 
@@ -90,10 +90,10 @@ internal class NativeTextInputConnection(
         // Out-of-bounds non-empty frame is required to hide text keyboard focus frame
         val outOfBoundsFrame = CGRectMake(-100000.0, 0.0, 1.0, 1.0)
 
-        textUIView.input = null
-        textUIView.inputTraits = EmptyInputTraits
+        textInputView.input = null
+        textInputView.inputTraits = EmptyInputTraits
 
-        textUIView.let { textView ->
+        textInputView.let { textView ->
             textView.setFrame(outOfBoundsFrame)
             textView.onKeyboardPresses = NoOpOnKeyboardPresses
             coroutineScope.launch {
@@ -107,19 +107,19 @@ internal class NativeTextInputConnection(
 
     override fun stateWillChange(textChanged: Boolean, selectionChanged: Boolean) {
         if (textChanged) {
-            textUIView.textWillChange()
+            textInputView.textWillChange()
         }
         if (selectionChanged) {
-            textUIView.selectionWillChange()
+            textInputView.selectionWillChange()
         }
     }
 
     override fun stateDidChange(textChanged: Boolean, selectionChanged: Boolean) {
         if (textChanged) {
-            textUIView.textDidChange()
+            textInputView.textDidChange()
         }
         if (selectionChanged) {
-            textUIView.selectionDidChange()
+            textInputView.selectionDidChange()
         }
     }
 
@@ -380,7 +380,7 @@ internal class NativeTextInputConnection(
     // If not specified, iOS would use the default system tint color
     private var selectionTintColor: Color? = null
     private fun setupTintColor() {
-        textUIView.let {
+        textInputView.let {
             val uiColor = selectionTintColor?.toUIColor()
             it.setTintColor(uiColor)
         }
@@ -393,7 +393,7 @@ internal class NativeTextInputConnection(
         selectAll: (() -> Unit)?,
         customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
     ) {
-        textUIView.updateMenuActions(
+        textInputView.updateMenuActions(
             copy,
             paste,
             cut,

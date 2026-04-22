@@ -121,11 +121,11 @@ internal abstract class BaseTextInputConnection(
     protected abstract fun detachView()
 
     override fun showKeyboard() {
-        focusedViewsList?.addAndFocus(textUIView)
+        focusedViewsList?.addAndFocus(textInputView)
     }
 
     override fun dismissKeyboard() {
-        focusedViewsList?.remove(textUIView, delayMillis = CLEAR_FOCUS_DELAY)
+        focusedViewsList?.remove(textInputView, delayMillis = CLEAR_FOCUS_DELAY)
     }
 
     override fun updateState(newValue: TextFieldValue) {
@@ -182,7 +182,7 @@ internal abstract class BaseTextInputConnection(
 
     protected var textInputServiceInvalidationsCount = 0
 
-    protected abstract val textUIView: UIView
+    protected abstract val textInputView: UIView
     protected var currentOnEditCommand: ((List<EditCommand>) -> Unit)? = null
     protected var currentImeOptions: ImeOptions? = null
     protected var currentImeActionHandler: ((ImeAction) -> Unit)? = null
