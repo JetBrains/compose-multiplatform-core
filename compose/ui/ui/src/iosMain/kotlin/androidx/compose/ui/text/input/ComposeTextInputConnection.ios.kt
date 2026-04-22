@@ -73,18 +73,9 @@ internal open class ComposeTextInputConnection(
             it.setFrame(view.bounds)
         }
 
-    override fun open(
-        value: TextFieldValue,
-        imeOptions: ImeOptions,
-        onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
-    ) {
-        super.open(value, imeOptions, onEditCommand, onImeActionPerformed)
-
+    override fun attachInputToView(imeOptions: ImeOptions) {
         textUIView.input = this
         textUIView.inputTraits = getUITextInputTraits(imeOptions)
-
-        showKeyboard()
     }
 
     override fun detachView() {

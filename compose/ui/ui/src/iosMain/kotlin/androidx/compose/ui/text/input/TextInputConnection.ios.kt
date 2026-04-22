@@ -94,7 +94,11 @@ internal abstract class BaseTextInputConnection(
         currentOnEditCommand = onEditCommand
         currentImeOptions = imeOptions
         currentImeActionHandler = onImeActionPerformed
+        attachInputToView(imeOptions)
+        showKeyboard()
     }
+
+    protected abstract fun attachInputToView(imeOptions: ImeOptions)
 
     override fun close() {
         flushEditCommandsIfNeeded(force = true)

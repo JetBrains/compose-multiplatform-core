@@ -78,23 +78,13 @@ internal class NativeTextInputConnection(
         it.clipsToBounds = false
     }
 
-    override fun open(
-        value: TextFieldValue,
-        imeOptions: ImeOptions,
-        onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
-    ) {
-        super.open(value, imeOptions, onEditCommand, onImeActionPerformed)
-
+    override fun attachInputToView(imeOptions: ImeOptions) {
         textUIView.input = this
         textUIView.inputTraits = getUITextInputTraits(imeOptions)
-
         // Resizing should be done later
         textUIView.resignFirstResponder()
         textUIView.becomeFirstResponder()
         setupTintColor()
-
-        showKeyboard()
     }
 
     override fun detachView() {
