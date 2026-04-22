@@ -759,24 +759,17 @@ internal class ComposeSceneMediator(
                 }
                 launch {
                     snapshotFlow {
-                        Triple(
+                        Pair(
                             request.textFieldRectInRoot(),
-                            request.textClippingRectInRoot(),
                             request.unclippedTextOffsetInRoot()
                         )
-                    }.collect { (textFieldRect, clippingRect, unclippedTextOffset) ->
-                        if (textFieldRect != null && clippingRect != null && unclippedTextOffset != null) {
+                    }.collect { (textFieldRect, unclippedTextOffset) ->
+                        if (textFieldRect != null && unclippedTextOffset != null) {
                             textInputService.updateTextFieldGeometry(
                                 textFieldFrame = textFieldRect,
-                                clippingTextFrame = clippingRect,
                                 unclippedTextPosition = unclippedTextOffset
                             )
                         }
-                    }
-                }
-                launch {
-                    snapshotFlow { request.focusedRectInRoot() }.filterNotNull().collect {
-                        textInputService.updateFocusedRect(it)
                     }
                 }
                 suspendCancellableCoroutine<Nothing> { continuation ->

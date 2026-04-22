@@ -115,18 +115,12 @@ internal class UIKitTextInputService(
         currentInputConnection?.updateTextLayoutResult(textLayoutResult)
     }
 
-    fun updateFocusedRect(rect: Rect) {
-        currentInputConnection?.updateFocusedRect(rect)
-    }
-
     fun updateTextFieldGeometry(
         textFieldFrame: Rect,
-        clippingTextFrame: Rect,
         unclippedTextPosition: Offset
     ) {
         currentInputConnection?.updateViewGeometry(
             textFieldFrame,
-            clippingTextFrame,
             unclippedTextPosition
         )
     }

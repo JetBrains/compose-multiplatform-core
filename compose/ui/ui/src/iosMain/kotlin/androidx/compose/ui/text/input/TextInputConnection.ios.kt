@@ -31,6 +31,7 @@ import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.window.BackgroundInputView
+import androidx.compose.ui.window.ComposeTextInputView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.NativeTextInputView
 import androidx.compose.ui.window.OverlayInputView
@@ -58,10 +59,8 @@ internal interface TextInputConnection {
     fun updateTextLayoutResult(textLayoutResult: TextLayoutResult)
     fun updateViewGeometry(
         textFieldFrame: Rect,
-        clippingTextFrame: Rect,
         unclippedTextPosition: Offset
     )
-    fun updateFocusedRect(rect: Rect)
 
     fun onPreviewKeyEvent(event: KeyEvent): Boolean
 
@@ -112,15 +111,11 @@ internal abstract class BaseTextInputConnection(
     protected abstract fun detachView()
 
     override fun showKeyboard() {
-        textUIView?.let {
-            focusedViewsList?.addAndFocus(it)
-        }
+        focusedViewsList?.addAndFocus(textUIView)
     }
 
     override fun dismissKeyboard() {
-        textUIView?.let {
-            focusedViewsList?.remove(it, delayMillis = CLEAR_FOCUS_DELAY)
-        }
+        focusedViewsList?.remove(textUIView, delayMillis = CLEAR_FOCUS_DELAY)
     }
 
     override fun updateState(newValue: TextFieldValue) {
@@ -145,18 +140,11 @@ internal abstract class BaseTextInputConnection(
         this.textLayoutResult = textLayoutResult
     }
 
-    override fun updateFocusedRect(rect: Rect) {
-        currentFocusedRect = rect
-    }
-
     override fun updateViewGeometry(
         textFieldFrame: Rect,
-        clippingTextFrame: Rect,
         unclippedTextPosition: Offset
     ) {
         textFieldFrameInRoot = textFieldFrame
-        this.clippingTextFrame = clippingTextFrame
-
         updateTextViewPosition(unclippedTextPosition)
     }
     protected abstract fun updateTextViewPosition(unclippedTextPosition: Offset)
@@ -184,14 +172,12 @@ internal abstract class BaseTextInputConnection(
 
     protected var textInputServiceInvalidationsCount = 0
 
-    protected abstract val textUIView: UIView?
+    protected abstract val textUIView: UIView
     protected var currentOnEditCommand: ((List<EditCommand>) -> Unit)? = null
     protected var currentImeOptions: ImeOptions? = null
     protected var currentImeActionHandler: ((ImeAction) -> Unit)? = null
-    protected var currentFocusedRect: Rect? = null
 
     protected var textFieldFrameInRoot: Rect? = null
-    protected var clippingTextFrame: Rect? = null
 
     protected var textLayoutResult: TextLayoutResult? = null
 
@@ -332,22 +318,32 @@ internal abstract class BaseTextInputConnection(
         return true
     }
 
-    private fun hasFocusedNonComposeInputViewInWindowHierarchy(): Boolean {
-        fun hasFocusedNonComposeInputView(view: UIView): Boolean {
+    /**
+     * Returns true if there is a focused view in the window hierarchy that is an external
+     * text input — i.e. a native UITextField or UITextView inserted via interop, not one of
+     * Compose's own input views.
+     *
+     * Used to distinguish the case where the user tapped a native interop text field (in which
+     * case Compose focus should be released) from the case where focus simply moved to another
+     * Compose text field (in which case Compose handles focus internally and no action is needed).
+     */
+    private fun hasFocusedExternalInputViewInWindowHierarchy(): Boolean {
+        fun hasFocusedExternalInputView(view: UIView): Boolean {
             if (view.isFirstResponder) {
                 return view !is NativeTextInputView &&
+                    view !is ComposeTextInputView &&
                     view !is OverlayInputView &&
                     view !is BackgroundInputView
             }
-            return view.subviews.any { it is UIView && hasFocusedNonComposeInputView(it) }
+            return view.subviews.any { it is UIView && hasFocusedExternalInputView(it) }
         }
-        return view.window?.let { hasFocusedNonComposeInputView(it) } ?: false
+        return view.window?.let { hasFocusedExternalInputView(it) } ?: false
     }
 
     override fun onResignFocus() {
         textInputServiceInvalidationsCount++
         coroutineScope.launch {
-            if (hasFocusedNonComposeInputViewInWindowHierarchy()) {
+            if (hasFocusedExternalInputViewInWindowHierarchy()) {
                 focusManager()?.releaseFocus()
             }
             textInputServiceInvalidationsCount--

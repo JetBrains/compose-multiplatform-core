@@ -128,10 +128,9 @@ internal open class ComposeTextInputConnection(
 
     override fun updateViewGeometry(
         textFieldFrame: Rect,
-        clippingTextFrame: Rect,
         unclippedTextPosition: Offset
     ) {
-        super.updateViewGeometry(textFieldFrame, clippingTextFrame, unclippedTextPosition)
+        super.updateViewGeometry(textFieldFrame, unclippedTextPosition)
         showMenuOrUpdatePosition()
     }
 
