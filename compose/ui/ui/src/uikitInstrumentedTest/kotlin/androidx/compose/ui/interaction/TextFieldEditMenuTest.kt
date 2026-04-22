@@ -432,9 +432,8 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.openToolbar(textFieldTag: String) {
-        delay(1000)
         findNodeWithTag(textFieldTag).tap()
-        delay(600)
+        delay(500)
         findNodeWithTag(textFieldTag).doubleTap()
         waitForContextMenu()
     }
@@ -497,10 +496,16 @@ class TextFieldEditMenuTest {
             "UICalloutBar"
         }
         waitForIdle()
-        UIKitInstrumentedTest.waitUntil {
-            firstNodeOrNull { node ->
-                node.element?.let { it::class.simpleName } == menuClassName
-            } != null
+        try {
+            UIKitInstrumentedTest.waitUntil {
+                firstNodeOrNull { node ->
+                    node.element?.let { it::class.simpleName } == menuClassName
+                } != null
+            }
+        } catch (e: Exception) {
+            println("Actual accessibility tree:")
+            println(getAccessibilityTree().printTree())
+            throw e
         }
         // Additional delay to wait until toolbar animation ends
         delay(500)

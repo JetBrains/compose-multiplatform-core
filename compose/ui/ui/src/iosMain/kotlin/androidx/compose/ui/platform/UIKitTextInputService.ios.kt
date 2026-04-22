@@ -416,6 +416,7 @@ internal class UIKitTextInputService(
                     val density = view.density
                     val offset = textUIView.frame.useContents { origin.asDpOffset().toOffset(density) }
                     val target = rect.translate(-offset).toDpRect(density).asCGRect()
+                    println(">>>> SHOW MENU AT $target | copy: ${onCopyRequested != null}, paste: ${onPasteRequested != null}, cut: ${onCutRequested != null}, selectAll: ${onSelectAllRequested != null} ")
                     textUIView.showEditMenuAtRect(
                         targetRect = target,
                         copy = onCopyRequested,
@@ -434,6 +435,7 @@ internal class UIKitTextInputService(
     override fun hide() {
         showMenuOrUpdatePosition = {}
         textUIView?.let {
+            println(">>>> HIDE")
             it.hideTextMenu()
             textMenuAppearanceChanged()
         }
