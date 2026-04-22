@@ -86,7 +86,6 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
-import kotlin.coroutines.coroutineContext
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsArray
 import kotlin.js.js
@@ -101,9 +100,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.isActive
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.jetbrains.skiko.hostOs
@@ -117,6 +114,7 @@ import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.LOADING
 import org.w3c.dom.MediaQueryListEvent
 import org.w3c.dom.Node
+import org.w3c.dom.TouchEvent
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventTarget
 import org.w3c.dom.events.FocusEvent
@@ -136,19 +134,6 @@ internal interface ComposeWindowState {
 
     fun dispose() {
         globalEvents.dispose()
-    }
-
-    companion object {
-        fun createFromLambda(lambda: suspend () -> IntSize): ComposeWindowState {
-            return object : ComposeWindowState {
-                override val globalEvents = EventTargetListener(window)
-                override fun sizeFlow(): Flow<IntSize> = flow {
-                    while (coroutineContext.isActive) {
-                        emit(lambda())
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -409,6 +394,17 @@ internal class ComposeWindow(
             addTypedEvent<PointerEvent>(name, passive = false) { onPointerEvent(it) }
         }
 
+        addTypedEvent<TouchEvent>("touchstart") { evt ->
+            // in most cases we don't care about touches since in Compose we do not process them at all
+            // there's one case however when we need to cancel them - it's when we are focussed in a DOM backing field
+            // see https://youtrack.jetbrains.com/issue/CMP-10079
+
+            val backingInput = (platformContext.textInputService as WebTextInputService).getBackingInput()
+            if (backingInput?.isFocused() == true) {
+                evt.preventDefault()
+            }
+        }
+
         addTypedEvent<WheelEvent>("wheel", passive = false) { event ->
             onWheelEvent(event)
         }
@@ -571,9 +567,43 @@ internal class ComposeWindow(
     private fun onPointerEvent(event: PointerEvent) {
         val eventType = event.getPointerEventType()
         var result: PointerEventResult? = null
-        val isTouchEvent = isTouchEvent(event)
 
-        if (isTouchEvent) {
+        if (isMouseEvent(event)) {
+            keyboardModeState = KeyboardModeState.Hardware
+
+            // validate event before sending it further - see
+            // https://youtrack.jetbrains.com/issue/CMP-8430/Sequence-of-Move-PointerInputEvents-cancel-out-press-PointerInputEvent-under-certain-conditions
+
+            var isValidEvent = true
+            when (eventType) {
+                PointerEventType.Press -> {
+                    actualActivePointerButtons = event.composeButtons
+                }
+                PointerEventType.Release -> {
+                    actualActivePointerButtons = null
+                }
+                PointerEventType.Move -> {
+                    isValidEvent = actualActivePointerButtons == null || actualActivePointerButtons == event.composeButtons
+                }
+            }
+
+            if (!isValidEvent) return
+
+            scene.sendPointerEvent(
+                eventType = eventType,
+                position = event.offset,
+                timeMillis = event.timeStamp.toInt().toLong(),
+                buttons = event.composeButtons,
+                keyboardModifiers = PointerKeyboardModifiers(
+                    isCtrlPressed = event.ctrlKey,
+                    isMetaPressed = event.metaKey,
+                    isAltPressed = event.altKey,
+                    isShiftPressed = event.shiftKey,
+                ),
+                nativeEvent = event,
+                button = event.composeButton,
+            )
+        } else {
             if (eventType == PointerEventType.Enter || eventType == PointerEventType.Exit) {
                 //Enter and Exit events have no sense for touches (Firefox and Safari send them)
                 return
@@ -659,48 +689,7 @@ internal class ComposeWindow(
 
             if (result != null && result.anyChangeConsumed && event.cancelable) {
                 event.preventDefault()
-
-                // Since we call preventDefault, the browser will not focus the canvas automatically,
-                // but it should be focused to receive key events.
-                if (!canvasFocused && !isTouchEvent && eventType == PointerEventType.Press) {
-                    canvas.focus()
-                }
             }
-        } else {
-            keyboardModeState = KeyboardModeState.Hardware
-
-            // validate event before sending it further - see
-            // https://youtrack.jetbrains.com/issue/CMP-8430/Sequence-of-Move-PointerInputEvents-cancel-out-press-PointerInputEvent-under-certain-conditions
-
-            var isValidEvent = true
-            when (eventType) {
-                PointerEventType.Press -> {
-                    actualActivePointerButtons = event.composeButtons
-                }
-                PointerEventType.Release -> {
-                    actualActivePointerButtons = null
-                }
-                PointerEventType.Move -> {
-                    isValidEvent = actualActivePointerButtons == null || actualActivePointerButtons == event.composeButtons
-                }
-            }
-
-            if (!isValidEvent) return
-
-            result = scene.sendPointerEvent(
-                eventType = eventType,
-                position = event.offset,
-                timeMillis = event.timeStamp.toInt().toLong(),
-                buttons = event.composeButtons,
-                keyboardModifiers = PointerKeyboardModifiers(
-                    isCtrlPressed = event.ctrlKey,
-                    isMetaPressed = event.metaKey,
-                    isAltPressed = event.altKey,
-                    isShiftPressed = event.shiftKey,
-                ),
-                nativeEvent = event,
-                button = event.composeButton,
-            )
         }
     }
 
@@ -833,7 +822,7 @@ private fun clipTargetElement(canvas: HTMLCanvasElement): HTMLTextAreaElement {
 
 // strings checks are faster on a JS side
 // language=js
-private fun isTouchEvent(event: PointerEvent): Boolean = js("event.pointerType === 'touch'")
+private fun isMouseEvent(event: PointerEvent): Boolean = js("event.pointerType === 'mouse'")
 
 // strings checks are faster on a JS side
 // language=js
@@ -866,3 +855,20 @@ private fun PointerEvent.getPointerEventType(): PointerEventType =
         PointerEventType.Exit.value -> PointerEventType.Exit
         else -> PointerEventType.Unknown
     }
+
+private fun Element.isFocused(): Boolean {
+    val activeElement = when {
+        document.activeElement?.shadowRoot != null -> (document.activeElement?.shadowRoot as? ShadowRootExt)?.activeElement
+        else -> document.activeElement
+    }
+
+    if (activeElement == null) {
+        return false
+    }
+
+    return activeElement == this
+}
+
+private external interface ShadowRootExt {
+    val activeElement: Element?
+}
