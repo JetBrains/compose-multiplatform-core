@@ -64,7 +64,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRectMake
-import platform.Foundation.NSDate
 import platform.UIKit.UIPress
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAutoresizingFlexibleHeight
@@ -75,7 +74,6 @@ import platform.UIKit.UIViewAutoresizingFlexibleWidth
 // Adding a delay to the 'resignFirstResponder' function call to eliminate this issue.
 private val CLEAR_FOCUS_DELAY: Long = 10L
 
-@Suppress("DEPRECATION") // TODO https://youtrack.jetbrains.com/issue/CMP-9858
 internal class UIKitTextInputService(
     private val updateView: UIKitTextInputService.() -> Unit,
     private val view: UIView,
@@ -415,7 +413,6 @@ internal class UIKitTextInputService(
                     val density = view.density
                     val offset = textUIView.frame.useContents { origin.asDpOffset().toOffset(density) }
                     val target = rect.translate(-offset).toDpRect(density).asCGRect()
-                    println(">>> ${NSDate().timeIntervalSinceReferenceDate() } Show menu: $rect | copy: ${onCopyRequested != null}, cut: ${onCutRequested != null}, paste: ${onPasteRequested != null}, selectAll: ${onSelectAllRequested != null}")
                     textUIView.showEditMenuAtRect(
                         targetRect = target,
                         copy = onCopyRequested,
@@ -432,7 +429,6 @@ internal class UIKitTextInputService(
     }
 
     override fun hide() {
-        println(">>> Hide menu")
         showMenuOrUpdatePosition = {}
         textUIView?.let {
             it.hideTextMenu()
