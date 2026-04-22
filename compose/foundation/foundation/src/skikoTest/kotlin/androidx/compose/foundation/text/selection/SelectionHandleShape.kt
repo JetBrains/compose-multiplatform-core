@@ -30,13 +30,13 @@ internal data class SelectionHandleShape(
     val lineRect: Rect,
     val circleRect: Rect,
 ) {
-    fun containsInner(point: IntOffset): Boolean =
+    fun isInside(point: IntOffset): Boolean =
         lineRect.roundToIntRect().contains(point) ||
             circleRect.roundToIntRect().deflate(1).containsInOval(point)
 
-    fun containsOuter(point: IntOffset): Boolean =
-        lineRect.roundToIntRect().contains(point) ||
-            circleRect.roundToIntRect().inflate(1).containsInOval(point)
+    fun isOutside(point: IntOffset): Boolean =
+        !lineRect.roundToIntRect().contains(point) &&
+            !circleRect.roundToIntRect().inflate(1).containsInOval(point)
 
     private fun IntRect.containsInOval(point: IntOffset): Boolean {
         val normX = (point.x + 0.5 - center.x) / (width / 2)

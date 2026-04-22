@@ -26,17 +26,11 @@ internal actual fun PlatformSelectionHandleShape(
     cursor: Rect,
     isStartHandler: Boolean,
 ): SelectionHandleShape {
-    val majorVersion = UIDevice.currentDevice.systemVersion
-        .substringBefore('.')
-        .toIntOrNull() ?: 0
-    val isModern = majorVersion >= 17
-    val lineWidth = 2.dp
-    val circleRadius = if (isModern) (16.7 / 2).dp else (11.0 / 2).dp
     return DefaultSelectionHandleShape(
         density = density,
         cursor = cursor,
         isStartHandler = isStartHandler,
-        lineWidth = lineWidth,
-        circleRadius = circleRadius,
+        lineWidth = iosHandleStyle.stemWidth,
+        circleRadius = iosHandleStyle.dotDiameter / 2,
     )
 }

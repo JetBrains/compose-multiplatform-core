@@ -46,14 +46,14 @@ import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 
-private data class HandleStyle(
+internal data class HandleStyle(
     val dotDiameter: Dp,
     val stemWidth: Dp,
     val shadowRadius: Dp,
     val shadowAlpha: Float,
 )
 
-private val iosHandleStyle: HandleStyle by lazy {
+internal val iosHandleStyle: HandleStyle by lazy {
     if (available(OS.Ios to OSVersion(major = 17))) {
         HandleStyle(
             dotDiameter = 16.7.dp,
