@@ -51,6 +51,11 @@ internal interface TextInputConnection {
         onImeActionPerformed: (ImeAction) -> Unit
     )
 
+    /**
+     * Tears down this connection: removes the underlying view from the hierarchy and releases
+     * focus. Safe to call even if [open] was never invoked — not all connection types require
+     * an active text input session (e.g. [SelectionContainerConnection]).
+     */
     fun close()
     fun showKeyboard()
     fun dismissKeyboard()

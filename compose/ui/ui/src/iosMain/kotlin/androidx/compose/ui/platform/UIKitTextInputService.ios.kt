@@ -144,11 +144,14 @@ internal class UIKitTextInputService(
             onCutRequested: (() -> Unit)?,
             onSelectAllRequested: (() -> Unit)?
         ) {
-            // Entry point for showing the context menu in SelectionContainer scenarios, where
-            // there is no active text input session. iOS requires a UIView that can become first
-            // responder in order to host the context menu, so we create a dedicated connection
-            // backed by a hidden view for this purpose.
             if (currentInputConnection == null) {
+                // Entry point for showing the context menu in SelectionContainer scenarios, where
+                // there is no active text input session. iOS requires a UIView that can become first
+                // responder in order to host the context menu, so we create a dedicated connection
+                // backed by a hidden view for this purpose.
+                // Note: open() is intentionally not called here — it establishes a text editing
+                // session (requiring TextFieldValue, ImeOptions, etc.) which is not applicable for
+                // SelectionContainer.
                 currentInputConnection = SelectionContainerConnection(
                     view, coroutineScope, viewConfiguration, focusManager
                 )
@@ -162,10 +165,11 @@ internal class UIKitTextInputService(
             (currentInputConnection as? TextToolbar)?.hide()
 
             if (currentInputConnection is SelectionContainerConnection) {
+                // close() removes the view from the hierarchy and resigns first responder,
+                // without requiring a prior open() call.
                 currentInputConnection?.close()
                 currentInputConnection = null
             }
-
         }
     }
 
