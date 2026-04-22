@@ -167,6 +167,7 @@ internal class UIKitTextInputService(
 
         showSoftwareKeyboard()
         onInputStarted()
+        updateTextViewPosition()
     }
 
     private fun stopInput() {
