@@ -19,6 +19,7 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.uikit.utils.CMPTextInputStringTokenizer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.asCGRect
@@ -413,3 +414,6 @@ internal enum class PlatformTextLayoutDirection(val platform: UITextLayoutDirect
         }
     }
 }
+
+// Insets in DP
+internal data class DpInsets(val left: Dp, val top: Dp, val right: Dp, val bottom: Dp)

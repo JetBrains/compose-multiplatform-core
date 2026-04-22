@@ -98,7 +98,7 @@ internal open class ComposeTextInputConnection(
         showMenuOrUpdatePosition = {}
         textUIView.let { view ->
             view.setFrame(outOfBoundsFrame)
-            textUIView.onKeyboardPresses = NoOpOnKeyboardPresses
+            view.onKeyboardPresses = NoOpOnKeyboardPresses
             coroutineScope.launch {
                 delay(CLEAR_FOCUS_DELAY)
                 view.removeFromSuperview()
@@ -122,7 +122,7 @@ internal open class ComposeTextInputConnection(
         if (selectionChanged) {
             textUIView.selectionDidChange()
         }
-        if ((textChanged || selectionChanged)) {
+        if (textChanged || selectionChanged) {
             updateView()
         }
     }
@@ -217,4 +217,9 @@ internal class SelectionContainerConnection(
     null,
     {},
     focusManager
-) {}
+) {
+    override fun close() {
+        textUIView.resignFirstResponder()
+        super.close()
+    }
+}

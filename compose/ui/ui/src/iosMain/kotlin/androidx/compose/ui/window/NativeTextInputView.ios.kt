@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.IntermediateTextPosition
 import androidx.compose.ui.platform.IntermediateTextRange
@@ -28,7 +29,6 @@ import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
 import androidx.compose.ui.platform.withDeferredEditBatch
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.DpInsets
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
 import androidx.compose.ui.uikit.utils.CMPEditMenuView
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer

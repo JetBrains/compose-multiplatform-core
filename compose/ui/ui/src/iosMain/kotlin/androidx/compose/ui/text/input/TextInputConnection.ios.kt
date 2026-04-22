@@ -23,6 +23,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.PlatformTextLayoutDirection
 import androidx.compose.ui.platform.TextInputDelegate
 import androidx.compose.ui.platform.TextSelectionRect
@@ -37,9 +38,8 @@ import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.FocusedViewsList
-import androidx.compose.ui.window.ComposeTextInputView
+import androidx.compose.ui.window.NativeTextInputView
 import androidx.compose.ui.window.OverlayInputView
-import kotlin.apply
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
@@ -102,8 +102,6 @@ internal abstract class BaseTextInputConnection(
         currentOnEditCommand = onEditCommand
         currentImeOptions = imeOptions
         currentImeActionHandler = onImeActionPerformed
-
-        showKeyboard()
     }
 
     override fun close() {
@@ -348,7 +346,7 @@ internal abstract class BaseTextInputConnection(
     private fun hasFocusedNonComposeInputViewInWindowHierarchy(): Boolean {
         fun hasFocusedNonComposeInputView(view: UIView): Boolean {
             if (view.isFirstResponder) {
-                return view !is ComposeTextInputView &&
+                return view !is NativeTextInputView &&
                     view !is OverlayInputView &&
                     view !is BackgroundInputView
             }
@@ -771,8 +769,8 @@ internal abstract class BaseTextInputConnection(
         // Due to unexpected delays between the commands to show/hide the keyboard,
         // it may jump when switching between text fields.
         // Adding a delay to the 'resignFirstResponder' function call to eliminate this issue.
-        protected const val CLEAR_FOCUS_DELAY: Long = 10L
+        const val CLEAR_FOCUS_DELAY: Long = 10L
 
-        protected val NoOpOnKeyboardPresses: (Set<*>) -> Unit = {}
+        val NoOpOnKeyboardPresses: (Set<*>) -> Unit = {}
     }
 }

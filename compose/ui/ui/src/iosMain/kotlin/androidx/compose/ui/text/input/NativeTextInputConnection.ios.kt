@@ -19,6 +19,7 @@ package androidx.compose.ui.text.input
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.UIKitNativeTextInputContext
 import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
@@ -70,14 +71,7 @@ internal class NativeTextInputConnection(
 
         it.onKeyboardPresses = onKeyboardPresses
         it.clipsToBounds = false
-
-        // Resizing should be done later
-        it.resignFirstResponder()
-        it.becomeFirstResponder()
-
-        setupTintColor() // TODO: onAttach?
     }
-
 
     override fun open(
         value: TextFieldValue,
@@ -89,6 +83,11 @@ internal class NativeTextInputConnection(
 
         textUIView.input = this
         textUIView.inputTraits = getUITextInputTraits(imeOptions)
+
+        // Resizing should be done later
+        textUIView.resignFirstResponder()
+        textUIView.becomeFirstResponder()
+        setupTintColor()
 
         showKeyboard()
     }
@@ -102,7 +101,7 @@ internal class NativeTextInputConnection(
 
         textUIView.let { textView ->
             textView.setFrame(outOfBoundsFrame)
-            textUIView.onKeyboardPresses = NoOpOnKeyboardPresses
+            textView.onKeyboardPresses = NoOpOnKeyboardPresses
             coroutineScope.launch {
                 delay(CLEAR_FOCUS_DELAY)
                 if (scrollView.textView == textView) {
@@ -171,7 +170,10 @@ internal class NativeTextInputConnection(
             left = max(0f, -contentBounds.left).toDp(),
             top = max(0f, -contentBounds.top).toDp(),
             right = max(0f, textFieldFrame.width - contentBounds.width + contentBounds.left).toDp(),
-            bottom = max(0f, textFieldFrame.height - contentBounds.height + contentBounds.top).toDp()
+            bottom = max(
+                0f,
+                textFieldFrame.height - contentBounds.height + contentBounds.top
+            ).toDp()
         )
     }
 
@@ -250,6 +252,3 @@ internal class NativeTextInputConnection(
      */
     private val cursorThickness = 2.dp
 }
-
-// Insets in DP
-internal data class DpInsets(val left: Dp, val top: Dp, val right: Dp, val bottom: Dp)

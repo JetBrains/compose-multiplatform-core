@@ -72,6 +72,7 @@ internal class UIKitTextInputService(
     ) {
         val usingNativeTextInput = imeOptions.platformImeOptions?.usingNativeTextInput ?: false
 
+        currentInputConnection?.close()
         currentInputConnection = if (usingNativeTextInput) NativeTextInputConnection(
             updateView = { updateView(true) },
             view = view,
@@ -95,6 +96,7 @@ internal class UIKitTextInputService(
 
     override fun stopInput() {
         currentInputConnection?.close()
+        currentInputConnection = null
     }
 
     override fun showSoftwareKeyboard() {
