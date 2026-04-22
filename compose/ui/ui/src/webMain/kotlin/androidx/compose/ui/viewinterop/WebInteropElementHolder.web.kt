@@ -168,7 +168,7 @@ private fun updateCssElementProperties(
     ucRectBottom: Int,
     ucRectRight: Int
 ): Int {
-    js(
+   return js(
         //language=javascript
         """
         const posChng = (chngFlgs & 1) !== 0;
