@@ -21,15 +21,19 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.EmptyInputTraits
+import androidx.compose.ui.platform.NativeTextInputDelegate
+import androidx.compose.ui.platform.PlatformTextLayoutDirection
+import androidx.compose.ui.platform.TextSelectionRect
 import androidx.compose.ui.platform.UIKitNativeTextInputContext
 import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.platform.toUIColor
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
@@ -40,6 +44,7 @@ import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.IntermediateTextScrollView
 import androidx.compose.ui.window.NativeTextInputView
 import kotlin.math.max
+import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -60,7 +65,7 @@ internal class NativeTextInputConnection(
     focusedViewsList,
     onKeyboardPresses,
     focusManager
-), UIKitNativeTextInputContext {
+), NativeTextInputDelegate, UIKitNativeTextInputContext {
     private val scrollView by lazy { IntermediateTextScrollView() }
 
     override val textUIView = NativeTextInputView(
@@ -131,7 +136,10 @@ internal class NativeTextInputConnection(
         }
     }
 
-    override fun updateTextViewPosition() {
+    private var currentContentBounds: Rect? = null
+    private var currentContentInsets: DpInsets? = null
+
+    override fun updateTextViewPosition(unclippedTextPosition: Offset) {
         val rect = textFieldFrameInRoot ?: return
         // Since Compose content is rendered on a MetalView and the UITextInput-implementing
         // view is overlayed on top of it, we need to synchronize the Compose text
@@ -139,13 +147,8 @@ internal class NativeTextInputConnection(
         // to ensure native iOS text input controls
         // align correctly with the rendered text.
         val layoutResult = textLayoutResult ?: return
-        val unclippedTextPosition = unclippedTextPosition ?: return
 
-        val contentBounds = calculateContentBounds(
-            layoutResult,
-            rect,
-            unclippedTextPosition
-        )
+        val contentBounds = calculateContentBounds(layoutResult, rect, unclippedTextPosition)
         currentContentBounds = contentBounds
         val contentInsets = calculateContentInsets(rect, contentBounds)
         currentContentInsets = contentInsets
@@ -209,7 +212,183 @@ internal class NativeTextInputConnection(
         }
     }
 
+    override fun selectionDpRectsForRange(range: TextRange): List<TextSelectionRect> {
+        // Native selection rects are required for correct work of the text editing menu
+        // Without them, it will be impossible to call the text editing menu by tapping on the selected area
+        if (range.collapsed || isIncorrect(range)) {
+            return emptyList()
+        }
+        val currentTextLayoutResult = textLayoutResult ?: return emptyList()
 
+        // Layout in native text input mode may be outdated, so not checking this may cause OOB error
+        // This workaround should be deleted after https://youtrack.jetbrains.com/issue/CMP-9767/
+        if (range.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) return emptyList()
+
+        val startSelectionHandleRect = currentTextLayoutResult.getCursorRect(range.start)
+        val endSelectionHandleRect = currentTextLayoutResult.getCursorRect(range.end)
+
+        val firstLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
+        val lastLineNumber = currentTextLayoutResult.getLineForOffset(range.end)
+
+        return if (firstLineNumber == lastLineNumber) {
+            listOf(
+                TextSelectionRect(
+                    dpRect = Rect(
+                        topLeft = startSelectionHandleRect.topLeft,
+                        bottomRight = endSelectionHandleRect.bottomRight
+                    ).toDpRect(view.density),
+                    writingDirection = TextDirection.Content,
+                    containsStart = true,
+                    containsEnd = true,
+                    isVertical = false
+                )
+            )
+        } else {
+            // TODO Consider RTL Layout
+            // We require separate rects for start line, end line and everything in between them
+            val contentInsets = currentContentInsets ?: return emptyList()
+            val contentRect = currentContentBounds?.let {
+                with(view.density) {
+                    Rect(
+                        top = it.top + contentInsets.top.toPx(),
+                        left = it.left + contentInsets.left.toPx(),
+                        right = it.right + contentInsets.right.toPx(),
+                        bottom = it.bottom + contentInsets.bottom.toPx()
+                    )
+                }
+            } ?: return emptyList()
+
+            val firstLineSelectionRect = TextSelectionRect(
+                dpRect = Rect(
+                    top = startSelectionHandleRect.top,
+                    left = startSelectionHandleRect.left,
+                    right = contentRect.right,
+                    bottom = startSelectionHandleRect.bottom
+                ).toDpRect(view.density),
+                writingDirection = TextDirection.Content,
+                containsStart = true,
+                containsEnd = false,
+                isVertical = false
+            )
+
+            val middleAreaSelectionRect = TextSelectionRect(
+                dpRect = Rect(
+                    top = startSelectionHandleRect.bottom,
+                    left = contentRect.left,
+                    right = contentRect.right,
+                    bottom = endSelectionHandleRect.top
+                ).toDpRect(view.density),
+                writingDirection = TextDirection.Content,
+                containsStart = false,
+                containsEnd = false,
+                isVertical = false
+            )
+
+            val lastLineStartRect = currentTextLayoutResult.getCursorRect(
+                currentTextLayoutResult.getLineStart(lastLineNumber)
+            )
+            val lastLineRect = TextSelectionRect(
+                dpRect = Rect(
+                    topLeft = lastLineStartRect.topLeft,
+                    bottomRight = endSelectionHandleRect.bottomRight
+                ).toDpRect(view.density),
+                writingDirection = TextDirection.Content,
+                containsStart = false,
+                containsEnd = true,
+                isVertical = false
+            )
+
+            listOf(
+                firstLineSelectionRect,
+                middleAreaSelectionRect,
+                lastLineRect
+            )
+        }
+    }
+
+    override fun firstSelectionRectForRange(range: TextRange): DpRect? {
+        if (range.collapsed || isIncorrect(range)) {
+            return null
+        }
+        val currentTextLayoutResult = textLayoutResult ?: return null
+
+        // Layout in native text input mode may be outdated, so not checking this may cause OOB error
+        // This workaround should be deleted after https://youtrack.jetbrains.com/issue/CMP-9767/
+        if (range.end > currentTextLayoutResult.multiParagraph.intrinsics.annotatedString.length) return null
+
+        val startHandleLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
+        val endHandleLineNumber = currentTextLayoutResult.getLineForOffset(range.end)
+
+        val startHandleRect = currentTextLayoutResult.getCursorRect(range.start)
+
+        return if (startHandleLineNumber == endHandleLineNumber) {
+            Rect(
+                topLeft = startHandleRect.topLeft,
+                bottomRight = currentTextLayoutResult.getCursorRect(range.end).bottomRight
+            ).toDpRect(view.density)
+        } else {
+            val startLineNumber = currentTextLayoutResult.getLineForOffset(range.start)
+            val startLineRight = currentTextLayoutResult.getLineRight(startLineNumber)
+            Rect(
+                startHandleRect.left,
+                startHandleRect.top,
+                startLineRight,
+                startHandleRect.bottom
+            ).toDpRect(view.density)
+        }
+    }
+
+    override fun closestPositionToPoint(point: DpOffset): Int? {
+        return textLayoutResult?.getOffsetForPosition(point.toOffset(view.density))
+    }
+
+    override fun closestPositionToPoint(point: DpOffset, withinRange: TextRange): Int? {
+        val pointOffset =
+            textLayoutResult?.getOffsetForPosition(point.toOffset(view.density))
+                ?: return null
+        return pointOffset.coerceIn(withinRange.start, withinRange.end)
+    }
+
+    override fun characterRangeAtPoint(point: DpOffset): TextRange? {
+        val pointOffset =
+            textLayoutResult?.getOffsetForPosition(point.toOffset(view.density))
+                ?: return null
+        return textLayoutResult?.getWordBoundary(pointOffset)
+    }
+
+    override fun positionWithinRange(
+        range: TextRange,
+        farthestInDirection: PlatformTextLayoutDirection
+    ): Int? {
+        if (isIncorrect(range)) return null
+        return when (farthestInDirection) {
+            PlatformTextLayoutDirection.Up -> range.start
+            PlatformTextLayoutDirection.Down -> range.end
+            else -> {
+                val layout = textLayoutResult ?: return null
+                val startLine = layout.getLineForOffset(range.start)
+                val endLine = layout.getLineForOffset(range.end)
+
+                val candidateOffsets = buildSet {
+                    add(range.start)
+                    add(range.end)
+
+                    for (line in startLine..endLine) {
+                        add(max(range.start, layout.getLineStart(line)))
+                        add(min(range.end, layout.getLineEnd(line)))
+                    }
+                }
+
+                when (farthestInDirection) {
+                    PlatformTextLayoutDirection.Left ->
+                        candidateOffsets.minByOrNull { layout.getHorizontalPosition(it, true) }
+                    PlatformTextLayoutDirection.Right ->
+                        candidateOffsets.maxByOrNull { layout.getHorizontalPosition(it, true) }
+                    else -> null
+                }
+            }
+        }
+    }
 
     // If not specified, iOS would use the default system tint color
     private var selectionTintColor: Color? = null

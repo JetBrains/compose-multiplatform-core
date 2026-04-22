@@ -24,7 +24,7 @@ import androidx.compose.ui.platform.IntermediateTextSelectionRect
 import androidx.compose.ui.platform.IntermediateTextTokenizer
 import androidx.compose.ui.platform.PlatformTextLayoutDirection
 import androidx.compose.ui.platform.SkikoUITextInputTraits
-import androidx.compose.ui.platform.TextInputDelegate
+import androidx.compose.ui.platform.NativeTextInputDelegate
 import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
 import androidx.compose.ui.platform.withDeferredEditBatch
@@ -110,7 +110,7 @@ internal class NativeTextInputView(
     private val coroutineScope: CoroutineScope,
 ): CMPEditMenuView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
 
-    var input: TextInputDelegate? = null // TODO: Rename?
+    var input: NativeTextInputDelegate? = null // TODO: Rename?
 
     var inputTraits: SkikoUITextInputTraits = EmptyInputTraits
 

@@ -160,6 +160,13 @@ internal interface TextInputDelegate {
      */
     fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int?
 
+}
+
+/**
+ * Extension of [TextInputDelegate] for the Native iOS Text Input path.
+ */
+internal interface NativeTextInputDelegate : TextInputDelegate {
+
     /**
      * Returns the caret rectangle for a given text position.
      * https://developer.apple.com/documentation/uikit/uitextinput/caretrect(for:)

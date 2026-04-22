@@ -410,16 +410,14 @@ internal class ComposeTextInputView(
     override fun selectionRectsForRange(range: UITextRange): List<*> =
         listOf<UITextSelectionRect>()
 
-    override fun closestPositionToPoint(point: CValue<CGPoint>): UITextPosition? =
-        null
+    override fun closestPositionToPoint(point: CValue<CGPoint>): UITextPosition? = null
 
     override fun closestPositionToPoint(
         point: CValue<CGPoint>,
         withinRange: UITextRange
     ): UITextPosition? = null
 
-    override fun characterRangeAtPoint(point: CValue<CGPoint>): UITextRange? =
-        null
+    override fun characterRangeAtPoint(point: CValue<CGPoint>): UITextRange? = null
 
     override fun textStylingAtPosition(
         position: UITextPosition,

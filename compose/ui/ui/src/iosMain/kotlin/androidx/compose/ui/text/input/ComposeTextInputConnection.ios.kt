@@ -27,7 +27,6 @@ import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.asCGRect
 import androidx.compose.ui.unit.asDpOffset
 import androidx.compose.ui.unit.toDpRect
@@ -136,7 +135,7 @@ internal open class ComposeTextInputConnection(
         showMenuOrUpdatePosition()
     }
 
-    override fun updateTextViewPosition() {
+    override fun updateTextViewPosition(unclippedTextPosition: Offset) {
         val rect = textFieldFrameInRoot ?: return
         textUIView.setFrame(rect.toDpRect(view.density).asCGRect())
     }
@@ -146,10 +145,6 @@ internal open class ComposeTextInputConnection(
         val cursorRect = textLayoutResult?.getCursorRect(cursorPos) ?: return
         floatingCursorTranslation = cursorRect.center - offset.toOffset(view.density)
     }
-
-    override fun caretDpRectForPosition(position: Int): DpRect? =
-        null
-
 
     private fun textMenuAppearanceChanged() {
         textInputServiceInvalidationsCount++

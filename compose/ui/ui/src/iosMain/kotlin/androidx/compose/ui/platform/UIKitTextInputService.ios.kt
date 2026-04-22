@@ -150,6 +150,10 @@ internal class UIKitTextInputService(
             onCutRequested: (() -> Unit)?,
             onSelectAllRequested: (() -> Unit)?
         ) {
+            // Entry point for showing the context menu in SelectionContainer scenarios, where
+            // there is no active text input session. iOS requires a UIView that can become first
+            // responder in order to host the context menu, so we create a dedicated connection
+            // backed by a hidden view for this purpose.
             if (currentInputConnection == null) {
                 currentInputConnection = SelectionContainerConnection(
                     view, coroutineScope, viewConfiguration, focusManager
