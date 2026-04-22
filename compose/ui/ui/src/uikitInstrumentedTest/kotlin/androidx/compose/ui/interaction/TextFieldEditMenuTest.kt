@@ -49,6 +49,7 @@ import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.firstNodeOrNull
+import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.up
@@ -495,7 +496,13 @@ class TextFieldEditMenuTest {
             "UICalloutBar"
         }
         waitForIdle()
-        waitUntil {
+        UIKitInstrumentedTest.waitUntil(
+            {
+                "\n\n\n===========================================================\n" +
+                    this.getAccessibilityTree().printTree() +
+                    "\n\n\n===========================================================\n"
+            }
+        ) {
             firstNodeOrNull { node ->
                 node.element?.let { it::class.simpleName } == menuClassName
             } != null
