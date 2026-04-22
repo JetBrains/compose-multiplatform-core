@@ -124,10 +124,9 @@ internal class UIKitTextInputService(
     private var _tempImeActionIsCalledWithHardwareReturnKey: Boolean = false
 
     suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
-        // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7832/iOS-Adopt-PlatformTextInputService2)
         coroutineScope {
             launch {
-                snapshotFlow { request.value() }.collect {
+                snapshotFlow { request.stateSnapshot() }.collect {
                     onTextFieldValueUpdated()
                 }
             }
@@ -155,7 +154,7 @@ internal class UIKitTextInputService(
 
     private fun startInput(request: PlatformTextInputMethodRequest) {
         currentRequest = request
-        currentTextFieldValue = request.value()
+        currentTextFieldValue = request.stateSnapshot()
         usingNativeTextInput = request.imeOptions.platformImeOptions?.usingNativeTextInput ?: false
 
         attachIntermediateTextInputView()
@@ -194,7 +193,7 @@ internal class UIKitTextInputService(
     }
 
     private fun onTextFieldValueUpdated() {
-        val newValue = currentRequest?.value() ?: return
+        val newValue = currentRequest?.stateSnapshot() ?: return
         if (postponeSelectionUpdate) {
             currentTextFieldValue = newValue
         }
@@ -947,6 +946,9 @@ internal class UIKitTextInputService(
         }
     }
 }
+
+private fun PlatformTextInputMethodRequest.stateSnapshot() =
+    TextFieldValue(state.toString(), state.selection, state.composition)
 
 internal data class TextSelectionRect(
     val dpRect: DpRect,
