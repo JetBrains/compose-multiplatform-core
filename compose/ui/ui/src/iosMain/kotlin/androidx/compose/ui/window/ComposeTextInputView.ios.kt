@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.IntermediateTextPosition
 import androidx.compose.ui.platform.IntermediateTextRange
 import androidx.compose.ui.platform.IntermediateTextTokenizer
 import androidx.compose.ui.platform.SkikoUITextInputTraits
-import androidx.compose.ui.platform.TextInputDelegate
+import androidx.compose.ui.platform.TextEditingDelegate
 import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
 import androidx.compose.ui.platform.withDeferredEditBatch
@@ -83,7 +83,7 @@ internal class ComposeTextInputView(
 ) : CMPEditMenuView(frame = CGRectZero.readValue()),
     UIKeyInputProtocol, UITextInputProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
-    var input: TextInputDelegate? = null
+    var input: TextEditingDelegate? = null
         set(value) {
             field = value
             if (value == null) {

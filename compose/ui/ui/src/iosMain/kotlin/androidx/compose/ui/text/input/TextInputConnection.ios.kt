@@ -23,7 +23,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.TextInputDelegate
+import androidx.compose.ui.platform.TextEditingDelegate
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -81,7 +81,7 @@ internal abstract class BaseTextInputConnection(
     @Suppress("UNUSED")
     protected var onKeyboardPresses: (Set<*>) -> Unit,
     private var focusManager: () -> ComposeSceneFocusManager?,
-): TextInputConnection, TextInputDelegate {
+): TextInputConnection, TextEditingDelegate {
     override fun open(
         value: TextFieldValue,
         imeOptions: ImeOptions,

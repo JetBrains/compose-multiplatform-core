@@ -44,7 +44,7 @@ import platform.UIKit.UITextSelectionRect
 import platform.UIKit.UITextStorageDirectionForward
 import platform.UIKit.UITextWritingDirection
 
-internal interface TextInputDelegate {
+internal interface TextEditingDelegate {
 
     fun onResignFocus()
 
@@ -163,9 +163,9 @@ internal interface TextInputDelegate {
 }
 
 /**
- * Extension of [TextInputDelegate] for the Native iOS Text Input path.
+ * Extension of [TextEditingDelegate] for the Native iOS Text Input path.
  */
-internal interface NativeTextInputDelegate : TextInputDelegate {
+internal interface NativeTextEditingDelegate : TextEditingDelegate {
 
     /**
      * Returns the caret rectangle for a given text position.
@@ -227,9 +227,9 @@ internal interface NativeTextInputDelegate : TextInputDelegate {
     fun positionWithinRange(range: TextRange, farthestInDirection: PlatformTextLayoutDirection): Int?
 }
 
-internal fun TextInputDelegate.withDeferredEditBatch(
+internal fun TextEditingDelegate.withDeferredEditBatch(
     withScope: CoroutineScope,
-    update: TextInputDelegate.() -> Unit
+    update: TextEditingDelegate.() -> Unit
 ) {
     beginEditBatch()
     update()

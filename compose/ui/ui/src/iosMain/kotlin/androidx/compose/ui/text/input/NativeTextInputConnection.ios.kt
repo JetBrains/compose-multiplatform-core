@@ -21,7 +21,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.EmptyInputTraits
-import androidx.compose.ui.platform.NativeTextInputDelegate
+import androidx.compose.ui.platform.NativeTextEditingDelegate
 import androidx.compose.ui.platform.PlatformTextLayoutDirection
 import androidx.compose.ui.platform.TextSelectionRect
 import androidx.compose.ui.platform.UIKitNativeTextInputContext
@@ -65,7 +65,7 @@ internal class NativeTextInputConnection(
     focusedViewsList,
     onKeyboardPresses,
     focusManager
-), NativeTextInputDelegate, UIKitNativeTextInputContext {
+), NativeTextEditingDelegate, UIKitNativeTextInputContext {
     private val scrollView by lazy { IntermediateTextScrollView() }
 
     override val textUIView = NativeTextInputView(
