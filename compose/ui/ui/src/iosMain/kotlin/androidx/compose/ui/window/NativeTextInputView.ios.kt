@@ -686,7 +686,7 @@ internal class NativeTextInputView(
 }
 
 /**
- * A [UIScrollView] that hosts the [ComposeTextInputView] when native input handling (Native Text Input)
+ * A [UIScrollView] that hosts the [NativeTextInputView] when native input handling (Native Text Input)
  * is enabled.
  *
  * This container is necessary because:
@@ -695,7 +695,7 @@ internal class NativeTextInputView(
  *    to align correctly with the Compose-rendered text.
  * 2. It synchronizes its [contentOffset] and [contentInset] with the Compose text field's
  *    internal scroll state, ensuring that the UITextInput-conforming overlay view
- *    ([ComposeTextInputView]) stays in sync with the visual rendering.
+ *    ([NativeTextInputView]) stays in sync with the visual rendering.
  * 3. It provides a larger hit-testing area for native interactive elements (like selection handles)
  *    that may overflow the immediate visual bounds of the text field.
  *
