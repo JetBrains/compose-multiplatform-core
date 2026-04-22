@@ -167,10 +167,10 @@ private fun updateCssElementProperties(
     ucRectLeft: Int,
     ucRectBottom: Int,
     ucRectRight: Int
-): Int {
-   return js(
+): Int = js(
         //language=javascript
         """
+        {
         const posChng = (chngFlgs & 1) !== 0;
         const ucRectChng = (chngFlgs & 2) !== 0;
         const oldHid = (retrnFlgs & 1) !== 0;
@@ -204,9 +204,10 @@ private fun updateCssElementProperties(
             wrpEl.style.visibility = "visible";
         }
         return (hid ? 1 : 0) | (pos ? 2 : 0);
+        }
     """
     )
-}
+
 
 private fun changeInteropViewIndex(
     rootElement: HTMLElement,
