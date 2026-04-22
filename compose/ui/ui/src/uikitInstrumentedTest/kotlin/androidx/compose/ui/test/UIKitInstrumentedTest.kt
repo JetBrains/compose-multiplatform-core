@@ -214,7 +214,7 @@ internal class UIKitInstrumentedTest(
         }
 
         fun waitUntil(
-            conditionDescription: () -> String? = { null },
+            conditionDescription: String? = null,
             timeoutMillis: Long = 5_000,
             condition: () -> Boolean
         ) {
@@ -342,7 +342,7 @@ internal class UIKitInstrumentedTest(
         conditionDescription: String? = null,
         timeoutMillis: Long = 5_000,
         condition: () -> Boolean
-    ) = UIKitInstrumentedTest.waitUntil({ conditionDescription }, timeoutMillis, condition)
+    ) = UIKitInstrumentedTest.waitUntil(conditionDescription, timeoutMillis, condition)
 
     // Touches:
 

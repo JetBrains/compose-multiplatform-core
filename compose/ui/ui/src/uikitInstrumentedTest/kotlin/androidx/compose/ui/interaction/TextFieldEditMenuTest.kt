@@ -496,13 +496,7 @@ class TextFieldEditMenuTest {
             "UICalloutBar"
         }
         waitForIdle()
-        UIKitInstrumentedTest.waitUntil(
-            {
-                "\n\n\n===========================================================\n" +
-                    this.getAccessibilityTree().printTree() +
-                    "\n\n\n===========================================================\n"
-            }
-        ) {
+        UIKitInstrumentedTest.waitUntil {
             firstNodeOrNull { node ->
                 node.element?.let { it::class.simpleName } == menuClassName
             } != null

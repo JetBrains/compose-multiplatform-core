@@ -57,7 +57,7 @@ class ComposeHostingViewIntegrationTest {
         composeView.removeFromSuperview()
 
         assertEquals(launchesCount, 1)
-        UIKitInstrumentedTest.waitUntil({"Wait until compose view being disposed"}) {
+        UIKitInstrumentedTest.waitUntil("Wait until compose view being disposed") {
             composeView.rootRedrawer == null
         }
 
