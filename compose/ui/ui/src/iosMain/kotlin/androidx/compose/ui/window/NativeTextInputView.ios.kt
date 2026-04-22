@@ -23,8 +23,8 @@ import androidx.compose.ui.platform.IntermediateTextRange
 import androidx.compose.ui.platform.IntermediateTextSelectionRect
 import androidx.compose.ui.platform.IntermediateTextTokenizer
 import androidx.compose.ui.platform.PlatformTextLayoutDirection
-import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.NativeTextEditingDelegate
+import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
 import androidx.compose.ui.platform.withDeferredEditBatch

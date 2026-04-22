@@ -489,5 +489,3 @@ internal class ComposeTextInputView(
     }
     override fun tokenizer(): UITextInputTokenizerProtocol = _tokenizer
 }
-
-

@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.NativeTextEditingDelegate
 import androidx.compose.ui.platform.PlatformTextLayoutDirection
 import androidx.compose.ui.platform.TextSelectionRect
-import androidx.compose.ui.platform.UIKitNativeTextInputContext
 import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.platform.toUIColor
@@ -65,7 +64,7 @@ internal class NativeTextInputConnection(
     focusedViewsList,
     onKeyboardPresses,
     focusManager
-), NativeTextEditingDelegate, UIKitNativeTextInputContext {
+), NativeTextEditingDelegate {
     private val scrollView by lazy { IntermediateTextScrollView() }
 
     override val textUIView = NativeTextInputView(
@@ -81,7 +80,7 @@ internal class NativeTextInputConnection(
     override fun attachInputToView(imeOptions: ImeOptions) {
         textUIView.input = this
         textUIView.inputTraits = getUITextInputTraits(imeOptions)
-        // Resizing should be done later
+        // The view frame will be set later via updateTextViewPosition;
         textUIView.resignFirstResponder()
         textUIView.becomeFirstResponder()
         setupTintColor()
@@ -194,9 +193,9 @@ internal class NativeTextInputConnection(
         }
         val rect = currentTextLayoutResult.getCursorRect(position)
         return rect.toDpRect(view.density).let {
-            val hafWidth = cursorThickness / 2
+            val halfWidth = cursorThickness / 2
             val center = (it.left + it.right) / 2
-            it.copy(left = center - hafWidth, right = center + hafWidth)
+            it.copy(left = center - halfWidth, right = center + halfWidth)
         }
     }
 
@@ -387,9 +386,7 @@ internal class NativeTextInputConnection(
         }
     }
 
-    override fun usingNativeTextInput(): Boolean = true
-
-    override fun updateNativeTextInputEditMenuState(
+    fun updateNativeTextInputEditMenuState(
         copy: (() -> Unit)?,
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,
@@ -407,7 +404,7 @@ internal class NativeTextInputConnection(
         )
     }
 
-    override fun updateNativeTextInputTintColor(color: Color?) {
+    fun updateNativeTextInputTintColor(color: Color?) {
         selectionTintColor = color
         setupTintColor()
     }

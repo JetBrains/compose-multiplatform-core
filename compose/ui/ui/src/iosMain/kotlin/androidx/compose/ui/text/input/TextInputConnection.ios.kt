@@ -103,6 +103,7 @@ internal abstract class BaseTextInputConnection(
     override fun close() {
         flushEditCommandsIfNeeded(force = true)
         sessionEditProcessor = null
+        currentOnEditCommand = null
         currentImeOptions = null
         currentImeActionHandler = null
         textLayoutResult = null

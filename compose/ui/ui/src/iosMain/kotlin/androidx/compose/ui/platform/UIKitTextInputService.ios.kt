@@ -171,8 +171,7 @@ internal class UIKitTextInputService(
 
     val nativeTextInputContext = object : UIKitNativeTextInputContext {
         override fun usingNativeTextInput(): Boolean =
-            (currentInputConnection as? UIKitNativeTextInputContext)?.usingNativeTextInput()
-                ?: false
+            currentInputConnection is NativeTextInputConnection
 
         override fun updateNativeTextInputEditMenuState(
             copy: (() -> Unit)?,
@@ -181,17 +180,16 @@ internal class UIKitTextInputService(
             selectAll: (() -> Unit)?,
             customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
         ) {
-            (currentInputConnection as? UIKitNativeTextInputContext)?.updateNativeTextInputEditMenuState(
+            (currentInputConnection as? NativeTextInputConnection)?.updateNativeTextInputEditMenuState(
                 copy, paste, cut, selectAll, customActions
             )
         }
 
         override fun updateNativeTextInputTintColor(color: Color?) {
-            (currentInputConnection as? UIKitNativeTextInputContext)?.updateNativeTextInputTintColor(
+            (currentInputConnection as? NativeTextInputConnection)?.updateNativeTextInputTintColor(
                 color
             )
         }
-
     }
 
     fun dispose() {
