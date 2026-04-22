@@ -127,7 +127,7 @@ internal class UIKitTextInputService(
         coroutineScope {
             launch {
                 snapshotFlow { request.stateSnapshot() }.collect {
-                    onTextFieldValueUpdated()
+                    onTextFieldValueUpdated(it)
                 }
             }
             launch {
@@ -192,8 +192,7 @@ internal class UIKitTextInputService(
         }
     }
 
-    private fun onTextFieldValueUpdated() {
-        val newValue = currentRequest?.stateSnapshot() ?: return
+    private fun onTextFieldValueUpdated(newValue: TextFieldValue) {
         if (postponeSelectionUpdate) {
             currentTextFieldValue = newValue
         }
@@ -318,7 +317,7 @@ internal class UIKitTextInputService(
             if (requireUpdateView) {
                 updateView()
             }
-            onTextFieldValueUpdated()
+            onTextFieldValueUpdated(it.stateSnapshot())
             postponeSelectionUpdate = false
         }
     }
@@ -948,7 +947,7 @@ internal class UIKitTextInputService(
 }
 
 private fun PlatformTextInputMethodRequest.stateSnapshot() =
-    TextFieldValue(state.toString(), state.selection, state.composition)
+    TextFieldValue(state.subSequence(0, state.length).toString(), state.selection, state.composition)
 
 internal data class TextSelectionRect(
     val dpRect: DpRect,
