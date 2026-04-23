@@ -20,7 +20,7 @@ import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.TextInputPosition
 import androidx.compose.ui.platform.TextInputRange
-import androidx.compose.ui.platform.IntermediateTextSelectionRect
+import androidx.compose.ui.platform.TextInputSelectionRect
 import androidx.compose.ui.platform.TextInputStringTokenizer
 import androidx.compose.ui.platform.PlatformTextLayoutDirection
 import androidx.compose.ui.platform.NativeTextEditingDelegate
@@ -514,7 +514,7 @@ internal class NativeTextInputView(
             end = (range.end as? TextInputPosition)?.position ?: return fallbackList
         )
         val rects = input?.selectionDpRectsForRange(textRange) ?: return fallbackList
-        return rects.fastMap { IntermediateTextSelectionRect(it) }
+        return rects.fastMap { TextInputSelectionRect(it) }
     }
 
     override fun closestPositionToPoint(point: CValue<CGPoint>): UITextPosition? {

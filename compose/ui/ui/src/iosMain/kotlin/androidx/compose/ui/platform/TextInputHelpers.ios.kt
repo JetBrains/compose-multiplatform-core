@@ -282,7 +282,7 @@ internal fun UITextRange.toTextRange(): TextRange? {
 internal fun TextRange.toUITextRange(): UITextRange =
     TextInputRange(start = start, end = end)
 
-internal class IntermediateTextSelectionRect(
+internal class TextInputSelectionRect(
     private var _rect: CValue<CGRect>,
     private val _writingDirection: UITextWritingDirection,
     private val _containsStart: Boolean,
@@ -405,6 +405,10 @@ internal class TextInputStringTokenizer(
     }
 }
 
+/**
+ * Compose-side representation of a selection rectangle, using Compose types ([DpRect], [TextDirection]).
+ * Converted to [TextInputSelectionRect] (a [UITextSelectionRect] subclass) when passed to UIKit.
+ */
 internal data class TextSelectionRect(
     val dpRect: DpRect,
     val writingDirection: TextDirection,
