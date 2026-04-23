@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.awt
 
-import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ImageComposeScene
 
@@ -31,4 +31,4 @@ import androidx.compose.ui.ImageComposeScene
  *   [ImageComposeScene].
  */
 @ExperimentalComposeUiApi
-val LocalAwtWindow = compositionLocalOf<java.awt.Window?> { null }
+val LocalAwtWindow = staticCompositionLocalOf<java.awt.Window?> { null }
