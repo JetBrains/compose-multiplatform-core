@@ -51,7 +51,7 @@ internal open class ComposeTextInputConnection(
     focusedViewsList: FocusedViewsList?,
     onKeyboardPresses: (Set<*>) -> Unit,
     focusManager: () -> ComposeSceneFocusManager?
-) : BaseTextInputConnection(
+) : TextInputConnection(
     updateView,
     view,
     coroutineScope,
@@ -186,25 +186,5 @@ internal open class ComposeTextInputConnection(
             it.hideTextMenu()
             textMenuAppearanceChanged()
         }
-    }
-}
-
-internal class SelectionContainerConnection(
-    view: UIView,
-    coroutineScope: CoroutineScope,
-    viewConfiguration: ViewConfiguration,
-    focusManager: () -> ComposeSceneFocusManager?
-) : ComposeTextInputConnection(
-    {},
-    view,
-    coroutineScope,
-    viewConfiguration,
-    null,
-    {},
-    focusManager
-) {
-    override fun close() {
-        textInputView.resignFirstResponder()
-        super.close()
     }
 }

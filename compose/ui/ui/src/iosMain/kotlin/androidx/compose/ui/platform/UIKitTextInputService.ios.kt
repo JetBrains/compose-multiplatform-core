@@ -72,7 +72,7 @@ internal class UIKitTextInputService(
     ) {
         val usingNativeTextInput = imeOptions.platformImeOptions?.usingNativeTextInput ?: false
 
-        currentInputConnection?.close()
+        currentInputConnection?.stop()
         currentInputConnection = if (usingNativeTextInput) NativeTextInputConnection(
             updateView = { updateView(true) },
             view = view,
@@ -89,13 +89,13 @@ internal class UIKitTextInputService(
             onKeyboardPresses = onKeyboardPresses,
             focusManager = focusManager
         )
-        currentInputConnection?.open(value, imeOptions, onEditCommand, onImeActionPerformed)
+        currentInputConnection?.start(value, imeOptions, onEditCommand, onImeActionPerformed)
 
         onInputStarted()
     }
 
     override fun stopInput() {
-        currentInputConnection?.close()
+        currentInputConnection?.stop()
         currentInputConnection = null
     }
 
@@ -167,7 +167,7 @@ internal class UIKitTextInputService(
             if (currentInputConnection is SelectionContainerConnection) {
                 // close() removes the view from the hierarchy and resigns first responder,
                 // without requiring a prior open() call.
-                currentInputConnection?.close()
+                currentInputConnection?.stop()
                 currentInputConnection = null
             }
         }

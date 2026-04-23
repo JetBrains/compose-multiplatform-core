@@ -18,10 +18,10 @@ package androidx.compose.ui.window
 
 import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.EmptyInputTraits
-import androidx.compose.ui.platform.IntermediateTextPosition
-import androidx.compose.ui.platform.IntermediateTextRange
+import androidx.compose.ui.platform.TextInputPosition
+import androidx.compose.ui.platform.TextInputRange
 import androidx.compose.ui.platform.IntermediateTextSelectionRect
-import androidx.compose.ui.platform.IntermediateTextTokenizer
+import androidx.compose.ui.platform.TextInputStringTokenizer
 import androidx.compose.ui.platform.PlatformTextLayoutDirection
 import androidx.compose.ui.platform.NativeTextEditingDelegate
 import androidx.compose.ui.platform.SkikoUITextInputTraits
@@ -348,7 +348,7 @@ internal class NativeTextInputView(
     }
 
     override fun beginningOfDocument(): UITextPosition {
-        return IntermediateTextPosition(0)
+        return TextInputPosition(0)
     }
 
     /**
@@ -356,7 +356,7 @@ internal class NativeTextInputView(
      * https://developer.apple.com/documentation/uikit/uitextinput/1614555-endofdocument
      */
     override fun endOfDocument(): UITextPosition {
-        return IntermediateTextPosition(input?.endOfDocument() ?: 0)
+        return TextInputPosition(input?.endOfDocument() ?: 0)
     }
 
     /**
@@ -366,11 +366,11 @@ internal class NativeTextInputView(
         fromPosition: UITextPosition,
         toPosition: UITextPosition
     ): UITextRange? {
-        val from = (fromPosition as? IntermediateTextPosition)?.position ?: return null
-        val to = (toPosition as? IntermediateTextPosition)?.position ?: return null
-        return IntermediateTextRange(
-            IntermediateTextPosition(minOf(from, to)),
-            IntermediateTextPosition(maxOf(from, to))
+        val from = (fromPosition as? TextInputPosition)?.position ?: return null
+        val to = (toPosition as? TextInputPosition)?.position ?: return null
+        return TextInputRange(
+            TextInputPosition(minOf(from, to)),
+            TextInputPosition(maxOf(from, to))
         )
     }
 
@@ -384,10 +384,10 @@ internal class NativeTextInputView(
         position: UITextPosition,
         offset: NSInteger
     ): UITextPosition? {
-        val p = (position as? IntermediateTextPosition)?.position ?: return null
+        val p = (position as? TextInputPosition)?.position ?: return null
         val input = input ?: return null
         return input.positionFromPosition(position = p, offset = offset.toInt())?.let {
-            IntermediateTextPosition(it)
+            TextInputPosition(it)
         }
     }
 
@@ -395,10 +395,10 @@ internal class NativeTextInputView(
         position: UITextPosition,
         offset: NSInteger
     ): UITextPosition? {
-        val p = (position as? IntermediateTextPosition)?.position ?: return null
+        val p = (position as? TextInputPosition)?.position ?: return null
         val input = input ?: return null
         return input.verticalPositionFromPosition(position = p, verticalOffset = offset.toInt())
-            ?.let { IntermediateTextPosition(it) }
+            ?.let { TextInputPosition(it) }
     }
 
     override fun positionFromPosition(
@@ -422,8 +422,8 @@ internal class NativeTextInputView(
         position: UITextPosition,
         toPosition: UITextPosition
     ): NSComparisonResult {
-        val from = (position as? IntermediateTextPosition)?.position ?: return NSOrderedSame
-        val to = (toPosition as? IntermediateTextPosition)?.position ?: return NSOrderedSame
+        val from = (position as? TextInputPosition)?.position ?: return NSOrderedSame
+        val to = (toPosition as? TextInputPosition)?.position ?: return NSOrderedSame
         val result = if (from < to) {
             NSOrderedAscending
         } else if (from > to) {
@@ -435,7 +435,7 @@ internal class NativeTextInputView(
     }
 
     override fun offsetFromPosition(from: UITextPosition, toPosition: UITextPosition): NSInteger {
-        if (from !is IntermediateTextPosition || toPosition !is IntermediateTextPosition) {
+        if (from !is TextInputPosition || toPosition !is TextInputPosition) {
             return 0
         }
         return (toPosition.position - from.position).toLong()
@@ -446,7 +446,7 @@ internal class NativeTextInputView(
         withinRange: UITextRange
     ): NSInteger {
         val withinTextRange = withinRange.toTextRange() ?: return 0L
-        val intermediatePosition = (position as? IntermediateTextPosition)?.position ?: 0
+        val intermediatePosition = (position as? TextInputPosition)?.position ?: 0
         return (intermediatePosition - withinTextRange.start).toLong()
     }
 
@@ -454,21 +454,21 @@ internal class NativeTextInputView(
         range: UITextRange,
         atCharacterOffset: NSInteger
     ): UITextPosition {
-        val fallback = IntermediateTextPosition(0)
+        val fallback = TextInputPosition(0)
         val textRange = range.toTextRange() ?: return fallback
         return (textRange.start + atCharacterOffset.toInt()).takeIf { range.isValid() && it in textRange }
-            ?.let { IntermediateTextPosition(it) } ?: fallback
+            ?.let { TextInputPosition(it) } ?: fallback
     }
 
     override fun positionWithinRangeFarthestInDirection(
         range: UITextRange,
         farthestInDirection: UITextLayoutDirection
     ): UITextPosition {
-        val fallback = IntermediateTextPosition(0)
+        val fallback = TextInputPosition(0)
         val textRange = range.toTextRange() ?: return fallback
         return PlatformTextLayoutDirection(farthestInDirection)?.let { direction ->
             input?.positionWithinRange(textRange, direction)?.let {
-                IntermediateTextPosition(it)
+                TextInputPosition(it)
             }
         } ?: fallback
     }
@@ -477,13 +477,13 @@ internal class NativeTextInputView(
         position: UITextPosition,
         inDirection: UITextLayoutDirection
     ): UITextRange? {
-        val oldPosition = position as? IntermediateTextPosition ?: return null
+        val oldPosition = position as? TextInputPosition ?: return null
         val newPosition = positionFromPosition(oldPosition, inDirection = inDirection, offset = 1)
-            as? IntermediateTextPosition ?: return null
+            as? TextInputPosition ?: return null
         return if (newPosition.position < oldPosition.position) {
-            IntermediateTextRange(newPosition, oldPosition)
+            TextInputRange(newPosition, oldPosition)
         } else {
-            IntermediateTextRange(oldPosition, newPosition)
+            TextInputRange(oldPosition, newPosition)
         }
     }
 
@@ -508,7 +508,7 @@ internal class NativeTextInputView(
 
     override fun caretRectForPosition(position: UITextPosition): CValue<CGRect> {
         val fallbackRect = CGRectMake(x = 1.0, y = 1.0, width = 0.0, height = 1.0)
-        val position = (position as? IntermediateTextPosition)?.position ?: return fallbackRect
+        val position = (position as? TextInputPosition)?.position ?: return fallbackRect
         val caretDpRect = input?.caretDpRectForPosition(position)
         return caretDpRect?.asCGRect() ?: fallbackRect
     }
@@ -516,8 +516,8 @@ internal class NativeTextInputView(
     override fun selectionRectsForRange(range: UITextRange): List<*> {
         val fallbackList = listOf<UITextSelectionRect>()
         val textRange = TextRange(
-            start = (range.start as? IntermediateTextPosition)?.position ?: return fallbackList,
-            end = (range.end as? IntermediateTextPosition)?.position ?: return fallbackList
+            start = (range.start as? TextInputPosition)?.position ?: return fallbackList,
+            end = (range.end as? TextInputPosition)?.position ?: return fallbackList
         )
         val rects = input?.selectionDpRectsForRange(textRange) ?: return fallbackList
         return rects.fastMap { IntermediateTextSelectionRect(it) }
@@ -526,25 +526,25 @@ internal class NativeTextInputView(
     override fun closestPositionToPoint(point: CValue<CGPoint>): UITextPosition? {
         val closestPosition =
             input?.closestPositionToPoint(point.useContents { DpOffset(x.dp, y.dp) }) ?: return null
-        return IntermediateTextPosition(closestPosition)
+        return TextInputPosition(closestPosition)
     }
 
     override fun closestPositionToPoint(
         point: CValue<CGPoint>,
         withinRange: UITextRange
     ): UITextPosition? {
-        val textRange = (withinRange as? IntermediateTextRange)?.toTextRange() ?: return null
+        val textRange = (withinRange as? TextInputRange)?.toTextRange() ?: return null
         val closestPosition = input?.closestPositionToPoint(
             point.useContents { DpOffset(x.dp, y.dp) },
             textRange
         ) ?: return null
-        return IntermediateTextPosition(closestPosition)
+        return TextInputPosition(closestPosition)
     }
 
     override fun characterRangeAtPoint(point: CValue<CGPoint>): UITextRange? {
         val characterRange =
             input?.characterRangeAtPoint(point.useContents { DpOffset(x.dp, y.dp) }) ?: return null
-        return IntermediateTextRange(characterRange.start, characterRange.end)
+        return TextInputRange(characterRange.start, characterRange.end)
     }
 
     override fun textStylingAtPosition(
@@ -673,7 +673,7 @@ internal class NativeTextInputView(
         }
     }
 
-    private val _tokenizer = IntermediateTextTokenizer(textInput = this) {
+    private val _tokenizer = TextInputStringTokenizer(textInput = this) {
         input?.let { it.textInRange(TextRange(0, it.endOfDocument())) }
     }
     override fun tokenizer(): UITextInputTokenizerProtocol = _tokenizer
@@ -702,7 +702,7 @@ internal class NativeTextInputView(
  * This view does not handle user-driven scrolling; scrolling is still managed by Compose,
  * which then updates this scroll view's state.
  */
-internal class IntermediateTextScrollView(): UIScrollView(frame = CGRectZero.readValue()) {
+internal class NativeTextInputScrollView(): UIScrollView(frame = CGRectZero.readValue()) {
     init {
         setScrollEnabled(false)
         setShowsVerticalScrollIndicator(false)

@@ -238,7 +238,7 @@ internal fun TextEditingDelegate.withDeferredEditBatch(
     }
 }
 
-internal class IntermediateTextPosition(val position: Int = 0) : UITextPosition() {
+internal class TextInputPosition(val position: Int = 0) : UITextPosition() {
     override fun description(): String {
         return "IntermediateTextPosition($position)"
     }
@@ -248,15 +248,15 @@ internal class IntermediateTextPosition(val position: Int = 0) : UITextPosition(
     }
 }
 
-internal fun IntermediateTextRange(start: Int, end: Int) =
-    IntermediateTextRange(
-        _start = IntermediateTextPosition(start),
-        _end = IntermediateTextPosition(end)
+internal fun TextInputRange(start: Int, end: Int) =
+    TextInputRange(
+        _start = TextInputPosition(start),
+        _end = TextInputPosition(end)
     )
 
-internal class IntermediateTextRange(
-    val _start: IntermediateTextPosition,
-    val _end: IntermediateTextPosition
+internal class TextInputRange(
+    val _start: TextInputPosition,
+    val _end: TextInputPosition
 ) : UITextRange() {
     override fun isEmpty() = (_end.position - _start.position) <= 0
     override fun start(): UITextPosition = _start
@@ -269,13 +269,13 @@ internal class IntermediateTextRange(
 
 // Despite UITextRange being declared as non-null, iOS can still pass null to methods that take a UITextRange parameter.
 internal fun UITextRange.toTextRange(): TextRange? {
-    val start = (start() as? IntermediateTextPosition)?.position ?: return null
-    val end = (end() as? IntermediateTextPosition)?.position ?: return null
+    val start = (start() as? TextInputPosition)?.position ?: return null
+    val end = (end() as? TextInputPosition)?.position ?: return null
     return TextRange(start, end)
 }
 
 internal fun TextRange.toUITextRange(): UITextRange =
-    IntermediateTextRange(start = start, end = end)
+    TextInputRange(start = start, end = end)
 
 internal class IntermediateTextSelectionRect(
     private var _rect: CValue<CGRect>,
@@ -300,7 +300,7 @@ internal class IntermediateTextSelectionRect(
     override fun isVertical(): Boolean = _isVertical
 }
 
-internal class IntermediateTextTokenizer(
+internal class TextInputStringTokenizer(
     textInput: UIResponder,
     val getString: () -> String?
 ): CMPTextInputStringTokenizer(textInput) {
@@ -311,7 +311,7 @@ internal class IntermediateTextTokenizer(
         toBoundary: UITextGranularity,
         inDirection: UITextDirection
     ): UITextPosition? {
-        val textPosition = position as? IntermediateTextPosition ?: return null
+        val textPosition = position as? TextInputPosition ?: return null
         val isForward = inDirection == UITextStorageDirectionForward ||
             inDirection == UITextLayoutDirectionRight ||
             inDirection == UITextLayoutDirectionDown
@@ -344,7 +344,7 @@ internal class IntermediateTextTokenizer(
             }
         }
 
-        return IntermediateTextPosition(iteratorResult)
+        return TextInputPosition(iteratorResult)
     }
 
     override fun isPositionAtBoundary(
@@ -352,7 +352,7 @@ internal class IntermediateTextTokenizer(
         atBoundary: UITextGranularity,
         inDirection: UITextDirection
     ): Boolean {
-        val textPosition = position as? IntermediateTextPosition ?: return false
+        val textPosition = position as? TextInputPosition ?: return false
 
         val iterator = when (atBoundary) {
             UITextGranularity.UITextGranularityCharacter -> BreakIterator.makeCharacterInstance()
@@ -373,7 +373,7 @@ internal class IntermediateTextTokenizer(
         position: UITextPosition,
         isForward: Boolean
     ): UITextPosition? {
-        val textPosition = position as? IntermediateTextPosition ?: return null
+        val textPosition = position as? TextInputPosition ?: return null
 
         val string = getString() ?: ""
         var location = textPosition.position
@@ -391,7 +391,7 @@ internal class IntermediateTextTokenizer(
                 location--
             }
         }
-        return IntermediateTextPosition(location)
+        return TextInputPosition(location)
     }
 
     private fun isAtParagraphBoundary(text: String, position: Int): Boolean {

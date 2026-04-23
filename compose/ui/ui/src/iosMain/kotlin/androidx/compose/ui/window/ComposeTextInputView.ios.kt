@@ -17,9 +17,9 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.platform.EmptyInputTraits
-import androidx.compose.ui.platform.IntermediateTextPosition
-import androidx.compose.ui.platform.IntermediateTextRange
-import androidx.compose.ui.platform.IntermediateTextTokenizer
+import androidx.compose.ui.platform.TextInputPosition
+import androidx.compose.ui.platform.TextInputRange
+import androidx.compose.ui.platform.TextInputStringTokenizer
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextEditingDelegate
 import androidx.compose.ui.platform.toTextRange
@@ -267,7 +267,7 @@ internal class ComposeTextInputView(
     }
 
     override fun beginningOfDocument(): UITextPosition {
-        return IntermediateTextPosition(0)
+        return TextInputPosition(0)
     }
 
     /**
@@ -275,7 +275,7 @@ internal class ComposeTextInputView(
      * https://developer.apple.com/documentation/uikit/uitextinput/1614555-endofdocument
      */
     override fun endOfDocument(): UITextPosition {
-        return IntermediateTextPosition(input?.endOfDocument() ?: 0)
+        return TextInputPosition(input?.endOfDocument() ?: 0)
     }
 
     /**
@@ -285,11 +285,11 @@ internal class ComposeTextInputView(
         fromPosition: UITextPosition,
         toPosition: UITextPosition
     ): UITextRange? {
-        val from = (fromPosition as? IntermediateTextPosition)?.position ?: return null
-        val to = (toPosition as? IntermediateTextPosition)?.position ?: return null
-        return IntermediateTextRange(
-            IntermediateTextPosition(minOf(from, to)),
-            IntermediateTextPosition(maxOf(from, to))
+        val from = (fromPosition as? TextInputPosition)?.position ?: return null
+        val to = (toPosition as? TextInputPosition)?.position ?: return null
+        return TextInputRange(
+            TextInputPosition(minOf(from, to)),
+            TextInputPosition(maxOf(from, to))
         )
     }
 
@@ -303,10 +303,10 @@ internal class ComposeTextInputView(
         position: UITextPosition,
         offset: NSInteger
     ): UITextPosition? {
-        val p = (position as? IntermediateTextPosition)?.position ?: return null
+        val p = (position as? TextInputPosition)?.position ?: return null
         val input = input ?: return null
         return input.positionFromPosition(position = p, offset = offset.toInt())?.let {
-            IntermediateTextPosition(it)
+            TextInputPosition(it)
         }
     }
 
@@ -314,10 +314,10 @@ internal class ComposeTextInputView(
         position: UITextPosition,
         offset: NSInteger
     ): UITextPosition? {
-        val p = (position as? IntermediateTextPosition)?.position ?: return null
+        val p = (position as? TextInputPosition)?.position ?: return null
         val input = input ?: return null
         return input.verticalPositionFromPosition(position = p, verticalOffset = offset.toInt())
-            ?.let { IntermediateTextPosition(it) }
+            ?.let { TextInputPosition(it) }
     }
 
     override fun positionFromPosition(
@@ -341,8 +341,8 @@ internal class ComposeTextInputView(
         position: UITextPosition,
         toPosition: UITextPosition
     ): NSComparisonResult {
-        val from = (position as? IntermediateTextPosition)?.position ?: return NSOrderedSame
-        val to = (toPosition as? IntermediateTextPosition)?.position ?: return NSOrderedSame
+        val from = (position as? TextInputPosition)?.position ?: return NSOrderedSame
+        val to = (toPosition as? TextInputPosition)?.position ?: return NSOrderedSame
         val result = if (from < to) {
             NSOrderedAscending
         } else if (from > to) {
@@ -354,7 +354,7 @@ internal class ComposeTextInputView(
     }
 
     override fun offsetFromPosition(from: UITextPosition, toPosition: UITextPosition): NSInteger {
-        if (from !is IntermediateTextPosition || toPosition !is IntermediateTextPosition) {
+        if (from !is TextInputPosition || toPosition !is TextInputPosition) {
             return 0
         }
         return (toPosition.position - from.position).toLong()
@@ -368,24 +368,24 @@ internal class ComposeTextInputView(
     override fun positionWithinRangeAtCharacterOffset(
         range: UITextRange,
         atCharacterOffset: NSInteger
-    ): UITextPosition = IntermediateTextPosition(0)
+    ): UITextPosition = TextInputPosition(0)
 
     override fun positionWithinRangeFarthestInDirection(
         range: UITextRange,
         farthestInDirection: UITextLayoutDirection
-    ): UITextPosition = IntermediateTextPosition(0)
+    ): UITextPosition = TextInputPosition(0)
 
     override fun characterRangeByExtendingPosition(
         position: UITextPosition,
         inDirection: UITextLayoutDirection
     ): UITextRange? {
-        val oldPosition = position as? IntermediateTextPosition ?: return null
+        val oldPosition = position as? TextInputPosition ?: return null
         val newPosition = positionFromPosition(oldPosition, inDirection = inDirection, offset = 1)
-            as? IntermediateTextPosition ?: return null
+            as? TextInputPosition ?: return null
         return if (newPosition.position < oldPosition.position) {
-            IntermediateTextRange(newPosition, oldPosition)
+            TextInputRange(newPosition, oldPosition)
         } else {
-            IntermediateTextRange(oldPosition, newPosition)
+            TextInputRange(oldPosition, newPosition)
         }
     }
 
@@ -484,7 +484,7 @@ internal class ComposeTextInputView(
     fun isTextMenuShown() = isEditMenuShown
     override fun shouldUseNonComposeMenuActions() = false
 
-    private val _tokenizer = IntermediateTextTokenizer(textInput = this) {
+    private val _tokenizer = TextInputStringTokenizer(textInput = this) {
         input?.let { it.textInRange(TextRange(0, it.endOfDocument())) }
     }
     override fun tokenizer(): UITextInputTokenizerProtocol = _tokenizer

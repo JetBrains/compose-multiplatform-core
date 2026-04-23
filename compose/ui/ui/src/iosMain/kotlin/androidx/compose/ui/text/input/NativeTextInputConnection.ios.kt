@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.FocusedViewsList
-import androidx.compose.ui.window.IntermediateTextScrollView
+import androidx.compose.ui.window.NativeTextInputScrollView
 import androidx.compose.ui.window.NativeTextInputView
 import kotlin.math.max
 import kotlin.math.min
@@ -57,7 +57,7 @@ internal class NativeTextInputConnection(
     focusedViewsList: FocusedViewsList?,
     onKeyboardPresses: (Set<*>) -> Unit,
     focusManager: () -> ComposeSceneFocusManager?
-) : BaseTextInputConnection(
+) : TextInputConnection(
     updateView,
     view,
     coroutineScope,
@@ -65,7 +65,7 @@ internal class NativeTextInputConnection(
     onKeyboardPresses,
     focusManager
 ), NativeTextEditingDelegate {
-    private val scrollView by lazy { IntermediateTextScrollView() }
+    private val scrollView by lazy { NativeTextInputScrollView() }
 
     override val textInputView = NativeTextInputView(
         coroutineScope = coroutineScope

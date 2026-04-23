@@ -43,38 +43,7 @@ import org.jetbrains.skia.BreakIterator
 import platform.UIKit.UIPress
 import platform.UIKit.UIView
 
-internal interface TextInputConnection {
-    fun open(
-        value: TextFieldValue,
-        imeOptions: ImeOptions,
-        onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
-    )
-
-    /**
-     * Tears down this connection: removes the underlying view from the hierarchy and releases
-     * focus. Safe to call even if [open] was never invoked — not all connection types require
-     * an active text input session (e.g. [SelectionContainerConnection]).
-     */
-    fun close()
-    fun showKeyboard()
-    fun dismissKeyboard()
-
-    fun updateState(newValue: TextFieldValue)
-    fun updateTextLayoutResult(textLayoutResult: TextLayoutResult)
-    fun updateViewGeometry(
-        textFieldFrame: Rect,
-        unclippedTextPosition: Offset
-    )
-
-    fun onPreviewKeyEvent(event: KeyEvent): Boolean
-
-    fun flushEditCommandsIfNeeded(force: Boolean = false)
-
-    val hasInvalidations: Boolean
-}
-
-internal abstract class BaseTextInputConnection(
+internal abstract class TextInputConnection(
     protected val updateView: () -> Unit,
     protected val view: UIView,
     protected val coroutineScope: CoroutineScope,
@@ -86,8 +55,8 @@ internal abstract class BaseTextInputConnection(
     @Suppress("UNUSED")
     protected var onKeyboardPresses: (Set<*>) -> Unit,
     private var focusManager: () -> ComposeSceneFocusManager?,
-): TextInputConnection, TextEditingDelegate {
-    override fun open(
+): TextEditingDelegate {
+    fun start(
         value: TextFieldValue,
         imeOptions: ImeOptions,
         onEditCommand: (List<EditCommand>) -> Unit,
@@ -105,7 +74,7 @@ internal abstract class BaseTextInputConnection(
 
     protected abstract fun attachInputToView(imeOptions: ImeOptions)
 
-    override fun close() {
+    open fun stop() {
         flushEditCommandsIfNeeded(force = true)
         sessionEditProcessor = null
         currentOnEditCommand = null
@@ -120,15 +89,15 @@ internal abstract class BaseTextInputConnection(
 
     protected abstract fun detachView()
 
-    override fun showKeyboard() {
+    fun showKeyboard() {
         focusedViewsList?.addAndFocus(textInputView)
     }
 
-    override fun dismissKeyboard() {
+    fun dismissKeyboard() {
         focusedViewsList?.remove(textInputView, delayMillis = CLEAR_FOCUS_DELAY)
     }
 
-    override fun updateState(newValue: TextFieldValue) {
+    fun updateState(newValue: TextFieldValue) {
         val internalOldValue = sessionEditProcessor?.toTextFieldValue()
         val textChanged = internalOldValue == null || internalOldValue.text != newValue.text
         val selectionChanged = textChanged || internalOldValue.selection != newValue.selection
@@ -146,11 +115,11 @@ internal abstract class BaseTextInputConnection(
     protected abstract fun stateWillChange(textChanged: Boolean, selectionChanged: Boolean)
     protected abstract fun stateDidChange(textChanged: Boolean, selectionChanged: Boolean)
 
-    override fun updateTextLayoutResult(textLayoutResult: TextLayoutResult) {
+    fun updateTextLayoutResult(textLayoutResult: TextLayoutResult) {
         this.textLayoutResult = textLayoutResult
     }
 
-    override fun updateViewGeometry(
+    open fun updateViewGeometry(
         textFieldFrame: Rect,
         unclippedTextPosition: Offset
     ) {
@@ -159,7 +128,7 @@ internal abstract class BaseTextInputConnection(
     }
     protected abstract fun updateTextViewPosition(unclippedTextPosition: Offset)
 
-    override fun onPreviewKeyEvent(event: KeyEvent): Boolean {
+    fun onPreviewKeyEvent(event: KeyEvent): Boolean {
         return when (event.key) {
             Key.Enter -> handleEnterKey(event)
             Key.Backspace -> handleBackspace(event)
@@ -168,7 +137,7 @@ internal abstract class BaseTextInputConnection(
         }
     }
 
-    override fun flushEditCommandsIfNeeded(force: Boolean) {
+    fun flushEditCommandsIfNeeded(force: Boolean = false) {
         if ((force || editBatchDepth == 0) && editCommandsBatch.isNotEmpty()) {
             val commandList = editCommandsBatch.toList()
             editCommandsBatch.clear()
@@ -177,7 +146,7 @@ internal abstract class BaseTextInputConnection(
         }
     }
 
-    override val hasInvalidations: Boolean
+    val hasInvalidations: Boolean
         get() = textInputServiceInvalidationsCount > 0
 
     protected var textInputServiceInvalidationsCount = 0
