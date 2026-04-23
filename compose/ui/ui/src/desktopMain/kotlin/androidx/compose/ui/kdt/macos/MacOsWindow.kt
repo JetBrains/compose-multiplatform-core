@@ -54,6 +54,7 @@ import androidx.compose.ui.kdt.LightweightWindowId
 import androidx.compose.ui.kdt.PositionAwareWindow
 import androidx.compose.ui.kdt.Scene
 import androidx.compose.ui.kdt.Window
+import androidx.compose.ui.kdt.WindowCloseRequestReason
 import androidx.compose.ui.kdt.WindowScope
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.platform.DefaultTextToolbar
@@ -119,7 +120,7 @@ class MacOsWindow internal constructor(
     internal val scene: Scene<*>,
     nativeWindow: org.jetbrains.desktop.macos.Window = org.jetbrains.desktop.macos.Window.create(),
     val viewContext: MetalViewContext = application.desktopGpuContext.createMetalViewContext(),
-    private val onCloseRequest: () -> Unit,
+    private val onCloseRequest: (WindowCloseRequestReason) -> Unit,
 ) :
     PositionAwareWindow, InteractiveMoveInitiator {
     private var backingNativeWindow: org.jetbrains.desktop.macos.Window? = nativeWindow
@@ -226,6 +227,7 @@ class MacOsWindow internal constructor(
                     position.y.takeOrElse { nativeWindow.origin.y.dp }.value.toDouble(),
                 ),
                 nativeWindow.size,
+                animateTransition = false,
             )
         }
     }
@@ -241,6 +243,7 @@ class MacOsWindow internal constructor(
                     bounds.width.takeOrElse { nativeWindow.size.width.dp }.value.toDouble(),
                     bounds.height.takeOrElse { nativeWindow.size.height.dp }.value.toDouble(),
                 ),
+                animateTransition = false,
             )
         }
     }
@@ -257,9 +260,9 @@ class MacOsWindow internal constructor(
         }
     }
 
-    override fun requestClose() {
+    override fun requestClose(reason: WindowCloseRequestReason) {
         if (!isDisposed) {
-            onCloseRequest()
+            onCloseRequest(reason)
         }
     }
 
@@ -666,6 +669,11 @@ class MacOsWindow internal constructor(
                 application.desktopGpuContext.destroyMetalViewContext(viewContext)
             }
             backingNativeWindow = null
+            if (application.windows.isEmpty()) {
+                GrandCentralDispatch.dispatchOnMain(highPriority = false) {
+                    application.finishStructuredQuitIfNeeded()
+                }
+            }
         }
     }
 
@@ -923,6 +931,8 @@ class MacOsWindow internal constructor(
                 EventHandlerResult.Stop
             }
             is Event.WindowResize -> {
+                // Resizing from the top/left edges also shifts the native origin.
+                position = nativeWindow.origin.toDpOffset()
                 size = nativeWindow.size.toDpSize()
                 contentSize = nativeWindow.contentSize.toDpSize()
                 composeScene.size = contentSizeInPx()
@@ -991,7 +1001,7 @@ class MacOsWindow internal constructor(
             }
             is Event.WindowCloseRequest -> {
                 scene.withPreparedMainThread {
-                    onCloseRequest()
+                    onCloseRequest(WindowCloseRequestReason.UserRequest)
                 }
                 EventHandlerResult.Stop
             }

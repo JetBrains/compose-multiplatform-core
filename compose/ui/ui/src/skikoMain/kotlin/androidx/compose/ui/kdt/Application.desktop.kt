@@ -159,7 +159,7 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
 
     fun createWindow(
         scene: Scene<*>,
-        onCloseRequest: () -> Unit,
+        onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window
 
     fun prepareNativeWindowResourcesForReuse(id: LightweightWindowId)
@@ -167,7 +167,7 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
     fun reuseWindow(
         id: LightweightWindowId,
         scene: Scene<*>,
-        onCloseRequest: () -> Unit,
+        onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window?
 
     fun disposeReusableNativeWindowResources(id: LightweightWindowId)
