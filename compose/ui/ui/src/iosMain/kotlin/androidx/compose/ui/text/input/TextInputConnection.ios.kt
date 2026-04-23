@@ -350,18 +350,8 @@ internal abstract class TextInputConnection(
         editBatchDepth--
     }
 
-    /**
-     * A Boolean value that indicates whether the text-entry object has any text.
-     * https://developer.apple.com/documentation/uikit/uikeyinput/1614457-hastext
-     */
     override fun hasText(): Boolean = getState()?.text?.isNotEmpty() ?: false
 
-    /**
-     * Inserts a character into the displayed text.
-     * Add the character text to your class’s backing store at the index corresponding to the cursor and redisplay the text.
-     * https://developer.apple.com/documentation/uikit/uikeyinput/1614543-inserttext
-     * @param text A string object representing the character typed on the system keyboard.
-     */
     override fun insertText(text: String) {
         if (text == "\n") {
             if (runImeActionIfRequired()) {
@@ -374,11 +364,6 @@ internal abstract class TextInputConnection(
         sendEditCommand(CommitTextCommand(text, 1))
     }
 
-    /**
-     * Deletes a character from the displayed text.
-     * Remove the character just before the cursor from your class’s backing store and redisplay the text.
-     * https://developer.apple.com/documentation/uikit/uikeyinput/1614572-deletebackward
-     */
     override fun deleteBackward() {
         val deleteCommand = if (getState()?.selection?.collapsed == true) {
             DeleteSurroundingTextCommand(lengthBeforeCursor = 1, lengthAfterCursor = 0)
@@ -388,19 +373,8 @@ internal abstract class TextInputConnection(
         sendEditCommand(deleteCommand)
     }
 
-    /**
-     * The text position for the end of a document.
-     * https://developer.apple.com/documentation/uikit/uitextinput/1614555-endofdocument
-     */
     override fun endOfDocument(): Int = getState()?.text?.length ?: 0
 
-    /**
-     * The range of selected text in a document.
-     * If the text range has a length, it indicates the currently selected text.
-     * If it has zero length, it indicates the caret (insertion point).
-     * If the text-range object is nil, it indicates that there is no current selection.
-     * https://developer.apple.com/documentation/uikit/uitextinput/1614541-selectedtextrange
-     */
     override fun getSelectedTextRange(): TextRange? = getState()?.selection
 
     override fun setSelectedTextRange(range: TextRange?) {
@@ -421,12 +395,6 @@ internal abstract class TextInputConnection(
         )
     }
 
-    /**
-     * Returns the text in the specified range.
-     * https://developer.apple.com/documentation/uikit/uitextinput/1614527-text
-     * @param range A range of text in a document.
-     * @return A substring of a document that falls within the specified range.
-     */
     override fun textInRange(range: TextRange): String? {
         if (isIncorrect(range)) {
             return null
@@ -435,12 +403,6 @@ internal abstract class TextInputConnection(
         return text.substring(range.start, range.end)
     }
 
-    /**
-     * Replaces the text in a document that is in the specified range.
-     * https://developer.apple.com/documentation/uikit/uitextinput/1614558-replace
-     * @param range A range of text in a document.
-     * @param text A string to replace the text in range.
-     */
     override fun replaceRange(range: TextRange, text: String) {
         sendEditCommand(
             SetComposingRegionCommand(range.start, range.end),
@@ -449,15 +411,6 @@ internal abstract class TextInputConnection(
         )
     }
 
-    /**
-     * Inserts the provided text and marks it to indicate that it is part of an active input session.
-     * Setting marked text either replaces the existing marked text or,
-     * if none is present, inserts it in place of the current selection.
-     * https://developer.apple.com/documentation/uikit/uitextinput/1614465-setmarkedtext
-     * @param markedText The text to be marked.
-     * @param selectedRange A range within markedText that indicates the current selection.
-     * This range is always relative to markedText.
-     */
     override fun setMarkedText(markedText: String?, selectedRange: TextRange) {
         if (markedText != null) {
             sendEditCommand(
@@ -466,31 +419,14 @@ internal abstract class TextInputConnection(
         }
     }
 
-    /**
-     * The range of currently marked text in a document.
-     * If there is no marked text, the value of the property is nil.
-     * Marked text is provisionally inserted text that requires user confirmation;
-     * it occurs in multistage text input.
-     * The current selection, which can be a caret or an extended range, always occurs within the marked text.
-     * https://developer.apple.com/documentation/uikit/uitextinput/1614489-markedtextrange
-     */
     override fun markedTextRange(): TextRange? {
         return getState()?.composition
     }
 
-    /**
-     * Unmarks the currently marked text.
-     * After this method is called, the value of markedTextRange is nil.
-     * https://developer.apple.com/documentation/uikit/uitextinput/1614512-unmarktext
-     */
     override fun unmarkText() {
         sendEditCommand(FinishComposingTextCommand())
     }
 
-    /**
-     * Returns the text position at a specified offset from another text position.
-     * Returned value must be in range between 0 and length of text (inclusive).
-     */
     override fun positionFromPosition(position: Int, offset: Int): Int? {
         val text = getState()?.text ?: return null
 
@@ -522,10 +458,6 @@ internal abstract class TextInputConnection(
         return resultPosition
     }
 
-    /**
-     * Returns the text position at a specified offset from another text position.
-     * Returned value must be in range between 0 and length of text (inclusive).
-     */
     override fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int? {
         val text = getState()?.text ?: return null
         val layoutResult = textLayoutResult ?: return null

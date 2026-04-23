@@ -73,22 +73,26 @@ internal class UIKitTextInputService(
         val usingNativeTextInput = imeOptions.platformImeOptions?.usingNativeTextInput ?: false
 
         currentInputConnection?.stop()
-        currentInputConnection = if (usingNativeTextInput) NativeTextInputConnection(
-            updateView = { updateView(true) },
-            view = view,
-            coroutineScope = coroutineScope,
-            focusedViewsList = focusedViewsList,
-            onKeyboardPresses = onKeyboardPresses,
-            focusManager = focusManager
-        ) else ComposeTextInputConnection(
-            updateView = { updateView(false) },
-            view = view,
-            coroutineScope = coroutineScope,
-            viewConfiguration = viewConfiguration,
-            focusedViewsList = focusedViewsList,
-            onKeyboardPresses = onKeyboardPresses,
-            focusManager = focusManager
-        )
+        currentInputConnection = if (usingNativeTextInput) {
+            NativeTextInputConnection(
+                updateView = { updateView(true) },
+                view = view,
+                coroutineScope = coroutineScope,
+                focusedViewsList = focusedViewsList,
+                onKeyboardPresses = onKeyboardPresses,
+                focusManager = focusManager
+            )
+        } else {
+            ComposeTextInputConnection(
+                updateView = { updateView(false) },
+                view = view,
+                coroutineScope = coroutineScope,
+                viewConfiguration = viewConfiguration,
+                focusedViewsList = focusedViewsList,
+                onKeyboardPresses = onKeyboardPresses,
+                focusManager = focusManager
+            )
+        }
         currentInputConnection?.start(value, imeOptions, onEditCommand, onImeActionPerformed)
 
         onInputStarted()

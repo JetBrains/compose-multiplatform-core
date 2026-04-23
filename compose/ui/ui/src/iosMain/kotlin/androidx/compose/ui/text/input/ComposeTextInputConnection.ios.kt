@@ -69,11 +69,12 @@ internal open class ComposeTextInputConnection(
                 UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight
             )
             it.onKeyboardPresses = onKeyboardPresses
-            view.addSubview(it)
-            it.setFrame(view.bounds)
         }
 
     override fun attachInputToView(imeOptions: ImeOptions) {
+        view.addSubview(textInputView)
+        textInputView.setFrame(view.bounds)
+
         textInputView.input = this
         textInputView.inputTraits = getUITextInputTraits(imeOptions)
     }
@@ -148,10 +149,11 @@ internal open class ComposeTextInputConnection(
     private var showMenuOrUpdatePosition = {}
 
     override val status: TextToolbarStatus
-        get() = if (textInputView.isTextMenuShown())
+        get() = if (textInputView.isTextMenuShown()) {
             TextToolbarStatus.Shown
-        else
+        } else {
             TextToolbarStatus.Hidden
+        }
 
     override fun showMenu(
         rect: Rect,

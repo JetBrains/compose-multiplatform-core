@@ -70,17 +70,18 @@ internal class NativeTextInputConnection(
     override val textInputView = NativeTextInputView(
         coroutineScope = coroutineScope
     ).also {
-        view.addSubview(scrollView)
-        scrollView.textView = it
-
         it.onKeyboardPresses = onKeyboardPresses
         it.clipsToBounds = false
     }
 
     override fun attachInputToView(imeOptions: ImeOptions) {
+        view.addSubview(scrollView)
+        scrollView.textView = textInputView
+        // The view frame will be set later via updateTextViewPosition;
+
         textInputView.input = this
         textInputView.inputTraits = getUITextInputTraits(imeOptions)
-        // The view frame will be set later via updateTextViewPosition;
+        
         textInputView.resignFirstResponder()
         textInputView.becomeFirstResponder()
         setupTintColor()
