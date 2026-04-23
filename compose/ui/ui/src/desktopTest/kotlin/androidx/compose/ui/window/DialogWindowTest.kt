@@ -838,6 +838,7 @@ class DialogWindowTest {
                 localWindow = LocalAwtWindow.current
             }
         }
+        awaitIdle()
         assertNotNull(localWindow)
     }
 }

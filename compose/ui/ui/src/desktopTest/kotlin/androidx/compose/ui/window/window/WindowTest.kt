@@ -891,6 +891,7 @@ class WindowTest {
                 localWindow = LocalAwtWindow.current
             }
         }
+        awaitIdle()
         assertNotNull(localWindow)
     }
 }
