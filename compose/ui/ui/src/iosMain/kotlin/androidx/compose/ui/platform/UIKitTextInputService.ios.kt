@@ -153,7 +153,7 @@ internal class UIKitTextInputService(
                 // there is no active text input session. iOS requires a UIView that can become first
                 // responder in order to host the context menu, so we create a dedicated connection
                 // backed by a hidden view for this purpose.
-                // Note: open() is intentionally not called here — it establishes a text editing
+                // Note: start() is intentionally not called here — it establishes a text editing
                 // session (requiring TextFieldValue, ImeOptions, etc.) which is not applicable for
                 // SelectionContainer.
                 currentInputConnection = SelectionContainerConnection(
@@ -170,7 +170,7 @@ internal class UIKitTextInputService(
 
             if (currentInputConnection is SelectionContainerConnection) {
                 // stop() removes the view from the hierarchy and resigns first responder,
-                // without requiring a prior open() call.
+                // without requiring a prior start() call.
                 currentInputConnection?.stop()
                 currentInputConnection = null
             }
