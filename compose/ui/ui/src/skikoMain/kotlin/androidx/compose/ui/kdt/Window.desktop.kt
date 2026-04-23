@@ -48,6 +48,11 @@ interface WindowScope {
     val window: Window
 }
 
+enum class WindowCloseRequestReason {
+    UserRequest,
+    ApplicationQuit,
+}
+
 interface Window {
     val id: LightweightWindowId
 
@@ -160,7 +165,7 @@ interface Window {
     val nativeWindow: Any
 
     @MainThread
-    fun requestClose() {
+    fun requestClose(reason: WindowCloseRequestReason = WindowCloseRequestReason.UserRequest) {
         dispose()
     }
 
@@ -241,7 +246,7 @@ interface IconDecoratedWindow : Window {
 @OptIn(InternalComposeUiApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun Window(
-    onCloseRequested: () -> Unit,
+    onCloseRequested: (WindowCloseRequestReason) -> Unit,
     configure: Window.() -> Unit = {},
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
@@ -255,7 +260,7 @@ fun Window(
         object : RememberObserver {
             val window = application.createWindow(
                 scene,
-                { currentOnCloseRequest() },
+                { reason -> currentOnCloseRequest(reason) },
             )
 
             override fun onRemembered() {}
