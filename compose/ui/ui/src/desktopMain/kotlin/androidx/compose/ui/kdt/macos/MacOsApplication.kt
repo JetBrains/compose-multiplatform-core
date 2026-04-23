@@ -34,6 +34,7 @@ import androidx.compose.ui.kdt.IconDecoratedApplication
 import androidx.compose.ui.kdt.LightweightWindowId
 import androidx.compose.ui.kdt.Scene
 import androidx.compose.ui.kdt.Window
+import androidx.compose.ui.kdt.WindowCloseRequestReason
 import androidx.compose.ui.kdt.deactivateApplication
 import androidx.compose.ui.kdt.logging.logger
 import androidx.compose.ui.kdt.removeApplication
@@ -77,6 +78,9 @@ object MacOsApplication : Application,
     private var configuredLibraryFolderPath: Path? = null
     private var shutdown = false
     private var initialized = false
+    private var structuredQuitInProgress = false
+    internal var terminationInProgress = false
+        private set
 
     private var openUrls: (List<String>) -> Unit = {}
     private var uriHandler: UriHandler = MacOsUriHandler()
@@ -153,6 +157,9 @@ object MacOsApplication : Application,
     internal val reusableNativeWindowResources =
         mutableMapOf<LightweightWindowId, Pair<org.jetbrains.desktop.macos.Window, MetalViewContext>>()
 
+    private fun hasEffectiveWindows(): Boolean =
+        windows.isNotEmpty() || reusableNativeWindowResources.isNotEmpty()
+
 
     // todo[unterhofer] Back with the native keyWindow and the corresponding event
     override val focusedWindow: Window? get() = windows.values.firstOrNull { it.isFocused }
@@ -177,12 +184,34 @@ object MacOsApplication : Application,
                 }
                 nativeApplication.setQuitHandler {
                     // currently, we must evaluate ALL handlers because SafeQuitInterceptor may quit too early otherwise
-                    quitHandlers.values.fold(true) { accumulator, shouldTerminate -> shouldTerminate() and accumulator } &&
-                        this@MacOsApplication.customQuit?.invoke()
-                        ?: run {
-                            runBlocking {
-                                stopAndJoin()
-                            }
+                    val shouldTerminate = quitHandlers.values.fold(true) { accumulator, quitHandler ->
+                        quitHandler() and accumulator
+                    }
+                    if (!shouldTerminate) return@setQuitHandler false
+
+                    if (structuredQuitInProgress) return@setQuitHandler false
+
+                    val windowsToClose = windows.values.toList()
+                    if (windowsToClose.isNotEmpty()) {
+                        structuredQuitInProgress = true
+                        logger.info { "Quit approved; requesting structured close for ${windowsToClose.size} window(s)" }
+                        windowsToClose.forEach { it.requestClose(WindowCloseRequestReason.ApplicationQuit) }
+                        return@setQuitHandler false
+                    }
+
+                    if (reusableNativeWindowResources.isNotEmpty()) {
+                        structuredQuitInProgress = true
+                        logger.info {
+                            "Quit approved; waiting for ${reusableNativeWindowResources.size} reusable window resource(s) to drain"
+                        }
+                        return@setQuitHandler false
+                    }
+
+                    terminationInProgress = true
+                    this@MacOsApplication.customQuit?.invoke() ?: run {
+                        runBlocking {
+                            stopAndJoin()
+                        }
                         true
                     }
                 }
@@ -361,6 +390,8 @@ object MacOsApplication : Application,
         get() = org.jetbrains.desktop.macos.Application
 
     override suspend fun stopAndJoin() {
+        structuredQuitInProgress = false
+        terminationInProgress = true
         try {
             resetState()
         } finally {
@@ -383,7 +414,7 @@ object MacOsApplication : Application,
 
     override fun createWindow(
         scene: Scene<*>,
-        onCloseRequest: () -> Unit,
+        onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window {
         return MacOsWindow(
             this,
@@ -401,7 +432,7 @@ object MacOsApplication : Application,
     override fun reuseWindow(
         id: LightweightWindowId,
         scene: Scene<*>,
-        onCloseRequest: () -> Unit,
+        onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window? {
         return reusableNativeWindowResources[id]?.let { (nativeWindow, viewContext) ->
             logger.debug { "Reusing window $id" }
@@ -415,6 +446,21 @@ object MacOsApplication : Application,
         reusableNativeWindowResources.remove(id)?.let { (nativeWindow, viewContext) ->
             nativeWindow.close()
             desktopGpuContext.destroyMetalViewContext(viewContext)
+        }
+        if (structuredQuitInProgress && !hasEffectiveWindows()) {
+            GrandCentralDispatch.dispatchOnMain(highPriority = false) {
+                finishStructuredQuitIfNeeded()
+            }
+        }
+    }
+
+    internal fun finishStructuredQuitIfNeeded() {
+        if (!structuredQuitInProgress || hasEffectiveWindows()) return
+
+        logger.info { "Structured quit finished closing windows; continuing application shutdown" }
+        terminationInProgress = true
+        this.customQuit?.invoke() ?: runBlocking {
+            stopAndJoin()
         }
     }
 
