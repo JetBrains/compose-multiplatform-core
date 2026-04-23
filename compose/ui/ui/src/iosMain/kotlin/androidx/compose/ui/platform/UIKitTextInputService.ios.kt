@@ -169,7 +169,7 @@ internal class UIKitTextInputService(
             (currentInputConnection as? TextToolbar)?.hide()
 
             if (currentInputConnection is SelectionContainerConnection) {
-                // close() removes the view from the hierarchy and resigns first responder,
+                // stop() removes the view from the hierarchy and resigns first responder,
                 // without requiring a prior open() call.
                 currentInputConnection?.stop()
                 currentInputConnection = null
