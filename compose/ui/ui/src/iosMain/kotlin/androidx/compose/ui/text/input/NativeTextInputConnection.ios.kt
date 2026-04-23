@@ -20,12 +20,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.DpInsets
-import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.NativeTextEditingDelegate
 import androidx.compose.ui.platform.PlatformTextLayoutDirection
 import androidx.compose.ui.platform.TextSelectionRect
 import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
-import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.platform.toUIColor
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextLayoutResult
@@ -70,18 +68,16 @@ internal class NativeTextInputConnection(
     override val textInputView = NativeTextInputView(
         coroutineScope = coroutineScope
     ).also {
-        it.onKeyboardPresses = onKeyboardPresses
         it.clipsToBounds = false
     }
 
-    override fun attachInputToView(imeOptions: ImeOptions) {
+    override fun attachInputToView() {
         view.addSubview(scrollView)
         scrollView.textView = textInputView
         // The view frame will be set later via updateTextViewPosition;
 
         textInputView.input = this
-        textInputView.inputTraits = getUITextInputTraits(imeOptions)
-        
+
         textInputView.resignFirstResponder()
         textInputView.becomeFirstResponder()
         setupTintColor()
@@ -92,11 +88,9 @@ internal class NativeTextInputConnection(
         val outOfBoundsFrame = CGRectMake(-100000.0, 0.0, 1.0, 1.0)
 
         textInputView.input = null
-        textInputView.inputTraits = EmptyInputTraits
 
         textInputView.let { textView ->
             textView.setFrame(outOfBoundsFrame)
-            textView.onKeyboardPresses = NoOpOnKeyboardPresses
             coroutineScope.launch {
                 delay(CLEAR_FOCUS_DELAY)
                 scrollView.textView = null

@@ -23,7 +23,10 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.EmptyInputTraits
+import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextEditingDelegate
+import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -40,7 +43,6 @@ import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
-import platform.UIKit.UIPress
 import platform.UIKit.UIView
 
 internal abstract class TextInputConnection(
@@ -48,12 +50,7 @@ internal abstract class TextInputConnection(
     protected val view: UIView,
     protected val coroutineScope: CoroutineScope,
     protected val focusedViewsList: FocusedViewsList?,
-    /**
-     * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
-     * Erasure happens due to K/N not supporting Obj-C lightweight generics.
-     */
-    @Suppress("UNUSED")
-    protected var onKeyboardPresses: (Set<*>) -> Unit,
+    override var onKeyboardPresses: (Set<*>) -> Unit,
     private var focusManager: () -> ComposeSceneFocusManager?,
 ): TextEditingDelegate {
     fun start(
@@ -67,18 +64,20 @@ internal abstract class TextInputConnection(
         }
         currentOnEditCommand = onEditCommand
         currentImeOptions = imeOptions
+        inputTraits = getUITextInputTraits(imeOptions)
         currentImeActionHandler = onImeActionPerformed
-        attachInputToView(imeOptions)
+        attachInputToView()
         showKeyboard()
     }
 
-    protected abstract fun attachInputToView(imeOptions: ImeOptions)
+    protected abstract fun attachInputToView()
 
     open fun stop() {
         flushEditCommandsIfNeeded(force = true)
         sessionEditProcessor = null
         currentOnEditCommand = null
         currentImeOptions = null
+        inputTraits = EmptyInputTraits
         currentImeActionHandler = null
         textLayoutResult = null
 
@@ -154,6 +153,7 @@ internal abstract class TextInputConnection(
     protected abstract val textInputView: UIView
     protected var currentOnEditCommand: ((List<EditCommand>) -> Unit)? = null
     protected var currentImeOptions: ImeOptions? = null
+    override var inputTraits: SkikoUITextInputTraits = EmptyInputTraits
     protected var currentImeActionHandler: ((ImeAction) -> Unit)? = null
 
     protected var textFieldFrameInRoot: Rect? = null

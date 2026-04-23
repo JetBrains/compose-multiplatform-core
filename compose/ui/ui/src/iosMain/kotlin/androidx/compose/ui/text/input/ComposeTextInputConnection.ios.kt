@@ -18,11 +18,9 @@ package androidx.compose.ui.text.input
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.platform.ViewConfiguration
-import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
@@ -68,15 +66,13 @@ internal open class ComposeTextInputConnection(
             it.setAutoresizingMask(
                 UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight
             )
-            it.onKeyboardPresses = onKeyboardPresses
         }
 
-    override fun attachInputToView(imeOptions: ImeOptions) {
+    override fun attachInputToView() {
         view.addSubview(textInputView)
         textInputView.setFrame(view.bounds)
 
         textInputView.input = this
-        textInputView.inputTraits = getUITextInputTraits(imeOptions)
     }
 
     override fun detachView() {
@@ -84,12 +80,10 @@ internal open class ComposeTextInputConnection(
         val outOfBoundsFrame = CGRectMake(-100000.0, 0.0, 1.0, 1.0)
 
         textInputView.input = null
-        textInputView.inputTraits = EmptyInputTraits
 
         showMenuOrUpdatePosition = {}
         textInputView.let { view ->
             view.setFrame(outOfBoundsFrame)
-            view.onKeyboardPresses = NoOpOnKeyboardPresses
             coroutineScope.launch {
                 delay(CLEAR_FOCUS_DELAY)
                 view.removeFromSuperview()

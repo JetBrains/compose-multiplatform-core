@@ -45,6 +45,13 @@ import platform.UIKit.UITextStorageDirectionForward
 import platform.UIKit.UITextWritingDirection
 
 internal interface TextEditingDelegate {
+    var inputTraits: SkikoUITextInputTraits
+    
+    /**
+     * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
+     * Erasure happens due to K/N not supporting Obj-C lightweight generics.
+     */
+    var onKeyboardPresses: (Set<*>) -> Unit
 
     fun onResignFocus()
 
@@ -159,14 +166,12 @@ internal interface TextEditingDelegate {
      * Returned value must be in range between 0 and length of the text (inclusive).
      */
     fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int?
-
 }
 
 /**
  * Extension of [TextEditingDelegate] for the Native iOS Text Input path.
  */
 internal interface NativeTextEditingDelegate : TextEditingDelegate {
-
     /**
      * Returns the caret rectangle for a given text position.
      * https://developer.apple.com/documentation/uikit/uitextinput/caretrect(for:)

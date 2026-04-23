@@ -78,7 +78,6 @@ import platform.UIKit.UIKeyboardAppearance
 import platform.UIKit.UIKeyboardType
 import platform.UIKit.UIMenu
 import platform.UIKit.UIMenuElement
-import platform.UIKit.UIPress
 import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIReturnKeyType
 import platform.UIKit.UIScrollView
@@ -112,15 +111,10 @@ internal class NativeTextInputView(
 
     var input: NativeTextEditingDelegate? = null
 
-    var inputTraits: SkikoUITextInputTraits = EmptyInputTraits
+    private val inputTraits: SkikoUITextInputTraits
+        get() = input?.inputTraits ?: EmptyInputTraits
 
     private var _inputDelegate: UITextInputDelegateProtocol? = null
-
-    /**
-     * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
-     * Erasure happens due to K/N not supporting Obj-C lightweight generics.
-     */
-    var onKeyboardPresses: (Set<*>) -> Unit = {}
 
     private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
         addGestureRecognizer(it)
@@ -184,12 +178,12 @@ internal class NativeTextInputView(
     }
 
     override fun pressesBegan(presses: Set<*>, withEvent: UIPressesEvent?) {
-        onKeyboardPresses(presses)
+        input?.onKeyboardPresses(presses)
         super.pressesBegan(presses, withEvent)
     }
 
     override fun pressesEnded(presses: Set<*>, withEvent: UIPressesEvent?) {
-        onKeyboardPresses(presses)
+        input?.onKeyboardPresses(presses)
         super.pressesEnded(presses, withEvent)
     }
 
