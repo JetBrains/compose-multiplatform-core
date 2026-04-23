@@ -30,7 +30,7 @@ import androidx.compose.ui.platform.toUITextRange
 import androidx.compose.ui.platform.withDeferredEditBatch
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
-import androidx.compose.ui.uikit.utils.CMPEditMenuView
+import androidx.compose.ui.uikit.utils.CMPTextInputView
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -107,7 +107,7 @@ import platform.darwin.NSInteger
 
 internal class NativeTextInputView(
     private val coroutineScope: CoroutineScope,
-): CMPEditMenuView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
+): CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
 
     var input: NativeTextEditingDelegate? = null
 
@@ -119,9 +119,6 @@ internal class NativeTextInputView(
     private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
         addGestureRecognizer(it)
     }
-
-    override fun inputView(): UIView? = inputTraits.inputView()
-    override fun inputAccessoryView(): UIView? = inputTraits.inputAccessoryView()
 
     override fun canBecomeFirstResponder() = true
 
@@ -597,7 +594,6 @@ internal class NativeTextInputView(
         _inputDelegate?.selectionDidChange(this)
     }
 
-    override fun shouldUseNonComposeMenuActions() = true
     private var onCopy: (() -> Unit)? = null
     private var onPaste: (() -> Unit)? = null
     private var onCut: (() -> Unit)? = null

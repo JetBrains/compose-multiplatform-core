@@ -359,15 +359,10 @@ internal class ComposeTextInputView(
         withinRange: UITextRange
     ): NSInteger = 0L
 
-    override fun positionWithinRangeAtCharacterOffset(
-        range: UITextRange,
-        atCharacterOffset: NSInteger
-    ): UITextPosition = TextInputPosition(0)
-
-    override fun positionWithinRangeFarthestInDirection(
+    override fun positionWithinRange(
         range: UITextRange,
         farthestInDirection: UITextLayoutDirection
-    ): UITextPosition = TextInputPosition(0)
+    ): UITextPosition? = TextInputPosition(0)
 
     override fun characterRangeByExtendingPosition(
         position: UITextPosition,
@@ -476,7 +471,6 @@ internal class ComposeTextInputView(
     fun hideTextMenu() = this.hideEditMenu()
 
     fun isTextMenuShown() = isEditMenuShown
-    override fun shouldUseNonComposeMenuActions() = false
 
     private val _tokenizer = TextInputStringTokenizer(textInput = this) {
         input?.let { it.textInRange(TextRange(0, it.endOfDocument())) }
