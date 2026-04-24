@@ -432,39 +432,39 @@ private class ScrollGestureRecognizer(
     }
 
     private var cursorPosition: DpOffset? = null
-    private var previousTransition: DpOffset? = null
+    private var previousPosition: DpOffset? = null
     private var event: UIEvent? = null
 
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun onPan(gestureRecognizer: UIPanGestureRecognizer) {
-        val transition = gestureRecognizer.translationInView(view).asDpOffset()
+        val position = gestureRecognizer.locationInView(view).asDpOffset()
 
         when (gestureRecognizer.state) {
             UIGestureRecognizerStateBegan -> {
-                onScrollEvent(transition, DpOffset.Zero, event, TouchesEventKind.BEGAN)
-                cursorPosition = transition
-                previousTransition = transition
+                onScrollEvent(position, DpOffset.Zero, event, TouchesEventKind.BEGAN)
+                cursorPosition = position
+                previousPosition = position
             }
 
             UIGestureRecognizerStateChanged -> {
-                val delta = (previousTransition ?: transition) - transition
-                onScrollEvent(cursorPosition ?: transition, delta, event, TouchesEventKind.MOVED)
-                previousTransition = transition
+                val delta = (previousPosition ?: position) - position
+                onScrollEvent(cursorPosition ?: position, delta, event, TouchesEventKind.MOVED)
+                previousPosition = position
             }
 
             UIGestureRecognizerStateEnded -> {
-                val delta = (previousTransition ?: transition) - transition
-                onScrollEvent(cursorPosition ?: transition, delta, event, TouchesEventKind.ENDED)
+                val delta = (previousPosition ?: position) - position
+                onScrollEvent(cursorPosition ?: position, delta, event, TouchesEventKind.ENDED)
                 cursorPosition = null
-                previousTransition = null
+                previousPosition = null
                 event = null
             }
 
             UIGestureRecognizerStateCancelled, UIGestureRecognizerStateFailed -> {
                 onCancelScroll()
                 cursorPosition = null
-                previousTransition = null
+                previousPosition = null
                 event = null
             }
 
