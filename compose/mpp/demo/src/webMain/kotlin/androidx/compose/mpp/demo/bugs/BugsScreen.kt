@@ -28,6 +28,9 @@ val BugsScreen = Screen.Selection("Web Bug Reproducers", screens = listOf(
     },
     Screen.Example("MagicMouse") {
         MagicMouse()
+    },
+    Screen.Example("A11yMissingAttributes"){
+        A11yMissingAriaAttributesExample()
     }
 ))
 
