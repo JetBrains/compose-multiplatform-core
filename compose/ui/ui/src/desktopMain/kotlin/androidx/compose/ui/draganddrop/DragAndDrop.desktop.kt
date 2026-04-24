@@ -202,5 +202,5 @@ interface DragData {
     }
 }
 
-internal actual val DragAndDropEvent.positionInRoot: Offset
+/* internal */ actual val DragAndDropEvent.positionInRoot: Offset
     get() = positionInRootImpl

@@ -33,7 +33,7 @@ public expect class DragAndDropEvent
  * Returns the position of this [DragAndDropEvent] relative to the root Compose View in the layout
  * hierarchy.
  */
-internal expect val DragAndDropEvent.positionInRoot: Offset
+/* internal */ expect val DragAndDropEvent.positionInRoot: Offset
 
 /** A scope that allows starting a drag and drop session. */
 public interface DragAndDropStartTransferScope {

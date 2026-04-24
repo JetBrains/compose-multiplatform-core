@@ -59,5 +59,5 @@ public fun DragAndDropEvent.mimeTypes(): Set<String> {
     }
 }
 
-internal actual val DragAndDropEvent.positionInRoot: Offset
+/* internal */ actual val DragAndDropEvent.positionInRoot: Offset
     get() = Offset(x = dragEvent.x, y = dragEvent.y)
