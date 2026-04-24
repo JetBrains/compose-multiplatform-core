@@ -340,6 +340,28 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
 
     [[UIApplication sharedApplication] sendEvent:event];
 
+    // UIKit's in-process scroll dispatch keeps every UIPanGestureRecognizer stuck
+    // at .began after each sendEvent — the translation accumulates correctly but
+    // the recognizer's `state` never advances past .began until the session ends.
+    // Force the state to match the scroll phase so target-actions observe the
+    // proper Began → Changed …→ Ended lifecycle.
+    UIGestureRecognizerState targetState;
+    switch (phase) {
+        case CMPScrollPhaseBegan:   targetState = UIGestureRecognizerStateBegan;   break;
+        case CMPScrollPhaseChanged: targetState = UIGestureRecognizerStateChanged; break;
+        case CMPScrollPhaseEnded:   targetState = UIGestureRecognizerStateEnded;   break;
+        default:                    targetState = UIGestureRecognizerStatePossible; break;
+    }
+    if (targetState != UIGestureRecognizerStatePossible) {
+        SEL setStateSel = NSSelectorFromString(@"setState:");
+        for (UIGestureRecognizer *r in recognizers) {
+            if (![r isKindOfClass:[UIPanGestureRecognizer class]]) { continue; }
+            if (r.state != targetState) {
+                ((void(*)(id, SEL, NSInteger))objc_msgSend)(r, setStateSel, targetState);
+            }
+        }
+    }
+
     CMPForceRecognizerActions(recognizers, [UIPanGestureRecognizer class]);
 }
 

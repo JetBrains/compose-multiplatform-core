@@ -114,8 +114,8 @@ internal class TrackpadPanTest {
 
         val expectedTotalPxAbs = panDx.value * density.density
         assertTrue(
-            totalPan.value.getDistance() > expectedTotalPxAbs / 2,
-            "Accumulated pan offset (${totalPan.value}) should be in the ballpark of " +
+            totalPan.getDistance() > expectedTotalPxAbs / 2,
+            "Accumulated pan offset ($totalPan) should be in the ballpark of " +
                 "the simulated delta (~${expectedTotalPxAbs}px along X)."
         )
     }

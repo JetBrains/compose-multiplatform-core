@@ -72,22 +72,37 @@ final class CMPPanTest: XCTestCase {
             XCTFail("UIPanGestureRecognizer received no state transitions from the simulated scroll stream.")
         }
 
-        // Expected per-fire accumulation: the recognizer only transitions to Began
-        // on the second dispatch (the first `scrollByDelta`), and UIKit applies a
-        // small hysteresis (~10pt on each axis) to the step that triggers the
-        // Began state. After that the translation grows by exactly perStepDelta
-        // on each subsequent dispatch, so the total is
-        //   stepCount × perStepDelta − hysteresis
-        // e.g. 5 × (20, 30) − (10, 10) = (90, 140). ±15 accommodates minor UIKit
-        // differences without masking a real regression.
+        // The recognizer must observe the full scroll lifecycle — we want to see a
+        // Began state at least once, multiple Changed states (one per scroll step
+        // past the one that triggers Began), and a terminal Ended state.
+        XCTAssertEqual(viewController.states.first, .began,
+                       "Expected first recorded state to be .began, got \(describe(viewController.states.first))")
+        XCTAssertEqual(viewController.states.last, .ended,
+                       "Expected last recorded state to be .ended, got \(describe(viewController.states.last))")
+
+        let changedCount = viewController.states.filter { $0 == .changed }.count
+        XCTAssertEqual(changedCount, stepCount,
+                       "Expected exactly \(stepCount) .changed transitions, got \(changedCount); states=\(viewController.states.map(describe))")
+
+        // The healthy sequence is Began → Changed* → Ended with no interstitial
+        // failed/cancelled/possible transitions.
+        let allowed: Set<UIGestureRecognizer.State> = [.began, .changed, .ended]
+        for state in viewController.states {
+            XCTAssertTrue(allowed.contains(state),
+                          "Unexpected state \(describe(state)) in sequence \(viewController.states.map(describe))")
+        }
+
+        // Translation accumulates by perStepDelta on each `scrollByDelta`
+        // dispatch — the initial `scrollEventAt` delta opens the session but is
+        // not applied, so total = stepCount × perStepDelta.
         let last = viewController.translations.last ?? .zero
         let expected = CGPoint(
             x: CGFloat(stepCount) * perStepDelta.x,
             y: CGFloat(stepCount) * perStepDelta.y
         )
-        XCTAssertEqual(last.x, expected.x, accuracy: 15,
+        XCTAssertEqual(last.x, expected.x, accuracy: 0.5,
                        "Unexpected accumulated x translation; got \(last.x), translations=\(viewController.translations)")
-        XCTAssertEqual(last.y, expected.y, accuracy: 15,
+        XCTAssertEqual(last.y, expected.y, accuracy: 0.5,
                        "Unexpected accumulated y translation; got \(last.y), translations=\(viewController.translations)")
     }
 
@@ -124,6 +139,19 @@ final class CMPPanTest: XCTestCase {
             scrollView.contentOffset.y, 0,
             "UIScrollView did not scroll down in response to the synthetic trackpad gesture; contentOffset=\(scrollView.contentOffset)."
         )
+    }
+}
+
+private func describe(_ state: UIGestureRecognizer.State?) -> String {
+    guard let state = state else { return "nil" }
+    switch state {
+    case .possible:  return "possible"
+    case .began:     return "began"
+    case .changed:   return "changed"
+    case .ended:     return "ended"
+    case .cancelled: return "cancelled"
+    case .failed:    return "failed"
+    @unknown default: return "unknown(\(state.rawValue))"
     }
 }
 
