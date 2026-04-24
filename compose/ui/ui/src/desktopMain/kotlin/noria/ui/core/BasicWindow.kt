@@ -18,9 +18,11 @@ package noria.ui.core
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.kdt.LightweightWindowId
+import androidx.compose.ui.kdt.Window
 
-data class WindowData(val windowId: Long)
+data class WindowData(val windowId: LightweightWindowId)
 
-val LocalWindow: ProvidableCompositionLocal<ComposeWindow> = staticCompositionLocalOf {
+val LocalWindow: ProvidableCompositionLocal<Window> = staticCompositionLocalOf {
     error("LocalWindow is not provided")
 }
