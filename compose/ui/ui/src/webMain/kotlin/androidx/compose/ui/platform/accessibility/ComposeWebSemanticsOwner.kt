@@ -135,6 +135,8 @@ internal class ComposeWebSemanticsOwner(
     }
 
     private val bfsDeque = ArrayDeque<SemanticsNode>()
+
+    //Necessary due to the Breadth-First traversal of the semantics tree, to keep track of the correct parent in the DOM tree
     private val domParentQueue = ArrayDeque<HTMLElement>()
 
     /**
@@ -156,7 +158,7 @@ internal class ComposeWebSemanticsOwner(
      */
     private fun syncSemanticsWithWebA11Y() {
         fun SemanticsNode.isValid() =
-            layoutNode.let { it.isPlaced && it.isAttached } and !unmergedConfig.let {
+            layoutNode.let { it.isPlaced && it.isAttached } and !config.let {
                 @Suppress("DEPRECATION")
                 SemanticsProperties.InvisibleToUser in it ||
                     SemanticsProperties.HideFromAccessibility in it
