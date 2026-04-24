@@ -58,7 +58,7 @@ constructor(
  * Returns the position of this [DragAndDropEvent] relative to the root Compose View in the
  * layout hierarchy.
  */
-internal actual val DragAndDropEvent.positionInRoot: Offset
+/* internal */ actual val DragAndDropEvent.positionInRoot: Offset
     get() =
         session
             .locationInView(view)
