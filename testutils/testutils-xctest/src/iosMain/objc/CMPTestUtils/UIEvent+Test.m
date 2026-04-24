@@ -515,13 +515,3 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
 }
 
 @end
-
-#pragma mark - UIEvent (CMPSyntheticLocation) — Public API
-
-@implementation UIEvent (CMPSyntheticLocation)
-
-- (CGPoint)cmp_locationInView:(UIView *)view {
-    return [self cmp_syntheticLocationInView:view];
-}
-
-@end

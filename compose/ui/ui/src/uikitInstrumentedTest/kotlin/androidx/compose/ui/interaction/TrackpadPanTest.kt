@@ -23,16 +23,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.endScroll
 import androidx.compose.ui.test.utils.scrollBy
 import androidx.compose.ui.test.utils.scrollEventAt
+import androidx.compose.ui.touch
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toDpOffset
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
@@ -41,9 +47,9 @@ internal class TrackpadPanTest {
 
     @Test
     fun testPointerInputReceivesTrackpadPan() = runUIKitInstrumentedTest {
-        val panStartCount = mutableStateOf(0)
-        val panMoveCount = mutableStateOf(0)
-        val panEndCount = mutableStateOf(0)
+        var panStartCount = 0
+        var panMoveCount = 0
+        var panEndCount = 0
         var totalPan = Offset.Zero
 
         setContent {
@@ -54,21 +60,18 @@ internal class TrackpadPanTest {
                     .pointerInput(Unit) {
                         awaitPointerEventScope {
                             while (true) {
-                                val event = awaitPointerEvent()
-                                println(
-                                    ">>> pointerInput got ${event.type}" +
-                                        " changes=${event.changes.size}" +
-                                        " | ${event.changes.map { it.panOffset }}"
-                                )
+                                val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+
                                 when (event.type) {
-                                    PointerEventType.PanStart -> panStartCount.value++
+                                    PointerEventType.PanStart -> panStartCount++
                                     PointerEventType.PanMove -> {
-                                        panMoveCount.value++
+                                        panMoveCount++
                                         totalPan = event.changes.fold(totalPan) { acc, c ->
                                             acc + c.panOffset
                                         }
                                     }
-                                    PointerEventType.PanEnd -> panEndCount.value++
+
+                                    PointerEventType.PanEnd -> panEndCount++
                                 }
                             }
                         }
@@ -76,47 +79,18 @@ internal class TrackpadPanTest {
             )
         }
 
-        val panDx = 120.dp
-        val panDy = 0.dp
-        val steps = 8
-        val stepInterval = 16.milliseconds
-        val perStepDelta = DpOffset(panDx / steps.toFloat(), panDy / steps.toFloat())
-        val center = DpOffset(screenSize.width / 2, screenSize.height / 2)
-        val window = appDelegate.window()
-        assertNotNull(window, "Host window must exist")
+        trackpadPan(screenSize.center, 120.dp, dy = 75.dp)
 
-        val scrollEvent = window.scrollEventAt(location = center, delta = perStepDelta)
-
-        // 2. Emit UIScrollPhaseChanged events for each subsequent step.
-        repeat(steps - 1) {
-            UIKitInstrumentedTest.delay(stepInterval.inWholeMilliseconds)
-            scrollEvent.scrollBy(delta = perStepDelta, window = window)
-        }
-
-        // 3. Close the session — UIScrollPhaseEnded.
-        UIKitInstrumentedTest.delay(stepInterval.inWholeMilliseconds)
-        scrollEvent.endScroll(window = window)
-
-        waitForIdle()
-
+        assertEquals(1, panStartCount)
         assertTrue(
-            panStartCount.value >= 1,
-            "Expected at least one PanStart, received ${panStartCount.value}"
+            panMoveCount >= 1,
+            "Expected at least one PanMove, received ${panMoveCount}"
         )
-        assertTrue(
-            panMoveCount.value >= 1,
-            "Expected at least one PanMove, received ${panMoveCount.value}"
-        )
-        assertTrue(
-            panEndCount.value >= 1,
-            "Expected at least one PanEnd, received ${panEndCount.value}"
-        )
+        assertEquals(1, panEndCount)
 
-        val expectedTotalPxAbs = panDx.value * density.density
-        assertTrue(
-            totalPan.getDistance() > expectedTotalPxAbs / 2,
-            "Accumulated pan offset ($totalPan) should be in the ballpark of " +
-                "the simulated delta (~${expectedTotalPxAbs}px along X)."
-        )
+        val totalPanDp = totalPan.toDpOffset(density)
+        println(">>> totalPan=$totalPanDp")
+        assertEquals(120.dp.value, totalPanDp.x.value)
+        assertEquals(75.dp.value, totalPanDp.y.value)
     }
 }

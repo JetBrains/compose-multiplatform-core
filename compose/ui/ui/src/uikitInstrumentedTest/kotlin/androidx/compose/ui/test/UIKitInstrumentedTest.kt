@@ -482,40 +482,25 @@ internal class UIKitInstrumentedTest(
     }
 
     /**
-     * Simulates a trackpad continuous pan gesture as a stateful scroll session:
-     *   1. [UIWindow.scrollEventAt] opens the session (`UIScrollPhaseBegan`).
-     *   2. [UIEvent.scrollBy] emits [steps] `UIScrollPhaseChanged` events carrying
-     *      the linear per-step delta.
-     *   3. [UIEvent.endScroll] closes the session (`UIScrollPhaseEnded`).
-     *
+     * Simulates a trackpad continuous pan gesture as a stateful scroll session anchored
+     * at [position].
      * All scroll synthesis goes through the `UIEvent (CMPScroll)` category in
-     * `UIEvent+Test.m`, which builds a scroll-rooted HID tree with a pointer
-     * child (matching the on-device trace) and dispatches through
-     * `-[UIApplication sendEvent:]` and `-[UIApplication _handleHIDEvent:]`.
-     *
-     * Known limitation (iOS 18, April 2026): synthetic `UIScrollEvent` dispatched
-     * from the same process does NOT trigger
-     * `UIPanGestureRecognizer.allowedScrollTypesMask`. See [TrackpadPanTest] for
-     * details. The scaffolding is kept for future experiments.
-     *
-     * @return `true` once the sequence has been dispatched. `false` only if the
-     *         runtime lacks the private `UIScrollEvent` class.
+     * `UIEvent+Test.m`, which dispatches via `-[UIApplication sendEvent:]` and
+     * then forces each [UIPanGestureRecognizer] into the matching state so
+     * target-actions observe the proper `Began → Changed …→ Ended` lifecycle.
      */
     fun trackpadPan(
         position: DpOffset,
-        totalDelta: DpOffset,
-        steps: Int = 10,
-        stepInterval: Duration = 16.milliseconds,
-        window: UIWindow? = null,
-    ): Boolean {
-        require(steps >= 1) { "steps must be >= 1" }
-        val targetWindow = window ?: appDelegate.window()!!
+        dx: Dp = 0.dp,
+        dy: Dp = 0.dp,
+        duration: Duration = 0.5.seconds,
+    ) {
+        val stepInterval = 16.milliseconds
+        val steps = maxOf(1, (duration / stepInterval).toInt())
+        val targetWindow = appDelegate.window()!!
+        val scrollEvent = targetWindow.scrollEventAt(location = position)
 
-        val scrollEvent = targetWindow.scrollEventAt(location = position) ?: return false
-
-        val dxPerStep = totalDelta.x / steps.toFloat()
-        val dyPerStep = totalDelta.y / steps.toFloat()
-        val perStepDelta = DpOffset(dxPerStep, dyPerStep)
+        val perStepDelta = DpOffset(dx / steps.toFloat(), dy / steps.toFloat())
         repeat(steps) {
             delay(stepInterval.inWholeMilliseconds)
             scrollEvent.scrollBy(perStepDelta, targetWindow)
@@ -523,7 +508,6 @@ internal class UIKitInstrumentedTest(
 
         delay(stepInterval.inWholeMilliseconds)
         scrollEvent.endScroll(targetWindow)
-        return true
     }
 }
 

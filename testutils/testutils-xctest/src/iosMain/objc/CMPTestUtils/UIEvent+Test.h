@@ -77,16 +77,4 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-
-/** Read the anchor point from a synthetic scroll/pinch/hover event. */
-@interface UIEvent (CMPSyntheticLocation)
-
-/**
- * Returns the synthetic event's anchor point converted to [view]'s coordinate
- * space. If [view] is `nil`, returns the raw window-space point.
- */
-- (CGPoint)cmp_locationInView:(nullable UIView *)view;
-
-@end
-
 NS_ASSUME_NONNULL_END
