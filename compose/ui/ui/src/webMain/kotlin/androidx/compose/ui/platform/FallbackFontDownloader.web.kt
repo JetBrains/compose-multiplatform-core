@@ -41,7 +41,7 @@ private val LocalFallbackFontDownloader = staticCompositionLocalOf<FallbackFontD
     NotoFontDownloader()
 }
 
-private class WebFallbackFontDownloader(
+internal class WebFallbackFontDownloader(
     private val downloader: FallbackFontDownloader,
     scope: CoroutineScope,
     private val onFontsLoaded: suspend (List<FontFamily>) -> Unit
