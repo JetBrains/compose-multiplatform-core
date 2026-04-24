@@ -36,7 +36,6 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import kotlin.js.js
 import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -280,6 +279,7 @@ internal class ComposeWebSemanticsOwner(
             val text = config[SemanticsProperties.Text]
             val oldText = oldConfig?.getOrNull(SemanticsProperties.Text)
             if (needsUpdate(isNewlyCreated, text, oldText)) {
+                //Better than innerText since it does not cause layout reflows
                 htmlNode.textContent = text.fastJoinToString("\n") { it.text }
             }
         } else {
@@ -288,6 +288,7 @@ internal class ComposeWebSemanticsOwner(
                     oldConfig?.contains(SemanticsProperties.Text) == true
                 )
             ) {
+                //Better than innerText since it does not cause layout reflows
                 htmlNode.textContent = ""
             }
         }
@@ -335,6 +336,7 @@ internal class ComposeWebSemanticsOwner(
                 htmlNode.id = testTag
             }
         } else {
+            //Rather than removal, it is replacing it for the default id which is formatted as "a11y_${semanticsNode.id}"
             if (needsRemoval(
                     isNewlyCreated,
                     oldConfig?.contains(SemanticsProperties.TestTag) == true
@@ -432,7 +434,7 @@ internal class ComposeWebSemanticsOwner(
         }
 
         if (SemanticsProperties.Error in config) {
-            //TODO: aria-errormessage adding HtmlElement with error id and the pointing to it
+            //TODO: Implement aria-errormessage, which accepts an HTMLElement id that refers to the error message.
             if (isNewlyCreated) {
                 setErrorState(htmlNode)
             }
@@ -1026,7 +1028,7 @@ private fun setProgressBarRangeInfo(
     start: Float,
     endIncl: Float,
     current: Float
-): Unit {
+) {
     // language=javascript
     js(
         """
@@ -1041,7 +1043,7 @@ private fun setValueTextStateDescription(element: HTMLElement, description: Stri
     // language=javascript
     js("element.setAttribute('aria-valuetext', description)")
 
-private fun removeRangeInfoAttributes(element: HTMLElement): Unit {
+private fun removeRangeInfoAttributes(element: HTMLElement) {
     // language=javascript
     js(
         """
@@ -1129,7 +1131,7 @@ private fun setElementId(element: HTMLElement, id: Int): Unit =
     // language=javascript
     js("element.id = 'a11y_' + id")
 
-private fun setCollectionInfo(element: HTMLElement, rowCount: Int, columnCount: Int): Unit {
+private fun setCollectionInfo(element: HTMLElement, rowCount: Int, columnCount: Int) {
     // language=javascript
     js(
         """
