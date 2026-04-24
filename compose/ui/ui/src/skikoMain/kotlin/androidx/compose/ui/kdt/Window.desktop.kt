@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.WindowPlacement
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.io.files.Path
 
@@ -106,10 +107,10 @@ interface Window {
 
     @MainThread
     fun requestMinimized(minimized: Boolean)
-//    val placement: WindowPlacement
+    val placement: WindowPlacement
 
-//    @MainThread
-//    fun requestPlacement(placement: WindowPlacement)
+    @MainThread
+    fun requestPlacement(placement: WindowPlacement)
 
     @MainThread
     fun showOpenSingleDialog(
