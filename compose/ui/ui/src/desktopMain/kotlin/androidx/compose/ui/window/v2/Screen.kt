@@ -33,6 +33,8 @@ import java.awt.Toolkit
  * Additionally, screens can come and go (the user may disconnect one, for example).
  * Therefore, it is highly discouraged to keep long-term references to [Screen] objects, beyond
  * their use in [WindowScreenProviderScope] or [WindowGeometryProviderScope].
+ *
+ * Note: this class may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 class Screen internal constructor(

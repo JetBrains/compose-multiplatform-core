@@ -90,6 +90,8 @@ import kotlinx.coroutines.launch
  * }
  * ```
  *
+ * Note: this function may be moved to `androidx.compose.ui.awt` before stabilization.
+ *
  * @see androidx.compose.ui.window.v2.Window
  */
 @ExperimentalComposeUiApi

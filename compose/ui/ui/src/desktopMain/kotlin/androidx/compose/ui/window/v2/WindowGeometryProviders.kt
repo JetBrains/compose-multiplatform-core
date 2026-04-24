@@ -50,6 +50,8 @@ import java.awt.GraphicsDevice
 
 /**
  * The scope in which [WindowScreenProvider] is evaluated.
+ *
+ * Note: this class may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 class WindowScreenProviderScope internal constructor(
@@ -69,6 +71,8 @@ class WindowScreenProviderScope internal constructor(
 
 /**
  * Provides the screen on which the window will be placed.
+ *
+ * Note: this interface may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 fun interface WindowScreenProvider {
@@ -91,6 +95,8 @@ fun interface WindowScreenProvider {
 
 /**
  * The scope in which window geometry providers (e.g. [WindowBoundsProvider]) are evaluated.
+ *
+ * Note: this class may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 class WindowGeometryProviderScope internal constructor(
@@ -172,6 +178,8 @@ class WindowGeometryProviderScope internal constructor(
 
 /**
  * Provides the bounds of the window.
+ *
+ * Note: this interface may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 interface WindowBoundsProvider {
@@ -210,6 +218,8 @@ interface WindowBoundsProvider {
 
 /**
  * Creates a [WindowBoundsProvider] from the given [bounds] function.
+ *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 fun WindowBoundsProvider(
@@ -220,6 +230,8 @@ fun WindowBoundsProvider(
 
 /**
  * Combines a [WindowSizeProvider] and [WindowPositionProvider] into a [WindowBoundsProvider].
+ *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 fun WindowBoundsProvider(
@@ -235,6 +247,8 @@ fun WindowBoundsProvider(
  * Provides the position of the window.
  *
  * Use this in conjunction with a [WindowSizeProvider] to construct a [WindowBoundsProvider].
+ *
+ * Note: this interface may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 fun interface WindowPositionProvider {
@@ -305,6 +319,8 @@ fun interface WindowPositionProvider {
  * Provides the size of the window.
  *
  * Use this in conjunction with a [WindowPositionProvider] to construct a [WindowBoundsProvider].
+ *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 fun interface WindowSizeProvider {
@@ -539,6 +555,8 @@ fun interface WindowSizeProvider {
 
 /**
  * The kinds of intrinsic sizes that can be used with [WindowSizeProvider].
+ *
+ * Note: this class may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 abstract class WindowIntrinsicSize internal constructor() {

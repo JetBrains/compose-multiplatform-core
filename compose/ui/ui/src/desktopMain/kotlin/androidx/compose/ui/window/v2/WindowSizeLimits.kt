@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.DpSize
 
 /**
  * Defines limits on the window size.
+ *
+ * Note: this class may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 @Immutable

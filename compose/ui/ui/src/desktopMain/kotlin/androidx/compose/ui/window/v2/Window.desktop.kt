@@ -56,6 +56,8 @@ import androidx.compose.ui.window.application
  * }
  * ```
  *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
+ *
  * @param onCloseRequest Callback that will be called when the user tries to clos the window.
  * @param state The state object to be used to control or observe the window's state
  * @param visible Whether the window is visible to the user.
@@ -141,6 +143,8 @@ fun Window(
  *     Window(onCloseRequest = { ... } ) { }
  * }
  * ```
+ *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
  *
  * Set [exitProcessOnExit] to `false` to execute code after the [singleWindowApplication] block,
  * otherwise it won't be executed as [singleWindowApplication] will exit the process.

@@ -45,6 +45,8 @@ import kotlinx.coroutines.channels.Channel
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
  *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
+ *
  * @param initialPosition The initial position of the dialog; default if `null`. All the
  * coordinates must be [Dp.isSpecified] and [Dp.isFinite], and the [DpOffset] object itself must be
  * [DpOffset.isSpecified].
@@ -70,6 +72,8 @@ fun rememberDialogStateWithBounds(
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
  *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
+ *
  * @param initialBoundsProvider Provides the initial bounds of the dialog.
  */
 @ExperimentalComposeUiApi
@@ -88,6 +92,8 @@ fun rememberDialogState(
  *
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
+ *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
  *
  * @param initialSize The initial size of the dialog; default if `null`. All the
  * coordinates must be [Dp.isSpecified] and [Dp.isFinite], and the [DpSize] object itself must be
@@ -113,6 +119,8 @@ fun DialogStateWithBounds(
 /**
  * Creates a [DialogState] with the specified initial bounds provider.
  *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
+ *
  * @param initialBoundsProvider Provides the initial bounds of the dialog.
  */
 @ExperimentalComposeUiApi
@@ -123,8 +131,9 @@ fun DialogState(
 }
 
 /**
- * A state object that can be hoisted to control and observe dialog attributes
- * (size, position).
+ * A state object that can be hoisted to control and observe dialog attributes (size, position).
+ *
+ * Note: this class may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @Stable
 @ExperimentalComposeUiApi
@@ -329,6 +338,8 @@ class DialogState private constructor(
 /**
  * Returns the bounds of the dialog, as an AWT [Rectangle]; throws [IllegalStateException] if the
  * window is not yet [isInitialized].
+ *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 val DialogState.awtBounds: Rectangle

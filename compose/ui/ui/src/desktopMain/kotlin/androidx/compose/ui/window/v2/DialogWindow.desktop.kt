@@ -46,6 +46,9 @@ import java.awt.Window
  *     }
  * }
  * ```
+ *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
+ *
  * @param onCloseRequest Callback that will be called when the user closes the dialog.
  * Usually in this callback we need to manually tell Compose what to do:
  * - change `isOpen` state of the dialog (which is manually defined)

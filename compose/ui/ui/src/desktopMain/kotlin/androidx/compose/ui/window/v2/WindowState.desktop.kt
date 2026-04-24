@@ -46,6 +46,8 @@ import kotlinx.coroutines.channels.Channel
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
  *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
+ *
  * @param initialPosition The initial position of the window; default if `null`. All the
  * coordinates must be [Dp.isSpecified] and [Dp.isFinite], and the [DpOffset] object itself must be
  * [DpOffset.isSpecified].
@@ -73,6 +75,8 @@ fun rememberWindowStateWithBounds(
  *
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
+ *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
  *
  * @param initialScreenProvider Provides the initial screen on which the window will be placed.
  * @param initialPlacement The initial placement of the window.
@@ -102,6 +106,8 @@ fun rememberWindowState(
  * Changes to the provided initial values will **not** result in the state being recreated or
  * changed in any way if it has already been created.
  *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
+ *
  * @param initialPosition The initial position of the window; default if `null`. All the
  * coordinates must be [Dp.isSpecified] and [Dp.isFinite], and the [DpOffset] object itself must be
  * [DpOffset.isSpecified].
@@ -129,6 +135,8 @@ fun WindowStateWithBounds(
 /**
  * Creates a [WindowState] with the specified initial values.
  *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
+ *
  * @param initialScreenProvider Provides the initial screen on which the window will be placed.
  * @param initialPlacement The initial placement of the window.
  * @param initialBoundsProvider Provides the initial bounds of the window.
@@ -150,6 +158,8 @@ fun WindowState(
 /**
  * A state object that can be hoisted to control and observe window attributes
  * (size, position, etc.).
+ *
+ * Note: this class may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @Stable
 @ExperimentalComposeUiApi
@@ -467,6 +477,8 @@ class WindowState private constructor(
 /**
  * Returns the bounds of the window, as an AWT [Rectangle]; throws [IllegalStateException] if the
  * window is not yet [isInitialized].
+ *
+ * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 val WindowState.awtBounds: Rectangle
