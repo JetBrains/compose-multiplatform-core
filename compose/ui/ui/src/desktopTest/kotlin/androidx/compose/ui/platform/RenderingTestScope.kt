@@ -57,11 +57,15 @@ internal class RenderingTestScope(
         onRender(currentTimeMillis * 1_000_000)
     }
 
+    private val platformFrameDispatcher = PlatformFrameDispatcher(coroutineContext, frameDispatcher::scheduleFrame)
+
     val surface: Surface = Surface.makeRasterN32Premul(width, height)
     private val canvas = surface.canvas.asComposeCanvas()
     val scene = CanvasLayersComposeScene(
         coroutineContext = coroutineContext,
-        invalidate = frameDispatcher::scheduleFrame
+        platformContext = PlatformContext.Empty(platformFrameDispatcher),
+        invalidateLayout = frameDispatcher::scheduleFrame,
+        invalidateDraw = frameDispatcher::scheduleFrame,
     ).apply {
         size = IntSize(width = width, height = height)
     }
@@ -74,6 +78,7 @@ internal class RenderingTestScope(
 
     fun dispose() {
         scene.close()
+        platformFrameDispatcher.close()
         frameDispatcher.cancel()
     }
 
@@ -87,7 +92,9 @@ internal class RenderingTestScope(
 
     private fun onRender(timeNanos: Long) {
         canvas.skiaCanvas.clear(Color.Transparent.toArgb())
-        scene.render(canvas, timeNanos)
+        platformFrameDispatcher.recomposeFrame(timeNanos)
+        scene.measureAndLayout()
+        scene.draw(canvas)
         onRender.complete(Unit)
     }
 

@@ -32,9 +32,12 @@ import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.isEqualTo
 import androidx.compose.ui.platform.LocalPointerIconService
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformFrameDispatcher
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneContext
+import androidx.compose.ui.platform.PlatformValueStorage
 import androidx.compose.ui.scene.PlatformLayersComposeScene
+import androidx.compose.ui.platform.asPlatformValueStorage
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.unit.IntSize
@@ -91,7 +94,7 @@ class PointerIconTest {
     fun commitsToComponent() {
         val iconContext = IconPlatformContext()
         val size = IntSize(100, 100)
-        val scene = SingleLayerComposeScene(
+        val (scene, frameDispatcher) = createPlatformLayersScene(
             platformContext = iconContext,
         )
 
@@ -114,6 +117,7 @@ class PointerIconTest {
             assertThat(iconContext._pointerIcon).isEqualTo(PointerIcon.Text)
         } finally {
             scene.close()
+            frameDispatcher.close()
         }
     }
 
@@ -121,7 +125,7 @@ class PointerIconTest {
     fun preservedIfSameEventDispatchedTwice() {
         val iconContext = IconPlatformContext()
         val size = IntSize(100, 100)
-        val scene = SingleLayerComposeScene(
+        val (scene, frameDispatcher) = createPlatformLayersScene(
             platformContext = iconContext,
         )
 
@@ -145,6 +149,7 @@ class PointerIconTest {
             assertThat(iconContext._pointerIcon).isEqualTo(PointerIcon.Text)
         } finally {
             scene.close()
+            frameDispatcher.close()
         }
     }
 
@@ -214,18 +219,23 @@ class PointerIconTest {
         val iconContext = IconPlatformContext()
         val size = IntSize(100, 100)
         val surface = Surface.makeRasterN32Premul(size.width, size.height)
-        lateinit var scene: ComposeScene
+        val frameDispatcherHolder = arrayOfNulls<PlatformFrameDispatcher>(1)
+        val sceneHolder = arrayOfNulls<ComposeScene>(1)
 
         val frameDispatcher = FrameDispatcher(coroutineContext) {
-            scene.render(surface.canvas.asComposeCanvas(), 1)
+            frameDispatcherHolder[0]!!.recomposeFrame(1)
+            sceneHolder[0]!!.measureAndLayout()
+            sceneHolder[0]!!.draw(surface.canvas.asComposeCanvas())
         }
-        scene = SingleLayerComposeScene(
+        val (scene, platformFrameDispatcher) = createPlatformLayersScene(
             coroutineContext = coroutineContext,
             platformContext = iconContext,
             invalidate = {
                 frameDispatcher.scheduleFrame()
             }
         )
+        sceneHolder[0] = scene
+        frameDispatcherHolder[0] = platformFrameDispatcher
         val iconState = mutableStateOf(PointerIcon.Text)
 
         val recomposeChannel = Channel<Int>(Channel.CONFLATED) // helps with waiting for recomposition
@@ -248,6 +258,7 @@ class PointerIconTest {
             assertThat(iconContext._pointerIcon).isEqualTo(PointerIcon.Crosshair)
         } finally {
             scene.close()
+            platformFrameDispatcher.close()
             frameDispatcher.cancel()
         }
     }
@@ -257,18 +268,23 @@ class PointerIconTest {
         val iconContext = IconPlatformContext()
         val size = IntSize(100, 100)
         val surface = Surface.makeRasterN32Premul(size.width, size.height)
-        lateinit var scene: ComposeScene
+        val frameDispatcherHolder = arrayOfNulls<PlatformFrameDispatcher>(1)
+        val sceneHolder = arrayOfNulls<ComposeScene>(1)
 
         val frameDispatcher = FrameDispatcher(coroutineContext) {
-            scene.render(surface.canvas.asComposeCanvas(), 1)
+            frameDispatcherHolder[0]!!.recomposeFrame(1)
+            sceneHolder[0]!!.measureAndLayout()
+            sceneHolder[0]!!.draw(surface.canvas.asComposeCanvas())
         }
-        scene = SingleLayerComposeScene(
+        val (scene, platformFrameDispatcher) = createPlatformLayersScene(
             coroutineContext = coroutineContext,
             platformContext = iconContext,
             invalidate = {
                 frameDispatcher.scheduleFrame()
             }
         )
+        sceneHolder[0] = scene
+        frameDispatcherHolder[0] = platformFrameDispatcher
 
         val iconState = mutableStateOf(PointerIcon.Text)
 
@@ -299,6 +315,7 @@ class PointerIconTest {
             assertThat(iconContext._pointerIcon).isEqualTo(PointerIcon.Default)
         } finally {
             scene.close()
+            platformFrameDispatcher.close()
             frameDispatcher.cancel()
         }
     }
@@ -342,14 +359,25 @@ class PointerIconTest {
     }
 }
 
-private fun SingleLayerComposeScene(
+private fun createPlatformLayersScene(
     coroutineContext: CoroutineContext = Dispatchers.Unconfined,
     platformContext: PlatformContext,
     invalidate: () -> Unit = {},
-) = PlatformLayersComposeScene(
-    coroutineContext = coroutineContext,
-    composeSceneContext = object : ComposeSceneContext {
-        override val platformContext get() = platformContext
-    },
-    invalidate = invalidate
-)
+): Pair<ComposeScene, PlatformFrameDispatcher> {
+    val frameDispatcher = PlatformFrameDispatcher(coroutineContext, invalidate)
+    val scenePlatformContext = object : PlatformContext by platformContext {
+        override val valueStorage: PlatformValueStorage =
+            PlatformValueStorage.MapValueStorage(
+                parent = frameDispatcher.asPlatformValueStorage()
+            )
+    }
+    val scene = PlatformLayersComposeScene(
+        coroutineContext = coroutineContext,
+        composeSceneContext = object : ComposeSceneContext {
+            override val platformContext get() = scenePlatformContext
+        },
+        invalidateLayout = invalidate,
+        invalidateDraw = invalidate,
+    )
+    return scene to frameDispatcher
+}

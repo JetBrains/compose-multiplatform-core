@@ -21,7 +21,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformFrameDispatcher
 import androidx.compose.ui.unit.IntSize
+import kotlin.coroutines.CoroutineContext
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlin.test.Test
@@ -36,16 +39,21 @@ class CanvasLayersComposeSceneTest {
     @Test
     fun sceneSizeChangeTriggersInvalidation() = runTest(StandardTestDispatcher()) {
         var invalidationCount = 0
-        CanvasLayersComposeScene(
+        createCanvasLayersScene(
             size = IntSize(100, 100),
             coroutineContext = coroutineContext,
-            invalidate = { invalidationCount++ }
-        ).use { scene ->
+            invalidateLayout = { invalidationCount++ },
+            invalidateDraw = { invalidationCount++ },
+        ).let { (scene, dispose) ->
+            try {
             scene.setContent { Box(Modifier.fillMaxSize()) }
 
-            assertEquals(1, invalidationCount)
-            scene.size = IntSize(120, 120)
             assertEquals(2, invalidationCount)
+            scene.size = IntSize(120, 120)
+            assertEquals(4, invalidationCount)
+            } finally {
+                dispose.close()
+            }
         }
     }
 
@@ -53,10 +61,11 @@ class CanvasLayersComposeSceneTest {
     fun cancelClickForGestureOwner() = runTest(StandardTestDispatcher()) {
         var rootCancelled = false
         var popupCancelled = false
-        CanvasLayersComposeScene(
+        createCanvasLayersScene(
             size = IntSize(100, 100),
             coroutineContext = coroutineContext,
-        ).use { scene ->
+        ).let { (scene, dispose) ->
+            try {
             scene.setContent {
                 Box(modifier = Modifier.fillMaxSize().onCancel { rootCancelled = true })
 
@@ -70,6 +79,29 @@ class CanvasLayersComposeSceneTest {
 
             assertFalse(rootCancelled)
             assertTrue(popupCancelled)
+            } finally {
+                dispose.close()
+            }
         }
+    }
+}
+
+private fun createCanvasLayersScene(
+    coroutineContext: CoroutineContext,
+    size: IntSize,
+    invalidateLayout: () -> Unit = {},
+    invalidateDraw: () -> Unit = {},
+): Pair<ComposeScene, AutoCloseable> {
+    val frameDispatcher = PlatformFrameDispatcher(coroutineContext)
+    val scene = CanvasLayersComposeScene(
+        size = size,
+        coroutineContext = coroutineContext,
+        platformContext = PlatformContext.Empty(frameDispatcher),
+        invalidateLayout = invalidateLayout,
+        invalidateDraw = invalidateDraw,
+    )
+    return scene to AutoCloseable {
+        scene.close()
+        frameDispatcher.close()
     }
 }

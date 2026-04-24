@@ -22,7 +22,6 @@ import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.currentTimeMillis
@@ -159,18 +158,20 @@ sealed interface ComposeScene : AutoCloseable {
     fun invalidatePositionOnScreen()
 
     /**
-     * Returns whether there are pending recompositions, renders, or dispatched tasks.
+     * Returns whether there is pending measure or layout work for this scene.
      * Can be called from any thread.
-     *
-     * Note that changes to snapshot state don't immediately trigger an invalidation.
-     * To guarantee that there are no changes expected in the scene use
-     * ```
-     * !Snapshot.current.hasPendingChanges()
-     *     && !Snapshot.isApplyObserverNotificationPending
-     *     && !scene.hasInvalidations()
-     * ```
      */
-    fun hasInvalidations(): Boolean
+    val hasPendingMeasureOrLayout: Boolean
+
+    /**
+     * Returns whether there is pending draw work for this scene.
+     *
+     * This also stays `true` while snapshot observer callbacks are queued for the scene, since
+     * those callbacks can schedule the next draw/layout turn even before a new draw invalidation
+     * has been requested explicitly.
+     * Can be called from any thread.
+     */
+    val hasPendingDraw: Boolean
 
     /**
      * Update the composition with the content described by the [content] composable. After this
@@ -184,17 +185,14 @@ sealed interface ComposeScene : AutoCloseable {
     fun setContent(content: @Composable () -> Unit)
 
     /**
-     * Render the current content on [canvas]. Passed [nanoTime] will be used to drive all
-     * animations in the content (or any other code, which uses [withFrameNanos]
+     * Runs layout for the current scene content.
      */
-    fun render(canvas: Canvas, nanoTime: Long)
+    fun measureAndLayout()
 
     /**
-     * Performs pending recompositions and layout passes without rendering.
-     *
-     * @param nanoTime the time to use for animations and any other code that uses [withFrameNanos]
+     * Draws the current scene content into [canvas].
      */
-    fun recomposeAndLayout(nanoTime: Long)
+    fun draw(canvas: Canvas)
 
     /**
      * Send pointer event to the content.
@@ -297,12 +295,6 @@ sealed interface ComposeScene : AutoCloseable {
      * @return The [InteropView] associated with the resulting node in case there is any, or null.
      */
     fun hitTestInteropView(position: Offset): InteropView?
-
-    /**
-     * Run the [block] in a coroutine with a [androidx.compose.runtime.MonotonicFrameClock] instance
-     * provided by the [androidx.compose.runtime.Recomposer] of the current scene.
-     */
-    suspend fun withMonotonicFrameClock(block: suspend () -> Unit)
 
     /**
      * Set the visual debug option that shows bounds for all nodes in the hierarchy.

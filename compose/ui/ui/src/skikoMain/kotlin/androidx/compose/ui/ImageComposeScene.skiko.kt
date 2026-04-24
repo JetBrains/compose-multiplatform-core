@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.scene.CanvasLayersComposeScene
+import androidx.compose.ui.platform.PlatformFrameDispatcher
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.unconstrainedSize
@@ -159,7 +160,9 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         containerDpSize = imageSize.toSize().toDpSize(density)
     }
 
-    private val _platformContext = object : PlatformContext by PlatformContext.Empty(),
+    private val frameDispatcher = PlatformFrameDispatcher(coroutineContext)
+
+    private val _platformContext = object : PlatformContext by PlatformContext.Empty(frameDispatcher),
         PlatformContext.SemanticsOwnerListener {
 
         val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
@@ -219,7 +222,10 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
      *
      * After calling this method, you cannot call any other method of this [ImageComposeScene].
      */
-    fun close(): Unit = scene.close()
+    fun close(): Unit {
+        scene.close()
+        frameDispatcher.close()
+    }
 
     /**
      * Constraints used to measure and layout content.
@@ -237,10 +243,13 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
      * ```
      * !Snapshot.current.hasPendingChanges()
      *     && !Snapshot.isApplyObserverNotificationPending
-     *     && !scene.hasInvalidations()
+     *     && !frameDispatcher.hasPendingWork()
+     *     && !scene.hasPendingMeasureOrLayout
+     *     && !scene.hasPendingDraw
      * ```
      */
-    fun hasInvalidations() = scene.hasInvalidations()
+    fun hasInvalidations() =
+        frameDispatcher.hasPendingWork() || scene.hasPendingMeasureOrLayout || scene.hasPendingDraw
 
     /**
      * Update the composition with the content described by the [content] composable. After this
@@ -278,7 +287,9 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
      */
     fun render(nanoTime: Long = 0): Image {
         surface.canvas.clear(Color.TRANSPARENT)
-        scene.render(surface.canvas.asComposeCanvas(), nanoTime)
+        frameDispatcher.recomposeFrame(nanoTime)
+        scene.measureAndLayout()
+        scene.draw(surface.canvas.asComposeCanvas())
         return surface.makeImageSnapshot()
     }
 

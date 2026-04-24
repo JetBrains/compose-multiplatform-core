@@ -66,6 +66,7 @@ import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
+import androidx.compose.ui.platform.PlatformFrameDispatcher
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
@@ -218,8 +219,10 @@ internal class ComposeWindow(
 
     private val clipTarget = clipTargetElement(canvas)
 
+    private val frameDispatcher = PlatformFrameDispatcher(Dispatchers.Main, invalidate = { skiaLayer.needRender() })
+
     private val platformContext: PlatformContext =
-        object : PlatformContext by PlatformContext.Empty() {
+        object : PlatformContext by PlatformContext.Empty(frameDispatcher) {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
 
@@ -327,7 +330,9 @@ internal class ComposeWindow(
 
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
         renderDelegate = SkikoRenderDelegate { canvas, _, _, nanoTime ->
-            scene.render(canvas.asComposeCanvas(), nanoTime)
+            frameDispatcher.recomposeFrame(nanoTime)
+            scene.measureAndLayout()
+            scene.draw(canvas.asComposeCanvas())
         }
     }
 
@@ -335,7 +340,10 @@ internal class ComposeWindow(
         coroutineContext = Dispatchers.Main,
         platformContext = platformContext,
         density = density,
-        invalidate = skiaLayer::needRender,
+        // TODO: Split layout invalidation from draw invalidation once the web host has distinct
+        // scheduling paths for relayout vs redraw.
+        invalidateLayout = skiaLayer::needRender,
+        invalidateDraw = skiaLayer::needRender,
     )
 
     private val systemThemeObserver = getSystemThemeObserver()
@@ -539,6 +547,7 @@ internal class ComposeWindow(
             .navigationEventDispatcher.removeInput(navigationEventInput)
 
         scene.close()
+        frameDispatcher.close()
         skiaLayer.detach()
 
         systemThemeObserver.dispose()
@@ -892,4 +901,3 @@ private fun Element.isFocused(): Boolean {
 private external interface ShadowRootExt {
     val activeElement: Element?
 }
-

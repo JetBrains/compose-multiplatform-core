@@ -33,8 +33,6 @@ internal class SnapshotInvalidationTracker(
     private val invalidate: () -> Unit = {}
 ) {
     private val snapshotChanges = CommandList(invalidate)
-    private var needMeasureAndLayout = true
-    private var needDraw = true
 
     /**
      * The id of the thread currently inside [performSnapshotChangesSynchronously].
@@ -44,24 +42,33 @@ internal class SnapshotInvalidationTracker(
     private var renderingThreadId: Long? by atomic(null)
 
     val hasInvalidations: Boolean
-        get() = needMeasureAndLayout || needDraw || snapshotChanges.hasCommands
+        get() = hasPendingMeasureOrLayout || hasPendingDraw || hasPendingSnapshotCommands
+
+    val hasPendingSnapshotCommands: Boolean
+        get() = snapshotChanges.hasCommands
+
+    var hasPendingMeasureOrLayout: Boolean = true
+        private set
+
+    var hasPendingDraw: Boolean = true
+        private set
 
     fun requestMeasureAndLayout() {
-        needMeasureAndLayout = true
+        hasPendingMeasureOrLayout = true
         invalidate()
     }
 
     fun onMeasureAndLayout() {
-        needMeasureAndLayout = false
+        hasPendingMeasureOrLayout = false
     }
 
     fun requestDraw() {
-        needDraw = true
+        hasPendingDraw = true
         invalidate()
     }
 
     fun onDraw() {
-        needDraw = false
+        hasPendingDraw = false
     }
 
     /**

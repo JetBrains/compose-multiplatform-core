@@ -47,6 +47,7 @@ import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
+import androidx.compose.ui.platform.PlatformFrameDispatcher
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.DelegateRootForTestListener
 import androidx.compose.ui.platform.DesktopTextInputService
@@ -56,10 +57,12 @@ import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.PlatformValueStorage
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
+import androidx.compose.ui.platform.asPlatformValueStorage
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Density
@@ -129,7 +132,7 @@ internal class ComposeSceneMediator(
     private val measureDrawLayerBounds: Boolean = false,
 
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
-    val coroutineContext: CoroutineContext,
+    coroutineContext: CoroutineContext,
 
     skiaLayerComponentFactory: (ComposeSceneMediator) -> SkiaLayerComponent,
     composeSceneFactory: (ComposeSceneMediator) -> ComposeScene,
@@ -152,6 +155,9 @@ internal class ComposeSceneMediator(
     private val textInputService2 by lazy(LazyThreadSafetyMode.NONE) {
         DesktopTextInputService2(platformComponent)
     }
+
+    private val frameDispatcher = PlatformFrameDispatcher(coroutineContext, ::onComposeInvalidation)
+    val effectCoroutineContext: CoroutineContext by frameDispatcher.compositionContext::effectCoroutineContext
 
     private val _platformContext = DesktopPlatformContext()
     val platformContext: PlatformContext get() = _platformContext
@@ -597,6 +603,7 @@ internal class ComposeSceneMediator(
         container.dropTarget = null
 
         scene.close()
+        frameDispatcher.close()
         skiaLayerComponent.dispose()
 
         interopContainer.root.removeContainerListener(interopContainerListener)
@@ -705,7 +712,9 @@ internal class ComposeSceneMediator(
     override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) = catchExceptions {
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
-                scene.render(asComposeCanvas(), nanoTime)
+                frameDispatcher.recomposeFrame(nanoTime)
+                scene.measureAndLayout()
+                scene.draw(asComposeCanvas())
             }
         }
     }
@@ -796,6 +805,13 @@ internal class ComposeSceneMediator(
     }
 
     private inner class DesktopPlatformContext : PlatformContext {
+        // TODO: Back this with Swing's `getClientProperty` / `putClientProperty` on the current
+        // host component, and make parent lookup traverse the Swing containment hierarchy.
+        override val valueStorage: PlatformValueStorage =
+            PlatformValueStorage.MapValueStorage(
+                parent = frameDispatcher.asPlatformValueStorage()
+            )
+
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val isWindowTransparent: Boolean get() = windowContext.isWindowTransparent

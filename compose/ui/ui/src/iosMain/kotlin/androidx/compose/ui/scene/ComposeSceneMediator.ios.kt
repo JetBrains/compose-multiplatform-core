@@ -52,9 +52,12 @@ import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformFrameDispatcher
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.PlatformValueStorage
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.asPlatformValueStorage
 import androidx.compose.ui.platform.UIKitIdleTimerManager
 import androidx.compose.ui.platform.UIKitTextInputService
 import androidx.compose.ui.platform.UIKitWindowInsetsManager
@@ -214,6 +217,8 @@ internal class ComposeSceneMediator(
                     CUPERTINO_TOUCH_SLOP.dp.toPx()
                 }
         }
+
+    private val frameDispatcher = PlatformFrameDispatcher(coroutineContext, redrawer::setNeedsRedraw)
 
     private val scene: ComposeScene by lazy {
         composeSceneFactory(
@@ -392,7 +397,9 @@ internal class ComposeSceneMediator(
     }
 
     val hasInvalidations: Boolean
-        get() = scene.hasInvalidations() ||
+        get() = scene.hasPendingMeasureOrLayout ||
+            scene.hasPendingDraw ||
+            frameDispatcher.hasPendingWork() ||
             keyboardManager.isAnimating ||
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
@@ -599,7 +606,9 @@ internal class ComposeSceneMediator(
     private var lastRenderTime = CACurrentMediaTime().toNanoSeconds()
     fun render(canvas: Canvas, nanoTime: Long) {
         lastRenderTime = nanoTime
-        scene.render(canvas, nanoTime)
+        frameDispatcher.recomposeFrame(nanoTime)
+        scene.measureAndLayout()
+        scene.draw(canvas)
     }
 
     fun retrieveInteropTransaction(): UIKitInteropTransaction =
@@ -649,6 +658,7 @@ internal class ComposeSceneMediator(
         _backgroundView.removeFromSuperview()
 
         scene.close()
+        frameDispatcher.close()
         interopContainer.dispose()
         semanticsOwnerListener.dispose()
     }
@@ -709,6 +719,14 @@ internal class ComposeSceneMediator(
             || navigationEventInput.onKeyEvent(keyEvent)
 
     private inner class PlatformContextImpl : PlatformContext {
+        // TODO: Back this with ObjC associated objects on the hosting UIKit view
+        // (`objc_getAssociatedObject` / `objc_setAssociatedObject`) and walk the superview chain
+        // for ancestor lookup instead of relying on the synthetic map-backed storage.
+        override val valueStorage: PlatformValueStorage =
+            PlatformValueStorage.MapValueStorage(
+                parent = frameDispatcher.asPlatformValueStorage()
+            )
+
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val screenReader: PlatformScreenReader get() = platformScreenReader

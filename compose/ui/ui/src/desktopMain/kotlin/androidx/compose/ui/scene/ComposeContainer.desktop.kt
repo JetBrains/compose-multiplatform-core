@@ -388,18 +388,24 @@ internal class ComposeContainer(
                 CanvasLayersComposeScene(
                     density = density,
                     layoutDirection = layoutDirection,
-                    coroutineContext = mediator.coroutineContext,
+                    coroutineContext = mediator.effectCoroutineContext,
                     platformContext = mediator.platformContext,
-                    invalidate = mediator::onComposeInvalidation,
+                    // TODO: Split these into native layout vs repaint invalidation on desktop.
+                    // `invalidateLayout` should participate in AWT/Swing layout, while
+                    // `invalidateDraw` should schedule repaint only.
+                    invalidateLayout = mediator::onComposeInvalidation,
+                    invalidateDraw = mediator::onComposeInvalidation,
                 )
             else -> PlatformLayersComposeScene(
                 density = density,
                 layoutDirection = layoutDirection,
-                coroutineContext = mediator.coroutineContext,
+                coroutineContext = mediator.effectCoroutineContext,
                 composeSceneContext = createComposeSceneContext(
                     platformContext = mediator.platformContext
                 ),
-                invalidate = mediator::onComposeInvalidation,
+                // TODO: Split these into native layout vs repaint invalidation on desktop.
+                invalidateLayout = mediator::onComposeInvalidation,
+                invalidateDraw = mediator::onComposeInvalidation,
             )
         }
     }

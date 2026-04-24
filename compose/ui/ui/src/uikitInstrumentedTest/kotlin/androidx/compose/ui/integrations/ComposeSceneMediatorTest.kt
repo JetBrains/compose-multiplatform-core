@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
 import androidx.compose.ui.test.runUIKitInstrumentedTest
@@ -111,9 +112,14 @@ class ComposeSceneMediatorTest {
                 endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
             ),
             interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
-            composeSceneFactory = { _, _ ->
+            composeSceneFactory = { invalidate, platformContext ->
                 PlatformLayersComposeScene(
-                    density = Density(1f)
+                    density = Density(1f),
+                    composeSceneContext = object : ComposeSceneContext {
+                        override val platformContext = platformContext
+                    },
+                    invalidateLayout = invalidate,
+                    invalidateDraw = invalidate,
                 )
             },
         )

@@ -123,7 +123,10 @@ internal class UIKitComposeSceneLayer(
             layoutDirection = initialLayoutDirection,
             coroutineContext = layerCoroutineContext,
             composeSceneContext = createComposeSceneContext(platformContext),
-            invalidate = invalidate,
+            // TODO: Split these into UIKit layout vs display invalidation instead of using the
+            // same invalidation callback for both phases.
+            invalidateLayout = invalidate,
+            invalidateDraw = invalidate,
         )
 
     val hasInvalidations by mediator::hasInvalidations

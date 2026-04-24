@@ -224,9 +224,12 @@ internal class WindowComposeSceneLayer(
         val density = container.density
         val layoutDirection = layoutDirectionFor(container)
         return PlatformLayersComposeScene(
-            coroutineContext = mediator.coroutineContext,
+            coroutineContext = mediator.effectCoroutineContext,
             density = density,
-            invalidate = mediator::onComposeInvalidation,
+            // TODO: Route layout invalidations through window layout and draw invalidations
+            // through repaint instead of collapsing both to `onComposeInvalidation`.
+            invalidateLayout = mediator::onComposeInvalidation,
+            invalidateDraw = mediator::onComposeInvalidation,
             layoutDirection = layoutDirection,
             composeSceneContext = composeContainer.createComposeSceneContext(
                 platformContext = mediator.platformContext

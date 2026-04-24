@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.MacosTextInputService
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.scene.CanvasLayersComposeScene
+import androidx.compose.ui.platform.PlatformFrameDispatcher
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
@@ -96,8 +97,9 @@ private class ComposeWindow(
         isWindowFocused = true
     }
     private val archComponentsOwner = DefaultArchitectureComponentsOwner()
+    private val frameDispatcher = PlatformFrameDispatcher(Dispatchers.Main) { skiaLayer.needRender() }
     private val platformContext: PlatformContext =
-        object : PlatformContext by PlatformContext.Empty() {
+        object : PlatformContext by PlatformContext.Empty(frameDispatcher) {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
             override val textInputService get() = macosTextInputService
@@ -110,7 +112,10 @@ private class ComposeWindow(
     private val scene = CanvasLayersComposeScene(
         coroutineContext = Dispatchers.Main,
         platformContext = platformContext,
-        invalidate = skiaLayer::needRender,
+        // TODO: Route these to distinct AppKit invalidation paths: layout work should use
+        // native layout scheduling, while draw work should only mark display dirty.
+        invalidateLayout = skiaLayer::needRender,
+        invalidateDraw = skiaLayer::needRender,
     )
     private val renderDelegate = object : SkikoRenderDelegate {
         override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
@@ -118,7 +123,9 @@ private class ComposeWindow(
             _windowInfo.containerSize = sizeInPx
             _windowInfo.containerDpSize = sizeInPx.toSize().toDpSize(scene.density)
             scene.size = sizeInPx // TODO: Move it out from onRender to avoid extra invalidation
-            scene.render(canvas.asComposeCanvas(), nanoTime)
+            frameDispatcher.recomposeFrame(nanoTime)
+            scene.measureAndLayout()
+            scene.draw(canvas.asComposeCanvas())
         }
     }
 
@@ -233,6 +240,7 @@ private class ComposeWindow(
         archComponentsOwner.viewModelStore.clear()
         skiaLayer.detach()
         scene.close()
+        frameDispatcher.close()
         isDisposed = true
     }
 

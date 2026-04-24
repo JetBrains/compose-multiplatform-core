@@ -339,7 +339,10 @@ internal class ComposeContainer(
             platformContext = platformContext,
             layersHolder = layersHolder
         ),
-        invalidate = invalidate,
+        // TODO: Split these into UIKit layout vs display invalidation. `invalidateLayout`
+        // should call into layout scheduling, while `invalidateDraw` should schedule display.
+        invalidateLayout = invalidate,
+        invalidateDraw = invalidate,
     )
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.platform
+package androidx.compose.ui.node
 
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.getValue
@@ -26,16 +26,32 @@ import androidx.compose.ui.assertThat
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isFinite
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.DefaultCameraDistance
+import androidx.compose.ui.graphics.DefaultShadowColor
+import androidx.compose.ui.graphics.GraphicsContext
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.RenderEffect
+import androidx.compose.ui.graphics.ReusableGraphicsLayerScope
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SkiaGraphicsContext
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.graphics.layer.GraphicsLayer
-import androidx.compose.ui.node.OwnedLayer
+import androidx.compose.ui.platform.invertTo
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.jetbrains.skia.Surface
@@ -532,33 +548,39 @@ class OwnerLayerTest {
 
                 draw()
                 Snapshot.sendApplyNotifications()
-                assertEquals(0, invalidateCount)
-                assertEquals(1, drawCount)  // no cache, draw
+                kotlin.test.assertEquals(0, invalidateCount)
+                kotlin.test.assertEquals(1, drawCount)  // no cache, draw
 
                 draw()
                 Snapshot.sendApplyNotifications()
-                assertEquals(0, invalidateCount)
-                assertEquals(1, drawCount) // no draw, as it is cached
+                kotlin.test.assertEquals(0, invalidateCount)
+                kotlin.test.assertEquals(1, drawCount) // no draw, as it is cached
 
                 state = 1f
                 Snapshot.sendApplyNotifications()
-                assertEquals(1, invalidateCount)  // invalidate, as draw state changed
-                assertEquals(1, drawCount)
+                kotlin.test.assertEquals(1, invalidateCount)  // invalidate, as draw state changed
+                kotlin.test.assertEquals(1, drawCount)
 
                 state = 2f
                 Snapshot.sendApplyNotifications()
-                assertEquals(2, invalidateCount)  // invalidate, as draw state changed again
-                assertEquals(1, drawCount)
+                kotlin.test.assertEquals(
+                    2,
+                    invalidateCount
+                )  // invalidate, as draw state changed again
+                kotlin.test.assertEquals(1, drawCount)
 
                 draw()
                 Snapshot.sendApplyNotifications()
-                assertEquals(2, invalidateCount)
-                assertEquals(2, drawCount)  // draw, because we invalidated and cache cleared
+                kotlin.test.assertEquals(2, invalidateCount)
+                kotlin.test.assertEquals(
+                    2,
+                    drawCount
+                )  // draw, because we invalidated and cache cleared
 
                 draw()
                 Snapshot.sendApplyNotifications()
-                assertEquals(2, invalidateCount)
-                assertEquals(2, drawCount) // no draw, as it is cached
+                kotlin.test.assertEquals(2, invalidateCount)
+                kotlin.test.assertEquals(2, drawCount) // no draw, as it is cached
             } finally {
                 stateObserver.stop()
                 stateObserver.clear()
@@ -632,8 +654,8 @@ class OwnerLayerTest {
 
     private fun assertEquals(expected: Offset, actual: Offset, absoluteTolerance: Float) {
         val message = "Expected <$expected>, actual <$actual>."
-        assertEquals(expected.x, actual.x, absoluteTolerance, message)
-        assertEquals(expected.y, actual.y, absoluteTolerance, message)
+        kotlin.test.assertEquals(expected.x, actual.x, absoluteTolerance, message)
+        kotlin.test.assertEquals(expected.y, actual.y, absoluteTolerance, message)
     }
 
     private fun OwnedLayer.updateProperties(
