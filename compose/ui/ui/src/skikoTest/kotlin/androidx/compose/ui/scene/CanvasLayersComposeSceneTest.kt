@@ -95,7 +95,7 @@ private fun createCanvasLayersScene(
     val frameDispatcher = PlatformFrameDispatcher(coroutineContext)
     val scene = CanvasLayersComposeScene(
         size = size,
-        coroutineContext = coroutineContext,
+        coroutineContext = frameDispatcher.compositionContext.effectCoroutineContext,
         platformContext = PlatformContext.Empty(frameDispatcher),
         invalidateLayout = invalidateLayout,
         invalidateDraw = invalidateDraw,

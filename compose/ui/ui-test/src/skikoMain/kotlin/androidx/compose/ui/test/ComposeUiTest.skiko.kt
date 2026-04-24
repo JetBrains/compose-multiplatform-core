@@ -327,7 +327,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         scene = CanvasLayersComposeScene(
             density = density,
             size = size,
-            coroutineContext = recomposerCoroutineScope.coroutineContext,
+            coroutineContext = frameDispatcher.compositionContext.effectCoroutineContext,
             platformContext = TestContext(),
             invalidateLayout = { },
             invalidateDraw = { },
@@ -365,6 +365,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
         return !Snapshot.current.hasPendingChanges()
             && !Snapshot.isApplyObserverNotificationPending
+            && !frameDispatcher.hasPendingWork()
             && !scene.hasPendingMeasureOrLayout
             && !scene.hasPendingDraw
             && areAllResourcesIdle()
