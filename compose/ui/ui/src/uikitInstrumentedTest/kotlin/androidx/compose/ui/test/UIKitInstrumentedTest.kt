@@ -23,10 +23,13 @@ import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.scene.ComposeLayersViewController
 import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.endScroll
 import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.mouseDown
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
 import androidx.compose.ui.test.utils.resetTouches
+import androidx.compose.ui.test.utils.scrollBy
+import androidx.compose.ui.test.utils.scrollEventAt
 import androidx.compose.ui.test.utils.toCGPoint
 import androidx.compose.ui.test.utils.touchDown
 import androidx.compose.ui.test.utils.up
@@ -476,6 +479,51 @@ internal class UIKitInstrumentedTest(
      */
     fun UITouch.dragBy(dx: Dp = 0.dp, dy: Dp = 0.dp, duration: Duration = 0.5.seconds): UITouch {
         return dragBy(DpOffset(dx, dy), duration)
+    }
+
+    /**
+     * Simulates a trackpad continuous pan gesture as a stateful scroll session:
+     *   1. [UIWindow.scrollEventAt] opens the session (`UIScrollPhaseBegan`).
+     *   2. [UIEvent.scrollBy] emits [steps] `UIScrollPhaseChanged` events carrying
+     *      the linear per-step delta.
+     *   3. [UIEvent.endScroll] closes the session (`UIScrollPhaseEnded`).
+     *
+     * All scroll synthesis goes through the `UIEvent (CMPScroll)` category in
+     * `UIEvent+Test.m`, which builds a scroll-rooted HID tree with a pointer
+     * child (matching the on-device trace) and dispatches through
+     * `-[UIApplication sendEvent:]` and `-[UIApplication _handleHIDEvent:]`.
+     *
+     * Known limitation (iOS 18, April 2026): synthetic `UIScrollEvent` dispatched
+     * from the same process does NOT trigger
+     * `UIPanGestureRecognizer.allowedScrollTypesMask`. See [TrackpadPanTest] for
+     * details. The scaffolding is kept for future experiments.
+     *
+     * @return `true` once the sequence has been dispatched. `false` only if the
+     *         runtime lacks the private `UIScrollEvent` class.
+     */
+    fun trackpadPan(
+        position: DpOffset,
+        totalDelta: DpOffset,
+        steps: Int = 10,
+        stepInterval: Duration = 16.milliseconds,
+        window: UIWindow? = null,
+    ): Boolean {
+        require(steps >= 1) { "steps must be >= 1" }
+        val targetWindow = window ?: appDelegate.window()!!
+
+        val scrollEvent = targetWindow.scrollEventAt(location = position) ?: return false
+
+        val dxPerStep = totalDelta.x / steps.toFloat()
+        val dyPerStep = totalDelta.y / steps.toFloat()
+        val perStepDelta = DpOffset(dxPerStep, dyPerStep)
+        repeat(steps) {
+            delay(stepInterval.inWholeMilliseconds)
+            scrollEvent.scrollBy(perStepDelta, targetWindow)
+        }
+
+        delay(stepInterval.inWholeMilliseconds)
+        scrollEvent.endScroll(targetWindow)
+        return true
     }
 }
 

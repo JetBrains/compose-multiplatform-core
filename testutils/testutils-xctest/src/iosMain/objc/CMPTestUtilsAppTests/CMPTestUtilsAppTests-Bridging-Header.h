@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,4 @@
  * limitations under the License.
  */
 
-#import <Foundation/Foundation.h>
-
-//! Project version number for CMPTestUtils.
-FOUNDATION_EXPORT double CMPTestUtilsVersionNumber;
-
-//! Project version string for CMPTestUtils.
-FOUNDATION_EXPORT const unsigned char CMPTestUtilsVersionString[];
-
-#import "UITouch+Test.h"
-#import "UIEvent+Test.h"
+#import "CMPTestUtils.h"

@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+
 <Scheme
    LastUpgradeVersion = "2640"
    version = "1.7">
@@ -15,9 +31,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "995A49392D3023CC0091FB9B"
-               BuildableName = "libCMPTestUtils.a"
-               BlueprintName = "CMPTestUtils"
+               BlueprintIdentifier = "99C2D6B72F9B8F2100435A2B"
+               BuildableName = "CMPTestUtilsApp.app"
+               BlueprintName = "CMPTestUtilsApp"
                ReferencedContainer = "container:CMPTestUtils.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -39,7 +55,18 @@
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
-      allowLocationSimulation = "YES">
+      allowLocationSimulation = "YES"
+      queueDebuggingEnableBacktraceRecording = "Yes">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "99C2D6B72F9B8F2100435A2B"
+            BuildableName = "CMPTestUtilsApp.app"
+            BlueprintName = "CMPTestUtilsApp"
+            ReferencedContainer = "container:CMPTestUtils.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -47,15 +74,16 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <MacroExpansion>
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "995A49392D3023CC0091FB9B"
-            BuildableName = "libCMPTestUtils.a"
-            BlueprintName = "CMPTestUtils"
+            BlueprintIdentifier = "99C2D6B72F9B8F2100435A2B"
+            BuildableName = "CMPTestUtilsApp.app"
+            BlueprintName = "CMPTestUtilsApp"
             ReferencedContainer = "container:CMPTestUtils.xcodeproj">
          </BuildableReference>
-      </MacroExpansion>
+      </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
