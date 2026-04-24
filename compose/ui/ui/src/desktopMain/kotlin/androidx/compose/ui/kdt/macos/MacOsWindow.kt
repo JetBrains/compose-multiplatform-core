@@ -248,7 +248,7 @@ class MacOsWindow internal constructor(
         }
     }
 
-    fun requestPlacement(placement: WindowPlacement) {
+    override fun requestPlacement(placement: WindowPlacement) {
         if (!isDisposed) {
             when (placement) {
                 WindowPlacement.Floating if nativeWindow.isMaximized -> nativeWindow.toggleMaximize()
@@ -347,7 +347,7 @@ class MacOsWindow internal constructor(
         else -> WindowPlacement.Floating
     }
 
-    var placement: WindowPlacement by mutableStateOf(placement())
+    override var placement: WindowPlacement by mutableStateOf(placement())
         private set
 
     override fun requestMinimized(minimized: Boolean) {
