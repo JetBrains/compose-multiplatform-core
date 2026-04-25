@@ -104,3 +104,6 @@ internal fun KeyEvent.copy(
         nativeEvent = nativeEvent
     )
 )
+
+@InternalComposeUiApi
+class TestNativeKeyEvent(val isTyped: Boolean)

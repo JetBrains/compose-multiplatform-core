@@ -541,6 +541,15 @@ class TextFieldKeyEventTest {
             expectedSelection = TextRange("aaa\nbbb\nccc\nddd".length),
         )
 
+    @Test
+    fun textField_a() =
+        singleKeyStrokeTest(
+            initText = "",
+            initSelection = TextRange.Zero,
+            key = Key.A,
+            expectedText = "a"
+        )
+
     private class SequenceScope(
         private val state: TextFieldState,
         private val clipboard: FakeClipboard,

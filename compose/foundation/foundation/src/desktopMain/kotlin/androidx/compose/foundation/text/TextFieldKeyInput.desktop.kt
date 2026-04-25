@@ -17,21 +17,12 @@
 package androidx.compose.foundation.text
 
 import androidx.compose.foundation.InternalFoundationApi
-import androidx.compose.ui.awt.awtEventOrNull
+import androidx.compose.ui.awt.isTypedEvent
 import androidx.compose.ui.input.key.KeyEvent
-
-private fun Char.isPrintable(): Boolean {
-    val block = Character.UnicodeBlock.of(this)
-    return (!Character.isISOControl(this)) &&
-        this != java.awt.event.KeyEvent.CHAR_UNDEFINED &&
-        block != null &&
-        block != Character.UnicodeBlock.SPECIALS
-}
 
 // This API was never supposed to be public, but currently there are some external usages of it,
 // so it cannot be removed from the public right now.
 // However, starting with 1.9 it's marked as NOT a public-stable API with compatibility guarantees.
 @InternalFoundationApi
 actual val KeyEvent.isTypedEvent: Boolean
-    get() = awtEventOrNull?.id == java.awt.event.KeyEvent.KEY_TYPED &&
-        awtEventOrNull?.keyChar?.isPrintable() == true
+    get() = this.isTypedEvent

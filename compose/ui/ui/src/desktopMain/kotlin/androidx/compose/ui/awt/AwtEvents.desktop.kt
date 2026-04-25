@@ -1,6 +1,7 @@
 package androidx.compose.ui.awt
 
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.TestNativeKeyEvent
 import androidx.compose.ui.input.key.internal
 import androidx.compose.ui.input.pointer.PointerEvent
 
@@ -33,3 +34,20 @@ val PointerEvent.awtEventOrNull: java.awt.event.MouseEvent? get() {
 val KeyEvent.awtEventOrNull: java.awt.event.KeyEvent? get() {
     return internal.nativeEvent as? java.awt.event.KeyEvent?
 }
+
+private fun Char.isPrintable(): Boolean {
+    val block = Character.UnicodeBlock.of(this)
+    return (!Character.isISOControl(this)) &&
+        this != java.awt.event.KeyEvent.CHAR_UNDEFINED &&
+        block != null &&
+        block != Character.UnicodeBlock.SPECIALS
+}
+
+
+val KeyEvent.isTypedEvent: Boolean
+    get() =
+        awtEventOrNull?.let {
+            it.id == java.awt.event.KeyEvent.KEY_TYPED && it.keyChar.isPrintable()
+        }
+            ?: (internal.nativeEvent as? TestNativeKeyEvent)?.isTyped
+            ?: false
