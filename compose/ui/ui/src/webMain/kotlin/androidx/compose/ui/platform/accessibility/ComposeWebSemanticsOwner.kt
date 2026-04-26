@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.findClosestParentNode
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.semantics.sortByGeometryGroupings
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import kotlin.js.js
@@ -674,6 +675,11 @@ internal class ComposeWebSemanticsOwner(
             }
         ) as MutableList<SemanticsNode>
 
+        //sortByGeometryGroupings uses clipped bounds for sorting, which is not accurate for nodes beyond visible bounds
+        // (as their clipped bounds are empty), so we need to fix the order of those nodes. Similar to IOS fix for this
+        val isRTL = layoutNode.layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
+        sortedChildren.sortWith(BeyondBoundsComparator(isRTL))
+
         // Fix the specifics of nodes sorting where a parent node may go after a child in the sorted list.
         // Swapping them if the order is not specified by other criteria as TraversalIndex.
         // In case of other sort issues, consider copy and re-implementing the `sortByGeometryGroupings`
@@ -691,6 +697,44 @@ internal class ComposeWebSemanticsOwner(
             }
         }
         return sortedChildren
+    }
+
+    /**
+     * Simplified version of [SemanticsNode.sortByGeometryGroupings] based on the
+     * [SemanticsNode.unclippedBoundsInWindow] because [SemanticsNode.boundsInWindow] is empty for
+     * nodes beyond visible bounds.
+     */
+    private class BeyondBoundsComparator(private val isRTL: Boolean) : Comparator<SemanticsNode> {
+
+        val SemanticsNode.unclippedBoundsInWindow: Rect
+            get() = Rect(positionInWindow, size.toSize())
+        override fun compare(a: SemanticsNode, b: SemanticsNode): Int {
+            var result = a.unmergedConfig
+                .getOrElse(SemanticsProperties.TraversalIndex) { 0f }
+                .compareTo(b.unmergedConfig.getOrElse(SemanticsProperties.TraversalIndex) { 0f })
+
+            if (result != 0) {
+                return result
+            }
+            val aCenter = a.unclippedBoundsInWindow.center
+            val bCenter = b.unclippedBoundsInWindow.center
+
+            result = aCenter.y
+                .compareTo(bCenter.y)
+
+            if (result != 0) {
+                return result
+            }
+
+            result = aCenter.x
+                .compareTo(bCenter.x)
+
+            if (result != 0) {
+                return if (isRTL) -result else result
+            }
+
+            return result
+        }
     }
 
     fun dispose() {
@@ -719,7 +763,7 @@ private fun WebSemanticsNode.setBounds(htmlRootElementOffset: Offset) {
 
     // Calculate strict local boundaries between the two nodes
     val localBounds = if (layoutCoordinates != null && parentLayoutCoordinates != null) {
-        parentLayoutCoordinates.localBoundingBoxOf(layoutCoordinates, clipBounds = true)
+        parentLayoutCoordinates.localBoundingBoxOf(layoutCoordinates, clipBounds = false)
     } else if (layoutCoordinates != null) {
         // Fallback for the root node
         this.semanticsNode.boundsInRoot
