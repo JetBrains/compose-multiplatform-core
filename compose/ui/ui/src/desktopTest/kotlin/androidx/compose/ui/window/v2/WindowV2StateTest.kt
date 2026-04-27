@@ -860,7 +860,7 @@ class WindowV2StateTest {
         awaitIdle()
 
         windowState.requestBounds {
-            val screenBounds = screen.availableBounds
+            val screenBounds = windowMetrics.screen.availableBounds
             val size = DpSize(400.dp, 400.dp)
             DpRect(
                 origin = DpOffset(
@@ -916,7 +916,7 @@ class WindowV2StateTest {
         awaitIdle()
 
         windowState!!.requestBounds {
-            val screenBounds = screen.availableBounds
+            val screenBounds = windowMetrics.screen.availableBounds
             val size = DpSize(400.dp, 400.dp)
             DpRect(
                 origin = DpOffset(
@@ -979,7 +979,7 @@ class WindowV2StateTest {
         assertNotNull(windowState)
         assertFalse(windowState!!.isInitialized)
         windowState!!.requestBounds {
-            val screenBounds = screen.availableBounds
+            val screenBounds = windowMetrics.screen.availableBounds
             val size = DpSize(400.dp, 400.dp)
             DpRect(
                 origin = DpOffset(

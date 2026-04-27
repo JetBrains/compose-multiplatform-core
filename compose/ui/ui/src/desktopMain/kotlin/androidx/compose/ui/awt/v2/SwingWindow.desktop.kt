@@ -313,6 +313,7 @@ private fun ComposeWindow.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
     }
 
     val scope = WindowGeometryProviderScope(
+        parentWindow = null,
         window = this,
         measurableContentProvider = ::measurableContent
     )

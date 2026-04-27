@@ -27,6 +27,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposeDialog
+import androidx.compose.ui.awt.LocalAwtWindow
 import androidx.compose.ui.awt.SwingDialog
 import androidx.compose.ui.awt.toAwtRectangleSizeRoundedUp
 import androidx.compose.ui.graphics.painter.Painter
@@ -38,7 +39,6 @@ import androidx.compose.ui.util.setIcon
 import androidx.compose.ui.util.setUndecoratedSafely
 import androidx.compose.ui.util.windowListenerRef
 import androidx.compose.ui.window.DialogWindowScope
-import androidx.compose.ui.window.LocalWindow
 import androidx.compose.ui.window.UndecoratedWindowDecoration
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
@@ -49,6 +49,7 @@ import androidx.compose.ui.window.v2.WindowBoundsProvider
 import androidx.compose.ui.window.v2.WindowGeometryProviderScope
 import androidx.compose.ui.window.v2.rememberDialogState
 import java.awt.Dialog.ModalityType
+import java.awt.Window
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import java.awt.event.WindowAdapter
@@ -96,6 +97,7 @@ import kotlinx.coroutines.launch
 @ComposableOpenTarget(-1)
 fun SwingDialog(
     onCloseRequest: () -> Unit,
+    parentWindow: Window? = LocalAwtWindow.current,
     state: DialogState = rememberDialogState(),
     visible: Boolean = true,
     title: String = "Untitled",
@@ -108,11 +110,14 @@ fun SwingDialog(
     alwaysOnTop: Boolean = false,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
-    modalityType: ModalityType = ModalityType.DOCUMENT_MODAL,
+    modalityType: ModalityType =
+        if (parentWindow == null) ModalityType.MODELESS else ModalityType.DOCUMENT_MODAL,
     init: (ComposeDialog) -> Unit,
     content: @Composable DialogWindowScope.() -> Unit
 ) {
-    val owner = LocalWindow.current
+    if ((parentWindow == null) && (modalityType != ModalityType.MODELESS)) {
+        throw IllegalArgumentException("SwingDialog with no parent window cannot be modal")
+    }
 
     val currentState by rememberUpdatedState(state)
     val currentTitle by rememberUpdatedState(title)
@@ -149,9 +154,9 @@ fun SwingDialog(
         onKeyEvent = onKeyEvent,
         create = {
             val graphicsConfiguration = WindowLocationTracker.lastActiveGraphicsConfiguration
-            val dlg = if (owner != null) {
+            val dlg = if (parentWindow != null) {
                 ComposeDialog(
-                    owner = owner,
+                    owner = parentWindow,
                     modalityType = currentModalityType,
                     graphicsConfiguration = graphicsConfiguration,
                     coroutineContext = coroutineContext
@@ -266,6 +271,7 @@ private fun ComposeDialog.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
     }
 
     val scope = WindowGeometryProviderScope(
+        parentWindow = owner,
         window = this,
         measurableContentProvider = ::measurableContent
     )

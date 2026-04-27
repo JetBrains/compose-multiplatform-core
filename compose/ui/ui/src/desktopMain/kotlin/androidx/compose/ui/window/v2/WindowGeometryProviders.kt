@@ -27,12 +27,16 @@ import androidx.compose.ui.unit.DpInsets
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.unit.minus
 import androidx.compose.ui.unit.plus
 import androidx.compose.ui.unit.requireReal
 import androidx.compose.ui.unit.roundToIntSize
@@ -46,6 +50,7 @@ import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.toDpOffset
 import androidx.compose.ui.window.toDpRect
 import java.awt.GraphicsDevice
+import kotlin.math.roundToInt
 
 
 /**
@@ -94,12 +99,41 @@ fun interface WindowScreenProvider {
 }
 
 /**
+ * The various properties of a window that are useful in a [WindowGeometryProviderScope].
+ *
+ * Note: this class may be moved to `androidx.compose.ui.window` before stabilization.
+ */
+@ExperimentalComposeUiApi
+class WindowMetrics internal constructor(
+    private val window: java.awt.Window
+) {
+    /**
+     * The screen on which the window is placed.
+     */
+    val screen: Screen by lazy { Screen(window.graphicsConfiguration.device) }
+
+    /**
+     * The bounds of the entire window (including insets) on the screen.
+     */
+    val bounds: DpRect
+        get() = window.bounds.toDpRect()
+
+    /**
+     * The window's insets (the sizes of the areas where the content isn't placed, such as the title
+     * bar).
+     */
+    val insets: DpInsets
+        get() = window.insets.toDpInsets()
+}
+
+/**
  * The scope in which window geometry providers (e.g. [WindowBoundsProvider]) are evaluated.
  *
  * Note: this class may be moved to `androidx.compose.ui.window` before stabilization.
  */
 @ExperimentalComposeUiApi
 class WindowGeometryProviderScope internal constructor(
+    parentWindow: java.awt.Window?,
     private val window: java.awt.Window,
     private val measurableContentProvider: () -> MeasurableRootContent,
 ): Density {
@@ -108,11 +142,6 @@ class WindowGeometryProviderScope internal constructor(
             "Window must be displayable before it can be used in WindowGeometryProviderScope"
         }
     }
-
-    /**
-     * The screen on which the window will be placed.
-     */
-    val screen: Screen = Screen(window.graphicsConfiguration.device)
 
     /**
      * The density of the window.
@@ -127,25 +156,25 @@ class WindowGeometryProviderScope internal constructor(
         get() = windowDensity.fontScale
 
     /**
-     * The current bounds of the window.
+     * The metrics of the parent window, if any.
      */
-    val windowBounds: DpRect
-        get() = window.bounds.toDpRect()
+    val parentWindowMetrics: WindowMetrics? = parentWindow?.let { WindowMetrics(it) }
 
     /**
-     * The insets of the window.
+     * The window's metrics.
      */
-    val windowInsets: DpInsets
-        get() = window.insets.toDpInsets()
+    val windowMetrics: WindowMetrics = WindowMetrics(window)
 
     /**
      * Returns the size a window should have, given the size of its content.
      *
-     * The content size is expanded by [windowInsets] and then constrained to
+     * The content size is expanded by the window's insets and then constrained to
      * [Screen.availableBounds].
      */
     fun contentToWindowSize(contentSize: DpSize): DpSize =
-        (contentSize + windowInsets).coerceAtMost(screen.availableBounds.size)
+        with(windowMetrics) {
+            (contentSize + insets).coerceAtMost(screen.availableBounds.size)
+        }
 
     /**
      * Represents the composable content of the window, which can be queried for its preferred size
@@ -270,7 +299,7 @@ fun interface WindowPositionProvider {
          */
         val Default = WindowPositionProvider { size ->
             WindowLocationTracker.getCascadeLocationFor(
-                graphicsDevice = screen.device,
+                graphicsDevice = windowMetrics.screen.device,
                 windowSize = size.roundToDimension()
             ).toDpOffset()
         }
@@ -278,7 +307,7 @@ fun interface WindowPositionProvider {
         /**
          * Returns the current position of the window.
          */
-        val Current = WindowPositionProvider { windowBounds.topLeft }
+        val Current = WindowPositionProvider { windowMetrics.bounds.topLeft }
 
         /**
          * Positions the window at the given [position].
@@ -300,7 +329,7 @@ fun interface WindowPositionProvider {
             alignment: Alignment,
             offset: DpOffset = DpOffset.Zero,
         ): WindowPositionProvider = WindowPositionProvider { size ->
-            val availableBounds = screen.availableBounds
+            val availableBounds = windowMetrics.screen.availableBounds
 
             val position = alignment.align(
                 size = size.roundToIntSize(),
@@ -311,6 +340,64 @@ fun interface WindowPositionProvider {
                 x = availableBounds.left + position.x.dp + offset.x,
                 y = availableBounds.top + position.y.dp + offset.y
             )
+        }
+
+        /**
+         * Aligns the window relative to its parent window, according to [anchor], [alignment] and
+         * [offset].
+         *
+         * [anchor] specifies the point in the parent bounds relative to which [alignment] is
+         * applied. For example, [Alignment.BottomEnd] specifies the bottom-right corner.
+         * [alignment] specifies the alignment inside an area centered at [anchor] and is twice the
+         * width and height of the window. For example, [Alignment.TopStart] will position it such
+         * that its bottom-right corner is at [anchor].
+         *
+         * @param anchor The anchor relative to which [alignment] is applied.
+         * @param alignment The alignment of the window relative to the [anchor].
+         * @param offset An additional absolute offset added after aligning.
+         * @param excludeParentInsets Whether to position relative to the content of the parent
+         * window, excluding the insets.
+         */
+        fun AlignedToParentWindow(
+            anchor: Alignment,
+            alignment: Alignment = Alignment.Center,
+            offset: DpOffset = DpOffset.Zero,
+            excludeParentInsets: Boolean = false,
+        ): WindowPositionProvider = WindowPositionProvider { size ->
+            val parentMetrics = parentWindowMetrics ?: error("No parent window metrics specified")
+            val parentBounds = if (excludeParentInsets) {
+                parentMetrics.bounds - parentMetrics.insets
+            } else {
+                parentMetrics.bounds
+            }
+
+            val anchorPointInParent = anchor.align(
+                size = IntSize.Zero,
+                space = parentBounds.size.roundToIntSize(),
+                layoutDirection = LayoutDirection.Ltr
+            )
+            val anchorPoint = IntOffset(
+                anchorPointInParent.x + parentBounds.left.value.roundToInt(),
+                anchorPointInParent.y + parentBounds.top.value.roundToInt(),
+            )
+
+            val intSize = IntSize(
+                width = size.width.value.roundToInt(),
+                height = size.height.value.roundToInt()
+            )
+            val targetArea = IntRect(
+                left = anchorPoint.x - intSize.width,
+                top = anchorPoint.y - intSize.height,
+                right = anchorPoint.x + intSize.width,
+                bottom = anchorPoint.y + intSize.height
+            )
+            val positionInTargetArea =
+                alignment.align(intSize, targetArea.size, LayoutDirection.Ltr)
+
+            DpOffset(
+                x = (targetArea.left + positionInTargetArea.x).dp,
+                y = (targetArea.top + positionInTargetArea.y).dp
+            ) + offset
         }
     }
 }
@@ -346,7 +433,7 @@ fun interface WindowSizeProvider {
         /**
          * Returns the current size of the window.
          */
-        val Current = WindowSizeProvider { windowBounds.size }
+        val Current = WindowSizeProvider { windowMetrics.bounds.size }
 
         /**
          * Sets the size of the window to the given [size].
@@ -496,7 +583,7 @@ fun interface WindowSizeProvider {
             intrinsicPrimary: WindowIntrinsicSize,
             intrinsicSecondary: WindowIntrinsicSize,
         ) = WindowSizeProvider {
-            val availableScreenBounds = screen.availableBounds
+            val availableScreenBounds = windowMetrics.screen.availableBounds
             val width: Int
             val height: Int
             if (isWidth) {
