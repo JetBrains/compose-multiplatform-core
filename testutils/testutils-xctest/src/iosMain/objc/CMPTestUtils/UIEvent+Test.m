@@ -288,16 +288,46 @@ static void CMPForceRecognizerActions(NSSet<UIGestureRecognizer *> *recognizers,
     }
 }
 
+#pragma mark - State override (UIGestureRecognizer)
+
+// `UIGestureRecognizer.state` is cached outside the recognizer (in
+// UIGestureEnvironment / gesture-graph nodes) and rejects backwards
+// transitions via `setState:`, so a synthetic gesture session that ends in
+// .ended cannot be reopened: the next .began dispatch leaves state stuck at
+// .ended and target-actions observe the wrong phase. Swizzle the getter so we
+// can pin the value the action handler reads via an associated object.
+
+static const void *kCMPGRStateOverrideKey = &kCMPGRStateOverrideKey;
+static IMP gOriginalGRStateImp = NULL;
+
+static UIGestureRecognizerState CMPSwizzledState(id self, SEL _cmd) {
+    NSNumber *override = objc_getAssociatedObject(self, kCMPGRStateOverrideKey);
+    if (override != nil) {
+        return (UIGestureRecognizerState)[override integerValue];
+    }
+    return ((UIGestureRecognizerState(*)(id, SEL))gOriginalGRStateImp)(self, _cmd);
+}
+
+static void CMPInstallStateOverrideOnce(void) {
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        Method m = class_getInstanceMethod([UIGestureRecognizer class], @selector(state));
+        if (m == NULL) { return; }
+        gOriginalGRStateImp = method_getImplementation(m);
+        method_setImplementation(m, (IMP)CMPSwizzledState);
+    });
+}
+
 #pragma mark - Direct pinch recognizer driver
 
 // UIKit's gesture environment needs a real HID event to transition pinch
 // recognizers into Began/Changed — synthetic transform events reach the
-// environment but state never moves. Instead of trying to fake deeper into
-// the pipeline, we drive the recognizer directly: force its state via
-// private `-setState:`, write `scale` (public API), and let
-// `CMPForceRecognizerActions` fire the bound target-actions.
-// `UIScrollViewPinchGestureRecognizer`'s action reads `scale` and mutates
-// `zoomScale`, so this path delivers a real zoom.
+// environment but state never moves. Pin the value the target-action handler
+// reads via the state-override swizzle, write `scale` (public API), and let
+// `CMPForceRecognizerActions` fire the bound target-actions. `setState:` would
+// double-fire (UIKit fires the action on the transition AND the force-fire
+// fires it again) and would reject backwards transitions, blocking a second
+// pinch session after the first ends.
 static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
                                      CGFloat absoluteScale,
                                      CMPTransformPhase phase) {
@@ -309,14 +339,11 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
         case CMPTransformPhaseCancelled: targetState = UIGestureRecognizerStateCancelled; break;
         default: return;
     }
-    SEL setStateSel = NSSelectorFromString(@"setState:");
     for (UIGestureRecognizer *recognizer in recognizers) {
         if (![recognizer isKindOfClass:[UIPinchGestureRecognizer class]]) { continue; }
         UIPinchGestureRecognizer *pinch = (UIPinchGestureRecognizer *)recognizer;
-
-        // `-setState:Began` resets internal `_scale` to 1.0, so write `scale`
-        // after the transition to avoid having the reset clobber our value.
-        ((void(*)(id, SEL, NSInteger))objc_msgSend)(pinch, setStateSel, targetState);
+        objc_setAssociatedObject(pinch, kCMPGRStateOverrideKey, @(targetState),
+                                 OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         pinch.scale = absoluteScale;
     }
     CMPForceRecognizerActions(recognizers, [UIPinchGestureRecognizer class]);
@@ -331,6 +358,8 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
                         delta:(CGVector)delta
                         phase:(CMPScrollPhase)phase
                      inWindow:(UIWindow *)window {
+    CMPInstallStateOverrideOnce();
+
     CMPSynSetLocation(event, anchor);
     CMPSynSetDelta(event, delta);
     CMPSynSetPhase(event, phase);
@@ -338,13 +367,6 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
 
     NSSet<UIGestureRecognizer *> *recognizers = [event cmp_syntheticGestureRecognizersForWindow:window];
 
-    [[UIApplication sharedApplication] sendEvent:event];
-
-    // UIKit's in-process scroll dispatch keeps every UIPanGestureRecognizer stuck
-    // at .began after each sendEvent — the translation accumulates correctly but
-    // the recognizer's `state` never advances past .began until the session ends.
-    // Force the state to match the scroll phase so target-actions observe the
-    // proper Began → Changed …→ Ended lifecycle.
     UIGestureRecognizerState targetState;
     switch (phase) {
         case CMPScrollPhaseBegan:   targetState = UIGestureRecognizerStateBegan;   break;
@@ -352,15 +374,17 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
         case CMPScrollPhaseEnded:   targetState = UIGestureRecognizerStateEnded;   break;
         default:                    targetState = UIGestureRecognizerStatePossible; break;
     }
-    if (targetState != UIGestureRecognizerStatePossible) {
-        SEL setStateSel = NSSelectorFromString(@"setState:");
-        for (UIGestureRecognizer *r in recognizers) {
-            if (![r isKindOfClass:[UIPanGestureRecognizer class]]) { continue; }
-            if (r.state != targetState) {
-                ((void(*)(id, SEL, NSInteger))objc_msgSend)(r, setStateSel, targetState);
-            }
-        }
+
+    // Pin the synthetic state so target-actions observe the right phase even
+    // when UIKit's state cache disagrees (e.g. the first dispatch of a second
+    // session — the recognizer is still .ended from the previous one).
+    for (UIGestureRecognizer *r in recognizers) {
+        if (![r isKindOfClass:[UIPanGestureRecognizer class]]) { continue; }
+        objc_setAssociatedObject(r, kCMPGRStateOverrideKey, @(targetState),
+                                 OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
+
+    [[UIApplication sharedApplication] sendEvent:event];
 
     CMPForceRecognizerActions(recognizers, [UIPanGestureRecognizer class]);
 }
@@ -370,6 +394,8 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
                            scale:(CGFloat)scale
                            phase:(CMPTransformPhase)phase
                         inWindow:(UIWindow *)window {
+    CMPInstallStateOverrideOnce();
+
     CMPSynSetLocation(event, anchor);
     CMPSynSetScale(event, scale);
     CMPSynSetPhase(event, phase);
@@ -425,7 +451,7 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
     CMPSynSetWindow(scrollEvent, window);
     [UIEvent dispatchScrollOnEvent:scrollEvent
                           atAnchor:point
-                             delta:CGVectorMake(delta.x, delta.y)
+                             delta:CGVectorMake(-delta.x, -delta.y)
                              phase:CMPScrollPhaseBegan
                           inWindow:window];
     return (UIEvent *)scrollEvent;
@@ -434,7 +460,7 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
 - (void)scrollByDelta:(CGPoint)delta inWindow:(UIWindow *)window {
     [UIEvent dispatchScrollOnEvent:self
                           atAnchor:CMPSynGetLocation(self)
-                             delta:CGVectorMake(delta.x, delta.y)
+                             delta:CGVectorMake(-delta.x, -delta.y)
                              phase:CMPScrollPhaseChanged
                           inWindow:window];
 }

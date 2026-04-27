@@ -17,7 +17,7 @@
 import UIKit
 import XCTest
 
-final class CMPPinchTest: XCTestCase {
+final class PinchTest: XCTestCase {
     private var appDelegate: MockAppDelegate!
 
     override func setUpWithError() throws {
@@ -112,6 +112,97 @@ final class CMPPinchTest: XCTestCase {
             "UIPinchGestureRecognizer received no events from the simulated pinch stream."
         )
     }
+
+    @MainActor
+    func testSimulatedPinchInThenPinchOut() {
+        let window = appDelegate.window!
+
+        let viewController = PinchRecordingViewController()
+        window.rootViewController = viewController
+
+        let anchor = CGPoint(x: window.bounds.midX, y: window.bounds.midY)
+
+        runPinchSession(label: "pinch-in",
+                        anchor: anchor,
+                        finalScale: 0.5,
+                        stepCount: 4,
+                        viewController: viewController,
+                        window: window)
+
+        // After the first gesture ends, the recognizer is in .ended. The
+        // dispatch layer must reset it to .possible so a second session can
+        // run as a fresh Began → Changed* → Ended cycle.
+        viewController.reset()
+
+        runPinchSession(label: "pinch-out",
+                        anchor: anchor,
+                        finalScale: 2.0,
+                        stepCount: 4,
+                        viewController: viewController,
+                        window: window)
+    }
+
+    @MainActor
+    private func runPinchSession(label: String,
+                                 anchor: CGPoint,
+                                 finalScale: CGFloat,
+                                 stepCount: Int,
+                                 viewController: PinchRecordingViewController,
+                                 window: UIWindow) {
+        let pinch = UIEvent.pinch(at: anchor, scale: 1.0, in: window)
+        XCTAssertNotNil(pinch, "[\(label)] UITransformEvent is unavailable.")
+        pumpRunLoop(0.1)
+
+        for i in 1...stepCount {
+            let scale = 1.0 + (finalScale - 1.0) * CGFloat(i) / CGFloat(stepCount)
+            pinch?.pinch(byScale: scale, in: window)
+            pumpRunLoop(0.1)
+        }
+        pinch?.endPinch(in: window)
+
+        let deadline = Date().addingTimeInterval(2.0)
+        while viewController.events.isEmpty && Date() < deadline {
+            pumpRunLoop(0.05)
+        }
+
+        let states = viewController.events.map { $0.state }
+        if states.isEmpty {
+            XCTFail("[\(label)] UIPinchGestureRecognizer received no events.")
+            return
+        }
+
+        XCTAssertEqual(states.first, .began,
+                       "[\(label)] Expected first state .began, got \(describe(states.first))")
+        XCTAssertEqual(states.last, .ended,
+                       "[\(label)] Expected last state .ended, got \(describe(states.last))")
+
+        let changedCount = states.filter { $0 == .changed }.count
+        XCTAssertEqual(changedCount, stepCount,
+                       "[\(label)] Expected exactly \(stepCount) .changed transitions, got \(changedCount); states=\(states.map(describe))")
+
+        let allowed: Set<UIGestureRecognizer.State> = [.began, .changed, .ended]
+        for state in states {
+            XCTAssertTrue(allowed.contains(state),
+                          "[\(label)] Unexpected state \(describe(state)) in sequence \(states.map(describe))")
+        }
+
+        let lastScale = viewController.events.last?.scale ?? 0
+        XCTAssertEqual(lastScale, finalScale, accuracy: 0.01,
+                       "[\(label)] Expected final scale ≈ \(finalScale), got \(lastScale)")
+    }
+}
+
+private func describe(_ state: UIGestureRecognizer.State?) -> String {
+    guard let state = state else { return "nil" }
+    switch state {
+    case .possible:  return "possible"
+    case .began:     return "began"
+    case .changed:   return "changed"
+    case .ended:     return "ended"
+    case .cancelled: return "cancelled"
+    case .failed:    return "failed"
+    @unknown default: return "unknown(\(state.rawValue))"
+    }
 }
 
 private final class ZoomableScrollHostViewController: UIViewController, UIScrollViewDelegate {
@@ -158,6 +249,10 @@ private final class PinchRecordingViewController: UIViewController {
         view.backgroundColor = .systemBackground
         recognizer.addTarget(self, action: #selector(handlePinch(_:)))
         view.addGestureRecognizer(recognizer)
+    }
+
+    func reset() {
+        events.removeAll()
     }
 
     @objc
