@@ -23,10 +23,13 @@ import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.scene.ComposeLayersViewController
 import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.endPinch
 import androidx.compose.ui.test.utils.endScroll
 import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.mouseDown
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
+import androidx.compose.ui.test.utils.pinchBy
+import androidx.compose.ui.test.utils.pinchEventAt
 import androidx.compose.ui.test.utils.resetTouches
 import androidx.compose.ui.test.utils.scrollBy
 import androidx.compose.ui.test.utils.scrollEventAt
@@ -508,6 +511,35 @@ internal class UIKitInstrumentedTest(
 
         delay(stepInterval.inWholeMilliseconds)
         scrollEvent.endScroll(targetWindow)
+    }
+
+    /**
+     * Simulates a trackpad continuous pinch gesture as a stateful transform session anchored
+     * at [position]. The gesture ramps the absolute scale linearly from `1.0` to [finalScale]
+     * over [duration], emitting one `phase-Began`, multiple `phase-Changed`, and a final
+     * `phase-Ended` event. All transform synthesis goes through the `UIEvent (CMPPinch)`
+     * category in `UIEvent+Test.m`, which drives each [platform.UIKit.UIPinchGestureRecognizer]
+     * directly so target-actions observe the proper `Began → Changed …→ Ended` lifecycle.
+     */
+    fun trackpadPinch(
+        position: DpOffset,
+        finalScale: Float,
+        duration: Duration = 0.5.seconds,
+    ) {
+        val stepInterval = 16.milliseconds
+        val steps = maxOf(1, (duration / stepInterval).toInt())
+        val targetWindow = appDelegate.window()!!
+        val pinchEvent = targetWindow.pinchEventAt(location = position, scale = 1.0)
+
+        repeat(steps) { i ->
+            delay(stepInterval.inWholeMilliseconds)
+            val progress = (i + 1).toFloat() / steps.toFloat()
+            val scale = 1.0 + (finalScale - 1.0) * progress
+            pinchEvent.pinchBy(scale.toDouble(), targetWindow)
+        }
+
+        delay(stepInterval.inWholeMilliseconds)
+        pinchEvent.endPinch(targetWindow)
     }
 }
 

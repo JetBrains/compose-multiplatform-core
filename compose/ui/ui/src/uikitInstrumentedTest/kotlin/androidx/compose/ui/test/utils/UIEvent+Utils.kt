@@ -16,7 +16,13 @@
 
 package androidx.compose.ui.test.utils
 
+import androidx.compose.test.utils.endHoverInWindow
 import androidx.compose.test.utils.endInWindow
+import androidx.compose.test.utils.endPinchInWindow
+import androidx.compose.test.utils.hoverEventAtPoint
+import androidx.compose.test.utils.hoverMoveToPoint
+import androidx.compose.test.utils.pinchByScale
+import androidx.compose.test.utils.pinchEventAtPoint
 import androidx.compose.test.utils.scrollByDelta
 import androidx.compose.test.utils.scrollEventAtPoint
 import androidx.compose.ui.unit.DpOffset
@@ -62,4 +68,70 @@ internal fun UIEvent.scrollBy(delta: DpOffset, window: UIWindow) {
 @OptIn(ExperimentalForeignApi::class)
 internal fun UIEvent.endScroll(window: UIWindow) {
     endInWindow(window)
+}
+
+/**
+ * Begins a synthetic trackpad pinch session anchored at [location] in this window with the
+ * initial absolute [scale] (typically `1.0`, phase Began). Use [UIEvent.pinchBy] to emit
+ * follow-up `Changed` events with new absolute scales and [UIEvent.endPinch] to close the
+ * session.
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun UIWindow.pinchEventAt(location: DpOffset, scale: Double = 1.0): UIEvent {
+    return UIEvent.pinchEventAtPoint(
+        point = location.toCGPoint(),
+        scale = scale,
+        inWindow = this,
+    ) ?: error("UITransformEvent unavailable on this runtime")
+}
+
+/**
+ * Emits one `phase-Changed` pinch event on this pinch session with the new absolute
+ * [scale]. Must only be called on a [UIEvent] returned by [UIWindow.pinchEventAt].
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun UIEvent.pinchBy(scale: Double, window: UIWindow) {
+    pinchByScale(scale, inWindow = window)
+}
+
+/**
+ * Emits the closing `phase-Ended` pinch event on this pinch session. Must only be called
+ * on a [UIEvent] returned by [UIWindow.pinchEventAt].
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun UIEvent.endPinch(window: UIWindow) {
+    endPinchInWindow(window)
+}
+
+/**
+ * Opens a synthetic hover session anchored at [location] in this window (phase Began).
+ * Use [UIEvent.hoverTo] to emit follow-up `Changed` events at new locations and
+ * [UIEvent.endHover] to close the session.
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun UIWindow.hoverEventAt(
+    location: DpOffset,
+): UIEvent {
+    return UIEvent.hoverEventAtPoint(
+        point = location.toCGPoint(),
+        inWindow = this,
+    ) ?: error("UIHoverEvent unavailable on this runtime")
+}
+
+/**
+ * Emits one `Changed` hover event at [location] on this hover session. Must only be
+ * called on a [UIEvent] returned by [UIWindow.hoverEventAt].
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun UIEvent.hoverTo(location: DpOffset, window: UIWindow) {
+    hoverMoveToPoint(location.toCGPoint(), inWindow = window)
+}
+
+/**
+ * Emits the closing `Ended` hover event on this hover session. Must only be called on
+ * a [UIEvent] returned by [UIWindow.hoverEventAt].
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun UIEvent.endHover(window: UIWindow) {
+    endHoverInWindow(window)
 }

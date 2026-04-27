@@ -36,6 +36,12 @@ typedef NS_ENUM(NSInteger, CMPTransformPhase) {
     CMPTransformPhaseCancelled = 4,
 };
 
+typedef NS_ENUM(NSInteger, CMPHoverPhase) {
+    CMPHoverPhaseBegan   = 1,
+    CMPHoverPhaseChanged = 2,
+    CMPHoverPhaseEnded   = 3,
+};
+
 #pragma mark - Synthetic event state (associated objects)
 
 static const void *kCMPSynPhaseKey = &kCMPSynPhaseKey;
@@ -234,10 +240,10 @@ static Class CMPSyntheticTransformEventClass(void) {
     return cls;
 }
 
-// Hover dispatch drives the recognizer via `shouldReceiveEvent:` directly and
-// skips `-[UIApplication sendEvent:]`, so the synthetic subclass needs no
-// overrides — it exists only to carry associated-object state on an instance
-// that passes `isKindOfClass:[UIHoverEvent class]` checks.
+// Hover dispatch drives the recognizer directly (state + location pins, then
+// force-fired target-actions) and never routes through `-[UIApplication
+// sendEvent:]`, so the synthetic subclass needs no overrides — it just
+// provides a UIEvent-typed instance that can hold associated-object state.
 static Class CMPSyntheticHoverEventClass(void) {
     static Class cls;
     static dispatch_once_t once;
@@ -315,6 +321,95 @@ static void CMPInstallStateOverrideOnce(void) {
         if (m == NULL) { return; }
         gOriginalGRStateImp = method_getImplementation(m);
         method_setImplementation(m, (IMP)CMPSwizzledState);
+        // UIHoverGestureRecognizer (and possibly other subclasses) have their
+        // own `-state` IMP that bypasses the base class swizzle, so install the
+        // override directly on the subclass too. We use the same swizzle
+        // function — when its associated-object check finds nothing it falls
+        // back to `gOriginalGRStateImp`, which is the base-class IMP. That's a
+        // fine approximation: if a subclass overrides `state`, its override
+        // typically just reads the same underlying storage.
+        Class hoverCls = NSClassFromString(@"UIHoverGestureRecognizer");
+        if (hoverCls != Nil) {
+            Method hm = class_getInstanceMethod(hoverCls, @selector(state));
+            const char *typeEncoding = hm ? method_getTypeEncoding(hm) :
+                                            method_getTypeEncoding(m);
+            BOOL added = class_addMethod(hoverCls, @selector(state),
+                                         (IMP)CMPSwizzledState, typeEncoding);
+            if (!added && hm != NULL) {
+                method_setImplementation(hm, (IMP)CMPSwizzledState);
+            }
+        }
+    });
+}
+
+#pragma mark - Location override (UIGestureRecognizer)
+
+// Synthetic hover/pinch dispatch skips `-[UIApplication sendEvent:]`, so UIKit
+// never populates the recognizer's internal `_locationInWindow`. Without this,
+// `recognizer.location(in: view)` from the target-action handler reports stale
+// or zero data. Pin a per-recognizer window-coordinate point via an associated
+// object and swizzle the recognizer class's `locationInView:` to convert that
+// point into the requested view's coordinate space.
+
+static const void *kCMPGRLocationOverrideKey = &kCMPGRLocationOverrideKey;
+static IMP gOriginalHoverLocationInViewImp = NULL;
+static IMP gOriginalPinchLocationInViewImp = NULL;
+
+static CGPoint CMPSwizzledLocationInViewImpl(id self, SEL _cmd, UIView *view, IMP original) {
+    NSValue *override = objc_getAssociatedObject(self, kCMPGRLocationOverrideKey);
+    if (override != nil) {
+        CGPoint windowPoint = CGPointZero;
+        [override getValue:&windowPoint size:sizeof(CGPoint)];
+        UIView *recognizerView = [(UIGestureRecognizer *)self view];
+        UIWindow *window = recognizerView.window;
+        if (view == nil || window == nil || view == window) { return windowPoint; }
+        return [view convertPoint:windowPoint fromView:window];
+    }
+    if (original != NULL) {
+        return ((CGPoint(*)(id, SEL, UIView *))original)(self, _cmd, view);
+    }
+    return CGPointZero;
+}
+
+static CGPoint CMPSwizzledHoverLocationInView(id self, SEL _cmd, UIView *view) {
+    return CMPSwizzledLocationInViewImpl(self, _cmd, view, gOriginalHoverLocationInViewImp);
+}
+
+static CGPoint CMPSwizzledPinchLocationInView(id self, SEL _cmd, UIView *view) {
+    return CMPSwizzledLocationInViewImpl(self, _cmd, view, gOriginalPinchLocationInViewImp);
+}
+
+static void CMPInstallLocationOverrideOnClass(Class cls, IMP swizzled, IMP *outOriginal) {
+    if (cls == Nil) { return; }
+    SEL sel = @selector(locationInView:);
+    Method m = class_getInstanceMethod(cls, sel);
+    if (m == NULL) { return; }
+    *outOriginal = method_getImplementation(m);
+    const char *typeEncoding = method_getTypeEncoding(m);
+    // If `locationInView:` is inherited from UIGestureRecognizer, add a direct
+    // override on the subclass instead of swizzling the base class — keeps
+    // blast radius limited to recognizers we synthesize.
+    BOOL added = class_addMethod(cls, sel, swizzled, typeEncoding);
+    if (!added) {
+        method_setImplementation(m, swizzled);
+    }
+}
+
+static void CMPInstallHoverLocationOverrideOnce(void) {
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        CMPInstallLocationOverrideOnClass(NSClassFromString(@"UIHoverGestureRecognizer"),
+                                          (IMP)CMPSwizzledHoverLocationInView,
+                                          &gOriginalHoverLocationInViewImp);
+    });
+}
+
+static void CMPInstallPinchLocationOverrideOnce(void) {
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        CMPInstallLocationOverrideOnClass([UIPinchGestureRecognizer class],
+                                          (IMP)CMPSwizzledPinchLocationInView,
+                                          &gOriginalPinchLocationInViewImp);
     });
 }
 
@@ -330,6 +425,7 @@ static void CMPInstallStateOverrideOnce(void) {
 // pinch session after the first ends.
 static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
                                      CGFloat absoluteScale,
+                                     CGPoint anchorInWindow,
                                      CMPTransformPhase phase) {
     UIGestureRecognizerState targetState;
     switch (phase) {
@@ -339,10 +435,16 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
         case CMPTransformPhaseCancelled: targetState = UIGestureRecognizerStateCancelled; break;
         default: return;
     }
+    NSValue *anchorBox = [NSValue valueWithBytes:&anchorInWindow objCType:@encode(CGPoint)];
     for (UIGestureRecognizer *recognizer in recognizers) {
         if (![recognizer isKindOfClass:[UIPinchGestureRecognizer class]]) { continue; }
         UIPinchGestureRecognizer *pinch = (UIPinchGestureRecognizer *)recognizer;
         objc_setAssociatedObject(pinch, kCMPGRStateOverrideKey, @(targetState),
+                                 OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        // Pin the centroid (in window coords) so `recognizer.location(in: view)`
+        // reports the synthetic anchor — UIKit doesn't populate it for us when
+        // we skip `sendEvent:`.
+        objc_setAssociatedObject(pinch, kCMPGRLocationOverrideKey, anchorBox,
                                  OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         pinch.scale = absoluteScale;
     }
@@ -395,6 +497,7 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
                            phase:(CMPTransformPhase)phase
                         inWindow:(UIWindow *)window {
     CMPInstallStateOverrideOnce();
+    CMPInstallPinchLocationOverrideOnce();
 
     CMPSynSetLocation(event, anchor);
     CMPSynSetScale(event, scale);
@@ -408,25 +511,43 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
     // as object pointers and retains them unconditionally, crashing on iOS 26.
     // We drive the pinch recognizer directly below, so UIKit's routing is
     // unnecessary anyway.
-    CMPDrivePinchRecognizers(recognizers, scale, phase);
+    CMPDrivePinchRecognizers(recognizers, scale, anchor, phase);
 }
 
 + (void)dispatchHoverOnEvent:(UIEvent *)event
                     atAnchor:(CGPoint)anchor
+                       phase:(CMPHoverPhase)phase
                     inWindow:(UIWindow *)window {
+    CMPInstallStateOverrideOnce();
+    CMPInstallHoverLocationOverrideOnce();
+
     CMPSynSetLocation(event, anchor);
     if (window != nil) { CMPSynSetWindow(event, window); }
 
-    NSSet<UIGestureRecognizer *> *recognizers = [event cmp_syntheticGestureRecognizersForWindow:window];
+    UIGestureRecognizerState targetState;
+    switch (phase) {
+        case CMPHoverPhaseBegan:   targetState = UIGestureRecognizerStateBegan;   break;
+        case CMPHoverPhaseChanged: targetState = UIGestureRecognizerStateChanged; break;
+        case CMPHoverPhaseEnded:   targetState = UIGestureRecognizerStateEnded;   break;
+    }
 
-    // Skip `-[UIApplication sendEvent:]` entirely — UIKit's hover path
-    // dereferences private touch-bookkeeping ivars we can't safely populate.
-    // `shouldReceiveEvent:` only needs the event, so invoke it directly as
-    // the delivery entry point.
+    // Skip `-[UIApplication sendEvent:]` — UIKit's hover path dereferences
+    // private touch-bookkeeping ivars we can't safely populate. Pin synthetic
+    // state + location on each candidate recognizer, then force-fire its
+    // target-actions. We also forward the event through `shouldReceiveEvent:`
+    // so subclasses that override it (e.g. CMPHoverGestureRecognizer caching
+    // `lastReceivedEvent`) observe the synthetic event.
+    NSSet<UIGestureRecognizer *> *recognizers = [event cmp_syntheticGestureRecognizersForWindow:window];
+    NSNumber *boxedState = @(targetState);
+    NSValue *boxedAnchor = [NSValue valueWithBytes:&anchor objCType:@encode(CGPoint)];
     SEL shouldReceiveEventSel = @selector(shouldReceiveEvent:);
     for (UIGestureRecognizer *recognizer in recognizers) {
         if (![recognizer isKindOfClass:[UIHoverGestureRecognizer class]]) { continue; }
         ((BOOL(*)(id, SEL, id))objc_msgSend)(recognizer, shouldReceiveEventSel, event);
+        objc_setAssociatedObject(recognizer, kCMPGRStateOverrideKey, boxedState,
+                                 OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(recognizer, kCMPGRLocationOverrideKey, boxedAnchor,
+                                 OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
 
     CMPForceRecognizerActions(recognizers, [UIHoverGestureRecognizer class]);
@@ -524,6 +645,7 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
     CMPSynSetWindow(hoverEvent, window);
     [UIEvent dispatchHoverOnEvent:hoverEvent
                          atAnchor:point
+                            phase:CMPHoverPhaseBegan
                          inWindow:window];
     return (UIEvent *)hoverEvent;
 }
@@ -531,12 +653,14 @@ static void CMPDrivePinchRecognizers(NSSet<UIGestureRecognizer *> *recognizers,
 - (void)hoverMoveToPoint:(CGPoint)point inWindow:(UIWindow *)window {
     [UIEvent dispatchHoverOnEvent:self
                          atAnchor:point
+                            phase:CMPHoverPhaseChanged
                          inWindow:window];
 }
 
 - (void)endHoverInWindow:(UIWindow *)window {
     [UIEvent dispatchHoverOnEvent:self
                          atAnchor:CMPSynGetLocation(self)
+                            phase:CMPHoverPhaseEnded
                          inWindow:window];
 }
 
