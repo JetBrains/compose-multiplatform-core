@@ -29,6 +29,7 @@ import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.text.TextRange
@@ -110,12 +111,16 @@ class TextFieldMultiTapSelectionTest {
     private fun UIKitInstrumentedTest.focusThenTripleTap(tag: String) {
         findNodeWithTag(tag).tap()
         delay(400)
-        val center = findNodeWithTag(tag).frame!!.center()
-        tap(center)
+        // Tap at 10% from left to stay inside the first word on any screen width.
+        // Tapping at the frame center might be failed because the frame center
+        // might be near the edge of the double-tapped word's selection handle.
+        val frame = findNodeWithTag(tag).frame!!
+        val tapPoint = DpOffset(frame.left + (frame.right - frame.left) * 0.1f, frame.center().y)
+        tap(tapPoint)
         delay(50)
-        tap(center)
+        tap(tapPoint)
         delay(50)
-        tap(center)
+        tap(tapPoint)
         waitForIdle()
     }
 
