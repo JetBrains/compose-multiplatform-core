@@ -136,7 +136,7 @@ internal class UIKitTextInputService(
         currentInputConnection?.flushEditCommandsIfNeeded(force)
     }
 
-    val toolbarHandler: TextToolbar = object : TextToolbar {
+    val textToolbar: TextToolbar = object : TextToolbar {
 
         override val status: TextToolbarStatus
             get() = (currentInputConnection as? TextToolbar)?.status ?: TextToolbarStatus.Hidden
