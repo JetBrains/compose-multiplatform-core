@@ -22,13 +22,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.NativeTextEditingDelegate
 import androidx.compose.ui.platform.PlatformTextLayoutDirection
-import androidx.compose.ui.platform.TextSelectionRect
+import androidx.compose.ui.platform.TextInputSelectionRect
 import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.platform.toUIColor
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
 import androidx.compose.ui.unit.DpOffset
@@ -194,7 +194,7 @@ internal class NativeTextInputConnection(
         }
     }
 
-    override fun selectionDpRectsForRange(range: TextRange): List<TextSelectionRect> {
+    override fun selectionDpRectsForRange(range: TextRange): List<TextInputSelectionRect> {
         // Native selection rects are required for correct work of the text editing menu
         // Without them, it will be impossible to call the text editing menu by tapping on the selected area
         if (range.collapsed || isIncorrect(range)) {
@@ -214,7 +214,7 @@ internal class NativeTextInputConnection(
 
         return if (firstLineNumber == lastLineNumber) {
             listOf(
-                TextSelectionRect(
+                TextInputSelectionRect(
                     dpRect = Rect(
                         topLeft = startSelectionHandleRect.topLeft,
                         bottomRight = endSelectionHandleRect.bottomRight
@@ -240,7 +240,7 @@ internal class NativeTextInputConnection(
                 }
             } ?: return emptyList()
 
-            val firstLineSelectionRect = TextSelectionRect(
+            val firstLineSelectionRect = TextInputSelectionRect(
                 dpRect = Rect(
                     top = startSelectionHandleRect.top,
                     left = startSelectionHandleRect.left,
@@ -253,7 +253,7 @@ internal class NativeTextInputConnection(
                 isVertical = false
             )
 
-            val middleAreaSelectionRect = TextSelectionRect(
+            val middleAreaSelectionRect = TextInputSelectionRect(
                 dpRect = Rect(
                     top = startSelectionHandleRect.bottom,
                     left = contentRect.left,
@@ -269,7 +269,7 @@ internal class NativeTextInputConnection(
             val lastLineStartRect = currentTextLayoutResult.getCursorRect(
                 currentTextLayoutResult.getLineStart(lastLineNumber)
             )
-            val lastLineRect = TextSelectionRect(
+            val lastLineRect = TextInputSelectionRect(
                 dpRect = Rect(
                     topLeft = lastLineStartRect.topLeft,
                     bottomRight = endSelectionHandleRect.bottomRight

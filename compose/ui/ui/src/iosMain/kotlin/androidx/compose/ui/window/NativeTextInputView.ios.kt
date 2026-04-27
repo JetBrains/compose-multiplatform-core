@@ -20,7 +20,6 @@ import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.TextInputPosition
 import androidx.compose.ui.platform.TextInputRange
-import androidx.compose.ui.platform.TextInputSelectionRect
 import androidx.compose.ui.platform.TextInputStringTokenizer
 import androidx.compose.ui.platform.PlatformTextLayoutDirection
 import androidx.compose.ui.platform.NativeTextEditingDelegate
@@ -36,7 +35,6 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.asCGRect
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
 import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.CValue
@@ -510,8 +508,7 @@ internal class NativeTextInputView(
             start = (range.start as? TextInputPosition)?.position ?: return fallbackList,
             end = (range.end as? TextInputPosition)?.position ?: return fallbackList
         )
-        val rects = input?.selectionDpRectsForRange(textRange) ?: return fallbackList
-        return rects.fastMap { TextInputSelectionRect(it) }
+        return input?.selectionDpRectsForRange(textRange) ?: fallbackList
     }
 
     override fun closestPositionToPoint(point: CValue<CGPoint>): UITextPosition? {

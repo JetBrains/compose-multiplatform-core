@@ -29,7 +29,9 @@ import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRect
 import platform.UIKit.NSWritingDirection
+import platform.UIKit.NSWritingDirectionLeftToRight
 import platform.UIKit.NSWritingDirectionNatural
+import platform.UIKit.NSWritingDirectionRightToLeft
 import platform.UIKit.UIResponder
 import platform.UIKit.UITextDirection
 import platform.UIKit.UITextGranularity
@@ -187,7 +189,7 @@ internal interface NativeTextEditingDelegate : TextEditingDelegate {
      * @param range A range of text in the document.
      * @return A list of rectangles, in dp, that tightly bound the visual selection for the range.
      */
-    fun selectionDpRectsForRange(range: TextRange): List<TextSelectionRect>
+    fun selectionDpRectsForRange(range: TextRange): List<TextInputSelectionRect>
 
     /**
      * Returns the first rectangle that encloses a range of text.
@@ -288,14 +290,19 @@ internal class TextInputSelectionRect(
     private val _containsStart: Boolean,
     private val _containsEnd: Boolean,
     private val _isVertical: Boolean
-
 ) : UITextSelectionRect() {
-    constructor(textSelectionRect: TextSelectionRect) : this(
-        textSelectionRect.dpRect.asCGRect(),
-        NSWritingDirectionNatural,
-        textSelectionRect.containsStart,
-        textSelectionRect.containsEnd,
-        textSelectionRect.isVertical
+    constructor(
+        dpRect: DpRect,
+        writingDirection: TextDirection,
+        containsStart: Boolean,
+        containsEnd: Boolean,
+        isVertical: Boolean
+    ) : this(
+        dpRect.asCGRect(),
+        writingDirection.toUITextWritingDirection(),
+        containsStart,
+        containsEnd,
+        isVertical
     )
 
     override fun rect(): CValue<CGRect> = _rect
@@ -303,6 +310,12 @@ internal class TextInputSelectionRect(
     override fun containsStart(): Boolean = _containsStart
     override fun containsEnd(): Boolean = _containsEnd
     override fun isVertical(): Boolean = _isVertical
+}
+
+private fun TextDirection.toUITextWritingDirection(): UITextWritingDirection = when (this) {
+    TextDirection.Ltr, TextDirection.ContentOrLtr -> NSWritingDirectionLeftToRight
+    TextDirection.Rtl, TextDirection.ContentOrRtl -> NSWritingDirectionRightToLeft
+    else -> NSWritingDirectionNatural
 }
 
 internal class TextInputStringTokenizer(
@@ -404,18 +417,6 @@ internal class TextInputStringTokenizer(
         return text[position] in newLineCharacters || text[position - 1] in newLineCharacters
     }
 }
-
-/**
- * Compose-side representation of a selection rectangle, using Compose types ([DpRect], [TextDirection]).
- * Converted to [TextInputSelectionRect] (a [UITextSelectionRect] subclass) when passed to UIKit.
- */
-internal data class TextSelectionRect(
-    val dpRect: DpRect,
-    val writingDirection: TextDirection,
-    val containsStart: Boolean,
-    val containsEnd: Boolean,
-    val isVertical: Boolean
-)
 
 // Kotlin wrapper for UITextLayoutDirection
 internal enum class PlatformTextLayoutDirection(val platform: UITextLayoutDirection) {
