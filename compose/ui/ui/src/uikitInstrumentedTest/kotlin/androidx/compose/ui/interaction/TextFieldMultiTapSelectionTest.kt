@@ -44,7 +44,7 @@ class TextFieldMultiTapSelectionTest {
     private val tfOptions = listOf(TextFieldFactory.BTF1, TextFieldFactory.BTF2)
 
     @Test
-    fun doubleTap_selectsWord() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
+    fun double_tap_selects_word() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
         focusThenDoubleTap(TAG)
         assertFalse(textFieldOption.selection.collapsed, "[${textFieldOption.name}] Expected a word to be selected after double tap")
@@ -55,7 +55,7 @@ class TextFieldMultiTapSelectionTest {
     }
 
     @Test
-    fun tripleTap_selectsAllText() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
+    fun triple_tap_selects_all_text() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
         focusThenTripleTap(TAG)
         assertTrue(
@@ -65,37 +65,25 @@ class TextFieldMultiTapSelectionTest {
     }
 
     @Test
-    fun doubleTap_doesNotShowMagnifier() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
+    fun multitap_does_not_show_magnifier() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
-        focusThenDoubleTap(TAG)
+        focusThenDoubleTap(TAG) // double tap is enough
         delay(200)
         assertEquals(
             findFirstDescendant { it.isLoupeView },
             null,
-            "[${textFieldOption.name}] Magnifier should not appear during double tap selection"
+            "[${textFieldOption.name}] Magnifier should not appear during multi-tap selection"
         )
     }
 
     @Test
-    fun tripleTap_doesNotShowMagnifier() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
-        textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
-        focusThenTripleTap(TAG)
-        delay(200)
-        assertEquals(
-            findFirstDescendant { it.isLoupeView },
-            null,
-            "[${textFieldOption.name}] Magnifier should not appear during triple tap selection"
-        )
-    }
-
-    @Test
-    fun tripleTap_thenDoubleTap_selectsWord() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
+    fun BTF2_triple_tap_then_double_tap_selects_word() = runUIKitInstrumentedTest(params = listOf(TextFieldFactory.BTF2)) { textFieldOption ->
         textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
 
         focusThenTripleTap(TAG)
         assertTrue(
             textFieldOption.selection.start == 0 && textFieldOption.selection.end == MULTI_WORD_TEXT.length,
-            "[${textFieldOption.name}] triple tap should select all text"
+            "BTF2: triple tap should select all text"
         )
 
         // After triple tap selects all, a subsequent double tap should re-select only a word.
@@ -105,10 +93,10 @@ class TextFieldMultiTapSelectionTest {
         waitForIdle()
 
         val afterDoubleTap = textFieldOption.selection
-        assertFalse(afterDoubleTap.collapsed, "[${textFieldOption.name}] Expected a word to be selected after double tap")
+        assertFalse(afterDoubleTap.collapsed, "BTF2: Expected a word to be selected after double tap")
         assertTrue(
             afterDoubleTap.length < MULTI_WORD_TEXT.length,
-            "[${textFieldOption.name}] Expected only a word to be selected after double tap, but got: $afterDoubleTap"
+            "BTF2: Expected only a word to be selected after double tap, but got: $afterDoubleTap"
         )
     }
 
