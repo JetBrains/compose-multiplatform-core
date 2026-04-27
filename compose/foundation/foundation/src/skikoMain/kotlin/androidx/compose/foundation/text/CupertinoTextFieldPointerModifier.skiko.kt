@@ -49,57 +49,55 @@ internal fun Modifier.cupertinoTextFieldPointer(
 ): Modifier = if (enabled) {
     this
         .updateSelectionTouchMode { state.isInTouchMode = it }
-        .then(
-            tapPressTextFieldModifier(interactionSource, enabled) { offset ->
-                if (state.hasFocus) {
-                    // To show keyboard if it was hidden. Even in selection mode (like native)
-                    requestFocusAndShowKeyboardIfNeeded(
-                        state,
-                        focusRequester,
-                        !readOnly
-                    )
-                    if (state.handleState != HandleState.Selection) {
-                        state.layoutResult?.let { layoutResult ->
-                            TextFieldDelegate.cupertinoSetCursorOffsetFocused(
-                                position = offset,
-                                textLayoutResult = layoutResult,
-                                editProcessor = state.processor,
-                                offsetMapping = offsetMapping,
-                                showContextMenu = { show ->
-                                    // it shouldn't be selection, but this is a way to call a context menu in BasicTextField
-                                    if (show) {
-                                        manager.enterSelectionMode()
-                                    } else {
-                                        manager.exitSelectionMode()
-                                    }
-                                },
-                                onValueChange = state.onValueChange
-                            )
-                        }
-                    } else {
-                        manager.deselect(offset)
-                    }
-                } else {
-                    requestFocusAndShowKeyboardIfNeeded(
-                        state,
-                        focusRequester,
-                        !readOnly
-                    )
+        .tapPressTextFieldModifier(interactionSource, enabled) { offset ->
+            if (state.hasFocus) {
+                // To show keyboard if it was hidden. Even in selection mode (like native)
+                requestFocusAndShowKeyboardIfNeeded(
+                    state,
+                    focusRequester,
+                    !readOnly
+                )
+                if (state.handleState != HandleState.Selection) {
                     state.layoutResult?.let { layoutResult ->
-                        TextFieldDelegate.setCursorOffset(
-                            offset,
-                            layoutResult,
-                            state.processor,
-                            offsetMapping,
-                            state.onValueChange
+                        TextFieldDelegate.cupertinoSetCursorOffsetFocused(
+                            position = offset,
+                            textLayoutResult = layoutResult,
+                            editProcessor = state.processor,
+                            offsetMapping = offsetMapping,
+                            showContextMenu = { show ->
+                                // it shouldn't be selection, but this is a way to call a context menu in BasicTextField
+                                if (show) {
+                                    manager.enterSelectionMode()
+                                } else {
+                                    manager.exitSelectionMode()
+                                }
+                            },
+                            onValueChange = state.onValueChange
                         )
                     }
+                } else {
+                    manager.deselect(offset)
                 }
-                if (state.textDelegate.text.isNotEmpty()) {
-                    state.handleState = HandleState.Cursor
+            } else {
+                requestFocusAndShowKeyboardIfNeeded(
+                    state,
+                    focusRequester,
+                    !readOnly
+                )
+                state.layoutResult?.let { layoutResult ->
+                    TextFieldDelegate.setCursorOffset(
+                        offset,
+                        layoutResult,
+                        state.processor,
+                        offsetMapping,
+                        state.onValueChange
+                    )
                 }
             }
-        )
+            if (state.textDelegate.text.isNotEmpty()) {
+                state.handleState = HandleState.Cursor
+            }
+        }
         .then(CupertinoSelectionGesturesModifierElement(manager, state, offsetMapping))
         .pointerHoverIcon(PointerIcon.Text)
 } else {
