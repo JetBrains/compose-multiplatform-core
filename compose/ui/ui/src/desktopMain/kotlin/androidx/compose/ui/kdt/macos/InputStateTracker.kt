@@ -484,17 +484,17 @@ private operator fun PointerButtons.minus(other: PointerButton): PointerButtons 
 private fun Event.ScrollWheel.delta(): DpOffset {
     val directionMultiplier = -1f // scroll is inverted on macos
     val yScaleMultiplier = if (hasPreciseScrillingDeltas) {
-        1f
+        0.1f
     } else {
         // According to the macOS documentation, it should be the height of editor line
         // but for now we have a constant hardcoded here...
-        10f
+        1f
     }
     val xScaleMultiplier = if (hasPreciseScrillingDeltas) {
-        1f
+        0.1f
     } else {
         // According to the macOS documentation, it should be some multiplier, based on character width, I guess
-        10f
+        1f
     }
     return DpOffset(
         (directionMultiplier * xScaleMultiplier * scrollingDeltaX).dp,
