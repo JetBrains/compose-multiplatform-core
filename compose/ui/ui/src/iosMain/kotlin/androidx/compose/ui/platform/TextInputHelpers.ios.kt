@@ -28,6 +28,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRect
+import platform.Foundation.NSCharacterSet
 import platform.UIKit.NSWritingDirection
 import platform.UIKit.NSWritingDirectionLeftToRight
 import platform.UIKit.NSWritingDirectionNatural
@@ -318,11 +319,13 @@ private fun TextDirection.toUITextWritingDirection(): UITextWritingDirection = w
     else -> NSWritingDirectionNatural
 }
 
+private fun Char.isNewLineCharacter(): Boolean =
+    NSCharacterSet.newlineCharacterSet.characterIsMember(code.toUShort())
+
 internal class TextInputStringTokenizer(
     textInput: UIResponder,
     val getString: () -> String?
 ): CMPTextInputStringTokenizer(textInput) {
-    private val newLineCharacters = setOf('\n', '\r', '\u2029')
 
     override fun positionFromPosition(
         position: UITextPosition,
@@ -395,14 +398,16 @@ internal class TextInputStringTokenizer(
 
         val string = getString() ?: ""
         var location = textPosition.position
-        while (isForward && location < string.length || !isForward && location > 0) {
-            if (isForward) {
-                if (string[location] in newLineCharacters) {
+        if (isForward) {
+            while (location < string.length) {
+                if (string[location].isNewLineCharacter()) {
                     break
                 }
                 location++
-            } else {
-                if (string[location] in newLineCharacters) {
+            }
+        } else {
+            while (location > 0) {
+                if (string[location].isNewLineCharacter()) {
                     location++
                     break
                 }
@@ -414,7 +419,7 @@ internal class TextInputStringTokenizer(
 
     private fun isAtParagraphBoundary(text: String, position: Int): Boolean {
         if (position == 0 || position == text.length) return true
-        return text[position] in newLineCharacters || text[position - 1] in newLineCharacters
+        return text[position].isNewLineCharacter() || text[position - 1].isNewLineCharacter()
     }
 }
 
