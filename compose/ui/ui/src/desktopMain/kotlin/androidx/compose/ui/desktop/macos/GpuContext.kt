@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.desktop.macos
 
+import androidx.compose.ui.desktop.logging.logger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
@@ -72,8 +73,8 @@ data class MetalViewContext(
       catch (_: InterruptedException) {
         break
       }
-      catch (e: Throwable) {
-          println("Error during rendering")
+      catch (throwable: Throwable) {
+        logger.error(throwable) { "Could not execute render loop cycle" }
       } finally {
         renderTaskLock.withLock {
           pendingTask?.onComplete?.invoke()
@@ -171,3 +172,5 @@ data class DesktopGpuContext(
     metalViewContext.view.close()
   }
 }
+
+private val logger = logger<DesktopGpuContext>()

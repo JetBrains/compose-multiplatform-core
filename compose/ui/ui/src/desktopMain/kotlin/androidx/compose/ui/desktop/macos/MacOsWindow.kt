@@ -47,6 +47,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.desktop.ClipboardItemsEntry
 import androidx.compose.ui.desktop.InteractiveMoveInitiator
 import androidx.compose.ui.desktop.KdtDragAndDropManager
 import androidx.compose.ui.desktop.KdtDragAndDropTransferable
@@ -124,6 +125,7 @@ class MacOsWindow internal constructor(
 ) :
     PositionAwareWindow, InteractiveMoveInitiator {
     private var backingNativeWindow: org.jetbrains.desktop.macos.Window? = nativeWindow
+    internal val nativeWindowId: org.jetbrains.desktop.macos.WindowId = nativeWindow.windowId()
     override val nativeWindow: org.jetbrains.desktop.macos.Window
         get() = checkNotNull(backingNativeWindow) {
             "Cannot access the native Window of a disposed MacOsWindow"
@@ -250,11 +252,13 @@ class MacOsWindow internal constructor(
 
     override fun requestPlacement(placement: WindowPlacement) {
         if (!isDisposed) {
+            val isFullscreen = nativeWindow.isFullScreen
+            val isMaximized = nativeWindow.isMaximizedButNotInFullScreen()
             when (placement) {
-                WindowPlacement.Floating if nativeWindow.isMaximized -> nativeWindow.toggleMaximize()
-                WindowPlacement.Floating if nativeWindow.isFullScreen -> nativeWindow.toggleFullScreen()
-                WindowPlacement.Fullscreen if !nativeWindow.isFullScreen -> nativeWindow.toggleFullScreen()
-                WindowPlacement.Maximized if !nativeWindow.isMaximized -> nativeWindow.toggleMaximize()
+                WindowPlacement.Floating if isMaximized -> nativeWindow.toggleMaximize()
+                WindowPlacement.Floating if isFullscreen -> nativeWindow.toggleFullScreen()
+                WindowPlacement.Fullscreen if !isFullscreen -> nativeWindow.toggleFullScreen()
+                WindowPlacement.Maximized if !isMaximized -> nativeWindow.toggleMaximize()
                 else -> {}
             }
         }
@@ -343,7 +347,7 @@ class MacOsWindow internal constructor(
 
     private fun placement(): WindowPlacement = when {
         nativeWindow.isFullScreen -> WindowPlacement.Fullscreen
-        nativeWindow.isMaximized -> WindowPlacement.Maximized
+        nativeWindow.isMaximizedButNotInFullScreen() -> WindowPlacement.Maximized
         else -> WindowPlacement.Floating
     }
 
@@ -605,10 +609,11 @@ class MacOsWindow internal constructor(
         decorationSize: Size,
         drawDragDecoration: DrawScope.() -> Unit,
     ) {
-        val data = (transferData.transferable as? KdtDragAndDropTransferable)
+        val itemsEntry = (transferData.transferable as? KdtDragAndDropTransferable)
             ?.clipboardEntry
-            ?.nativeClipEntry as? MacOsClipboardEntry.Items
+            ?.nativeClipEntry as? ClipboardItemsEntry
             ?: return
+        val pasteboardItems = itemsEntry.items.toPasteboardItems()
 
         val image = DragAndDropImage(
             decorationSize,
@@ -632,7 +637,7 @@ class MacOsWindow internal constructor(
             emptyImageSize.toLogicalSize(density),
         )
 
-        val draggingItems = data.items.mapIndexed { index, item ->
+        val draggingItems = pasteboardItems.mapIndexed { index, item ->
             DraggingItem(
                 item,
                 if (index == 0)
@@ -666,6 +671,7 @@ class MacOsWindow internal constructor(
             architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
             if (id !in application.reusableNativeWindowResources) {
                 nativeWindow.close()
+                nativeWindowId.destroyLightweightWindowId()
                 application.desktopGpuContext.destroyMetalViewContext(viewContext)
             }
             backingNativeWindow = null
@@ -785,34 +791,55 @@ class MacOsWindow internal constructor(
     private fun setupDisplayLink() {
         displayLink?.close()
         displayLink = DisplayLink.create(nativeWindow.screenId()) {
+            val frameStartTimeMarkWrapper = TimeMarkWrapper(TimeSource.Monotonic.markNow())
             if (
                 !isDisposed &&
                 isFrameRequested &&
-                displayLinkFrameStartTimeMark.compareAndSet(
-                    null,
-                    TimeMarkWrapper(TimeSource.Monotonic.markNow()),
-                )
+                displayLinkFrameStartTimeMark.compareAndSet(null, frameStartTimeMarkWrapper)
             ) {
                 GrandCentralDispatch.dispatchOnMain(highPriority = true) {
                     isFrameRequested = false
-                    scene.withPreparedMainThread {
-                        preparePicture()?.let { presentablePicture ->
-                            viewContext.presentAsync(
-                                presentablePicture, waitForCATransaction = false,
-                                onComplete = {
+                    try {
+                        scene.withPreparedMainThread {
+                            preparePicture()?.let { presentablePicture ->
+                                try {
+                                    viewContext.presentAsync(
+                                        presentablePicture, waitForCATransaction = false,
+                                        onComplete = {
+                                            presentablePicture.close()
+                                            val elapsedTime = displayLinkFrameStartTimeMark
+                                                .exchange(null)!!
+                                                .timeMark
+                                                .elapsedNow()
+                                            if (elapsedTime.inWholeMilliseconds > 10) {
+                                                logger.debug("Long frame: ${elapsedTime}")
+                                            }
+                                        },
+                                    )
+                                } catch (throwable: Throwable) {
+                                    logger.error(throwable) { "Could not schedule frame presentation" }
+                                    isFrameRequested = true
+                                    displayLinkFrameStartTimeMark.compareAndSet(
+                                        frameStartTimeMarkWrapper,
+                                        null,
+                                    )
                                     presentablePicture.close()
-                                    val elapsedTime = displayLinkFrameStartTimeMark
-                                        .exchange(null)!!
-                                        .timeMark
-                                        .elapsedNow()
-                                    if (elapsedTime.inWholeMilliseconds > 10) {
-                                        logger.debug("Long frame: ${elapsedTime}")
-                                    }
-                                },
-                            )
-                        } ?: run {
-                            isFrameRequested = true
+                                }
+                            } ?: run {
+                                isFrameRequested = true
+                                displayLinkFrameStartTimeMark.compareAndSet(
+                                    frameStartTimeMarkWrapper,
+                                    null,
+                                )
+                            }
                         }
+                    } catch (throwable: Throwable) {
+                        logger.error(throwable) { "Could not prepare frame" }
+                        isFrameRequested = true
+                        displayLinkFrameStartTimeMark.compareAndSet(
+                            frameStartTimeMarkWrapper,
+                            null,
+                        )
                     }
                 }
             }
@@ -822,16 +849,25 @@ class MacOsWindow internal constructor(
 
     private fun repaintSynchronously() {
         displayLink?.setRunning(false)
+        val wasFrameRequestedPreviously = isFrameRequested
         isFrameRequested = false
-        scene.withPreparedMainThread {
-            preparePicture()?.use { picture ->
-                viewContext.presentSync(picture, waitForCATransaction = true)
-            } ?: run {
-                logger.debug { "No picture was produced before display layer" }
+        try {
+            scene.withPreparedMainThread {
+                preparePicture()?.use { picture ->
+                    viewContext.presentSync(picture, waitForCATransaction = true)
+                } ?: run {
+                    logger.debug { "No picture was produced before display layer" }
+                    isFrameRequested = true
+                }
+            }
+        } catch (throwable: Throwable) {
+            logger.error(throwable) { "Could not prepare frame synchronously" }
+            if (!isFrameRequested && wasFrameRequestedPreviously) {
                 isFrameRequested = true
             }
+        } finally {
+            displayLink?.setRunning(true)
         }
-        displayLink?.setRunning(true)
     }
 
     @OptIn(ExperimentalComposeUiApi::class, InternalCoreApi::class)
@@ -1073,6 +1109,10 @@ class MacOsWindow internal constructor(
         // any event dispatched by the application event loop can reach `handleEvent`.
         application.windows += id to this
     }
+}
+
+private fun org.jetbrains.desktop.macos.Window.isMaximizedButNotInFullScreen(): Boolean {
+    return !isFullScreen && isMaximized
 }
 
 private

@@ -36,32 +36,25 @@ interface ClipboardEntry {
         getForFormat(format).firstOrNull()
 }
 
-data class WindowLocalDragData(val windowId: LightweightWindowId?, val type: String) {
-    init {
-        require('\n' !in type) { "WindowLocalDragData type must not contain newlines: $type" }
-    }
+class ClipboardItemsEntry(val items: List<ClipboardItem>) : ClipboardEntry {
+    override suspend fun <T : Any> getForFormat(format: ClipboardFormat<T>): List<T> =
+        getForFormatSync(format)
 
-    fun serialize(): String = "${windowId?.value ?: ""}\n$type"
-
-    companion object {
-        fun deserialize(data: String): WindowLocalDragData? {
-            val newlineIndex = data.indexOf('\n')
-            if (newlineIndex < 0) return null
-            val idStr = data.substring(0, newlineIndex)
-            val windowId = if (idStr.isEmpty()) null else LightweightWindowId(idStr.toLongOrNull() ?: return null)
-            return WindowLocalDragData(windowId, data.substring(newlineIndex + 1))
-        }
+    override fun <T : Any> getForFormatSync(format: ClipboardFormat<T>): List<T> {
+        @Suppress("UNCHECKED_CAST")
+        return items
+            .flatMap { it.elements }
+            .filter { it.format == format }
+            .map { it.value as T }
     }
 }
-
-fun dupa() {}
 
 sealed interface ClipboardFormat<T : Any> {
     data object Utf8PlainText : ClipboardFormat<String>
     data object Html : ClipboardFormat<String>
     data object Png : ClipboardFormat<ByteArray>
     data object File : ClipboardFormat<String>
-    data object WindowLocalDrag : ClipboardFormat<WindowLocalDragData>
+    data object WindowLocalDrag : ClipboardFormat<LightweightWindowId>
     data class CustomSerializable<T : Any>(
         val mimeType: String,
         val serializer: KSerializer<T>,
