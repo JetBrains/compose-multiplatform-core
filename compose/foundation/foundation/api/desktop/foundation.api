@@ -398,8 +398,8 @@ public final class androidx/compose/foundation/content/TransferableContent$Sourc
 public final class androidx/compose/foundation/contextmenu/ComposableSingletons$ContextMenuUiKt {
 	public static final field INSTANCE Landroidx/compose/foundation/contextmenu/ComposableSingletons$ContextMenuUiKt;
 	public fun <init> ()V
-	public final fun getLambda$-1455401925$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-1571120048$foundation ()Lkotlin/jvm/functions/Function8;
+	public final fun getLambda$-1455401925$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1571120048$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function8;
 }
 
 public final class androidx/compose/foundation/draganddrop/DragAndDropSourceKt {
@@ -2026,23 +2026,23 @@ public final class androidx/compose/foundation/text/ClickableTextKt {
 public final class androidx/compose/foundation/text/ComposableSingletons$BasicTextFieldKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$BasicTextFieldKt;
 	public fun <init> ()V
-	public final fun getLambda$-665310900$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$444370233$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$486633673$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$759698998$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-665310900$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$444370233$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$486633673$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$759698998$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/ComposableSingletons$BasicTextField_desktopKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$BasicTextField_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda$-580413359$foundation ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$1808468638$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-580413359$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1808468638$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/ComposableSingletons$CoreTextFieldKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/ComposableSingletons$CoreTextFieldKt;
 	public fun <init> ()V
-	public final fun getLambda$559628295$foundation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$559628295$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/foundation/text/InlineTextContent {
@@ -2192,9 +2192,9 @@ public abstract interface class androidx/compose/foundation/text/contextmenu/dat
 public final class androidx/compose/foundation/text/contextmenu/internal/ComposableSingletons$DefaultTextContextMenuDropdownProvider_skikoKt {
 	public static final field INSTANCE Landroidx/compose/foundation/text/contextmenu/internal/ComposableSingletons$DefaultTextContextMenuDropdownProvider_skikoKt;
 	public fun <init> ()V
-	public final fun getLambda$-651812147$foundation ()Lkotlin/jvm/functions/Function5;
-	public final fun getLambda$1837043723$foundation ()Lkotlin/jvm/functions/Function5;
-	public final fun getLambda$1965104340$foundation ()Lkotlin/jvm/functions/Function5;
+	public final fun getLambda$-651812147$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
+	public final fun getLambda$1837043723$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
+	public final fun getLambda$1965104340$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function5;
 }
 
 public final class androidx/compose/foundation/text/contextmenu/modifier/TextContextMenuModifierKt {
@@ -2405,7 +2405,7 @@ public final class androidx/compose/foundation/v2/Scrollbar_desktopKt {
 public final class androidx/compose/foundation/window/ComposableSingletons$WindowDraggableArea_desktopKt {
 	public static final field INSTANCE Landroidx/compose/foundation/window/ComposableSingletons$WindowDraggableArea_desktopKt;
 	public fun <init> ()V
-	public final fun getLambda$358499693$foundation ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$358499693$org_jetbrains_compose_foundation_foundation ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/foundation/window/WindowDraggableArea_desktopKt {

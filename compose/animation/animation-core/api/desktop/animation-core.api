@@ -171,7 +171,7 @@ public final class androidx/compose/animation/core/AnimationVector1D : androidx/
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getValue ()F
 	public fun hashCode ()I
-	public synthetic fun newVector$animation_core ()Landroidx/compose/animation/core/AnimationVector;
+	public synthetic fun newVector$org_jetbrains_compose_animation_animation_core ()Landroidx/compose/animation/core/AnimationVector;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -182,7 +182,7 @@ public final class androidx/compose/animation/core/AnimationVector2D : androidx/
 	public final fun getV1 ()F
 	public final fun getV2 ()F
 	public fun hashCode ()I
-	public synthetic fun newVector$animation_core ()Landroidx/compose/animation/core/AnimationVector;
+	public synthetic fun newVector$org_jetbrains_compose_animation_animation_core ()Landroidx/compose/animation/core/AnimationVector;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -194,7 +194,7 @@ public final class androidx/compose/animation/core/AnimationVector3D : androidx/
 	public final fun getV2 ()F
 	public final fun getV3 ()F
 	public fun hashCode ()I
-	public synthetic fun newVector$animation_core ()Landroidx/compose/animation/core/AnimationVector;
+	public synthetic fun newVector$org_jetbrains_compose_animation_animation_core ()Landroidx/compose/animation/core/AnimationVector;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -207,7 +207,7 @@ public final class androidx/compose/animation/core/AnimationVector4D : androidx/
 	public final fun getV3 ()F
 	public final fun getV4 ()F
 	public fun hashCode ()I
-	public synthetic fun newVector$animation_core ()Landroidx/compose/animation/core/AnimationVector;
+	public synthetic fun newVector$org_jetbrains_compose_animation_animation_core ()Landroidx/compose/animation/core/AnimationVector;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -471,7 +471,7 @@ public final class androidx/compose/animation/core/KeyframesSpec$KeyframesSpecCo
 	public fun at (Ljava/lang/Object;I)Landroidx/compose/animation/core/KeyframesSpec$KeyframeEntity;
 	public synthetic fun atFraction (Ljava/lang/Object;F)Landroidx/compose/animation/core/KeyframeBaseEntity;
 	public fun atFraction (Ljava/lang/Object;F)Landroidx/compose/animation/core/KeyframesSpec$KeyframeEntity;
-	public synthetic fun createEntityFor$animation_core (Ljava/lang/Object;)Landroidx/compose/animation/core/KeyframeBaseEntity;
+	public synthetic fun createEntityFor$org_jetbrains_compose_animation_animation_core (Ljava/lang/Object;)Landroidx/compose/animation/core/KeyframeBaseEntity;
 	public final fun using-ngzHuyU (Landroidx/compose/animation/core/KeyframesSpec$KeyframeEntity;I)Landroidx/compose/animation/core/KeyframesSpec$KeyframeEntity;
 	public final fun with (Landroidx/compose/animation/core/KeyframesSpec$KeyframeEntity;Landroidx/compose/animation/core/Easing;)V
 }
@@ -500,7 +500,7 @@ public final class androidx/compose/animation/core/KeyframesWithSplineSpec : and
 public final class androidx/compose/animation/core/KeyframesWithSplineSpec$KeyframesWithSplineSpecConfig : androidx/compose/animation/core/KeyframesSpecBaseConfig {
 	public static final field $stable I
 	public fun <init> ()V
-	public synthetic fun createEntityFor$animation_core (Ljava/lang/Object;)Landroidx/compose/animation/core/KeyframeBaseEntity;
+	public synthetic fun createEntityFor$org_jetbrains_compose_animation_animation_core (Ljava/lang/Object;)Landroidx/compose/animation/core/KeyframeBaseEntity;
 }
 
 public final class androidx/compose/animation/core/MutableTransitionState : androidx/compose/animation/core/TransitionState {
@@ -510,7 +510,7 @@ public final class androidx/compose/animation/core/MutableTransitionState : andr
 	public fun getTargetState ()Ljava/lang/Object;
 	public final fun isIdle ()Z
 	public fun setTargetState (Ljava/lang/Object;)V
-	public synthetic fun setTargetState$animation_core (Ljava/lang/Object;)V
+	public synthetic fun setTargetState$org_jetbrains_compose_animation_animation_core (Ljava/lang/Object;)V
 }
 
 public final class androidx/compose/animation/core/PathEasing : androidx/compose/animation/core/Easing {

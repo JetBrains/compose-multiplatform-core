@@ -1,14 +1,14 @@
 public final class androidx/compose/material3/adaptive/navigationsuite/ComposableSingletons$NavigationSuiteScaffoldKt {
 	public static final field INSTANCE Landroidx/compose/material3/adaptive/navigationsuite/ComposableSingletons$NavigationSuiteScaffoldKt;
 	public fun <init> ()V
-	public final fun getLambda$-1164008505$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$-1305500908$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$-1476022764$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$-1548300991$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$-1866128853$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$-492711772$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$568924554$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$895267259$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1164008505$org_jetbrains_compose_material3_material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1305500908$org_jetbrains_compose_material3_material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1476022764$org_jetbrains_compose_material3_material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1548300991$org_jetbrains_compose_material3_material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1866128853$org_jetbrains_compose_material3_material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-492711772$org_jetbrains_compose_material3_material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$568924554$org_jetbrains_compose_material3_material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$895267259$org_jetbrains_compose_material3_material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/material3/adaptive/navigationsuite/DefaultNavigationSuiteScaffoldOverride : androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldOverride {
