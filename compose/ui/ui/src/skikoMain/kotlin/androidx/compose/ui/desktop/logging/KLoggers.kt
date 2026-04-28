@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package androidx.compose.ui.desktop.logging
 
-package noria.ui.core
+import kotlin.reflect.KClass
 
-import androidx.compose.runtime.*
-import androidx.compose.ui.desktop.LightweightWindowId
-import androidx.compose.ui.desktop.Window
+object KLoggers {
+  internal val loggerFactory: KLoggerFactory =
+      ConsoleKLoggerFactory
 
-data class WindowData(val windowId: LightweightWindowId)
-
-val LocalWindow: ProvidableCompositionLocal<Window> = staticCompositionLocalOf {
-    error("LocalWindow is not provided")
+  fun logger(owner: KClass<*>): KLogger = loggerFactory.logger(owner)
 }
+
+inline fun <reified T> logger(): KLogger = KLoggers.logger(T::class)
