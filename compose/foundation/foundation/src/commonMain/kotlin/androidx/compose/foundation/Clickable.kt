@@ -56,6 +56,11 @@ import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.isOutOfBounds
+import androidx.compose.foundation.text.selection.LocalInteractiveAreaRegistry
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DelegatingNode
@@ -642,7 +647,7 @@ internal inline fun Modifier.clickableWithIndicationIfNeeded(
                         .then(createClickable(newInteractionSource, null))
                 }
         }
-    )
+    ).pointerHoverIcon(PointerIcon.Default, overrideDescendants = true)
 }
 
 /**
@@ -1702,6 +1707,7 @@ internal abstract class AbstractClickableNode(
     CompositionLocalConsumerModifierNode,
     ObserverModifierNode,
     IndirectPointerInputModifierNode,
+    GlobalPositionAwareModifierNode,
     GestureConnection {
     protected var enabled = enabled
         private set
@@ -1739,6 +1745,20 @@ internal abstract class AbstractClickableNode(
     private var lazilyCreateIndication = shouldLazilyCreateIndication()
 
     private fun shouldLazilyCreateIndication() = userProvidedInteractionSource == null
+
+    // Interactive area registry — used on web to exclude clickable areas from text selection.
+    private var interactiveAreaCoords: LayoutCoordinates? = null
+    private var unregisterInteractiveArea: (() -> Unit)? = null
+
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        interactiveAreaCoords = coordinates
+    }
+
+    private fun updateInteractiveAreaRegistration() {
+        unregisterInteractiveArea?.invoke()
+        unregisterInteractiveArea =
+            currentValueOf(LocalInteractiveAreaRegistry)?.register { interactiveAreaCoords }
+    }
 
     /**
      * Handles subclass-specific click related pointer input logic. Hover is already handled
@@ -1841,6 +1861,11 @@ internal abstract class AbstractClickableNode(
     }
 
     override fun onObservedReadsChanged() {
+        // Always observe LocalInteractiveAreaRegistry so registration is updated if the local
+        // changes (e.g. button moves in/out of WebDefaultSelectionContainer scope).
+        observeReads {
+            updateInteractiveAreaRegistration()
+        }
         if (useLocalIndication) {
             observeReads {
                 val indication = currentValueOf(LocalIndication)
@@ -1859,6 +1884,9 @@ internal abstract class AbstractClickableNode(
     }
 
     final override fun onDetach() {
+        unregisterInteractiveArea?.invoke()
+        unregisterInteractiveArea = null
+        interactiveAreaCoords = null
         disposeInteractions()
         // If we lazily created an interaction source, reset it in case we are reused / moved. Note
         // that we need to do it here instead of onReset() - since onReset won't be called in the

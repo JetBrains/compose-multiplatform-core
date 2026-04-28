@@ -16,6 +16,7 @@
 
 package androidx.compose.mpp.demo
 
+import androidx.compose.foundation.text.selection.WebDefaultSelectionContainer
 import androidx.compose.mpp.demo.bugs.BugsScreen
 import androidx.compose.mpp.demo.components.text.loadResource
 import androidx.compose.mpp.demo.interops.HtmlInteropDemos
@@ -55,7 +56,9 @@ fun main() {
         ) }
 
         if (fontsLoaded.value) {
-            app.Content(navController)
+            WebDefaultSelectionContainer {
+                app.Content(navController)
+            }
 
             // TODO: possibly suboptimal workaround for https://youtrack.jetbrains.com/issue/CMP-7136/web-Its-non-trivial-to-bind-to-navigation-if-NavHost-is-called-asynchronously
             LaunchedEffect(Unit) {

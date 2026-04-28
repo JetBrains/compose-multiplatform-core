@@ -26,6 +26,8 @@ import androidx.compose.foundation.text.selection.LocalSelectionRegistrar
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.SelectionRegistrar
 import androidx.compose.foundation.text.selection.hasSelection
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.NonRestartableComposable
@@ -118,12 +120,14 @@ fun BasicText(
         }
 
     val fontFamilyResolver = LocalFontFamilyResolver.current
+    val selectionPointerIconModifier =
+        if (selectionController != null) Modifier.pointerHoverIcon(PointerIcon.Text) else Modifier
 
     BackgroundTextMeasurement(text = text, style = style, fontFamilyResolver = fontFamilyResolver)
 
     val finalModifier =
         if (selectionController != null || onTextLayout != null || autoSize != null) {
-            modifier.textModifier(
+            modifier.then(selectionPointerIconModifier).textModifier(
                 AnnotatedString(text = text),
                 style = style,
                 onTextLayout = onTextLayout,
@@ -218,6 +222,8 @@ fun BasicText(
     val hasLinks = text.hasLinks()
 
     val fontFamilyResolver = LocalFontFamilyResolver.current
+    val selectionPointerIconModifier =
+        if (selectionController != null) Modifier.pointerHoverIcon(PointerIcon.Text) else Modifier
 
     if (!hasInlineContent && !hasLinks) {
         BackgroundTextMeasurement(
@@ -230,7 +236,7 @@ fun BasicText(
         // this is the same as text: String, use all the early exits
         Layout(
             modifier =
-                modifier.textModifier(
+                modifier.then(selectionPointerIconModifier).textModifier(
                     text = text,
                     style = style,
                     onTextLayout = onTextLayout,
@@ -254,7 +260,7 @@ fun BasicText(
         var displayedText by remember(text) { mutableStateOf(text) }
 
         LayoutWithLinksAndInlineContent(
-            modifier = modifier,
+            modifier = modifier.then(selectionPointerIconModifier),
             text = displayedText,
             onTextLayout = onTextLayout,
             hasInlineContent = hasInlineContent,

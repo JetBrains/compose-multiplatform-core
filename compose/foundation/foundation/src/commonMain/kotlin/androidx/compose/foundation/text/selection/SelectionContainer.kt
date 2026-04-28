@@ -56,12 +56,18 @@ import kotlinx.coroutines.launch
 @Composable
 fun SelectionContainer(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     var selection by remember { mutableStateOf<Selection?>(null) }
-    SelectionContainer(
-        modifier = modifier,
-        selection = selection,
-        onSelectionChange = { selection = it },
-        children = content,
-    )
+    // Clear the interactive area registry so that explicitly opted-in SelectionContainers
+    // restore the standard "everything is selectable" behavior (including button labels).
+    // This ensures WebDefaultSelectionContainer's exclusion logic does not leak into
+    // developer-controlled selection scopes.
+    CompositionLocalProvider(LocalInteractiveAreaRegistry provides null) {
+        SelectionContainer(
+            modifier = modifier,
+            selection = selection,
+            onSelectionChange = { selection = it },
+            children = content,
+        )
+    }
 }
 
 /**
@@ -125,6 +131,8 @@ internal fun SelectionContainer(
             onCopy = { manager.getSelectedText() },
             isEnabled = manager.isNonEmptySelection(),
         )
+
+    manager.interactiveAreaRegistry = LocalInteractiveAreaRegistry.current
 
     /*
      * Need a layout for selection gestures that span multiple text children.

@@ -160,6 +160,13 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
      */
     internal var shouldIgnoreCopyKeyEvent: Boolean = false
 
+    /**
+     * Optional registry of interactive (clickable) component bounds.
+     * When set, text inside interactive areas is excluded from selection gestures and Select All.
+     * Only used on web via [WebDefaultSelectionContainer].
+     */
+    internal var interactiveAreaRegistry: InteractiveAreaRegistry? = null
+
     /** Modifier for selection container. */
     val modifier
         get() =
@@ -337,7 +344,12 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
 
                 val positionInContainer = convertToContainerCoordinates(layoutCoordinates, position)
 
-                if (positionInContainer.isSpecified) {
+                if (positionInContainer.isSpecified &&
+                    // Don't start selection when the gesture originates inside an interactive
+                    // component (e.g. a Button). Only active when interactiveAreaRegistry is set
+                    // (web platform with WebDefaultSelectionContainer).
+                    interactiveAreaRegistry?.isInsideInteractiveArea(layoutCoordinates) != true
+                ) {
                     this.isInTouchMode = isInTouchMode
                     startSelection(
                         position = positionInContainer,
@@ -617,6 +629,13 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
         val newSubSelections =
             mutableLongObjectMapOf<Selection>().apply {
                 selectables.fastForEach { selectable ->
+                    // Skip selectables inside interactive areas (e.g. button labels).
+                    val selectableCoords = selectable.getLayoutCoordinates()
+                    if (selectableCoords != null &&
+                        interactiveAreaRegistry?.isInsideInteractiveArea(selectableCoords) == true
+                    ) {
+                        return@fastForEach
+                    }
                     val subSelection = selectable.getSelectAllSelection() ?: return@fastForEach
                     if (firstSubSelection == null) firstSubSelection = subSelection
                     lastSubSelection = subSelection

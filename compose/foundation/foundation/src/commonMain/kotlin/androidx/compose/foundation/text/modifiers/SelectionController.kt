@@ -31,8 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.text.TextLayoutResult
@@ -82,7 +80,6 @@ internal class SelectionController(
                 selectableId = selectableId,
                 layoutCoordinates = { params.layoutCoordinates },
             )
-            .pointerHoverIcon(PointerIcon.Text)
 
     override fun onRemembered() {
         selectable =
@@ -164,6 +161,7 @@ internal class SelectionController(
         }
     }
 }
+
 
 // this is not chained, but is a standalone factory
 @Suppress("ModifierFactoryExtensionFunction")
