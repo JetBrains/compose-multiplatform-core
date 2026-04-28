@@ -3,107 +3,90 @@ package androidx.compose.ui.desktop.macos
 import androidx.compose.ui.desktop.ClipboardEntry
 import androidx.compose.ui.desktop.ClipboardFormat
 import androidx.compose.ui.desktop.ClipboardItem
-import androidx.compose.ui.desktop.WindowLocalDragData
+import androidx.compose.ui.desktop.ClipboardItemsEntry
+import androidx.compose.ui.desktop.LightweightWindowId
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import java.nio.file.Path
 import org.jetbrains.desktop.macos.Pasteboard
 import org.jetbrains.desktop.macos.PasteboardType
-import org.jetbrains.desktop.macos.UrlUtils
 
 object MacOsClipboard : Clipboard {
     override fun getClipEntrySync(): ClipEntry {
-        return ClipEntry(MacOsClipboardEntry.Dummy(PasteboardType.General))
+        return ClipEntry(MacOsClipboardEntry(PasteboardType.General))
     }
 
     override suspend fun getClipEntry(): ClipEntry? = getClipEntrySync()
 
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
         clipEntry ?: return
-        require(clipEntry.nativeClipEntry is MacOsClipboardEntry.Items)
+        val entry = clipEntry.nativeClipEntry
+        require(entry is ClipboardItemsEntry)
         Pasteboard.clear()
-        Pasteboard.writeObjects(clipEntry.nativeClipEntry.items)
+        Pasteboard.writeObjects(entry.items.toPasteboardItems())
     }
 
     override val nativeClipboard: Any
         get() = Pasteboard
 }
 
-internal fun macOsClipboardEntry(vararg items: ClipboardItem): MacOsClipboardEntry.Items {
-    return MacOsClipboardEntry.Items(
-        items.flatMap { item ->
-            val elements = item.elements.flatMap {
-                @Suppress("UNCHECKED_CAST")
-                when (it.format) {
-                    ClipboardFormat.Utf8PlainText -> listOf(
-                        Pasteboard.Element.ofString(
-                            UniformTypeIdentifiers.utf8PlainText,
-                            it.value as String,
-                        ),
-                    )
-                    ClipboardFormat.Html -> listOf(
-                        Pasteboard.Element.ofString(
-                            UniformTypeIdentifiers.html,
-                            it.value as String,
-                        ),
-                    )
-                    ClipboardFormat.File -> listOf(
-                        Pasteboard.Element.ofFilePath(Path.of(it.value as String)),
-                    )
-                    ClipboardFormat.Png -> listOf(
-                        Pasteboard.Element(UniformTypeIdentifiers.png, it.value as ByteArray),
-                    )
-                    ClipboardFormat.WindowLocalDrag -> listOf(
-                        Pasteboard.Element.ofString(
-                            UniformTypeIdentifiers.windowLocalDrag,
-                            (it.value as WindowLocalDragData).serialize(),
-                        ),
-                    )
-                    is ClipboardFormat.CustomSerializable<*> -> listOf(
-                        Pasteboard.Element.ofString(
-                            it.format.toUniformTypeIdentifier(),
-                            (it.format as ClipboardFormat.CustomSerializable<Any>).encode(it.value),
-                        ),
-                    )
-                }
-            }
-
-            listOf(Pasteboard.Item(elements))
-        },
-    )
+internal fun macOsClipboardEntry(vararg items: ClipboardItem): ClipboardItemsEntry {
+    return ClipboardItemsEntry(items.toList())
 }
 
-sealed interface MacOsClipboardEntry : ClipboardEntry {
-    data class Items(val items: List<Pasteboard.Item>) : MacOsClipboardEntry {
-        override suspend fun <T : Any> getForFormat(format: ClipboardFormat<T>): List<T> {
-            return getForFormatSync(format)
+internal fun List<ClipboardItem>.toPasteboardItems(): List<Pasteboard.Item> {
+    return flatMap { item ->
+        val elements = item.elements.flatMap {
+            @Suppress("UNCHECKED_CAST")
+            when (it.format) {
+                ClipboardFormat.Utf8PlainText -> listOf(
+                    Pasteboard.Element.ofString(
+                        UniformTypeIdentifiers.utf8PlainText,
+                        it.value as String,
+                    ),
+                )
+                ClipboardFormat.Html -> listOf(
+                    Pasteboard.Element.ofString(
+                        UniformTypeIdentifiers.html,
+                        it.value as String,
+                    ),
+                )
+                ClipboardFormat.File -> listOf(
+                    Pasteboard.Element.ofFilePath(Path.of(it.value as String)),
+                )
+                ClipboardFormat.Png -> listOf(
+                    Pasteboard.Element(UniformTypeIdentifiers.png, it.value as ByteArray),
+                )
+                ClipboardFormat.WindowLocalDrag -> listOf(
+                    Pasteboard.Element.ofString(
+                        UniformTypeIdentifiers.windowLocalDrag,
+                        (it.value as LightweightWindowId).value.toString(),
+                    ),
+                )
+                is ClipboardFormat.CustomSerializable<*> -> listOf(
+                    Pasteboard.Element.ofString(
+                        it.format.toUniformTypeIdentifier(),
+                        (it.format as ClipboardFormat.CustomSerializable<Any>).encode(it.value),
+                    ),
+                )
+            }
         }
 
-        override fun <T : Any> getForFormatSync(format: ClipboardFormat<T>): List<T> {
-            return decodeClipboardData(
-                format,
-                readBytesForType = { uti -> items.flatMap { it.elements }.filter { it.type == uti }.map { it.content } },
-                readFilePaths = {
-                    items.flatMap { it.elements }
-                        .filter { it.type == UniformTypeIdentifiers.file }
-                        .mapNotNull { UrlUtils.urlToFilePath(String(it.content, charset = Charsets.UTF_8)) }
-                },
-            )
-        }
+        listOf(Pasteboard.Item(elements))
+    }
+}
+
+class MacOsClipboardEntry(private val pasteboardType: PasteboardType) : ClipboardEntry {
+    override suspend fun <T : Any> getForFormat(format: ClipboardFormat<T>): List<T> {
+        return getForFormatSync(format)
     }
 
-    class Dummy(private val pasteboardType: PasteboardType) : MacOsClipboardEntry {
-        override suspend fun <T : Any> getForFormat(format: ClipboardFormat<T>): List<T> {
-            return getForFormatSync(format)
-        }
-
-        override fun <T : Any> getForFormatSync(format: ClipboardFormat<T>): List<T> {
-            return decodeClipboardData(
-                format,
-                readBytesForType = { uti -> Pasteboard.readItemsOfType(uti, pasteboardType) },
-                readFilePaths = { Pasteboard.readFileItemPaths(pasteboardType).map { it.toString() } },
-            )
-        }
+    override fun <T : Any> getForFormatSync(format: ClipboardFormat<T>): List<T> {
+        return decodeClipboardData(
+            format,
+            readBytesForType = { uti -> Pasteboard.readItemsOfType(uti, pasteboardType) },
+            readFilePaths = { Pasteboard.readFileItemPaths(pasteboardType).map { it.toString() } },
+        )
     }
 }
 
@@ -121,7 +104,7 @@ private fun <T : Any> decodeClipboardData(
         ClipboardFormat.Png -> readBytesForType(UniformTypeIdentifiers.png)
         ClipboardFormat.File -> readFilePaths()
         ClipboardFormat.WindowLocalDrag -> readBytesForType(UniformTypeIdentifiers.windowLocalDrag)
-            .mapNotNull { WindowLocalDragData.deserialize(String(it, charset = Charsets.UTF_8)) }
+            .mapNotNull { String(it, charset = Charsets.UTF_8).toLongOrNull()?.let(::LightweightWindowId) }
         is ClipboardFormat.CustomSerializable<*> -> readBytesForType(format.toUniformTypeIdentifier())
             .map { format.decode(String(it, charset = Charsets.UTF_8)) }
     } as List<T>
@@ -135,7 +118,7 @@ internal object UniformTypeIdentifiers {
     const val windowLocalDrag = "org.jetbrains.fleet.window-local-drag"
 }
 
-private fun <T : Any> ClipboardFormat<T>.toUniformTypeIdentifier(): String {
+internal fun <T : Any> ClipboardFormat<T>.toUniformTypeIdentifier(): String {
     return when (this) {
         ClipboardFormat.Utf8PlainText -> UniformTypeIdentifiers.utf8PlainText
         ClipboardFormat.Html -> UniformTypeIdentifiers.html

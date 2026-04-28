@@ -15,6 +15,10 @@ import kotlin.coroutines.resumeWithException
 
 class MacOsNotificationCenter(private val application: MacOsApplication) {
 
+    private suspend fun awaitWhenReady() {
+        application.awaitWhenReady()
+    }
+
     internal fun init(): MacOsNotificationCenter? {
         return if (NotificationCenter.isSupportedByApplication) {
             NotificationCenter.registerNotificationCategories(emptyList())
@@ -54,6 +58,7 @@ class MacOsNotificationCenter(private val application: MacOsApplication) {
     }
 
     suspend fun isNotificationsAllowed(): Boolean {
+        awaitWhenReady()
         return withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
             when (getAuthorizationStatus()) {
                 AuthorizationStatus.NotDetermined -> {
@@ -151,6 +156,7 @@ class MacOsNotificationCenter(private val application: MacOsApplication) {
         sound: Sound,
         vararg actions: Action,
     ): NotificationId? {
+        awaitWhenReady()
         return withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
             if (isNotificationsAllowed().not()) return@withContext null
 
@@ -179,6 +185,7 @@ class MacOsNotificationCenter(private val application: MacOsApplication) {
     }
 
     suspend fun removeNotification(notificationId: NotificationId) {
+        awaitWhenReady()
         withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
             actionCallbacks.remove(notificationId)
             NotificationCenter.removeNotification(NotificationCenter.NotificationId(notificationId.value))

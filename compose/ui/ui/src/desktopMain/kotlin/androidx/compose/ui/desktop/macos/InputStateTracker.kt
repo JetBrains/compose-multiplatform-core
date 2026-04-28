@@ -389,6 +389,7 @@ internal class InputStateTracker(
     }
 }
 
+
 private fun MouseButton.toPointerButton(): PointerButton = when (this) {
     MouseButton.LEFT -> PointerButton.Primary
     MouseButton.RIGHT -> PointerButton.Secondary
