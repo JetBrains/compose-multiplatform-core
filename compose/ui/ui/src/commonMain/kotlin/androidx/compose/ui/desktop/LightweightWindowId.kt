@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-package noria.ui.core
+package androidx.compose.ui.desktop
 
-import androidx.compose.runtime.*
-import androidx.compose.ui.desktop.LightweightWindowId
-import androidx.compose.ui.desktop.Window
+import kotlin.jvm.JvmInline
 
-data class WindowData(val windowId: LightweightWindowId)
-
-val LocalWindow: ProvidableCompositionLocal<Window> = staticCompositionLocalOf {
-    error("LocalWindow is not provided")
-}
+@JvmInline
+value class LightweightWindowId(val value: Long)
