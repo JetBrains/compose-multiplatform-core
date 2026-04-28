@@ -16,154 +16,43 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.runtime.Immutable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.DesktopPlatform
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/**
- * Defines the options for window decoration.
- */
-@ExperimentalComposeUiApi
-sealed interface WindowDecoration {
-
-    val isDecorated: Boolean
-
-    val leftTitleBarElements: List<TitleBarElement>
-    val rightTitleBarElements: List<TitleBarElement>
-
-    /**
-     * Specifies that the default system decoration should be used.
-     */
-    data object Decorated : WindowDecoration {
-        override val isDecorated: Boolean = true
-        override val leftTitleBarElements: List<TitleBarElement> =
-            WindowDecorationDefaults.LeftTitleBarElements
-        override val rightTitleBarElements: List<TitleBarElement> =
-            WindowDecorationDefaults.RightTitleBarElements
-    }
-
-    /**
-     * Specifies that the window should be undecorated.
-     *
-     * If it is resizable, the given thickness will be used for the edge resizers.
-     */
-    @Immutable
-    class Undecorated(val resizerThickness: Dp = WindowDecorationDefaults.ResizerThickness) :
-        WindowDecoration {
-        override val isDecorated: Boolean = false
-        override val leftTitleBarElements: List<TitleBarElement> = emptyList()
-        override val rightTitleBarElements: List<TitleBarElement> = emptyList()
-
-        override fun equals(other: Any?): Boolean {
-            if (other !is Undecorated) return false
-            return other.resizerThickness == resizerThickness
-        }
-
-        override fun hashCode(): Int {
-            return resizerThickness.hashCode()
-        }
-    }
-
-    /**
-     * Specifies that the window should be decorated with a custom title bar.
-     *
-     * If it is resizable, the given thickness will be used for the edge resizers.
-     */
-    @Immutable
-    class CustomTitleBar(val height: Dp) : WindowDecoration {
-        override val isDecorated: Boolean = true
-        override val leftTitleBarElements: List<TitleBarElement> =
-            WindowDecorationDefaults.LeftTitleBarElements
-        override val rightTitleBarElements: List<TitleBarElement> =
-            WindowDecorationDefaults.RightTitleBarElements
-
-        override fun equals(other: Any?): Boolean {
-            if (other !is CustomTitleBar) return false
-            return other.height == height
-        }
-
-        override fun hashCode(): Int {
-            return height.hashCode()
-        }
-    }
-
-    enum class TitleBarElement {
-        AppMenu,
-        Icon,
-        Spacer,
-        MinimizeButton,
-        MaximizeButton,
-        FullscreenButton,
-        CloseButton,
-    }
+internal actual fun windowDecorationCustomTitleBarHeight(): Dp = when (DesktopPlatform.Current) {
+    DesktopPlatform.MacOS -> 28.dp
+    DesktopPlatform.Windows -> 32.dp
+    else -> 24.dp
 }
 
-/**
- * Default values for window decoration.
- */
-@ExperimentalComposeUiApi
-object WindowDecorationDefaults {
-    /**
-     * The default thickness of the resizers in an undecorated window.
-     */
-    val ResizerThickness: Dp = 8.dp
+internal actual fun windowDecorationLeftTitleBarElements(): List<WindowDecoration.TitleBarElement> =
+    when (DesktopPlatform.Current) {
+        DesktopPlatform.MacOS -> listOf(
+            WindowDecoration.TitleBarElement.CloseButton,
+            WindowDecoration.TitleBarElement.MinimizeButton,
+            WindowDecoration.TitleBarElement.FullscreenButton
+        )
 
-    /**
-     * The default height of the region at the top of an undecorated window
-     * where it can be drag-moved.
-     */
-    val CustomTitleBarHeight: Dp = when (DesktopPlatform.Current) {
-        DesktopPlatform.MacOS -> 28.dp
-        DesktopPlatform.Windows -> 32.dp
-        else -> 24.dp
+        DesktopPlatform.Windows -> listOf(WindowDecoration.TitleBarElement.AppMenu)
+        DesktopPlatform.Linux -> emptyList()
+        DesktopPlatform.Unknown -> emptyList()
     }
 
-    val LeftTitleBarElements: List<WindowDecoration.TitleBarElement> =
-        when (DesktopPlatform.Current) {
-            DesktopPlatform.MacOS -> listOf(
-                WindowDecoration.TitleBarElement.CloseButton,
-                WindowDecoration.TitleBarElement.MinimizeButton,
-                WindowDecoration.TitleBarElement.FullscreenButton
-            )
+internal actual fun windowDecorationRightTitleBarElements(): List<WindowDecoration.TitleBarElement> =
+    when (DesktopPlatform.Current) {
+        DesktopPlatform.MacOS -> emptyList()
+        DesktopPlatform.Windows -> listOf(
+            WindowDecoration.TitleBarElement.MinimizeButton,
+            WindowDecoration.TitleBarElement.MaximizeButton,
+            WindowDecoration.TitleBarElement.CloseButton
+        )
 
-            DesktopPlatform.Windows -> listOf(WindowDecoration.TitleBarElement.AppMenu)
-            DesktopPlatform.Linux -> emptyList()
-            DesktopPlatform.Unknown -> emptyList()
-        }
+        DesktopPlatform.Linux -> listOf(
+            WindowDecoration.TitleBarElement.MinimizeButton,
+            WindowDecoration.TitleBarElement.MaximizeButton,
+            WindowDecoration.TitleBarElement.CloseButton
+        )
 
-    val RightTitleBarElements: List<WindowDecoration.TitleBarElement> =
-        when (DesktopPlatform.Current) {
-            DesktopPlatform.MacOS -> emptyList()
-            DesktopPlatform.Windows -> listOf(
-                WindowDecoration.TitleBarElement.MinimizeButton,
-                WindowDecoration.TitleBarElement.MaximizeButton,
-                WindowDecoration.TitleBarElement.CloseButton
-            )
-
-            DesktopPlatform.Linux -> listOf(
-                WindowDecoration.TitleBarElement.MinimizeButton,
-                WindowDecoration.TitleBarElement.MaximizeButton,
-                WindowDecoration.TitleBarElement.CloseButton
-            )
-
-            DesktopPlatform.Unknown -> emptyList()
-        }
-}
-
-/**
- * Returns the resizer thickness of the given [WindowDecoration].
- */
-internal val WindowDecoration.resizerThickness: Dp
-    get() = when {
-        this is WindowDecoration.Undecorated -> resizerThickness
-        else -> WindowDecorationDefaults.ResizerThickness
+        DesktopPlatform.Unknown -> emptyList()
     }
-
-/**
- * Returns [WindowDecoration.Decorated] if [undecorated] is `false`, or
- * [WindowDecoration.Undecorated] with default resizer thickness, if `true`.
- */
-internal fun windowDecorationFromFlag(undecorated: Boolean): WindowDecoration =
-    if (undecorated) WindowDecoration.Undecorated() else WindowDecoration.Decorated
