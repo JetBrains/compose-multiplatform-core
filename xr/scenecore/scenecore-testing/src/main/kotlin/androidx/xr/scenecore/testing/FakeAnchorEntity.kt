@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.Anchor
 import androidx.xr.runtime.math.Pose
@@ -25,8 +25,8 @@ import androidx.xr.scenecore.runtime.AnchorEntity
 import androidx.xr.scenecore.runtime.AnchorEntity.OnStateChangedListener
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.AnchorEntity] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-@RequiresApi(Build.VERSION_CODES.O)
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FakeAnchorEntity : FakeSystemSpaceEntity(), AnchorEntity {
     /**
      * The underlying [androidx.xr.arcore.runtime.Anchor] instance that this fake entity represents,
@@ -37,7 +37,7 @@ public class FakeAnchorEntity : FakeSystemSpaceEntity(), AnchorEntity {
      */
     internal var anchor: Anchor? = null
 
-    private var onStateChangedListener: OnStateChangedListener =
+    private var onStateChangedListener: OnStateChangedListener? =
         OnStateChangedListener { newState ->
             _state = newState
         }
@@ -50,21 +50,27 @@ public class FakeAnchorEntity : FakeSystemSpaceEntity(), AnchorEntity {
 
     /** Registers a listener to be called when the state of the anchor changes. */
     @Suppress("ExecutorRegistration")
-    override fun setOnStateChangedListener(onStateChangedListener: OnStateChangedListener) {
+    override fun setOnStateChangedListener(onStateChangedListener: OnStateChangedListener?) {
         this.onStateChangedListener = onStateChangedListener
-        onStateChangedListener.onStateChanged(_state)
+        onStateChangedListener?.onStateChanged(_state)
     }
 
     override fun setAnchor(anchor: Anchor): Boolean {
         // detach current
         anchor.detach()
         this.anchor = anchor
-        onStateChangedListener.onStateChanged(AnchorEntity.State.ANCHORED)
+        onStateChangedListener?.onStateChanged(AnchorEntity.State.ANCHORED)
         return true
     }
 
+    @Suppress("RestrictedApiAndroidX")
     override fun getPose(relativeTo: Int): Pose {
         return anchor?.runtimeAnchor?.pose ?: Pose.Identity
+    }
+
+    @Suppress("RestrictedApiAndroidX")
+    override fun dispose() {
+        anchor?.runtimeAnchor?.detach()
     }
 
     /**
@@ -76,6 +82,6 @@ public class FakeAnchorEntity : FakeSystemSpaceEntity(), AnchorEntity {
      * responds correctly to state updates.
      */
     public fun onStateChanged(newState: @AnchorEntity.State Int) {
-        onStateChangedListener.onStateChanged(newState)
+        onStateChangedListener?.onStateChanged(newState)
     }
 }

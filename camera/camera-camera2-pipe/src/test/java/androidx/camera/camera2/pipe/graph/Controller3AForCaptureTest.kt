@@ -39,8 +39,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class Controller3AForCaptureTest {
     private val graphTestContext = GraphTestContext()
     private val graphState3A = GraphState3A()

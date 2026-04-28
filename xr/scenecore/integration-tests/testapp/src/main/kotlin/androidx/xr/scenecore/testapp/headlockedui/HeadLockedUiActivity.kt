@@ -31,6 +31,8 @@ import androidx.core.app.ActivityCompat
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -41,7 +43,7 @@ import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextPanel
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.slider.Slider
@@ -79,17 +81,18 @@ class HeadLockedUiActivity : AppCompatActivity() {
         setContentView(R.layout.activity_head_locked_ui)
 
         // Create session
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
         session!!.configure(
             Config(
-                planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                headTracking = Config.HeadTrackingMode.LAST_KNOWN,
+                planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                deviceTracking = DeviceTrackingMode.SPATIAL,
             )
         )
+        session?.scene?.keyEntity = null
         device = ArDevice.getInstance(session!!)
-        cameraLeft = RenderViewpoint.left(session!!)
-        cameraRight = RenderViewpoint.right(session!!)
+        cameraLeft = runCatching { RenderViewpoint.left(session!!) }.getOrNull()
+        cameraRight = runCatching { RenderViewpoint.right(session!!) }.getOrNull()
 
         // Toolbar action
         findViewById<Toolbar>(R.id.top_app_bar).also {
@@ -110,7 +113,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
         }
 
         // Hide debug panel
-        findViewById<MaterialButton>(R.id.toggle_debug_panel).setOnClickListener() {
+        findViewById<MaterialButton>(R.id.toggle_debug_panel).setOnClickListener {
             mDebugPanel.panelEntity.let { it.setEnabled(!it.isEnabled()) }
         }
 
@@ -177,7 +180,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
             DebugTextPanel(
                 context = this,
                 session = session!!,
-                parent = session!!.scene.activitySpace,
+                parent = session!!.scene.mainPanelEntity,
                 name = "DebugPanel",
                 pose = Pose(Vector3(0f, -0.8f, -0.05f)),
             )
@@ -199,12 +202,6 @@ class HeadLockedUiActivity : AppCompatActivity() {
         this.mHeadLockedPanelView.removeCallbacks(animationRunnable)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        mHeadLockedPanel.parent = null
-        mHeadLockedPanel.dispose()
-    }
-
     private fun createHeadLockedPanel() {
         this.mHeadLockedPanelView = layoutInflater.inflate(R.layout.headlocked_star, null, false)
         this.mHeadLockedPanel =
@@ -213,6 +210,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 view = mHeadLockedPanelView,
                 pixelDimensions = IntSize2d(640, 480),
                 name = "headLockedPanel",
+                parent = session!!.scene.activitySpace,
             )
         this.mHeadLockedPanel.setPose(Pose(Vector3(0f, 0f, 0f)))
         this.mHeadLockedPanel.parent = session!!.scene.activitySpace
@@ -236,6 +234,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                     .scene
                     .perceptionSpace
                     .getScenePoseFromPerceptionPose(device.state.value.devicePose)
+
             ProjectionSource.CameraLeft ->
                 cameraLeft?.let {
                     session!!
@@ -243,6 +242,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                         .perceptionSpace
                         .getScenePoseFromPerceptionPose(it.state.value.pose)
                 }
+
             ProjectionSource.CameraRight ->
                 cameraRight?.let {
                     session!!
@@ -258,6 +258,8 @@ class HeadLockedUiActivity : AppCompatActivity() {
         if (projectionSource != null) {
             // Since the panel is parented by the activitySpace, we need to inverse its scale
             // so that the panel stays at a fixed size in the view even when ActivitySpace scales.
+            // TODO - b/415320653: Remove use of deprecated Space.REAL_WORLD
+            @Suppress("DEPRECATION", "RestrictedApiAndroidX")
             this.mHeadLockedPanel.setScale(
                 0.5f / session!!.scene.activitySpace.getScale(Space.REAL_WORLD)
             )
@@ -271,10 +273,12 @@ class HeadLockedUiActivity : AppCompatActivity() {
         mHeadLockedPanelView.postOnAnimation(animationRunnable)
     }
 
+    // TODO - b/415320653: Remove use of deprecated Space.REAL_WORLD
+    @Suppress("DEPRECATION", "RestrictedApiAndroidX")
     private fun updateDebugPanel(projectedPose: Pose) {
         mDebugPanel.view.setLine(
             "ActivitySpace ActivityPose",
-            session!!.scene.activitySpace.activitySpacePose.toFormattedString(),
+            session!!.scene.activitySpace.poseInActivitySpace.toFormattedString(),
         )
         mDebugPanel.view.setLine(
             "ActivitySpace WorldScale",
@@ -288,7 +292,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 .scene
                 .perceptionSpace
                 .getScenePoseFromPerceptionPose(device.state.value.devicePose)
-                .activitySpacePose
+                .poseInActivitySpace
                 .toFormattedString(),
         )
         mDebugPanel.view.setLine(
@@ -297,7 +301,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 .scene
                 .perceptionSpace
                 .getScenePoseFromPerceptionPose(cameraLeft!!.state.value.pose)
-                .activitySpacePose
+                .poseInActivitySpace
                 .toFormattedString(),
         )
         mDebugPanel.view.setLine(
@@ -306,12 +310,12 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 .scene
                 .perceptionSpace
                 .getScenePoseFromPerceptionPose(cameraRight!!.state.value.pose)
-                .activitySpacePose
+                .poseInActivitySpace
                 .toFormattedString(),
         )
         mDebugPanel.view.setLine(
             "Projection Source ActivityPose",
-            getProjectionSource()?.activitySpacePose!!.toFormattedString(),
+            getProjectionSource()?.poseInActivitySpace!!.toFormattedString(),
         )
         mDebugPanel.view.setLine(
             "Head locked Pose ActivitySpace",

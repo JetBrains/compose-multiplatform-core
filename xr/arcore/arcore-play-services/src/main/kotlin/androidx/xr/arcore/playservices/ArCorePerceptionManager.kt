@@ -20,7 +20,8 @@ import android.view.Surface
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.AnchorNotTrackingException
-import androidx.xr.arcore.runtime.DepthMap
+import androidx.xr.arcore.runtime.ConversationState
+import androidx.xr.arcore.runtime.Depth
 import androidx.xr.arcore.runtime.Eye
 import androidx.xr.arcore.runtime.Face
 import androidx.xr.arcore.runtime.Hand
@@ -28,11 +29,13 @@ import androidx.xr.arcore.runtime.HitResult
 import androidx.xr.arcore.runtime.PerceptionManager
 import androidx.xr.arcore.runtime.RenderViewpoint
 import androidx.xr.arcore.runtime.Trackable
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.CameraFacingDirection
+import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import com.google.ar.core.AugmentedFace as ARCore1xAugmentedFace
+import com.google.ar.core.AugmentedImage as ARCore1xAugmentedImage
 import com.google.ar.core.CameraConfig
 import com.google.ar.core.CameraConfigFilter
 import com.google.ar.core.Frame
@@ -48,9 +51,23 @@ import kotlin.time.TimeSource.Monotonic
 /**
  * Implementation of the perception capabilities of a runtime using ARCore.
  *
- * @property timeSource The time source to use for the perception manager.
+ * @property timeSource the time source to use for the perception manager
+ * @property trackables the collection of [Trackable] objects
+ * @property leftEye the left eye, or null if not available
+ * @property rightEye the right eye, or null if not available
+ * @property leftHand the left hand, or null if not available
+ * @property rightHand the right hand, or null if not available
+ * @property userFace the user's face, or null if not available
+ * @property geospatial the [ArCoreEarth] instance
+ * @property arDevice the [ArCoreDevice] instance
+ * @property leftRenderViewpoint the left [RenderViewpoint], or null if not available
+ * @property rightRenderViewpoint the right [RenderViewpoint], or null if not available
+ * @property monoRenderViewpoint the mono [RenderViewpoint], or null if not available
+ * @property leftDepth the left [Depth], or null if not available
+ * @property rightDepth the right [Depth], or null if not available
+ * @property monoDepth the mono [Depth], or null if not available
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ArCorePerceptionManager
 internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManager {
 
@@ -59,6 +76,8 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     internal lateinit var _latestFrame: Frame
     internal var lastFrameTimestampNs: Long = -1L
     internal lateinit var session: Session
+    internal val isSessionInitialized: Boolean
+        get() = ::session.isInitialized
 
     private val timeProvider: TimeSource.WithComparableMarks = Monotonic
     private var lastFrameTimeMark: ComparableTimeMark? = null
@@ -66,14 +85,19 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     internal fun timeSinceLastFrame(): Duration = lastFrameTimeMark?.elapsedNow() ?: Duration.ZERO
 
     private val xrResources: XrResources = XrResources()
-    internal var depthEstimationMode = Config.DepthEstimationMode.DISABLED
+    internal var depthEstimationMode = DepthEstimationMode.DISABLED
 
     private var displayRotation = Surface.ROTATION_0
     private var displayWidth = 0
     private var displayHeight = 0
     internal var displayChanged: Boolean = false
 
-    /** The latest [Frame] returned by the underlying [Session]. */
+    /**
+     * The latest [Frame] returned by the underlying [Session].
+     *
+     * @return the latest [Frame]
+     * @sample androidx.xr.arcore.samples.getARCoreFrame
+     */
     @UnsupportedArCoreCompatApi public fun lastFrame(): Frame = _latestFrame
 
     internal fun lastFrame(value: Frame) {
@@ -92,8 +116,8 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
      *
      * This method calls the [Session.createAnchor] method.
      *
-     * @param pose The pose of the anchor.
-     * @return The created anchor.
+     * @param pose the [Pose] of the anchor
+     * @return the created [Anchor]
      */
     override fun createAnchor(pose: Pose): Anchor {
         try {
@@ -110,8 +134,8 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
      *
      * This method calls the [Frame.hitTest] method.
      *
-     * @param ray The ray to perform the hit test against.
-     * @return The list of hit results.
+     * @param ray the [Ray] to perform the hit test against
+     * @return the list of [HitResult] objects
      */
     override fun hitTest(ray: Ray): List<HitResult> {
         val origin = floatArrayOf(ray.origin.x, ray.origin.y, ray.origin.z)
@@ -155,92 +179,46 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
         throw NotImplementedError("Anchor persistence is currently not supported by ARCore.")
     }
 
+    override val imageDatabaseMaxLoadedImageCount: Int
+        get() =
+            throw NotImplementedError(
+                "Image database max loaded image count is not supported by ARCore."
+            )
+
+    override val isPhysicalSizeEstimationSupported: Boolean
+        get() =
+            throw NotImplementedError("Physical size estimation check is not supported by ARCore.")
+
     override val trackables: Collection<Trackable> = xrResources.trackables.values
 
-    /**
-     * Returns the left eye.
-     *
-     * ARCore does not support eye tracking, so this property is always null.
-     */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val leftEye: Eye? = null
+    override val leftEye: Eye? = null
 
-    /**
-     * Returns the right eye.
-     *
-     * ARCore does not support eye tracking, so this property is always null.
-     */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val rightEye: Eye? = null
+    override val rightEye: Eye? = null
 
-    /**
-     * Returns the left hand.
-     *
-     * ARCore does not support hand tracking, so this property is always null.
-     */
     override val leftHand: Hand? = null
 
-    /**
-     * Returns the right hand.
-     *
-     * ARCore does not support hand tracking, so this property is always null.
-     */
     override val rightHand: Hand? = null
 
-    /**
-     * Returns the face
-     *
-     * ARCore does not support face tracking, so this property is always null.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val userFace: Face? = null
+    override val userFace: Face? = null
 
-    /** Returns the [Geospatial] instance. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val geospatial: ArCoreEarth = xrResources.geospatial
 
-    /** Returns the [ArDevice] instance. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val arDevice: ArCoreDevice = xrResources.arDevice
 
-    /**
-     * Returns the left [RenderViewpoint] object.
-     *
-     * This is not available in ARCore.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val leftRenderViewpoint: RenderViewpoint? = null
 
-    /**
-     * Returns the right [RenderViewpoint] object.
-     *
-     * This is not available in ARCore.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val rightRenderViewpoint: RenderViewpoint? = null
 
-    /**
-     * Returns the mono[RenderViewpoint] object.
-     *
-     * This is not currently implemented in ARCore.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val monoRenderViewpoint: RenderViewpoint? = null
 
-    /**
-     * Returns the left [DepthMap] object.
-     *
-     * This is not available in ARCore.
-     */
-    override val leftDepthMap: DepthMap? = null
+    override val leftDepth: Depth? = null
 
-    /**
-     * Returns the right [DepthMap] object.
-     *
-     * This is not available in ARCore.
-     */
-    override val rightDepthMap: DepthMap? = null
+    override val rightDepth: Depth? = null
 
-    /** Returns the mono [DepthMap] object. */
-    override val monoDepthMap: DepthMap?
-        get() = xrResources.depthMap
+    override val monoDepth: Depth?
+        get() = xrResources.depth
+
+    override val conversationSceneSignal: ConversationState? = null
 
     /**
      * Updates the perception manager.
@@ -280,10 +258,22 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
             }
         augmentedFaces.forEach { xrResources.addTrackable(it, ArCoreFace(it)) }
 
+        val augmentedImages = _latestFrame.getUpdatedTrackables(ARCore1xAugmentedImage::class.java)
+        // Don't retain any AugmentedImages that the ArCore Session is no longer tracking
+        xrResources.trackables
+            .filter { it.value is ArCoreAugmentedImage }
+            .keys
+            .forEach {
+                if (!augmentedImages.contains(it)) {
+                    xrResources.removeTrackable(it)
+                }
+            }
+        augmentedImages.forEach { xrResources.addTrackable(it, ArCoreAugmentedImage(it)) }
+
         arDevice.update(_latestFrame)
 
-        if (depthEstimationMode != Config.DepthEstimationMode.DISABLED) {
-            xrResources.depthMap.update(_latestFrame)
+        if (depthEstimationMode != DepthEstimationMode.DISABLED) {
+            xrResources.depth.update(_latestFrame)
         }
 
         geospatial.update(session)
@@ -298,7 +288,8 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
         xrResources.clear()
     }
 
-    public fun setDisplayRotation(rotation: Int, width: Int, height: Int) {
+    @ExperimentalCameraApi
+    override fun setDisplayRotation(rotation: Int, width: Int, height: Int) {
         if (rotation != displayRotation || width != displayWidth || height != displayHeight) {
             displayRotation = rotation
             displayWidth = width
@@ -308,29 +299,30 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     }
 
     /**
-     * Sets the Depth Estimation Mode for the Perception Manager and the [xrResources.depthMap]
+     * Sets the Depth Estimation Mode for the Perception Manager and the [XrResources.depth] of
+     * [xrResources]
      *
-     * @param depthMode The desired [Config.DepthEstimationMode].
+     * @param depthMode the desired [DepthEstimationMode]
      */
-    public fun setDepthEstimationMode(depthMode: Config.DepthEstimationMode) {
+    public fun setDepthEstimationMode(depthMode: DepthEstimationMode) {
         depthEstimationMode = depthMode
-        xrResources.depthMap.updateDepthEstimationMode(depthMode)
+        xrResources.depth.updateDepthEstimationMode(depthMode)
     }
 
     /**
      * Clears any lingering resources within [xrResources].
      *
-     * @see ArCoreDepthMap.dispose
+     * @see ArCoreDepth.dispose
      */
     public fun dispose() {
-        xrResources.depthMap.dispose()
+        xrResources.depth.dispose()
     }
 
-    internal fun setCameraFacingDirection(facingDirection: Config.CameraFacingDirection) {
+    internal fun setCameraFacingDirection(facingDirection: CameraFacingDirection) {
         val arCoreFacingDirection =
             when (facingDirection) {
-                Config.CameraFacingDirection.USER -> CameraConfig.FacingDirection.FRONT
-                Config.CameraFacingDirection.WORLD -> CameraConfig.FacingDirection.BACK
+                CameraFacingDirection.USER -> CameraConfig.FacingDirection.FRONT
+                CameraFacingDirection.WORLD -> CameraConfig.FacingDirection.BACK
                 else ->
                     throw IllegalArgumentException(
                         "Unsupported CameraFacingDirection ${facingDirection}."

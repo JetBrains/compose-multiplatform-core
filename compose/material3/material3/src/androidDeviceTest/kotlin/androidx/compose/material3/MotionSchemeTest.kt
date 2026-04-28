@@ -18,7 +18,7 @@ package androidx.compose.material3
 
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
@@ -29,7 +29,6 @@ import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class MotionSchemeTest {
     @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
@@ -62,16 +61,17 @@ class MotionSchemeTest {
         }
     }
 
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun readLocalMotionScheme() {
         lateinit var mainMotionScheme: MotionScheme
         lateinit var nestedMotionScheme: MotionScheme
         rule.setContent {
             MaterialTheme {
-                mainMotionScheme = MaterialTheme.LocalMotionScheme.current
+                mainMotionScheme = MaterialTheme.motionScheme
 
                 MaterialTheme(motionScheme = MotionScheme.expressive()) {
-                    nestedMotionScheme = MaterialTheme.LocalMotionScheme.current
+                    nestedMotionScheme = MaterialTheme.motionScheme
                 }
             }
         }

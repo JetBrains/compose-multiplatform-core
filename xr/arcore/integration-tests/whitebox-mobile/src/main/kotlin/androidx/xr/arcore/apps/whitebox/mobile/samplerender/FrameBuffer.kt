@@ -128,7 +128,7 @@ class Framebuffer(val render: SampleRender, width: Int, height: Int) : Closeable
     override fun close() {
         if (framebufferId[0] != 0) {
             GLES30.glDeleteFramebuffers(1, framebufferId, 0)
-            maybeLogGLError(Log.WARN, TAG, "Failed to free framebuffer", "glDeleteFramebuffers")
+            maybeLogGLError(Log.WARN, "Failed to free framebuffer", "glDeleteFramebuffers")
             framebufferId[0] = 0
         }
         colorTexture.close()

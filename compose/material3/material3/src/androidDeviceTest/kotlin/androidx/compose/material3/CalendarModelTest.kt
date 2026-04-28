@@ -173,7 +173,6 @@ internal class CalendarModelTest(private val model: CalendarModel) {
         assertThat(formatted).isEqualTo("Monday, December 20, 2021")
     }
 
-    @SdkSuppress(minSdkVersion = 24) // b/452713222
     @Test
     fun formatWithSkeletonProducingEqualPattern() {
         // Format twice to check that the formatter is outputting the right values, and that it's
@@ -213,7 +212,7 @@ internal class CalendarModelTest(private val model: CalendarModel) {
             formatWithSkeleton(
                 January2022Millis,
                 skeleton = "yMMMM",
-                Locale("ES"),
+                Locale.forLanguageTag("ES"),
                 cache = mutableMapOf(),
             )
         // Danish
@@ -221,7 +220,7 @@ internal class CalendarModelTest(private val model: CalendarModel) {
             formatWithSkeleton(
                 January2022Millis,
                 skeleton = "yMMMM",
-                Locale("DA"),
+                Locale.forLanguageTag("DA"),
                 cache = mutableMapOf(),
             )
         // Note: Expecting the month names to be capitalized in English and Spanish, but lowercase
@@ -287,8 +286,8 @@ internal class CalendarModelTest(private val model: CalendarModel) {
         assertThat(legacyModel.getDateInputFormat().patternWithoutDelimiters).isEqualTo("yyyyMMdd")
         assertThat(legacyModel.getDateInputFormat().delimiter).isEqualTo('.')
 
-        newModel = CalendarModelImpl(Locale("es", "CL"))
-        legacyModel = LegacyCalendarModelImpl(Locale("es", "CL"))
+        newModel = CalendarModelImpl(Locale.forLanguageTag("es-CL"))
+        legacyModel = LegacyCalendarModelImpl(Locale.forLanguageTag("es-CL"))
         assertThat(newModel.getDateInputFormat().patternWithDelimiters).isEqualTo("dd-MM-yyyy")
         assertThat(newModel.getDateInputFormat().patternWithoutDelimiters).isEqualTo("ddMMyyyy")
         assertThat(newModel.getDateInputFormat().delimiter).isEqualTo('-')

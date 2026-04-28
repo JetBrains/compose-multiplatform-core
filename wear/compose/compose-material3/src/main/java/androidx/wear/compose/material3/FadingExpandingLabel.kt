@@ -70,8 +70,8 @@ import androidx.compose.ui.unit.TextUnit
  *   [TextStyle.textDecoration].
  * @param textAlign The alignment of the text within the lines of the paragraph. See
  *   [TextStyle.textAlign].
- * @param lineHeight Line height for the [Paragraph] in [TextUnit] unit, e.g. SP or EM. See
- *   [TextStyle.lineHeight].
+ * @param lineHeight Line height for the [androidx.compose.ui.text.Paragraph] in [TextUnit] unit,
+ *   e.g. SP or EM. See [TextStyle.lineHeight].
  * @param softWrap Whether the text should break at soft line breaks. If false, the glyphs in the
  *   text will be positioned as if there was unlimited horizontal space. If [softWrap] is false,
  *   TextAlign may have unexpected effects.
@@ -144,23 +144,12 @@ public fun FadingExpandingLabel(
             return@LaunchedEffect
         }
 
-        // If the text is expanding, update it before the fading lines animation, if it's
-        // collapsing, update it after the animation. This is because we can only animate the
-        // expanding fading effect on the larger text.
-        val isLinesDecreasing = currentTextMeasureResult.lineCount > textMeasureResult.lineCount
-        if (!isLinesDecreasing) {
-            currentText = text
-            currentTextMeasureResult = textMeasureResult
-        }
+        currentText = text
+        currentTextMeasureResult = textMeasureResult
 
         showAnimatedTextHeight = true
         // Animate to the new text height to reveal it with a fade-in animation
         animatedHeight.animateTo(textMeasureResult.size.height.toFloat(), animationSpec)
-
-        if (isLinesDecreasing) {
-            currentText = text
-            currentTextMeasureResult = textMeasureResult
-        }
     }
 
     Text(

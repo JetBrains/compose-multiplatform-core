@@ -20,25 +20,30 @@ import android.graphics.SurfaceTexture
 import android.os.Build
 import android.util.Size
 import android.view.Surface
+import androidx.camera.camera2.pipe.CameraController
 import androidx.camera.camera2.pipe.CameraController.ControllerState
 import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraId
-import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.SurfaceTracker
 import androidx.camera.camera2.pipe.core.TimeSource
 import androidx.camera.camera2.pipe.core.TimestampNs
 import androidx.camera.camera2.pipe.graph.GraphListener
+import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.internal.CameraStatusMonitor
 import androidx.camera.camera2.pipe.testing.FakeCamera2DeviceManager
 import androidx.camera.camera2.pipe.testing.FakeCamera2MetadataProvider
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeCameraStatusMonitor
+import androidx.camera.camera2.pipe.testing.FakeImageReaders
+import androidx.camera.camera2.pipe.testing.FakeImageSources
+import androidx.camera.camera2.pipe.testing.FakeSurfaces
 import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import kotlin.test.Test
@@ -56,9 +61,11 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class Camera2CameraControllerTest {
     private val cameraId = CameraId.fromCamera2Id("0")
     private val testScheduler = TestCoroutineScheduler()
@@ -68,7 +75,15 @@ class Camera2CameraControllerTest {
     private val streamConfig1 =
         CameraStream.Config.create(size = Size(1280, 720), format = StreamFormat.YUV_420_888)
     private val streamId1 = StreamId(1)
-    private val fakeGraphConfig = CameraGraph.Config(cameraId, listOf(streamConfig1))
+    private val fakeGraphConfig =
+        CameraGraph.Config(
+            cameraId,
+            listOf(streamConfig1),
+            // Closing the capture session requires setting up and faking the session configuration
+            // pipeline end-to-end, which is largely out-of-scope for this test. For now, set it to
+            // false for the default behavior.
+            flags = CameraGraph.Flags(closeCaptureSessionOnDisconnect = false),
+        )
     private val fakeGraphListener: GraphListener = mock()
     private val fakeSurfaceTracker: SurfaceTracker = mock()
 
@@ -83,7 +98,7 @@ class Camera2CameraControllerTest {
     private val fakeCamera2Quirks =
         Camera2Quirks(
             FakeCamera2MetadataProvider(mapOf(cameraId to fakeCameraMetadata)),
-            cameraPipeFlags = CameraPipe.Flags(),
+            StrictMode(false),
         )
     private val fakeTimeSource: TimeSource = mock()
     private val fakeGraphId = CameraGraphId.nextId()
@@ -93,30 +108,46 @@ class Camera2CameraControllerTest {
     private val fakeSurfaceTexture = SurfaceTexture(0).apply { setDefaultBufferSize(1280, 720) }
     private val fakeSurface = Surface(fakeSurfaceTexture)
 
+    private val fakeSurfaces = FakeSurfaces()
+    private val fakeImageReaders = FakeImageReaders(fakeSurfaces)
+
     private fun createCamera2CameraController(): Camera2CameraController {
-        return Camera2CameraController(
-            testBackgroundScope,
-            fakeThreads,
-            fakeGraphConfig,
-            fakeGraphListener,
-            fakeSurfaceTracker,
-            fakeCameraStatusMonitor,
-            fakeCaptureSessionFactory,
-            fakeCaptureSequenceProcessorFactory,
-            fakeCamera2DeviceManager,
-            fakeCameraSurfaceManager,
-            fakeCamera2Quirks,
-            fakeTimeSource,
-            fakeGraphId,
-            fakeShutdownListener,
-            fakeConcurrentSessionSequencers,
-        )
+        lateinit var cameraController: CameraController
+        val streamGraph =
+            StreamGraphImpl(
+                fakeCameraMetadata,
+                fakeGraphConfig,
+                FakeImageSources(fakeImageReaders),
+                { cameraController },
+            )
+        cameraController =
+            Camera2CameraController(
+                testBackgroundScope,
+                fakeThreads,
+                StrictMode(true),
+                fakeGraphConfig,
+                fakeGraphListener,
+                fakeSurfaceTracker,
+                fakeCameraStatusMonitor,
+                fakeCaptureSessionFactory,
+                fakeCaptureSequenceProcessorFactory,
+                fakeCamera2DeviceManager,
+                fakeCameraSurfaceManager,
+                fakeCamera2Quirks,
+                fakeTimeSource,
+                fakeGraphId,
+                fakeShutdownListener,
+                streamGraph,
+                fakeConcurrentSessionSequencers,
+            )
+        return cameraController
     }
 
     @After
     fun tearDown() {
         fakeSurface.release()
         fakeSurfaceTexture.release()
+        fakeSurfaces.close()
     }
 
     @Test

@@ -48,10 +48,20 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
     private float mAlpha = 1f;
     private float mOutAlpha;
 
-    @NonNull
-    ImageScaling mScaling = new ImageScaling();
-    @NonNull
-    PaintBundle mPaint = new PaintBundle();
+    @NonNull ImageScaling mScaling = new ImageScaling();
+    @NonNull PaintBundle mPaint = new PaintBundle();
+
+    public float getAlpha() {
+        return mAlpha;
+    }
+
+    public int getBitmapId() {
+        return mBitmapId;
+    }
+
+    public int getScaleType() {
+        return mScaleType;
+    }
 
     @Override
     public void registerListening(@NonNull RemoteContext context) {
@@ -97,7 +107,9 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
     @Override
     public void computeWrapSize(
             @NonNull PaintContext context,
+            float minWidth,
             float maxWidth,
+            float minHeight,
             float maxHeight,
             boolean horizontalWrap,
             boolean verticalWrap,
@@ -261,9 +273,7 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
         return Operations.LAYOUT_IMAGE;
     }
 
-    /**
-     * Write the operation to the buffer
-     */
+    /** Write the operation to the buffer */
     public static void apply(
             @NonNull WireBuffer buffer,
             int componentId,
@@ -282,15 +292,15 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int componentId = buffer.readInt();
-        int animationId = buffer.readInt();
-        int bitmapId = buffer.readInt();
+        int componentId = buffer.declareId();
+        int animationId = buffer.declareId();
+        int bitmapId = buffer.readId();
         int scaleType = buffer.readInt();
-        float alpha = buffer.readFloat();
+        float alpha = buffer.readNanId();
         operations.add(new ImageLayout(null, componentId, animationId, bitmapId, scaleType, alpha));
     }
 
@@ -300,16 +310,14 @@ public class ImageLayout extends LayoutManager implements VariableSupport {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Layout Operations", id(), name())
-                .description("Image layout implementation.\n\n")
-                .field(INT, "COMPONENT_ID", "unique id for this component")
-                .field(
-                        INT,
-                        "ANIMATION_ID",
-                        "id used to match components," + " for animation purposes")
-                .field(INT, "BITMAP_ID", "bitmap id")
-                .field(INT, "SCALE_TYPE", "scale type")
-                .field(FLOAT, "ALPHA", "alpha");
+        doc.operation("Layout Managers", id(), name())
+                .additionalDocumentation("image_layout")
+                .description("Image layout implementation")
+                .field(INT, "componentId", "Unique ID for this component")
+                .field(INT, "animationId", "ID used to match components for animation purposes")
+                .field(INT, "bitmapId", "The ID of the bitmap to display")
+                .field(INT, "scaleType", "The scale type to apply")
+                .field(FLOAT, "alpha", "The alpha transparency [0..1]");
     }
 
     @Override

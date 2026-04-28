@@ -15,38 +15,35 @@
  */
 package androidx.xr.arcore.openxr
 
-import android.app.Activity
+import android.content.Context
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
-import androidx.xr.runtime.internal.Feature
+import androidx.xr.runtime.interfaces.Feature
+import androidx.xr.runtime.internal.LibraryNotLinkedException
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import kotlin.coroutines.CoroutineContext
 
 /** Factory for creating instances of [OpenXrRuntime]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+// TODO: b/452158733 - Make this class internal once YTXR has been migrated.
 public class OpenXrRuntimeFactory() : PerceptionRuntimeFactory {
-    public companion object {
-        init {
-            try {
-                System.loadLibrary("androidx.xr.runtime.openxr")
-            } catch (e: UnsatisfiedLinkError) {
-                // TODO: b/344962771 - Use Flogger instead of println.
-                println("Failed to load library: $e")
-            }
-        }
+    private companion object {
+        private const val LIBRARY_NAME: String = "androidx.xr.arcore.openxr"
     }
 
     override val requirements: Set<Feature> = setOf(Feature.FULLSTACK, Feature.OPEN_XR)
 
     override fun createRuntime(
-        activity: Activity,
+        context: Context,
         coroutineContext: CoroutineContext,
     ): PerceptionRuntime {
+        try {
+            System.loadLibrary(LIBRARY_NAME)
+        } catch (_: UnsatisfiedLinkError) {
+            throw LibraryNotLinkedException(LIBRARY_NAME)
+        }
         val timeSource = OpenXrTimeSource()
         val perceptionManager = OpenXrPerceptionManager(timeSource)
-        return OpenXrRuntime(
-            OpenXrManager(activity, perceptionManager, timeSource),
-            perceptionManager,
-        )
+        return OpenXrRuntime(context, perceptionManager, timeSource)
     }
 }

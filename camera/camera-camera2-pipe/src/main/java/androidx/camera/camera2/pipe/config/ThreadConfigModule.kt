@@ -71,7 +71,13 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
     ): Threads {
         val executorServices = mutableListOf<ExecutorService>()
 
-        // TODO: b/391655975 - Figure out why cached thread pool creates kotlin default executors.
+        // CAUTION: Our blocking executor is created with a scheduled thread pool, whereas this
+        // normally should be a cached thread pool which creates new threads as needed. The reason
+        // here is that a CoroutineDispatcher created from a non-scheduled ExecutorService would
+        // create internal threads when a delayed task execution is needed, e.g., withTimeout(),
+        // delay(). This may run afoul of runtime checks that prohibit thread creation.
+        //
+        // More details can be found in: b/450940477#comment13
         val blockingExecutor =
             threadConfig.defaultBlockingExecutor
                 ?: AndroidThreads.factory

@@ -19,7 +19,6 @@ package androidx.compose.ui.focus
 import androidx.collection.MutableLongSet
 import androidx.collection.MutableObjectList
 import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ComposeUiFlags.isOptimizedFocusEventDispatchEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.CustomDestinationResult.Cancelled
@@ -143,16 +142,9 @@ internal class FocusOwnerImpl(
      * hierarchy.
      */
     override fun releaseFocus() {
-        rootFocusNode.clearFocus(forced = true, refreshFocusEvents = true)
-
-        // When the optimized focus change is enabled, the [FocusTargetNode.clearFocus()] call above
-        // no longer clears activeFocusTargetNode and dispatches focus callbacks. We now have to
-        // trigger the callbacks ourselves here and in other locations. By doing this, we can delay
-        // calling Compose's onFocusChanged() multiple times for a single change (and cache the
-        // previous focus node), and then actually trigger the callback with both the previous and
-        // current focused nodes in one call (vs. two calls).
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (isOptimizedFocusEventDispatchEnabled && activeFocusTargetNode != null) {
+        rootFocusNode.prepareToClearFocus(forced = true, refreshFocusEvents = true)
+        // After preparing to clear focus above, we can now release focus directly.
+        if (activeFocusTargetNode != null) {
             val previousActive = activeFocusTargetNode
             activeFocusTargetNode = null
             previousActive?.dispatchFocusCallbacks(previousState = Active, newState = Inactive)
@@ -343,13 +335,7 @@ internal class FocusOwnerImpl(
                     Default -> {
                         /* Do Nothing */
                     }
-                    else ->
-                        @OptIn(ExperimentalComposeUiApi::class)
-                        return if (ComposeUiFlags.isRequestFocusOnNonFocusableFocusTargetEnabled) {
-                            customDest.findFocusTarget(onFound)
-                        } else {
-                            customDest.findFocusTargetNode(onFound)
-                        }
+                    else -> return customDest.findFocusTarget(onFound)
                 }
             }
 
@@ -573,9 +559,7 @@ internal class FocusOwnerImpl(
             val previousValue = field
             field = value
             if (value == null || previousValue !== value) isFocusCaptured = false
-            if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isSemanticAutofillEnabled) {
-                listeners.forEach { it.onFocusChanged(previousValue, value) }
-            }
+            listeners.forEach { it.onFocusChanged(previousValue, value) }
         }
 
     override var isFocusCaptured: Boolean = false

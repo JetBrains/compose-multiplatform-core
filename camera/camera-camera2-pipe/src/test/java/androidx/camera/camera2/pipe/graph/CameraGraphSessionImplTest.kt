@@ -46,6 +46,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 internal class CameraGraphSessionImplTest {
     private val testScope = TestScope()
     private val metadata =

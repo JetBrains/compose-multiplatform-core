@@ -81,7 +81,7 @@ interface XType : XAnnotated {
      *
      * @see [javax.lang.model.type.DeclaredType.getTypeArguments]
      */
-    val typeArguments: List<XType>
+    val typeArguments: List<XTypeArgument>
 
     /** Returns `true` if this type can be assigned from [other] */
     fun isAssignableFrom(other: XType): Boolean
@@ -123,12 +123,6 @@ interface XType : XAnnotated {
      * TODO: decide on how we want to handle nullability here.
      */
     fun isSameType(other: XType): Boolean
-
-    /** Returns the extends bound if this is a wildcard or self. */
-    fun extendsBoundOrSelf(): XType = extendsBound() ?: this
-
-    /** If this is a wildcard with an extends bound, returns that bounded typed. */
-    fun extendsBound(): XType?
 
     /**
      * Creates a type with nullability [XNullability.NULLABLE] or returns this if the nullability is
@@ -180,8 +174,8 @@ private fun isAssignableWithoutVariance(from: XType, to: XType): Boolean {
     // because Types.isAssignable handles it as it is valid java
     return (fromTypeArgs.indices).all { index ->
         isAssignableWithoutVariance(
-            from = fromExtendsBounds[index] ?: fromTypeArgs[index],
-            to = toTypeArgs[index],
+            from = fromExtendsBounds[index] ?: fromTypeArgs[index].type,
+            to = toTypeArgs[index].type,
         )
     }
 }

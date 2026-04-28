@@ -133,6 +133,9 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
                     override val text: TextFieldCharSequence
                         get() = state.visualText
 
+                    override val transformedLength: Int
+                        get() = imeEditCommandScope.transformedLength
+
                     override fun sendKeyEvent(keyEvent: KeyEvent) {
                         composeImm.sendKeyEvent(keyEvent)
                     }
@@ -203,7 +206,7 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
  */
 private val ALL_MIME_TYPES = arrayOf("*/*", "image/*", "video/*")
 
-private fun logDebug(tag: String = TIA_TAG, content: () -> String) {
+private inline fun logDebug(tag: String = TIA_TAG, content: () -> String) {
     if (TIA_DEBUG) {
         Log.d(tag, content())
     }

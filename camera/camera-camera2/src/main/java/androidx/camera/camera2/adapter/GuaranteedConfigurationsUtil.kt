@@ -48,6 +48,8 @@ public object GuaranteedConfigurationsUtil {
      * guaranteed to provide a valid result via feature combination query (i.e.
      * [CameraDeviceSetup.isSessionConfigurationSupported] API).
      *
+     * Note that these streams are not queryable with video stabilization.
+     *
      * These combinations are generated based on the documentation of
      * [CameraCharacteristics.INFO_SESSION_CONFIGURATION_QUERY_VERSION].
      */
@@ -1097,7 +1099,10 @@ public object GuaranteedConfigurationsUtil {
                     cameraMetadata[CameraCharacteristics.INFO_SESSION_CONFIGURATION_QUERY_VERSION]
                 )
 
-            if (sessionConfigQueryVersion >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            if (
+                sessionConfigQueryVersion >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
+                    videoStabilization != VideoStabilization.ON
+            ) {
                 combinations.addAll(QUERYABLE_VIC_FCQ_COMBINATIONS)
             }
 

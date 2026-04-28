@@ -18,124 +18,41 @@ package androidx.ink.authoring.internal
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.graphics.Canvas
-import android.graphics.Matrix
 import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
+import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
 import androidx.ink.authoring.ExperimentalLatencyDataApi
-import androidx.ink.authoring.InProgressStrokeId
+import androidx.ink.authoring.InkInProgressShape
 import androidx.ink.authoring.InkInProgressShapeRenderer
-import androidx.ink.authoring.latency.LatencyData
+import androidx.ink.brush.Brush
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
-import androidx.ink.geometry.AffineTransform
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
-import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.Stroke
 import java.util.concurrent.TimeUnit
+import org.mockito.kotlin.mock
 
 /** An [Activity] to support [CanvasInProgressStrokesRenderHelperV33]. */
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalInkCustomBrushApi::class)
+@OptIn(
+    ExperimentalLatencyDataApi::class,
+    ExperimentalInkCustomBrushApi::class,
+    ExperimentalCustomShapeWorkflowApi::class,
+)
 @SuppressLint("UseSdkSuppress") // SdkSuppress is on the test class.
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
 
     lateinit var rootView: ViewGroup
     lateinit var mainView: ViewGroup
-    internal lateinit var renderHelper: CanvasInProgressStrokesRenderHelperV33
+    internal lateinit var renderHelper:
+        CanvasInProgressStrokesRenderHelperV33<Brush, InkInProgressShape, Stroke>
 
     internal var fakeThreads = FakeThreads()
 
-    internal var callback: InProgressStrokesRenderHelper.Callback? = null
-    var renderer: CanvasStrokeRenderer? = null
-
-    private val delegatingCallback =
-        object : InProgressStrokesRenderHelper.Callback {
-            override fun onDraw() {
-                callback?.onDraw()
-            }
-
-            override fun onDrawComplete() {
-                callback?.onDrawComplete()
-            }
-
-            override fun reportEstimatedPixelPresentationTime(timeNanos: Long) {
-                callback?.reportEstimatedPixelPresentationTime(timeNanos)
-            }
-
-            override fun setCustomLatencyDataField(setter: (LatencyData, Long) -> Unit) {
-                callback?.setCustomLatencyDataField(setter)
-            }
-
-            override fun handOffAllLatencyData() {
-                callback?.handOffAllLatencyData()
-            }
-
-            override fun setPauseStrokeCohortHandoffs(paused: Boolean) {
-                callback?.setPauseStrokeCohortHandoffs(paused)
-            }
-
-            override fun onStrokeCohortHandoffToHwui(
-                strokeCohort: Map<InProgressStrokeId, FinishedStroke>
-            ) {
-                callback?.onStrokeCohortHandoffToHwui(strokeCohort)
-            }
-
-            override fun onStrokeCohortHandoffToHwuiComplete() {
-                callback?.onStrokeCohortHandoffToHwuiComplete()
-            }
-        }
-
-    private val delegatingRenderer =
-        object : CanvasStrokeRenderer {
-            override fun draw(
-                canvas: Canvas,
-                stroke: Stroke,
-                strokeToScreenTransform: AffineTransform,
-                textureAnimationProgress: Float,
-            ) {
-                renderer?.draw(canvas, stroke, strokeToScreenTransform, textureAnimationProgress)
-            }
-
-            override fun draw(
-                canvas: Canvas,
-                stroke: Stroke,
-                strokeToScreenTransform: Matrix,
-                textureAnimationProgress: Float,
-            ) {
-                renderer?.draw(canvas, stroke, strokeToScreenTransform, textureAnimationProgress)
-            }
-
-            override fun draw(
-                canvas: Canvas,
-                inProgressStroke: InProgressStroke,
-                strokeToScreenTransform: AffineTransform,
-                textureAnimationProgress: Float,
-            ) {
-                renderer?.draw(
-                    canvas,
-                    inProgressStroke,
-                    strokeToScreenTransform,
-                    textureAnimationProgress,
-                )
-            }
-
-            override fun draw(
-                canvas: Canvas,
-                inProgressStroke: InProgressStroke,
-                strokeToScreenTransform: Matrix,
-                textureAnimationProgress: Float,
-            ) {
-                renderer?.draw(
-                    canvas,
-                    inProgressStroke,
-                    strokeToScreenTransform,
-                    textureAnimationProgress,
-                )
-            }
-        }
+    internal val mockRenderer = mock<CanvasStrokeRenderer> {}
+    internal val mockCallback = mock<InProgressStrokesRenderHelper.Callback<Stroke>> {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -148,11 +65,11 @@ class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
         renderHelper =
             CanvasInProgressStrokesRenderHelperV33(
                 mainView,
-                delegatingCallback,
-                InkInProgressShapeRenderer(delegatingRenderer),
-                fakeThreads.uiThreadExecutors,
-                fakeThreads.renderThreadExecutors,
+                InkInProgressShapeRenderer(mockRenderer),
+                fakeThreads.uiThreadExecutor,
+                { fakeThreads.renderThreadExecutor.apply { isShutdown = false } },
             )
+        renderHelper.callback = mockCallback
     }
 
     internal class FakeThreads {
@@ -166,33 +83,31 @@ class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
 
         val clock =
             FakeClock(1000) { newTimeMillis ->
-                _uiThreadExecutors.onNewTime(newTimeMillis)
-                _renderThreadExecutors.onNewTime(newTimeMillis)
+                uiThreadExecutor.onNewTime(newTimeMillis)
+                renderThreadExecutor.onNewTime(newTimeMillis)
             }
 
-        private val _uiThreadExecutors = FakeScheduledExecutor(ThreadId.UI)
-        val uiThreadExecutors: CanvasInProgressStrokesRenderHelperV33.ScheduledExecutor =
-            _uiThreadExecutors
+        val uiThreadExecutor = FakeScheduledExecutor(ThreadId.UI)
 
-        private val _renderThreadExecutors = FakeScheduledExecutor(ThreadId.RENDER)
-        val renderThreadExecutors: CanvasInProgressStrokesRenderHelperV33.ScheduledExecutor =
-            _renderThreadExecutors
+        val renderThreadExecutor = FakeScheduledExecutor(ThreadId.RENDER)
 
-        fun uiThreadReadyTaskCount() = _uiThreadExecutors.tasks.size
+        fun uiThreadReadyTaskCount() = uiThreadExecutor.tasks.size
 
-        fun renderThreadReadyTaskCount() = _renderThreadExecutors.tasks.size
+        fun renderThreadReadyTaskCount() = renderThreadExecutor.tasks.size
 
-        fun uiThreadDelayedTaskCount() = _uiThreadExecutors.delayedTasks.size
+        fun uiThreadDelayedTaskCount() = uiThreadExecutor.delayedTasks.size
 
-        fun renderThreadDelayedTaskCount() = _renderThreadExecutors.delayedTasks.size
+        fun renderThreadDelayedTaskCount() = renderThreadExecutor.delayedTasks.size
 
-        fun runUiThreadOnce() = runFakeThreadOnce(_uiThreadExecutors)
+        fun renderThreadIsShutdown() = renderThreadExecutor.isShutdown
 
-        fun runRenderThreadOnce() = runFakeThreadOnce(_renderThreadExecutors)
+        fun runUiThreadOnce() = runFakeThreadOnce(uiThreadExecutor)
 
-        fun runUiThreadToIdle() = runFakeThreadToIdle(_uiThreadExecutors)
+        fun runRenderThreadOnce() = runFakeThreadOnce(renderThreadExecutor)
 
-        fun runRenderThreadToIdle() = runFakeThreadToIdle(_renderThreadExecutors)
+        fun runUiThreadToIdle() = runFakeThreadToIdle(uiThreadExecutor)
+
+        fun runRenderThreadToIdle() = runFakeThreadToIdle(renderThreadExecutor)
 
         fun runOnUiThread(block: () -> Unit) {
             val previousThreadId = currentThreadId
@@ -232,11 +147,19 @@ class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
             return ranAny
         }
 
-        private inner class FakeScheduledExecutor(val threadId: ThreadId) :
+        internal inner class FakeScheduledExecutor(val threadId: ThreadId) :
             CanvasInProgressStrokesRenderHelperV33.ScheduledExecutor {
             val tasks = mutableListOf<Runnable>()
             /** Each element is a delayed runtime (in the [clock] time space) with its task. */
             val delayedTasks = mutableListOf<Pair<Long, Runnable>>()
+
+            override var isShutdown = false
+
+            override fun shutdown() {
+                tasks.clear()
+                delayedTasks.clear()
+                isShutdown = true
+            }
 
             override fun onThread() = currentThreadId == threadId
 

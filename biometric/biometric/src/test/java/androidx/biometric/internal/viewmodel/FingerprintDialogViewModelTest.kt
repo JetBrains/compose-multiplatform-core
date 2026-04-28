@@ -17,26 +17,19 @@
 package androidx.biometric.internal.viewmodel
 
 import androidx.biometric.internal.ui.FingerprintDialogState
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(AndroidJUnit4::class)
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class FingerprintDialogViewModelTest {
-
-    private lateinit var viewModel: FingerprintDialogViewModel
-
-    @Before
-    fun setUp() {
-        viewModel = FingerprintDialogViewModel()
-    }
+    private val viewModel: FingerprintDialogViewModel = FingerprintDialogViewModel()
 
     @Test
     fun testInitialState() = runTest {

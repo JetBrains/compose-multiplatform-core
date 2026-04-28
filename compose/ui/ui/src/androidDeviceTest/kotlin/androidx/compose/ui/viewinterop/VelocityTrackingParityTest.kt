@@ -40,11 +40,10 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
-import androidx.compose.ui.input.pointer.util.VelocityTrackerAddPointsFix
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.tests.R
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.util.fastFirstOrNull
@@ -89,7 +88,6 @@ class VelocityTrackingParityTest {
     @Before
     fun setUp() {
         latestComposeVelocity = Velocity.Zero
-        VelocityTrackerAddPointsFix = true
     }
 
     fun tearDown() {

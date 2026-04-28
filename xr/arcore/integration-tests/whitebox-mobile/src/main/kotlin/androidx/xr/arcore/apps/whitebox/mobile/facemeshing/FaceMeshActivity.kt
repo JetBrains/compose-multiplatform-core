@@ -50,6 +50,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.lifecycleScope
 import androidx.opengl.EGLExt
 import androidx.opengl.EGLImageKHR
+import androidx.xr.arcore.ExperimentalFaceApi
 import androidx.xr.arcore.Face
 import androidx.xr.arcore.FaceMeshRegion
 import androidx.xr.arcore.apps.whitebox.mobile.common.ArCoreVerificationHelper
@@ -58,11 +59,12 @@ import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Framebuffer
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.SampleRender
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.maybeThrowGLException
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.renderers.BackgroundRenderer
-import androidx.xr.arcore.playservices.ArCoreRuntime
+import androidx.xr.arcore.playservices.ExperimentalCameraApi
 import androidx.xr.arcore.playservices.cameraState
+import androidx.xr.arcore.runtime.PerceptionRuntime
+import androidx.xr.runtime.CameraFacingDirection
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.CameraFacingDirection
-import androidx.xr.runtime.Config.FaceTrackingMode
+import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Matrix4
 import kotlinx.coroutines.CompletableJob
@@ -122,6 +124,8 @@ class FaceMeshActivity : ComponentActivity(), SampleRender.Companion.Renderer {
         sessionHelper.tryCreateSession()
     }
 
+    @OptIn(ExperimentalFaceApi::class)
+    @Suppress("RestrictedApiAndroidX")
     override fun onResume() {
         super.onResume()
         if (::session.isInitialized) {
@@ -210,16 +214,20 @@ class FaceMeshActivity : ComponentActivity(), SampleRender.Companion.Renderer {
         backgroundRenderer.setUseOcclusion(render, false)
     }
 
+    @Suppress("RestrictedApiAndroidX")
     override fun onSurfaceChanged(render: SampleRender, width: Int, height: Int) {
-        (session.runtimes.first() as ArCoreRuntime)
+        session.runtimes
+            .filterIsInstance<PerceptionRuntime>()
+            .first()
             .perceptionManager
             .setDisplayRotation(Surface.ROTATION_0, width, height)
         framebuffer.resize(width, height)
     }
 
+    @OptIn(ExperimentalFaceApi::class, ExperimentalCameraApi::class)
+    @Suppress("RestrictedApiAndroidX")
     override fun onDrawFrame(render: SampleRender) {
         val cameraState = session.state.value.cameraState
-        val perceptionManager = (session.runtimes.first() as ArCoreRuntime).perceptionManager
 
         if (cameraState?.hardwareBuffer == null) {
             return
@@ -263,6 +271,7 @@ class FaceMeshActivity : ComponentActivity(), SampleRender.Companion.Renderer {
             if (renderStyle == RenderStyle.MASK) {
                 faceMeshRenderer.draw(foundFaces.first(), viewMatrix, projectionMatrix, framebuffer)
             } else {
+                val regionPoses = faceState.getRegionPoseMap()
                 faceEffectsRenderer.draw(
                     foundFaces.first(),
                     viewMatrix,
@@ -270,19 +279,19 @@ class FaceMeshActivity : ComponentActivity(), SampleRender.Companion.Renderer {
                     framebuffer,
                 )
                 noseTipRenderer.draw(
-                    faceState.regionPoses!![FaceMeshRegion.NOSE_TIP]!!,
+                    regionPoses[FaceMeshRegion.NOSE_TIP]!!,
                     viewMatrix,
                     projectionMatrix,
                     framebuffer,
                 )
                 foreheadLeftRenderer.draw(
-                    faceState.regionPoses!![FaceMeshRegion.FOREHEAD_LEFT]!!,
+                    regionPoses[FaceMeshRegion.FOREHEAD_LEFT]!!,
                     viewMatrix,
                     projectionMatrix,
                     framebuffer,
                 )
                 foreheadRightRenderer.draw(
-                    faceState.regionPoses!![FaceMeshRegion.FOREHEAD_RIGHT]!!,
+                    regionPoses[FaceMeshRegion.FOREHEAD_RIGHT]!!,
                     viewMatrix,
                     projectionMatrix,
                     framebuffer,

@@ -65,6 +65,7 @@ private val DEVICE_STATE_CALLBACK =
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 @OptIn(ExperimentalCamera2Interop::class)
 class Camera2InteropTest {
     @Test

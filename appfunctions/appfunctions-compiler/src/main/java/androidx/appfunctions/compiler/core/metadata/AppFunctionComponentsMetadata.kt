@@ -22,12 +22,14 @@ data class AppFunctionComponentsMetadata(
     fun toAppFunctionComponentsMetadataDocument(): AppFunctionComponentsMetadataDocument {
         return AppFunctionComponentsMetadataDocument(
             dataTypes =
-                dataTypes.map { (name, dataType) ->
-                    AppFunctionNamedDataTypeMetadataDocument(
-                        name = name,
-                        dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
-                    )
-                }
+                dataTypes.entries
+                    .sortedBy { it.key }
+                    .map { (name, dataType) ->
+                        AppFunctionNamedDataTypeMetadataDocument(
+                            name = name,
+                            dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
+                        )
+                    }
         )
     }
 }

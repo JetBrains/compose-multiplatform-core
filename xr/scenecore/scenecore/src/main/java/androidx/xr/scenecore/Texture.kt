@@ -21,13 +21,14 @@ import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.TextureResource as RtTextureResource
 import java.io.File
+import java.io.IOException
 import java.nio.file.Path
 
 /**
  * Represents a [Texture] in SceneCore.
  *
  * A texture is an image that can be applied to a 3D model to give it color, detail, and realism. It
- * can also be used as an alpha mask for a [StereoSurfaceEntity].
+ * can also be used as an alpha mask for a [SurfaceEntity].
  *
  * It's important to close a [Texture] when it's no longer needed to free up resources. This can be
  * done by calling the [close] method or letting it get garbage collected.
@@ -42,6 +43,8 @@ internal constructor(internal val texture: RtTextureResource, internal val sessi
      * The [Texture] can be explicitly closed at anytime or garbage collected. In both cases, its
      * resources are freed and an exception will be thrown if the [Texture] is used after being
      * closed.
+     *
+     * @throws IllegalStateException if the resource has already been closed.
      */
     @MainThread
     override public open fun close() {
@@ -54,22 +57,24 @@ internal constructor(internal val texture: RtTextureResource, internal val sessi
             name: String,
             session: Session,
         ): Texture {
-            val textureResource = renderingRuntime.loadTexture(name)!!.awaitSuspending()
+            val textureResource = renderingRuntime.loadTexture(name)
             return Texture(textureResource, session)
         }
 
         /**
-         * Public factory for a Texture, asynchronously loading a preprocessed texture from a [Path]
-         * relative to the application's `assets/` folder.
+         * Public factory for a [Texture], asynchronously loading a preprocessed texture from a
+         * [Path] relative to the application's `assets/` folder.
          *
          * Currently, only URLs and relative paths from the `assets/` directory are supported.
          *
          * @param session The [Session] to use for loading the [Texture].
-         * @param path The Path of the `.png` texture file to be loaded, relative to the
+         * @param path The [Path] of the `.png` texture file to be loaded, relative to the
          *   application's `assets/` folder.
          * @return a [Texture] upon completion.
          * @throws IllegalArgumentException if [Path.isAbsolute] is true, as this method requires a
          *   relative path.
+         * @throws IOException if no file exists at the specified path, or if the file cannot be
+         *   read or decoded.
          */
         @MainThread
         @JvmStatic

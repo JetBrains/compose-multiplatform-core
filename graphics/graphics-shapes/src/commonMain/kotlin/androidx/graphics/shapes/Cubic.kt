@@ -422,6 +422,7 @@ interface MutablePoint {
     var y: Float
 }
 
+@Suppress("TypealiasDefinition")
 typealias TransformResult = FloatFloatPair
 
 /** Interface for a function that can transform (rotate/scale/translate/etc.) points. */
@@ -430,7 +431,7 @@ fun interface PointTransformer {
      * Transform the point given the x and y parameters, returning the transformed point as a
      * [TransformResult]
      */
-    fun transform(x: Float, y: Float): TransformResult
+    @Suppress("ValueClassUsageWithoutJvmName") fun transform(x: Float, y: Float): TransformResult
 }
 
 /**

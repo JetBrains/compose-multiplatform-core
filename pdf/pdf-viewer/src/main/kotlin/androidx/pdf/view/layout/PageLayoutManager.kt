@@ -19,17 +19,17 @@ package androidx.pdf.view.layout
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
-import android.os.DeadObjectException
+import android.os.RemoteException
 import android.util.Range
 import android.util.SparseArray
 import androidx.pdf.PdfDocument
-import androidx.pdf.PdfDocument.Companion.INCLUDE_FORM_WIDGET_INFO
 import androidx.pdf.PdfPoint
 import androidx.pdf.PdfRect
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
-import androidx.pdf.featureflag.PdfFeatureFlags
+import androidx.pdf.util.ExceptionUtils.isHandledRemoteException
 import androidx.pdf.util.PAGE_INFO_REQUEST_NAME
+import androidx.pdf.util.compatContentEquals
 import androidx.pdf.view.PdfFormFillingState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,16 +49,23 @@ import kotlinx.coroutines.withContext
 internal class PageLayoutManager(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
-    topPageMarginPx: Float = 0f,
+    private val topPageMarginPx: Float = 0f,
+    pagesPerRow: Int = SINGLE_PAGE,
+    horizontalPageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
     verticalPageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
-    internal val paginationModel: PaginationModel =
-        PaginationModel(verticalPageSpacingPx, pdfDocument.pageCount, topPageMarginPx),
+    internal val paginationModel: PaginationModel = PaginationModel(pdfDocument.pageCount),
     internal var layoutStrategy: LayoutStrategy =
-        SinglePageLayoutStrategy(pdfDocument.pageCount, verticalPageSpacingPx, topPageMarginPx),
+        createLayoutStrategy(
+            pdfDocument.pageCount,
+            pagesPerRow,
+            horizontalPageSpacingPx,
+            verticalPageSpacingPx,
+            topPageMarginPx,
+        ),
     internal val pdfFormFillingState: PdfFormFillingState =
         PdfFormFillingState(pdfDocument.pageCount),
     private val errorFlow: MutableSharedFlow<Throwable>,
-    private val isFormFillingEnabled: Boolean = false,
+    internal var isFormFillingEnabled: () -> Boolean = { false },
 ) {
     /** The 0-indexed maximum page number whose dimensions are known to this model */
     val reach
@@ -109,21 +116,11 @@ internal class PageLayoutManager(
 
     /** The maximum width of the PDF content. */
     val maxContentWidth: Float
-        get() =
-            if (PdfFeatureFlags.isLayoutStrategyEnabled) {
-                layoutStrategy.maxWidth
-            } else {
-                paginationModel.maxWidth
-            }
+        get() = layoutStrategy.maxWidth
 
     /** The total height of the PDF content. */
     val contentHeight: Float
-        get() =
-            if (PdfFeatureFlags.isLayoutStrategyEnabled) {
-                layoutStrategy.totalHeight
-            } else {
-                paginationModel.totalEstimatedHeight
-            }
+        get() = layoutStrategy.totalHeight
 
     /**
      * The current [Job] that is handling dimensions loading work
@@ -153,13 +150,33 @@ internal class PageLayoutManager(
         increaseReach(DEFAULT_PREFETCH_RADIUS)
     }
 
+    /** Updates the layout strategy with a new configuration. */
+    fun updateLayoutStrategy(
+        pagesPerRow: Int,
+        horizontalPageSpacingPx: Float,
+        verticalPageSpacingPx: Float,
+    ) {
+        layoutStrategy =
+            createLayoutStrategy(
+                pdfDocument.pageCount,
+                pagesPerRow,
+                horizontalPageSpacingPx,
+                verticalPageSpacingPx,
+                topPageMarginPx,
+            )
+
+        for (pageNum in 0..paginationModel.reach) {
+            layoutStrategy.setPagePositions(pageNum, paginationModel.getPageSize(pageNum))
+        }
+    }
+
     /** Calculates the content coordinate location for a 0-indexed [pageNum] */
     private fun calculatePageLocation(pageNum: Int, viewport: RectF): RectF {
-        return if (PdfFeatureFlags.isLayoutStrategyEnabled) {
-            layoutStrategy.getPageLocation(viewport, pageNum, paginationModel.getPageSize(pageNum))
-        } else {
-            paginationModel.getPageLocation(pageNum, viewport)
-        }
+        return layoutStrategy.getPageLocation(
+            viewport,
+            pageNum,
+            paginationModel.getPageSize(pageNum),
+        )
     }
 
     /** Returns the current content coordinate location of a 0-indexed [pageNum] */
@@ -169,11 +186,7 @@ internal class PageLayoutManager(
 
     /** Returns the pages currently visible within the given [viewport]. */
     fun getVisiblePages(viewport: RectF, includePartial: Boolean = true): PagesInViewport {
-        return if (PdfFeatureFlags.isLayoutStrategyEnabled) {
-            layoutStrategy.getVisiblePages(viewport, includePartial)
-        } else {
-            paginationModel.getPagesInViewport(viewport.top, viewport.bottom, includePartial)
-        }
+        return layoutStrategy.getVisiblePages(viewport, includePartial)
     }
 
     /** Returns the size of the page at [pageNum], or null if we don't know that page's size yet */
@@ -260,7 +273,7 @@ internal class PageLayoutManager(
      * Returns a View-relative [RectF] corresponding to a page-relative [PdfRect], or null if the
      * page hasn't been laid out
      */
-    fun getViewRect(pdfRect: PdfRect, viewport: RectF): RectF? {
+    fun getContentViewRect(pdfRect: PdfRect, viewport: RectF): RectF? {
         if (pdfRect.pageNum > paginationModel.reach) return null
         val pageBounds = getPageLocation(pdfRect.pageNum, viewport)
         val out = RectF(pdfRect.left, pdfRect.top, pdfRect.right, pdfRect.bottom)
@@ -338,7 +351,7 @@ internal class PageLayoutManager(
             pageLocations.put(i, calculatePageLocation(i, viewport))
         }
         this.pageLocations = pageLocations
-        return !prevLocations.contentEquals(this@PageLayoutManager.pageLocations)
+        return !prevLocations.compatContentEquals(this@PageLayoutManager.pageLocations)
     }
 
     /**
@@ -363,7 +376,7 @@ internal class PageLayoutManager(
             visibleAreas.put(i, area)
         }
         visiblePageAreas = visibleAreas
-        return !prevAreas.contentEquals(visiblePageAreas)
+        return !prevAreas.compatContentEquals(visiblePageAreas)
     }
 
     /** Waits for any outstanding dimensions to be loaded, then loads dimensions for [pageNum] */
@@ -376,11 +389,11 @@ internal class PageLayoutManager(
                 try {
                     val pageInfoFlags =
                         if (
-                            isFormFillingEnabled and
+                            isFormFillingEnabled() and
                                 (pdfDocument.formType != PdfDocument.PDF_FORM_TYPE_NONE)
                         )
-                            PdfDocument.PageInfoFlags.of(INCLUDE_FORM_WIDGET_INFO)
-                        else PdfDocument.PageInfoFlags.of(0)
+                            PdfDocument.PAGE_INFO_INCLUDE_FORM_WIDGET
+                        else PdfDocument.PAGE_INFO_EXCLUDE_FORM_WIDGETS
                     val pageMetadata = pdfDocument.getPageInfo(pageNum, pageInfoFlags)
 
                     val size = Point(pageMetadata.width, pageMetadata.height)
@@ -398,7 +411,8 @@ internal class PageLayoutManager(
                 // TODO(b/409465579): Propagate custom exception from SandboxedPdfDocument to
                 // decouple
                 // it from service specific exceptions
-                catch (e: DeadObjectException) {
+                catch (e: RemoteException) {
+                    if (!e.isHandledRemoteException) throw e
                     // An exception happened above because of service disconnection. Our marked
                     // requestedReach is no longer correct. In subsequent calls the missed value
                     // will be approximated by the next known value.
@@ -420,5 +434,26 @@ internal class PageLayoutManager(
     companion object {
         internal const val DEFAULT_PREFETCH_RADIUS = 4
         private const val DEFAULT_PAGE_SPACING_PX = 20f
+        private const val SINGLE_PAGE = 1
+        private const val TWO_PAGE = 2
+
+        private fun createLayoutStrategy(
+            pageCount: Int,
+            pagesPerRow: Int,
+            horizontalPageSpacingPx: Float,
+            verticalPageSpacingPx: Float,
+            topPageMarginPx: Float,
+        ): LayoutStrategy {
+            return if (pagesPerRow == TWO_PAGE) {
+                TwoPageLayoutStrategy(
+                    pageCount,
+                    verticalPageSpacingPx,
+                    horizontalPageSpacingPx,
+                    topPageMarginPx,
+                )
+            } else {
+                SinglePageLayoutStrategy(pageCount, verticalPageSpacingPx, topPageMarginPx)
+            }
+        }
     }
 }

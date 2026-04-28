@@ -112,12 +112,7 @@ class Mesh(
     override fun close() {
         if (vertexArrayId[0] != 0) {
             GLES30.glDeleteVertexArrays(1, vertexArrayId, 0)
-            maybeLogGLError(
-                Log.WARN,
-                TAG,
-                "Failed to free vertex array object",
-                "glDeleteVertexArrays",
-            )
+            maybeLogGLError(Log.WARN, "Failed to free vertex array object", "glDeleteVertexArrays")
         }
     }
 

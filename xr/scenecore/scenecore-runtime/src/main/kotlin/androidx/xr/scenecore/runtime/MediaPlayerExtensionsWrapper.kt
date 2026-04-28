@@ -20,7 +20,7 @@ import android.media.MediaPlayer
 import androidx.annotation.RestrictTo
 
 /** Interface for a XR Runtime MediaPlayerExtensionsWrapper */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface MediaPlayerExtensionsWrapper {
     /**
      * Sets the PointSourceParams of the MediaPlayer.
@@ -28,7 +28,11 @@ public interface MediaPlayerExtensionsWrapper {
      * @param mediaPlayer The MediaPlayer to set the PointSourceParams on.
      * @param params The PointSourceParams to set.
      */
-    public fun setPointSourceParams(mediaPlayer: MediaPlayer, params: PointSourceParams)
+    public fun setPointSourceParams(
+        mediaPlayer: MediaPlayer,
+        params: PointSourceParams,
+        entity: Entity,
+    )
 
     /**
      * Sets the SoundFieldAttributes of the MediaPlayer.

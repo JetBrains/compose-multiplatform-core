@@ -29,7 +29,6 @@ import static androidx.camera.core.ImageCapture.OUTPUT_FORMAT_RAW_JPEG;
 import static androidx.camera.core.ImageCapture.getImageCaptureCapabilities;
 import static androidx.camera.integration.extensions.CameraDirection.BACKWARD;
 import static androidx.camera.integration.extensions.CameraDirection.FORWARD;
-import static androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_CAMERA_IMPLEMENTATION;
 import static androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_CAMERA_DIRECTION;
 import static androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_CAMERA_ID;
 import static androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_DELETE_CAPTURED_IMAGE;
@@ -80,7 +79,6 @@ import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.camera2.interop.Camera2Interop;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraInfo;
@@ -144,8 +142,6 @@ public class CameraExtensionsActivity extends AppCompatActivity
 
     private static final String TAG = "CameraExtensionActivity";
     private static final int PERMISSIONS_REQUEST_CODE = 42;
-    public static final String CAMERA2_IMPLEMENTATION_OPTION = "camera2";
-    public static final String CAMERA_PIPE_IMPLEMENTATION_OPTION = "camera_pipe";
 
     private CameraSelector mCurrentCameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
 
@@ -210,6 +206,7 @@ public class CameraExtensionsActivity extends AppCompatActivity
 
     private @ImageCapture.OutputFormat int mImageOutputFormat = OUTPUT_FORMAT_JPEG;
     private Button mButtonImageOutputFormat;
+    private boolean mAutoRotationEnabled = true;
 
     void setupButtons() {
         Button btnToggleMode = findViewById(R.id.PhotoToggle);
@@ -359,6 +356,7 @@ public class CameraExtensionsActivity extends AppCompatActivity
                 new ExtensionSessionConfig.Builder(mCurrentExtensionMode, mExtensionsManager);
         extensionSessionConfigBuilder.addUseCase(mPreview);
         extensionSessionConfigBuilder.addUseCase(mImageCapture);
+        extensionSessionConfigBuilder.setAutoRotationEnabled(mAutoRotationEnabled);
         // Setup VideoCapture.
         stopRecording();
         mVideoCapture = null;
@@ -642,8 +640,6 @@ public class CameraExtensionsActivity extends AppCompatActivity
         mPreviewView = (PreviewView) viewFinderStub.inflate();
         mPreviewView.setImplementationMode(PreviewView.ImplementationMode.COMPATIBLE);
         setupPinchToZoomAndTapToFocus(mPreviewView);
-        String cameraImplementation =
-                getIntent().getStringExtra(INTENT_EXTRA_CAMERA_IMPLEMENTATION);
         Pair<ListenableFuture<Boolean>, CallbackToFutureAdapter.Completer<Boolean>>
                 futureCompleter = setupPermissions(this);
         mPermissionCompleter = futureCompleter.second;
@@ -660,11 +656,6 @@ public class CameraExtensionsActivity extends AppCompatActivity
                     return;
                 }
 
-                if (cameraImplementation != null
-                        && cameraImplementation.equals(CAMERA_PIPE_IMPLEMENTATION_OPTION)) {
-                    ((ExtensionsApplication) getApplication()).setCameraXConfig(
-                            CameraPipeConfig.defaultConfig());
-                }
                 ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
                         ProcessCameraProvider.getInstance(CameraExtensionsActivity.this);
 
@@ -705,6 +696,17 @@ public class CameraExtensionsActivity extends AppCompatActivity
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(@Nullable Menu menu) {
+        if (menu != null) {
+            MenuItem item = menu.findItem(R.id.menu_auto_rotation);
+            if (item != null) {
+                item.setChecked(mAutoRotationEnabled);
+            }
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         Intent intent = new Intent();
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -721,6 +723,11 @@ public class CameraExtensionsActivity extends AppCompatActivity
             intent.setClassName(this, CameraValidationResultActivity.class.getName());
             startActivity(intent);
             finish();
+            return true;
+        } else if (itemId == R.id.menu_auto_rotation) {
+            mAutoRotationEnabled = !mAutoRotationEnabled;
+            item.setChecked(mAutoRotationEnabled);
+            bindUseCasesWithCurrentExtensionMode();
             return true;
         }
 

@@ -19,12 +19,13 @@ package androidx.compose.foundation.gestures.snapping
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.lazy.LazyListLayoutInfo
+import androidx.compose.foundation.lazy.LazyListMeasuredItem
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.layout.LazyLayoutMeasuredItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastSumBy
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 
@@ -53,7 +54,7 @@ fun SnapLayoutInfoProvider(
                     0
                 } else {
                     val numberOfItems = layoutInfo.visibleItemsInfo.size
-                    layoutInfo.visibleItemsInfo.sumOf { it.size } / numberOfItems
+                    layoutInfo.visibleItemsInfo.fastSumBy { it.size } / numberOfItems
                 }
             }
 
@@ -67,7 +68,7 @@ fun SnapLayoutInfoProvider(
             var upperBoundOffset = Float.POSITIVE_INFINITY
 
             layoutInfo.visibleItemsInfo.fastForEach { item ->
-                if ((item as? LazyLayoutMeasuredItem)?.nonScrollableItem == true) return@fastForEach
+                if ((item as? LazyListMeasuredItem)?.nonScrollableItem == true) return@fastForEach
                 val offset =
                     calculateDistanceToDesiredSnapPosition(
                         mainAxisViewPortSize = layoutInfo.singleAxisViewportSize,

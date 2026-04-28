@@ -14,117 +14,60 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.GltfAnimationFeature
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
-import androidx.xr.scenecore.runtime.MaterialResource
+import androidx.xr.scenecore.runtime.GltfModelNodeFeature
 import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.GltfEntity] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public open class FakeGltfEntity(
     private val feature: GltfFeature? = null,
     private val executor: Executor? = null,
 ) : FakeEntity(), GltfEntity {
-    public class Node {
-        public val nodeName: String = "glTF node"
-        public val materialArray: Array<FakeResource> =
-            arrayOf(FakeResource(1), FakeResource(2), FakeResource(3))
-    }
+    override val nodes: List<GltfModelNodeFeature>
+        get() = feature?.nodes ?: emptyList()
 
-    public val node: Node = Node()
-
-    @GltfEntity.AnimationStateValue
-    private var _animationState: Int = GltfEntity.AnimationState.STOPPED
-
-    /** Returns the current animation state of the glTF entity. */
-    @GltfEntity.AnimationStateValue
-    override val animationState: Int
-        get() {
-            return feature?.animationState ?: _animationState
-        }
-
-    override fun getGltfModelBoundingBox(): BoundingBox =
+    override val gltfModelBoundingBox: BoundingBox =
         BoundingBox.fromMinMax(Vector3.Zero, Vector3.One)
 
-    /**
-     * Indicates whether the animation is currently looping. In tests, you can
-     * - call [startAnimation] with loop set to true to simulate looping the animation and verify
-     *   that your code responds correctly to the animation looping.
-     * - call [stopAnimation] to clear the looping state and verify that your code responds
-     *   correctly to the animation stopping.
-     */
-    public var isLooping: Boolean = false
+    private val _animations = mutableListOf<GltfAnimationFeature>()
 
-    override fun setMaterialOverride(
-        material: MaterialResource,
-        nodeName: String,
-        primitiveIndex: Int,
-    ) {
-        feature?.setMaterialOverride(material, nodeName, primitiveIndex)
-        if (nodeName == node.nodeName && primitiveIndex < node.materialArray.size) {
-            node.materialArray[primitiveIndex] = material as FakeResource
-        }
+    override val animations: List<GltfAnimationFeature>
+        get() = (feature?.getAnimations(executor!!) ?: emptyList()) + _animations
+
+    override fun setColliderEnabled(enabled: Boolean) {
+        feature?.setColliderEnabled(enabled)
     }
 
-    override fun clearMaterialOverride(nodeName: String, primitiveIndex: Int) {
-        feature?.clearMaterialOverride(nodeName, primitiveIndex)
-        if (nodeName == node.nodeName && primitiveIndex < node.materialArray.size) {
-            node.materialArray[primitiveIndex] = FakeResource(primitiveIndex.toLong())
-        }
+    override fun addOnBoundsUpdateListener(listener: Consumer<BoundingBox>) {
+        feature?.addOnBoundsUpdateListener(listener)
+    }
+
+    override fun removeOnBoundsUpdateListener(listener: Consumer<BoundingBox>) {
+        feature?.removeOnBoundsUpdateListener(listener)
+    }
+
+    override fun setReformAffordanceEnabled(enabled: Boolean, systemMovable: Boolean) {
+        feature?.setReformAffordanceEnabled(this, enabled, executor!!, systemMovable)
     }
 
     /**
-     * The name of the animation that is currently playing. In tests, you can
-     * - call [startAnimation] with a supported animationName and verify that your code responds
-     *   correctly to the animation starting.
-     * - call [stopAnimation] to clear the value and verify that your code responds correctly to the
-     *   animation stopping.
-     */
-    public var currentAnimationName: String? = null
-        private set
-
-    /**
-     * A list of supported animation names with a default value of "animation_name" which is used in
-     * the scenecore/JxrPlatformAdapterAxrTest unit test. In tests, you can call [startAnimation]
-     * with a supported/unsupported animationName and verify that your code responds correctly to
-     * the [isLooping] and [currentAnimationName] values.
-     */
-    public var supportedAnimationNames: MutableList<String> = mutableListOf("animation_name")
-
-    /**
-     * Starts the animation with a supported given name when the animation state is STOPPED.
+     * Adds an animation to the list of animations.
      *
-     * @param currentAnimationName The name of the animation to start. If null is supplied, will
-     *   play the first animation found in the glTF.
-     * @param loop Whether the animation should loop.
+     * @param animation The animation to add.
      */
-    override fun startAnimation(loop: Boolean, animationName: String?) {
-        feature?.startAnimation(loop, animationName, executor!!)
-        if (
-            supportedAnimationNames.contains(animationName) &&
-                _animationState == GltfEntity.AnimationState.STOPPED
-        ) {
-
-            _animationState = GltfEntity.AnimationState.PLAYING
-
-            isLooping = loop
-            currentAnimationName = animationName
-        }
-    }
-
-    /** Stops the animation of the glTF entity. */
-    override fun stopAnimation() {
-        feature?.stopAnimation()
-        if (_animationState == GltfEntity.AnimationState.PLAYING) {
-            _animationState = GltfEntity.AnimationState.STOPPED
-
-            isLooping = false
-            currentAnimationName = null
-        }
+    public fun addAnimation(animation: GltfAnimationFeature) {
+        _animations.add(animation)
     }
 }

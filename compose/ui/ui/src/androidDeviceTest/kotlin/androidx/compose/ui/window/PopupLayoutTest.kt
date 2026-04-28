@@ -30,7 +30,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -317,6 +317,82 @@ class PopupLayoutTest {
         assertThat(layout.params.y).isEqualTo(0)
     }
 
+    @Test
+    fun unclippedPopup_usesFullWindowBounds_forPositioning() {
+        val windowBounds = android.graphics.Rect(0, 0, 1080, 2400)
+        var providedWindowSize: IntSize? = null
+
+        val layout =
+            createPopupLayout(
+                properties = PopupProperties(clippingEnabled = false),
+                popupLayoutHelper =
+                    object : NoopPopupLayoutHelper() {
+                        override fun getWindowBounds(
+                            composeView: View,
+                            outRect: android.graphics.Rect,
+                        ) {
+                            outRect.set(windowBounds)
+                        }
+                    },
+                positionProvider =
+                    object : PopupPositionProvider {
+                        override fun calculatePosition(
+                            anchorBounds: IntRect,
+                            windowSize: IntSize,
+                            layoutDirection: LayoutDirection,
+                            popupContentSize: IntSize,
+                        ): IntOffset {
+                            providedWindowSize = windowSize
+                            return IntOffset.Zero
+                        }
+                    },
+            )
+
+        layout.popupContentSize = IntSize.Zero
+        layout.updateParentLayoutCoordinates(MutableLayoutCoordinates())
+
+        assertThat(providedWindowSize)
+            .isEqualTo(IntSize(windowBounds.width(), windowBounds.height()))
+    }
+
+    @Test
+    fun clippedPopup_usesVisibleDisplayFrame_forPositioning() {
+        val visibleBounds = android.graphics.Rect(0, 100, 1080, 2200)
+        var providedWindowSize: IntSize? = null
+
+        val layout =
+            createPopupLayout(
+                properties = PopupProperties(clippingEnabled = true),
+                popupLayoutHelper =
+                    object : NoopPopupLayoutHelper() {
+                        override fun getWindowVisibleDisplayFrame(
+                            composeView: View,
+                            outRect: android.graphics.Rect,
+                        ) {
+                            outRect.set(visibleBounds)
+                        }
+                    },
+                positionProvider =
+                    object : PopupPositionProvider {
+                        override fun calculatePosition(
+                            anchorBounds: IntRect,
+                            windowSize: IntSize,
+                            layoutDirection: LayoutDirection,
+                            popupContentSize: IntSize,
+                        ): IntOffset {
+                            providedWindowSize = windowSize
+                            return IntOffset.Zero
+                        }
+                    },
+            )
+
+        layout.popupContentSize = IntSize.Zero
+        layout.updateParentLayoutCoordinates(MutableLayoutCoordinates())
+
+        assertThat(providedWindowSize)
+            .isEqualTo(IntSize(visibleBounds.width(), visibleBounds.height()))
+    }
+
     private fun createPopupLayout(
         onDismissRequest: (() -> Unit)? = null,
         properties: PopupProperties = PopupProperties(),
@@ -337,6 +413,7 @@ class PopupLayoutTest {
                         density = density,
                         initialPositionProvider = positionProvider,
                         popupId = UUID.randomUUID(),
+                        isNested = false,
                         popupLayoutHelper = popupLayoutHelper,
                     )
                     .also { layout = it }
@@ -411,6 +488,10 @@ class PopupLayoutTest {
                 composeView: View,
                 outRect: android.graphics.Rect,
             ) {
+                // do nothing
+            }
+
+            override fun getWindowBounds(composeView: View, outRect: android.graphics.Rect) {
                 // do nothing
             }
 

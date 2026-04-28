@@ -31,6 +31,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -40,7 +42,7 @@ import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.math.tan
 import kotlinx.coroutines.delay
@@ -70,7 +72,7 @@ class SpatialUserActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
 
         enableEdgeToEdge()
@@ -83,13 +85,14 @@ class SpatialUserActivity : AppCompatActivity() {
 
         session!!.configure(
             Config(
-                planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                headTracking = Config.HeadTrackingMode.LAST_KNOWN,
+                planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                deviceTracking = DeviceTrackingMode.SPATIAL,
             )
         )
+        session?.scene?.keyEntity = null
         device = ArDevice.getInstance(session!!)
-        cameraLeft = RenderViewpoint.left(session!!)
-        cameraRight = RenderViewpoint.right(session!!)
+        cameraLeft = runCatching { RenderViewpoint.left(session!!) }.getOrNull()
+        cameraRight = runCatching { RenderViewpoint.right(session!!) }.getOrNull()
 
         // toolbar
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {
@@ -119,6 +122,7 @@ class SpatialUserActivity : AppCompatActivity() {
                 IntSize2d(640, 480),
                 "Spatial User Test Panel",
                 Pose(Vector3(0f, 0f, 0.5f)),
+                parent = session!!.scene.activitySpace,
             )
         spatialUserPanel.parent = session!!.scene.activitySpace
 

@@ -124,19 +124,34 @@ class AppFunctionDataParameterExtractorTest {
     }
 
     @Test
-    fun testAppFunctionData_extractRequiredSingleParameters_notExist(
-        @TestParameter isNullable: Boolean
-    ) {
+    fun testAppFunctionData_extractRequiredNonNullSingleParameters_notExist() {
         val parameterMetadata =
             AppFunctionParameterMetadata(
                 name = "fakeDouble",
                 isRequired = true,
-                dataType = AppFunctionDoubleTypeMetadata(isNullable = isNullable),
+                dataType = AppFunctionDoubleTypeMetadata(isNullable = false),
             )
 
         assertThrows(AppFunctionInvalidArgumentException::class.java) {
             testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
         }
+    }
+
+    @Test
+    fun testAppFunctionData_extractRequiredNullableSingleParameters_notExist() {
+        val parameterMetadata =
+            AppFunctionParameterMetadata(
+                name = "fakeDouble",
+                isRequired = true,
+                dataType = AppFunctionDoubleTypeMetadata(isNullable = true),
+            )
+        val testData =
+            AppFunctionData.Builder(listOf(parameterMetadata), AppFunctionComponentsMetadata())
+                .build()
+
+        val value = testData.unsafeGetParameterValue(parameterMetadata)
+
+        assertThat(value).isNull()
     }
 
     @Test
@@ -228,16 +243,14 @@ class AppFunctionDataParameterExtractorTest {
     }
 
     @Test
-    fun testAppFunctionData_extractRequiredCollectionParameters_notExist(
-        @TestParameter isNullable: Boolean
-    ) {
+    fun testAppFunctionData_extractRequiredNonNullCollectionParameters_notExist() {
         val parameterMetadata =
             AppFunctionParameterMetadata(
                 name = "fakeDoubleArray",
                 isRequired = true,
                 dataType =
                     AppFunctionArrayTypeMetadata(
-                        isNullable = isNullable,
+                        isNullable = false,
                         itemType = AppFunctionDoubleTypeMetadata(isNullable = false),
                     ),
             )
@@ -245,6 +258,27 @@ class AppFunctionDataParameterExtractorTest {
         assertThrows(AppFunctionInvalidArgumentException::class.java) {
             testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
         }
+    }
+
+    @Test
+    fun testAppFunctionData_extractRequiredNullableCollectionParameters_notExist() {
+        val parameterMetadata =
+            AppFunctionParameterMetadata(
+                name = "fakeDoubleArray",
+                isRequired = true,
+                dataType =
+                    AppFunctionArrayTypeMetadata(
+                        isNullable = true,
+                        itemType = AppFunctionDoubleTypeMetadata(isNullable = false),
+                    ),
+            )
+        val testData =
+            AppFunctionData.Builder(listOf(parameterMetadata), AppFunctionComponentsMetadata())
+                .build()
+
+        val value = testData.unsafeGetParameterValue(parameterMetadata)
+
+        assertThat(value).isNull()
     }
 
     @Test

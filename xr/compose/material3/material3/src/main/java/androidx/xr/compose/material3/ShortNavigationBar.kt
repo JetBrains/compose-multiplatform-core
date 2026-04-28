@@ -45,16 +45,8 @@ import androidx.compose.ui.unit.dp
  * Short navigation bars offer a persistent and convenient way to switch between primary
  * destinations in an app.
  *
- * ![Short navigation bar with vertical items
- * image](https://developer.android.com/images/reference/androidx/compose/material3/short-navigation-bar-vertical-items.png)
- *
- * ![Short navigation bar with horizontal items
- * image](https://developer.android.com/images/reference/androidx/compose/material3/short-navigation-bar-horizontal-items.png)
- *
  * The recommended configuration of the [ShortNavigationBar] in an XR environment is three to six
  * [ShortNavigationBarItem]s, each representing a singular destination.
- *
- * @sample androidx.compose.material3.samples.ShortNavigationBarWithHorizontalItemsSample
  *
  * See [ShortNavigationBarItem] for configurations specific to each item, and not the overall
  * [ShortNavigationBar] component.
@@ -65,6 +57,8 @@ import androidx.compose.ui.unit.dp
  * @param contentColor the color for content inside this navigation bar.
  * @param content the content of this navigation bar, typically [ShortNavigationBarItem]s
  */
+// TODO(brandonjiang): Link to XR-specific ShortNavBar image asset when available
+// TODO(brandonjiang): Add a @sample tag and create a new sample project for XR.
 @ExperimentalMaterial3ExpressiveApi
 @ExperimentalMaterial3XrApi
 @Composable
@@ -75,7 +69,7 @@ public fun ShortNavigationBar(
     content: @Composable () -> Unit,
 ) {
     HorizontalOrbiter(LocalShortNavigationBarOrbiterProperties.current) {
-        Surface(color = containerColor, contentColor = contentColor) {
+        Surface(color = containerColor, contentColor = contentColor, modifier = modifier) {
             Row(
                 modifier =
                     Modifier.defaultMinSize(minHeight = XrNavigationBarTokens.ContainerHeight)

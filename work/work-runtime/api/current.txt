@@ -19,6 +19,7 @@ package androidx.work {
     method @InaccessibleFromKotlin public androidx.work.Clock getClock();
     method @InaccessibleFromKotlin public int getContentUriTriggerWorkersLimit();
     method @InaccessibleFromKotlin public String? getDefaultProcessName();
+    method @SuppressCompatibility @androidx.work.ExperimentalEventsApi public androidx.work.ExecutionEventListener? getExecutionEventListener();
     method @InaccessibleFromKotlin public java.util.concurrent.Executor getExecutor();
     method @InaccessibleFromKotlin public androidx.core.util.Consumer<java.lang.Throwable>? getInitializationExceptionHandler();
     method @InaccessibleFromKotlin public androidx.work.InputMergerFactory getInputMergerFactory();
@@ -26,6 +27,7 @@ package androidx.work {
     method @InaccessibleFromKotlin public int getMinJobSchedulerId();
     method @InaccessibleFromKotlin public long getRemoteSessionTimeoutMillis();
     method @InaccessibleFromKotlin public androidx.work.RunnableScheduler getRunnableScheduler();
+    method @SuppressCompatibility @androidx.work.ExperimentalEventsApi public androidx.work.ScheduleEventListener? getScheduleEventListener();
     method @InaccessibleFromKotlin public androidx.core.util.Consumer<java.lang.Throwable>? getSchedulingExceptionHandler();
     method @InaccessibleFromKotlin public java.util.concurrent.Executor getTaskExecutor();
     method @InaccessibleFromKotlin public kotlin.coroutines.CoroutineContext getWorkerCoroutineContext();
@@ -59,6 +61,7 @@ package androidx.work {
     method public androidx.work.Configuration.Builder setClock(androidx.work.Clock clock);
     method public androidx.work.Configuration.Builder setContentUriTriggerWorkersLimit(int contentUriTriggerWorkersLimit);
     method public androidx.work.Configuration.Builder setDefaultProcessName(String processName);
+    method @SuppressCompatibility @androidx.work.ExperimentalEventsApi public androidx.work.Configuration.Builder setExecutionEventListener(androidx.work.ExecutionEventListener listener);
     method public androidx.work.Configuration.Builder setExecutor(java.util.concurrent.Executor executor);
     method public androidx.work.Configuration.Builder setInitializationExceptionHandler(androidx.core.util.Consumer<java.lang.Throwable> exceptionHandler);
     method public androidx.work.Configuration.Builder setInputMergerFactory(androidx.work.InputMergerFactory inputMergerFactory);
@@ -68,6 +71,7 @@ package androidx.work {
     method public androidx.work.Configuration.Builder setMinimumLoggingLevel(int loggingLevel);
     method public androidx.work.Configuration.Builder setRemoteSessionTimeoutMillis(@IntRange(from=0L, to=1200000L) long timeoutMillis);
     method public androidx.work.Configuration.Builder setRunnableScheduler(androidx.work.RunnableScheduler runnableScheduler);
+    method @SuppressCompatibility @androidx.work.ExperimentalEventsApi public androidx.work.Configuration.Builder setScheduleEventListener(androidx.work.ScheduleEventListener listener);
     method public androidx.work.Configuration.Builder setSchedulingExceptionHandler(androidx.core.util.Consumer<java.lang.Throwable> schedulingExceptionHandler);
     method public androidx.work.Configuration.Builder setTaskExecutor(java.util.concurrent.Executor taskExecutor);
     method public androidx.work.Configuration.Builder setWorkerCoroutineContext(kotlin.coroutines.CoroutineContext context);
@@ -168,8 +172,9 @@ package androidx.work {
     method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.Object?> getKeyValueMap();
     method public long getLong(String key, long defaultValue);
     method public long[]? getLongArray(String key);
+    method public String?[]? getNullableStringArray(String key);
     method public String? getString(String key);
-    method public String[]? getStringArray(String key);
+    method @Deprecated public String[]? getStringArray(String key);
     method public <T> boolean hasKeyWithValueOfType(String key, Class<T> klass);
     method public byte[] toByteArray();
     property public java.util.Map<java.lang.String,java.lang.Object?> keyValueMap;
@@ -216,6 +221,13 @@ package androidx.work {
     method public final androidx.work.ListenableWorker? createWorker(android.content.Context appContext, String workerClassName, androidx.work.WorkerParameters workerParameters);
   }
 
+  @SuppressCompatibility @androidx.work.ExperimentalEventsApi public interface ExecutionEventListener {
+    method public suspend Object? onException(Throwable throwable, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? onFinished(androidx.work.ListenableWorker.Result result, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? onStarted(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? onStopped(int stopReason, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+  }
+
   public enum ExistingPeriodicWorkPolicy {
     enum_constant public static final androidx.work.ExistingPeriodicWorkPolicy CANCEL_AND_REENQUEUE;
     enum_constant public static final androidx.work.ExistingPeriodicWorkPolicy KEEP;
@@ -231,6 +243,9 @@ package androidx.work {
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.CLASS}) public @interface ExperimentalConfigurationApi {
+  }
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.CLASS}) public @interface ExperimentalEventsApi {
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.CLASS}) public @interface ExperimentalWorkRequestBuilderApi {
@@ -390,6 +405,14 @@ package androidx.work {
     method public void scheduleWithDelay(@IntRange(from=0) long, Runnable);
   }
 
+  @SuppressCompatibility @androidx.work.ExperimentalEventsApi public interface ScheduleEventListener {
+    method public default suspend Object? onCancelled(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public default suspend Object? onEnqueued(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public default suspend Object? onPrerequisiteFailed(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public default suspend Object? onUnblocked(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public default suspend Object? onUpdated(androidx.work.WorkInfo oldWorkInfo, androidx.work.WorkInfo updatedWorkInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+  }
+
   public abstract class WorkContinuation {
     ctor public WorkContinuation();
     method public static androidx.work.WorkContinuation combine(java.util.List<androidx.work.WorkContinuation!>);
@@ -401,7 +424,7 @@ package androidx.work {
   }
 
   public final class WorkInfo {
-    ctor @BytecodeOnly public WorkInfo(java.util.UUID!, androidx.work.WorkInfo.State!, java.util.Set!, androidx.work.Data!, androidx.work.Data!, int, int, androidx.work.Constraints!, long, androidx.work.WorkInfo.PeriodicityInfo!, long, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public WorkInfo(java.util.UUID!, androidx.work.WorkInfo.State!, java.util.Set!, androidx.work.Data!, androidx.work.Data!, int, int, androidx.work.Constraints!, long, androidx.work.WorkInfo.PeriodicityInfo!, long, int, String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags);
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData);
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData, optional androidx.work.Data progress);
@@ -412,6 +435,7 @@ package androidx.work {
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData, optional androidx.work.Data progress, optional int runAttemptCount, optional int generation, optional androidx.work.Constraints constraints, optional long initialDelayMillis, optional androidx.work.WorkInfo.PeriodicityInfo? periodicityInfo);
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData, optional androidx.work.Data progress, optional int runAttemptCount, optional int generation, optional androidx.work.Constraints constraints, optional long initialDelayMillis, optional androidx.work.WorkInfo.PeriodicityInfo? periodicityInfo, optional long nextScheduleTimeMillis);
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData, optional androidx.work.Data progress, optional int runAttemptCount, optional int generation, optional androidx.work.Constraints constraints, optional long initialDelayMillis, optional androidx.work.WorkInfo.PeriodicityInfo? periodicityInfo, optional long nextScheduleTimeMillis, optional int stopReason);
+    ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData, optional androidx.work.Data progress, optional int runAttemptCount, optional int generation, optional androidx.work.Constraints constraints, optional long initialDelayMillis, optional androidx.work.WorkInfo.PeriodicityInfo? periodicityInfo, optional long nextScheduleTimeMillis, optional int stopReason, optional String? workerClassName);
     method @InaccessibleFromKotlin public androidx.work.Constraints getConstraints();
     method @InaccessibleFromKotlin public int getGeneration();
     method @InaccessibleFromKotlin public java.util.UUID getId();
@@ -424,6 +448,7 @@ package androidx.work {
     method @InaccessibleFromKotlin public androidx.work.WorkInfo.State getState();
     method @InaccessibleFromKotlin @RequiresApi(31) public int getStopReason();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getTags();
+    method @InaccessibleFromKotlin public String? getWorkerClassName();
     property public androidx.work.Constraints constraints;
     property public int generation;
     property public java.util.UUID id;
@@ -436,6 +461,7 @@ package androidx.work {
     property public androidx.work.WorkInfo.State state;
     property @RequiresApi(31) public int stopReason;
     property public java.util.Set<java.lang.String> tags;
+    property public String? workerClassName;
     field public static final androidx.work.WorkInfo.Companion Companion;
     field public static final int STOP_REASON_APP_STANDBY = 12; // 0xc
     field public static final int STOP_REASON_BACKGROUND_RESTRICTION = 11; // 0xb

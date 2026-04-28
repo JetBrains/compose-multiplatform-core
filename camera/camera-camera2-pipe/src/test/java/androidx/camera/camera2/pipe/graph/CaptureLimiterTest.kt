@@ -27,8 +27,10 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import org.robolectric.annotation.Config
 
 @RunWith(JUnit4::class)
+@Config(sdk = [Config.ALL_SDKS])
 class CaptureLimiterTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
@@ -44,7 +46,7 @@ class CaptureLimiterTest {
             cameraGraphId = cameraGraphId,
             defaultParameters = emptyMap<Any, Any?>(),
             requiredParameters = emptyMap<Any, Any?>(),
-            graphListeners = listOf(),
+            requiredListeners = listOf(),
             listeners = listOf(captureLimiter),
             shutdownScope = testScope,
             dispatcher = testDispatcher,

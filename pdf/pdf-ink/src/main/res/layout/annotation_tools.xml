@@ -21,7 +21,6 @@
         android:id="@+id/pen_button"
         android:layout_width="@dimen/annotation_tool_width"
         android:layout_height="@dimen/annotation_tool_height"
-        android:layout_marginEnd="@dimen/margin_4dp"
         android:contentDescription="@string/annotation_pen_button_content_desc"
         app:backgroundTint="@color/annotation_tool_background_color_state"
         app:iconTint="?attr/colorOnSurfaceVariant"
@@ -31,7 +30,6 @@
         android:id="@+id/highlighter_button"
         android:layout_width="@dimen/annotation_tool_width"
         android:layout_height="@dimen/annotation_tool_height"
-        android:layout_marginEnd="@dimen/margin_4dp"
         android:contentDescription="@string/annotation_highlighter_button_content_desc"
         app:backgroundTint="@color/annotation_tool_background_color_state"
         app:iconTint="?attr/colorOnSurfaceVariant"
@@ -41,7 +39,6 @@
         android:id="@+id/eraser_button"
         android:layout_width="@dimen/annotation_tool_width"
         android:layout_height="@dimen/annotation_tool_height"
-        android:layout_marginEnd="@dimen/margin_4dp"
         android:contentDescription="@string/annotation_eraser_button_content_desc"
         app:backgroundTint="@color/annotation_tool_background_color_state"
         app:iconTint="?attr/colorOnSurfaceVariant"
@@ -51,19 +48,19 @@
         android:id="@+id/color_palette_button"
         android:layout_width="@dimen/annotation_tool_width"
         android:layout_height="@dimen/annotation_tool_height"
-        android:layout_marginEnd="@dimen/margin_4dp"
+        android:contentDescription="@string/annotation_color_palette_button_content_desc"
         app:cornerRadius="@dimen/color_palette_icon_corner_radius"
         app:backgroundTint="?attr/colorSurfaceContainerLowest"
-        app:iconTint="@color/default_palette_color"
-        app:icon="@drawable/color_palette_icon_drawable"/>
+        app:icon="@drawable/color_palette_icon_fill"/>
 
     <LinearLayout
+        android:id="@+id/undo_redo_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:focusable="false"
-        android:background="@drawable/annotation_tool_container_background"
-        android:layout_marginEnd="@dimen/margin_4dp">
+        android:clipToOutline="true"
+        android:background="@drawable/annotation_tool_container_background">
 
         <androidx.pdf.ink.view.tool.AnnotationToolView
             android:id="@+id/undo_button"
@@ -72,6 +69,7 @@
             android:layout_marginEnd="@dimen/margin_4dp"
             android:contentDescription="@string/annotation_undo_button_content_desc"
             app:backgroundTint="@android:color/transparent"
+            app:rippleColor="?attr/colorPrimaryContainer"
             app:elevation="0dp"
             app:iconTint="?attr/colorOnSurfaceVariant"
             app:icon="@drawable/undo_drawable"/>
@@ -82,6 +80,7 @@
             android:layout_height="@dimen/annotation_tool_height"
             android:contentDescription="@string/annotation_redo_button_content_desc"
             app:backgroundTint="@android:color/transparent"
+            app:rippleColor="?attr/colorPrimaryContainer"
             app:elevation="0dp"
             app:iconTint="?attr/colorOnSurfaceVariant"
             app:icon="@drawable/redo_drawable"/>

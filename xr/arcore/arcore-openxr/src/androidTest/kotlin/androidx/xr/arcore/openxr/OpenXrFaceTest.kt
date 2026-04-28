@@ -21,8 +21,9 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -30,7 +31,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.runtime.openxr.test"
+// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.arcore.openxr.test"
 // supports a lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
 @LargeTest
@@ -39,13 +40,13 @@ class OpenXrFaceTest {
 
     companion object {
         init {
-            System.loadLibrary("androidx.xr.runtime.openxr.test")
+            System.loadLibrary("androidx.xr.arcore.openxr.test")
         }
     }
 
     @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
-    lateinit private var openXrManager: OpenXrManager
+    lateinit private var openXrRuntime: OpenXrRuntime
     lateinit private var underTest: OpenXrFace
 
     @Before
@@ -54,7 +55,7 @@ class OpenXrFaceTest {
     }
 
     @Test
-    fun update_updatesTrackingStateToTracking() = initOpenXrManagerAndRunTest {
+    fun update_updatesTrackingStateToTracking() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         check(underTest.trackingState != TrackingState.TRACKING)
 
@@ -64,7 +65,7 @@ class OpenXrFaceTest {
     }
 
     @Test
-    fun update_updatesBlendShapeAndConfidenceValues() = initOpenXrManagerAndRunTest {
+    fun update_updatesBlendShapeAndConfidenceValues() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
 
         underTest.update(xrTime)
@@ -88,27 +89,27 @@ class OpenXrFaceTest {
         }
     }
 
-    private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
+    private fun initOpenXrRuntimeAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
             val timeSource = OpenXrTimeSource()
             val perceptionManager = OpenXrPerceptionManager(timeSource)
-            openXrManager = OpenXrManager(it, perceptionManager, timeSource)
-            openXrManager.create()
-            openXrManager.resume()
+            openXrRuntime = OpenXrRuntime(it, perceptionManager, timeSource)
+            openXrRuntime.initialize()
+            openXrRuntime.resume()
 
             // Configure twice because the stubs return false calibration the first time
             try {
-                openXrManager.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+                openXrRuntime.configure(Config(faceTracking = FaceTrackingMode.BLEND_SHAPES))
             } catch (e: FaceTrackingNotCalibratedException) {
-                openXrManager.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+                openXrRuntime.configure(Config(faceTracking = FaceTrackingMode.BLEND_SHAPES))
             }
 
             testBody()
 
-            // Pause and stop the OpenXR manager here in lieu of an @After method to ensure that the
-            // calls to the OpenXR manager are coming from the same thread.
-            openXrManager.pause()
-            openXrManager.stop()
+            // Pause and stop the OpenXR runtime here in lieu of an @After method to ensure that the
+            // calls to the OpenXR runtime are coming from the same thread.
+            openXrRuntime.pause()
+            openXrRuntime.destroy()
         }
     }
 }

@@ -34,6 +34,14 @@ class RecompositionDataWithStateReads : RecompositionData() {
         super.incrementCount()
     }
 
+    /**
+     * Expect state reads to be recorded for the last recorded recomposition. Add empty
+     * observations.
+     */
+    fun expectStateReads(): ObservedStateReads {
+        return addObservedStateReads(count)
+    }
+
     // Add an observed state read for the current recomposition:
     fun addStateRead(value: Any?, trace: Exception): ObservedStateReads? {
         if (lastCountWasSkipped || count <= 0) {
@@ -75,7 +83,7 @@ class RecompositionDataWithStateReads : RecompositionData() {
         recompositionNumberEnd: Int,
         includeExtra: Boolean,
     ): List<ObservedReadResult> {
-        if (observed?.isNotEmpty() != true) {
+        if (observed == null) {
             return emptyList()
         }
         val result = mutableListOf<ObservedReadResult>()
@@ -121,7 +129,7 @@ class RecompositionDataWithStateReads : RecompositionData() {
             // being recorded, make a copy:
             stateRead = stateRead?.copy()
         }
-        return stateRead?.let { ObservedReadResult(actual, it.reads) }
+        return stateRead?.toObservedReadResult(actual)
     }
 
     fun clearStateReads(): IntObjectMap<ObservedStateReads>? {

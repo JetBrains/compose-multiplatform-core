@@ -119,7 +119,7 @@ internal class GpuBuffer(
     fun free() {
         if (bufferId[0] != 0) {
             GLES30.glDeleteBuffers(1, bufferId, 0)
-            maybeLogGLError(Log.WARN, TAG, "Failed to free buffer object", "glDeleteBuffers")
+            maybeLogGLError(Log.WARN, "Failed to free buffer object", "glDeleteBuffers")
             bufferId[0] = 0
         }
     }

@@ -24,6 +24,7 @@ import androidx.test.filters.SmallTest;
 import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -127,6 +128,7 @@ public class PrefetchTest {
      * Test to make sure that calling the API won't cause any obvious errors.
      */
     @Test
+    @SuppressWarnings("removal")
     public void testSettingCacheConfig() {
         WebkitUtils.checkFeature(WebViewFeature.SPECULATIVE_LOADING_CONFIG);
         SpeculativeLoadingConfig.Builder builder =
@@ -141,8 +143,74 @@ public class PrefetchTest {
                 Assert.fail(exception.getMessage());
             }
         });
-
     }
 
+    /**
+     * Test to make sure that calling the setMaxPrefetches API won't cause any obvious errors.
+     */
+    @Test
+    @Ignore("https://crbug.com/501069897")
+    public void testSetMaxPrefetches() throws Exception {
+        WebkitUtils.checkFeature(WebViewFeature.PREFETCH_CACHE_V1);
+        WebkitUtils.onMainThreadSync(() -> {
+            PrefetchCache prefetchCache = ProfileStore.getInstance().getProfile(
+                    Profile.DEFAULT_PROFILE_NAME).getPrefetchCache();
+            prefetchCache.setMaxPrefetches(5);
+            prefetchCache.setMaxPrefetches(null);
+            prefetchCache.setMaxPrefetches(1);
+        });
+    }
 
+    /**
+     * Test to make sure that calling the setPrefetchTtlSeconds API won't cause any obvious errors.
+     */
+    @Test
+    @Ignore("https://crbug.com/501069897")
+    public void testSetPrefetchTtlSeconds() throws Exception {
+        WebkitUtils.checkFeature(WebViewFeature.PREFETCH_CACHE_V1);
+        WebkitUtils.onMainThreadSync(() -> {
+            PrefetchCache prefetchCache = ProfileStore.getInstance().getProfile(
+                    Profile.DEFAULT_PROFILE_NAME).getPrefetchCache();
+            prefetchCache.setPrefetchTtlSeconds(60);
+            prefetchCache.setPrefetchTtlSeconds(1);
+            prefetchCache.setPrefetchTtlSeconds(null);
+        });
+    }
+
+    /**
+     * Test to make sure that calling the setMaxPrerenders API won't cause any obvious errors.
+     */
+    @Test
+    public void testSetMaxPrerenders() throws Exception {
+        WebkitUtils.checkFeature(WebViewFeature.SET_MAX_PRERENDERS_V1);
+        WebkitUtils.onMainThreadSync(() -> {
+            Profile testProfile = ProfileStore.getInstance().getProfile(
+                    Profile.DEFAULT_PROFILE_NAME);
+            testProfile.setMaxPrerenders(5);
+            testProfile.setMaxPrerenders(1);
+            testProfile.setMaxPrerenders(null);
+        });
+    }
+
+    /**
+     * Test to make sure that IntRange returns the right exception
+     */
+    @Test
+    public void testIntRangeThrowsException() throws Exception {
+        WebkitUtils.checkFeature(WebViewFeature.SET_MAX_PRERENDERS_V1);
+        WebkitUtils.onMainThreadSync(() -> {
+            Profile testProfile = ProfileStore.getInstance().getProfile(
+                    Profile.DEFAULT_PROFILE_NAME);
+            assertThrows(IllegalArgumentException.class, () -> testProfile.setMaxPrerenders(0));
+            assertThrows(IllegalArgumentException.class, () -> testProfile.setMaxPrerenders(-1));
+            assertThrows(IllegalArgumentException.class,
+                    () -> testProfile.getPrefetchCache().setMaxPrefetches(0));
+            assertThrows(IllegalArgumentException.class,
+                    () -> testProfile.getPrefetchCache().setMaxPrefetches(-1));
+            assertThrows(IllegalArgumentException.class,
+                    () -> testProfile.getPrefetchCache().setPrefetchTtlSeconds(0));
+            assertThrows(IllegalArgumentException.class,
+                    () -> testProfile.getPrefetchCache().setPrefetchTtlSeconds(-1));
+        });
+    }
 }

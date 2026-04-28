@@ -91,6 +91,7 @@ class AndroidXIssueRegistry : IssueRegistry() {
                     ClassVerificationFailureDetector.IMPLICIT_CAST_ISSUE,
                     ScreenshotTestSdkSuppressAnnotationEnforcer.ISSUE,
                     ExperimentalCompanionWithNonExperimentalElementsDetector.ISSUE,
+                    MissingRobolectricSdkConfigDetector.ISSUE,
                 )
             }
     }

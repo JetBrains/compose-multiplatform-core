@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.scenecore
 
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import androidx.xr.arcore.Plane
+import androidx.xr.arcore.PlaneLabel
+import androidx.xr.arcore.PlaneType
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
@@ -27,9 +27,11 @@ import androidx.xr.runtime.math.Ray
 import androidx.xr.scenecore.HitTestResult.SurfaceType
 import androidx.xr.scenecore.InputEvent.HitInfo
 import androidx.xr.scenecore.ScenePose.HitTestFilter
+import androidx.xr.scenecore.SurfaceEntity.Shape.TriangleMesh
 import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
 import androidx.xr.scenecore.runtime.AnchorPlacement as RtAnchorPlacement
 import androidx.xr.scenecore.runtime.Dimensions as RtDimensions
+import androidx.xr.scenecore.runtime.DirectExecutor
 import androidx.xr.scenecore.runtime.HitTestResult as RtHitTestResult
 import androidx.xr.scenecore.runtime.HitTestResult.HitTestSurfaceType as RtHitTestSurfaceType
 import androidx.xr.scenecore.runtime.InputEvent as RtInputEvent
@@ -48,22 +50,12 @@ import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilitie
 import androidx.xr.scenecore.runtime.SpatialPointerIcon as RtSpatialPointerIcon
 import androidx.xr.scenecore.runtime.SpatialPointerIconType as RtSpatialPointerIconType
 import androidx.xr.scenecore.runtime.SpatialVisibility as RtSpatialVisibility
+import androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh as RtTriangleMesh
 import androidx.xr.scenecore.runtime.TextureSampler as RtTextureSampler
 import com.google.common.util.concurrent.ListenableFuture
-import java.util.concurrent.Executor
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
-
-internal class HandlerExecutor(val handler: Handler) : Executor {
-    override fun execute(command: Runnable) {
-        handler.post(command)
-    }
-
-    companion object {
-        val mainThreadExecutor: Executor = HandlerExecutor(Handler(Looper.getMainLooper()))
-    }
-}
 
 /**
  * Extension function that converts a [androidx.xr.runtime.math.FloatSize3d] to
@@ -112,41 +104,38 @@ internal fun RtPixelDimensions.toIntSize2d(): IntSize2d {
 }
 
 /**
- * Extension function that converts [Int] to
- * [androidx.xr.scenecore.runtime.SceneRuntime.planeOrientation].
+ * Extension function that converts [PlaneOrientation] to [androidx.xr.scenecore.runtime.PlaneType].
  */
-internal fun Int.toRtPlaneType(): RtPlaneType {
+internal fun PlaneOrientation.toRtPlaneType(): RtPlaneType {
     return when (this) {
         PlaneOrientation.HORIZONTAL -> RtPlaneType.HORIZONTAL
         PlaneOrientation.VERTICAL -> RtPlaneType.VERTICAL
-        PlaneOrientation.ANY -> RtPlaneType.ANY
         else -> error("Unknown Plane Type: $PlaneOrientation")
     }
 }
 
 /**
- * Extension function that converts [Int] to
- * [androidx.xr.scenecore.runtime.SceneRuntime.PlaneSemantic].
+ * Extension function that converts [PlaneSemanticType] to
+ * [androidx.xr.scenecore.runtime.PlaneSemantic].
  */
-internal fun Int.toRtPlaneSemantic(): RtPlaneSemantic {
+internal fun PlaneSemanticType.toRtPlaneSemantic(): RtPlaneSemantic {
     return when (this) {
         PlaneSemanticType.WALL -> RtPlaneSemantic.WALL
         PlaneSemanticType.FLOOR -> RtPlaneSemantic.FLOOR
         PlaneSemanticType.CEILING -> RtPlaneSemantic.CEILING
         PlaneSemanticType.TABLE -> RtPlaneSemantic.TABLE
-        PlaneSemanticType.ANY -> RtPlaneSemantic.ANY
         else -> error("Unknown Plane Semantic: $PlaneSemanticType")
     }
 }
 
 /**
- * Extension function that converts [Space] value to
- * [androidx.xr.scenecore.runtime.SceneRuntime.Space] value.
+ * Extension function that converts [Space] value to [androidx.xr.scenecore.runtime.Space] value.
  */
 internal fun Space.toRtSpace(): Int {
     return when (this) {
         Space.PARENT -> RtSpace.PARENT
         Space.ACTIVITY -> RtSpace.ACTIVITY
+        @Suppress("DEPRECATION") // TODO - b/415320653
         Space.REAL_WORLD -> RtSpace.REAL_WORLD
         else -> error("Unknown Space Value: $this")
     }
@@ -155,9 +144,9 @@ internal fun Space.toRtSpace(): Int {
 /**
  * Extension function that converts a [androidx.xr.scenecore.runtime.MoveEvent] to a [MoveEvent].
  */
-internal fun RtMoveEvent.toMoveEvent(entityManager: EntityManager): MoveEvent {
+internal fun RtMoveEvent.toMoveEvent(entityRegistry: EntityRegistry): MoveEvent {
 
-    disposedEntity?.let { entityManager.removeEntity(it) }
+    disposedEntity?.let { entityRegistry.removeEntity(it) }
     return MoveEvent(
         moveState.toMoveState(),
         Ray(initialInputRay.origin, initialInputRay.direction),
@@ -166,18 +155,18 @@ internal fun RtMoveEvent.toMoveEvent(entityManager: EntityManager): MoveEvent {
         currentPose,
         previousScale.x,
         currentScale.x,
-        entityManager.getEntityForRtEntity(initialParent)!!,
+        entityRegistry.getEntityForRtEntity(initialParent)!!,
         updatedParent?.let {
-            entityManager.getEntityForRtEntity(it)
-                ?: AnchorEntity.create(it as RtAnchorEntity, entityManager)
+            entityRegistry.getEntityForRtEntity(it)
+                ?: AnchorEntity.create(it as RtAnchorEntity, entityRegistry)
         },
     )
 }
 
 /** Extension function that converts a [RtHitInfo] to a [HitInfo]. */
-internal fun RtHitInfo.toHitInfo(entityManager: EntityManager): HitInfo? {
+internal fun RtHitInfo.toHitInfo(entityRegistry: EntityRegistry): HitInfo? {
     // TODO: b/377541143 - Replace instance equality check in EntityManager.
-    val hitEntity = entityManager.getEntityForRtEntity(inputEntity)
+    val hitEntity = entityRegistry.getEntityForRtEntity(inputEntity)
     return if (hitEntity == null) {
         null
     } else {
@@ -188,9 +177,9 @@ internal fun RtHitInfo.toHitInfo(entityManager: EntityManager): HitInfo? {
 /**
  * Extension function that converts a [androidx.xr.scenecore.runtime.InputEvent] to a [InputEvent].
  */
-internal fun RtInputEvent.toInputEvent(entityManager: EntityManager): InputEvent {
+internal fun RtInputEvent.toInputEvent(entityRegistry: EntityRegistry): InputEvent {
     val hitInfos = mutableListOf<HitInfo>()
-    hitInfoList.forEach { it.toHitInfo(entityManager)?.let { element -> hitInfos.add(element) } }
+    hitInfoList.forEach { it.toHitInfo(entityRegistry)?.let { element -> hitInfos.add(element) } }
     return InputEvent(
         source.toInputEventSource(),
         pointerType.toInputEventPointer(),
@@ -251,7 +240,7 @@ internal fun RtResizeEvent.toResizeEvent(entity: Entity): ResizeEvent {
 
 /**
  * Extension function that converts a [Set] of [AnchorPlacement] to a [Set] of
- * [androidx.xr.scenecore.runtime.SceneRuntime.AnchorPlacement].
+ * [androidx.xr.scenecore.runtime.AnchorPlacement].
  */
 internal fun Set<AnchorPlacement>.toRtAnchorPlacement(
     sceneRuntime: SceneRuntime
@@ -270,23 +259,29 @@ internal fun Set<AnchorPlacement>.toRtAnchorPlacement(
     return rtAnchorPlacementSet
 }
 
-/** Extension function that converts an ARCore [Plane.Type] to a Scene [PlaneOrientationValue] */
-internal fun Plane.Type.toSceneCoreOrientation(): @PlaneOrientationValue Int =
+/** Extension function that converts an ARCore [PlaneType] to a Scene [PlaneOrientation] */
+@Suppress("DEPRECATION")
+internal fun PlaneType.toSceneCoreOrientation(): PlaneOrientation =
     when (this) {
-        Plane.Type.HORIZONTAL_UPWARD_FACING -> PlaneOrientation.HORIZONTAL
-        Plane.Type.HORIZONTAL_DOWNWARD_FACING -> PlaneOrientation.HORIZONTAL
-        Plane.Type.VERTICAL -> PlaneOrientation.VERTICAL
+        PlaneType.HORIZONTAL_UPWARD_FACING -> PlaneOrientation.HORIZONTAL
+        PlaneType.HORIZONTAL_DOWNWARD_FACING -> PlaneOrientation.HORIZONTAL
+        PlaneType.VERTICAL -> PlaneOrientation.VERTICAL
         else -> error("Unknown plane orientation: $this")
     }
 
-/** Extension function that converts an ARCore [Plane.Label] to a Scene [PlaneSemanticTypeValue] */
-internal fun Plane.Label.toSceneCoreSemanticType(): @PlaneSemanticTypeValue Int =
+/**
+ * Extension function that converts an ARCore [androidx.xr.arcore.PlaneLabel] to a Scene
+ * [PlaneSemanticType]
+ */
+@Suppress("DEPRECATION")
+internal fun PlaneLabel.toSceneCoreSemanticType(): PlaneSemanticType =
     when (this) {
-        Plane.Label.FLOOR -> PlaneSemanticType.FLOOR
-        Plane.Label.TABLE -> PlaneSemanticType.TABLE
-        Plane.Label.WALL -> PlaneSemanticType.WALL
-        Plane.Label.CEILING -> PlaneSemanticType.CEILING
-        Plane.Label.UNKNOWN -> PlaneSemanticType.ANY
+        PlaneLabel.FLOOR -> PlaneSemanticType.FLOOR
+        PlaneLabel.TABLE -> PlaneSemanticType.TABLE
+        PlaneLabel.WALL -> PlaneSemanticType.WALL
+        PlaneLabel.CEILING -> PlaneSemanticType.CEILING
+        // TODO: b/500464864 - Cleanup when PlaneSemanticType.ANY is removed.
+        PlaneLabel.UNKNOWN -> PlaneSemanticType.ANY
         else -> error("Unknown semantic type: $this")
     }
 
@@ -533,8 +528,8 @@ internal fun RtPerceivedResolutionResult.toPerceivedResolutionResult(): Perceive
         is RtPerceivedResolutionResult.Success ->
             PerceivedResolutionResult.Success(this.perceivedResolution.toIntSize2d())
         is RtPerceivedResolutionResult.EntityTooClose -> PerceivedResolutionResult.EntityTooClose()
-        is RtPerceivedResolutionResult.InvalidCameraView ->
-            PerceivedResolutionResult.InvalidCameraView()
+        is RtPerceivedResolutionResult.InvalidRenderViewpoint ->
+            PerceivedResolutionResult.InvalidRenderViewpoint()
     }
 }
 
@@ -557,8 +552,10 @@ internal suspend fun <T> ListenableFuture<T>.awaitSuspending(): T {
     return deferred.await()
 }
 
-internal object DirectExecutor : Executor {
-    override fun execute(command: Runnable) {
-        command.run()
-    }
+internal fun RtTriangleMesh.toTriangleMesh(): TriangleMesh {
+    return TriangleMesh(positions = positions, texCoords = texCoords, indices = indices)
+}
+
+internal fun TriangleMesh.toRtTriangleMesh(): RtTriangleMesh {
+    return RtTriangleMesh(positions = positions, texCoords = texCoords, indices = indices)
 }

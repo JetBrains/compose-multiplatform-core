@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -29,7 +28,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -37,6 +35,7 @@ dependencies {
     api(project(":xr:arcore:arcore"))
     api(project(":xr:runtime:runtime"))
     api(project(":xr:scenecore:scenecore-runtime"))
+    api("androidx.media3:media3-exoplayer:1.10.0")
 
     implementation(project(":xr:scenecore:scenecore-spatial-core"))
     implementation(project(":xr:scenecore:scenecore-spatial-rendering"))
@@ -60,16 +59,16 @@ dependencies {
     testImplementation(project(":xr:runtime:runtime-testing"))
     testImplementation("androidx.appcompat:appcompat:1.2.0")
 
-    // For com.android.xr.extensions.
-    compileOnly("com.android.extensions.xr:extensions-xr:1.1.0")
+    // For com.android.extensions.xr
+    compileOnly(libs.androidExtensionsXr)
     testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
-    testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    testImplementation(libs.androidExtensionsXr)
 }
 
 android {
     defaultConfig {
-        consumerProguardFiles("proguard-rules.pro")
-        minSdk = 24
+        minSdk { version = release(24) }
+        compileSdk { version = release(36) }
     }
     namespace = "androidx.xr.scenecore"
 }

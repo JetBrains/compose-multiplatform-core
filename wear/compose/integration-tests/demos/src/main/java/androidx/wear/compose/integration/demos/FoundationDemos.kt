@@ -18,6 +18,8 @@ package androidx.wear.compose.integration.demos
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.wear.compose.foundation.samples.AmbientModeBasicSample
+import androidx.wear.compose.foundation.samples.AmbientModeWithAmbientTickSample
 import androidx.wear.compose.foundation.samples.CurvedAndNormalText
 import androidx.wear.compose.foundation.samples.CurvedBackground
 import androidx.wear.compose.foundation.samples.CurvedBottomLayout
@@ -55,6 +57,9 @@ import androidx.wear.compose.foundation.samples.SwipeToRevealSample
 import androidx.wear.compose.foundation.samples.SwipeToRevealWithDelayedText
 import androidx.wear.compose.foundation.samples.SwipeToRevealWithExpandables
 import androidx.wear.compose.foundation.samples.TransformingLazyColumnAnimateItemSample
+import androidx.wear.compose.foundation.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
+import androidx.wear.compose.foundation.samples.TransformingLazyColumnRequestAnchorItemSample
+import androidx.wear.compose.foundation.samples.TransformingLazyColumnWithSnapSample
 import androidx.wear.compose.integration.demos.common.Centralize
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.integration.demos.common.DemoCategory
@@ -101,6 +106,13 @@ val WearFoundationDemos =
     DemoCategory(
         "Foundation",
         listOf(
+            DemoCategory(
+                "Ambient mode",
+                listOf(
+                    ComposableDemo("Ambient sample") { AmbientModeBasicSample() },
+                    ComposableDemo("Ambient tick sample") { AmbientModeWithAmbientTickSample() },
+                ),
+            ),
             ComposableDemo("Arrangements") { ArrangementsDemo() },
             DemoCategory(
                 "Expandables",
@@ -117,6 +129,7 @@ val WearFoundationDemos =
                 listOf(
                     ComposableDemo("Warped Text Demo") { WarpedTextDemo() },
                     ComposableDemo("Warped Text Sample") { CurvedWarpingSample() },
+                    ComposableDemo("Lookahead Demo") { LookaheadDemo() },
                     ComposableDemo("Curved Row") { CurvedWorldDemo() },
                     ComposableDemo("Curved Row and Column") { CurvedRowAndColumn() },
                     ComposableDemo("Curved Box") { CurvedBoxDemo() },
@@ -237,8 +250,15 @@ val WearFoundationDemos =
                 "TransformingLazyColumn",
                 listOf(
                     ComposableDemo("Basic Sample") { SimpleTransformingLazyColumnSample() },
+                    ComposableDemo("With Snap") { TransformingLazyColumnWithSnapSample() },
                     ComposableDemo("Animation Sample") {
                         TransformingLazyColumnAnimateItemSample()
+                    },
+                    ComposableDemo("Responsive Padding") {
+                        TransformingLazyColumnMinimumVerticalContentPaddingSample()
+                    },
+                    ComposableDemo("Request Anchor Item") {
+                        TransformingLazyColumnRequestAnchorItemSample()
                     },
                     ComposableDemo("Letter Demo") { TransformingLazyColumnLettersDemo() },
                 ),

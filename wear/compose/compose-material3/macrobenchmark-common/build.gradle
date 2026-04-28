@@ -3,16 +3,14 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
     namespace = "androidx.wear.compose.material3.macrobenchmark.common"
-    compileSdk = 35
+    compileSdk { version = release(37) }
 
     defaultConfig {
-        minSdk = 25
-        consumerProguardFiles("proguard-rules.pro")
+        minSdk { version = release(25) }
     }
 }
 

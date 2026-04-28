@@ -16,10 +16,12 @@
 
 package androidx.compose.material3
 
+import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,7 +33,7 @@ import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
@@ -43,7 +45,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -260,7 +261,6 @@ class CardScreenshotTest {
     }
 
     @Test
-    @Ignore("b/355413615")
     fun filledCard_pressed() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
@@ -272,11 +272,14 @@ class CardScreenshotTest {
             }
         }
 
-        assertPressed("filledCard_pressed")
+        if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            assertPressed("filledCard_pressed_post_api_34")
+        } else {
+            assertPressed("filledCard_pressed")
+        }
     }
 
     @Test
-    @Ignore("b/355413615")
     fun elevatedCard_pressed() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
@@ -288,11 +291,14 @@ class CardScreenshotTest {
             }
         }
 
-        assertPressed("elevatedCard_pressed")
+        if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            assertPressed("elevatedCard_pressed_post_api_34")
+        } else {
+            assertPressed("elevatedCard_pressed")
+        }
     }
 
     @Test
-    @Ignore("b/355413615")
     fun outlinedCard_pressed() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
@@ -304,7 +310,11 @@ class CardScreenshotTest {
             }
         }
 
-        assertPressed("outlinedCard_pressed")
+        if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            assertPressed("outlinedCard_pressed_post_api_34")
+        } else {
+            assertPressed("outlinedCard_pressed")
+        }
     }
 
     @Test
@@ -389,6 +399,40 @@ class CardScreenshotTest {
     }
 
     @Test
+    fun filledCard_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+        rule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+                Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
+                    Card(
+                        onClick = {},
+                        Modifier.size(width = 180.dp, height = 100.dp)
+                            .focusRequester(focusRequester),
+                    ) {
+                        Box(Modifier.fillMaxSize()) {
+                            Text("Filled Card", Modifier.align(Alignment.Center))
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+        rule.waitForIdle()
+
+        assertAgainstGolden("filledCard_focused_insetFocusRings")
+    }
+
+    @Test
     fun elevatedCard_focused() {
         val focusRequester = FocusRequester()
         var localInputModeManager: InputModeManager? = null
@@ -416,6 +460,40 @@ class CardScreenshotTest {
     }
 
     @Test
+    fun elevatedCard_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+        rule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+                Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
+                    ElevatedCard(
+                        onClick = {},
+                        Modifier.size(width = 180.dp, height = 100.dp)
+                            .focusRequester(focusRequester),
+                    ) {
+                        Box(Modifier.fillMaxSize()) {
+                            Text("Elevated Card", Modifier.align(Alignment.Center))
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+        rule.waitForIdle()
+
+        assertAgainstGolden("elevatedCard_focused_insetFocusRings")
+    }
+
+    @Test
     fun outlinedCard_focused() {
         val focusRequester = FocusRequester()
         var localInputModeManager: InputModeManager? = null
@@ -440,6 +518,40 @@ class CardScreenshotTest {
         rule.waitForIdle()
 
         assertAgainstGolden("outlinedCard_focused")
+    }
+
+    @Test
+    fun outlinedCard_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+        rule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+                Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
+                    OutlinedCard(
+                        onClick = {},
+                        Modifier.size(width = 180.dp, height = 100.dp)
+                            .focusRequester(focusRequester),
+                    ) {
+                        Box(Modifier.fillMaxSize()) {
+                            Text("Outlined Card", Modifier.align(Alignment.Center))
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+        rule.waitForIdle()
+
+        assertAgainstGolden("outlinedCard_focused_insetFocusRings")
     }
 
     private fun assertPressed(goldenName: String) {

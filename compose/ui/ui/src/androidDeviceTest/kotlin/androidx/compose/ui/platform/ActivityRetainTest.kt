@@ -27,7 +27,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
 import androidx.compose.runtime.retain.LocalRetainedValuesStore
+import androidx.compose.runtime.retain.ManagedRetainedValuesStore
 import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.retain.retain
 import androidx.compose.ui.Modifier
@@ -39,7 +41,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasTextExactly
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.core.view.get
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -53,6 +55,7 @@ import androidx.test.ext.junit.rules.activityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlin.UnsupportedOperationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -385,3 +388,12 @@ private val ComposeView.viewRootForTest: ViewRootForTest
 
 private fun inTestRoot(root: RootForTest): SemanticsMatcher =
     SemanticsMatcher("in test root $root") { it.root == root }
+
+private val RetainedValuesStore.isRetainingExitedValues
+    get() =
+        when (this) {
+            is ForgetfulRetainedValuesStore -> false
+            is ManagedRetainedValuesStore -> this.isRetainingExitedValues
+            is LifecycleRetainedValuesStore -> this.isRetainingExitedValues
+            else -> throw UnsupportedOperationException("Cannot resolve retaining state for $this")
+        }

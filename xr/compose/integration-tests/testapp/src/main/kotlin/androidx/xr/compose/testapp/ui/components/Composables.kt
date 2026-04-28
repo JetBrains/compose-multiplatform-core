@@ -62,10 +62,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.transformingMovable
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.ui.theme.Purple40
 import androidx.xr.compose.testapp.ui.theme.Purple80
@@ -127,7 +127,7 @@ fun CommonTestPanel(
     onClickRecreate: (() -> Unit)? = null,
     composable: @Composable (padding: PaddingValues) -> Unit,
 ) {
-    SpatialPanel(modifier = SubspaceModifier.size(size), dragPolicy = MovePolicy()) {
+    SpatialPanel(modifier = SubspaceModifier.size(size).transformingMovable()) {
         CommonTestScaffold(title, showBottomBar, "", onClickBackArrow, onClickRecreate, composable)
     }
 }

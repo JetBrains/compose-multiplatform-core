@@ -19,7 +19,7 @@ package androidx.xr.arcore.openxr
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.runtime.FieldOfView
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -28,7 +28,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.runtime.openxr.test"
+// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.arcore.openxr.test"
 // supports a
 // lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
@@ -44,13 +44,18 @@ class OpenXrRenderViewpointTest {
 
     @Test
     fun update_alignWithState() {
-        val viewCameraState = ViewCameraState(Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f)))
+        val viewCameraState =
+            ViewCameraState(
+                Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f)),
+                FieldOfView(45.0f, 45.0f, 30.0f, 30.0f),
+            )
         check(underTest.pose == Pose())
         check(underTest.fieldOfView == FieldOfView(0f, 0f, 0f, 0f))
 
         underTest.update(viewCameraState)
 
         assertThat(underTest.pose).isEqualTo(viewCameraState.pose)
+
         assertThat(underTest.fieldOfView).isEqualTo(viewCameraState.fieldOfView)
     }
 }

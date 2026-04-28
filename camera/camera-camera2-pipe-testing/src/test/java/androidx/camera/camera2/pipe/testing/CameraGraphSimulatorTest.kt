@@ -46,12 +46,14 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraGraphSimulatorTest {
     private val testScope = TestScope()
     private val metadata =
@@ -67,6 +69,24 @@ class CameraGraphSimulatorTest {
 
     private val context = ApplicationProvider.getApplicationContext() as Context
     private val simulator = CameraGraphSimulator.create(testScope, context, metadata, graphConfig)
+
+    @After
+    fun tearDown() {
+        simulator.close()
+    }
+
+    @Test
+    fun closingCameraGraphSimulatorShouldStopCameraGraph() =
+        testScope.runTest {
+            simulator.start()
+            simulator.simulateCameraStarted()
+            simulator.initializeSurfaces()
+
+            simulator.close()
+            advanceUntilIdle()
+
+            assertThat(simulator.graphState.value).isEqualTo(GraphStateStopped)
+        }
 
     @Test
     fun simulatorCanSimulateRepeatingFrames() =
@@ -174,6 +194,7 @@ class CameraGraphSimulatorTest {
     fun simulatorCanIssueBufferLoss() =
         testScope.runTest {
             val stream = simulator.streams[streamConfig]!!
+            val outputId = stream.outputs.single().id
             val listener = FakeRequestListener()
             val request = Request(streams = listOf(stream.id), listeners = listOf(listener))
 
@@ -187,11 +208,12 @@ class CameraGraphSimulatorTest {
             val frame = simulator.simulateNextFrame()
             assertThat(frame.request).isSameInstanceAs(request)
 
-            frame.simulateBufferLoss(stream.id)
+            frame.simulateBufferLoss(stream.id, outputId)
             val lossEvent = listener.onBufferLostFlow.first()
             assertThat(lossEvent.frameNumber).isEqualTo(frame.frameNumber)
             assertThat(lossEvent.requestMetadata.request).isSameInstanceAs(request)
             assertThat(lossEvent.streamId).isEqualTo(stream.id)
+            assertThat(lossEvent.outputId).isEqualTo(outputId)
         }
 
     @Test

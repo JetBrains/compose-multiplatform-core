@@ -78,16 +78,12 @@ public class DismissAction extends TakenAction {
     @Document.LongProperty
     private final int mResultRankGlobal;
 
-    DismissAction(@NonNull String namespace, @NonNull String id, long documentTtlMillis,
-            long actionTimestampMillis, @TakenAction.ActionType int actionType,
-            @Nullable String query, @Nullable String referencedQualifiedId, int resultRankInBlock,
-            int resultRankGlobal) {
-        super(namespace, id, documentTtlMillis, actionTimestampMillis, actionType);
-
-        mQuery = query;
-        mReferencedQualifiedId = referencedQualifiedId;
-        mResultRankInBlock = resultRankInBlock;
-        mResultRankGlobal = resultRankGlobal;
+    DismissAction(@NonNull BuilderImpl<? extends BuilderImpl<?>> builder) {
+        super(builder);
+        mQuery = builder.mQuery;
+        mReferencedQualifiedId = builder.mReferencedQualifiedId;
+        mResultRankInBlock = builder.mResultRankInBlock;
+        mResultRankGlobal = builder.mResultRankGlobal;
     }
 
     /**
@@ -191,8 +187,7 @@ public class DismissAction extends TakenAction {
     }
 
     @SuppressWarnings("unchecked")
-    static class BuilderImpl<T extends BuilderImpl<T>> extends
-            TakenAction.BuilderImpl<T> {
+    static class BuilderImpl<T extends BuilderImpl<T>> extends TakenAction.BuilderImpl<T> {
         protected String mQuery;
         protected String mReferencedQualifiedId;
         protected int mResultRankInBlock;
@@ -284,9 +279,7 @@ public class DismissAction extends TakenAction {
         /** Builds an {@link DismissAction}. */
         @Override
         public @NonNull DismissAction build() {
-            return new DismissAction(mNamespace, mId, mDocumentTtlMillis, mActionTimestampMillis,
-                    mActionType, mQuery, mReferencedQualifiedId, mResultRankInBlock,
-                    mResultRankGlobal);
+            return new DismissAction(this);
         }
     }
 }

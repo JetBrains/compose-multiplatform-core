@@ -41,7 +41,7 @@ import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.StateRestorationTester
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
@@ -1512,6 +1512,7 @@ class SwipeableTest {
         rule.onNodeWithTag(swipeableTag).performTouchInput {
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = 0f, y = -1500f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -1523,6 +1524,7 @@ class SwipeableTest {
         rule.onNodeWithTag(swipeableTag).performTouchInput {
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = 0f, y = 1500f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 

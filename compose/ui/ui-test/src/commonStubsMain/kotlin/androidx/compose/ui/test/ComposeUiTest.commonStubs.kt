@@ -22,6 +22,13 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlinx.coroutines.test.TestResult
 
+@Deprecated(
+    message =
+        "Use `androidx.compose.ui.test.v2.runComposeUiTest` instead. The v2 APIs use " +
+            "`StandardTestDispatcher` by default to better simulate production behavior where " +
+            "coroutines are queued rather than executed immediately.",
+    level = DeprecationLevel.WARNING,
+)
 @ExperimentalTestApi
 actual fun runComposeUiTest(
     effectContext: CoroutineContext,
@@ -33,11 +40,16 @@ actual fun runComposeUiTest(
 @ExperimentalTestApi
 actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
     actual val density: Density
+
     actual val mainClock: MainTestClock
 
     actual fun <T> runOnUiThread(action: () -> T): T
 
     actual fun <T> runOnIdle(action: () -> T): T
+
+    actual fun <T> runWhenIdle(action: () -> T): T
+
+    actual suspend fun <T> awaitAndRunWhenIdle(action: () -> T): T
 
     actual fun waitForIdle()
 
@@ -50,4 +62,6 @@ actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
     )
 
     actual fun setContent(composable: @Composable () -> Unit)
+
+    actual fun hasPendingWork(): Boolean
 }

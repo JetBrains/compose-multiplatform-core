@@ -28,4 +28,6 @@ data class InitializedExtensionsHolder(
     val participants: ParticipantExtension? = null,
     val raiseHand: RaiseHandState? = null,
     val participantsManager: ParticipantsExtensionManager? = null,
+    val initialLocalMuteState: Boolean = false,
+    val initialCanUserUpdateSilenceState: Boolean = true,
 )

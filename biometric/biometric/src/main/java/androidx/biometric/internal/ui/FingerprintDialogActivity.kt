@@ -36,8 +36,7 @@ import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.R
-import androidx.biometric.internal.CanceledFrom
-import androidx.biometric.internal.isManagingDeviceCredentialButton
+import androidx.biometric.internal.data.CanceledFrom
 import androidx.biometric.internal.viewmodel.AuthenticationViewModel
 import androidx.biometric.internal.viewmodel.AuthenticationViewModelFactory
 import androidx.biometric.internal.viewmodel.FingerprintDialogViewModel
@@ -110,8 +109,8 @@ public class FingerprintDialogActivity : ComponentActivity() {
             }
         normalTextColor = getThemedColorFor(android.R.attr.textColorSecondary)
 
-        connectObservers()
         showAlertDialog()
+        connectObservers()
 
         if (savedInstanceState == null) {
             showAuthentication()
@@ -121,16 +120,11 @@ public class FingerprintDialogActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
+        destroyAlertDialog()
+
         if (!isChangingConfigurations) {
             cancelAuthentication(CanceledFrom.INTERNAL)
         }
-    }
-
-    /** Handles the pause event, removing any pending callbacks. */
-    override fun onPause() {
-        super.onPause()
-
-        destroyAlertDialog()
     }
 
     /**
@@ -138,7 +132,6 @@ public class FingerprintDialogActivity : ComponentActivity() {
      *
      * @return The created dialog, or `null` if the dialog should be hidden on the current device.
      */
-    // TODO(b/442913777): Fix rotation fingerprint icon gone bug
     private fun showAlertDialog(): AlertDialog? {
         if (DeviceUtils.shouldHideFingerprintDialog(this, Build.MODEL)) {
             return null
@@ -191,7 +184,7 @@ public class FingerprintDialogActivity : ComponentActivity() {
             ) {
                 getString(R.string.confirm_device_credential_password)
             } else {
-                authenticationViewModel.negativeButtonText
+                authenticationViewModel.singleFallbackOptionText
             }
         builder.setNegativeButton(negativeButtonText) { _, _ ->
             authenticationViewModel.setNegativeButtonPressPending()
@@ -311,9 +304,7 @@ public class FingerprintDialogActivity : ComponentActivity() {
                 // Define the special cases where we should NOT show an error message.
                 val isLockoutHandledByButton =
                     ErrorUtils.isLockoutError(knownErrorCode) &&
-                        isManagingDeviceCredentialButton(
-                            authenticationViewModel.allowedAuthenticators
-                        )
+                        authenticationViewModel.isOverriddenDeviceCredential
 
                 val isCanceled = knownErrorCode == BiometricPrompt.ERROR_CANCELED
 
@@ -348,7 +339,7 @@ public class FingerprintDialogActivity : ComponentActivity() {
     private fun showAuthentication() {
         @Suppress("deprecation")
         val fingerprintManagerCompat =
-            androidx.core.hardware.fingerprint.FingerprintManagerCompat.from(applicationContext)
+            androidx.biometric.internal.FingerprintManagerCompat.from(applicationContext)
         val errorCode =
             fingerprintDialogViewModel.fingerprintPreAuthChecker(fingerprintManagerCompat)
         if (errorCode != BiometricPrompt.BIOMETRIC_SUCCESS) {
@@ -373,7 +364,7 @@ public class FingerprintDialogActivity : ComponentActivity() {
      */
     @Suppress("deprecation")
     private fun authenticateWithFingerprint(
-        fingerprintManager: androidx.core.hardware.fingerprint.FingerprintManagerCompat,
+        fingerprintManager: androidx.biometric.internal.FingerprintManagerCompat,
         context: Context,
     ) {
         val crypto =

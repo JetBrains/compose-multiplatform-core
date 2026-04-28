@@ -9,6 +9,19 @@ package androidx.window.testing {
 
 }
 
+package androidx.window.testing.area {
+
+  public final class TestWindowArea {
+    method @KotlinOnly public static androidx.window.area.WindowArea WindowArea(optional androidx.window.layout.WindowMetrics metrics, optional androidx.window.area.WindowArea.Type type, optional android.os.IBinder token);
+    method @InaccessibleFromKotlin public static androidx.window.area.WindowArea createTestWindowArea();
+    method @InaccessibleFromKotlin public static androidx.window.area.WindowArea createTestWindowArea(optional androidx.window.layout.WindowMetrics metrics);
+    method @InaccessibleFromKotlin public static androidx.window.area.WindowArea createTestWindowArea(optional androidx.window.layout.WindowMetrics metrics, optional androidx.window.area.WindowArea.Type type);
+    method @InaccessibleFromKotlin public static androidx.window.area.WindowArea createTestWindowArea(optional androidx.window.layout.WindowMetrics metrics, optional androidx.window.area.WindowArea.Type type, optional android.os.IBinder token);
+    method @BytecodeOnly public static androidx.window.area.WindowArea! createTestWindowArea$default(androidx.window.layout.WindowMetrics!, androidx.window.area.WindowArea.Type!, android.os.IBinder!, int, Object!);
+  }
+
+}
+
 package androidx.window.testing.embedding {
 
   public final class ActivityEmbeddingRule implements org.junit.rules.TestRule {
@@ -81,10 +94,11 @@ package androidx.window.testing.layout {
   }
 
   public final class WindowLayoutInfoTesting {
-    method @KotlinOnly public static androidx.window.layout.WindowLayoutInfo TestWindowLayoutInfo(optional java.util.List<androidx.window.layout.DisplayFeature> displayFeatures);
+    method @KotlinOnly public static androidx.window.layout.WindowLayoutInfo TestWindowLayoutInfo(optional java.util.List<androidx.window.layout.DisplayFeature> displayFeatures, optional java.util.Set<androidx.window.layout.WindowLayoutInfo.EngagementMode> engagementModes);
     method @InaccessibleFromKotlin public static androidx.window.layout.WindowLayoutInfo createWindowLayoutInfo();
     method @InaccessibleFromKotlin public static androidx.window.layout.WindowLayoutInfo createWindowLayoutInfo(optional java.util.List<? extends androidx.window.layout.DisplayFeature> displayFeatures);
-    method @BytecodeOnly public static androidx.window.layout.WindowLayoutInfo! createWindowLayoutInfo$default(java.util.List!, int, Object!);
+    method @InaccessibleFromKotlin public static androidx.window.layout.WindowLayoutInfo createWindowLayoutInfo(optional java.util.List<? extends androidx.window.layout.DisplayFeature> displayFeatures, optional java.util.Set<androidx.window.layout.WindowLayoutInfo.EngagementMode> engagementModes);
+    method @BytecodeOnly public static androidx.window.layout.WindowLayoutInfo! createWindowLayoutInfo$default(java.util.List!, java.util.Set!, int, Object!);
   }
 
   public final class WindowMetricsCalculatorRule implements org.junit.rules.TestRule {

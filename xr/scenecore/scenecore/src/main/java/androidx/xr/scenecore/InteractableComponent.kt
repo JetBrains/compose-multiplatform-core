@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore
 
-import android.util.Log
+import android.app.Activity
 import androidx.core.content.ContextCompat
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.InputEventListener as RtInputEventListener
@@ -31,13 +31,14 @@ import java.util.function.Consumer
 public class InteractableComponent
 private constructor(
     private val sceneRuntime: SceneRuntime,
-    private val entityManager: EntityManager,
+    private val entityRegistry: EntityRegistry,
     private val executor: Executor,
     private val inputEventListener: Consumer<InputEvent>,
-) : Component {
+) : Component() {
     private val rtInputEventListener = RtInputEventListener { rtEvent ->
-        inputEventListener.accept(rtEvent.toInputEvent(entityManager))
+        inputEventListener.accept(rtEvent.toInputEvent(entityRegistry))
     }
+
     private val rtInteractableComponent by lazy {
         sceneRuntime.createInteractableComponent(executor, rtInputEventListener)
     }
@@ -51,11 +52,10 @@ private constructor(
      */
     override fun onAttach(entity: Entity): Boolean {
         if (this.entity != null) {
-            Log.e("InteractableComponent", "Already attached to entity ${this.entity}")
             return false
         }
         this.entity = entity
-        return (entity as BaseEntity<*>).rtEntity!!.addComponent(rtInteractableComponent)
+        return (entity as BaseEntity<*>).rtEntity.addComponent(rtInteractableComponent)
     }
 
     /**
@@ -64,19 +64,20 @@ private constructor(
      * @param entity The [Entity] to detach this component from.
      */
     override fun onDetach(entity: Entity) {
-        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtInteractableComponent)
+        (entity as BaseEntity<*>).rtEntity.removeComponent(rtInteractableComponent)
         this.entity = null
     }
 
     public companion object {
+
         /** Factory for Interactable component. */
         internal fun create(
             sceneRuntime: SceneRuntime,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             executor: Executor,
             inputEventListener: Consumer<InputEvent>,
         ): InteractableComponent {
-            return InteractableComponent(sceneRuntime, entityManager, executor, inputEventListener)
+            return InteractableComponent(sceneRuntime, entityRegistry, executor, inputEventListener)
         }
 
         /**
@@ -93,7 +94,7 @@ private constructor(
             executor: Executor,
             inputEventListener: Consumer<InputEvent>,
         ): InteractableComponent =
-            create(session.sceneRuntime, session.scene.entityManager, executor, inputEventListener)
+            create(session.sceneRuntime, session.scene.entityRegistry, executor, inputEventListener)
 
         /**
          * Public factory for creating an InteractableComponent. It enables access to raw input
@@ -108,6 +109,10 @@ private constructor(
             session: Session,
             inputEventListener: Consumer<InputEvent>,
         ): InteractableComponent =
-            create(session, ContextCompat.getMainExecutor(session.activity), inputEventListener)
+            create(
+                session,
+                ContextCompat.getMainExecutor(session.context as Activity),
+                inputEventListener,
+            )
     }
 }

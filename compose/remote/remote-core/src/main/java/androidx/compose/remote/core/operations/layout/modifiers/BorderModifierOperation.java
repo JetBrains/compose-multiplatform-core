@@ -16,8 +16,10 @@
 package androidx.compose.remote.core.operations.layout.modifiers;
 
 import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
+import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -27,6 +29,7 @@ import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.layout.Component;
+import androidx.compose.remote.core.operations.loom.LoomWireBuffer;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 import androidx.compose.remote.core.operations.utilities.StringSerializer;
 import androidx.compose.remote.core.serialize.MapSerializer;
@@ -53,15 +56,20 @@ public class BorderModifierOperation extends DecoratorModifierOperation implemen
     float mG;
     float mB;
     float mA;
+    boolean mUseColorId = false;
+    int mColorId;
     int mShapeType = ShapeType.RECTANGLE;
 
-    @NonNull public PaintBundle paint = new PaintBundle();
+    /** Color is through and ID */
+    public static final int COLOR_REF = 2;
+
+    @NonNull public PaintBundle mPaint = new PaintBundle();
 
     public BorderModifierOperation(
-            float x,
-            float y,
-            float width,
-            float height,
+            int flags,
+            int colorId,
+            int reserved1,
+            int reserved2,
             float borderWidth,
             float roundedCorner,
             float r,
@@ -69,15 +77,19 @@ public class BorderModifierOperation extends DecoratorModifierOperation implemen
             float b,
             float a,
             int shapeType) {
-        this.mX = x;
-        this.mY = y;
-        this.mWidth = width;
-        this.mHeight = height;
+        this.mX = 0;
+        this.mY = 0;
+        this.mWidth = 0;
+        this.mHeight = 0;
         this.mBorderWidth = borderWidth;
         if (!Float.isNaN(mBorderWidth)) {
             mBorderWidthValue = mBorderWidth;
         }
         this.mRoundedCorner = roundedCorner;
+        if (flags == COLOR_REF) {
+            mUseColorId = true;
+            mColorId = colorId;
+        }
         this.mR = r;
         this.mG = g;
         this.mB = b;
@@ -119,19 +131,7 @@ public class BorderModifierOperation extends DecoratorModifierOperation implemen
 
     @Override
     public void write(@NonNull WireBuffer buffer) {
-        apply(
-                buffer,
-                mX,
-                mY,
-                mWidth,
-                mHeight,
-                mBorderWidth,
-                mRoundedCorner,
-                mR,
-                mG,
-                mB,
-                mA,
-                mShapeType);
+        apply(buffer, 0, 0, 0, 0, mBorderWidth, mRoundedCorner, mR, mG, mB, mA, mShapeType);
     }
 
     @Override
@@ -193,10 +193,10 @@ public class BorderModifierOperation extends DecoratorModifierOperation implemen
      * Write the operation to the buffer
      *
      * @param buffer the WireBuffer
-     * @param x x coordinate of the border rect
-     * @param y y coordinate of the border rect
-     * @param width width of the border rect
-     * @param height height of the border rect
+     * @param flags flag
+     * @param colorId the id of the color if flag is set
+     * @param reserve1 reserved for future expansion
+     * @param reserve2 reserved for future expansion
      * @param borderWidth the width of the border outline
      * @param roundedCorner rounded corner value in pixels
      * @param r red component of the border color
@@ -207,10 +207,10 @@ public class BorderModifierOperation extends DecoratorModifierOperation implemen
      */
     public static void apply(
             @NonNull WireBuffer buffer,
-            float x,
-            float y,
-            float width,
-            float height,
+            int flags,
+            int colorId,
+            int reserve1,
+            int reserve2,
             float borderWidth,
             float roundedCorner,
             float r,
@@ -219,10 +219,10 @@ public class BorderModifierOperation extends DecoratorModifierOperation implemen
             float a,
             int shapeType) {
         buffer.start(OP_CODE);
-        buffer.writeFloat(x);
-        buffer.writeFloat(y);
-        buffer.writeFloat(width);
-        buffer.writeFloat(height);
+        buffer.writeInt(flags);
+        buffer.writeInt(colorId);
+        buffer.writeInt(reserve1);
+        buffer.writeInt(reserve2);
         buffer.writeFloat(borderWidth);
         buffer.writeFloat(roundedCorner);
         buffer.writeFloat(r);
@@ -240,38 +240,65 @@ public class BorderModifierOperation extends DecoratorModifierOperation implemen
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        float x = buffer.readFloat();
-        float y = buffer.readFloat();
-        float width = buffer.readFloat();
-        float height = buffer.readFloat();
-        float bw = buffer.readFloat();
-        float rc = buffer.readFloat();
-        float r = buffer.readFloat();
-        float g = buffer.readFloat();
-        float b = buffer.readFloat();
-        float a = buffer.readFloat();
+        int flags = buffer.readInt();
+        int colorId = buffer.readInt();
+        if ((flags & COLOR_REF) != 0) {
+            // Manual remapping since we already read it
+            if (buffer instanceof LoomWireBuffer) {
+                colorId = ((LoomWireBuffer) buffer).getRemapContext().resolveId(colorId);
+            }
+        }
+        int reserve1 = buffer.readInt();
+        int reserve2 = buffer.readInt();
+        float bw = buffer.readNanId();
+        float rc = buffer.readNanId();
+        float r = buffer.readNanId();
+        float g = buffer.readNanId();
+        float b = buffer.readNanId();
+        float a = buffer.readNanId();
         // shape type
         int shapeType = buffer.readInt();
         operations.add(
-                new BorderModifierOperation(x, y, width, height, bw, rc, r, g, b, a, shapeType));
+                new BorderModifierOperation(
+                        flags, colorId, reserve1, reserve2, bw, rc, r, g, b, a, shapeType));
     }
 
     @Override
     public void paint(@NonNull PaintContext context) {
         context.savePaint();
-        paint.reset();
-        paint.setColor(mR, mG, mB, mA);
-        if (isAtLeastVersion7(context.getContext())) {
-            paint.setStrokeWidth(mBorderWidthValue);
+        mPaint.reset();
+        mPaint.setStyle(PaintBundle.STYLE_FILL);
+        if (mUseColorId) {
+            int col = context.getContext().getColor(mColorId);
+            mPaint.setColor(col);
         } else {
-            paint.setStrokeWidth(mBorderWidth * context.getContext().getDensity());
+            mPaint.setColor(mR, mG, mB, mA);
         }
-        paint.setStyle(PaintBundle.STYLE_STROKE);
-        context.replacePaint(paint);
+
+        float borderWidth = mBorderWidthValue;
+        float roundedCorner = mRoundedCorner;
+        switch (context.getDensityBehavior()) {
+            case CoreDocument.DENSITY_BEHAVIOR_DP:
+                float density = context.getDensity();
+                borderWidth *= density;
+                roundedCorner *= density;
+                break;
+            case CoreDocument.DENSITY_BEHAVIOR_LEGACY:
+                if (!isAtLeastVersion7(context.getContext())) {
+                    borderWidth = mBorderWidth * context.getContext().getDensity();
+                }
+                break;
+            case CoreDocument.DENSITY_BEHAVIOR_PIXELS:
+                // nothing to do
+        }
+
+        mPaint.setStrokeWidth(borderWidth);
+        mPaint.setStyle(PaintBundle.STYLE_STROKE);
+        context.replacePaint(mPaint);
         if (mShapeType == ShapeType.RECTANGLE) {
             context.drawRect(0f, 0f, mWidth, mHeight);
         } else {
-            float size = mRoundedCorner;
+            float size = roundedCorner;
             if (mShapeType == ShapeType.CIRCLE) {
                 size = Math.min(mWidth, mHeight) / 2f;
             }
@@ -287,18 +314,19 @@ public class BorderModifierOperation extends DecoratorModifierOperation implemen
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Modifier Operations", OP_CODE, CLASS_NAME)
-                .description("define the Border Modifier")
-                .field(FLOAT, "x", "")
-                .field(FLOAT, "y", "")
-                .field(FLOAT, "width", "")
-                .field(FLOAT, "height", "")
-                .field(FLOAT, "borderWidth", "")
-                .field(FLOAT, "roundedCorner", "")
-                .field(FLOAT, "r", "")
-                .field(FLOAT, "g", "")
-                .field(FLOAT, "b", "")
-                .field(FLOAT, "a", "")
-                .field(FLOAT, "shapeType", "");
+                .additionalDocumentation("modifier_border")
+                .description("Define a border for a component")
+                .field(INT, "flags", "Behavior flags")
+                .field(INT, "colorId", "The ID of the color if flags include COLOR_REF")
+                .field(INT, "reserve1", "Reserved for future use")
+                .field(INT, "reserve2", "Reserved for future use")
+                .field(FLOAT, "borderWidth", "Width of the border")
+                .field(FLOAT, "roundedCorner", "Radius for rounded corners")
+                .field(FLOAT, "r", "Red component [0..1]")
+                .field(FLOAT, "g", "Green component [0..1]")
+                .field(FLOAT, "b", "Blue component [0..1]")
+                .field(FLOAT, "a", "Alpha component [0..1]")
+                .field(INT, "shapeType", "The shape type (0=RECTANGLE, 1=CIRCLE)");
     }
 
     @Override

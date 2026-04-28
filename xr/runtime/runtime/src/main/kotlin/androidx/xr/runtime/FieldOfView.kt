@@ -31,6 +31,7 @@ constructor(
     public val angleUp: Float,
     public val angleDown: Float,
 ) {
+    @Suppress("DEPRECATION")
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is FieldOfView) return false
@@ -55,6 +56,7 @@ constructor(
         "Fov{\n\tangleLeft=$angleLeft\n\tangleRight=$angleRight\n\tangleUp=$angleUp\n\tangleDown=$angleDown\n}"
 
     @JvmOverloads
+    @Suppress("DEPRECATION")
     public fun copy(
         angleLeft: Float = this.angleLeft,
         angleRight: Float = this.angleRight,

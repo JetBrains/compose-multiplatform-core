@@ -1,19 +1,17 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     api(libs.jspecify)
-    implementation(project(":core:core"))
+    implementation("androidx.core:core:1.17.0")
     implementation(project(":cursoradapter:cursoradapter"))
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.0.0")
     implementation(project(":slidingpanelayout:slidingpanelayout"))
@@ -32,6 +30,6 @@ dependencies {
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(36) { minorApiLevel = 1 }}
     namespace = "com.example.android.supportv4"
 }

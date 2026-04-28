@@ -18,22 +18,26 @@ package androidx.xr.arcore
 
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.testing.FakeLifecycleManager
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
-import androidx.xr.arcore.testing.FakeRuntimeEye
+import androidx.xr.arcore.testing.ArCoreTestRule
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.manifest.EYE_TRACKING_COARSE
+import androidx.xr.runtime.manifest.EYE_TRACKING_FINE
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.runBlocking
+import kotlin.test.assertFailsWith
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -42,12 +46,13 @@ import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
 class EyeTest {
+    @Rule @JvmField val arCoreTestRule = ArCoreTestRule()
+
     private lateinit var activityController: ActivityController<ComponentActivity>
     private lateinit var activity: ComponentActivity
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var testScope: TestScope
     private lateinit var session: Session
-    private lateinit var xrResourcesManager: XrResourcesManager
 
     @Before
     fun setUp() {
@@ -55,46 +60,114 @@ class EyeTest {
         testScope = TestScope(testDispatcher)
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
         activity = activityController.get()
-        xrResourcesManager = XrResourcesManager()
 
-        val shadowApplication = shadowOf(activity.application)
-        FakeLifecycleManager.TestPermissions.forEach { permission ->
-            shadowApplication.grantPermissions(permission)
-        }
-        FakePerceptionRuntimeFactory.hasCreatePermission = true
-        activityController.create()
+        shadowOf(activity.application).grantPermissions(EYE_TRACKING_COARSE, EYE_TRACKING_FINE)
+
+        activityController.create().start().resume()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
-        session.configure(Config(eyeTracking = Config.EyeTrackingMode.COARSE_TRACKING))
-        xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
+        session.configure(Config(eyeTracking = EyeTrackingMode.FINE_TRACKING))
     }
 
     @Test
-    fun update_trackingStateMatchesRuntime() = runBlocking {
-        val runtimeEye = FakeRuntimeEye()
-        runtimeEye.isOpen = false
-        runtimeEye.trackingState = TrackingState.TRACKING
-        val underTest = Eye(runtimeEye)
-        check(!underTest.state.value.isOpen)
+    fun left_eyeTrackingDisabled_throwsIllegalStateException() {
+        session.configure(Config(eyeTracking = EyeTrackingMode.DISABLED))
 
-        runtimeEye.isOpen = true
-        underTest.update()
-
-        assertThat(underTest.state.value.isOpen).isTrue()
+        assertFailsWith<IllegalStateException> { Eye.left(session) }
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun left_trackingStateMatchesRuntime() =
+        runTest(testDispatcher) {
+            val underTest = Eye.left(session)
+            advanceUntilIdle()
+
+            assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.TRACKING)
+
+            arCoreTestRule.leftEye.isOpen = false
+            advanceUntilIdle()
+
+            assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.PAUSED)
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun left_isOpen_poseMatchesRuntime() =
+        runTest(testDispatcher) {
+            val expectedPose = Pose(Vector3.Left, Quaternion.Identity)
+            arCoreTestRule.leftEye.pose = expectedPose
+            advanceUntilIdle()
+            val underTest = Eye.left(session)
+            advanceUntilIdle()
+
+            assertThat(underTest.state.value.isOpen).isTrue()
+            assertThat(underTest.state.value.pose).isEqualTo(expectedPose)
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun left_isClosed_poseDoesNotUpdate() =
+        runTest(testDispatcher) {
+            val expectedPose = Pose(Vector3.Left, Quaternion.Identity)
+            arCoreTestRule.leftEye.isOpen = false
+            arCoreTestRule.leftEye.pose = expectedPose
+            advanceUntilIdle()
+            val underTest = Eye.left(session)
+            advanceUntilIdle()
+
+            assertThat(underTest.state.value.isOpen).isFalse()
+            assertThat(underTest.state.value.pose).isNotEqualTo(expectedPose)
+        }
 
     @Test
-    fun update_poseMatchesRuntime() = runBlocking {
-        val runtimeEye = FakeRuntimeEye()
-        val underTest = Eye(runtimeEye)
-        check(
-            (underTest.state.value.pose == Pose(Vector3(0f, 0f, 0f), Quaternion(0f, 0f, 0f, 1.0f)))
-        )
+    fun right_eyeTrackingDisabled_throwsIllegalStateException() {
+        session.configure(Config(eyeTracking = EyeTrackingMode.DISABLED))
 
-        val newPose = Pose(Vector3(1.0f, 2.0f, 3.0f), Quaternion(1.0f, 2.0f, 3.0f, 4.0f))
-        runtimeEye.pose = newPose
-        underTest.update()
-
-        assertThat(underTest.state.value.pose).isEqualTo(newPose)
+        assertFailsWith<IllegalStateException> { Eye.right(session) }
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun right_trackingStateMatchesRuntime() =
+        runTest(testDispatcher) {
+            val underTest = Eye.right(session)
+            advanceUntilIdle()
+
+            assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.TRACKING)
+
+            arCoreTestRule.rightEye.isOpen = false
+            advanceUntilIdle()
+
+            assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.PAUSED)
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun right_isOpen_poseMatchesRuntime() =
+        runTest(testDispatcher) {
+            val expectedPose = Pose(Vector3.Right, Quaternion.Identity)
+            arCoreTestRule.rightEye.pose = expectedPose
+            advanceUntilIdle()
+            val underTest = Eye.right(session)
+            advanceUntilIdle()
+
+            assertThat(underTest.state.value.isOpen).isTrue()
+            assertThat(underTest.state.value.pose).isEqualTo(expectedPose)
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun right_isClosed_poseDoesNotUpdate() =
+        runTest(testDispatcher) {
+            val expectedPose = Pose(Vector3.Right, Quaternion.Identity)
+            arCoreTestRule.rightEye.isOpen = false
+            arCoreTestRule.rightEye.pose = expectedPose
+            advanceUntilIdle()
+            val underTest = Eye.right(session)
+            advanceUntilIdle()
+
+            assertThat(underTest.state.value.isOpen).isFalse()
+            assertThat(underTest.state.value.pose).isNotEqualTo(expectedPose)
+        }
 }

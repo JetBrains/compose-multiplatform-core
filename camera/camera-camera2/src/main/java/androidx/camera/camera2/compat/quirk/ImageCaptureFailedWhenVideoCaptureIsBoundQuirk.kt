@@ -54,6 +54,7 @@ public class ImageCaptureFailedWhenVideoCaptureIsBoundQuirk :
                 isPixel4XLApi29 ||
                 isMotoE13 ||
                 isSamsungTabA8 ||
+                isSamsungA53 ||
                 isUniSocChipsetDevice()
         }
 
@@ -81,6 +82,9 @@ public class ImageCaptureFailedWhenVideoCaptureIsBoundQuirk :
                 isSamsungDevice() &&
                     ("gta8".equals(Build.DEVICE, ignoreCase = true) ||
                         "gta8wifi".equals(Build.DEVICE, ignoreCase = true))
+
+        private val isSamsungA53: Boolean
+            get() = isSamsungDevice() && Build.MODEL.startsWith("SM-A536")
     }
 
     override fun workaroundByCaptureIntentPreview(): Boolean {
@@ -95,6 +99,7 @@ public class ImageCaptureFailedWhenVideoCaptureIsBoundQuirk :
             isPixel4XLApi29 ||
             isMotoE13 ||
             isSamsungTabA8 ||
+            isSamsungA53 ||
             isUniSocChipsetDevice()
     }
 }

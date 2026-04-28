@@ -46,7 +46,7 @@ import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.firstUriOrNull
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -96,6 +96,9 @@ class StatelessInputConnectionTest {
                 mapToTransformedCalled = range
                 return state.mapToTransformed(range)
             }
+
+            override val transformedLength: Int
+                get() = value.length
 
             override fun beginBatchEdit(): Boolean {
                 beginBatchEditCalls++

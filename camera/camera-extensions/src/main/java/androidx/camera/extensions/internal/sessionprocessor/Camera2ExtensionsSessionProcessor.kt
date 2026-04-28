@@ -29,13 +29,10 @@ import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.CameraCaptureCallback
 import androidx.camera.core.impl.CameraCaptureResult
 import androidx.camera.core.impl.CameraInfoInternal
-import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.OutputSurfaceConfiguration
-import androidx.camera.core.impl.RequestProcessor
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.SessionProcessor.CaptureSessionRequestProcessor
-import androidx.camera.core.impl.TagBundle
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.extensions.CameraExtensionsControl
 import androidx.camera.extensions.CameraExtensionsInfo
@@ -59,8 +56,10 @@ public class Camera2ExtensionsSessionProcessor(
 
     private var extensionStrengthLiveData: MutableLiveData<Int>? = null
     private var currentExtensionTypeLiveData: MutableLiveData<Int>? = null
+    private var nightModeIndicatorLiveData: MutableLiveData<Int>? = null
     private val extensionStrength: AtomicInteger = AtomicInteger(100)
     private val currentExtensionType: AtomicInteger = AtomicInteger(mode)
+    private val nightModeIndicator: AtomicInteger = AtomicInteger(0)
 
     @AdapterCameraInfo.CameraOperation
     private val supportedCameraOperations: Set<Int> =
@@ -80,6 +79,9 @@ public class Camera2ExtensionsSessionProcessor(
         }
         if (isExtensionStrengthAvailable()) {
             extensionStrengthLiveData = MutableLiveData<Int>(100)
+        }
+        if (isNightModeIndicatorAvailable()) {
+            nightModeIndicatorLiveData = MutableLiveData<Int>(0)
         }
     }
 
@@ -101,10 +103,13 @@ public class Camera2ExtensionsSessionProcessor(
                     ) {
                         cameraCaptureResult.captureResult
                             ?.get(CaptureResult.EXTENSION_CURRENT_TYPE)
-                            ?.let {
-                                val cameraXMode = convertCamera2ModeToCameraXMode(it)
-                                if (currentExtensionType.getAndSet(cameraXMode) != cameraXMode) {
-                                    extensionStrengthLiveData?.postValue(it)
+                            ?.let { camera2Mode ->
+                                convertCamera2ModeToCameraXMode(camera2Mode)?.let { cameraXMode ->
+                                    if (
+                                        currentExtensionType.getAndSet(cameraXMode) != cameraXMode
+                                    ) {
+                                        currentExtensionTypeLiveData?.postValue(cameraXMode)
+                                    }
                                 }
                             }
                     }
@@ -118,6 +123,16 @@ public class Camera2ExtensionsSessionProcessor(
                             ?.let {
                                 if (extensionStrength.getAndSet(it) != it) {
                                     extensionStrengthLiveData?.postValue(it)
+                                }
+                            }
+                    }
+
+                    if (Build.VERSION.SDK_INT >= 36 && isNightModeIndicatorAvailable()) {
+                        cameraCaptureResult.captureResult
+                            ?.get(CaptureResult.EXTENSION_NIGHT_MODE_INDICATOR)
+                            ?.let {
+                                if (nightModeIndicator.getAndSet(it) != it) {
+                                    nightModeIndicatorLiveData?.postValue(it)
                                 }
                             }
                     }
@@ -159,55 +174,6 @@ public class Camera2ExtensionsSessionProcessor(
         return Pair.create(SessionProcessor.TYPE_CAMERA2_EXTENSION, camera2ExtensionMode)
     }
 
-    override fun setParameters(config: Config) {
-        throw UnsupportedOperationException(
-            "Camera2ExtensionsSessionProcessor#setParameters should not be invoked!"
-        )
-    }
-
-    override fun onCaptureSessionStart(requestProcessor: RequestProcessor) {
-        throw UnsupportedOperationException(
-            "Camera2ExtensionsSessionProcessor#onCaptureSessionStart should not be invoked!"
-        )
-    }
-
-    override fun onCaptureSessionEnd() {
-        throw UnsupportedOperationException(
-            "Camera2ExtensionsSessionProcessor#onCaptureSessionEnd should not be invoked!"
-        )
-    }
-
-    override fun startRepeating(
-        tagBundle: TagBundle,
-        callback: SessionProcessor.CaptureCallback,
-    ): Int {
-        throw UnsupportedOperationException(
-            "Camera2ExtensionsSessionProcessor#startRepeating should not be invoked!"
-        )
-    }
-
-    override fun stopRepeating() {
-        throw UnsupportedOperationException(
-            "Camera2ExtensionsSessionProcessor#stopRepeating should not be invoked!"
-        )
-    }
-
-    override fun startCapture(
-        postviewEnabled: Boolean,
-        tagBundle: TagBundle,
-        callback: SessionProcessor.CaptureCallback,
-    ): Int {
-        throw UnsupportedOperationException(
-            "Camera2ExtensionsSessionProcessor#startCapture should not be invoked!"
-        )
-    }
-
-    override fun abortCapture(captureSequenceId: Int) {
-        throw UnsupportedOperationException(
-            "Camera2ExtensionsSessionProcessor#abortCapture should not be invoked!"
-        )
-    }
-
     override fun isExtensionStrengthAvailable(): Boolean =
         vendorExtender.isExtensionStrengthAvailable
 
@@ -217,6 +183,11 @@ public class Camera2ExtensionsSessionProcessor(
         vendorExtender.isCurrentExtensionModeAvailable
 
     override fun getCurrentExtensionMode(): LiveData<Int>? = currentExtensionTypeLiveData
+
+    override fun isNightModeIndicatorAvailable(): Boolean =
+        vendorExtender.isNightModeIndicatorAvailable
+
+    override fun getNightModeIndicator(): LiveData<Int>? = nightModeIndicatorLiveData
 
     override fun getRealtimeCaptureLatency(): Pair<Long, Long>? {
         synchronized(lock) {

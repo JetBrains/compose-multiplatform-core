@@ -351,8 +351,34 @@ public class TestUtils {
         return recreatedDocument;
     }
 
-    static RemoteDocument createDocument(RemoteContext context,
-            Profile profile, final Callback cb) {
+    static RemoteDocument createDocument(
+            RemoteContext context, int apiLevel, int profilesMask, final Callback cb) {
+        RemoteComposeContextAndroid doc =
+                new RemoteComposeContextAndroid(
+                        600,
+                        600,
+                        "Demo",
+                        apiLevel,
+                        profilesMask,
+                        sPlatform,
+                        doc1 -> {
+                            if (cb != null) {
+                                cb.run(doc1);
+                            }
+
+                            return null;
+                        });
+
+        byte[] buffer = doc.buffer();
+        int bufferSize = doc.bufferSize();
+        System.out.println("size of doc " + memSize(bufferSize));
+        RemoteDocument recreatedDocument =
+                new RemoteDocument(new ByteArrayInputStream(buffer, 0, bufferSize));
+        return recreatedDocument;
+    }
+
+    static RemoteDocument createDocument(
+            RemoteContext context, Profile profile, final Callback cb) {
         RemoteComposeContextAndroid doc =
                 new RemoteComposeContextAndroid(
                         600,
@@ -374,6 +400,7 @@ public class TestUtils {
                 new RemoteDocument(new ByteArrayInputStream(buffer, 0, bufferSize));
         return recreatedDocument;
     }
+
     private static String memSize(int size) {
         DecimalFormat df = new DecimalFormat("#.0##");
         if (size > 1024 * 1024) {
@@ -517,11 +544,7 @@ public class TestUtils {
     }
 
     static Bitmap docToBitmap(
-            int w,
-            int h,
-            Context appContext,
-            RemoteDocument doc,
-            ModifyCanvas modifyCanvas) {
+            int w, int h, Context appContext, RemoteDocument doc, ModifyCanvas modifyCanvas) {
         Bitmap bitmap = blank(w, h);
         RemoteComposeView remoteCanvas = new RemoteComposeView(appContext);
         remoteCanvas.setDocument(doc);

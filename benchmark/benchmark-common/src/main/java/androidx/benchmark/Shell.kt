@@ -80,7 +80,7 @@ object Shell {
     }
 
     fun connectUiAutomation() {
-        ShellImpl // force initialization
+        @Suppress("UnusedExpression") ShellImpl // force initialization
     }
 
     /**
@@ -918,7 +918,7 @@ internal constructor(
                 else
                     cat $3 | /system/bin/sh $1 2> $2
                 fi
-            """
+                """
                     .trimIndent()
                     .byteInputStream(),
             )

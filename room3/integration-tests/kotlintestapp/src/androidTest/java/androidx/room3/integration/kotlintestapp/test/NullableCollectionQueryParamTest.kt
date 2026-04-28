@@ -26,7 +26,6 @@ import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SmallTest
 import org.junit.After
 import org.junit.Before
@@ -43,10 +42,7 @@ class NullableCollectionQueryParamTest {
 
     @Before
     fun setup() {
-        db =
-            Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
-                .setDriver(AndroidSQLiteDriver())
-                .build()
+        db = Room.inMemoryDatabaseBuilder<TestDatabase>().setDriver(AndroidSQLiteDriver()).build()
         dao = db.getDao()
 
         dao.addSong(songOne)

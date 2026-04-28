@@ -58,11 +58,11 @@ import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.SpatialCapabilities
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.testTag
+import androidx.xr.compose.subspace.semantics.testTag
+import androidx.xr.compose.testing.ShadowActivityEmbeddingController
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.createFakeSession
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.session
 import androidx.xr.compose.unit.toMeter
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
@@ -72,11 +72,19 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 /** Tests for [SpatialDialog]. */
 @RunWith(AndroidJUnit4::class)
+@Config(shadows = [ShadowActivityEmbeddingController::class])
 class SpatialDialogTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun spatialDialog_dismissOnBackPress_setToTrue_dismissDialog() {
@@ -232,9 +240,7 @@ class SpatialDialogTest {
     fun spatialDialog_homeSpaceMode_dismissOnClickOutside_setToTrue_dismissDialog() {
         val showDialog = mutableStateOf(true)
         var outsideClicked = false
-
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Subspace {
@@ -273,9 +279,7 @@ class SpatialDialogTest {
     fun spatialDialog_homeSpaceMode_dismissOnClickOutside_setToFalse_doesNotDismissDialog() {
         val showDialog = mutableStateOf(true)
         var outsideClicked = false
-
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Subspace {
@@ -1092,5 +1096,17 @@ class SpatialDialogTest {
 
         assertThat(errorOccurred).isTrue() // Error should be handled
         composeTestRule.onNodeWithText("Error handled gracefully").assertExists()
+    }
+
+    @Test
+    fun spatialDialog_whenActivityIsEmbedded_fallsBackToStandardDialog() {
+        ShadowActivityEmbeddingController.isEmbedded = true
+
+        composeTestRule.setContent {
+            SpatialDialog(onDismissRequest = {}) { Text("Fallback Content") }
+        }
+        composeTestRule.onNodeWithText("Fallback Content")
+
+        ShadowActivityEmbeddingController.isEmbedded = false
     }
 }
