@@ -24,7 +24,6 @@ import android.os.Build
 import android.util.Range
 import android.util.Rational
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -34,11 +33,9 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.DynamicRange.SDR
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.Preview
 import androidx.camera.core.impl.utils.TransformUtils.rotateSize
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.FrameRateUtil.FPS_120_120
 import androidx.camera.testing.impl.FrameRateUtil.FPS_240_240
@@ -73,7 +70,6 @@ import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalHighSpeedVideo::class)
 @LargeTest
 @RunWith(Parameterized::class)
 class HighSpeedVideoVerificationTest(
@@ -90,10 +86,7 @@ class HighSpeedVideoVerificationTest(
     companion object {
         private const val SLOW_MOTION_ENCODE_FRAME_RATE = 30
         private val cameraConfigs =
-            arrayOf(
-                Camera2Config::class.simpleName to Camera2Config.defaultConfig(),
-                CameraPipeConfig::class.simpleName to CameraPipeConfig.defaultConfig(),
-            )
+            arrayOf(Camera2Config::class.simpleName to Camera2Config.defaultConfig())
         private val cameraSelectors = arrayOf(DEFAULT_BACK_CAMERA, DEFAULT_FRONT_CAMERA)
         private val dynamicRanges = arrayOf("SDR" to SDR, "HLG" to HLG_10_BIT)
         private val qualities = arrayOf(SD, HD, FHD, UHD)
@@ -135,9 +128,6 @@ class HighSpeedVideoVerificationTest(
     val skipAndPreTestRule: TestRule =
         RuleChain.outerRule(IgnoreVideoRecordingProblematicDeviceRule())
             .around(
-                CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
-            )
-            .around(
                 CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
                     CameraUtil.PreTestCameraIdList(cameraConfig)
                 )
@@ -145,9 +135,7 @@ class HighSpeedVideoVerificationTest(
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val audioStreamAvailable by lazy {
-        AudioChecker.canAudioStreamBeStarted(videoCapabilities, Recorder.DEFAULT_QUALITY_SELECTOR)
-    }
+    private val audioStreamAvailable by lazy { AudioChecker.canAudioStreamBeStarted() }
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var lifecycleOwner: FakeLifecycleOwner
     private lateinit var cameraInfo: CameraInfo
@@ -157,7 +145,6 @@ class HighSpeedVideoVerificationTest(
     private lateinit var preview: Preview
     private lateinit var videoCapture: VideoCapture<Recorder>
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Before
     fun setUp() {
         assumeTrue(CameraUtil.hasCameraWithLensFacing(lensFacing))
@@ -237,7 +224,6 @@ class HighSpeedVideoVerificationTest(
     }
 
     @SuppressLint("BanThreadSleep")
-    @OptIn(ExperimentalSessionConfig::class)
     private fun testRecording(isSlowMotionEnabled: Boolean = false) {
         // Arrange.
         val highSpeedVideoConfig =
@@ -264,10 +250,9 @@ class HighSpeedVideoVerificationTest(
             it.setDataSource(context, Uri.fromFile(finalize.file))
 
             // Verify video resolution.
-            val videoProfile =
-                videoCapabilities.getProfiles(quality, dynamicRange)!!.defaultVideoProfile
+            val resolution = videoCapabilities.getResolution(quality, dynamicRange)!!
             val expectedResolution =
-                rotateSize(videoProfile.resolution, getRotationNeeded(videoCapture, cameraInfo))
+                rotateSize(resolution, getRotationNeeded(videoCapture, cameraInfo))
 
             assertThat(it.getRotatedResolution()).isEqualTo(expectedResolution)
 

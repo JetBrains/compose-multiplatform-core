@@ -18,7 +18,7 @@ import kotlin.collections.mutableSetOf
 import kotlin.reflect.KClass
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
 internal class MyDao_Impl(
   __db: RoomDatabase,
 ) : MyDao {
@@ -192,7 +192,7 @@ internal class MyDao_Impl(
           _tmpArtistId = _stmt.getText(_columnIndexOfArtistId)
           _key = Artist(_tmpArtistId)
           if (_stmt.isNull(_columnIndexOfSongCount)) {
-            error("The column(s) of the map value object of type 'Int' are NULL but the map's value type argument expect it to be NON-NULL")
+            error("The column(s) of the map value object of type '[@MapColumn(\"songCount\")] Int' are NULL but the map's value type argument expect it to be NON-NULL")
           }
           val _value: Int
           val _tmp: Int

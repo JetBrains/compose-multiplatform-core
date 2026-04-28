@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   Copyright 2025 The Android Open Source Project
 
   Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +15,15 @@
   -->
 
 <resources>
-    <!-- Integer representation of the large container type. -->
+    <!--
+      The integer value representing the 'large' container type for Glance Wear widgets.
+      For more info see androidx.glance.wear.core.ContainerInfo.ContainerType.CONTAINER_TYPE_LARGE.
+    -->
     <integer name="glance_wear_container_type_large">1</integer>
 
-    <!-- Integer representation of the small container type. -->
+    <!--
+      The integer value representing the 'small' container type for Glance Wear widgets.
+      For more info see androidx.glance.wear.core.ContainerInfo.ContainerType.CONTAINER_TYPE_SMALL.
+    -->
     <integer name="glance_wear_container_type_small">2</integer>
 </resources>

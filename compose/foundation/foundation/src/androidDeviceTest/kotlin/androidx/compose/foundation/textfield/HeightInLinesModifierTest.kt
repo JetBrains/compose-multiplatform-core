@@ -18,21 +18,40 @@ package androidx.compose.foundation.textfield
 
 import android.content.Context
 import android.graphics.Typeface
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.CoreTextField
 import androidx.compose.foundation.text.TEST_FONT
+import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.foundation.text.heightInLines
+import androidx.compose.foundation.text.input.isEqualTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.ValueElement
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.AndroidFont
@@ -44,12 +63,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
@@ -62,6 +84,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * This test tests [CoreTextField] (legacy text field). When updating or adding tests, check if you
+ * also need to modify [androidx.compose.foundation.text.input.HeightInLinesModifierTest].
+ */
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class HeightInLinesModifierTest {
@@ -151,38 +177,21 @@ class HeightInLinesModifierTest {
     @Test(expected = IllegalArgumentException::class)
     fun minLines_invalidValue() {
         rule.setContent {
-            CoreTextField(
-                value = TextFieldValue(),
-                onValueChange = {},
-                modifier = Modifier.heightInLines(textStyle = TextStyle.Default, minLines = 0),
-            )
+            CoreTextField(value = TextFieldValue(), onValueChange = {}, minLines = 0)
         }
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun maxLines_invalidValue() {
         rule.setContent {
-            CoreTextField(
-                value = TextFieldValue(),
-                onValueChange = {},
-                modifier = Modifier.heightInLines(textStyle = TextStyle.Default, maxLines = 0),
-            )
+            CoreTextField(value = TextFieldValue(), onValueChange = {}, maxLines = 0)
         }
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun minLines_greaterThan_maxLines_invalidValue() {
         rule.setContent {
-            CoreTextField(
-                value = TextFieldValue(),
-                onValueChange = {},
-                modifier =
-                    Modifier.heightInLines(
-                        textStyle = TextStyle.Default,
-                        minLines = 2,
-                        maxLines = 1,
-                    ),
-            )
+            CoreTextField(value = TextFieldValue(), onValueChange = {}, minLines = 2, maxLines = 1)
         }
     }
 
@@ -236,6 +245,53 @@ class HeightInLinesModifierTest {
             assertThat(subjectLayout!!.lineCount).isGreaterThan(2)
             assertThat(subjectHeight!!).isEqualTo(twoLineHeight)
         }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun maxLines_longInputText_styleUpdate_respectsMaxLines() {
+        ComposeFoundationFlags.isBasicTextFieldMinSizeOptimizationEnabled = true
+        val testString = "aaaaa ".repeat(3)
+        val maxLines = 3
+
+        var measuredTextHeight = -1
+        var subjectLayout: TextLayoutResult? = null
+
+        var textStyle by mutableStateOf(TextStyle(fontSize = 10.sp))
+
+        rule.setContent {
+            HeightObservingText(
+                onGlobalHeightPositioned = { measuredTextHeight = it },
+                onTextLayoutResult = { subjectLayout = it },
+                textFieldValue = TextFieldValue(testString),
+                textStyle = textStyle,
+                maxLines = maxLines,
+            )
+        }
+
+        rule.waitForIdle()
+
+        val firstMeasuredHeight = measuredTextHeight
+        assertWithMessage("Measured height should be initialized")
+            .that(firstMeasuredHeight)
+            .isAtLeast(1)
+        assertThat(subjectLayout).isNotNull()
+        assertWithMessage("Expected no overflow at 10.sp")
+            .that(subjectLayout!!.size.height)
+            .isAtMost(measuredTextHeight)
+
+        subjectLayout = null
+        measuredTextHeight = -1
+
+        textStyle = TextStyle(fontSize = 50.sp)
+        rule.waitForIdle()
+
+        assertWithMessage("Expected overflow at 20.sp")
+            .that(subjectLayout!!.size.height)
+            .isGreaterThan(measuredTextHeight)
+        assertWithMessage("Text layout result for 20.sp should respect max lines")
+            .that(subjectLayout!!.lineCount)
+            .isGreaterThan(maxLines)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -293,8 +349,12 @@ class HeightInLinesModifierTest {
     @Test
     fun testInspectableValue() {
         val modifier =
-            Modifier.heightInLines(textStyle = TextStyle.Default, minLines = 5, maxLines = 10)
-                as InspectableValue
+            Modifier.heightInLines(
+                textStyle = TextStyle.Default,
+                softWrap = true,
+                minLines = 5,
+                maxLines = 10,
+            ) as InspectableValue
         assertThat(modifier.nameFallback).isEqualTo("heightInLines")
         assertThat(modifier.inspectableElements.asIterable())
             .containsExactly(
@@ -330,27 +390,548 @@ class HeightInLinesModifierTest {
         return Pair(textLayoutResult, height)
     }
 
+    @Test
+    fun minLines_densityChange() {
+        var subjectHeight: Int? = null
+        var density by mutableStateOf(Density(1.0f))
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides density) {
+                HeightObservingText(
+                    onGlobalHeightPositioned = { subjectHeight = it },
+                    onTextLayoutResult = {},
+                    textFieldValue = TextFieldValue("abc"),
+                    textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY),
+                    minLines = 2,
+                )
+            }
+        }
+
+        rule.waitForIdle()
+        val heightAtDensity1 = subjectHeight!!
+
+        density = Density(2.0f)
+        rule.waitForIdle()
+        val heightAtDensity2 = subjectHeight
+
+        assertWithMessage("Expected height to be doubled")
+            .that(heightAtDensity2)
+            .isEqualTo(
+                heightAtDensity1 * 2,
+                // Allow for rounding errors
+                tolerance = 1,
+            )
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun minLines_layoutDirectionChange() {
+        var subjectSize: IntSize? = null
+        var textLayoutResult: TextLayoutResult? = null
+        var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                HeightObservingText(
+                    onGloballyPositioned = { coordinates -> subjectSize = coordinates.size },
+                    onTextLayoutResult = { textLayoutResult = it },
+                    textFieldValue = TextFieldValue("aaaaa ".repeat(5)),
+                    textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY),
+                    minLines = 2,
+                )
+            }
+        }
+
+        rule.waitForIdle()
+        val sizeAtLtr = requireNotNull(subjectSize) { "Expected height to be set after setContent" }
+        val textLayoutResultAtLtr =
+            requireNotNull(textLayoutResult) {
+                "Expected textLayoutResult to be set after setContent"
+            }
+        assertWithMessage("Line count should be >= 2")
+            .that(textLayoutResultAtLtr.lineCount)
+            .isAtLeast(2)
+        for (line in 0 until textLayoutResultAtLtr.lineCount) {
+            assertWithMessage("Expected line $line to start at 0 in LTR")
+                .that(textLayoutResultAtLtr.getLineLeft(line))
+                .isEqualTo(0)
+        }
+
+        // Reset the stored results to verify the new results
+        subjectSize = null
+        textLayoutResult = null
+
+        layoutDirection = LayoutDirection.Rtl
+        rule.waitForIdle()
+
+        val sizeAtRtl =
+            requireNotNull(subjectSize) {
+                "Expected height to be set after updating layoutDirection"
+            }
+        val textLayoutResultAtRtl =
+            requireNotNull(textLayoutResult) {
+                "Expected textLayoutResult to be set after updating layoutDirection"
+            }
+
+        assertWithMessage("Expected height to be equal in RTL and LTR")
+            .that(sizeAtRtl.height)
+            .isEqualTo(sizeAtLtr.height)
+        assertWithMessage("Line count should be >= 2")
+            .that(textLayoutResultAtRtl.lineCount)
+            .isAtLeast(2)
+        for (line in 0 until textLayoutResultAtRtl.lineCount) {
+            assertWithMessage("Expected line $line be aligned to the right edge in RTL")
+                .that(textLayoutResultAtRtl.getLineRight(line))
+                .isWithin(1f)
+                .of(sizeAtRtl.width.toFloat())
+        }
+    }
+
+    @Test
+    fun heightInLines_returnsOriginalModifier_whenSingleLine() {
+        val style = TextStyle.Default
+        val modifier = Modifier
+        val result =
+            modifier.heightInLines(textStyle = style, minLines = 1, maxLines = 1, softWrap = false)
+        assertThat(result).isSameInstanceAs(modifier)
+    }
+
+    @Test
+    fun heightInLines_returnsOriginalModifier_multiLine_whenMinLinesAndMaxLinesAreOne() {
+        val style = TextStyle.Default
+        val modifier = Modifier
+        val result =
+            modifier.heightInLines(textStyle = style, minLines = 1, maxLines = 1, softWrap = true)
+        assertThat(result).isNotSameInstanceAs(modifier)
+    }
+
+    @Test
+    fun heightInLines_returnsOriginalModifier_whenDefaults() {
+        val style = TextStyle.Default
+        val modifier = Modifier
+        val result = modifier.heightInLines(textStyle = style, softWrap = true)
+        assertThat(result).isSameInstanceAs(modifier)
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun heightInLines_minIntrinsicHeight_textLongerThanMaxLines() {
+        ComposeFoundationFlags.isBasicTextFieldMinSizeOptimizationEnabled = true
+        var size: IntSize? = null
+        var labelLayoutResult: TextLayoutResult? = null
+        var fieldLayoutResult: TextLayoutResult? = null
+        rule.setContent {
+            Column(
+                modifier =
+                    Modifier.onSizeChanged { size = it }
+                        .height(IntrinsicSize.Min) // <-- Triggers minIntrinsicHeight query
+            ) {
+                Layout(
+                    content = {
+                        // Label
+                        BasicText(
+                            text = "Label",
+                            modifier = Modifier.layoutId("label"),
+                            onTextLayout = { labelLayoutResult = it },
+                        )
+                        // Text field
+                        var text by remember { mutableStateOf("One\nTwo\nThree") }
+                        BasicTextField(
+                            value = text,
+                            onValueChange = { text = it },
+                            modifier = Modifier.layoutId("field").fillMaxWidth(),
+                            singleLine = false,
+                            maxLines = 2,
+                            onTextLayout = { fieldLayoutResult = it },
+                        )
+                    }
+                ) { measurables, constraints ->
+                    val label =
+                        measurables
+                            .first { it.layoutId == "label" }
+                            .measure(constraints.copy(minWidth = 0, minHeight = 0))
+
+                    val fieldConstraints =
+                        constraints.copy(
+                            minHeight = 0,
+                            maxHeight =
+                                (constraints.maxHeight - label.height)
+                                    .coerceAtLeast(0)
+                                    .coerceAtMost(1000),
+                        )
+                    val field =
+                        measurables.first { it.layoutId == "field" }.measure(fieldConstraints)
+                    layout(constraints.maxWidth, label.height + field.height) {
+                        label.place(0, 0)
+                        field.place(0, label.height)
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(size).isNotNull()
+            assertThat(labelLayoutResult).isNotNull()
+            assertThat(fieldLayoutResult).isNotNull()
+
+            val expectedLabelHeight = labelLayoutResult!!.size.height
+            // The text field has 3 lines but maxLines=2, so it should be exactly 2 lines tall
+            val expectedFieldHeight = fieldLayoutResult!!.multiParagraph.getLineBottom(1).toInt()
+
+            assertThat(size!!.height).isEqualTo(expectedLabelHeight + expectedFieldHeight)
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun heightInLines_maxIntrinsicHeight_textLongerThanMaxLines() {
+        ComposeFoundationFlags.isBasicTextFieldMinSizeOptimizationEnabled = true
+        var size: IntSize? = null
+        var labelLayoutResult: TextLayoutResult? = null
+        var fieldLayoutResult: TextLayoutResult? = null
+        rule.setContent {
+            Column(modifier = Modifier.onSizeChanged { size = it }.height(IntrinsicSize.Max)) {
+                Layout(
+                    content = {
+                        // Label
+                        BasicText(
+                            text = "Label",
+                            modifier = Modifier.layoutId("label"),
+                            onTextLayout = { labelLayoutResult = it },
+                        )
+                        // Text field
+                        var text by remember { mutableStateOf("One\nTwo\nThree") }
+                        BasicTextField(
+                            value = text,
+                            onValueChange = { text = it },
+                            modifier = Modifier.layoutId("field").fillMaxWidth(),
+                            singleLine = false,
+                            maxLines = 2,
+                            onTextLayout = { fieldLayoutResult = it },
+                        )
+                    }
+                ) { measurables, constraints ->
+                    val label =
+                        measurables
+                            .first { it.layoutId == "label" }
+                            .measure(constraints.copy(minWidth = 0, minHeight = 0))
+
+                    val fieldConstraints =
+                        constraints.copy(
+                            minHeight = 0,
+                            maxHeight =
+                                (constraints.maxHeight - label.height)
+                                    .coerceAtLeast(0)
+                                    .coerceAtMost(1000),
+                        )
+                    val field =
+                        measurables.first { it.layoutId == "field" }.measure(fieldConstraints)
+                    layout(constraints.maxWidth, label.height + field.height) {
+                        label.place(0, 0)
+                        field.place(0, label.height)
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(size).isNotNull()
+            assertThat(labelLayoutResult).isNotNull()
+            assertThat(fieldLayoutResult).isNotNull()
+
+            val expectedLabelHeight = labelLayoutResult!!.size.height
+            // The text field has 3 lines but maxLines=2, so it should be exactly 2 lines tall
+            val expectedFieldHeight = fieldLayoutResult!!.multiParagraph.getLineBottom(1).toInt()
+
+            assertThat(size!!.height).isEqualTo(expectedLabelHeight + expectedFieldHeight)
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun heightInLines_minIntrinsicHeight_textBetweenMinMaxLines() {
+        ComposeFoundationFlags.isBasicTextFieldMinSizeOptimizationEnabled = true
+        var size: IntSize? = null
+        var labelLayoutResult: TextLayoutResult? = null
+        var fieldLayoutResult: TextLayoutResult? = null
+        rule.setContent {
+            Column(modifier = Modifier.onSizeChanged { size = it }.height(IntrinsicSize.Min)) {
+                Layout(
+                    content = {
+                        // Label
+                        BasicText(
+                            text = "Label",
+                            modifier = Modifier.layoutId("label"),
+                            onTextLayout = { labelLayoutResult = it },
+                        )
+                        // Text field
+                        var text by remember { mutableStateOf("One\nTwo\nThree") }
+                        BasicTextField(
+                            value = text,
+                            onValueChange = { text = it },
+                            modifier = Modifier.layoutId("field").fillMaxWidth(),
+                            singleLine = false,
+                            minLines = 2,
+                            maxLines = 5,
+                            onTextLayout = { fieldLayoutResult = it },
+                        )
+                    }
+                ) { measurables, constraints ->
+                    val label =
+                        measurables
+                            .first { it.layoutId == "label" }
+                            .measure(constraints.copy(minWidth = 0, minHeight = 0))
+
+                    val fieldConstraints =
+                        constraints.copy(
+                            minHeight = 0,
+                            maxHeight =
+                                (constraints.maxHeight - label.height)
+                                    .coerceAtLeast(0)
+                                    .coerceAtMost(1000),
+                        )
+                    val field =
+                        measurables.first { it.layoutId == "field" }.measure(fieldConstraints)
+                    layout(constraints.maxWidth, label.height + field.height) {
+                        label.place(0, 0)
+                        field.place(0, label.height)
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(size).isNotNull()
+            assertThat(labelLayoutResult).isNotNull()
+            assertThat(fieldLayoutResult).isNotNull()
+
+            val expectedLabelHeight = labelLayoutResult!!.size.height
+            // The text field has 3 lines which is more than minLines and less than maxLines
+            val expectedFieldHeight = fieldLayoutResult!!.multiParagraph.getLineBottom(2).toInt()
+
+            assertThat(size!!.height).isEqualTo(expectedLabelHeight + expectedFieldHeight)
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun heightInLines_maxIntrinsicHeight_textBetweenMinMaxLines() {
+        ComposeFoundationFlags.isBasicTextFieldMinSizeOptimizationEnabled = true
+        var size: IntSize? = null
+        var labelLayoutResult: TextLayoutResult? = null
+        var fieldLayoutResult: TextLayoutResult? = null
+        rule.setContent {
+            Column(modifier = Modifier.onSizeChanged { size = it }.height(IntrinsicSize.Max)) {
+                Layout(
+                    content = {
+                        // Label
+                        BasicText(
+                            text = "Label",
+                            modifier = Modifier.layoutId("label"),
+                            onTextLayout = { labelLayoutResult = it },
+                        )
+                        // Text field
+                        var text by remember { mutableStateOf("One\nTwo\nThree") }
+                        BasicTextField(
+                            value = text,
+                            onValueChange = { text = it },
+                            modifier = Modifier.layoutId("field").fillMaxWidth(),
+                            singleLine = false,
+                            minLines = 2,
+                            maxLines = 5,
+                            onTextLayout = { fieldLayoutResult = it },
+                        )
+                    }
+                ) { measurables, constraints ->
+                    val label =
+                        measurables
+                            .first { it.layoutId == "label" }
+                            .measure(constraints.copy(minWidth = 0, minHeight = 0))
+
+                    val fieldConstraints =
+                        constraints.copy(
+                            minHeight = 0,
+                            maxHeight =
+                                (constraints.maxHeight - label.height)
+                                    .coerceAtLeast(0)
+                                    .coerceAtMost(1000),
+                        )
+                    val field =
+                        measurables.first { it.layoutId == "field" }.measure(fieldConstraints)
+                    layout(constraints.maxWidth, label.height + field.height) {
+                        label.place(0, 0)
+                        field.place(0, label.height)
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(size).isNotNull()
+            assertThat(labelLayoutResult).isNotNull()
+            assertThat(fieldLayoutResult).isNotNull()
+
+            val expectedLabelHeight = labelLayoutResult!!.size.height
+            // The text field has 3 lines which is more than minLines and less than maxLines
+            val expectedFieldHeight = fieldLayoutResult!!.multiParagraph.getLineBottom(2).toInt()
+
+            assertThat(size!!.height).isEqualTo(expectedLabelHeight + expectedFieldHeight)
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun heightInLines_minIntrinsicHeight_textShorterThanMinLines() {
+        ComposeFoundationFlags.isBasicTextFieldMinSizeOptimizationEnabled = true
+        var size: IntSize? = null
+        var labelLayoutResult: TextLayoutResult? = null
+        var fieldLayoutResult: TextLayoutResult? = null
+        rule.setContent {
+            Column(modifier = Modifier.onSizeChanged { size = it }.height(IntrinsicSize.Min)) {
+                Layout(
+                    content = {
+                        // Label
+                        BasicText(
+                            text = "Label",
+                            modifier = Modifier.layoutId("label"),
+                            onTextLayout = { labelLayoutResult = it },
+                        )
+                        // Text field
+                        var text by remember { mutableStateOf("One\nTwo") }
+                        BasicTextField(
+                            value = text,
+                            onValueChange = { text = it },
+                            modifier = Modifier.layoutId("field").fillMaxWidth(),
+                            singleLine = false,
+                            minLines = 4,
+                            onTextLayout = { fieldLayoutResult = it },
+                        )
+                    }
+                ) { measurables, constraints ->
+                    val label =
+                        measurables
+                            .first { it.layoutId == "label" }
+                            .measure(constraints.copy(minWidth = 0, minHeight = 0))
+
+                    val fieldConstraints =
+                        constraints.copy(
+                            minHeight = 0,
+                            maxHeight =
+                                (constraints.maxHeight - label.height)
+                                    .coerceAtLeast(0)
+                                    .coerceAtMost(1000),
+                        )
+                    val field =
+                        measurables.first { it.layoutId == "field" }.measure(fieldConstraints)
+                    layout(constraints.maxWidth, label.height + field.height) {
+                        label.place(0, 0)
+                        field.place(0, label.height)
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(size).isNotNull()
+            assertThat(labelLayoutResult).isNotNull()
+            assertThat(fieldLayoutResult).isNotNull()
+
+            val expectedLabelHeight = labelLayoutResult!!.size.height
+            // The text field has 2 lines
+            val expectedFieldHeight = fieldLayoutResult!!.multiParagraph.getLineBottom(1).toInt()
+            // min lines is set to 4
+            assertThat(size!!.height).isGreaterThan(expectedLabelHeight + expectedFieldHeight)
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun heightInLines_maxIntrinsicHeight_textShorterThanMinLines() {
+        ComposeFoundationFlags.isBasicTextFieldMinSizeOptimizationEnabled = true
+        var size: IntSize? = null
+        var labelLayoutResult: TextLayoutResult? = null
+        var fieldLayoutResult: TextLayoutResult? = null
+        rule.setContent {
+            Column(modifier = Modifier.onSizeChanged { size = it }.height(IntrinsicSize.Max)) {
+                Layout(
+                    content = {
+                        // Label
+                        BasicText(
+                            text = "Label",
+                            modifier = Modifier.layoutId("label"),
+                            onTextLayout = { labelLayoutResult = it },
+                        )
+                        // Text field
+                        var text by remember { mutableStateOf("One\nTwo") }
+                        BasicTextField(
+                            value = text,
+                            onValueChange = { text = it },
+                            modifier = Modifier.layoutId("field").fillMaxWidth(),
+                            singleLine = false,
+                            minLines = 4,
+                            onTextLayout = { fieldLayoutResult = it },
+                        )
+                    }
+                ) { measurables, constraints ->
+                    val label =
+                        measurables
+                            .first { it.layoutId == "label" }
+                            .measure(constraints.copy(minWidth = 0, minHeight = 0))
+
+                    val fieldConstraints =
+                        constraints.copy(
+                            minHeight = 0,
+                            maxHeight =
+                                (constraints.maxHeight - label.height)
+                                    .coerceAtLeast(0)
+                                    .coerceAtMost(1000),
+                        )
+                    val field =
+                        measurables.first { it.layoutId == "field" }.measure(fieldConstraints)
+                    layout(constraints.maxWidth, label.height + field.height) {
+                        label.place(0, 0)
+                        field.place(0, label.height)
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(size).isNotNull()
+            assertThat(labelLayoutResult).isNotNull()
+            assertThat(fieldLayoutResult).isNotNull()
+
+            val expectedLabelHeight = labelLayoutResult!!.size.height
+            // The text field has 2 lines
+            val expectedFieldHeight = fieldLayoutResult!!.multiParagraph.getLineBottom(1).toInt()
+            // min lines is set to 4
+            assertThat(size!!.height).isGreaterThan(expectedLabelHeight + expectedFieldHeight)
+        }
+    }
+
     @Composable
     private fun HeightObservingText(
-        onGlobalHeightPositioned: (Int) -> Unit,
+        onGlobalHeightPositioned: (Int) -> Unit = {},
+        onGloballyPositioned: (LayoutCoordinates) -> Unit = {},
         onTextLayoutResult: (TextLayoutResult) -> Unit,
         textFieldValue: TextFieldValue,
         minLines: Int = 1,
         maxLines: Int = Int.MAX_VALUE,
         textStyle: TextStyle = TextStyle.Default,
     ) {
-        Box(Modifier.onGloballyPositioned { onGlobalHeightPositioned(it.size.height) }) {
+        Box(
+            Modifier.onGloballyPositioned {
+                onGlobalHeightPositioned(it.size.height)
+                onGloballyPositioned(it)
+            }
+        ) {
             CoreTextField(
                 value = textFieldValue,
                 onValueChange = {},
+                modifier = Modifier.requiredWidth(100.dp),
                 textStyle = textStyle,
-                modifier =
-                    Modifier.requiredWidth(100.dp)
-                        .heightInLines(
-                            textStyle = textStyle,
-                            minLines = minLines,
-                            maxLines = maxLines,
-                        ),
+                minLines = minLines,
+                maxLines = maxLines,
                 onTextLayout = onTextLayoutResult,
             )
         }

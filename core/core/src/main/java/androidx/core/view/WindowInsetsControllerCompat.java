@@ -814,12 +814,8 @@ public final class WindowInsetsControllerCompat {
                 return;
             }
             WindowInsetsController.OnControllableInsetsChangedListener
-                    fwListener = (controller, typeMask) -> {
-                        if (mInsetsController == controller) {
-                            listener.onControllableInsetsChanged(
-                                    mCompatController, typeMask);
-                        }
-                    };
+                    fwListener = (controller, typeMask) ->
+                            listener.onControllableInsetsChanged(mCompatController, typeMask);
             mListeners.put(listener, fwListener);
             mInsetsController.addOnControllableInsetsChangedListener(fwListener);
         }

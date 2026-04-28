@@ -62,6 +62,7 @@ import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -276,7 +277,8 @@ class RobolectricComposeTest {
 
         setContent {
             // Alternate scheduling work to the main queue and scheduling work for Compose.
-            // waitForIdle shouldn't return until both Compose and the main queue have nothing to
+            // waitForIdle shouldn't return until both Compose and the main queue have nothing
+            // to
             // do.
             if (phase in 1 until trampoliningIterations) {
                 DisposableEffect(phase) {
@@ -299,8 +301,10 @@ class RobolectricComposeTest {
         // Trigger the trampolining.
         phase = 1
 
-        // If Robolectric and Compose don't coordinate idleness correctly, waitForIdle will return
-        // before finishing the chain of trampolined work, and we won't be in the expected terminal
+        // If Robolectric and Compose don't coordinate idleness correctly, waitForIdle will
+        // return
+        // before finishing the chain of trampolined work, and we won't be in the expected
+        // terminal
         // state.
         runOnIdle {
             assertThat(phase).isEqualTo(trampoliningIterations)
@@ -443,8 +447,10 @@ class RobolectricComposeTest {
             }
         }
 
-        // In testing (Espresso, Robolectric, etc.), it's important to move the clock forward when
-        // using detectTapGestures {} as parts of it rely on changes in the clock (double tap, etc.)
+        // In testing (Espresso, Robolectric, etc.), it's important to move the clock forward
+        // when
+        // using detectTapGestures {} as parts of it rely on changes in the clock (double tap,
+        // etc.)
         mainClock.advanceTimeBy(100)
 
         runOnIdle {
@@ -542,8 +548,10 @@ class RobolectricComposeTest {
         topLevelContainerView?.dispatchTouchEvent(motionEventDown)
         topLevelContainerView?.dispatchTouchEvent(motionEventUp)
 
-        // In testing (Espresso, Robolectric, etc.), it's important to move the clock forward when
-        // using detectTapGestures {} as parts of it rely on changes in the clock (double tap, etc.)
+        // In testing (Espresso, Robolectric, etc.), it's important to move the clock forward
+        // when
+        // using detectTapGestures {} as parts of it rely on changes in the clock (double tap,
+        // etc.)
         // Delay to trigger second single tap (times out double tap detector)
         mainClock.advanceTimeBy(400)
 
@@ -627,8 +635,10 @@ class RobolectricComposeTest {
         topLevelContainerView?.dispatchTouchEvent(motionEventDown1)
         topLevelContainerView?.dispatchTouchEvent(motionEventUp1)
 
-        // In testing (Espresso, Robolectric, etc.), it's important to move the clock forward when
-        // using detectTapGestures {} as parts of it rely on changes in the clock (double tap, etc.)
+        // In testing (Espresso, Robolectric, etc.), it's important to move the clock forward
+        // when
+        // using detectTapGestures {} as parts of it rely on changes in the clock (double tap,
+        // etc.)
         mainClock.advanceTimeBy(100)
 
         val motionEventDown2 =

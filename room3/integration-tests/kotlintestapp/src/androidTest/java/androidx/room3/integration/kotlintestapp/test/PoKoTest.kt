@@ -21,7 +21,6 @@ import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Embedded
 import androidx.room3.Entity
-import androidx.room3.ExperimentalRoomApi
 import androidx.room3.Insert
 import androidx.room3.PrimaryKey
 import androidx.room3.Query
@@ -36,7 +35,6 @@ import androidx.room3.integration.kotlintestapp.vo.Hivemind
 import androidx.room3.integration.kotlintestapp.vo.Robot
 import androidx.room3.withWriteTransaction
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import java.nio.ByteBuffer
@@ -180,10 +178,7 @@ class PoKoTest {
 
     @Before
     fun setup() {
-        db =
-            Room.inMemoryDatabaseBuilder<PokoDatabase>(ApplicationProvider.getApplicationContext())
-                .setDriver(AndroidSQLiteDriver())
-                .build()
+        db = Room.inMemoryDatabaseBuilder<PokoDatabase>().setDriver(AndroidSQLiteDriver()).build()
         dao = db.dao()
     }
 
@@ -324,7 +319,6 @@ class PoKoTest {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun relationshipLarge() = runTest {
         db.withWriteTransaction {
             dao.insert(SampleEntity(1, 5, null))

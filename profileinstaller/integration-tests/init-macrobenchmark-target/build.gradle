@@ -17,7 +17,6 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -32,6 +31,5 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(project(":profileinstaller:profileinstaller"))
 }

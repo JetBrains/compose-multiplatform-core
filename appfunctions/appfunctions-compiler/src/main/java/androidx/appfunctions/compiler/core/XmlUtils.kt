@@ -18,6 +18,7 @@ package androidx.appfunctions.compiler.core
 
 import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadataDocument
 import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDeprecationMetadataDocument
 import androidx.appfunctions.compiler.core.metadata.AppFunctionMetadataDocument
 import androidx.appfunctions.compiler.core.metadata.AppFunctionNamedDataTypeMetadataDocument
 import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadataDocument
@@ -54,6 +55,10 @@ internal fun AppFunctionMetadataDocument.toXmlElement(doc: Document, elementName
 
         schemaVersion?.let {
             appendChild(doc.createElementWithTextNode("schemaVersion", it.toString()))
+        }
+
+        if (deprecation != null) {
+            appendChild(deprecation.toXmlElement(doc, "deprecation"))
         }
     }
 
@@ -149,3 +154,13 @@ private fun AppFunctionParameterMetadataDocument.toXmlElement(
             appendChild(doc.createElementWithTextNode("description", description))
         }
     }
+
+private fun AppFunctionDeprecationMetadataDocument.toXmlElement(
+    doc: Document,
+    elementName: String,
+): Element {
+    return doc.createElement(elementName).apply {
+        appendChild(doc.createElementWithTextNode("id", id))
+        appendChild(doc.createElementWithTextNode("message", message))
+    }
+}

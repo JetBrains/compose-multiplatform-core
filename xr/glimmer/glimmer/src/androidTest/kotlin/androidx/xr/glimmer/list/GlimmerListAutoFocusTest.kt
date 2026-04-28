@@ -23,10 +23,10 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,9 +35,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.indirect.IndirectTouchEvent
-import androidx.compose.ui.input.indirect.IndirectTouchEventType
-import androidx.compose.ui.input.indirect.IndirectTouchInputModifierNode
+import androidx.compose.ui.input.indirect.IndirectPointerEvent
+import androidx.compose.ui.input.indirect.IndirectPointerEventType
+import androidx.compose.ui.input.indirect.IndirectPointerInputModifierNode
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.LocalFocusManager
@@ -47,8 +47,6 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
-import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
@@ -64,7 +62,6 @@ import androidx.test.filters.MediumTest
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.performIndirectSwipe
 import com.google.common.truth.Truth
-import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -87,46 +84,22 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
 
         rule.onNodeWithTag(LIST_TEST_TAG).performScrollToIndex(25)
 
-        // TODO: b/447024357 - list focus not recovered immediately
-        rule.waitUntil {
-            rule
-                .onAllNodes(hasTestTag("item-27") and isFocused())
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        }
-
         // TODO: b/433687753 - performScrollToIndex() isn't aligned with the auto-focused item.
         // We brought item-25 to the top, but centered item-27 is focused.
         rule.onListItem(27).assertIsFocused()
     }
 
     @Test
-    fun animateScrollToItem_movesAutoFocus() {
-        rule.setAutoFocusContent {
-            val state = remember { ListState() }
-            FocusableTestList(state = state, itemsCount = 100)
-            LaunchedEffect(Unit) { state.animateScrollToItem(42) }
-        }
+    fun scrollBy_movesAutoFocus_whenUserScrollIsDisabled() {
+        val state = ListState()
+        rule.setAutoFocusContent { FocusableTestList(userScrollEnabled = false, state = state) }
 
-        rule.waitForIdle()
+        // Default size of items is 100.dp
+        state.scrollByAndWaitForIdle(250.dp)
 
-        // TODO: b/433687753 - animateScrollToItem() isn't aligned with the auto-focused item.
-        // We brought item-42 to the top, but centered item-44 is focused.
-        rule.onListItem(44).assertIsFocused()
+        // The third item must be focused.
+        rule.onListItem(2).assertIsFocused()
     }
-
-    @Test
-    fun scrollBy_movesAutoFocus_whenUserScrollIsDisabled() =
-        runTest(testDispatcher) {
-            val state = ListState()
-            rule.setAutoFocusContent { FocusableTestList(userScrollEnabled = false, state = state) }
-
-            // Default size of items is 100.dp
-            state.scrollByAndWaitForIdle(250.dp)
-
-            // The third item must be focused.
-            rule.onListItem(2).assertIsFocused()
-        }
 
     @Test
     fun performSemanticsAction_scrollBy_movesAutoFocus() {
@@ -140,7 +113,7 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
     }
 
     @Test
-    fun indirectTouch_movesAutoFocus() {
+    fun indirectPointer_movesAutoFocus() {
         rule.setAutoFocusContent { FocusableTestList(itemsCount = 100) }
 
         val swipe = with(rule.density) { ItemHeight.toPx() * 5.5f }
@@ -151,29 +124,29 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
     }
 
     @Test
-    fun nonScrollableList_doesNotConsumed_indirectTouchEvents() {
+    fun nonScrollableList_doesNotConsumed_indirectPointerEvents() {
         var downEventReceivedByParentWasConsumed = false
         var moveEventReceivedByParentWasConsumed = false
         var upEventReceivedByParentWasConsumed = false
         rule.setAutoFocusContent {
             Box(
                 Modifier.elementFor(
-                    IndirectTouchInputNode(
+                    IndirectPointerInputNode(
                         onEvent = {
-                            indirectTouchEvent: IndirectTouchEvent,
+                            indirectPointerEvent: IndirectPointerEvent,
                             pointerEventPass: PointerEventPass ->
                             if (pointerEventPass == PointerEventPass.Main) {
                                 val indirectConsumed =
-                                    indirectTouchEvent.changes.fastAny { it.isConsumed }
+                                    indirectPointerEvent.changes.fastAny { it.isConsumed }
 
-                                when (indirectTouchEvent.type) {
-                                    IndirectTouchEventType.Press -> {
+                                when (indirectPointerEvent.type) {
+                                    IndirectPointerEventType.Press -> {
                                         downEventReceivedByParentWasConsumed = indirectConsumed
                                     }
-                                    IndirectTouchEventType.Move -> {
+                                    IndirectPointerEventType.Move -> {
                                         moveEventReceivedByParentWasConsumed = indirectConsumed
                                     }
-                                    IndirectTouchEventType.Release -> {
+                                    IndirectPointerEventType.Release -> {
                                         // Check 'Release' since 'Press' is always propagated.
                                         upEventReceivedByParentWasConsumed = indirectConsumed
                                     }
@@ -204,22 +177,22 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
         rule.setAutoFocusContent {
             Box(
                 Modifier.elementFor(
-                    IndirectTouchInputNode(
+                    IndirectPointerInputNode(
                         onEvent = {
-                            indirectTouchEvent: IndirectTouchEvent,
+                            indirectPointerEvent: IndirectPointerEvent,
                             pointerEventPass: PointerEventPass ->
                             if (pointerEventPass == PointerEventPass.Main) {
                                 val indirectConsumed =
-                                    indirectTouchEvent.changes.fastAny { it.isConsumed }
+                                    indirectPointerEvent.changes.fastAny { it.isConsumed }
 
-                                when (indirectTouchEvent.type) {
-                                    IndirectTouchEventType.Press -> {
+                                when (indirectPointerEvent.type) {
+                                    IndirectPointerEventType.Press -> {
                                         downEventReceivedByParentWasConsumed = indirectConsumed
                                     }
-                                    IndirectTouchEventType.Move -> {
+                                    IndirectPointerEventType.Move -> {
                                         moveEventReceivedByParentWasConsumed = indirectConsumed
                                     }
-                                    IndirectTouchEventType.Release -> {
+                                    IndirectPointerEventType.Release -> {
                                         // Check 'Release' since 'Press' is always propagated.
                                         upEventReceivedByParentWasConsumed = indirectConsumed
                                     }
@@ -382,6 +355,26 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
         rule.onNodeWithTag("button").assertIsFocused()
     }
 
+    @Test
+    fun listWithLargePadding_focusesFirstListItemAutomatically() {
+        rule.setAutoFocusContent {
+            FocusableTestList(
+                modifier = Modifier.padding(start = ItemWidth * 2, top = ItemHeight * 2)
+            )
+        }
+        rule.onListItem(0).assertIsFocused()
+    }
+
+    @Test
+    fun listWithLargeContentPadding_focusesFirstListItemAutomatically() {
+        rule.setAutoFocusContent {
+            FocusableTestList(
+                contentPadding = PaddingValues(start = ItemWidth * 2, top = ItemHeight * 2)
+            )
+        }
+        rule.onListItem(0).assertIsFocused()
+    }
+
     private fun scrollListBy(scroll: Dp) {
         val pixels = with(rule.density) { scroll.toPx() }
         rule.onNodeWithTag(LIST_TEST_TAG).performSemanticsAction(ScrollBy) { it.invoke(0f, pixels) }
@@ -393,10 +386,8 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
         rule.waitForIdle()
     }
 
-    private fun ComposeContentTestRule.setAutoFocusContent(
-        content: @Composable ColumnScope.() -> Unit
-    ) {
-        setContentWithInitialFocus {
+    private fun ComposeContentTestRule.setAutoFocusContent(content: @Composable () -> Unit) {
+        setContent {
             focusManager = LocalFocusManager.current
             content()
         }
@@ -425,10 +416,12 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
      */
     @Composable
     fun FocusableTestList(
+        modifier: Modifier = Modifier,
         itemsCount: Int = 100,
         userScrollEnabled: Boolean = true,
         listOrientation: Orientation = orientation,
         state: ListState = rememberListState(),
+        contentPadding: PaddingValues = PaddingValues(),
         itemContent: @Composable (Int) -> Unit = { FocusableListItem(it) },
     ) {
         TestList(
@@ -436,7 +429,8 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
             itemsCount = itemsCount,
             listOrientation = listOrientation,
             userScrollEnabled = userScrollEnabled,
-            modifier = Modifier.requiredSize(ItemWidth * 3, ItemHeight * ItemsPerScreen),
+            contentPadding = contentPadding,
+            modifier = modifier.requiredSize(ItemWidth * 3, ItemHeight * ItemsPerScreen),
         ) { index ->
             itemContent(index)
         }
@@ -487,13 +481,14 @@ internal data class NodeElement(val node: Modifier.Node) : ModifierNodeElement<M
     override fun update(node: Modifier.Node) {}
 }
 
-internal class IndirectTouchInputNode(var onEvent: (IndirectTouchEvent, PointerEventPass) -> Unit) :
-    IndirectTouchInputModifierNode, Modifier.Node() {
-    override fun onIndirectTouchEvent(event: IndirectTouchEvent, pass: PointerEventPass) {
+internal class IndirectPointerInputNode(
+    var onEvent: (IndirectPointerEvent, PointerEventPass) -> Unit
+) : IndirectPointerInputModifierNode, Modifier.Node() {
+    override fun onIndirectPointerEvent(event: IndirectPointerEvent, pass: PointerEventPass) {
         onEvent(event, pass)
     }
 
-    override fun onCancelIndirectTouchInput() {}
+    override fun onCancelIndirectPointerInput() {}
 }
 
 private val ItemWidth: Dp = 100.dp

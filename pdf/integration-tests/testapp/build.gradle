@@ -2,21 +2,15 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "androidx.pdf.testapp"
-
+    group = "androidx.pdf"
+    compileSdk { version = release(37) }
     defaultConfig {
         applicationId = "androidx.pdf.testapp"
-        minSdk = 31
-        compileSdk = 36
-        compileSdkExtension = 19
-    }
-
-    sourceSets {
-        androidTest.assets.srcDirs += files("src/androidTest/assets/".toString())
+        minSdk { version = release(28) }
     }
 
     viewBinding {

@@ -17,18 +17,22 @@
 package androidx.car.app.model;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY;
+import static androidx.car.app.utils.LogTags.TAG;
 
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.SuppressLint;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.car.app.Screen;
 import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
+import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.constraints.CarIconConstraints;
 import androidx.car.app.model.constraints.CarTextConstraints;
 
@@ -44,6 +48,7 @@ import java.util.Objects;
  */
 @CarProtocol
 @KeepFields
+@OptIn(markerClass = ExperimentalCarApi.class)
 public final class GridItem implements Item {
     /**
      * The type of images supported within grid items.
@@ -84,6 +89,7 @@ public final class GridItem implements Item {
     private final @Nullable OnClickDelegate mOnClickDelegate;
     private final @Nullable Badge mBadge;
     private final boolean mIndexable;
+    private final @Nullable CarProgressBar mProgressBar;
 
     /**
      * Returns whether the grid item is in a loading state.
@@ -142,7 +148,7 @@ public final class GridItem implements Item {
      *
      * @see Builder#setBadge(Badge)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public @Nullable Badge getBadge() {
         return mBadge;
     }
@@ -152,9 +158,20 @@ public final class GridItem implements Item {
      *
      * @see Builder#setIndexable(boolean)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public boolean isIndexable() {
         return mIndexable;
+    }
+
+    /**
+     * Returns the progress bar to display in the grid item, or {@code null} if not set.
+     *
+     * @see Builder#setProgressBar(CarProgressBar)
+     */
+    @RequiresCarApi(9)
+    @ExperimentalCarApi
+    public @Nullable CarProgressBar getProgressBar() {
+        return mProgressBar;
     }
 
     @Override
@@ -169,6 +186,8 @@ public final class GridItem implements Item {
                 + mIsLoading
                 + ", badge: "
                 + mBadge
+                + ", progressBar: "
+                + mProgressBar
                 + "]";
     }
 
@@ -181,7 +200,8 @@ public final class GridItem implements Item {
                 mImageType,
                 mOnClickDelegate == null,
                 mBadge,
-                mIndexable
+                mIndexable,
+                mProgressBar
         );
     }
 
@@ -202,7 +222,8 @@ public final class GridItem implements Item {
                 && Objects.equals(mOnClickDelegate == null, otherGridItem.mOnClickDelegate == null)
                 && Objects.equals(mBadge, otherGridItem.mBadge)
                 && mImageType == otherGridItem.mImageType
-                && mIndexable == otherGridItem.mIndexable;
+                && mIndexable == otherGridItem.mIndexable
+                && Objects.equals(mProgressBar, otherGridItem.mProgressBar);
     }
 
     GridItem(Builder builder) {
@@ -214,6 +235,7 @@ public final class GridItem implements Item {
         mOnClickDelegate = builder.mOnClickDelegate;
         mBadge = builder.mBadge;
         mIndexable = builder.mIndexable;
+        mProgressBar = builder.mProgressBar;
     }
 
     /** Constructs an empty instance, used by serialization code. */
@@ -226,6 +248,7 @@ public final class GridItem implements Item {
         mOnClickDelegate = null;
         mBadge = null;
         mIndexable = true;
+        mProgressBar = null;
     }
 
     /** A builder of {@link GridItem}. */
@@ -239,6 +262,7 @@ public final class GridItem implements Item {
         boolean mIsLoading;
         @Nullable Badge mBadge;
         boolean mIndexable = true;
+        @Nullable CarProgressBar mProgressBar;
 
         /**
          * Sets whether the item is in a loading state.
@@ -301,6 +325,9 @@ public final class GridItem implements Item {
          *
          * This text is truncated at the end to fit in a single line below the title
          *
+         * <p><strong>Note:</strong> This field is mutually exclusive with {@link #setProgressBar}.
+         * If both are set, the progress bar will take precedence and this text will be ignored.
+         *
          * @throws NullPointerException     if {@code text} is {@code null}
          * @throws IllegalArgumentException if {@code text} contains unsupported spans
          */
@@ -321,6 +348,9 @@ public final class GridItem implements Item {
          * <h2>Text Wrapping</h2>
          *
          * This text is truncated at the end to fit in a single line below the title
+         *
+         * <p><strong>Note:</strong> This field is mutually exclusive with {@link #setProgressBar}.
+         * If both are set, the progress bar will take precedence and this text will be ignored.
          *
          * @throws NullPointerException     if {@code text} is {@code null}
          * @throws IllegalArgumentException if {@code text} contains unsupported spans
@@ -352,7 +382,7 @@ public final class GridItem implements Item {
          * @throws NullPointerException if {@code image} or {@code badge} is {@code null}
          * @see #setImage(CarIcon, int)
          */
-        @ExperimentalCarApi
+        @RequiresCarApi(8)
         public @NonNull Builder setImage(@NonNull CarIcon image, @NonNull Badge badge) {
             requireNonNull(badge);
             mBadge = badge;
@@ -370,7 +400,7 @@ public final class GridItem implements Item {
          * @throws NullPointerException if {@code image} or {@code badge} is {@code null}
          * @see #setImage(CarIcon, int)
          */
-        @ExperimentalCarApi
+        @RequiresCarApi(8)
         public @NonNull Builder setImage(@NonNull CarIcon image, @GridItemImageType int imageType,
                 @NonNull Badge badge) {
             requireNonNull(badge);
@@ -440,11 +470,26 @@ public final class GridItem implements Item {
          * <p>Individual items can be set to be included or excluded from filtered lists, but it's
          * also possible to enable/disable the creation of filtered lists as a whole via the
          * template's API (eg. {@code SectionedItemTemplate
-         * .Builder#setAlphabeticalIndexingAllowed(Boolean)}).
+         * .Builder#setAlphabeticalIndexingStrategy(int)}).
          */
-        @ExperimentalCarApi
+        @RequiresCarApi(8)
         public @NonNull Builder setIndexable(boolean indexable) {
             mIndexable = indexable;
+            return this;
+        }
+
+        /**
+         * Sets the progress bar to display in the grid item.
+         *
+         * <p><strong>Note:</strong> This field is mutually exclusive with {@link #setText}.
+         * If both are set, the progress bar will take precedence and the text will be ignored.
+         *
+         * @throws NullPointerException if {@code progressBar} is {@code null}
+         */
+        @RequiresCarApi(9)
+        @ExperimentalCarApi
+        public @NonNull Builder setProgressBar(@NonNull CarProgressBar progressBar) {
+            mProgressBar = requireNonNull(progressBar);
             return this;
         }
 
@@ -469,6 +514,12 @@ public final class GridItem implements Item {
             if (mImage == null && mBadge != null) {
                 throw new IllegalStateException("A badge can only be set when a grid item image "
                         + "is also provided");
+            }
+
+            if (mText != null && mProgressBar != null) {
+                Log.w(TAG, "Both text and progress bar were set on GridItem. The text will be "
+                        + "ignored.");
+                mText = null;
             }
 
             return new GridItem(this);

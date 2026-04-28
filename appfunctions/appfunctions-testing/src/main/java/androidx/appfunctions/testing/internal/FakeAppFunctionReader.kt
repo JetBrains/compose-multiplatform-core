@@ -20,13 +20,14 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.appfunctions.AppFunctionManagerCompat
+import androidx.appfunctions.AppFunctionManager
 import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.internal.AppFunctionReader
 import androidx.appfunctions.internal.findImpl
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionName
 import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import kotlinx.coroutines.flow.Flow
@@ -66,9 +67,7 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
                 .mapValues { (_, staticMetadata) ->
                     AppFunctionStaticAndRuntimeMetadata(
                         staticMetadata = staticMetadata,
-                        AppFunctionRuntimeMetadata(
-                            AppFunctionManagerCompat.APP_FUNCTION_STATE_DEFAULT
-                        ),
+                        AppFunctionRuntimeMetadata(AppFunctionManager.APP_FUNCTION_STATE_DEFAULT),
                     )
                 }
                 .toMutableMap(),
@@ -100,14 +99,18 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
                             .filter { metadata -> matchesSchemaSpec(metadata, searchFunctionSpec) }
                             .map { metadata ->
                                 AppFunctionMetadata(
-                                    id = metadata.staticMetadata.id,
-                                    packageName = packageName,
-                                    isEnabled = metadata.computeEffectivelyEnabled(),
+                                    name = AppFunctionName(packageName, metadata.staticMetadata.id),
                                     schema = metadata.staticMetadata.schema,
                                     parameters = metadata.staticMetadata.parameters,
                                     response = metadata.staticMetadata.response,
-                                    components =
-                                        checkNotNull(packageToComponentsMetadataMap[packageName]),
+                                    packageMetadata =
+                                        AppFunctionPackageMetadata(
+                                            packageName,
+                                            checkNotNull(
+                                                packageToComponentsMetadataMap[packageName]
+                                            ),
+                                        ),
+                                    isEnabled = metadata.computeEffectivelyEnabled(),
                                 )
                             }
                     if (appFunctions.isNotEmpty()) {
@@ -161,9 +164,7 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
     }
 }
 
-internal data class AppFunctionRuntimeMetadata(
-    @AppFunctionManagerCompat.EnabledState val enabled: Int
-)
+internal data class AppFunctionRuntimeMetadata(@AppFunctionManager.EnabledState val enabled: Int)
 
 internal data class AppFunctionStaticAndRuntimeMetadata(
     val staticMetadata: CompileTimeAppFunctionMetadata,
@@ -174,20 +175,19 @@ internal data class AppFunctionStaticAndRuntimeMetadata(
         componentsMetadata: AppFunctionComponentsMetadata,
     ) =
         AppFunctionMetadata(
-            id = staticMetadata.id,
-            packageName = packageName,
-            isEnabled = computeEffectivelyEnabled(),
+            name = AppFunctionName(packageName, staticMetadata.id),
             schema = staticMetadata.schema,
             parameters = staticMetadata.parameters,
             response = staticMetadata.response,
-            components = componentsMetadata,
+            packageMetadata = AppFunctionPackageMetadata(packageName, componentsMetadata),
+            isEnabled = computeEffectivelyEnabled(),
         )
 
     fun computeEffectivelyEnabled(): Boolean =
         when (runtimeMetadata.enabled) {
-            AppFunctionManagerCompat.Companion.APP_FUNCTION_STATE_ENABLED -> true
-            AppFunctionManagerCompat.Companion.APP_FUNCTION_STATE_DISABLED -> false
-            AppFunctionManagerCompat.Companion.APP_FUNCTION_STATE_DEFAULT ->
+            AppFunctionManager.Companion.APP_FUNCTION_STATE_ENABLED -> true
+            AppFunctionManager.Companion.APP_FUNCTION_STATE_DISABLED -> false
+            AppFunctionManager.Companion.APP_FUNCTION_STATE_DEFAULT ->
                 staticMetadata.isEnabledByDefault
 
             else ->

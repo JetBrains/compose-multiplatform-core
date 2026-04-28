@@ -15,25 +15,24 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
 import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
+import com.google.devtools.ksp.gradle.KspAATask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":room3:room3-runtime"))
     api(project(":sqlite:sqlite"))
     implementation(libs.kotlinCoroutinesAndroid)
@@ -59,5 +58,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Use SupportSQLite APIs backed by a RoomDatabase"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

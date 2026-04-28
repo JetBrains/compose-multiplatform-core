@@ -15,25 +15,23 @@
  */
 package androidx.xr.arcore.projected
 
-import android.app.Activity
-import androidx.annotation.RestrictTo
+import android.content.Context
 import androidx.xr.arcore.runtime.PerceptionRuntime
-import androidx.xr.runtime.internal.Feature
+import androidx.xr.runtime.interfaces.Feature
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import kotlin.coroutines.CoroutineContext
 
 /** Factory for creating instances of [ProjectedRuntime]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class ProjectedRuntimeFactory() : PerceptionRuntimeFactory {
+internal class ProjectedRuntimeFactory : PerceptionRuntimeFactory {
     override val requirements: Set<Feature> = setOf(Feature.PROJECTED, Feature.FULLSTACK)
 
     override fun createRuntime(
-        activity: Activity,
+        context: Context,
         coroutineContext: CoroutineContext,
     ): PerceptionRuntime {
         val timeSource = ProjectedTimeSource()
         val perceptionManager = ProjectedPerceptionManager(timeSource)
-        val manager = ProjectedManager(activity, perceptionManager, timeSource, coroutineContext)
-        return ProjectedRuntime(manager, perceptionManager)
+
+        return ProjectedRuntime(context, perceptionManager, timeSource)
     }
 }

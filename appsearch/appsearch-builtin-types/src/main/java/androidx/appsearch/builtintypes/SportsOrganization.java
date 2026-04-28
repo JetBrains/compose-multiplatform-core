@@ -42,7 +42,7 @@ public class SportsOrganization extends Organization {
     private @Nullable Color mAccentColor;
 
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    protected SportsOrganization(
+    SportsOrganization(
         @NonNull String namespace, @NonNull String id, int documentScore,
         long creationTimestampMillis, long documentTtlMillis,
         @Nullable String name, @Nullable List<String> alternateNames,

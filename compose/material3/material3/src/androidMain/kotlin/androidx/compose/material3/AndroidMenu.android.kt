@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 actual fun DropdownMenu(
     expanded: Boolean,
@@ -62,7 +63,13 @@ actual fun DropdownMenu(
         val density = LocalDensity.current
         val popupPositionProvider =
             remember(offset, density) {
-                DropdownMenuPositionProvider(offset, density) { parentBounds, menuBounds ->
+                DropdownMenuPositionProvider(
+                    transformOriginState,
+                    offset,
+                    density,
+                    horizontalMargin = 0,
+                    dropdownMenuAnchorPosition = MenuAnchorPosition.Below,
+                ) { parentBounds, menuBounds ->
                     transformOriginState.value = calculateTransformOrigin(parentBounds, menuBounds)
                 }
             }
@@ -86,6 +93,29 @@ actual fun DropdownMenu(
             )
         }
     }
+}
+
+@Deprecated("Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
+@ExperimentalMaterial3ExpressiveApi
+@Composable
+actual fun DropdownMenuPopup(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier,
+    offset: DpOffset,
+    properties: PopupProperties,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    DropdownMenuPopup(
+        expanded = expanded,
+        onDismissRequest = onDismissRequest,
+        modifier = modifier,
+        popupPositionProvider =
+            MenuDefaults.rememberDropdownMenuPopupPositionProvider(MenuAnchorPosition.Below),
+        offset = offset,
+        properties = properties,
+        content = content,
+    )
 }
 
 @Deprecated(
@@ -191,6 +221,22 @@ actual fun DropdownMenuItem(
         colors = colors,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
+    )
+}
+
+@Composable
+@ExperimentalMaterial3ExpressiveApi
+internal actual fun DropdownMenuPopupImpl(
+    onDismissRequest: () -> Unit,
+    popupPositionProvider: DropdownMenuPopupPositionProvider,
+    properties: PopupProperties,
+    content: @Composable () -> Unit,
+) {
+    Popup(
+        onDismissRequest = onDismissRequest,
+        popupPositionProvider = popupPositionProvider,
+        properties = properties,
+        content = content,
     )
 }
 

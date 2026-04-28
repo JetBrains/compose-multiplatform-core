@@ -13,101 +13,91 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation.Type
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
+import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.modifier.HeightModifier
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.ScrollModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUi
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
+import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
-/** Utility modifier to record the layout information */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteComposeColumnModifier(
-    public val modifier: RemoteModifier = RemoteModifier,
-    public val horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    public val verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoCanvas {
-            if (it.nativeCanvas is RecordingCanvas) {
-                (it.nativeCanvas as RecordingCanvas).let {
-                    it.document.startColumn(
-                        modifier.toRemoteCompose(),
-                        horizontalAlignment.toRemoteCompose(),
-                        verticalArrangement.toRemoteCompose(),
-                    )
-                    drawContent()
-                    it.document.endColumn()
-                }
-            } else {
-                drawContent()
-            }
-        }
-    }
-}
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+/** Receiver scope used by [RemoteColumn] for its content. */
 public class RemoteColumnScope {
+    /**
+     * Sets the vertical weight of this element relative to its siblings in the [RemoteColumn].
+     *
+     * @param weight The proportional height to allocate to this element.
+     */
     public fun RemoteModifier.weight(weight: RemoteFloat): RemoteModifier =
         then(HeightModifier(Type.WEIGHT, weight))
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun RemoteModifier.weight(weight: Float): RemoteModifier =
         then(HeightModifier(Type.WEIGHT, RemoteFloat(weight)))
 }
 
+internal class RemoteColumnNode : RemoteComposeNode() {
+    var verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top
+    var horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start
+    var layoutDirection: LayoutDirection = LayoutDirection.Ltr
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val recordingModifier = creationState.toRecordingModifier(modifier)
+        (verticalArrangement as? RemoteSpaced)?.let {
+            recordingModifier.spacedBy(it.space.getFloatIdForCreationState(creationState))
+        }
+        creationState.document.startColumn(
+            recordingModifier,
+            horizontalAlignment.toRemote(layoutDirection),
+            verticalArrangement.toRemote(),
+        )
+        renderChildren(creationState, remoteCanvas)
+        creationState.document.endColumn()
+    }
+}
+
 /**
- * RemoteColumn implements a Column layout, delegating to the foundation Column layout as needed.
- * This allows RemoteColumn to both work as a normal Column when called within a normal Compose
- * tree, and capture the layout information when called within a capture pass for RemoteCompose.
+ * A layout composable that positions its children in a vertical sequence.
+ *
+ * `RemoteColumn` allows you to arrange children vertically and control their [verticalArrangement]
+ * (spacing) and [horizontalAlignment].
+ *
+ * @param modifier The modifier to be applied to this column.
+ * @param verticalArrangement The vertical arrangement of the children.
+ * @param horizontalAlignment The horizontal alignment of the children.
+ * @param content The content of the column, which has access to [RemoteColumnScope].
  */
 @RemoteComposable
 @Composable
 public fun RemoteColumn(
     modifier: RemoteModifier = RemoteModifier,
-    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
+    horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
     content: @Composable RemoteColumnScope.() -> Unit,
 ) {
     val scope = remember { RemoteColumnScope() }
-    val captureMode = LocalRemoteComposeCreationState.current
-    if (captureMode is NoRemoteCompose) {
-        androidx.compose.foundation.layout.Column(
-            modifier.toComposeUi(),
-            horizontalAlignment = horizontalAlignment.toComposeUi(),
-            verticalArrangement = verticalArrangement.toComposeUi(),
-        ) {
-            content(scope)
-        }
-    } else {
-        var composeModifiers =
-            RemoteComposeColumnModifier(modifier, horizontalAlignment, verticalArrangement)
-                .then(modifier.toComposeUiLayout())
-        if (modifier.any { element -> element is ScrollModifier }) {
-            composeModifiers = composeModifiers.then(Modifier.wrapContentSize(unbounded = true))
-        }
-        androidx.compose.foundation.layout.Column(
-            composeModifiers,
-            horizontalAlignment = horizontalAlignment.toComposeUi(),
-            verticalArrangement = verticalArrangement.toComposeUi(),
-        ) {
-            content(scope)
-        }
-    }
+    val layoutDirection = LocalLayoutDirection.current
+    RemoteComposeNode(
+        factory = ::RemoteColumnNode,
+        update = {
+            set(modifier) { nodeModifier -> this.modifier = nodeModifier }
+            set(verticalArrangement) { nodeVerticalArrangement ->
+                this.verticalArrangement = nodeVerticalArrangement
+            }
+            set(horizontalAlignment) { nodeHorizontalAlignment ->
+                this.horizontalAlignment = nodeHorizontalAlignment
+            }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
+            }
+        },
+        content = { scope.content() },
+    )
 }

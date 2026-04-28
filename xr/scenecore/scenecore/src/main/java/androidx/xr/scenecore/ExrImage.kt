@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.ExrImageResource as RtExrImage
 import androidx.xr.scenecore.runtime.RenderingRuntime
-import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Path
 
 /**
@@ -33,8 +32,32 @@ import java.nio.file.Path
  */
 // TODO(b/319269278): Make this and GltfModel derive from a common Resource base class which has
 //                    async helpers.
+// TODO(b/502251518): Remove restricted ExrImage once migration to ImageBasedLightingAsset is
+// complete.
+@Deprecated(
+    message = "ExrImage is being replaced by ImageBasedLightingAsset.",
+    replaceWith =
+        ReplaceWith("ImageBasedLightingAsset", "androidx.xr.scenecore.ImageBasedLightingAsset"),
+)
+@Suppress("DEPRECATION")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ExrImage
-internal constructor(internal val image: RtExrImage, internal val session: Session? = null) {
+internal constructor(internal val session: Session?, internal val image: RtExrImage) :
+    AutoCloseable {
+
+    /**
+     * Closes the given [ExrImage].
+     *
+     * The [ExrImage] can be explicitly closed at any time or garbage collected. When either
+     * happens, its resources are freed. If close() is not explicitly invoked by the client, the
+     * [ExrImage] will be automatically closed when the [ExrImage] is garbage collected.
+     *
+     * @throws IllegalStateException if the resource has already been closed.
+     */
+    @MainThread
+    override public fun close() {
+        session?.renderingRuntime?.destroyExrImage(image)
+    }
 
     /**
      * Returns the reflection texture from a preprocessed EXR image.
@@ -47,7 +70,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
      *   image was not preprocessed.
      */
     @MainThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getReflectionTexture(): CubeMapTexture {
         if (session == null) {
             throw IllegalStateException(
@@ -65,27 +88,27 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
 
     public companion object {
         internal suspend fun createFromZip(
+            session: Session,
             renderingRuntime: RenderingRuntime,
             name: String,
-            session: Session,
         ): ExrImage {
             require(name.endsWith(".zip", ignoreCase = true)) {
                 "Only preprocessed skybox files with the .zip extension are supported."
             }
 
-            return createExrImage(renderingRuntime.loadExrImageByAssetName(name), session)
+            return createExrImage(session, renderingRuntime.loadExrImageByAssetName(name))
         }
 
         @SuppressWarnings("RestrictTo")
         internal suspend fun createFromZip(
+            session: Session,
             renderingRuntime: RenderingRuntime,
             byteArray: ByteArray,
             assetKey: String,
-            session: Session,
         ): ExrImage {
             return createExrImage(
-                renderingRuntime.loadExrImageByByteArray(byteArray, assetKey),
                 session,
+                renderingRuntime.loadExrImageByByteArray(byteArray, assetKey),
             )
         }
 
@@ -112,7 +135,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             require(!path.isAbsolute) {
                 "ExrImage.createFromZip() expects a path relative to `assets/`, received absolute path $path."
             }
-            return createFromZip(session.renderingRuntime, path.toString(), session)
+            return createFromZip(session, session.renderingRuntime, path.toString())
         }
 
         /**
@@ -131,7 +154,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
         @MainThread
         @JvmStatic
         public suspend fun createFromZip(session: Session, uri: Uri): ExrImage =
-            createFromZip(session.renderingRuntime, uri.toString(), session)
+            createFromZip(session, session.renderingRuntime, uri.toString())
 
         /**
          * Public factory function for a preprocessed EXRImage, where the preprocessed EXRImage is
@@ -148,22 +171,17 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
          */
         @MainThread
         @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public suspend fun createFromZip(
             session: Session,
             assetData: ByteArray,
             assetKey: String,
         ): ExrImage {
-            return createFromZip(session.renderingRuntime, assetData, assetKey, session)
+            return createFromZip(session, session.renderingRuntime, assetData, assetKey)
         }
 
-        private suspend fun createExrImage(
-            exrImageResourceFuture: ListenableFuture<RtExrImage>,
-            session: Session,
-        ): ExrImage {
-            val image = exrImageResourceFuture.awaitSuspending()
-            return ExrImage(image, session)
-        }
+        private fun createExrImage(session: Session, exrImageResource: RtExrImage): ExrImage =
+            ExrImage(session, exrImageResource)
     }
 
     override fun equals(other: Any?): Boolean {

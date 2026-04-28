@@ -13,99 +13,110 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.layout.padding
+import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
+import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
+import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.LayoutDirection
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class PaddingModifier(
-    public val left: RemoteFloat,
+internal class PaddingModifier(
+    public val start: RemoteFloat,
     public val top: RemoteFloat,
-    public val right: RemoteFloat,
+    public val end: RemoteFloat,
     public val bottom: RemoteFloat,
-) : RemoteLayoutModifier {
+) : RemoteModifier.Element {
     init {
         require(
-            (!left.hasConstantValue || left.toFloat() >= 0f) and
-                (!top.hasConstantValue || top.toFloat() >= 0f) and
-                (!right.hasConstantValue || right.toFloat() >= 0f) and
-                (!bottom.hasConstantValue || bottom.toFloat() >= 0f)
+            (!start.hasConstantValue || start.constantValue >= 0f) and
+                (!top.hasConstantValue || top.constantValue >= 0f) and
+                (!end.hasConstantValue || end.constantValue >= 0f) and
+                (!bottom.hasConstantValue || bottom.constantValue >= 0f)
         ) {
             "Padding must be non-negative"
         }
     }
 
-    override fun toRemoteComposeElement(): RecordingModifier.Element {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
+        val isLtr = layoutDirection == LayoutDirection.Ltr
         return androidx.compose.remote.creation.modifiers.PaddingModifier(
-            left.internalAsFloat(),
-            top.internalAsFloat(),
-            right.internalAsFloat(),
-            bottom.internalAsFloat(),
+            (if (isLtr) start else end).floatId,
+            top.floatId,
+            (if (isLtr) end else start).floatId,
+            bottom.floatId,
         )
-    }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        // TODO how to get the value of a RemoteFloat in preview mode
-        // TODO LTR
-        return with(LocalDensity.current) {
-            padding(
-                left.toFloat().toDp(),
-                top.toFloat().toDp(),
-                right.toFloat().toDp(),
-                bottom.toFloat().toDp(),
-            )
-        }
     }
 }
 
+/**
+ * Adds padding to each edge of the content.
+ *
+ * @param start Padding at the start edge.
+ * @param top Padding at the top edge.
+ * @param end Padding at the end edge.
+ * @param bottom Padding at the bottom edge.
+ */
 public fun RemoteModifier.padding(
-    left: RemoteFloat = 0f.rf,
+    start: RemoteFloat = 0f.rf,
     top: RemoteFloat = 0f.rf,
-    right: RemoteFloat = 0f.rf,
+    end: RemoteFloat = 0f.rf,
     bottom: RemoteFloat = 0f.rf,
-): RemoteModifier = then(PaddingModifier(left, top, right, bottom))
+): RemoteModifier = then(PaddingModifier(start = start, top = top, end = end, bottom = bottom))
 
+/** Adds [all] padding to each edge of the content. */
 public fun RemoteModifier.padding(all: RemoteFloat): RemoteModifier = padding(all, all, all, all)
 
+/**
+ * Adds [horizontal] padding to the start and end edges, and [vertical] padding to the top and
+ * bottom edges.
+ */
 public fun RemoteModifier.padding(
     horizontal: RemoteFloat = 0f.rf,
     vertical: RemoteFloat = 0f.rf,
-): RemoteModifier =
-    padding(left = horizontal, top = vertical, right = horizontal, bottom = vertical)
+): RemoteModifier = padding(start = horizontal, top = vertical, end = horizontal, bottom = vertical)
 
-@Composable
-public fun RemoteModifier.padding(all: Dp): RemoteModifier =
-    padding(left = all, top = all, right = all, bottom = all)
+/** Adds padding defined by the [padding] object. */
+public fun RemoteModifier.padding(padding: RemotePaddingValues): RemoteModifier =
+    padding(
+        start = padding.leftPadding,
+        top = padding.topPadding,
+        end = padding.rightPadding,
+        bottom = padding.bottomPadding,
+    )
 
-@Composable
+/** Adds [all] padding to each edge of the content. */
+public fun RemoteModifier.padding(all: RemoteDp): RemoteModifier =
+    padding(start = all, top = all, end = all, bottom = all)
+
+/**
+ * Adds padding to each edge of the content using [RemoteDp] values.
+ *
+ * @param start Padding at the start edge.
+ * @param top Padding at the top edge.
+ * @param end Padding at the end edge.
+ * @param bottom Padding at the bottom edge.
+ */
 public fun RemoteModifier.padding(
-    left: Dp = 0.dp,
-    top: Dp = 0.dp,
-    right: Dp = 0.dp,
-    bottom: Dp = 0.dp,
+    start: RemoteDp = 0.rdp,
+    top: RemoteDp = 0.rdp,
+    end: RemoteDp = 0.rdp,
+    bottom: RemoteDp = 0.rdp,
 ): RemoteModifier {
-    return with(LocalDensity.current) {
-        padding(
-            RemoteFloat(left.toPx()),
-            RemoteFloat(top.toPx()),
-            RemoteFloat(right.toPx()),
-            RemoteFloat(bottom.toPx()),
-        )
-    }
+    return padding(start = start.toPx(), top = top.toPx(), end = end.toPx(), bottom = bottom.toPx())
 }
 
-@Composable
-public fun RemoteModifier.padding(horizontal: Dp = 0.dp, vertical: Dp = 0.dp): RemoteModifier =
-    padding(left = horizontal, top = vertical, right = horizontal, bottom = vertical)
+/**
+ * Adds [horizontal] padding to the start and end edges, and [vertical] padding to the top and
+ * bottom edges.
+ */
+public fun RemoteModifier.padding(
+    horizontal: RemoteDp = 0.rdp,
+    vertical: RemoteDp = 0.rdp,
+): RemoteModifier = padding(start = horizontal, top = vertical, end = horizontal, bottom = vertical)

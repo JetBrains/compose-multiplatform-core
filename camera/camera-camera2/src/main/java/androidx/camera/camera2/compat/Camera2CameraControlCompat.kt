@@ -124,8 +124,7 @@ public class Camera2CameraControlCompatImpl @Inject constructor() : Camera2Camer
                 }
 
                 updateSignal = signal
-                requestControl.setConfigAsync(
-                    type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
+                requestControl.updateCamera2ConfigAsync(
                     config = config,
                     tags = mapOf(TAG_KEY to signal.hashCode()),
                 )

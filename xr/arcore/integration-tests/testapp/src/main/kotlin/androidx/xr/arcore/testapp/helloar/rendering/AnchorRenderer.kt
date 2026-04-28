@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.arcore.testapp.helloar.rendering
 
@@ -24,14 +25,15 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
+import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Plane
+import androidx.xr.arcore.PlaneLabel
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.hitTest
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
-import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.InputEvent
@@ -49,6 +51,7 @@ internal class AnchorRenderer(
     val session: Session,
     val coroutineScope: CoroutineScope,
 ) : DefaultLifecycleObserver {
+    private val arDevice = ArDevice.getInstance(session)
 
     private lateinit var gltfAnchorModel: GltfModel
 
@@ -67,25 +70,29 @@ internal class AnchorRenderer(
     }
 
     override fun onPause(owner: LifecycleOwner) {
-        updateJob.complete()
+        updateJob.cancel()
         clearRenderedAnchors()
     }
 
     private fun clearRenderedAnchors() {
         for (anchor in renderedAnchors) {
-            anchor.entity.dispose()
+            anchor.entity.parent = null
         }
         renderedAnchors.clear()
     }
 
+    @Suppress("DEPRECATION")
     private fun attachInteractableComponents(planeModels: Collection<PlaneModel>) {
         for (planeModel in planeModels) {
-            if (planeModel.entity.getComponents().isEmpty()) {
-                planeModel.entity.addComponent(
+            if (planeModel.modelEntity.getComponents().isEmpty()) {
+                planeModel.modelEntity.addComponent(
                     InteractableComponent.create(session, activity.mainExecutor) { event ->
-                        if (event.action.equals(InputEvent.Action.ACTION_DOWN)) {
-                            val up =
-                                session.scene.spatialUser.head?.activitySpacePose?.up ?: Vector3.Up
+                        if (event.action.equals(InputEvent.Action.DOWN)) {
+                            val headScenePose =
+                                session.scene.perceptionSpace.getScenePoseFromPerceptionPose(
+                                    arDevice.state.value.devicePose
+                                )
+                            val up = headScenePose.poseInActivitySpace.up
                             val perceptionRayPose =
                                 session.scene.activitySpace.transformPoseTo(
                                     Pose(
@@ -102,7 +109,7 @@ internal class AnchorRenderer(
                                     // planes once we can
                                     // support rendering them.
                                     (it.trackable as? Plane)?.state?.value?.label !=
-                                        Plane.Label.UNKNOWN
+                                        PlaneLabel.UNKNOWN
                                 }
                                 ?.let { hitResult ->
                                     val anchorResult = Anchor.create(session, hitResult.hitPose)
@@ -114,8 +121,9 @@ internal class AnchorRenderer(
                                         }
                                         is AnchorCreateResourcesExhausted -> {
                                             Log.e(
-                                                activity::class.simpleName,
+                                                "JetpackXR",
                                                 "Failed to create anchor: anchor resources exhausted.",
+                                                null,
                                             )
                                             Toast.makeText(
                                                     activity,
@@ -126,8 +134,9 @@ internal class AnchorRenderer(
                                         }
                                         else -> {
                                             Log.e(
-                                                activity::class.simpleName,
+                                                "JetpackXR",
                                                 "Failed to create anchor: ${anchorResult::class.simpleName}",
+                                                null,
                                             )
                                             Toast.makeText(
                                                     activity,
@@ -146,7 +155,13 @@ internal class AnchorRenderer(
     }
 
     private fun createAnchorModel(anchor: Anchor): AnchorModel {
-        val entity = GltfModelEntity.create(session, gltfAnchorModel, Pose())
+        val entity =
+            GltfModelEntity.create(
+                session,
+                gltfAnchorModel,
+                Pose(),
+                parent = session.scene.activitySpace,
+            )
         entity.setScale(.1f)
         val renderJob =
             coroutineScope.launch(updateJob) {

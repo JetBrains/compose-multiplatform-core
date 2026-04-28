@@ -53,7 +53,6 @@ class InMemoryTracingTest {
             TracePacket(
                 timestamp = packet.timestamp,
                 timestamp_clock_id = 3,
-                incremental_state_cleared = true,
                 track_descriptor =
                     TrackDescriptor(
                         uuid = packet.track_descriptor?.uuid,

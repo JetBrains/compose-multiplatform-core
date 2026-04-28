@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import android.app.Activity
@@ -23,8 +25,10 @@ import androidx.annotation.RestrictTo
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.ActivityPanelEntity] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeActivityPanelEntity : FakePanelEntity(), ActivityPanelEntity {
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class FakeActivityPanelEntity(name: String = "") :
+    FakePanelEntity(name = name), ActivityPanelEntity {
 
     /** The intent that was last used to launch an activity. */
     public var launchIntent: Intent = Intent()

@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -26,25 +25,10 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api(project(":loader:loader"))
-    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.0.0") {
-        because "Mirror loader dependency graph for -ktx artifacts"
-    }
-    api(libs.kotlinStdlib)
-
-    androidTestImplementation(libs.truth)
-    androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.3.1")
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.mockitoCore)
-    androidTestImplementation(libs.dexmakerMockito)
 }
 
 androidx {
@@ -55,6 +39,6 @@ androidx {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     namespace = "androidx.loader.ktx"
 }

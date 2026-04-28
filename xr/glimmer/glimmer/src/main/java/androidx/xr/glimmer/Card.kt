@@ -80,12 +80,13 @@ import kotlin.math.max
  *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
  *   aspect ratio.
  * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param shape the [Shape] used to clip this card, and also used to draw the background and border
  * @param color background color of this card
- * @param contentColor content color used by components inside [content], [title] and [subtitle].
+ * @param contentColor content color used by components inside [content], [title], [subtitle],
+ *   [leadingIcon], and [trailingIcon].
  * @param border the border to draw around this card
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content. Note that there is additional padding applied around the content / text / icons inside
@@ -105,11 +106,11 @@ public fun Card(
     header: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = GlimmerTheme.shapes.medium,
+    shape: Shape = CardDefaults.shape,
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
-    contentPadding: PaddingValues = CardDefaults.ContentPadding,
+    contentPadding: PaddingValues = CardDefaults.contentPadding,
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
@@ -172,12 +173,13 @@ public fun Card(
  *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
  *   aspect ratio.
  * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param shape the [Shape] used to clip this card, and also used to draw the background and border
  * @param color background color of this card
- * @param contentColor content color used by components inside [content], [title] and [subtitle].
+ * @param contentColor content color used by components inside [content], [title], [subtitle],
+ *   [leadingIcon], and [trailingIcon].
  * @param border the border to draw around this card
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content. Note that there is additional padding applied around the content / text / icons inside
@@ -198,11 +200,11 @@ public fun Card(
     header: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = GlimmerTheme.shapes.medium,
+    shape: Shape = CardDefaults.shape,
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
-    contentPadding: PaddingValues = CardDefaults.ContentPadding,
+    contentPadding: PaddingValues = CardDefaults.contentPadding,
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
@@ -254,12 +256,13 @@ public fun Card(
  *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
  *   aspect ratio.
  * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
- *   [Icon]. [Colors.primary] is provided as the content color by default.
+ *   [Icon].
  * @param shape the [Shape] used to clip this card, and also used to draw the background and border
  * @param color background color of this card
- * @param contentColor content color used by components inside [content], [title] and [subtitle].
+ * @param contentColor content color used by components inside [content], [title], [subtitle],
+ *   [leadingIcon], and [trailingIcon].
  * @param border the border to draw around this card
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content. Note that there is additional padding applied around the content / text / icons inside
@@ -276,11 +279,11 @@ public fun Card(
     header: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = GlimmerTheme.shapes.medium,
+    shape: Shape = CardDefaults.shape,
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
-    contentPadding: PaddingValues = CardDefaults.ContentPadding,
+    contentPadding: PaddingValues = CardDefaults.contentPadding,
     content: @Composable () -> Unit,
 ) {
     // b/436852852 - in a list the button won't be focused until it crosses the focus line.
@@ -323,9 +326,11 @@ private fun CardImpl(
     interactionSource: MutableInteractionSource?,
     content: @Composable () -> Unit,
 ) {
-    val colors = GlimmerTheme.colors
     val iconSize = GlimmerTheme.iconSizes.large
     val typography = GlimmerTheme.typography
+    val componentSpacingValues = GlimmerTheme.componentSpacingValues
+    val innerPadding = componentSpacingValues.small
+    val iconSpacing = componentSpacingValues.medium
     val surfaceModifier =
         if (onClick != null) {
             Modifier.surface(
@@ -364,14 +369,12 @@ private fun CardImpl(
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(InnerPadding),
+            modifier = Modifier.fillMaxWidth().padding(innerPadding),
             verticalAlignment = CenterVertically,
         ) {
             if (leadingIcon != null) {
                 Box(
-                    Modifier.align(Alignment.Top)
-                        .padding(end = IconSpacing)
-                        .contentColorProvider(colors.primary),
+                    modifier = Modifier.align(Alignment.Top).padding(end = iconSpacing),
                     contentAlignment = Alignment.TopStart,
                 ) {
                     CompositionLocalProvider(LocalIconSize provides iconSize, content = leadingIcon)
@@ -390,7 +393,7 @@ private fun CardImpl(
 
                 if (subtitle != null) {
                     CompositionLocalProvider(
-                        LocalTextStyle provides typography.bodySmall,
+                        LocalTextStyle provides typography.caption,
                         content = subtitle,
                     )
                 }
@@ -402,10 +405,8 @@ private fun CardImpl(
             }
             if (trailingIcon != null) {
                 Box(
-                    Modifier.align(Alignment.Top)
-                        .padding(start = IconSpacing)
-                        .contentColorProvider(colors.primary),
-                    Alignment.TopEnd,
+                    modifier = Modifier.align(Alignment.Top).padding(start = iconSpacing),
+                    contentAlignment = Alignment.TopEnd,
                 ) {
                     CompositionLocalProvider(
                         LocalIconSize provides iconSize,
@@ -493,9 +494,10 @@ private fun ActionCardLayout(
 /**
  * Constrains the content's height to a maximum aspect ratio, based on the maximum width.
  *
- * This modifier is similar to [Modifier.aspectRatio], but it only enforces a maximum size, allowing
- * the content to be smaller than the bounds defined by the aspect ratio. It also only constrains
- * the height based on the width, it does not constrain the width based on the height.
+ * This modifier is similar to [androidx.compose.foundation.layout.aspectRatio], but it only
+ * enforces a maximum size, allowing the content to be smaller than the bounds defined by the aspect
+ * ratio. It also only constrains the height based on the width, it does not constrain the width
+ * based on the height.
  *
  * @param widthToHeightRatio the maximum aspect ratio allowed for the height. This is defined as the
  *   ratio of width / height
@@ -551,17 +553,16 @@ public object CardDefaults {
      * container. Note that there is additional padding applied around the content / text / icons
      * inside a card, this only represents the outer padding for the entire content.
      */
-    public val ContentPadding: PaddingValues = PaddingValues(16.dp)
+    public val contentPadding: PaddingValues
+        @Composable get() = PaddingValues(GlimmerTheme.componentSpacingValues.medium)
+
+    /** The default shape of [Card], which determines its corner radius. */
+    public val shape: Shape
+        @Composable get() = GlimmerTheme.shapes.medium
 }
 
 /** Default minimum height for a [Card] */
 private val MinimumHeight = 80.dp
-
-/** Spacing between icons and the text in a [Card] */
-private val IconSpacing = 12.dp
-
-/** Padding around the internal content (text / icons), but not added around header images. */
-private val InnerPadding = 8.dp
 
 /** Spacing between title / subtitle / body text */
 private val TextVerticalSpacing = 3.dp

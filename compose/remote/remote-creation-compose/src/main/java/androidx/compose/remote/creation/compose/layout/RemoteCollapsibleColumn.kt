@@ -18,52 +18,18 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.remote.core.operations.layout.managers.CollapsiblePriority
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation.Type
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
+import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.modifier.CollapsiblePriorityModifier
 import androidx.compose.remote.creation.compose.modifier.HeightModifier
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUi
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
+import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
 import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-
-/** Utility modifier to record the layout information */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteComposeCollapsibleColumnModifier(
-    public val modifier: RecordingModifier,
-    public val horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    public val verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoCanvas {
-            if (it.nativeCanvas is RecordingCanvas) {
-                (it.nativeCanvas as RecordingCanvas).let {
-                    it.document.startCollapsibleColumn(
-                        modifier,
-                        horizontalAlignment.toRemoteCompose(),
-                        verticalArrangement.toRemoteCompose(),
-                    )
-                    drawContent()
-                    it.document.endCollapsibleColumn()
-                }
-            } else {
-                drawContent()
-            }
-        }
-    }
-}
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteCollapsibleColumnScope {
@@ -77,45 +43,56 @@ public class RemoteCollapsibleColumnScope {
         then(CollapsiblePriorityModifier(CollapsiblePriority.VERTICAL, RemoteFloat(priority)))
 }
 
+internal class RemoteCollapsibleColumnNode : RemoteComposeNode() {
+    var verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top
+    var horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start
+    var layoutDirection: LayoutDirection = LayoutDirection.Ltr
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val recordingModifier = creationState.toRecordingModifier(modifier)
+        (verticalArrangement as? RemoteSpaced)?.let {
+            recordingModifier.spacedBy(it.space.getFloatIdForCreationState(creationState))
+        }
+        creationState.document.startCollapsibleColumn(
+            recordingModifier,
+            horizontalAlignment.toRemote(layoutDirection),
+            verticalArrangement.toRemote(),
+        )
+        renderChildren(creationState, remoteCanvas)
+        creationState.document.endCollapsibleColumn()
+    }
+}
+
 /**
  * RemoteRow implements a row layout, delegating to the foundation Row layout as needed. This allows
  * RemoteRow to both work as a normal Row when called within a normal Compose tree, and capture the
  * layout information when called within a capture pass for RemoteCompose.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
 public fun RemoteCollapsibleColumn(
     modifier: RemoteModifier = RemoteModifier,
-    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
+    verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
     content: @Composable RemoteCollapsibleColumnScope.() -> Unit,
 ) {
-    val captureMode = LocalRemoteComposeCreationState.current
     val scope = remember { RemoteCollapsibleColumnScope() }
-
-    if (captureMode is NoRemoteCompose) {
-        androidx.compose.foundation.layout.Column(
-            modifier.toComposeUi(),
-            horizontalAlignment = horizontalAlignment.toComposeUi(),
-            verticalArrangement = verticalArrangement.toComposeUi(),
-        ) {
-            content(scope)
-        }
-    } else {
-        var composeModifiers =
-            RemoteComposeCollapsibleColumnModifier(
-                    modifier.toRemoteCompose(),
-                    horizontalAlignment,
-                    verticalArrangement,
-                )
-                .then(modifier.toComposeUiLayout())
-        composeModifiers = composeModifiers.then(Modifier.wrapContentSize(unbounded = true))
-        androidx.compose.foundation.layout.Column(
-            composeModifiers,
-            horizontalAlignment = horizontalAlignment.toComposeUi(),
-            verticalArrangement = verticalArrangement.toComposeUi(),
-        ) {
-            content(scope)
-        }
-    }
+    val layoutDirection = LocalLayoutDirection.current
+    RemoteComposeNode(
+        factory = ::RemoteCollapsibleColumnNode,
+        update = {
+            set(modifier) { nodeModifier -> this.modifier = nodeModifier }
+            set(horizontalAlignment) { nodeHorizontalAlignment ->
+                this.horizontalAlignment = nodeHorizontalAlignment
+            }
+            set(verticalArrangement) { nodeVerticalArrangement ->
+                this.verticalArrangement = nodeVerticalArrangement
+            }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
+            }
+        },
+        content = { scope.content() },
+    )
 }

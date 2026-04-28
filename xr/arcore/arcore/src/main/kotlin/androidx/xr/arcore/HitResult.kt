@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore
 
-import androidx.xr.runtime.Config
+import androidx.xr.arcore.runtime.AnchorUnsupportedObjectException
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 
@@ -26,11 +26,13 @@ import androidx.xr.runtime.math.Pose
  * Can be obtained from [hitTest]. If the ray intersects a [Plane] that is being subsumed, the
  * subsuming [Plane] will be returned.
  *
- * @property distance the distance from the camera to the hit location, in meters.
+ * @property distance the distance from the camera to the hit location, in meters
  * @property hitPose the [Pose] of the intersection between a ray and the [Trackable] in the world
- *   coordinate space. If the hit [Trackable] is a [Plane], the hitPose will be parallel to the
- *   [Pose] of the [Plane].
- * @property trackable the [Trackable] that was hit.
+ *   coordinate space
+ *
+ * If the hit [Trackable] is a [Plane], the hitPose will be parallel to the [Pose] of the [Plane].
+ *
+ * @property trackable the [Trackable] that was hit
  */
 public class HitResult
 internal constructor(
@@ -42,11 +44,17 @@ internal constructor(
      * Creates an [Anchor] that is attached to this trackable, using the given initial [hitPose] in
      * the world coordinate space.
      *
+     * @return an [AnchorResult] with the result of the anchor creation
      * @throws [IllegalStateException] if [Session.config] is set to
-     *   [Config.PlaneTrackingMode.DISABLED]
+     *   [androidx.xr.runtime.PlaneTrackingMode.DISABLED]
+     * @throws [AnchorUnsupportedObjectException] if [trackable] is not an instance of [Anchorable].
      */
-    public fun createAnchor(): AnchorCreateResult {
-        return trackable.createAnchor(hitPose)
+    public fun createAnchor(): AnchorResult {
+        if (trackable is Anchorable) {
+            return trackable.createAnchor(hitPose)
+        } else {
+            throw AnchorUnsupportedObjectException()
+        }
     }
 
     override fun equals(other: Any?): Boolean {

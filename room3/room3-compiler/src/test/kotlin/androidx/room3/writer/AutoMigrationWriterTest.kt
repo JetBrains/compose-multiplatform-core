@@ -34,12 +34,12 @@ class AutoMigrationWriterTest() {
         Source.kotlin(
             "MyDatabase.kt",
             """
-        package foo.bar
-        import androidx.room3.*
-        @Database(entities = [], version = 1)
-        abstract class MyDatabase : RoomDatabase() {
-        }
-        """
+            package foo.bar
+            import androidx.room3.*
+            @Database(entities = [], version = 1)
+            abstract class MyDatabase : RoomDatabase() {
+            }
+            """
                 .trimIndent(),
         )
 
@@ -91,8 +91,9 @@ class AutoMigrationWriterTest() {
                     writerContext =
                         TypeWriter.WriterContext(
                             codeLanguage = CodeLanguage.KOTLIN,
-                            javaLambdaSyntaxAvailable = false,
                             targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
+                            javaLambdaSyntaxAvailable = false,
+                            validateChunkSize = 300,
                         ),
                 )
                 .write(invocation.processingEnv)
@@ -157,8 +158,9 @@ class AutoMigrationWriterTest() {
                     writerContext =
                         TypeWriter.WriterContext(
                             codeLanguage = CodeLanguage.KOTLIN,
-                            javaLambdaSyntaxAvailable = false,
                             targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
+                            javaLambdaSyntaxAvailable = false,
+                            validateChunkSize = 300,
                         ),
                 )
                 .write(invocation.processingEnv)
@@ -186,7 +188,7 @@ class AutoMigrationWriterTest() {
                 import androidx.room3.ProvidedAutoMigrationSpec
                 import androidx.room3.migration.AutoMigrationSpec
                 import androidx.sqlite.db.SupportSQLiteDatabase
-                
+
                 @ProvidedAutoMigrationSpec
                 class AutoMigrationWithProvidedSpec(val data: String) : AutoMigrationSpec {}
                 """
@@ -227,8 +229,9 @@ class AutoMigrationWriterTest() {
                     writerContext =
                         TypeWriter.WriterContext(
                             codeLanguage = CodeLanguage.KOTLIN,
-                            javaLambdaSyntaxAvailable = false,
                             targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
+                            javaLambdaSyntaxAvailable = false,
+                            validateChunkSize = 300,
                         ),
                 )
                 .write(invocation.processingEnv)

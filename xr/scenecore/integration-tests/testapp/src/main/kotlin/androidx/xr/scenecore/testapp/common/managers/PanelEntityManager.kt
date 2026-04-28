@@ -30,6 +30,7 @@ import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.Space
+import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import java.util.function.Consumer
 
@@ -75,7 +76,7 @@ class PanelEntityManager(
         if (panelEntities.size < maxEntities) {
             val panelNumber = panelEntities.size + 1
             val mTextView =
-                TextView(session.activity).apply {
+                TextView(session.context).apply {
                     text = "Hello, XR World! Panel $panelNumber"
                     textSize = 24f
                     setTextColor(Color.BLACK)
@@ -97,12 +98,13 @@ class PanelEntityManager(
                                 0.2f + (panelNumber * 0.01f),
                             )
                         ),
+                    parent = session.scene.activitySpace,
                 )
 
             val movableComponent = MovableComponent.createSystemMovable(session)
             val simpleResizeListener =
                 Consumer<ResizeEvent> { resizeEvent: ResizeEvent ->
-                    if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_END) {
+                    if (resizeEvent.resizeState == ResizeEvent.ResizeState.END) {
                         newPanel.size = resizeEvent.newSize.to2d()
                         val panelWidthInActivitySpace: Float =
                             newPanel.size.width * resizeEvent.entity.getScale(Space.ACTIVITY)
@@ -124,7 +126,8 @@ class PanelEntityManager(
         for (i in 1..entitiesPerClick) {
             if (panelEntities.isNotEmpty()) {
                 val lastPanel = panelEntities.removeAt(panelEntities.lastIndex)
-                lastPanel.dispose()
+                lastPanel.removeAllComponents()
+                lastPanel.parent = null
             }
         }
     }
@@ -137,11 +140,21 @@ class PanelEntityManager(
             createPanelEntityButton.text =
                 if (currentCount == maxEntities) "Create panel Entity"
                 else
-                    "Create Panel Entity #${currentCount + 1}-#${minOf(currentCount + entitiesPerClick, maxEntities)}"
+                    "Create Panel Entity #${currentCount + 1}-#${
+                        minOf(
+                            currentCount + entitiesPerClick,
+                            maxEntities,
+                        )
+                    }"
             destroyPanelEntityButton.text =
                 if (currentCount == 0) "Destroy Panel Entity"
                 else
-                    "Destroy Panel Entity #${currentCount}-#${maxOf(currentCount - entitiesPerClick, 1)}"
+                    "Destroy Panel Entity #${currentCount}-#${
+                        maxOf(
+                            currentCount - entitiesPerClick,
+                            1,
+                        )
+                    }"
         }
     }
 }

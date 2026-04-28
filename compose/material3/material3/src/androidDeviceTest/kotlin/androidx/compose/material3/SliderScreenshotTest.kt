@@ -30,6 +30,8 @@ import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -37,12 +39,15 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -67,7 +72,6 @@ class SliderScreenshotTest {
 
     private val wrapperTestTag = "sliderWrapper"
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_origin() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -76,7 +80,35 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_origin")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun slider_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+
+        rule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+                Box(wrap.testTag(wrapperTestTag)) {
+                    Slider(
+                        state = remember { SliderState(0.5f) },
+                        modifier = Modifier.focusRequester(focusRequester),
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        assertSliderAgainstGolden("slider_focused_insetFocusRings")
+    }
+
     @Test
     fun sliderTest_origin_rtl() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -87,7 +119,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_origin_rtl")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_withSteps_rtl() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -100,7 +131,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_withSteps_rtl")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_withSteps_rtl_lookaheadScope() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -115,7 +145,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("sliderTest_withSteps_rtl_lookaheadScope")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_origin_disabled() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -126,7 +155,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_origin_disabled")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_middle() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -135,7 +163,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_middle")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_middle_no_gap() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -149,7 +176,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_middle_no_gap")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_middle_no_inside_corner() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -163,7 +189,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_middle_no_inside_corner")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_middle_no_stop_indicator() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -177,7 +202,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_middle_no_stop_indicator")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_middle_dark() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -186,7 +210,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_middle_dark")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_middle_dark_disabled() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -197,7 +220,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_middle_dark_disabled")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_end() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -206,7 +228,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_end")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_end_rtl() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -217,7 +238,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_end_rtl")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_middle_steps() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -226,7 +246,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_middle_steps")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_first_steps() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -235,7 +254,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("sliderTest_first_steps")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_last_steps() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -244,7 +262,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("sliderTest_last_steps")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_middle_steps_dark() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -253,7 +270,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_middle_steps_dark")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_middle_steps_disabled() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -264,7 +280,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_middle_steps_disabled")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_middle_steps_custom_ticks() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -289,7 +304,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("sliderTest_middle_steps_custom_ticks")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_customColors() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -309,7 +323,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_customColors")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_customColors_disabled() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -333,7 +346,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_customColors_disabled")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun sliderTest_min_corner() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -342,7 +354,7 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("slider_min_corner")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun sliderTest_middle_custom_corners_track_icons() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -425,7 +437,7 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("sliderTest_middle_custom_corners_track_icons")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun verticalSliderTest() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -447,7 +459,7 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("verticalSliderTest")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun verticalSliderTest_rtl() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -471,7 +483,7 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("verticalSliderTest_rtl")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun verticalSliderTest_reversed() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -494,7 +506,7 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("verticalSliderTest_reversed")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun centeredSliderTest() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -509,7 +521,7 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("centeredSliderTest")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun centeredSliderTest_dark() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -524,7 +536,7 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("centeredSliderTest_dark")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun centeredSliderTest_rtl() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -541,7 +553,7 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("centeredSliderTest_rtl")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun centeredSliderTest_middle() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -556,7 +568,7 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("centeredSliderTest_middle")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun centeredSliderTest_steps() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -573,7 +585,7 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("centeredSliderTest_steps")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun verticalCenteredSliderTest() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -589,7 +601,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("verticalCenteredSliderTest")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_middle_no_gap() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -605,7 +616,7 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSlider_middle_no_gap")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun rangeSliderTest_middle_no_external_corner() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -619,7 +630,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSlider_middle_no_external_corner")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_middle_no_inside_corner() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -635,7 +645,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSlider_middle_no_inside_corner")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_middle_no_inside_corner_rtl() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -656,7 +665,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSliderTest_middle_no_inside_corner_rtl")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_middle_no_inside_corner_rtl_lookaheadScope() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -679,7 +687,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSliderTest_middle_no_inside_corner_rtl_lookaheadScope")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_middle_no_stop_indicator() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -695,7 +702,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSlider_middle_no_stop_indicator")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_middle_no_stop_indicator_rtl() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -713,7 +719,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSlider_middle_no_stop_indicator_rtl")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_middle_steps_disabled() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -724,7 +729,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSlider_middle_steps_disabled")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_middle_steps_enabled() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -735,7 +739,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSlider_middle_steps_enabled")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_middle_steps_dark_enabled() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -746,7 +749,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSlider_middle_steps_dark_enabled")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_middle_steps_dark_disabled() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -757,7 +759,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSlider_middle_steps_dark_disabled")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_middle_steps_custom_ticks() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -782,7 +783,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSliderTest_middle_steps_custom_ticks")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_overlappingThumbs() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -793,7 +793,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSlider_overlappingThumbs")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_fullRange() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -802,7 +801,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSlider_fullRange")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_asymmetric_startEnd() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -813,7 +811,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSliderTest_asymmetric_startEnd")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_asymmetric_startEnd_rtl() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -826,7 +823,6 @@ class SliderScreenshotTest {
         assertSliderAgainstGolden("rangeSliderTest_asymmetric_startEnd_rtl")
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun rangeSliderTest_steps_customColors() {
         rule.setMaterialContent(lightColorScheme()) {

@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.arcore.testapp.helloar.rendering
 
 import androidx.xr.arcore.Plane
-import androidx.xr.scenecore.Entity
+import androidx.xr.arcore.PlaneType
+import androidx.xr.scenecore.GltfModelEntity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
 
 data class PlaneModel(
     val id: Int,
-    val type: Plane.Type,
+    val planeType: PlaneType,
     val stateFlow: StateFlow<Plane.State>,
-    internal val entity: Entity,
+    internal val modelEntity: GltfModelEntity,
     internal val renderJob: Job?,
 ) {}

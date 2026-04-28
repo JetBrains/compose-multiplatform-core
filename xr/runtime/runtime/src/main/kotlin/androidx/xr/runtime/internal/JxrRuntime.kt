@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package androidx.xr.runtime.internal
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.ConfigMode
-import androidx.xr.runtime.XrDisplay.BlendMode
+import androidx.xr.runtime.DisplayBlendMode
 import kotlin.time.ComparableTimeMark
 
 /**
@@ -57,21 +57,19 @@ public interface JxrRuntime {
      * @param configMode the [ConfigMode] mode to check.
      * @return true if supported, false if not.
      */
-    @SuppressWarnings("UnavailableSymbol")
-    public fun isSupported(
-        @SuppressWarnings("HiddenTypeParameter") configMode: ConfigMode
-    ): Boolean {
+    public fun isSupported(configMode: ConfigMode): Boolean {
         return false
     }
 
     /**
-     * Gets the preferred [BlendMode] by the runtime.
+     * Gets the preferred [DisplayBlendMode] by the runtime.
      *
-     * @return the preferred [BlendMode], or [BlendMode.NOT_APPLICABLE] if none are supported.
+     * @return the preferred [DisplayBlendMode], or [DisplayBlendMode.NO_DISPLAY] if none are
+     *   supported.
      */
     @SuppressWarnings("UnavailableSymbol", "HiddenTypeParameter")
-    public fun getPreferredBlendMode(): BlendMode {
-        return BlendMode.NOT_APPLICABLE
+    public fun getPreferredDisplayBlendMode(): DisplayBlendMode {
+        return DisplayBlendMode.NO_DISPLAY
     }
 
     /**
@@ -91,4 +89,8 @@ public interface JxrRuntime {
      * after calling [destroy]. The runtime must not be resumed when this method is called.
      */
     public fun destroy() {}
+
+    /** Gets the pointer to the underlying native session if applicable. */
+    public val sessionPointer: Long?
+        get() = null
 }

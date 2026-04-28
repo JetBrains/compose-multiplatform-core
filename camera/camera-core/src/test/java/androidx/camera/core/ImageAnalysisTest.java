@@ -28,6 +28,7 @@ import static org.robolectric.Shadows.shadowOf;
 import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Pair;
 import android.util.Range;
@@ -67,6 +68,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 import java.util.ArrayList;
@@ -84,6 +86,7 @@ import java.util.concurrent.TimeoutException;
  */
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
+@Config(sdk = {Config.ALL_SDKS})
 public class ImageAnalysisTest {
 
     private static final Size APP_RESOLUTION = new Size(100, 200);
@@ -552,6 +555,33 @@ public class ImageAnalysisTest {
                         .setTargetAspectRatio(AspectRatio.RATIO_4_3)
                         .setResolutionSelector(new ResolutionSelector.Builder().build())
                         .build());
+    }
+
+    @Test
+    public void setTargetRotationByRotationProvider_rotationIsUpdated() {
+        // Arrange.
+        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder().build();
+        RotationProvider rotationProvider = new RotationProvider(
+                ApplicationProvider.getApplicationContext(),
+                true);
+        imageAnalysis.setRotationProvider(rotationProvider);
+
+        CameraUseCaseAdapter cameraUseCaseAdapter = CameraUtil.createCameraUseCaseAdapter(
+                ApplicationProvider.getApplicationContext(),
+                CameraSelector.DEFAULT_BACK_CAMERA);
+
+        try {
+            cameraUseCaseAdapter.addUseCases(Collections.singleton(imageAnalysis));
+        } catch (CameraUseCaseAdapter.CameraException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Act.
+        rotationProvider.updateOrientationForTesting(180);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        // Assert.
+        assertThat(imageAnalysis.getTargetRotation()).isEqualTo(Surface.ROTATION_180);
     }
 
     void assertCanReceiveAnalysisImage(ImageAnalysis imageAnalysis) throws InterruptedException {

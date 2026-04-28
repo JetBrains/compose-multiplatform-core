@@ -16,15 +16,12 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 
 /**
  * Data associated with a hit result.
  *
- * @property pose The pose of the hit result.
- * @property id The id of the trackable that was hit. It is the address of the native object.
+ * @property pose the [Pose] of the hit result
+ * @property id the id of the trackable that was hit
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-@Suppress("DataClassDefinition")
-public data class HitData(val pose: Pose, val id: Long) {}
+internal data class HitData(val pose: Pose, val id: Long) {}

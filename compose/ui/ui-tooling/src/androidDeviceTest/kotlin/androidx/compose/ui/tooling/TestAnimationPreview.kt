@@ -44,6 +44,7 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -51,15 +52,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.material.Button
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.TriStateCheckbox
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Done
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,6 +73,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.animation.Utils
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 
 enum class CheckBoxState {
@@ -85,7 +84,7 @@ enum class CheckBoxState {
 @Preview(name = "CheckBox + Scaffold")
 @Composable
 fun TransitionWithScaffoldPreview() {
-    Scaffold { TransitionPreview() }
+    Scaffold { padding -> TransitionPreview(padding) }
 }
 
 @Preview(name = "All unsupported and transition animations")
@@ -180,7 +179,7 @@ fun TransitionAnimatedVisibilityPreview() {
 
 @Preview
 @Composable
-fun TransitionPreview() {
+fun TransitionPreview(padding: PaddingValues = PaddingValues.Zero) {
     val (selected, onSelected) = remember { mutableStateOf(false) }
     val transition =
         updateTransition(
@@ -203,7 +202,7 @@ fun TransitionPreview() {
         shape = MaterialTheme.shapes.large.copy(topStart = CornerSize(checkBoxCorner)),
         modifier = Modifier.toggleable(value = selected, onValueChange = onSelected),
     ) {
-        Icon(imageVector = Icons.Filled.Done, contentDescription = null)
+        Box(Modifier.size(50.dp).background(Color.Blue))
     }
 }
 
@@ -457,4 +456,115 @@ fun InfiniteTransition.PulsingDot(startOffset: StartOffset) {
 fun MaterialPreview() {
     val state = remember { mutableStateOf(ToggleableState.On) }.value
     TriStateCheckbox(state, {})
+}
+
+private fun simpleTrigger() =
+    animationDebugMutableStateOf(
+        true,
+        { mutableStateOf(it) },
+        // This is extra information required for tooling
+        { setOf(true, false) },
+        "customState",
+    )
+
+@Preview
+@Composable
+fun AnimatedContentAndAnimateContentSizeWithTrigger() {
+    val trigger by remember { simpleTrigger() }
+    AnimatedContent(targetState = if (trigger) 10 else 20, label = "animation") { targetCount ->
+        Text(text = "Count: $targetCount")
+    }
+    Box(modifier = Modifier.animateContentSize()) { Text(text = "$trigger") }
+}
+
+@Preview
+@Composable
+fun AnimatedVisibilityWithTrigger() {
+    val trigger by remember { simpleTrigger() }
+    AnimatedVisibility(label = "animation", visible = trigger) { Text(text = "Edit") }
+}
+
+@Preview
+@Composable
+fun AnimateValueAsStateWithTrigger() {
+    val trigger by remember { simpleTrigger() }
+    val size: Dp by
+        animateDpAsState(targetValue = if (trigger) 0.dp else 10.dp, label = "animation1")
+    val offset by animateIntAsState(targetValue = if (trigger) 2 else 1, label = "animation2")
+}
+
+@Preview
+@Composable
+fun CrossFadeWithTrigger() {
+    val trigger by remember { simpleTrigger() }
+    Crossfade(targetState = if (trigger) "On" else "Off", label = "animation") { on ->
+        Text("Page $on")
+    }
+}
+
+@Preview
+@Composable
+fun UpdateTransitionWithTrigger() {
+    val trigger by remember { simpleTrigger() }
+    updateTransition(if (trigger) 100.dp else 200.dp, label = "animation").apply {
+        this.animateDp(
+            transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
+            label = "CheckBox Corner",
+        ) {
+            it
+        }
+    }
+}
+
+@Preview
+@Composable
+fun AnimatedContentExtensionWithTrigger() {
+    val trigger by remember { simpleTrigger() }
+    updateTransition(
+            targetState = if (trigger) IntSize(10, 10) else IntSize(20, 20),
+            label = "animation",
+        )
+        .apply { this.AnimatedContent { Text(text = "State: $it") } }
+}
+
+internal data class TestTrigger(val value: Int)
+
+@Preview
+@Composable
+fun AnimationsWithManyTriggers() {
+    val trigger by remember { simpleTrigger() }
+    updateTransition(
+            targetState = if (trigger) IntSize(10, 10) else IntSize(20, 20),
+            label = "animation1",
+        )
+        .apply { this.AnimatedContent { Text(text = "State: $it") } }
+
+    val intState by remember {
+        animationDebugMutableStateOf(
+            1,
+            { mutableStateOf(it) },
+            // This is extra information required for tooling
+            { setOf(2, 3, 4) },
+            "intState",
+        )
+    }
+    val size: Dp by
+        animateDpAsState(targetValue = if (intState == 1) 0.dp else 10.dp, label = "animation2")
+
+    val dataState by remember {
+        animationDebugMutableStateOf(
+            TestTrigger(1),
+            { mutableStateOf(it) },
+            // This is extra information required for tooling
+            { setOf(TestTrigger(2), TestTrigger(3), TestTrigger(4)) },
+            "dataState",
+        )
+    }
+
+    AnimatedContent(
+        targetState = if (dataState == TestTrigger(1)) 10 else 20,
+        label = "animation3",
+    ) { targetCount ->
+        Text(text = "Count: $targetCount")
+    }
 }

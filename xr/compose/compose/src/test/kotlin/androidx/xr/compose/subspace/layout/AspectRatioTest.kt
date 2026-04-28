@@ -22,12 +22,12 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.assertDepthIsEqualTo
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import kotlin.test.assertFailsWith
 import org.junit.Rule
 import org.junit.Test
@@ -37,11 +37,16 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AspectRatioTest {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun aspectRatio_capWidth_sizesCorrectly() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").width(20.dp).aspectRatio(2f)) {
                     Text(text = "Panel")
@@ -58,7 +63,7 @@ class AspectRatioTest {
 
     @Test
     fun aspectRatio_capHeight_sizesCorrectly() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").height(10.dp).aspectRatio(2f)) {
                     Text(text = "Panel")
@@ -75,7 +80,7 @@ class AspectRatioTest {
 
     @Test
     fun aspectRatio_capWidthMatchHeightFirst_sizesCorrectly() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
@@ -96,7 +101,7 @@ class AspectRatioTest {
 
     @Test
     fun aspectRatio_capHeightMatchHeightFirst_sizesCorrectly() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")

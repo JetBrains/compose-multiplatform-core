@@ -18,16 +18,18 @@ package androidx.camera.integration.featurecombo
 
 import android.util.Log
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.AspectRatio
+import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
 import androidx.camera.core.featuregroup.GroupableFeature
-import androidx.camera.integration.featurecombo.FeatureGroupTestBase.Companion.SupportedUseCase.*
+import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
+import androidx.camera.integration.featurecombo.AppUseCase.VIDEO_CAPTURE
 import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
+import androidx.camera.testing.impl.fakes.FakeSurfaceProcessorInternal
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.CompletableDeferred
@@ -39,7 +41,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalSessionConfig::class)
 @LargeTest
 @RunWith(Parameterized::class)
 class FeatureCombinationDeviceTest(
@@ -47,20 +48,31 @@ class FeatureCombinationDeviceTest(
     private val cameraSelector: CameraSelector,
     implName: String,
     cameraXConfig: CameraXConfig,
-    private val useCasesToTest: List<FeatureGroupTestBase.Companion.SupportedUseCase>,
+    private val useCasesToTest: List<AppUseCase>,
 ) : FeatureGroupTestBase(cameraSelector, implName, cameraXConfig) {
     @Test
     fun bindToLifecycle_allFeaturesPreferred_canBindSuccessfully(): Unit = runBlocking {
-        bindAndVerifyFeatures(useCasesToTest.toUseCases(), preferredFeatures = allFeatures.toList())
+        assertWithMessage("Binding shouldn't fail since all features are preferred")
+            .that(
+                tryBindAndVerifyFeatures(
+                    useCasesToTest.toUseCases(),
+                    preferredFeatures = allFeatures.toList(),
+                )
+            )
+            .isNotNull()
     }
 
     @Test
-    fun isFeatureGroupSupported_queryReturnsFalseWithUnselectedPreferredFeatures(): Unit =
+    fun isSessionConfigSupported_queryReturnsFalseWithUnselectedPreferredFeatures(): Unit =
         runBlocking {
             // Arrange: Bind with all features as preferred and store the selected ones.
             val useCases = useCasesToTest.toUseCases()
             val features = allFeatures.toList()
-            val selectedFeatures = bindAndVerifyFeatures(useCases, preferredFeatures = features)
+            val selectedFeatures =
+                tryBindAndVerifyFeatures(useCases, preferredFeatures = features)
+                    ?: throw AssertionError(
+                        "Binding shouldn't fail since all features are preferred"
+                    )
 
             // Act & assert: Ensure query returns false for each of the unselected features added
             //   to the selected ones.
@@ -76,7 +88,7 @@ class FeatureCombinationDeviceTest(
                     .that(
                         cameraProvider
                             .getCameraInfo(cameraSelector)
-                            .isFeatureGroupSupported(
+                            .isSessionConfigSupported(
                                 SessionConfig(
                                     useCases = useCases,
                                     requiredFeatureGroup = selectedFeatures + feature,
@@ -92,6 +104,7 @@ class FeatureCombinationDeviceTest(
         runBlocking {
             assumeTrue(useCasesToTest.contains(VIDEO_CAPTURE))
 
+            var anySupported = false
             allFeatures
                 .filter { it.featureType == GroupableFeature.FEATURE_TYPE_RECORDING_QUALITY }
                 .forEach { feature ->
@@ -99,21 +112,77 @@ class FeatureCombinationDeviceTest(
                         .forEach { aspectRatio ->
                             val useCases = useCasesToTest.toUseCases(aspectRatio)
 
-                            bindAndVerifyFeatures(
-                                useCases,
-                                requiredFeatures = setOf(feature),
-                                aspectRatio = aspectRatio,
-                            )
+                            val result =
+                                tryBindAndVerifyFeatures(
+                                    useCases,
+                                    requiredFeatures = setOf(feature),
+                                    aspectRatio = aspectRatio,
+                                )
+                            if (result != null) anySupported = true
                         }
                 }
+            assumeTrue("No feature combinations were supported", anySupported)
         }
 
-    private suspend fun bindAndVerifyFeatures(
+    /**
+     * A [androidx.camera.core.CameraEffect] targeting only one use case with PRIV format should not
+     * change the stream configuration and thus query result should always stay the same.
+     */
+    @Test
+    fun isSessionConfigSupported_effectTargetingPreviewOnly_resultMatchesWithoutEffect(): Unit =
+        runBlocking {
+            val cameraInfo = cameraProvider.getCameraInfo(cameraSelector)
+            val useCases = useCasesToTest.toUseCases()
+            val effect =
+                FakeSurfaceEffect(
+                    CameraEffect.PREVIEW,
+                    FakeSurfaceProcessorInternal(directExecutor()),
+                )
+
+            allFeatures.forEach { feature ->
+                val resultWithoutEffect =
+                    cameraInfo.isSessionConfigSupported(
+                        SessionConfig(useCases = useCases, requiredFeatureGroup = setOf(feature))
+                    )
+
+                val resultWithEffect =
+                    cameraInfo.isSessionConfigSupported(
+                        SessionConfig(
+                            useCases = useCases,
+                            requiredFeatureGroup = setOf(feature),
+                            effects = listOf(effect),
+                        )
+                    )
+
+                assertWithMessage(
+                        "resultWithEffect = $resultWithEffect, resultWithoutEffect = $resultWithoutEffect"
+                    )
+                    .that(resultWithEffect)
+                    .isEqualTo(resultWithoutEffect)
+            }
+        }
+
+    /**
+     * Tries to bind the given use cases and features to a lifecycle and verifies the selected
+     * features.
+     *
+     * This method creates a [SessionConfig] with the provided required and preferred features,
+     * checks if it's supported by the camera, and if so, binds the use cases to the lifecycle. It
+     * then verifies that the selected features meet the expectations.
+     *
+     * @param useCases The use cases to bind.
+     * @param requiredFeatures The features that are required for the session.
+     * @param preferredFeatures The features that are preferred for the session.
+     * @param aspectRatio The aspect ratio of the use cases.
+     * @return The set of selected features if the session configuration is supported, `null`
+     *   otherwise.
+     */
+    private suspend fun tryBindAndVerifyFeatures(
         useCases: List<UseCase>,
         requiredFeatures: Set<GroupableFeature> = emptySet(),
         preferredFeatures: List<GroupableFeature> = emptyList(),
         aspectRatio: Int = AspectRatio.RATIO_DEFAULT,
-    ): Set<GroupableFeature> {
+    ): Set<GroupableFeature>? {
         val selectedFeatures = CompletableDeferred<Set<GroupableFeature>>()
 
         val sessionConfig =
@@ -126,13 +195,13 @@ class FeatureCombinationDeviceTest(
                     setFeatureSelectionListener { features -> selectedFeatures.complete(features) }
                 }
 
-        withContext(Dispatchers.Main) {
-                assumeTrue(
-                    cameraProvider
-                        .getCameraInfo(cameraSelector)
-                        .isFeatureGroupSupported(sessionConfig)
-                )
+        val isSupported =
+            cameraProvider.getCameraInfo(cameraSelector).isSessionConfigSupported(sessionConfig)
+        if (!isSupported) {
+            return null
+        }
 
+        withContext(Dispatchers.Main) {
                 cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, sessionConfig)
             }
             .apply { selectedFeatures.await().verifyFeatures(useCases, cameraInfo, aspectRatio) }
@@ -158,17 +227,6 @@ class FeatureCombinationDeviceTest(
                                 selector,
                                 Camera2Config::class.simpleName,
                                 Camera2Config.defaultConfig(),
-                                useCases,
-                            )
-                        )
-
-                        add(
-                            arrayOf(
-                                "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}" +
-                                    " useCases = {$useCases}",
-                                selector,
-                                CameraPipeConfig::class.simpleName,
-                                CameraPipeConfig.defaultConfig(),
                                 useCases,
                             )
                         )

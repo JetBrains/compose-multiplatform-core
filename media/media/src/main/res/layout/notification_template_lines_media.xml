@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -32,6 +32,7 @@
         android:layout_marginLeft="@dimen/notification_content_margin_start"
         android:layout_marginStart="@dimen/notification_content_margin_start"
         android:orientation="horizontal"
+        tools:ignore="PrivateResource"
         >
         <TextView android:id="@+id/title"
             android:textAppearance="@style/TextAppearance.Compat.Notification.Title.Media"
@@ -77,6 +78,7 @@
         android:fadingEdge="horizontal"
         android:ellipsize="marquee"
         android:visibility="gone"
+        tools:ignore="PrivateResource"
         />
     <LinearLayout
         android:id="@+id/line3"
@@ -86,6 +88,7 @@
         android:gravity="center_vertical"
         android:layout_marginLeft="@dimen/notification_content_margin_start"
         android:layout_marginStart="@dimen/notification_content_margin_start"
+        tools:ignore="PrivateResource"
         >
         <TextView android:id="@+id/text"
             android:textAppearance="@style/TextAppearance.Compat.Notification.Media"

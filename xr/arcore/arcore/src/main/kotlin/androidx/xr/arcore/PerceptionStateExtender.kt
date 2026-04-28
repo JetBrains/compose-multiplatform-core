@@ -25,7 +25,10 @@ import androidx.xr.runtime.internal.JxrRuntime
 import kotlin.time.ComparableTimeMark
 
 /** [StateExtender] in charge of extending [CoreState] with [PerceptionState]. */
-internal class PerceptionStateExtender : StateExtender {
+// TODO: b/455593773 - Restrict ctor once YTXR ports to JXR proper, and is no longer a chimeric app.
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@Suppress("NotCloseable")
+public class PerceptionStateExtender : StateExtender {
 
     internal companion object {
         internal const val MAX_PERCEPTION_STATE_EXTENSION_SIZE = 100
@@ -42,7 +45,7 @@ internal class PerceptionStateExtender : StateExtender {
     override fun initialize(runtimes: List<JxrRuntime>) {
         val perceptionRuntime = runtimes.filterIsInstance<PerceptionRuntime>().single()
         perceptionManager = perceptionRuntime.perceptionManager
-        xrResourcesManager.lifecycleManager = perceptionRuntime.lifecycleManager
+        xrResourcesManager.perceptionRuntime = perceptionRuntime
         xrResourcesManager.initiateHands(perceptionManager.leftHand, perceptionManager.rightHand)
         xrResourcesManager.initiateArDeviceAndRenderViewpoints(
             perceptionManager.arDevice,
@@ -50,11 +53,11 @@ internal class PerceptionStateExtender : StateExtender {
             perceptionManager.rightRenderViewpoint,
             perceptionManager.monoRenderViewpoint,
         )
-        xrResourcesManager.initiateEarth(perceptionManager.earth)
-        xrResourcesManager.initiateDepthMaps(
-            perceptionManager.leftDepthMap,
-            perceptionManager.rightDepthMap,
-            perceptionManager.monoDepthMap,
+        xrResourcesManager.initiateGeospatial(perceptionManager.geospatial)
+        xrResourcesManager.initiateDepths(
+            perceptionManager.leftDepth,
+            perceptionManager.rightDepth,
+            perceptionManager.monoDepth,
         )
         xrResourcesManager.initiateFace(perceptionManager.userFace)
         xrResourcesManager.initiateEyes(perceptionManager.leftEye, perceptionManager.rightEye)
@@ -76,41 +79,39 @@ internal class PerceptionStateExtender : StateExtender {
         xrResourcesManager.leftRenderViewpoint?.update()
         xrResourcesManager.rightRenderViewpoint?.update()
         xrResourcesManager.monoRenderViewpoint?.update()
-        xrResourcesManager.leftDepthMap?.update()
-        xrResourcesManager.rightDepthMap?.update()
-        xrResourcesManager.monoDepthMap?.update()
+        xrResourcesManager.leftDepth?.update()
+        xrResourcesManager.rightDepth?.update()
+        xrResourcesManager.monoDepth?.update()
 
         xrResourcesManager.userFace?.update()
 
         updatePerceptionStateMap(coreState)
     }
 
-    internal fun close() {
+    override fun close() {
         perceptionStateMap.clear()
         timeMarkQueue.clear()
         xrResourcesManager.clear()
     }
 
     private fun updatePerceptionStateMap(coreState: CoreState) {
-        perceptionStateMap.put(
-            coreState.timeMark,
+        perceptionStateMap[coreState.timeMark] =
             PerceptionState(
                 coreState.timeMark,
-                xrResourcesManager.trackablesMap.values,
-                xrResourcesManager.leftHand,
-                xrResourcesManager.rightHand,
-                xrResourcesManager.arDevice,
-                xrResourcesManager.leftRenderViewpoint,
-                xrResourcesManager.rightRenderViewpoint,
-                xrResourcesManager.monoRenderViewpoint,
-                xrResourcesManager.leftDepthMap,
-                xrResourcesManager.rightDepthMap,
-                xrResourcesManager.monoDepthMap,
-                xrResourcesManager.userFace,
-                xrResourcesManager.leftEye,
-                xrResourcesManager.rightEye,
-            ),
-        )
+                xrResourcesManager.trackablesMap.values.map { it.state.value },
+                xrResourcesManager.leftHand?.state?.value,
+                xrResourcesManager.rightHand?.state?.value,
+                xrResourcesManager.arDevice.state.value,
+                xrResourcesManager.leftRenderViewpoint?.state?.value,
+                xrResourcesManager.rightRenderViewpoint?.state?.value,
+                xrResourcesManager.monoRenderViewpoint?.state?.value,
+                xrResourcesManager.leftDepth?.state?.value,
+                xrResourcesManager.rightDepth?.state?.value,
+                xrResourcesManager.monoDepth?.state?.value,
+                xrResourcesManager.userFace?.state?.value,
+                xrResourcesManager.leftEye?.state?.value,
+                xrResourcesManager.rightEye?.state?.value,
+            )
         timeMarkQueue.add(coreState.timeMark)
 
         if (timeMarkQueue.size > MAX_PERCEPTION_STATE_EXTENSION_SIZE) {

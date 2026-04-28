@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ public class TrackingState private constructor(private val value: Int) {
 
         /** Tracking has stopped for this instance and will never be resumed in the future. */
         @JvmField public val STOPPED: TrackingState = TrackingState(2)
+
+        /** Tracking is valid but the quality is degraded. */
+        @JvmField public val TRACKING_DEGRADED: TrackingState = TrackingState(3)
     }
 
     public override fun toString(): String =
@@ -34,6 +37,7 @@ public class TrackingState private constructor(private val value: Int) {
             TRACKING -> "TRACKING"
             PAUSED -> "PAUSED"
             STOPPED -> "STOPPED"
+            TRACKING_DEGRADED -> "TRACKING_DEGRADED"
             else -> "UNKNOWN"
         }
 }

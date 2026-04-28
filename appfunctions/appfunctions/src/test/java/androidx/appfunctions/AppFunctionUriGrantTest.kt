@@ -31,16 +31,6 @@ import org.robolectric.annotation.Config
 @Config(minSdk = 33)
 class AppFunctionUriGrantTest {
     @Test
-    fun createAppFunctionUriGrant_withPersistFlag_shouldFail() {
-        assertFailsWith<IllegalArgumentException> {
-            AppFunctionUriGrant(
-                uri = Uri.parse("content://com.example/1"),
-                modeFlags = Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION,
-            )
-        }
-    }
-
-    @Test
     fun createAppFunctionUriGrant_withoutAccessFlag_shouldFail() {
         assertFailsWith<IllegalArgumentException> {
             AppFunctionUriGrant(
@@ -93,6 +83,25 @@ class AppFunctionUriGrantTest {
                         Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
                             Intent.FLAG_GRANT_READ_URI_PERMISSION,
                 )
+            )
+    }
+
+    @Test
+    @Config(minSdk = 37)
+    fun toPlatformClass_shouldSucceed() {
+        val uriGrant =
+            AppFunctionUriGrant(
+                uri = Uri.parse("content://com.example/1"),
+                modeFlags =
+                    Intent.FLAG_GRANT_PREFIX_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+
+        val platformClass = uriGrant.toPlatformClass()
+
+        assertThat(platformClass.uri).isEqualTo(Uri.parse("content://com.example/1"))
+        assertThat(platformClass.modeFlags)
+            .isEqualTo(
+                Intent.FLAG_GRANT_PREFIX_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
     }
 }

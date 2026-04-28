@@ -236,6 +236,14 @@ public interface Features {
     String SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES";
 
     /**
+     * Feature for {@link #isFeatureSupported(String)}. This features covers whether setting
+     * {@link AppSearchSchema.StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID} is supported
+     * for a property with cardinality {@link AppSearchSchema.PropertyConfig#CARDINALITY_REPEATED}.
+     */
+    @ExperimentalAppSearchApi
+    String SCHEMA_JOINABLE_REPEATED_PROPERTIES = "SCHEMA_JOINABLE_REPEATED_PROPERTIES";
+
+    /**
      * Feature for {@link #isFeatureSupported(String)}. This feature covers
      * {@link AppSearchSchema.LongPropertyConfig.Builder#setScoringEnabled(boolean)},
      * {@link AppSearchSchema.DoublePropertyConfig.Builder#setScoringEnabled(boolean)},
@@ -379,6 +387,13 @@ public interface Features {
     @ExperimentalAppSearchApi
     String SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM =
             "SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}. This feature covers
+     * {@link SetSchemaRequest.Builder#setSchemaTypeWipeoutAccountPropertyPaths}.
+     */
+    @ExperimentalAppSearchApi
+    String SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT = "SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT";
 
     /**
      * Returns whether a feature is supported at run-time. Feature support depends on the

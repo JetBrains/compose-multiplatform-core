@@ -25,10 +25,12 @@ import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
 import androidx.compose.remote.core.PaintOperation;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.documentation.DocumentedOperation;
+import androidx.compose.remote.core.operations.loom.LoomWireBuffer;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
 import androidx.compose.remote.core.operations.utilities.NanMap;
 import androidx.compose.remote.core.serialize.MapSerializer;
@@ -43,10 +45,10 @@ import java.util.List;
  * for constructing the particles
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ParticlesCreate extends PaintOperation implements VariableSupport {
+public class ParticlesCreate extends PaintOperation implements VariableSupport, VariableProvider {
     private static final int OP_CODE = Operations.PARTICLE_DEFINE;
     private static final String CLASS_NAME = "ParticlesCreate";
-    private final int mId;
+    private int mId;
     private final float[][] mEquations;
     private final float[][] mOutEquations;
     private final float[][] mParticles;
@@ -56,6 +58,16 @@ public class ParticlesCreate extends PaintOperation implements VariableSupport {
     private static final int MAX_FLOAT_ARRAY = 2000;
     private static final int MAX_EQU_LENGTH = 32;
     @NonNull AnimatedFloatExpression mExp = new AnimatedFloatExpression();
+
+    @Override
+    public int getId() {
+        return mId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mId = id;
+    }
 
     public ParticlesCreate(
             int id, int @NonNull [] varId, float @NonNull [][] values, int particleCount) {
@@ -139,15 +151,7 @@ public class ParticlesCreate extends PaintOperation implements VariableSupport {
         return str;
     }
 
-    /**
-     * Write the operation on the buffer
-     *
-     * @param buffer
-     * @param id
-     * @param varId
-     * @param equations
-     * @param particleCount
-     */
+    /** Write the operation on the buffer */
     public static void apply(
             @NonNull WireBuffer buffer,
             int id,
@@ -174,7 +178,7 @@ public class ParticlesCreate extends PaintOperation implements VariableSupport {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int id = buffer.readInt();
+        int id = buffer.readId();
         int particleCount = buffer.readInt();
         int varLen = buffer.readInt();
         if (varLen > MAX_FLOAT_ARRAY) {
@@ -183,7 +187,7 @@ public class ParticlesCreate extends PaintOperation implements VariableSupport {
         int[] varId = new int[varLen];
         float[][] equations = new float[varLen][];
         for (int i = 0; i < varId.length; i++) {
-            varId[i] = buffer.readInt();
+            varId[i] = buffer.readId();
             int equLen = buffer.readInt();
             if (equLen > MAX_EQU_LENGTH) {
                 throw new RuntimeException(
@@ -191,7 +195,20 @@ public class ParticlesCreate extends PaintOperation implements VariableSupport {
             }
             equations[i] = new float[equLen];
             for (int j = 0; j < equations[i].length; j++) {
-                equations[i][j] = buffer.readFloat();
+                float v = buffer.readFloat();
+                if (Float.isNaN(v)
+                        && !AnimatedFloatExpression.isMathOperator(v)
+                        && !NanMap.isDataVariable(v)) {
+                    // Manual remapping since we already read it
+                    if (buffer instanceof LoomWireBuffer) {
+                        equations[i][j] =
+                                ((LoomWireBuffer) buffer).getRemapContext().resolveNanId(v);
+                    } else {
+                        equations[i][j] = v;
+                    }
+                } else {
+                    equations[i][j] = v;
+                }
             }
         }
         ParticlesCreate data = new ParticlesCreate(id, varId, equations, particleCount);
@@ -204,14 +221,18 @@ public class ParticlesCreate extends PaintOperation implements VariableSupport {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Data Operations", OP_CODE, CLASS_NAME)
-                .description("Creates a particle system")
-                .field(DocumentedOperation.INT, "id", "The reference of the particle system")
-                .field(INT, "particleCount", "number of particles to create")
-                .field(INT, "varLen", "number of variables asociate with the particles")
-                .field(FLOAT_ARRAY, "id", "varLen", "id followed by equations")
-                .field(INT, "equLen", "length of the equation")
-                .field(FLOAT_ARRAY, "equation", "varLen * equLen", "float array equations");
+        doc.operation("Animation & Particles Operations", OP_CODE, CLASS_NAME)
+                .additionalDocumentation("particles_create")
+                .description("Create a particle system")
+                .field(DocumentedOperation.INT, "id", "The ID of the particle system")
+                .field(INT, "particleCount", "Number of particles to create")
+                .field(INT, "varCount", "Number of variables associated with each particle")
+                .field(INT, "varId[0..n]", "The ID of each associated variable")
+                .field(
+                        INT,
+                        "equLen[0..n]",
+                        "The length of the initialization equation for each variable")
+                .field(FLOAT_ARRAY, "equations[0..n]", "The initialization equations (RPN)");
     }
 
     @NonNull

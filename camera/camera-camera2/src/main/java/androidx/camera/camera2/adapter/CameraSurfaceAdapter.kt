@@ -41,6 +41,7 @@ import androidx.camera.core.impl.StreamUseCase
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.SurfaceStreamSpecQueryResult
 import androidx.camera.core.impl.UseCaseConfig
+import androidx.camera.core.impl.stabilization.VideoStabilization
 import androidx.core.util.Preconditions
 
 /**
@@ -219,7 +220,7 @@ public class CameraSurfaceAdapter(
      *   resolutions for these surface can not change.
      * @param newUseCaseConfigsSupportedSizeMap map of configurations of the use cases to the
      *   supported sizes list that will be given a suggested stream specification
-     * @param isPreviewStabilizationOn whether the preview stabilization is enabled.
+     * @param videoStabilization the video stabilization mode.
      * @param hasVideoCapture whether the use cases has video capture.
      * @return map of suggested stream specifications for given use cases
      * @throws IllegalArgumentException if {@code newUseCaseConfigs} is an empty list, if there
@@ -231,7 +232,7 @@ public class CameraSurfaceAdapter(
         cameraId: String,
         existingSurfaces: List<AttachedSurfaceInfo>,
         newUseCaseConfigsSupportedSizeMap: Map<UseCaseConfig<*>, List<Size>>,
-        isPreviewStabilizationOn: Boolean,
+        videoStabilization: VideoStabilization,
         hasVideoCapture: Boolean,
         isFeatureComboInvocation: Boolean,
         findMaxSupportedFrameRate: Boolean,
@@ -252,7 +253,7 @@ public class CameraSurfaceAdapter(
             cameraMode,
             existingSurfaces,
             newUseCaseConfigsSupportedSizeMap,
-            isPreviewStabilizationOn,
+            videoStabilization,
             hasVideoCapture,
             isFeatureComboInvocation,
             findMaxSupportedFrameRate,

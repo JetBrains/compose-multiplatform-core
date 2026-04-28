@@ -25,6 +25,7 @@ import androidx.ink.brush.Brush
 import androidx.ink.brush.BrushCoat
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.BrushPaint
+import androidx.ink.brush.BrushPaint.TextureLayer
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.InputToolType
 import androidx.ink.brush.SelfOverlap
@@ -39,7 +40,11 @@ import androidx.ink.strokes.testing.buildStrokeInputBatchFromPoints
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
-import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -74,30 +79,28 @@ class CanvasMeshRendererTest {
     fun canDraw_withEmptyStroke_returnsTrue() {
         val emptyStroke = Stroke(simpleBrush, ImmutableStrokeInputBatch.EMPTY)
 
-        assertThat(
-                renderer.canDraw(
-                    canvas = createCanvas(),
-                    stroke = emptyStroke,
-                    coatIndex = 0,
-                    paintPreferenceIndex = 0,
-                )
+        assertTrue(
+            renderer.canDraw(
+                canvas = createCanvas(),
+                stroke = emptyStroke,
+                coatIndex = 0,
+                paintPreferenceIndex = 0,
             )
-            .isTrue()
+        )
     }
 
     @Test
     fun canDraw_withSoftwareCanvas_returnsFalse() {
         val softwareCanvas = Canvas(Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888))
 
-        assertThat(
-                renderer.canDraw(
-                    canvas = softwareCanvas,
-                    stroke = simpleStroke,
-                    coatIndex = 0,
-                    paintPreferenceIndex = 0,
-                )
+        assertFalse(
+            renderer.canDraw(
+                canvas = softwareCanvas,
+                stroke = simpleStroke,
+                coatIndex = 0,
+                paintPreferenceIndex = 0,
             )
-            .isFalse()
+        )
     }
 
     @Test
@@ -115,24 +118,25 @@ class CanvasMeshRendererTest {
             )
         val stroke = Stroke(selfOverlapDiscardBrush, simpleInputs)
 
-        assertThat(
-                renderer.canDraw(
-                    canvas = createCanvas(),
-                    stroke = stroke,
-                    coatIndex = 0,
-                    paintPreferenceIndex = 0,
-                )
+        assertFalse(
+            renderer.canDraw(
+                canvas = createCanvas(),
+                stroke = stroke,
+                coatIndex = 0,
+                paintPreferenceIndex = 0,
             )
-            .isFalse()
+        )
     }
 
     @Test
     fun obtainShaderMetadata_whenCalledTwiceWithSamePackedInstance_returnsCachedValue() {
-        assertThat(simpleStroke.shape.getRenderGroupCount()).isEqualTo(1)
+        assertEquals(1, simpleStroke.shape.getRenderGroupCount())
         val meshFormat = simpleStroke.shape.renderGroupFormat(0)
 
-        assertThat(renderer.obtainShaderMetadata(meshFormat, isPacked = true))
-            .isSameInstanceAs(renderer.obtainShaderMetadata(meshFormat, isPacked = true))
+        assertSame(
+            renderer.obtainShaderMetadata(meshFormat, isPacked = true),
+            renderer.obtainShaderMetadata(meshFormat, isPacked = true),
+        )
     }
 
     @Test
@@ -146,13 +150,15 @@ class CanvasMeshRendererTest {
                         .toImmutable(),
             )
 
-        assertThat(simpleStroke.shape.getRenderGroupCount()).isEqualTo(1)
+        assertEquals(1, simpleStroke.shape.getRenderGroupCount())
         val strokeFormat = simpleStroke.shape.renderGroupFormat(0)
-        assertThat(anotherStroke.shape.getRenderGroupCount()).isEqualTo(1)
+        assertEquals(1, anotherStroke.shape.getRenderGroupCount())
         val anotherStrokeFormat = anotherStroke.shape.renderGroupFormat(0)
 
-        assertThat(renderer.obtainShaderMetadata(anotherStrokeFormat, isPacked = true))
-            .isSameInstanceAs(renderer.obtainShaderMetadata(strokeFormat, isPacked = true))
+        assertSame(
+            renderer.obtainShaderMetadata(strokeFormat, isPacked = true),
+            renderer.obtainShaderMetadata(anotherStrokeFormat, isPacked = true),
+        )
     }
 
     @Test
@@ -169,43 +175,42 @@ class CanvasMeshRendererTest {
                 )
                 updateShape(3L)
             }
-        assertThat(renderer.createAndroidMesh(inProgressStroke, coatIndex = 0, meshIndex = 0))
-            .isNotNull()
+        assertNotNull(renderer.createAndroidMesh(inProgressStroke, coatIndex = 0, meshIndex = 0))
     }
 
     @Test
     fun obtainShaderMetadata_whenCalledTwiceWithSameUnpackedInstance_returnsCachedValue() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(simpleBrush)
-        assertThat(inProgressStroke.getBrushCoatCount()).isEqualTo(1)
-        assertThat(inProgressStroke.getMeshPartitionCount(0)).isEqualTo(1)
+        assertEquals(1, inProgressStroke.getBrushCoatCount())
+        assertEquals(1, inProgressStroke.getMeshPartitionCount(0))
         val meshFormat = inProgressStroke.getMeshFormat(0)
 
-        assertThat(renderer.obtainShaderMetadata(meshFormat, isPacked = false))
-            .isSameInstanceAs(renderer.obtainShaderMetadata(meshFormat, isPacked = false))
+        assertSame(
+            renderer.obtainShaderMetadata(meshFormat, isPacked = false),
+            renderer.obtainShaderMetadata(meshFormat, isPacked = false),
+        )
     }
 
     @Test
     fun obtainShaderMetadata_whenCalledTwiceWithEquivalentUnpackedFormat_returnsCachedValue() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(simpleBrush)
-        assertThat(inProgressStroke.getBrushCoatCount()).isEqualTo(1)
-        assertThat(inProgressStroke.getMeshPartitionCount(0)).isEqualTo(1)
+        assertEquals(1, inProgressStroke.getBrushCoatCount())
+        assertEquals(1, inProgressStroke.getMeshPartitionCount(0))
 
         val anotherInProgressStroke = InProgressStroke()
         anotherInProgressStroke.start(simpleBrush)
-        assertThat(anotherInProgressStroke.getBrushCoatCount()).isEqualTo(1)
-        assertThat(anotherInProgressStroke.getMeshPartitionCount(0)).isEqualTo(1)
+        assertEquals(1, anotherInProgressStroke.getBrushCoatCount())
+        assertEquals(1, anotherInProgressStroke.getMeshPartitionCount(0))
 
-        assertThat(
-                renderer.obtainShaderMetadata(inProgressStroke.getMeshFormat(0), isPacked = false)
-            )
-            .isSameInstanceAs(
-                renderer.obtainShaderMetadata(
-                    anotherInProgressStroke.getMeshFormat(0),
-                    isPacked = false,
-                )
-            )
+        assertSame(
+            renderer.obtainShaderMetadata(
+                anotherInProgressStroke.getMeshFormat(0),
+                isPacked = false,
+            ),
+            renderer.obtainShaderMetadata(inProgressStroke.getMeshFormat(0), isPacked = false),
+        )
     }
 
     @Test
@@ -215,7 +220,7 @@ class CanvasMeshRendererTest {
     )
     fun drawStroke_whenAndroidU_shouldSaveRecentlyDrawnMesh() {
         val canvas = createCanvas()
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(0)
+        assertEquals(0, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         renderer.draw(
             canvas = canvas,
@@ -225,7 +230,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(1)
+        assertEquals(1, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // New uniform value for transform scale, new mesh is created and drawn.
         renderer.draw(
@@ -236,7 +241,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix().apply { setScale(3F, 4F) },
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(2)
+        assertEquals(2, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Same uniform value for transform scale, same mesh is drawn again.
         renderer.draw(
@@ -247,7 +252,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix().apply { setScale(3F, 4F) },
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(2)
+        assertEquals(2, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Transform is the same but color is different, new mesh is created and drawn.
         val strokeNewColor =
@@ -262,7 +267,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix().apply { setScale(3F, 4F) },
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(3)
+        assertEquals(3, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Move forward just a little bit of time, the same meshes should be saved.
         clock.currentTimeMillis += 3500
@@ -274,7 +279,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix().apply { setScale(3F, 4F) },
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(3)
+        assertEquals(3, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Entirely different Ink mesh, so a new Android mesh is created and drawn.
         val strokeNewMesh = simpleStroke.copy(brush = simpleStroke.brush.copy(size = 33F))
@@ -286,7 +291,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(4)
+        assertEquals(4, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Move forward enough time that older meshes would be cleaned up, but not enough time to
         // actually trigger a cleanup. This confirms that cleanup isn't attempted on every draw
@@ -301,7 +306,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(4)
+        assertEquals(4, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // The next draw after enough time has passed should clean up the (no longer) recently drawn
         // meshes.
@@ -314,7 +319,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix().apply { setScale(3F, 4F) },
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(2)
+        assertEquals(2, renderer.getRecentlyDrawnAndroidMeshesCount())
     }
 
     /**
@@ -325,7 +330,7 @@ class CanvasMeshRendererTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
     fun drawStroke_whenAndroidVPlus_shouldNotSaveRecentlyDrawnMeshes() {
         val canvas = createCanvas()
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(0)
+        assertEquals(0, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         renderer.draw(
             canvas = canvas,
@@ -335,7 +340,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(0)
+        assertEquals(0, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         renderer.draw(
             canvas = canvas,
@@ -345,7 +350,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix().apply { setScale(3F, 4F) },
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(0)
+        assertEquals(0, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         renderer.draw(
             canvas = canvas,
@@ -355,7 +360,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix().apply { setScale(3F, 4F) },
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(0)
+        assertEquals(0, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         val strokeNewColor =
             simpleStroke.copy(
@@ -369,7 +374,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix().apply { setScale(3F, 4F) },
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(0)
+        assertEquals(0, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         clock.currentTimeMillis += 2500
         renderer.draw(
@@ -380,7 +385,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix().apply { setScale(3F, 4F) },
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(0)
+        assertEquals(0, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         val strokeNewMesh = simpleStroke.copy(brush = simpleStroke.brush.copy(size = 33F))
         renderer.draw(
@@ -391,7 +396,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(0)
+        assertEquals(0, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         clock.currentTimeMillis += 3000
         renderer.draw(
@@ -402,7 +407,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix().apply { setScale(3F, 4F) },
             textureAnimationProgress = 0F,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(0)
+        assertEquals(0, renderer.getRecentlyDrawnAndroidMeshesCount())
     }
 
     @Test
@@ -413,7 +418,7 @@ class CanvasMeshRendererTest {
     fun drawStroke_whenAndroidU_withTextureAnimation_shouldSaveRecentlyDrawnMesh() {
         // Create a stroke with a texture animation.
         val texture =
-            BrushPaint.TextureLayer(
+            TextureLayer(
                 clientTextureId = "test",
                 sizeX = 10f,
                 sizeY = 10f,
@@ -434,7 +439,7 @@ class CanvasMeshRendererTest {
             )
 
         val canvas = createCanvas()
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(0)
+        assertEquals(0, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Draw the stroke at texture progress = 10%.
         renderer.draw(
@@ -445,7 +450,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0.1f,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(1)
+        assertEquals(1, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Draw again, this time at 20% progress. Should use a new mesh.
         renderer.draw(
@@ -456,7 +461,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0.2f,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(2)
+        assertEquals(2, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Draw at 20% progress again. The mesh should be reused.
         renderer.draw(
@@ -467,7 +472,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0.2f,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(2)
+        assertEquals(2, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Draw at 30% progress. Should use a new mesh.
         renderer.draw(
@@ -478,7 +483,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0.3f,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(3)
+        assertEquals(3, renderer.getRecentlyDrawnAndroidMeshesCount())
     }
 
     /**
@@ -494,12 +499,7 @@ class CanvasMeshRendererTest {
     fun drawStroke_whenAndroidU_withoutTextureAnimation_shouldIgnoreTextureProgressForMeshReuse() {
         // Create a stroke without a texture animation.
         val texture =
-            BrushPaint.TextureLayer(
-                clientTextureId = "test",
-                sizeX = 10f,
-                sizeY = 10f,
-                animationFrames = 1,
-            )
+            TextureLayer(clientTextureId = "test", sizeX = 10f, sizeY = 10f, animationFrames = 1)
         val family = BrushFamily(paint = BrushPaint(listOf(texture)))
         val brush = Brush(family = family, size = 10f, epsilon = 0.1f)
         val stroke =
@@ -512,7 +512,7 @@ class CanvasMeshRendererTest {
             )
 
         val canvas = createCanvas()
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(0)
+        assertEquals(0, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Draw the stroke at texture progress = 10%.
         renderer.draw(
@@ -523,7 +523,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0.1f,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(1)
+        assertEquals(1, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Draw again, this time at 20% progress. Since the stroke has no texture animation, the
         // mesh
@@ -536,7 +536,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0.2f,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(1)
+        assertEquals(1, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Draw at 20% progress again. Should still reuse the same mesh.
         renderer.draw(
@@ -547,7 +547,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0.2f,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(1)
+        assertEquals(1, renderer.getRecentlyDrawnAndroidMeshesCount())
 
         // Draw at 30% progress. Should still reuse the same mesh.
         renderer.draw(
@@ -558,7 +558,7 @@ class CanvasMeshRendererTest {
             strokeToScreenTransform = Matrix(),
             textureAnimationProgress = 0.3f,
         )
-        assertThat(renderer.getRecentlyDrawnAndroidMeshesCount()).isEqualTo(1)
+        assertEquals(1, renderer.getRecentlyDrawnAndroidMeshesCount())
     }
 
     private fun createCanvas() = Picture().beginRecording(100, 100)

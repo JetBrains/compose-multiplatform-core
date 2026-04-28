@@ -36,8 +36,9 @@ internal class XrResources() {
     @SuppressLint("BanConcurrentHashMap")
     private val _trackables = ConcurrentHashMap<ArCoreTrackable, Trackable>()
     internal val trackables: Map<ArCoreTrackable, Trackable> = _trackables
-    internal val earth: ArCoreEarth = ArCoreEarth(this)
+    internal val geospatial: ArCoreEarth = ArCoreEarth(this)
     internal val arDevice: ArCoreDevice = ArCoreDevice()
+    internal val depth: ArCoreDepth = ArCoreDepth()
 
     /**
      * Adds a [androidx.xr.arcore.runtime.Trackable] to the map.

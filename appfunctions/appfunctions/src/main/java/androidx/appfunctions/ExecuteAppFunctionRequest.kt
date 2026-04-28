@@ -16,6 +16,7 @@
 
 package androidx.appfunctions
 
+import android.app.AppInteractionAttribution
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
@@ -32,6 +33,8 @@ import androidx.appfunctions.metadata.AppFunctionMetadata
  *   [AppFunctionData], the property names are the names of the function parameters and the property
  *   values are the values of those parameters. The data object may have missing parameters.
  *   Developers are advised to implement defensive handling measures.
+ * @property attribution The attribution that can be used by the privacy setting to provide
+ *   transparency to the user about why an app function was invoked.
  */
 public class ExecuteAppFunctionRequest
 @RestrictTo(LIBRARY_GROUP)
@@ -39,14 +42,57 @@ constructor(
     public val targetPackageName: String,
     public val functionIdentifier: String,
     public val functionParameters: AppFunctionData,
+    @get:RequiresApi(37) public val attribution: AppInteractionAttribution? = null,
     /** Whether the parameters in this request is encoded in the jetpack format or not. */
     @get:RestrictTo(LIBRARY_GROUP) public val useJetpackSchema: Boolean,
 ) {
+    /**
+     * Creates a new [ExecuteAppFunctionRequest].
+     *
+     * @param targetPackageName The package name of the app that hosts the function.
+     * @param functionIdentifier The unique string identifier of the app function to be executed.
+     * @param functionParameters The parameters required to invoke this function. Within this
+     *   [AppFunctionData], the property names are the names of the function parameters and the
+     *   property values are the values of those parameters. The data object may have missing
+     *   parameters. Developers are advised to implement defensive handling measures.
+     */
     public constructor(
         targetPackageName: String,
         functionIdentifier: String,
         functionParameters: AppFunctionData,
-    ) : this(targetPackageName, functionIdentifier, functionParameters, useJetpackSchema = true)
+    ) : this(
+        targetPackageName,
+        functionIdentifier,
+        functionParameters,
+        attribution = null,
+        useJetpackSchema = true,
+    )
+
+    /**
+     * Creates a new [ExecuteAppFunctionRequest] with attribution.
+     *
+     * @param targetPackageName The package name of the app that hosts the function.
+     * @param functionIdentifier The unique string identifier of the app function to be executed.
+     * @param functionParameters The parameters required to invoke this function. Within this
+     *   [AppFunctionData], the property names are the names of the function parameters and the
+     *   property values are the values of those parameters. The data object may have missing
+     *   parameters. Developers are advised to implement defensive handling measures.
+     * @param attribution The attribution that can be used by the privacy setting to provide
+     *   transparency to the user about why an app function was invoked.
+     */
+    @RequiresApi(37)
+    public constructor(
+        targetPackageName: String,
+        functionIdentifier: String,
+        functionParameters: AppFunctionData,
+        attribution: AppInteractionAttribution,
+    ) : this(
+        targetPackageName,
+        functionIdentifier,
+        functionParameters,
+        attribution = attribution,
+        useJetpackSchema = true,
+    )
 
     internal fun toPlatformExtensionClass():
         com.android.extensions.appfunctions.ExecuteAppFunctionRequest {
@@ -64,8 +110,15 @@ constructor(
             .build()
     }
 
+    /**
+     * Converts [androidx.appfunctions.ExecuteAppFunctionRequest] to
+     * [android.app.appfunctions.ExecuteAppFunctionRequest].
+     *
+     * @return The converted [android.app.appfunctions.ExecuteAppFunctionRequest].
+     */
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-    internal fun toPlatformClass(): android.app.appfunctions.ExecuteAppFunctionRequest {
+    public fun toPlatformExecuteAppFunctionRequest():
+        android.app.appfunctions.ExecuteAppFunctionRequest {
         return android.app.appfunctions.ExecuteAppFunctionRequest.Builder(
                 targetPackageName,
                 functionIdentifier,
@@ -77,12 +130,17 @@ constructor(
                     putBoolean(EXTRA_USE_JETPACK_SCHEMA, useJetpackSchema)
                 }
             )
+            .apply {
+                if (Build.VERSION.SDK_INT >= 37 && attribution != null) {
+                    setAttribution(attribution)
+                }
+            }
             .build()
     }
 
     override fun toString(): String {
-        return "ExecuteAppFunctionRequest(targetPackageName=$targetPackageName, " +
-            "functionIdentifier=$functionIdentifier, functionParameters=$functionParameters)"
+        return "ExecuteAppFunctionRequest(functionMetadata.packageName=$targetPackageName, " +
+            "functionMetadata.id=$functionIdentifier, functionParameters=$functionParameters)"
     }
 
     @RestrictTo(LIBRARY_GROUP)
@@ -96,6 +154,7 @@ constructor(
             targetPackageName,
             functionIdentifier,
             functionParameters,
+            attribution,
             useJetpackSchema,
         )
 
@@ -106,7 +165,7 @@ constructor(
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         internal fun fromPlatformExtensionClass(
             request: com.android.extensions.appfunctions.ExecuteAppFunctionRequest,
-            functionMetadata: AppFunctionMetadata? = null,
+            functionMetadata: AppFunctionMetadata,
         ): ExecuteAppFunctionRequest =
             ExecuteAppFunctionRequest(
                 targetPackageName = request.targetPackageName,
@@ -114,7 +173,6 @@ constructor(
                 functionParameters =
                     createAppFunctionDataWithParameterSpec(
                         functionMetadata,
-                        request.functionIdentifier,
                         AppFunctionData(
                             request.parameters,
                             request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY,
@@ -123,40 +181,47 @@ constructor(
                 useJetpackSchema = request.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false),
             )
 
+        /**
+         * Creates a [androidx.appfunctions.ExecuteAppFunctionRequest] from
+         * [android.app.appfunctions.ExecuteAppFunctionRequest].
+         *
+         * The provided [AppFunctionMetadata] is used to validate the created
+         * [androidx.appfunctions.ExecuteAppFunctionRequest].
+         *
+         * @param functionMetadata the [AppFunctionMetadata] of the function to be executed.
+         * @return The created [androidx.appfunctions.ExecuteAppFunctionRequest].
+         */
         @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-        internal fun fromPlatformClass(
-            request: android.app.appfunctions.ExecuteAppFunctionRequest,
-            functionMetadata: AppFunctionMetadata? = null,
+        @JvmStatic
+        public fun android.app.appfunctions.ExecuteAppFunctionRequest
+            .toCompatExecuteAppFunctionRequest(
+            functionMetadata: AppFunctionMetadata
         ): ExecuteAppFunctionRequest =
             ExecuteAppFunctionRequest(
-                targetPackageName = request.targetPackageName,
-                functionIdentifier = request.functionIdentifier,
+                targetPackageName = this.targetPackageName,
+                functionIdentifier = this.functionIdentifier,
                 functionParameters =
                     createAppFunctionDataWithParameterSpec(
                         functionMetadata,
-                        request.functionIdentifier,
                         AppFunctionData(
-                            request.parameters,
-                            request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY,
+                            this.parameters,
+                            this.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY,
                         ),
                     ),
-                useJetpackSchema = request.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false),
+                useJetpackSchema = this.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false),
+                attribution =
+                    if (Build.VERSION.SDK_INT >= 37) {
+                        this.attribution
+                    } else {
+                        null
+                    },
             )
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         private fun createAppFunctionDataWithParameterSpec(
-            // TODO: b/445389498 - Make function metadata non null after fixing tests.
-            functionMetadata: AppFunctionMetadata? = null,
-            functionIdentifier: String,
+            functionMetadata: AppFunctionMetadata,
             parametersAfd: AppFunctionData,
         ): AppFunctionData =
-            if (functionMetadata != null) {
-                parametersAfd.replaceSpecWith(
-                    functionMetadata.parameters,
-                    functionMetadata.components,
-                )
-            } else {
-                parametersAfd
-            }
+            parametersAfd.replaceSpecWith(functionMetadata.parameters, functionMetadata.components)
     }
 }

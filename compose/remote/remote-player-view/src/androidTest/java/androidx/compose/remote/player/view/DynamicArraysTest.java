@@ -32,8 +32,8 @@ import android.util.Log;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
-import androidx.compose.remote.creation.profile.PlatformProfile;
-import androidx.compose.remote.player.core.RemoteComposeDocument;
+import androidx.compose.remote.creation.profile.RcPlatformProfiles;
+import androidx.compose.remote.player.core.RemoteDocument;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -57,7 +57,7 @@ public class DynamicArraysTest {
         DebugPlayerContext debugContext = new DebugPlayerContext();
         debugContext.setHideString(false);
 
-        RemoteComposeDocument doc = TestUtils.createDocument(debugContext, run);
+        RemoteDocument doc = TestUtils.createDocument(debugContext, run);
         doc.paint(debugContext, Theme.UNSPECIFIED);
 
         return debugContext.getTestResults();
@@ -87,7 +87,7 @@ public class DynamicArraysTest {
                     rdoc.drawPath(v);
                 };
         TestUtils.Callback use = cb == null ? basic : cb;
-        RemoteComposeDocument doc = TestUtils.createDocument(debugContext, use);
+        RemoteDocument doc = TestUtils.createDocument(debugContext, use);
 
         doc.paint(debugContext, Theme.UNSPECIFIED);
         String result = debugContext.getTestResults();
@@ -155,38 +155,38 @@ public class DynamicArraysTest {
                     rdoc.drawCircle(x, y, z);
                 };
 
-        byte[] rawDoc = TestSerializeUtils.createDoc(PlatformProfile.ANDROIDX, cb);
+        byte[] rawDoc = TestSerializeUtils.createDoc(RcPlatformProfiles.ANDROIDX, cb);
         String result = TestSerializeUtils.toYamlFlatString(rawDoc);
 
         Log.v("TEST", result);
 
         System.out.println(result);
 
-        String expected = "\n"
-                + "CoreDocument width= 0 height= 0 \n"
-                + "  DataDynamicListFloat   id= 2097194   values= [300.0, 400.0, 42.0]   arrayId="
-                + " 2097194   index=      0.0        300.0   arrayId= 2097194   index=      1.0  "
-                + "      400.0   arrayId= 2097194   index=      2.0        42.0 \n"
-                + "  FloatExpression   id= 42   srcValues= \n"
-                + "    Variable     id= 42          0.0 \n"
-                + "    Instruction     instruction= A_DEREF   animation= null \n"
-                + "  FloatExpression   id= 43   srcValues= \n"
-                + "    Variable     id= 42          1.0 \n"
-                + "    Instruction     instruction= A_DEREF   animation= null \n"
-                + "  FloatExpression   id= 44   srcValues= \n"
-                + "    Variable     id= 42          2.0 \n"
-                + "    Instruction     instruction= A_DEREF   animation= null \n"
-                + "  DrawCircle   cx= \n"
-                + "  Variable   id= 42   300.0   cy= \n"
-                + "  Variable   id= 43   400.0   radius= \n"
-                + "  Variable   id= 44   42.0 ";
+        String expected =
+                "\n"
+                    + "CoreDocument width= 0 height= 0 \n"
+                    + "  DataDynamicListFloat   id= 2097194   values= [300.0, 400.0, 42.0]  "
+                    + " arrayId= 2097194   index=      0.0        300.0   arrayId= 2097194   index="
+                    + "      1.0        400.0   arrayId= 2097194   index=      2.0        42.0 \n"
+                    + "  FloatExpression   id= 42   srcValues= \n"
+                    + "    Variable     id= 42          0.0 \n"
+                    + "    Instruction     instruction= A_DEREF   animation= null \n"
+                    + "  FloatExpression   id= 43   srcValues= \n"
+                    + "    Variable     id= 42          1.0 \n"
+                    + "    Instruction     instruction= A_DEREF   animation= null \n"
+                    + "  FloatExpression   id= 44   srcValues= \n"
+                    + "    Variable     id= 42          2.0 \n"
+                    + "    Instruction     instruction= A_DEREF   animation= null \n"
+                    + "  DrawCircle   cx= \n"
+                    + "  Variable   id= 42   300.0   cy= \n"
+                    + "  Variable   id= 43   400.0   radius= \n"
+                    + "  Variable   id= 44   42.0 ";
         if (TestUtils.diff(expected, result)) {
             TestUtils.dumpDifference(expected, result);
         }
         assertEquals("not equals", expected, result);
 
-        RemoteComposeDocument doc =
-                new RemoteComposeDocument(new ByteArrayInputStream(rawDoc, 0, rawDoc.length));
+        RemoteDocument doc = new RemoteDocument(new ByteArrayInputStream(rawDoc, 0, rawDoc.length));
 
         DebugPlayerContext debugContext = new DebugPlayerContext();
         debugContext.mWidth = 1000;
@@ -197,11 +197,10 @@ public class DynamicArraysTest {
                 debugContext.getTestResults(); // doc.getDocument().getRootLayoutComponent()
         // .displayHierarchy();
 
-        String expectedPaint = "header(1, 1, 0) 600 x 600, 0\n"
-                + "setTheme(-1)\n"
-                + "drawCircle(300.0, 400.0, 42.0)\n";
+        String expectedPaint =
+                "header(1, 1, 0) 600 x 600, 0\n"
+                        + "setTheme(-1)\n"
+                        + "drawCircle(300.0, 400.0, 42.0)\n";
         assertEquals("not equals", expectedPaint, resultPaint);
-
     }
-
 }

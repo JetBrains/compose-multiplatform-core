@@ -354,4 +354,5 @@ enum class Collate {
 enum class FtsVersion {
     FTS3,
     FTS4,
+    FTS5,
 }

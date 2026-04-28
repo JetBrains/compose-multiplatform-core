@@ -18,9 +18,7 @@ package androidx.xr.scenecore
 
 import android.media.SoundPool
 import androidx.activity.ComponentActivity
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.scenecore.SpatializerConstants.Companion.AMBISONICS_ORDER_FIRST_ORDER
 import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.runtime.Entity as RtEntity
 import androidx.xr.scenecore.runtime.PointSourceParams as RtPointSourceParams
@@ -33,7 +31,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -45,14 +42,18 @@ import org.robolectric.RobolectricTestRunner
 
 /** Unit tests for the JXRCore SDK SpatialSoundPool Interface. */
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SpatialSoundPoolTest {
 
-    private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
+    private val fakePerceptionRuntimeFactory =
+        androidx.xr.arcore.testing.FakePerceptionRuntimeFactory()
     private var mockSceneRuntime: SceneRuntime = mock()
 
     private var mockRtSoundPoolExtensions: RtSoundPoolExtensionsWrapper = mock()
 
-    private val mockGroupEntity = mock<RtEntity>()
+    private val mockEntity = mock<RtEntity>()
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private val mockActivitySpace = mock<RtActivitySpace>()
@@ -60,14 +61,14 @@ class SpatialSoundPoolTest {
     private lateinit var session: Session
 
     @Before
+    @SuppressWarnings("RestrictTo")
     fun setUp() {
         mockSceneRuntime.stub {
             on { spatialEnvironment } doReturn mock()
             on { activitySpace } doReturn mockActivitySpace
-            on { headActivityPose } doReturn mock()
             on { perceptionSpaceActivityPose } doReturn mock()
             on { mainPanelEntity } doReturn mock()
-            on { createGroupEntity(any(), any(), any()) } doReturn mockGroupEntity
+            on { createEntity(any(), any(), any()) } doReturn mockEntity
             on { spatialCapabilities } doReturn RtSpatialCapabilities(0)
         }
 
@@ -78,6 +79,7 @@ class SpatialSoundPoolTest {
                 activity,
                 runtimes =
                     listOf(fakePerceptionRuntimeFactory.createRuntime(activity), mockSceneRuntime),
+                lifecycleOwner = activity,
             )
     }
 
@@ -86,13 +88,14 @@ class SpatialSoundPoolTest {
         val expectedStreamId = 1234
 
         val soundPool = SoundPool.Builder().build()
-        val entity = GroupEntity.create(session, "test")
-        val pointSourceAttributes = PointSourceParams(entity)
+        val entity = Entity.create(session, "test")
+        val pointSourceAttributes = PointSourceParams()
         whenever(
                 mockRtSoundPoolExtensions.play(
                     eq(soundPool),
                     any(),
                     any<RtPointSourceParams>(),
+                    any<RtEntity>(),
                     any(),
                     any(),
                     any(),
@@ -107,6 +110,7 @@ class SpatialSoundPoolTest {
                 soundPool,
                 TEST_SOUND_ID,
                 pointSourceAttributes,
+                entity,
                 TEST_VOLUME,
                 TEST_PRIORITY,
                 TEST_LOOP,
@@ -116,7 +120,8 @@ class SpatialSoundPoolTest {
             .play(
                 eq(soundPool),
                 eq(TEST_SOUND_ID),
-                argWhere<RtPointSourceParams> { it.entity == mockGroupEntity },
+                any(),
+                eq(mockEntity),
                 eq(TEST_VOLUME),
                 eq(TEST_PRIORITY),
                 eq(TEST_LOOP),
@@ -128,7 +133,8 @@ class SpatialSoundPoolTest {
     @Test
     fun playWithSoundField_callsRuntimeSoundPoolPlaySoundField() {
         val soundPool = SoundPool.Builder().build()
-        val soundFieldAttributes = SoundFieldAttributes(AMBISONICS_ORDER_FIRST_ORDER)
+        val soundFieldAttributes =
+            SoundFieldAttributes(SpatializerConstants.AmbisonicsOrder.FIRST_ORDER)
 
         assertThat(
                 SpatialSoundPool.play(
@@ -147,7 +153,7 @@ class SpatialSoundPoolTest {
 
     @Test
     fun getSourceType_returnsRuntimeSoundPoolGetSourceType() {
-        val expected = SpatializerConstants.SOURCE_TYPE_SOUND_FIELD
+        val expected = SpatializerConstants.SourceType.SOUND_FIELD
         val soundPool = SoundPool.Builder().build()
 
         whenever(mockRtSoundPoolExtensions.getSpatialSourceType(any(), any()))

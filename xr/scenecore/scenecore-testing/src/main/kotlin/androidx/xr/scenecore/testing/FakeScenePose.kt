@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
@@ -21,8 +23,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.HitTestResult
 import androidx.xr.scenecore.runtime.ScenePose
-import com.google.common.util.concurrent.Futures.immediateFuture
-import com.google.common.util.concurrent.ListenableFuture
+import androidx.xr.scenecore.runtime.impl.BaseScenePose
 
 /**
  * A test double for [androidx.xr.scenecore.runtime.ScenePose], designed for use in unit or
@@ -35,10 +36,11 @@ import com.google.common.util.concurrent.ListenableFuture
  *
  * @see androidx.xr.scenecore.runtime.ScenePose
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public open class FakeScenePose : ScenePose {
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public open class FakeScenePose : BaseScenePose() {
     /** Returns the pose for this entity, relative to the activity space root. */
-    override val activitySpacePose: Pose = Pose.Identity
+    override var activitySpacePose: Pose = Pose.Identity
 
     /**
      * Returns the scale of this ScenePose. For base ScenePoses, the scale is (1,1,1). For entities
@@ -53,18 +55,7 @@ public open class FakeScenePose : ScenePose {
      * Returns the scale in the activity space. This is used by [transformPoseTo] in its
      * calculation.
      */
-    override val activitySpaceScale: Vector3 = Vector3.One
-
-    /**
-     * Returns a pose relative to this entity transformed into a pose relative to the destination.
-     *
-     * @param pose A pose in this entity's local coordinate space.
-     * @param destination The entity which the returned pose will be relative to.
-     * @return The pose relative to the destination entity.
-     */
-    override fun transformPoseTo(pose: Pose, destination: ScenePose): Pose {
-        return pose
-    }
+    override var activitySpaceScale: Vector3 = Vector3.One
 
     /**
      * For test purposes only.
@@ -80,10 +71,9 @@ public open class FakeScenePose : ScenePose {
             0f,
         )
 
-    @Suppress("AsyncSuffixFuture")
-    override fun hitTest(
+    override suspend fun hitTest(
         origin: Vector3,
         direction: Vector3,
         @ScenePose.HitTestFilterValue hitTestFilter: Int,
-    ): ListenableFuture<HitTestResult> = immediateFuture(hitTestResult)
+    ): HitTestResult = hitTestResult
 }

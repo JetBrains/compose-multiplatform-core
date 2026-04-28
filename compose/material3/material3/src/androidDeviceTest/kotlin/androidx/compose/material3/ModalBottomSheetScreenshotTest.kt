@@ -16,18 +16,15 @@
 
 package androidx.compose.material3
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -98,13 +95,10 @@ class ModalBottomSheetScreenshotTest {
     @Composable
     private fun ModalBottomSheetPredictiveBack(progress: Float) {
         Box(Modifier.fillMaxSize(), propagateMinConstraints = true) {
-            ModalBottomSheetContent(
+            BottomSheetImpl(
                 modifier = Modifier.testTag(testTag),
-                predictiveBackProgress = remember { Animatable(initialValue = progress) },
-                scope = rememberCoroutineScope(),
-                sheetState = rememberSheetState(initialValue = SheetValue.Expanded),
-                animateToDismiss = {},
-                settleToDismiss = {},
+                predictiveBackProgress = progress,
+                state = rememberSheetState(initialValue = SheetValue.Expanded),
             ) {
                 Text(
                     "Modal Bottom Sheet Predictive Back\nProgress: $progress",

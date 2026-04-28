@@ -17,6 +17,7 @@
 package androidx.camera.camera2.adapter
 
 import android.graphics.ImageFormat
+import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
 import android.os.Build
@@ -26,11 +27,13 @@ import android.util.Size
 import androidx.camera.camera2.impl.CameraInteropStateCallbackRepository
 import androidx.camera.camera2.pipe.CameraBackendId
 import androidx.camera.camera2.pipe.CameraDevices
+import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.testing.FakeCameraGraph
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.impl.CameraThreadConfig
@@ -48,13 +51,16 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadows.StreamConfigurationMapBuilder
 import org.robolectric.util.ReflectionHelpers
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 @DoNotInstrument
+// TOD: b/456085770 - Add @Config(sdk = [Config.ALL_SDKS]) when resolved
 class CameraFactoryAdapterTest {
     private val testScope = TestScope()
     private lateinit var threadConfig: CameraThreadConfig
@@ -95,6 +101,10 @@ class CameraFactoryAdapterTest {
         fakeCameraPipe =
             object : CameraPipe by mock() {
                 override fun cameras(): CameraDevices = fakeCameraDevices
+
+                override fun createCameraGraph(config: CameraGraph.Config): CameraGraph {
+                    return FakeCameraGraph()
+                }
             }
     }
 
@@ -248,6 +258,7 @@ class CameraFactoryAdapterTest {
                     CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL to
                         CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
                     CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES to capabilities,
+                    CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE to Rect(0, 0, 10, 10),
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP to
                         StreamConfigurationMapBuilder.newBuilder()
                             .addOutputSize(ImageFormat.YUV_444_888, testOutputSize)
@@ -326,5 +337,7 @@ class CameraFactoryAdapterTest {
         ): androidx.camera.camera2.pipe.CameraMetadata? {
             return dynamicMetadataMap[cameraId]
         }
+
+        override fun awaitCameraMetadata(cameraId: CameraId) = awaitCameraMetadata(cameraId, null)
     }
 }

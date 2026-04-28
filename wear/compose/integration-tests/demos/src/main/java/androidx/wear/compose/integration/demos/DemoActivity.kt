@@ -26,7 +26,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -63,9 +62,6 @@ class DemoActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val recents = RecentsHandler()
-
-        // TODO(http://b/443031050): Remove when fixed.
-        ComposeFoundationFlags.isNonSuspendingPointerInputInDraggableEnabled = false
 
         ComposeView(this)
             .also { setContentView(it) }

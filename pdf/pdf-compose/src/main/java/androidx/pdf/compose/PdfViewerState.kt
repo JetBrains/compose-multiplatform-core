@@ -182,8 +182,8 @@ public class PdfViewerState {
     }
 
     /** Clears the current selection, if one exists. No-op if there is no current [Selection] */
-    public fun clearSelection() {
-        pdfView?.clearSelection()
+    public fun clearCurrentSelection() {
+        pdfView?.clearCurrentSelection()
     }
 
     /**
@@ -216,7 +216,7 @@ public class PdfViewerState {
 
             // Clear no longer visible pages
             visiblePageOffsets.forEachKey { page ->
-                if (!pageLocations.contains(page)) {
+                if (pageLocations.indexOfKey(page) < 0) {
                     visiblePageOffsets.remove(page)
                 }
             }

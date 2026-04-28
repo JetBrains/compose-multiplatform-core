@@ -22,6 +22,8 @@ import android.os.OutcomeReceiver
 import androidx.annotation.CallSuper
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
+import androidx.appfunctions.internal.AppFunctionInventoryProvider
 import androidx.appfunctions.internal.AppFunctionMetadataUtils.getAppFunctionMetadata
 import androidx.appfunctions.internal.Dispatchers
 import com.android.extensions.appfunctions.AppFunctionException as ExtensionAppFunctionException
@@ -52,8 +54,10 @@ import kotlinx.coroutines.withContext
  *
  * @see [com.android.extensions.appfunctions.AppFunctionService]
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-public abstract class ExtensionsAppFunctionService : AppFunctionService() {
+public abstract class ExtensionsAppFunctionService :
+    AppFunctionService(), AppFunctionInventoryProvider {
     private val workerCoroutineScope = CoroutineScope(Dispatchers.Worker)
 
     /**
@@ -83,6 +87,7 @@ public abstract class ExtensionsAppFunctionService : AppFunctionService() {
                         val appFunctionMetadata =
                             getAppFunctionMetadata(
                                 this@ExtensionsAppFunctionService,
+                                resolveInventory(),
                                 request.functionIdentifier,
                             )
                                 ?: throw AppFunctionFunctionNotFoundException(

@@ -104,8 +104,6 @@ public fun NavigationRail(
                 modifier = modifier,
             ) {
                 Column(
-                    // XR-changed: Original NavigationRail uses fillMaxHeight() and windowInsets,
-                    // which do not produce the desired result in XR.
                     Modifier.widthIn(min = XrNavigationRailTokens.ContainerWidth)
                         .padding(vertical = XrNavigationRailTokens.VerticalPadding)
                         .selectableGroup(),
@@ -119,7 +117,7 @@ public fun NavigationRail(
     }
 }
 
-private object XrNavigationRailTokens {
+internal object XrNavigationRailTokens {
     /** The [OrbiterOffset] for NavigationRail Orbiters in Full Space Mode (FSM). */
     val OrbiterOffset = 24.dp
 
