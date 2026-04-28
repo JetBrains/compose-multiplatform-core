@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.io.files.Path
@@ -87,18 +88,18 @@ interface Window {
     @MainThread
     fun requestFocusAndBringToFront()
 
-//    @ExperimentalComposeUiApi
-//    val decoration: WindowDecoration
+    @ExperimentalComposeUiApi
+    val decoration: WindowDecoration
 
-//    @MainThread
-//    @ExperimentalComposeUiApi
-//    fun requestDecoration(vararg decorations: WindowDecoration)
+    @MainThread
+    @ExperimentalComposeUiApi
+    fun requestDecoration(vararg decorations: WindowDecoration)
 
     val customTitleBarInsets: Pair<Dp, Dp>?
 
-//    @ExperimentalComposeUiApi
-//    val customTitleBarLayout: Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>>?
-//        get() = null
+    @ExperimentalComposeUiApi
+    val customTitleBarLayout: Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>>?
+        get() = null
 
     val systemTheme: SystemTheme
 
@@ -170,15 +171,15 @@ interface Window {
         dispose()
     }
 
-//    @MainThread
-//    fun requestTitleBarDoubleClickAction(pointerEvent: PointerEvent) {
-//        when (placement) {
-//            WindowPlacement.Floating, WindowPlacement.Fullscreen -> {
-//                requestPlacement(WindowPlacement.Maximized)
-//            }
-//            WindowPlacement.Maximized -> requestPlacement(WindowPlacement.Floating)
-//        }
-//    }
+    @MainThread
+    fun requestTitleBarDoubleClickAction(pointerEvent: PointerEvent) {
+        when (placement) {
+            WindowPlacement.Floating, WindowPlacement.Fullscreen -> {
+                requestPlacement(WindowPlacement.Maximized)
+            }
+            WindowPlacement.Maximized -> requestPlacement(WindowPlacement.Floating)
+        }
+    }
 
     @MainThread
     fun requestTitleBarTertiaryClickAction(pointerEvent: PointerEvent) {}
