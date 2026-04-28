@@ -22,8 +22,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.kdt.Window
-import androidx.compose.ui.kdt.runApplicationBlocking
+import androidx.compose.ui.desktop.Window
+import androidx.compose.ui.desktop.runApplicationBlocking
 
 fun main() {
     runApplicationBlocking(

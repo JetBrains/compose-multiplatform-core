@@ -17,11 +17,10 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.kdt.macos.MacOsClipboard
+import androidx.compose.ui.desktop.macos.MacOsClipboard
 import androidx.compose.ui.text.AnnotatedString
 import java.awt.HeadlessException
 import java.awt.Toolkit
-import java.awt.datatransfer.ClipboardOwner
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
 import java.awt.datatransfer.Transferable
