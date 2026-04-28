@@ -169,12 +169,6 @@ object MacOsApplication : Application,
                 if (!isNativeApplicationInitialized) {
                     nativeApplication.init(org.jetbrains.desktop.macos.Application.ApplicationConfig())
                     isNativeApplicationInitialized = true
-                } else {
-                    // We get this event only when the application is initialized
-                    // at the same time we can't initialize the native application twice for the same process
-                    GrandCentralDispatch.startOnMainThread {
-                        didFinishLaunchingCompletableJob.complete()
-                    }
                 }
                 Thread.currentThread().name = "MacOsApplication Main Thread (KDT)"
                 systemTheme = nativeApplication.appearance.toSystemTheme()
@@ -298,8 +292,8 @@ object MacOsApplication : Application,
                                 EventHandlerResult.Stop
                             }
                             is Event.ApplicationDidFinishLaunching -> {
-                                didFinishLaunchingCompletableJob.complete()
                                 notificationCenter.init()
+                                didFinishLaunchingCompletableJob.complete()
                                 EventHandlerResult.Stop
                             }
                             is Event.ApplicationAppearanceChange -> {
@@ -444,6 +438,7 @@ object MacOsApplication : Application,
     override fun disposeReusableNativeWindowResources(id: LightweightWindowId) {
         reusableNativeWindowResources.remove(id)?.let { (nativeWindow, viewContext) ->
             nativeWindow.close()
+            nativeWindow.windowId().destroyLightweightWindowId()
             desktopGpuContext.destroyMetalViewContext(viewContext)
         }
         if (structuredQuitInProgress && !hasEffectiveWindows()) {
@@ -468,6 +463,7 @@ object MacOsApplication : Application,
             windows.values.toList().forEach { it.dispose() }
             reusableNativeWindowResources.values.forEach { (nativeWindow, viewContext) ->
                 nativeWindow.close()
+                nativeWindow.windowId().destroyLightweightWindowId()
                 desktopGpuContext.destroyMetalViewContext(viewContext)
             }
             reusableNativeWindowResources.clear()

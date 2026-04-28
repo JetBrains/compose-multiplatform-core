@@ -39,6 +39,6 @@ fun Window.assignNewLightweightWindowId(): LightweightWindowId {
     return lightweightWindowId
 }
 
-fun Window.destroyLightweightWindowId() {
-    heavyToLight.remove(windowId())
+fun WindowId.destroyLightweightWindowId() {
+    heavyToLight.remove(this)
 }

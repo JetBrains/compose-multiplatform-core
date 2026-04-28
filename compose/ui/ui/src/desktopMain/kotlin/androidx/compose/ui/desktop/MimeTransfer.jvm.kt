@@ -55,6 +55,8 @@ internal class MimeTransferClipboardEntry(
     override fun <T : Any> getForFormatSync(format: ClipboardFormat<T>): List<T> {
         return decodeMimeData(mimeDataProvider(), format) as List<T>
     }
+
+    internal fun availableMimeTypes(): Set<String> = mimeDataProvider().keys
 }
 
 internal fun mimeTransferClipboardEntry(vararg items: ClipboardItem): FixedMimeTransferItems {
@@ -90,7 +92,7 @@ internal fun encodeClipboardItemsToMimeData(items: Iterable<ClipboardItem>): Map
                 ClipboardFormat.WindowLocalDrag ->
                     mimeData.putIfAbsent(
                         WindowLocalDragMimeType,
-                        (element.value as WindowLocalDragData).serialize().toByteArray(Charsets.UTF_8),
+                        (element.value as LightweightWindowId).value.toString().toByteArray(Charsets.UTF_8),
                     )
                 is ClipboardFormat.CustomSerializable<*> ->
                     mimeData.putIfAbsent(
@@ -116,6 +118,15 @@ internal fun availableMimeTypesForClipboardItems(items: Iterable<ClipboardItem>)
     return encodeClipboardItemsToMimeData(items).keys.toList()
 }
 
+internal fun ClipboardFormat<*>.linuxMimeTypes(): List<String> = when (this) {
+    ClipboardFormat.Utf8PlainText -> listOf(Utf8PlainTextMimeType, Utf8PlainTextMimeTypeFallback)
+    ClipboardFormat.Html -> listOf(HtmlMimeType, HtmlMimeTypeFallback)
+    ClipboardFormat.Png -> listOf(PngMimeType)
+    ClipboardFormat.File -> listOf(FileUriListMimeType)
+    ClipboardFormat.WindowLocalDrag -> listOf(WindowLocalDragMimeType)
+    is ClipboardFormat.CustomSerializable<*> -> listOf(mimeType)
+}
+
 internal fun <T : Any> decodeMimeData(
     mimeData: Map<String, ByteArray>,
     format: ClipboardFormat<T>,
@@ -136,7 +147,8 @@ internal fun <T : Any> decodeMimeData(
         ClipboardFormat.File -> decodeUriList(mimeData[FileUriListMimeType])
         ClipboardFormat.WindowLocalDrag -> mimeData[WindowLocalDragMimeType]
             ?.decodeToString()
-            ?.let { WindowLocalDragData.deserialize(it)?.let(::listOf) }
+            ?.toLongOrNull()
+            ?.let { listOf(LightweightWindowId(it)) }
             .orEmpty()
         is ClipboardFormat.CustomSerializable<*> -> mimeData[format.mimeType]
             ?.decodeToString()
