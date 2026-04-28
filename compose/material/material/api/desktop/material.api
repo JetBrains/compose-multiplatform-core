@@ -254,48 +254,48 @@ public final class androidx/compose/material/ColorsKt {
 public final class androidx/compose/material/ComposableSingletons$AppBarKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$AppBarKt;
 	public fun <init> ()V
-	public final fun getLambda$1260131259$material ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$269254275$material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1260131259$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$269254275$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/material/ComposableSingletons$BackdropScaffoldKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$BackdropScaffoldKt;
 	public fun <init> ()V
-	public final fun getLambda$2057676608$material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$2057676608$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/material/ComposableSingletons$BottomSheetScaffoldKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$BottomSheetScaffoldKt;
 	public fun <init> ()V
-	public final fun getLambda$-505419337$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$687232378$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$937349512$material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-505419337$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$687232378$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$937349512$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/material/ComposableSingletons$ScaffoldKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$ScaffoldKt;
 	public fun <init> ()V
-	public final fun getLambda$-1341284559$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$-1406416085$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$-1624772335$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$-1836397928$material ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$1714259275$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$566090785$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$866784315$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$939725476$material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1341284559$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1406416085$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1624772335$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1836397928$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1714259275$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$566090785$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$866784315$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$939725476$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/material/ComposableSingletons$SnackbarHostKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$SnackbarHostKt;
 	public fun <init> ()V
-	public final fun getLambda$1890101041$material ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1890101041$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/compose/material/ComposableSingletons$TabRowKt {
 	public static final field INSTANCE Landroidx/compose/material/ComposableSingletons$TabRowKt;
 	public fun <init> ()V
-	public final fun getLambda$-1216856915$material ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$-222041980$material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1216856915$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-222041980$org_jetbrains_compose_material_material ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/material/ContentAlpha {

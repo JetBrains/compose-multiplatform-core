@@ -1,7 +1,7 @@
 public final class androidx/navigation3/scene/ComposableSingletons$SceneSetupNavEntryDecoratorKt {
 	public static final field INSTANCE Landroidx/navigation3/scene/ComposableSingletons$SceneSetupNavEntryDecoratorKt;
 	public fun <init> ()V
-	public final fun getLambda$-51699941$navigation3_ui ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-51699941$org_jetbrains_androidx_navigation3_navigation3_ui ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/navigation3/scene/DialogSceneStrategy : androidx/navigation3/scene/SceneStrategy {
