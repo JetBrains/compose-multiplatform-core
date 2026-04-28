@@ -24,17 +24,14 @@ import android.content.Context
 import android.content.Intent
 import android.os.Looper
 import android.util.Log
-import androidx.annotation.CallSuper
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
-import androidx.annotation.WorkerThread
 import androidx.room3.Room.LOG_TAG
 import androidx.room3.autoclose.AutoCloser
 import androidx.room3.autoclose.AutoCloserConfig
 import androidx.room3.autoclose.AutoClosingSQLiteDriver
 import androidx.room3.concurrent.CloseBarrier
 import androidx.room3.coroutines.TransactionElement
-import androidx.room3.coroutines.runBlockingUninterruptible
 import androidx.room3.coroutines.withTransactionContext
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.migration.Migration
@@ -42,9 +39,9 @@ import androidx.room3.prepackage.CopyFromAssetPath
 import androidx.room3.prepackage.CopyFromFile
 import androidx.room3.prepackage.CopyFromInputStream
 import androidx.room3.prepackage.PrePackagedCopySQLiteDriver
-import androidx.room3.util.contains as containsCommon
+import androidx.room3.util.containsCommon
 import androidx.room3.util.findAndInstantiateDatabaseImpl
-import androidx.room3.util.findMigrationPath as findMigrationPathExt
+import androidx.room3.util.findMigrationPathCommon
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.AndroidSQLiteDriver
@@ -76,16 +73,14 @@ import kotlinx.coroutines.cancel
  *   [#Room.databaseBuilder] or [#Room.inMemoryDatabaseBuilder].
  * @see Database
  */
-public actual abstract class RoomDatabase
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-actual constructor() {
+public actual abstract class RoomDatabase actual constructor() {
 
     private lateinit var configuration: DatabaseConfiguration
     private lateinit var coroutineScope: CoroutineScope
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val path: String?
-        get() = configuration.name?.let { configuration.context.getDatabasePath(it).path }
+        get() = configuration.name?.let { configuration.context?.getDatabasePath(it)?.path ?: it }
 
     /**
      * The executor for thread-confined transactions, such as those from the [AndroidSQLiteDriver]
@@ -171,8 +166,7 @@ actual constructor() {
      * @param configuration The database configuration.
      * @throws IllegalArgumentException if initialization fails.
      */
-    @CallSuper
-    public actual open fun init(configuration: DatabaseConfiguration) {
+    internal actual fun init(configuration: DatabaseConfiguration) {
         this.configuration = configuration
         useTempTrackingTable = configuration.useTempTrackingTable
 
@@ -203,6 +197,7 @@ actual constructor() {
         // Configure multi-instance invalidation, if enabled
         if (configuration.multiInstanceInvalidationServiceIntent != null) {
             requireNotNull(configuration.name)
+            requireNotNull(configuration.context)
             invalidationTracker.initMultiInstanceInvalidation(
                 configuration.context,
                 configuration.name,
@@ -262,9 +257,11 @@ actual constructor() {
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public actual abstract fun createAutoMigrations(
+    public actual open fun createAutoMigrations(
         autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
-    ): List<Migration>
+    ): List<Migration> {
+        return emptyList()
+    }
 
     /**
      * Creates a delegate to configure and initialize the database when it is being opened. An
@@ -275,7 +272,11 @@ actual constructor() {
      * @throws NotImplementedError by default
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected actual abstract fun createOpenDelegate(): RoomOpenDelegateMarker
+    protected actual open fun createOpenDelegate(): RoomOpenDelegateMarker {
+        throw NotImplementedError(
+            "This function should be implemented by Room's generated database implementation."
+        )
+    }
 
     /**
      * Creates the invalidation tracker
@@ -285,7 +286,14 @@ actual constructor() {
      *
      * @return A new invalidation tracker.
      */
-    protected actual abstract fun createInvalidationTracker(): InvalidationTracker
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+    protected actual open fun createInvalidationTracker(): InvalidationTracker {
+        throw NotImplementedError(
+            "This function should be implemented by Room's generated database implementation."
+        )
+    }
+
+    internal fun getConfiguration() = configuration
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual fun getCoroutineScope(): CoroutineScope {
@@ -322,15 +330,19 @@ actual constructor() {
      * @return A map that will include all required type converters for this database.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected actual abstract fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>>
+    protected actual open fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
+        return emptyMap()
+    }
 
     /** Property delegate of [getRequiredTypeConverterClasses] for common ext functionality. */
     internal actual val requiredTypeConverterClassesMap: Map<KClass<*>, List<KClass<*>>>
         get() = getRequiredTypeConverterClasses()
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public actual abstract fun getRequiredAutoMigrationSpecClasses():
-        Set<KClass<out AutoMigrationSpec>>
+    public actual open fun getRequiredAutoMigrationSpecClasses():
+        Set<KClass<out AutoMigrationSpec>> {
+        return emptySet()
+    }
 
     /**
      * Deletes all rows from all the tables that are registered to this database as
@@ -344,37 +356,7 @@ actual constructor() {
      *
      * See SQLite documentation for details. [FileFormat](https://www.sqlite.org/fileformat.html)
      */
-    @WorkerThread public abstract fun clearAllTables()
-
-    /**
-     * Performs a 'clear all tables' operation.
-     *
-     * This should only be invoked from generated code.
-     *
-     * @see [RoomDatabase.clearAllTables]
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    protected fun performClear(hasForeignKeys: Boolean, vararg tableNames: String) {
-        assertNotMainThread()
-        runBlockingUninterruptible {
-            connectionManager.useConnection(isReadOnly = false) { connection ->
-                if (!connection.inTransaction()) {
-                    invalidationTracker.sync()
-                }
-                connection.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE) {
-                    if (hasForeignKeys) {
-                        execSQL("PRAGMA defer_foreign_keys = TRUE")
-                    }
-                    tableNames.forEach { tableName -> execSQL("DELETE FROM `$tableName`") }
-                }
-                if (!connection.inTransaction()) {
-                    connection.execSQL("PRAGMA wal_checkpoint(FULL)")
-                    connection.execSQL("VACUUM")
-                    invalidationTracker.refreshAsync()
-                }
-            }
-        }
-    }
+    public actual abstract suspend fun clearAllTables()
 
     /** True if the actual database connection is open, regardless of auto-close. */
     internal val isOpenInternal: Boolean
@@ -433,7 +415,7 @@ actual constructor() {
      * @param connection The database connection.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected actual fun internalInitInvalidationTracker(connection: SQLiteConnection) {
+    protected actual suspend fun internalInitInvalidationTracker(connection: SQLiteConnection) {
         invalidationTracker.internalInit(connection)
     }
 
@@ -459,15 +441,15 @@ actual constructor() {
         WRITE_AHEAD_LOGGING;
 
         /** Resolves [AUTOMATIC] to either [TRUNCATE] or [WRITE_AHEAD_LOGGING]. */
-        internal fun resolve(context: Context): JournalMode {
+        internal fun resolve(context: Context?): JournalMode {
             if (this != AUTOMATIC) {
                 return this
             }
-            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-            if (manager != null && !manager.isLowRamDevice) {
-                return WRITE_AHEAD_LOGGING
+            val manager = context?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            if (manager != null && manager.isLowRamDevice) {
+                return TRUNCATE
             }
-            return TRUNCATE
+            return WRITE_AHEAD_LOGGING
         }
     }
 
@@ -476,10 +458,11 @@ actual constructor() {
      *
      * @param T The type of the abstract database class.
      */
-    @Suppress("GetterOnBuilder") // To keep ABI compatibility from Java
-    public actual open class Builder<T : RoomDatabase> {
+    // GetterOnBuilder: To keep ABI compatibility from Java
+    @Suppress("GetterOnBuilder")
+    public actual class Builder<T : RoomDatabase> {
         private val klass: KClass<T>
-        private val context: Context
+        private val context: Context?
         private val name: String?
         private val factory: (() -> T)?
 
@@ -497,7 +480,7 @@ actual constructor() {
             klass: KClass<T>,
             name: String?,
             factory: (() -> T)?,
-            context: Context,
+            context: Context?,
         ) {
             this.klass = klass
             this.context = context
@@ -558,6 +541,7 @@ actual constructor() {
 
         private var driver: SQLiteDriver? = null
         private var queryCoroutineContext: CoroutineContext? = null
+        private var connectionPoolConfiguration: ConnectionPoolConfiguration? = null
 
         private var inMemoryTrackingTableMode = true
 
@@ -580,7 +564,10 @@ actual constructor() {
          *   database file is located.
          * @return This builder instance.
          */
-        public open fun createFromAsset(databaseFilePath: String): Builder<T> = apply {
+        public fun createFromAsset(databaseFilePath: String): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from asset when no Context is provided to this Builder."
+            }
             this.copyFromAssetPath = databaseFilePath
         }
 
@@ -597,7 +584,8 @@ actual constructor() {
          * pre-packaged database schema utilizing the exported schema files generated when
          * [Database.exportSchema] is enabled.
          *
-         * This method is not supported for an in memory database [Builder].
+         * This method is not supported for an in memory database [Builder] and a [Context] is
+         * required during builder instantiation.
          *
          * @param databaseFilePath The file path within the 'assets/' directory of where the
          *   database file is located.
@@ -605,10 +593,13 @@ actual constructor() {
          * @return This builder instance.
          */
         @SuppressLint("BuilderSetStyle") // To keep naming consistency.
-        public open fun createFromAsset(
+        public fun createFromAsset(
             databaseFilePath: String,
             callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from asset when no Context is provided to this Builder."
+            }
             this.prepackagedDatabaseCallback = callback
             this.copyFromAssetPath = databaseFilePath
         }
@@ -632,7 +623,10 @@ actual constructor() {
          * @param databaseFile The database file.
          * @return This builder instance.
          */
-        public open fun createFromFile(databaseFile: File): Builder<T> = apply {
+        public fun createFromFile(databaseFile: File): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from file when no Context is provided to this Builder."
+            }
             this.copyFromFile = databaseFile
         }
 
@@ -650,17 +644,21 @@ actual constructor() {
          * The [Callback.onOpen] method can be used as an indicator that the pre-packaged database
          * was successfully opened by Room and can be cleaned up.
          *
-         * This method is not supported for an in memory database [Builder].
+         * This method is not supported for an in memory database [Builder] and a [Context] is
+         * required during builder instantiation.
          *
          * @param databaseFile The database file.
          * @param callback The pre-packaged callback.
          * @return This builder instance.
          */
         @SuppressLint("BuilderSetStyle", "StreamFiles") // To keep naming consistency.
-        public open fun createFromFile(
+        public fun createFromFile(
             databaseFile: File,
             callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from file when no Context is provided to this Builder."
+            }
             this.prepackagedDatabaseCallback = callback
             this.copyFromFile = databaseFile
         }
@@ -680,7 +678,8 @@ actual constructor() {
          * The [Callback.onOpen] method can be used as an indicator that the pre-packaged database
          * was successfully opened by Room and can be cleaned up.
          *
-         * This method is not supported for an in memory database [Builder].
+         * This method is not supported for an in memory database [Builder] and a [Context] is
+         * required during builder instantiation.
          *
          * @param inputStreamCallable A callable that returns an InputStream from which to copy the
          *   database. The callable will be invoked in a thread from the dispatcher set via
@@ -690,9 +689,13 @@ actual constructor() {
          * @return This builder instance.
          */
         @SuppressLint("BuilderSetStyle") // To keep naming consistency.
-        public open fun createFromInputStream(
-            inputStreamCallable: Callable<InputStream>
-        ): Builder<T> = apply { this.copyFromInputStream = inputStreamCallable }
+        public fun createFromInputStream(inputStreamCallable: Callable<InputStream>): Builder<T> =
+            apply {
+                requireNotNull(context) {
+                    "Cannot create from stream when no Context is provided to this Builder."
+                }
+                this.copyFromInputStream = inputStreamCallable
+            }
 
         /**
          * Configures Room to create and open the database using a pre-packaged database via an
@@ -720,10 +723,13 @@ actual constructor() {
          * @return This builder instance.
          */
         @SuppressLint("BuilderSetStyle", "LambdaLast") // To keep naming consistency.
-        public open fun createFromInputStream(
+        public fun createFromInputStream(
             inputStreamCallable: Callable<InputStream>,
             callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from stream when no Context is provided to this Builder."
+            }
             this.prepackagedDatabaseCallback = callback
             this.copyFromInputStream = inputStreamCallable
         }
@@ -743,7 +749,7 @@ actual constructor() {
          *   necessary changes for a version change.
          * @return This builder instance.
          */
-        public actual open fun addMigrations(vararg migrations: Migration): Builder<T> = apply {
+        public actual fun addMigrations(vararg migrations: Migration): Builder<T> = apply {
             for (migration in migrations) {
                 migrationStartAndEndVersions.add(migration.startVersion)
                 migrationStartAndEndVersions.add(migration.endVersion)
@@ -759,9 +765,10 @@ actual constructor() {
          * @return This builder instance.
          */
         @Suppress("MissingGetterMatchingBuilder")
-        public actual open fun addAutoMigrationSpec(
-            autoMigrationSpec: AutoMigrationSpec
-        ): Builder<T> = apply { this.autoMigrationSpecs.add(autoMigrationSpec) }
+        public actual fun addAutoMigrationSpec(autoMigrationSpec: AutoMigrationSpec): Builder<T> =
+            apply {
+                this.autoMigrationSpecs.add(autoMigrationSpec)
+            }
 
         /**
          * Disables the main thread query check for Room.
@@ -775,7 +782,7 @@ actual constructor() {
          *
          * @return This builder instance.
          */
-        public open fun allowMainThreadQueries(): Builder<T> = apply {
+        public fun allowMainThreadQueries(): Builder<T> = apply {
             this.allowMainThreadQueries = true
         }
 
@@ -791,7 +798,7 @@ actual constructor() {
          * @param journalMode The journal mode.
          * @return This builder instance.
          */
-        public actual open fun setJournalMode(journalMode: JournalMode): Builder<T> = apply {
+        public actual fun setJournalMode(journalMode: JournalMode): Builder<T> = apply {
             this.journalMode = journalMode
         }
 
@@ -810,7 +817,7 @@ actual constructor() {
          */
         @OptIn(ExperimentalRoomApi::class)
         @Suppress("UnsafeOptInUsageError")
-        public open fun enableMultiInstanceInvalidation(): Builder<T> = apply {
+        public fun enableMultiInstanceInvalidation(): Builder<T> = apply {
             this.multiInstanceInvalidationIntent =
                 if (name != null) {
                     Intent(context, MultiInstanceInvalidationService::class.java)
@@ -825,7 +832,8 @@ actual constructor() {
          * separate process. In order to enable multi-instance invalidation, this has to be turned
          * on both ends and need to point to the same [MultiInstanceInvalidationService].
          *
-         * This is not enabled by default.
+         * This is not enabled by default and requires that a [Context] is used during builder
+         * instantiation.
          *
          * This does not work for in-memory databases. This does not work between database instances
          * targeting different database files.
@@ -836,9 +844,13 @@ actual constructor() {
          */
         @ExperimentalRoomApi
         @Suppress("MissingGetterMatchingBuilder")
-        public open fun setMultiInstanceInvalidationServiceIntent(
+        public fun setMultiInstanceInvalidationServiceIntent(
             invalidationServiceIntent: Intent
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Multi-instance invalidation cannot be enabled when no Context is provided " +
+                    "to this Builder."
+            }
             this.multiInstanceInvalidationIntent =
                 if (name != null) invalidationServiceIntent else null
         }
@@ -853,18 +865,20 @@ actual constructor() {
          * [IllegalStateException]. You can call this method to change this behavior to re-create
          * the database tables instead of crashing.
          *
-         * If the database was create from an asset or a file then Room will try to use the same
-         * file to re-create the database, otherwise this will delete all of the data in the
-         * database tables managed by Room.
+         * If the database was created from an asset or a file then Room will try to use the same
+         * file to re-create the database, otherwise this will delete all the data in the database
+         * tables managed by Room.
          *
          * To let Room fallback to destructive migration only during a schema downgrade then use
          * [fallbackToDestructiveMigrationOnDowngrade].
          *
          * @param dropAllTables Set to `true` if all tables should be dropped during destructive
-         *   migration including those not managed by Room. Recommended value is `true` as otherwise
-         *   Room could leave obsolete data when table names or existence changes between versions.
+         *   migration including those not managed by Room, otherwise only Room managed tables are
+         *   dropped. Default value is `true` as otherwise Room could leave obsolete data when table
+         *   names or existence changes between versions.
          * @return This builder instance.
          */
+        @JvmOverloads
         @Suppress("BuilderSetStyle") // Overload of existing API
         public actual fun fallbackToDestructiveMigration(dropAllTables: Boolean): Builder<T> =
             apply {
@@ -880,10 +894,12 @@ actual constructor() {
          * For details, see [Builder.fallbackToDestructiveMigration].
          *
          * @param dropAllTables Set to `true` if all tables should be dropped during destructive
-         *   migration including those not managed by Room. Recommended value is `true` as otherwise
-         *   Room could leave obsolete data when table names or existence changes between versions.
+         *   migration including those not managed by Room, otherwise only Room managed tables are
+         *   dropped. Default value is `true` as otherwise Room could leave obsolete data when table
+         *   names or existence changes between versions.
          * @return This builder instance.
          */
+        @JvmOverloads
         @Suppress("BuilderSetStyle") // Overload of existing API
         public actual fun fallbackToDestructiveMigrationOnDowngrade(
             dropAllTables: Boolean
@@ -911,17 +927,17 @@ actual constructor() {
          * thrown.
          *
          * @param dropAllTables Set to `true` if all tables should be dropped during destructive
-         *   migration including those not managed by Room.
+         *   migration including those not managed by Room, otherwise only Room managed tables are
+         *   dropped. Default value is `true` as otherwise Room could leave obsolete data when table
+         *   names or existence changes between versions.
          * @param startVersions The set of schema versions from which Room should use a destructive
          *   migration.
          * @return This builder instance.
          */
-        @Suppress(
-            "BuilderSetStyle", // Overload of existing API
-            "MissingJvmstatic", // No need for @JvmOverloads due to an overload already existing
-        )
-        public actual open fun fallbackToDestructiveMigrationFrom(
-            @Suppress("KotlinDefaultParameterOrder") // There is a vararg that must be last
+        @JvmOverloads
+        @Suppress("BuilderSetStyle") // Overload of existing API
+        public actual fun fallbackToDestructiveMigrationFrom(
+            @Suppress("KotlinDefaultParameterOrder") // vararg should be last param
             dropAllTables: Boolean,
             vararg startVersions: Int,
         ): Builder<T> = apply {
@@ -937,7 +953,7 @@ actual constructor() {
          * @param callback The callback.
          * @return This builder instance.
          */
-        public actual open fun addCallback(callback: Callback): Builder<T> = apply {
+        public actual fun addCallback(callback: Callback): Builder<T> = apply {
             this.callbacks.add(callback)
         }
 
@@ -948,7 +964,7 @@ actual constructor() {
          *   [ProvidedTypeConverter].
          * @return This builder instance.
          */
-        public actual open fun addTypeConverter(typeConverter: Any): Builder<T> = apply {
+        public actual fun addTypeConverter(typeConverter: Any): Builder<T> = apply {
             this.typeConverters.add(typeConverter)
         }
 
@@ -982,7 +998,7 @@ actual constructor() {
          */
         @ExperimentalRoomApi
         @Suppress("MissingGetterMatchingBuilder")
-        public open fun setAutoCloseTimeout(
+        public fun setAutoCloseTimeout(
             @IntRange(from = 0) autoCloseTimeout: Long,
             autoCloseTimeUnit: TimeUnit,
         ): Builder<T> = apply {
@@ -1047,6 +1063,63 @@ actual constructor() {
         }
 
         /**
+         * Sets the database connection pool to use a single connection for both reading and
+         * writing.
+         *
+         * A connection pool is only used if the supplied [SQLiteDriver] has no internal pool, i.e.
+         * [SQLiteDriver.hasConnectionPool] returns `false`. If the configured driver has an
+         * internal pool then calling this function has no effect.
+         *
+         * Calling this function overrides any previous setting. If neither this function or
+         * [setMultipleConnectionPool] are called then Room will default to a connection pool
+         * configuration that is based on the [JournalMode]. For [JournalMode.TRUNCATE] a single
+         * connection is used, while for [JournalMode.WRITE_AHEAD_LOGGING] multiple connections are
+         * used, four reader and one writer.
+         *
+         * @return This builder instance.
+         * @see setMultipleConnectionPool
+         */
+        @Suppress("MissingGetterMatchingBuilder")
+        public actual fun setSingleConnectionPool(): Builder<T> = apply {
+            this.connectionPoolConfiguration = SingleConnection
+        }
+
+        /**
+         * Sets the database connection pool to use multiple connections, separating readers and
+         * writers.
+         *
+         * A connection pool is only used if the supplied [SQLiteDriver] has no internal pool, i.e.
+         * [SQLiteDriver.hasConnectionPool] returns `false`. If the configured driver has an
+         * internal pool then calling this function has no effect.
+         *
+         * If the database being built is an in-memory database, then calling this function has no
+         * effect since a single connection will be used.
+         *
+         * Calling this function overrides any previous setting. If neither this function or
+         * [setMultipleConnectionPool] are called then Room will default to a connection pool
+         * configuration that is based on the [JournalMode]. For [JournalMode.TRUNCATE] a single
+         * connection is used, while for [JournalMode.WRITE_AHEAD_LOGGING] multiple connections are
+         * used, four reader and one writer.
+         *
+         * It is recommended to only use multiple connections when [JournalMode.WRITE_AHEAD_LOGGING]
+         * is configured. Be aware that if multiple writers are used then database operations might
+         * fail with `SQLITE_BUSY` errors. These must be handled by the callers and might be
+         * mitigated by configuring the `busy_timeout`.
+         *
+         * @param maxNumOfReaders The maximum number of reader connections.
+         * @param maxNumOfWriters The maximum number of writer connections.
+         * @return This builder instance.
+         * @see setSingleConnectionPool
+         */
+        @Suppress("MissingGetterMatchingBuilder")
+        public actual fun setMultipleConnectionPool(
+            @IntRange(from = 1) maxNumOfReaders: Int,
+            @IntRange(from = 1) maxNumOfWriters: Int,
+        ): Builder<T> = apply {
+            this.connectionPoolConfiguration = MultipleConnection(maxNumOfReaders, maxNumOfWriters)
+        }
+
+        /**
          * Creates the databases and initializes it.
          *
          * By default, all RoomDatabases use in memory storage for TEMP tables and enables recursive
@@ -1055,13 +1128,13 @@ actual constructor() {
          * @return A new database instance.
          * @throws IllegalArgumentException if the builder was misconfigured.
          */
-        public actual open fun build(): T {
+        public actual fun build(): T {
             validateMigrationsNotRequired(migrationStartAndEndVersions, migrationsNotRequiredFrom)
-
             if (driver == null) {
                 // No driver, use default one for Android
                 driver = AndroidSQLiteDriver()
             }
+            val journalMode = journalMode.resolve(context) ?: JournalMode.WRITE_AHEAD_LOGGING
             val autoCloseConfig =
                 if (autoCloseTimeout > 0) {
                     AutoCloserConfig(autoCloseTimeout, requireNotNull(autoCloseTimeUnit))
@@ -1074,6 +1147,9 @@ actual constructor() {
                 ) {
                     requireNotNull(name) {
                         "Cannot create from asset or file for an in-memory database."
+                    }
+                    requireNotNull(context) {
+                        "Cannot create from asset or file when no Context is provided to this Builder."
                     }
                     val copyFromAssetPathConfig = if (copyFromAssetPath == null) 0 else 1
                     val copyFromFileConfig = if (copyFromFile == null) 0 else 1
@@ -1092,6 +1168,21 @@ actual constructor() {
                 } else {
                     null
                 }
+            val poolConfig =
+                if (name == null) {
+                    SingleConnection
+                } else if (connectionPoolConfiguration != null) {
+                    checkNotNull(connectionPoolConfiguration)
+                } else {
+                    if (journalMode == JournalMode.TRUNCATE) {
+                        SingleConnection
+                    } else {
+                        MultipleConnection(
+                            numOfReaders = WAL_DEFAULT_NUMBER_OF_READERS,
+                            numOfWriters = WAL_DEFAULT_NUMBER_OF_WRITERS,
+                        )
+                    }
+                }
             val configuration =
                 DatabaseConfiguration(
                         context = context,
@@ -1099,9 +1190,9 @@ actual constructor() {
                         migrationContainer = migrationContainer,
                         callbacks = callbacks,
                         allowMainThreadQueries = allowMainThreadQueries,
-                        journalMode = journalMode.resolve(context),
+                        journalMode = journalMode,
                         multiInstanceInvalidationServiceIntent = multiInstanceInvalidationIntent,
-                        requireMigration = requireMigration,
+                        isMigrationRequired = requireMigration,
                         allowDestructiveMigrationOnDowngrade = allowDestructiveMigrationOnDowngrade,
                         migrationNotRequiredFrom = migrationsNotRequiredFrom,
                         prepackagedDatabaseCallback = prepackagedDatabaseCallback,
@@ -1111,6 +1202,7 @@ actual constructor() {
                             allowDestructiveMigrationForAllTables,
                         sqliteDriver = requireNotNull(driver),
                         queryCoroutineContext = queryCoroutineContext ?: Dispatchers.IO,
+                        connectionPoolConfiguration = poolConfig,
                     )
                     .apply {
                         this.useTempTrackingTable = inMemoryTrackingTableMode
@@ -1127,7 +1219,7 @@ actual constructor() {
      * A container to hold migrations. It also allows querying its contents to find migrations
      * between two versions.
      */
-    public actual open class MigrationContainer {
+    public actual class MigrationContainer {
         private val migrations = mutableMapOf<Int, TreeMap<Int, Migration>>()
 
         /**
@@ -1136,7 +1228,7 @@ actual constructor() {
          *
          * @param migrations List of available migrations.
          */
-        public open fun addMigrations(vararg migrations: Migration) {
+        public fun addMigrations(vararg migrations: Migration) {
             migrations.forEach(::addMigration)
         }
 
@@ -1146,7 +1238,7 @@ actual constructor() {
          *
          * @param migrations List of available migrations.
          */
-        public actual open fun addMigrations(migrations: List<Migration>) {
+        public actual fun addMigrations(migrations: List<Migration>) {
             migrations.forEach(::addMigration)
         }
 
@@ -1174,7 +1266,7 @@ actual constructor() {
          *
          * @return Map of migrations keyed by the start version
          */
-        public actual open fun getMigrations(): Map<Int, Map<Int, Migration>> {
+        public actual fun getMigrations(): Map<Int, Map<Int, Migration>> {
             return migrations
         }
 
@@ -1187,8 +1279,8 @@ actual constructor() {
          * @return An ordered list of [Migration] objects that should be run to migrate between the
          *   given versions. If a migration path cannot be found, returns `null`.
          */
-        public open fun findMigrationPath(start: Int, end: Int): List<Migration>? {
-            return this.findMigrationPathExt(start, end)
+        public actual fun findMigrationPath(start: Int, end: Int): List<Migration>? {
+            return this.findMigrationPathCommon(start, end)
         }
 
         /**
@@ -1227,21 +1319,21 @@ actual constructor() {
          *
          * @param connection The database connection.
          */
-        public actual open fun onCreate(connection: SQLiteConnection) {}
+        public actual open suspend fun onCreate(connection: SQLiteConnection) {}
 
         /**
          * Called after the database was destructively migrated.
          *
          * @param connection The database connection.
          */
-        public actual open fun onDestructiveMigration(connection: SQLiteConnection) {}
+        public actual open suspend fun onDestructiveMigration(connection: SQLiteConnection) {}
 
         /**
          * Called when the database has been opened.
          *
          * @param connection The database connection.
          */
-        public actual open fun onOpen(connection: SQLiteConnection) {}
+        public actual open suspend fun onOpen(connection: SQLiteConnection) {}
     }
 
     /**

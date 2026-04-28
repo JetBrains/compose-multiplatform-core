@@ -17,7 +17,12 @@
 package androidx.compose.material3
 
 import android.os.Build
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.DatePickerDefaults.defaultDatePickerColors
 import androidx.compose.material3.internal.MillisecondsIn24Hours
 import androidx.compose.material3.internal.Strings
@@ -31,9 +36,15 @@ import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertDoesNotContainColor
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertAll
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
@@ -42,12 +53,17 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.StateRestorationTester
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -64,7 +80,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalMaterial3Api::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class DateRangePickerTest {
@@ -73,9 +88,10 @@ class DateRangePickerTest {
 
     @Test
     fun state_initWithoutRemember() {
+        val locale = Locale.forLanguageTag("en-US")
         val dateRangePickerState =
             DateRangePickerState(
-                locale = Locale.getDefault(),
+                locale = locale,
                 initialSelectedStartDateMillis = 1649721600000L, // 04/12/2022
                 initialSelectedEndDateMillis = 1649721600000L + MillisecondsIn24Hours, // 04/13/2022
             )
@@ -84,12 +100,9 @@ class DateRangePickerTest {
             assertThat(selectedEndDateMillis).isEqualTo(1649721600000L + MillisecondsIn24Hours)
             assertThat(displayedMonthMillis)
                 .isEqualTo(
-                    // Using the JVM Locale.getDefault() for testing purposes only.
-                    createCalendarModel(Locale.getDefault())
-                        .getMonth(year = 2022, month = 4)
-                        .startUtcTimeMillis
+                    createCalendarModel(locale).getMonth(year = 2022, month = 4).startUtcTimeMillis
                 )
-            assertThat(locale).isEqualTo(Locale.getDefault())
+            assertThat(locale).isEqualTo(locale)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 assertThat(getSelectedStartDate()).isEqualTo(LocalDate.of(2022, 4, 12))
@@ -102,7 +115,9 @@ class DateRangePickerTest {
     @Test
     fun state_initWithSelectedDates() {
         lateinit var dateRangePickerState: DateRangePickerState
+        lateinit var locale: Locale
         rule.setMaterialContent(lightColorScheme()) {
+            locale = LocalLocale.current.platformLocale
             // 04/12/2022
             dateRangePickerState =
                 rememberDateRangePickerState(
@@ -117,10 +132,7 @@ class DateRangePickerTest {
             assertThat(selectedEndDateMillis).isEqualTo(1649721600000L + MillisecondsIn24Hours)
             assertThat(displayedMonthMillis)
                 .isEqualTo(
-                    // Using the JVM Locale.getDefault() for testing purposes only.
-                    createCalendarModel(Locale.getDefault())
-                        .getMonth(year = 2022, month = 4)
-                        .startUtcTimeMillis
+                    createCalendarModel(locale).getMonth(year = 2022, month = 4).startUtcTimeMillis
                 )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 assertThat(getSelectedStartDate()).isEqualTo(LocalDate.of(2022, 4, 12))
@@ -132,8 +144,10 @@ class DateRangePickerTest {
 
     @Test
     fun state_initWithSelectedDates_roundingToUtcMidnight() {
+        lateinit var locale: Locale
         lateinit var dateRangePickerState: DateRangePickerState
         rule.setMaterialContent(lightColorScheme()) {
+            locale = LocalLocale.current.platformLocale
             dateRangePickerState =
                 rememberDateRangePickerState(
                     // 04/12/2022
@@ -149,9 +163,7 @@ class DateRangePickerTest {
             assertThat(selectedEndDateMillis).isEqualTo(1649721600000L + MillisecondsIn24Hours)
             assertThat(displayedMonthMillis)
                 .isEqualTo(
-                    createCalendarModel(Locale.getDefault())
-                        .getMonth(year = 2022, month = 4)
-                        .startUtcTimeMillis
+                    createCalendarModel(locale).getMonth(year = 2022, month = 4).startUtcTimeMillis
                 )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 assertThat(getSelectedStartDate()).isEqualTo(LocalDate.of(2022, 4, 12))
@@ -707,9 +719,12 @@ class DateRangePickerTest {
     fun state_restoresDatePickerState() {
         val restorationTester = StateRestorationTester(rule)
         var dateRangePickerState: DateRangePickerState? = null
-        restorationTester.setContent { dateRangePickerState = rememberDateRangePickerState() }
-        // Using the JVM Locale.getDefault() for testing purposes only.
-        val calendarModel = createCalendarModel(Locale.getDefault())
+        lateinit var locale: Locale
+        restorationTester.setContent {
+            locale = LocalLocale.current.platformLocale
+            dateRangePickerState = rememberDateRangePickerState()
+        }
+        val calendarModel = createCalendarModel(locale)
         // 04/12/2022
         val startDate = calendarModel.getCanonicalDate(1649721600000L)
         // 04/13/2022
@@ -861,19 +876,20 @@ class DateRangePickerTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun state_initWithJavaTimeApi_withoutRemember() {
+        val locale = Locale.forLanguageTag("en-US")
         val startDateInUtcMillis = dayInUtcMilliseconds(year = 2022, month = 4, dayOfMonth = 12)
         val endDateInUtcMillis = dayInUtcMilliseconds(year = 2022, month = 6, dayOfMonth = 20)
         val monthInUtcMillis = dayInUtcMilliseconds(year = 2024, month = 1, dayOfMonth = 1)
         val dateRangePickerState =
             DateRangePickerState(
-                locale = Locale.getDefault(),
+                locale = locale,
                 initialSelectedStartDateMillis = startDateInUtcMillis,
                 initialSelectedEndDateMillis = endDateInUtcMillis,
                 initialDisplayedMonthMillis = monthInUtcMillis,
             )
         val dateRangePickerStateWithJavaTimeApi =
             DateRangePickerState(
-                locale = Locale.getDefault(),
+                locale = locale,
                 initialSelectedStartDate = LocalDate.of(2022, 4, 12),
                 initialSelectedEndDate = LocalDate.of(2022, 6, 20),
                 initialDisplayedMonth = YearMonth.of(2024, 1),
@@ -960,7 +976,7 @@ class DateRangePickerTest {
     fun yearRange_minYearAfterCurrentYear() {
         var currentYear = 0
         rule.setMaterialContent(lightColorScheme()) {
-            currentYear = createCalendarModel(Locale.getDefault()).today.year
+            currentYear = createCalendarModel(LocalLocale.current.platformLocale).today.year
             DateRangePicker(
                 state =
                     rememberDateRangePickerState(
@@ -970,6 +986,58 @@ class DateRangePickerTest {
         }
 
         rule.onNodeWithText("January ${currentYear + 1}").assertIsDisplayed()
+    }
+
+    @Test
+    fun dateRangePicker_keyboardNavigation() {
+        var currentYear = 0
+        rule.setMaterialContent(lightColorScheme()) {
+            LocalInputModeManager.current.requestInputMode(InputMode.Keyboard)
+            currentYear = createCalendarModel(LocalLocale.current.platformLocale).today.year
+            Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
+                Box(Modifier.testTag("Above picker").size(10.dp).focusable()) {}
+                DateRangePicker(
+                    modifier = Modifier.testTag("picker").weight(1f),
+                    state =
+                        rememberDateRangePickerState(
+                            yearRange = IntRange(currentYear + 1, currentYear + 10)
+                        ),
+                    showModeToggle = false,
+                )
+                Box(Modifier.testTag("Below picker").size(10.dp).focusable()) {}
+            }
+        }
+
+        // Focus above picker then tab to enter it.
+        rule.onNodeWithTag("Above picker").requestFocus()
+        rule.onNodeWithTag("Above picker").performKeyInput { pressKey(Key.Tab) }
+
+        // Assert first focusable date is focused.
+        rule.onNodeWithText("January 1, ${currentYear + 1}", substring = true).assertIsFocused()
+        // Tab away from date.
+        rule.onNodeWithText("January 1, ${currentYear + 1}", substring = true).performKeyInput {
+            pressKey(Key.Tab)
+        }
+
+        // Assert element below picker is focused.
+        rule.onNodeWithTag("Below picker").assertIsFocused()
+
+        // Shift tab to go back to date picker
+        rule.onNodeWithTag("Below picker").performKeyInput {
+            withKeyDown(Key.ShiftLeft) { pressKey(Key.Tab) }
+        }
+        rule.onNodeWithTag("Below picker").assertIsNotFocused()
+        rule.onNodeWithTag("Above picker").assertIsNotFocused()
+
+        // Focus on a random date.
+        rule.onNodeWithText("February 18, ${currentYear + 1}", substring = true).requestFocus()
+        // Shift tab from date.
+        rule.onNodeWithText("January 18, ${currentYear + 1}", substring = true).performKeyInput {
+            withKeyDown(Key.ShiftLeft) { pressKey(Key.Tab) }
+        }
+
+        // Assert element above picker is focused.
+        rule.onNodeWithTag("Above picker").assertIsFocused()
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)

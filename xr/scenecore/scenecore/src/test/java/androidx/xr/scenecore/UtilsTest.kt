@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.scenecore
 
-import androidx.xr.arcore.Plane
+import androidx.xr.arcore.PlaneLabel
+import androidx.xr.arcore.PlaneType
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Matrix4
@@ -67,7 +69,7 @@ class UtilsTest {
 
     @Test
     fun verifyPoseToRtPoseConversion() {
-        val rtPose = Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f).toNormalized())
+        val rtPose = Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f))
 
         assertThat(rtPose.translation.x).isEqualTo(1f)
         assertThat(rtPose.translation.y).isEqualTo(2f)
@@ -83,7 +85,7 @@ class UtilsTest {
 
     @Test
     fun verifyRtPoseToPoseConversion() {
-        val pose = Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f).toNormalized())
+        val pose = Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f))
 
         assertThat(pose.translation.x).isEqualTo(1f)
         assertThat(pose.translation.y).isEqualTo(2f)
@@ -121,9 +123,9 @@ class UtilsTest {
 
         val initialInputRay = Ray(vector0, vector1)
         val currentInputRay = Ray(vector1, vector2)
-        val entityManager = EntityManager()
+        val entityRegistry = EntityRegistry()
         val activitySpace = mock<RtActivitySpace>()
-        entityManager.setEntityForRtEntity(activitySpace, mock<Entity>())
+        entityRegistry.setEntityForRtEntity(activitySpace, mock<Entity>())
         val moveEvent =
             RuntimeMoveEvent(
                     RuntimeMoveEvent.MOVE_STATE_ONGOING,
@@ -137,7 +139,7 @@ class UtilsTest {
                     null,
                     null,
                 )
-                .toMoveEvent(entityManager)
+                .toMoveEvent(entityRegistry)
 
         assertThat(moveEvent.moveState).isEqualTo(MoveEvent.MOVE_STATE_ONGOING)
 
@@ -178,9 +180,9 @@ class UtilsTest {
 
     @Test
     fun verifyRtInputEventToInputEventConversion() {
-        val entityManager = EntityManager()
+        val entityRegistry = EntityRegistry()
         val activitySpace = mock<RtActivitySpace>()
-        entityManager.setEntityForRtEntity(activitySpace, mock<Entity>())
+        entityRegistry.setEntityForRtEntity(activitySpace, mock<Entity>())
         val inputEvent =
             RuntimeInputEvent(
                     RuntimeInputEvent.Source.HANDS,
@@ -191,7 +193,7 @@ class UtilsTest {
                     RuntimeInputEvent.Action.DOWN,
                     emptyList(),
                 )
-                .toInputEvent(entityManager)
+                .toInputEvent(entityRegistry)
         assertThat(inputEvent.source).isEqualTo(InputEvent.Source.HANDS)
         assertThat(inputEvent.pointerType).isEqualTo(InputEvent.Pointer.LEFT)
         assertThat(inputEvent.timestamp).isEqualTo(123456789)
@@ -207,13 +209,13 @@ class UtilsTest {
 
     @Test
     fun verifyRtHitInfoToHitInfoConversion() {
-        val entityManager = EntityManager()
+        val entityRegistry = EntityRegistry()
         val rtMockEntity = mock<RuntimeEntity>()
         val mockEntity = mock<Entity>()
-        entityManager.setEntityForRtEntity(rtMockEntity, mockEntity)
+        entityRegistry.setEntityForRtEntity(rtMockEntity, mockEntity)
         val hitPosition = Vector3(1f, 2f, 3f)
         val transform = Matrix4.Identity
-        val hitInfo = RuntimeHitInfo(rtMockEntity, hitPosition, transform).toHitInfo(entityManager)
+        val hitInfo = RuntimeHitInfo(rtMockEntity, hitPosition, transform).toHitInfo(entityRegistry)
 
         assertThat(hitInfo).isNotNull()
         assertThat(hitInfo!!.inputEntity).isEqualTo(mockEntity)
@@ -223,13 +225,13 @@ class UtilsTest {
 
     @Test
     fun verifyRtHitInfoToHitInfoConversionWhenEntityNotFound() {
-        val entityManager = EntityManager()
+        val entityRegistry = EntityRegistry()
         val rtMockEntity = mock<RuntimeEntity>()
         val hitPosition = Vector3(1f, 2f, 3f)
         val transform = Matrix4.Identity
-        val hitInfo = RuntimeHitInfo(rtMockEntity, hitPosition, transform).toHitInfo(entityManager)
+        val hitInfo = RuntimeHitInfo(rtMockEntity, hitPosition, transform).toHitInfo(entityRegistry)
 
-        // EntityManager does not have the entity for the given RuntimeEntity, so the hit info is
+        // EntityRegistry does not have the entity for the given RuntimeEntity, so the hit info is
         // null.
         assertThat(hitInfo).isNull()
     }
@@ -533,13 +535,13 @@ class UtilsTest {
         whenever(
                 mockRuntime.createAnchorPlacementForPlanes(
                     setOf(RtPlaneType.HORIZONTAL),
-                    setOf(RtPlaneSemantic.ANY),
+                    RtPlaneSemantic.entries.toSet(),
                 )
             )
             .thenReturn(mockAnchorPlacement1)
         whenever(
                 mockRuntime.createAnchorPlacementForPlanes(
-                    setOf(RtPlaneType.ANY),
+                    RtPlaneType.entries.toSet(),
                     setOf(RtPlaneSemantic.WALL, RtPlaneSemantic.FLOOR),
                 )
             )
@@ -572,12 +574,13 @@ class UtilsTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun planeTypeToSceneCoreOrientation_convertsCorrectly() {
         assertThat(
                 listOf(
-                        Plane.Type.HORIZONTAL_UPWARD_FACING,
-                        Plane.Type.HORIZONTAL_DOWNWARD_FACING,
-                        Plane.Type.VERTICAL,
+                        PlaneType.HORIZONTAL_UPWARD_FACING,
+                        PlaneType.HORIZONTAL_DOWNWARD_FACING,
+                        PlaneType.VERTICAL,
                     )
                     .map { it.toSceneCoreOrientation() }
             )
@@ -590,14 +593,15 @@ class UtilsTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun planeLabelToSceneCoreSemanticType_convertsCorrectly() {
         assertThat(
                 listOf(
-                        Plane.Label.FLOOR,
-                        Plane.Label.TABLE,
-                        Plane.Label.WALL,
-                        Plane.Label.CEILING,
-                        Plane.Label.UNKNOWN,
+                        PlaneLabel.FLOOR,
+                        PlaneLabel.TABLE,
+                        PlaneLabel.WALL,
+                        PlaneLabel.CEILING,
+                        PlaneLabel.UNKNOWN,
                     )
                     .map { it.toSceneCoreSemanticType() }
             )
@@ -762,9 +766,10 @@ class UtilsTest {
 
     @Test
     fun rtPerceivedResolutionResultInvalidCameraView_convertsCorrectly() {
-        val runtimeInvalidCamera = RuntimePerceivedResolutionResult.InvalidCameraView()
+        val runtimeInvalidCamera = RuntimePerceivedResolutionResult.InvalidRenderViewpoint()
         val result = runtimeInvalidCamera.toPerceivedResolutionResult()
 
-        assertThat(result).isInstanceOf(PerceivedResolutionResult.InvalidCameraView::class.java)
+        assertThat(result)
+            .isInstanceOf(PerceivedResolutionResult.InvalidRenderViewpoint::class.java)
     }
 }

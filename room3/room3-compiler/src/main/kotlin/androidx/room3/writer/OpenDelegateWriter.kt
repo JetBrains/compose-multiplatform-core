@@ -32,12 +32,6 @@ import androidx.room3.vo.Entity
 import androidx.room3.vo.FtsEntity
 import java.util.ArrayDeque
 
-/**
- * The threshold amount of statements in a validateMigration() method before creating additional
- * secondary validate methods.
- */
-const val VALIDATE_CHUNK_SIZE = 1000
-
 /** Create an open helper using SupportSQLiteOpenHelperFactory */
 class OpenDelegateWriter(val database: Database) {
 
@@ -91,12 +85,14 @@ class OpenDelegateWriter(val database: Database) {
                                 VisibilityModifier.PRIVATE
                             },
                         isOverride = isPrimaryMethod,
+                        isSuspend = true,
                     )
                     .apply {
                         returns(RoomTypeNames.ROOM_OPEN_DELEGATE_VALIDATION_RESULT)
                         addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
                         var statementCount = 0
-                        while (!entities.isEmpty() && statementCount < VALIDATE_CHUNK_SIZE) {
+                        val validateChunkSize = scope.writer.context.validateChunkSize
+                        while (!entities.isEmpty() && statementCount < validateChunkSize) {
                             val methodScope = scope.fork()
                             val entity = entities.poll()
                             val validationWriter =
@@ -108,7 +104,7 @@ class OpenDelegateWriter(val database: Database) {
                             addCode(methodScope.generate())
                             statementCount += validationWriter.statementCount()
                         }
-                        while (!views.isEmpty() && statementCount < VALIDATE_CHUNK_SIZE) {
+                        while (!views.isEmpty() && statementCount < validateChunkSize) {
                             val methodScope = scope.fork()
                             val view = views.poll()
                             val validationWriter = ViewInfoValidationWriter(view)
@@ -177,6 +173,7 @@ class OpenDelegateWriter(val database: Database) {
                 name = "onCreate",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
+                isSuspend = true,
             )
             .apply { addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION) }
             .build()
@@ -187,6 +184,7 @@ class OpenDelegateWriter(val database: Database) {
                 name = "onOpen",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
+                isSuspend = true,
             )
             .apply {
                 addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
@@ -210,6 +208,7 @@ class OpenDelegateWriter(val database: Database) {
                 name = "createAllTables",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
+                isSuspend = true,
             )
             .apply {
                 addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
@@ -232,6 +231,7 @@ class OpenDelegateWriter(val database: Database) {
                 name = "dropAllTables",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
+                isSuspend = true,
             )
             .apply {
                 addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
@@ -264,6 +264,7 @@ class OpenDelegateWriter(val database: Database) {
                 name = "onPreMigrate",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
+                isSuspend = true,
             )
             .apply {
                 addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
@@ -281,11 +282,12 @@ class OpenDelegateWriter(val database: Database) {
                 name = "onPostMigrate",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
+                isSuspend = true,
             )
             .apply {
                 addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
                 database.entities
-                    .filterIsInstance(FtsEntity::class.java)
+                    .filterIsInstance<FtsEntity>()
                     .filter { it.ftsOptions.contentEntity != null }
                     .flatMap { it.contentSyncTriggerCreateQueries }
                     .forEach { syncTriggerQuery ->

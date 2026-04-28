@@ -16,6 +16,7 @@
 package androidx.compose.remote.core.operations.layout.modifiers;
 
 import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
+import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
@@ -27,6 +28,7 @@ import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.layout.Component;
+import androidx.compose.remote.core.operations.loom.LoomWireBuffer;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 import androidx.compose.remote.core.operations.utilities.StringSerializer;
 import androidx.compose.remote.core.serialize.MapSerializer;
@@ -38,8 +40,8 @@ import java.util.List;
 
 /** Component size-aware background draw */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class BackgroundModifierOperation extends DecoratorModifierOperation implements
-        VariableSupport {
+public class BackgroundModifierOperation extends DecoratorModifierOperation
+        implements VariableSupport {
     private static final int OP_CODE = Operations.MODIFIER_BACKGROUND;
     private static final String CLASS_NAME = "BackgroundModifierOperation";
     float mX;
@@ -54,25 +56,32 @@ public class BackgroundModifierOperation extends DecoratorModifierOperation impl
     float mBId;
     float mA;
     float mAId;
+    boolean mUseColorId = false;
+    int mColorId;
     int mShapeType = ShapeType.RECTANGLE;
 
-    @NonNull
-    public PaintBundle mPaint = new PaintBundle();
+    public static final int COLOR_REF = 2;
+    @NonNull public PaintBundle mPaint = new PaintBundle();
 
     public BackgroundModifierOperation(
-            float x,
-            float y,
-            float width,
-            float height,
+            int flags,
+            int colorId,
+            int reserve1,
+            int reserve2,
             float r,
             float g,
             float b,
             float a,
             int shapeType) {
-        this.mX = x;
-        this.mY = y;
-        this.mWidth = width;
-        this.mHeight = height;
+
+        this.mX = 0;
+        this.mY = 0;
+        this.mWidth = 0;
+        this.mHeight = 0;
+        if (flags == COLOR_REF) {
+            mUseColorId = true;
+        }
+        this.mColorId = colorId;
         this.mRId = r;
         this.mR = mRId;
         this.mGId = g;
@@ -86,7 +95,11 @@ public class BackgroundModifierOperation extends DecoratorModifierOperation impl
 
     @Override
     public void write(@NonNull WireBuffer buffer) {
-        apply(buffer, mX, mY, mWidth, mHeight, mRId, mGId, mBId, mAId, mShapeType);
+        if (mUseColorId) {
+            apply(buffer, COLOR_REF, mColorId, 0, 0, mRId, mGId, mBId, mAId, mShapeType);
+        } else {
+            apply(buffer, 0, 0, 0, 0, mRId, mGId, mBId, mAId, mShapeType);
+        }
     }
 
     @Override
@@ -152,33 +165,33 @@ public class BackgroundModifierOperation extends DecoratorModifierOperation impl
     /**
      * Write the operation to the buffer
      *
-     * @param buffer    the WireBuffer
-     * @param x         x coordinate of the background rect
-     * @param y         y coordinate of the background rect
-     * @param width     width of the background rect
-     * @param height    height of the background rect
-     * @param r         red component of the background color
-     * @param g         green component of the background color
-     * @param b         blue component of the background color
-     * @param a         alpha component of the background color
+     * @param buffer the WireBuffer
+     * @param flags flag
+     * @param colorId color ref
+     * @param reserve1 reserved for future use
+     * @param reserve2 reserved for future use
+     * @param r red component of the background color
+     * @param g green component of the background color
+     * @param b blue component of the background color
+     * @param a alpha component of the background color
      * @param shapeType the shape of the background (RECTANGLE=0, CIRCLE=1)
      */
     public static void apply(
             @NonNull WireBuffer buffer,
-            float x,
-            float y,
-            float width,
-            float height,
+            int flags,
+            int colorId,
+            int reserve1,
+            int reserve2,
             float r,
             float g,
             float b,
             float a,
             int shapeType) {
         buffer.start(OP_CODE);
-        buffer.writeFloat(x);
-        buffer.writeFloat(y);
-        buffer.writeFloat(width);
-        buffer.writeFloat(height);
+        buffer.writeInt(flags);
+        buffer.writeInt(colorId);
+        buffer.writeInt(reserve1);
+        buffer.writeInt(reserve2);
         buffer.writeFloat(r);
         buffer.writeFloat(g);
         buffer.writeFloat(b);
@@ -190,21 +203,29 @@ public class BackgroundModifierOperation extends DecoratorModifierOperation impl
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        float x = buffer.readFloat();
-        float y = buffer.readFloat();
-        float width = buffer.readFloat();
-        float height = buffer.readFloat();
-        float r = buffer.readFloat();
-        float g = buffer.readFloat();
-        float b = buffer.readFloat();
-        float a = buffer.readFloat();
+        int flags = buffer.readInt();
+        int colorId = buffer.readInt();
+        if ((flags & COLOR_REF) != 0) {
+            // Manual remapping since we already read it
+            if (buffer instanceof LoomWireBuffer) {
+                colorId = ((LoomWireBuffer) buffer).getRemapContext().resolveId(colorId);
+            }
+        }
+        int reserve1 = buffer.readInt();
+        int reserve2 = buffer.readInt();
+        float r = buffer.readNanId();
+        float g = buffer.readNanId();
+        float b = buffer.readNanId();
+        float a = buffer.readNanId();
         // shape type
         int shapeType = buffer.readInt();
-        operations.add(new BackgroundModifierOperation(x, y, width, height, r, g, b, a, shapeType));
+        operations.add(
+                new BackgroundModifierOperation(
+                        flags, colorId, reserve1, reserve2, r, g, b, a, shapeType));
     }
 
     @Override
@@ -212,7 +233,12 @@ public class BackgroundModifierOperation extends DecoratorModifierOperation impl
         context.savePaint();
         mPaint.reset();
         mPaint.setStyle(PaintBundle.STYLE_FILL);
-        mPaint.setColor(mR, mG, mB, mA);
+        if (mUseColorId) {
+            int col = context.getContext().getColor(mColorId);
+            mPaint.setColor(col);
+        } else {
+            mPaint.setColor(mR, mG, mB, mA);
+        }
         context.replacePaint(mPaint);
         if (mShapeType == ShapeType.RECTANGLE) {
             context.drawRect(0f, 0f, mWidth, mHeight);
@@ -269,16 +295,17 @@ public class BackgroundModifierOperation extends DecoratorModifierOperation impl
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Modifier Operations", OP_CODE, CLASS_NAME)
-                .description("define the Background Modifier")
-                .field(FLOAT, "x", "")
-                .field(FLOAT, "y", "")
-                .field(FLOAT, "width", "")
-                .field(FLOAT, "height", "")
-                .field(FLOAT, "r", "")
-                .field(FLOAT, "g", "")
-                .field(FLOAT, "b", "")
-                .field(FLOAT, "a", "")
-                .field(FLOAT, "shapeType", "0 for RECTANGLE, 1 for CIRCLE");
+                .additionalDocumentation("modifier_background")
+                .description("Define a background color or shape for a component")
+                .field(INT, "flags", "Behavior flags")
+                .field(INT, "colorId", "The ID of the color if flags include COLOR_REF")
+                .field(INT, "reserve1", "Reserved for future use")
+                .field(INT, "reserve2", "Reserved for future use")
+                .field(FLOAT, "r", "Red component [0..1]")
+                .field(FLOAT, "g", "Green component [0..1]")
+                .field(FLOAT, "b", "Blue component [0..1]")
+                .field(FLOAT, "a", "Alpha component [0..1]")
+                .field(INT, "shapeType", "The shape type (0=RECTANGLE, 1=CIRCLE)");
     }
 
     @Override

@@ -17,6 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.Entity as RtEntity
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -25,31 +26,59 @@ import androidx.xr.scenecore.runtime.SceneRuntime
  * An [Entity] that contains no content, but can have an arbitrary number of children. GroupEntity
  * is useful for organizing the placement and movement of a group of child SceneCore Entities.
  */
-public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: EntityManager) :
-    BaseEntity<RtEntity>(rtEntity, entityManager) {
+public class GroupEntity private constructor(rtEntity: RtEntity, entityRegistry: EntityRegistry) :
+    BaseEntity<RtEntity>(rtEntity, entityRegistry) {
     public companion object {
         /** Factory method to create GroupEntity entities. */
+        @Suppress("RestrictedApiAndroidX")
         internal fun create(
             sceneRuntime: SceneRuntime,
-            entityManager: EntityManager,
+            entityRegistry: EntityRegistry,
             name: String,
             pose: Pose = Pose.Identity,
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): GroupEntity =
             GroupEntity(
-                sceneRuntime.createGroupEntity(pose, name, sceneRuntime.activitySpace),
-                entityManager,
-            )
+                    @Suppress("DEPRECATION")
+                    sceneRuntime.createGroupEntity(
+                        pose,
+                        name,
+                        if (parent != null && parent !is BaseEntity<*>) {
+                            XrLog.warn(
+                                "The provided parent is not a BaseEntity. The GroupEntity will " +
+                                    "be created without a parent."
+                            )
+                            null
+                        } else {
+                            parent?.rtEntity
+                        },
+                    ),
+                    entityRegistry,
+                )
+                .also { it.parent = parent as? BaseEntity<*> }
 
         /**
          * Public factory method for creating a [GroupEntity].
          *
          * @param session Session to create the GroupEntity in.
          * @param name Name of the entity.
-         * @param pose Initial pose of the entity.
+         * @param pose Initial pose of the entity. The default value is [Pose.Identity].
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is `null`.
          */
         @JvmOverloads
         @JvmStatic
-        public fun create(session: Session, name: String, pose: Pose = Pose.Identity): GroupEntity =
-            create(session.sceneRuntime, session.scene.entityManager, name, pose)
+        @Deprecated(
+            message =
+                "Use Entity.create instead. Creating an Entity without any content is now done from the Entity class",
+            replaceWith = ReplaceWith("Entity.create", "androidx.xr.scenecore.Entity"),
+        )
+        public fun create(
+            session: Session,
+            name: String,
+            pose: Pose = Pose.Identity,
+            parent: Entity? = null,
+        ): GroupEntity =
+            create(session.sceneRuntime, session.scene.entityRegistry, name, pose, parent)
     }
 }

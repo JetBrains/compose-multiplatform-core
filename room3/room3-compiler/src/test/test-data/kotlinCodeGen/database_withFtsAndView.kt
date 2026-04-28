@@ -6,6 +6,7 @@ import androidx.room3.util.FtsTableInfo
 import androidx.room3.util.TableInfo
 import androidx.room3.util.ViewInfo
 import androidx.room3.util.dropFtsSyncTriggers
+import androidx.room3.util.performClear
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 import javax.`annotation`.processing.Generated
@@ -27,7 +28,7 @@ import androidx.room3.util.TableInfo.Companion.read as tableInfoRead
 import androidx.room3.util.ViewInfo.Companion.read as viewInfoRead
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
 internal class MyDatabase_Impl : MyDatabase() {
   private val _myDao: Lazy<MyDao> = lazy {
     MyDao_Impl(this)
@@ -35,7 +36,7 @@ internal class MyDatabase_Impl : MyDatabase() {
 
   protected override fun createOpenDelegate(): RoomOpenDelegate {
     val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(1, "89ba16fb8b062b50acf0eb06c853efcb", "8a71a68e07bdd62aa8c8324d870cf804") {
-      public override fun createAllTables(connection: SQLiteConnection) {
+      public override suspend fun createAllTables(connection: SQLiteConnection) {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `MyParentEntity` (`parentKey` INTEGER NOT NULL, PRIMARY KEY(`parentKey`))")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `MyEntity` (`pk` INTEGER NOT NULL, `indexedCol` TEXT NOT NULL, PRIMARY KEY(`pk`), FOREIGN KEY(`indexedCol`) REFERENCES `MyParentEntity`(`parentKey`) ON UPDATE NO ACTION ON DELETE CASCADE )")
         connection.execSQL("CREATE INDEX IF NOT EXISTS `index_MyEntity_indexedCol` ON `MyEntity` (`indexedCol`)")
@@ -45,29 +46,29 @@ internal class MyDatabase_Impl : MyDatabase() {
         connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '89ba16fb8b062b50acf0eb06c853efcb')")
       }
 
-      public override fun dropAllTables(connection: SQLiteConnection) {
+      public override suspend fun dropAllTables(connection: SQLiteConnection) {
         connection.execSQL("DROP TABLE IF EXISTS `MyParentEntity`")
         connection.execSQL("DROP TABLE IF EXISTS `MyEntity`")
         connection.execSQL("DROP TABLE IF EXISTS `MyFtsEntity`")
         connection.execSQL("DROP VIEW IF EXISTS `MyView`")
       }
 
-      public override fun onCreate(connection: SQLiteConnection) {
+      public override suspend fun onCreate(connection: SQLiteConnection) {
       }
 
-      public override fun onOpen(connection: SQLiteConnection) {
+      public override suspend fun onOpen(connection: SQLiteConnection) {
         connection.execSQL("PRAGMA foreign_keys = ON")
         internalInitInvalidationTracker(connection)
       }
 
-      public override fun onPreMigrate(connection: SQLiteConnection) {
+      public override suspend fun onPreMigrate(connection: SQLiteConnection) {
         dropFtsSyncTriggers(connection)
       }
 
-      public override fun onPostMigrate(connection: SQLiteConnection) {
+      public override suspend fun onPostMigrate(connection: SQLiteConnection) {
       }
 
-      public override fun onValidateSchema(connection: SQLiteConnection): RoomOpenDelegate.ValidationResult {
+      public override suspend fun onValidateSchema(connection: SQLiteConnection): RoomOpenDelegate.ValidationResult {
         val _columnsMyParentEntity: MutableMap<String, TableInfo.Column> = mutableMapOf()
         _columnsMyParentEntity.put("parentKey", TableInfo.Column("parentKey", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY))
         val _foreignKeysMyParentEntity: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
@@ -141,8 +142,8 @@ internal class MyDatabase_Impl : MyDatabase() {
     return InvalidationTracker(this, _shadowTablesMap, _viewTables, "MyParentEntity", "MyEntity", "MyFtsEntity")
   }
 
-  public override fun clearAllTables() {
-    super.performClear(true, "MyParentEntity", "MyEntity", "MyFtsEntity")
+  public override suspend fun clearAllTables() {
+    performClear(this, true, "MyParentEntity", "MyEntity", "MyFtsEntity")
   }
 
   protected override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {

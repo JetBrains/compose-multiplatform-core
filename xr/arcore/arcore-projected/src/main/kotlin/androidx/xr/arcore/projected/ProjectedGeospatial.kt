@@ -16,18 +16,17 @@
 
 package androidx.xr.arcore.projected
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.Geospatial
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
-import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.VpsAvailabilityAvailable
-import androidx.xr.runtime.VpsAvailabilityErrorInternal
-import androidx.xr.runtime.VpsAvailabilityNetworkError
-import androidx.xr.runtime.VpsAvailabilityNotAuthorized
-import androidx.xr.runtime.VpsAvailabilityResourceExhausted
-import androidx.xr.runtime.VpsAvailabilityResult
-import androidx.xr.runtime.VpsAvailabilityUnavailable
+import androidx.xr.arcore.runtime.TrackingState
+import androidx.xr.arcore.runtime.VpsAvailabilityAvailable
+import androidx.xr.arcore.runtime.VpsAvailabilityErrorInternal
+import androidx.xr.arcore.runtime.VpsAvailabilityNetworkError
+import androidx.xr.arcore.runtime.VpsAvailabilityNotAuthorized
+import androidx.xr.arcore.runtime.VpsAvailabilityResourceExhausted
+import androidx.xr.arcore.runtime.VpsAvailabilityResult
+import androidx.xr.arcore.runtime.VpsAvailabilityUnavailable
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -37,27 +36,28 @@ import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
- * Currently unimplemented implementation of [androidx.xr.arcore.runtime.Geospatial] on Projected.
+ * Currently unimplemented implementation of [Geospatial] on Projected.
+ *
+ * @property state the [Geospatial.State] of the geospatial instance
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class ProjectedGeospatial internal constructor(private val xrResources: XrResources) :
+internal class ProjectedGeospatial internal constructor(private val xrResources: XrResources) :
     Geospatial {
-    public override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
-        private set
+    override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
+        internal set
 
     private val service: IProjectedPerceptionService
         get() = xrResources.service
 
     private fun checkTrackingState() {
         if (
-            xrResources.deviceTrackingState == TrackingState.STOPPED ||
+            xrResources.trackingState == TrackingState.STOPPED ||
                 xrResources.geospatialTrackingState == TrackingState.STOPPED
         ) {
             throw GeospatialPoseNotTrackingException()
         }
     }
 
-    override public fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose {
+    override fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose {
         checkTrackingState()
         val projectedQuaternion =
             ProjectedQuarternion().apply {
@@ -84,7 +84,7 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
         )
     }
 
-    override public fun createGeospatialPoseFromPose(pose: Pose): Geospatial.GeospatialPoseResult {
+    override fun createGeospatialPoseFromPose(pose: Pose): Geospatial.GeospatialPoseResult {
         checkTrackingState()
         val projectedVector =
             ProjectedVector3().apply {
@@ -104,7 +104,15 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
                 vector = projectedVector
                 q = projectedQuaternion
             }
-        val projectedEarthPose = service.createGeospatialPoseFromPose(projectedPose)
+        val projectedEarthPose =
+            try {
+                // TODO: b/491554279 - remove android.os.RemoteException once the bug is fixed.
+                service.createGeospatialPoseFromPose(projectedPose)
+            } catch (e: android.os.RemoteException) {
+                throw GeospatialPoseNotTrackingException()
+            } catch (e: RuntimeException) {
+                throw GeospatialPoseNotTrackingException()
+            }
         // TODO: b/446185235 - maybe we need better error handling or in service?
         if (projectedEarthPose == null) {
             return Geospatial.GeospatialPoseResult(
@@ -135,7 +143,7 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
         )
     }
 
-    override public fun createAnchor(
+    override fun createAnchor(
         latitude: Double,
         longitude: Double,
         altitude: Double,
@@ -144,7 +152,7 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
         throw NotImplementedError("Not implemented yet.")
     }
 
-    override public suspend fun createAnchorOnSurface(
+    override suspend fun createAnchorOnSurface(
         latitude: Double,
         longitude: Double,
         altitudeAboveSurface: Double,
@@ -182,6 +190,8 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
                         }
                     continuation.resume(vpsResult)
                 }
+
+                override fun getInterfaceVersion(): Int = VERSION
             }
         try {
             xrResources.service.checkVpsAvailability(latitude, longitude, callback)

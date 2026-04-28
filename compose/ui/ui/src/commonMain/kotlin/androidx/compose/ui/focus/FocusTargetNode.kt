@@ -17,7 +17,6 @@
 package androidx.compose.ui.focus
 
 import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ComposeUiFlags.isOptimizedFocusEventDispatchEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.CustomDestinationResult.Cancelled
@@ -102,17 +101,12 @@ internal class FocusTargetNode(
 
     override fun requestFocus(focusDirection: FocusDirection): Boolean {
         trace("FocusTransactions:requestFocus") {
-            @OptIn(ExperimentalComposeUiApi::class)
-            return if (ComposeUiFlags.isRequestFocusOnNonFocusableFocusTargetEnabled) {
-                if (fetchFocusProperties().canFocus) {
-                    assignFocus(focusDirection)
-                } else {
-                    findChildCorrespondingToFocusEnter(focusDirection) {
-                        it.assignFocus(focusDirection)
-                    }
-                }
+            if (fetchFocusProperties().canFocus) {
+                return assignFocus(focusDirection)
             } else {
-                fetchFocusProperties().canFocus && assignFocus(focusDirection)
+                return findChildCorrespondingToFocusEnter(focusDirection) {
+                    it.assignFocus(focusDirection)
+                }
             }
         }
     }
@@ -135,24 +129,19 @@ internal class FocusTargetNode(
                         this === requireOwner().focusOwner.activeFocusTargetNode &&
                         !field.canFocus(this)
                 ) {
-                    @OptIn(ExperimentalComposeUiApi::class)
-                    if (isOptimizedFocusEventDispatchEnabled) {
-                        if (clearFocus(forced = true, refreshFocusEvents = true)) {
-                            val previousActive = requireOwner().focusOwner.activeFocusTargetNode
-                            requireOwner().focusOwner.activeFocusTargetNode = null
-                            previousActive?.dispatchFocusCallbacks(
-                                previousState = Active,
-                                newState = Inactive,
-                            )
-                        }
-                    } else {
-                        clearFocus(forced = true, refreshFocusEvents = true)
+                    if (prepareToClearFocus(forced = true, refreshFocusEvents = true)) {
+                        val previousActive = requireOwner().focusOwner.activeFocusTargetNode
+                        requireOwner().focusOwner.activeFocusTargetNode = null
+                        previousActive?.dispatchFocusCallbacks(
+                            previousState = Active,
+                            newState = Inactive,
+                        )
                     }
                 }
             }
         }
 
-    var previouslyFocusedChildHash: Int = 0
+    var previouslyFocusedChildHash: Int? = null
 
     val beyondBoundsLayoutParent: BeyondBoundsLayout?
         get() = findNearestBeyondBoundsLayoutAncestor()
@@ -227,6 +216,7 @@ internal class FocusTargetNode(
         }
         // This node might be reused, so we reset its state.
         committedFocusState = null
+        previouslyFocusedChildHash = null
     }
 
     override fun onPlaced(coordinates: LayoutCoordinates) {

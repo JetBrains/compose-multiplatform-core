@@ -77,7 +77,17 @@ private constructor(
             synchronized(System::class.java) {
                 SQLiteJDBCLoader.initialize() // extract and loads native library
                 JDBC.isValidURL(CONNECTION_URL) // call to register driver
-                DRIVER = DriverManager.getDriver("jdbc:sqlite:") // get registered driver
+                DRIVER =
+                    try {
+                        DriverManager.getDriver("jdbc:sqlite:") // get registered driver
+                    } catch (_: SQLException) {
+                        // This is usually a 'driver not found' exception, can happen in a project
+                        // with both Room 2.0 and 3.0 when one version unregisters the driver but
+                        // another is initializing and JDBC's static block doesn't run. In that case
+                        // then manually register the driver and a hold a reference to it for
+                        // cleanup.
+                        JDBC().also { DriverManager.registerDriver(it) }
+                    }
                 check(DRIVER is JDBC) {
                     "Expected driver to be a '${JDBC::class.java}' but was '${DRIVER::class.java}'"
                 }

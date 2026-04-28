@@ -5115,7 +5115,7 @@ public class ViewCompat {
             // This looks strange, but the WindowInsetsCompat instance still needs to know about
             // what the root window insets, and the root view visible bounds are
             insets.setRootWindowInsets(insets);
-            insets.copyRootViewBounds(v.getRootView());
+            insets.init(v.getRootView());
             return insets;
         }
     }

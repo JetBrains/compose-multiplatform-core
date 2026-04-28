@@ -89,8 +89,8 @@ internal class PdfViewKeyboardActionHandler(pdfView: PdfView) :
         zoomOut(pivotX, pivotY)
     }
 
-    fun zoomToDefault() {
-        applyZoom(pdfView.getDefaultZoom(), pivotX, pivotY)
+    fun zoomFitToWidth() {
+        applyZoom(pdfView.getFitToWidthZoom(), pivotX, pivotY)
     }
 
     private fun findPreviousPage(): Int? {

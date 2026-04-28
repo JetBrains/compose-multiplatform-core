@@ -23,6 +23,10 @@ GetterSetterNames: androidx.fragment.app.Fragment#getAllowReturnTransitionOverla
     Symmetric method for `setAllowReturnTransitionOverlap` must be named `isAllowReturnTransitionOverlap`; was `getAllowReturnTransitionOverlap`
 
 
+HiddenSuperclass: androidx.fragment.app.FragmentActivity:
+    Public class androidx.fragment.app.FragmentActivity stripped of unavailable superclass androidx.core.app.ActivityCompat.RequestPermissionsRequestCodeValidator
+
+
 InvalidNullabilityOverride: androidx.fragment.app.DialogFragment#onCancel(android.content.DialogInterface) parameter #0:
     Invalid nullability on type android.content.DialogInterface in parameter `dialog` in method `onCancel`. Parameter in method override cannot use a non-null type when the corresponding type from the super method is platform-nullness.
 InvalidNullabilityOverride: androidx.fragment.app.DialogFragment#onDismiss(android.content.DialogInterface) parameter #0:
@@ -67,6 +71,14 @@ ParcelNotFinal: androidx.fragment.app.Fragment.SavedState:
 
 SingularCallback: androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks:
     Callback class names should be singular: FragmentLifecycleCallbacks
+
+
+TypeParameterName: androidx.fragment.app.FragmentViewModelLazyKt#activityViewModels(androidx.fragment.app.Fragment, kotlin.jvm.functions.Function0<androidx.lifecycle.viewmodel.CreationExtras>, kotlin.jvm.functions.Function0<androidx.lifecycle.ViewModelProvider.Factory>):
+    Invalid type parameter name "VM". Type parameter names must follow the Google naming guidelines specified here: https://developer.android.com/kotlin/style-guide#type_variable_names
+TypeParameterName: androidx.fragment.app.FragmentViewModelLazyKt#createViewModelLazy(androidx.fragment.app.Fragment, kotlin.reflect.KClass<VM>, kotlin.jvm.functions.Function0<? extends androidx.lifecycle.ViewModelStore>, kotlin.jvm.functions.Function0<? extends androidx.lifecycle.viewmodel.CreationExtras>, kotlin.jvm.functions.Function0<? extends androidx.lifecycle.ViewModelProvider.Factory>):
+    Invalid type parameter name "VM". Type parameter names must follow the Google naming guidelines specified here: https://developer.android.com/kotlin/style-guide#type_variable_names
+TypeParameterName: androidx.fragment.app.FragmentViewModelLazyKt#viewModels(androidx.fragment.app.Fragment, kotlin.jvm.functions.Function0<androidx.lifecycle.ViewModelStoreOwner>, kotlin.jvm.functions.Function0<androidx.lifecycle.viewmodel.CreationExtras>, kotlin.jvm.functions.Function0<androidx.lifecycle.ViewModelProvider.Factory>):
+    Invalid type parameter name "VM". Type parameter names must follow the Google naming guidelines specified here: https://developer.android.com/kotlin/style-guide#type_variable_names
 
 
 UseParcelFileDescriptor: androidx.fragment.app.Fragment#dump(String, java.io.FileDescriptor, java.io.PrintWriter, String[]) parameter #1:

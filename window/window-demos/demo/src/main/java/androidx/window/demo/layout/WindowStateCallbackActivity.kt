@@ -110,7 +110,6 @@ class WindowStateCallbackActivity : ComponentActivity() {
                 "Since API level 34 this is never called. Apps targeting API level 34 " +
                     "and above may provide an empty implementation."
             )
-            @Suppress("OVERRIDE_DEPRECATION") // b/446706247
             override fun onLowMemory() {}
         }
 

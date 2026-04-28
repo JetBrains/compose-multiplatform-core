@@ -23,23 +23,21 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.retain.RetainedValuesStore.*
 
 /**
- * Remember the value produced by [calculation] and retain it in the current [RetainedValuesStore].
- * A retained value is one that is persisted in memory to survive transient destruction and
- * recreation of a portion or the entirety of the content in the composition hierarchy. Some
- * examples of when content is transiently destroyed (later referred to as a "retention scenario")
- * include:
+ * Remember the value produced by [calculation] and retain it in the [LocalRetainedValuesStore]. A
+ * retained value is one that is persisted in memory to survive transient destruction and recreation
+ * of a portion or the entirety of the content in the composition hierarchy. Some examples of when
+ * content is transiently destroyed include:
  * - Navigation destinations that are on the back stack, not currently visible, and not composed
  * - UI components that are collapsed, not rendering, and not composed
  * - On Android, composition hierarchies hosted by an Activity that is being destroyed and recreated
  *   due to a configuration change
  *
- * When a value retained by [retain] leaves the composition hierarchy during one of these retention
- * scenarios, the [LocalRetainedValuesStore] will persist it until the content is recreated. If an
- * instance of this function then re-enters the composition hierarchy during the recreation, it will
- * return the retained value instead of invoking [calculation] again.
+ * When the content tracked by a [RetainedValuesStore] is removed with the expectation that it will
+ * be recreated in the future, all of its retained values will be persisted until the content is
+ * recreated. If an instance of this function then re-enters the composition hierarchy during this
+ * recreation, the retained value will be returned instead of invoking [calculation] again.
  *
  * If this function leaves the composition hierarchy when the [LocalRetainedValuesStore] is not
  * retaining values that exit the composition, the value will be discarded immediately.
@@ -88,6 +86,8 @@ import androidx.compose.runtime.retain.RetainedValuesStore.*
  * a custom class should not be retained (possibly because it will cause a memory leak), you can
  * annotate your class definition with [androidx.compose.runtime.annotation.DoNotRetain].
  *
+ * @sample androidx.compose.runtime.retain.samples.retainSample
+ * @sample androidx.compose.runtime.retain.samples.rememberAndRetainSample
  * @param calculation A computation to invoke to create a new value, which will be used when a
  *   previous one is not available to return because it was neither remembered nor retained.
  * @return The result of [calculation]
@@ -101,20 +101,19 @@ public inline fun <reified T> retain(noinline calculation: () -> T): T {
 }
 
 /**
- * Remember the value produced by [calculation] and retain it in the current [RetainedValuesStore].
- * A retained value is one that is persisted in memory to survive transient destruction and
- * recreation of a portion or the entirety of the content in the composition hierarchy. Some
- * examples of when content is transiently destroyed (later referred to as a "retention scenario")
- * include:
+ * Remember the value produced by [calculation] and retain it in the [LocalRetainedValuesStore]. A
+ * retained value is one that is persisted in memory to survive transient destruction and recreation
+ * of a portion or the entirety of the content in the composition hierarchy. Some examples of when
+ * content is transiently destroyed include:
  * - Navigation destinations that are on the back stack, not currently visible, and not composed
  * - UI components that are collapsed, not rendering, and not composed
  * - On Android, composition hierarchies hosted by an Activity that is being destroyed and recreated
  *   due to a configuration change
  *
- * When a value retained by [retain] leaves the composition hierarchy during one of these retention
- * scenarios, the [LocalRetainedValuesStore] will persist it until the content is recreated. If an
- * instance of this function then re-enters the composition hierarchy during the recreation, it will
- * return the retained value instead of invoking [calculation] again.
+ * When the content tracked by a [RetainedValuesStore] is removed with the expectation that it will
+ * be recreated in the future, all of its retained values will be persisted until the content is
+ * recreated. If an instance of this function then re-enters the composition hierarchy during this
+ * recreation, the retained value will be returned instead of invoking [calculation] again.
  *
  * If this function leaves the composition hierarchy when the [LocalRetainedValuesStore] is not
  * retaining values that exit the composition or is invoked with list of [keys] that are not all
@@ -122,7 +121,7 @@ public inline fun <reified T> retain(noinline calculation: () -> T): T {
  * immediately and [calculation] will execute again when a new value is needed.
  *
  * The lifecycle of the retained value can be observed by implementing [RetainObserver]. Callbacks
- * from [RememberObserver] are never invoked on objects retained this way. It is illegal to retain
+ * from [RememberObserver] are never invoked on objects retained this way. It is invalid to retain
  * an object that is a [RememberObserver] but not a [RetainObserver].
  *
  * Keys passed to this composable will be kept in-memory while the computed value is retained for
@@ -170,6 +169,13 @@ public inline fun <reified T> retain(noinline calculation: () -> T): T {
  * a custom class should not be retained (possibly because it will cause a memory leak), you can
  * annotate your class definition with [androidx.compose.runtime.annotation.DoNotRetain].
  *
+ * Because keys are held for the same duration as retained values, all input keys must follow the
+ * same lifespan requirements to prevent a memory leak. Do not use a key that references objects
+ * like Context or View. Types annotated with [androidx.compose.runtime.annotation.DoNotRetain] are
+ * similarly flagged as an error when used as a key to retain.
+ *
+ * @sample androidx.compose.runtime.retain.samples.retainSample
+ * @sample androidx.compose.runtime.retain.samples.rememberAndRetainSample
  * @param keys An arbitrary list of keys that, if changed, will cause an old retained value to be
  *   discarded and for [calculation] to return a new value, regardless of whether the old value was
  *   being retained in the [RetainedValuesStore] or not.
@@ -219,7 +225,11 @@ private fun <T> retainImpl(key: RetainKeys, calculation: () -> T): T {
     val holder =
         remember(key) {
             val retainedValue =
-                retainedValuesStore.getExitedValueOrElse(key, RetainedValuesStoreMissingValue)
+                retainedValuesStore.consumeExitedValueOrDefault(
+                    key = key,
+                    defaultValue = RetainedValuesStoreMissingValue,
+                )
+
             if (retainedValue !== RetainedValuesStoreMissingValue) {
                 RetainedValueHolder(
                     key = key,

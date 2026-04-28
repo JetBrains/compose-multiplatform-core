@@ -15,8 +15,6 @@
  */
 package androidx.compose.remote.core.operations;
 
-import static androidx.compose.remote.core.documentation.DocumentedOperation.INT_ARRAY;
-
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
@@ -41,8 +39,8 @@ public class BitmapFontData extends Operation implements Serializable {
     private static final int OP_CODE = Operations.DATA_BITMAP_FONT;
     private static final String CLASS_NAME = "BitmapFontData";
 
-    static final short VERSION_1 = 0;
-    static final short VERSION_2 = 1; // Adds kerning table support.
+    public static final short VERSION_1 = 0;
+    public static final short VERSION_2 = 1; // Adds kerning table support.
     private static final int MAX_GLYPHS = 0xffff;
     private static final int MAX_KERNING_TABLE_SIZE = 0xffff;
 
@@ -240,7 +238,7 @@ public class BitmapFontData extends Operation implements Serializable {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int id = buffer.readInt();
+        int id = buffer.readId();
         int versionAndNumGlyphElements = buffer.readInt();
         // The version is encoded in the top 16 bits to maintain backwards compatibility.
         short version = (short) (versionAndNumGlyphElements >>> 16);
@@ -249,7 +247,7 @@ public class BitmapFontData extends Operation implements Serializable {
         for (int i = 0; i < numGlyphElements; i++) {
             glyphs[i] = new Glyph();
             glyphs[i].mChars = buffer.readUTF8();
-            glyphs[i].mBitmapId = buffer.readInt();
+            glyphs[i].mBitmapId = buffer.readId();
             glyphs[i].mMarginLeft = (short) buffer.readShort();
             glyphs[i].mMarginTop = (short) buffer.readShort();
             glyphs[i].mMarginRight = (short) buffer.readShort();
@@ -278,11 +276,36 @@ public class BitmapFontData extends Operation implements Serializable {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Data Operations", OP_CODE, CLASS_NAME)
-                .description("Bitmap font data")
-                .field(DocumentedOperation.INT, "id", "id of bitmap font data")
-                .field(INT_ARRAY, "glyphNodes", "list used to greedily convert strings into glyphs")
-                .field(INT_ARRAY, "glyphElements", "");
+        doc.operation("Text Operations", OP_CODE, CLASS_NAME)
+                .description("Define a bitmap font with glyph metadata and optional kerning")
+                .field(DocumentedOperation.INT, "id", "The ID of the bitmap font")
+                .field(
+                        DocumentedOperation.INT,
+                        "versionAndNumGlyphs",
+                        "Encoded version and number of glyphs")
+                .field(DocumentedOperation.UTF8, "chars[0..n]", "The characters for each glyph")
+                .field(DocumentedOperation.INT, "bitmapId[0..n]", "The bitmap ID for each glyph")
+                .field(DocumentedOperation.SHORT, "marginLeft[0..n]", "Left margin for each glyph")
+                .field(DocumentedOperation.SHORT, "marginTop[0..n]", "Top margin for each glyph")
+                .field(
+                        DocumentedOperation.SHORT,
+                        "marginRight[0..n]",
+                        "Right margin for each glyph")
+                .field(
+                        DocumentedOperation.SHORT,
+                        "marginBottom[0..n]",
+                        "Bottom margin for each glyph")
+                .field(DocumentedOperation.SHORT, "width[0..n]", "Width for each glyph")
+                .field(DocumentedOperation.SHORT, "height[0..n]", "Height for each glyph")
+                .field(
+                        DocumentedOperation.SHORT,
+                        "kerningSize",
+                        "Number of entries in the kerning table")
+                .field(DocumentedOperation.UTF8, "glyphPair[0..n]", "Glyph pair for kerning")
+                .field(
+                        DocumentedOperation.SHORT,
+                        "adjustment[0..n]",
+                        "Horizontal adjustment for kerning pair");
     }
 
     @Override

@@ -171,7 +171,7 @@ class SpatialArrangementUsageActivity : ComponentActivity() {
             onClickBackArrow = { this@SpatialArrangementUsageActivity.finish() },
             onClickRecreate = { this@SpatialArrangementUsageActivity.recreate() },
         ) { padding ->
-            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
             Column(
                 modifier =
                     Modifier.fillMaxSize().background(Color.White).padding(padding).padding(20.dp)

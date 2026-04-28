@@ -29,18 +29,28 @@ import org.jetbrains.annotations.VisibleForTesting
  *
  * @param onItemClicked A lambda function to be invoked when an item in the palette is clicked.
  */
-internal class ColorPaletteAdapter(private var onItemClicked: (PaletteItem) -> Unit) :
+internal class ColorPaletteAdapter(private var onItemClicked: (Int, PaletteItem) -> Unit) :
     ListAdapter<PaletteItem, ColorPaletteAdapter.PaletteItemViewHolder>(PaletteItemDiffCallback) {
 
     @VisibleForTesting var areAnimationsEnabled: Boolean = true
 
     // Store the position of the selected item. Initialize to no selection.
-    private var selectedPosition = RecyclerView.NO_POSITION
+    var selectedPosition = RecyclerView.NO_POSITION
+        private set
+
+    /** Sets the currently selected item in the palette. */
+    fun setSelection(itemPos: Int) {
+        notifyItemSelectionChanged(itemPos)
+    }
 
     private fun handleItemClick(position: Int) {
         val item = getItem(position)
-        onItemClicked(item)
+        onItemClicked(position, item)
 
+        notifyItemSelectionChanged(position)
+    }
+
+    private fun notifyItemSelectionChanged(position: Int) {
         // Optimizes notifying item changed, if same item is selected
         if (position == selectedPosition) return
 

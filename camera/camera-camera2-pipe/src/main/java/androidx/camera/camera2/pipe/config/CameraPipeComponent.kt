@@ -29,6 +29,7 @@ import androidx.camera.camera2.pipe.CameraDevices
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraPipe.CameraMetadataConfig
 import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.compat.AndroidDevicePolicyManagerWrapper
 import androidx.camera.camera2.pipe.compat.AudioRestrictionController
 import androidx.camera.camera2.pipe.compat.ConcurrentSessionSequencers
@@ -40,8 +41,6 @@ import androidx.camera.camera2.pipe.core.TimeSource
 import androidx.camera.camera2.pipe.internal.CameraBackendsImpl
 import androidx.camera.camera2.pipe.internal.CameraDevicesImpl
 import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
-import androidx.camera.camera2.pipe.media.ImageReaderImageSources
-import androidx.camera.camera2.pipe.media.ImageSources
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompatFactory
 import dagger.Binds
 import dagger.Component
@@ -187,18 +186,11 @@ internal abstract class CameraPipeModule {
             )
         }
 
-        @Provides
-        fun configureImageSources(
-            imageReaderImageSources: ImageReaderImageSources,
-            cameraPipeConfig: CameraPipe.Config,
-        ): ImageSources {
-            if (cameraPipeConfig.imageSources != null) {
-                return cameraPipeConfig.imageSources
-            }
-            return imageReaderImageSources
-        }
-
         @Singleton @Provides fun provideCameraSurfaceManager() = CameraSurfaceManager()
+
+        @Singleton
+        @Provides
+        fun provideStrictMode(flags: CameraPipe.Flags) = StrictMode(flags.strictModeEnabled)
 
         @Singleton
         @Provides

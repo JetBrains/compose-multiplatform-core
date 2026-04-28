@@ -27,8 +27,9 @@ import androidx.annotation.Px
  * This class encapsulates the result of a vertical text layout process. It stores the layout's
  * properties and provides methods to draw the layout on a [Canvas].
  *
- * NOTE: Currently, this API leverages a platform feature added in API 36 (Android 16). For older
- * API levels, it provides a graceful fallback. We will provide a backport to API 31 in the future.
+ * NOTE: Currently, this API leverages a platform feature introduced in API 36 (Android 16). On
+ * older API levels, it falls back to a no-op (i.e. it does not draw any text and reports a width
+ * and line count of 0).
  */
 public class VerticalTextLayout
 /**
@@ -46,12 +47,16 @@ constructor(
     end: Int = text.length,
     paint: TextPaint = TextPaint(),
     @Px height: Float = 0f,
-    orientation: Int = TextOrientation.MIXED,
+    orientation: TextOrientation = TextOrientation.Mixed,
 ) {
-    /** The width constraint of the vertical text in pixels. */
+    /** The computed width of the vertical text layout in pixels. */
     @get:Px
     public val width: Float
         get() = impl.width
+
+    /** The number of lines (columns) in this vertical text layout. */
+    public val lineCount: Int
+        get() = impl.lineCount
 
     internal val impl: VerticalTextLayoutImpl
 
@@ -81,8 +86,8 @@ constructor(
     }
 
     /**
-     * Capability query to determine whether or not [VerticalTextLayout] supports vertical text
-     * painting. If it is false, calling methods will have no effect.
+     * Capability query to determine whether [VerticalTextLayout] supports vertical text painting.
+     * If this returns false, [draw] will have no effect.
      */
     public fun isVerticalTextSupported(): Boolean {
         return impl.isVerticalTextSupported()

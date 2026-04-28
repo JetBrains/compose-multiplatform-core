@@ -36,8 +36,11 @@ import androidx.compose.remote.creation.particlesLoops
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.creation.round
 import androidx.compose.remote.creation.sin
+import androidx.compose.remote.tooling.preview.RemoteDocPreview
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.tooling.preview.Preview
 
 @SuppressLint("RestrictedApiAndroidX")
 fun RemoteComposeWriterAndroid.drawWithShader(
@@ -136,7 +139,7 @@ fun shaderFireworks(): RemoteComposeContext {
 }
 
 @SuppressLint("RestrictedApiAndroidX")
-fun fireworksEngine(
+private fun fireworksEngine(
     rcDoc: RemoteComposeWriterAndroid,
     event: Float,
     width: RFloat,
@@ -216,3 +219,5 @@ fun fireworksEngine(
         //        rcDoc.restore()
     }
 }
+
+@Preview @Composable private fun ShaderFireworksPreview() = RemoteDocPreview(shaderFireworks())

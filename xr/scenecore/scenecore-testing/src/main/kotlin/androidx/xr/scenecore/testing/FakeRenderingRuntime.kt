@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.NodeHolder
+import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
+import androidx.xr.scenecore.runtime.CustomMeshResource
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.ExrImageResource
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfModelResource
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.MaterialResource
+import androidx.xr.scenecore.runtime.MeshBufferResource
+import androidx.xr.scenecore.runtime.MeshEntity
 import androidx.xr.scenecore.runtime.RenderingEntityFactory
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -35,9 +41,7 @@ import androidx.xr.scenecore.runtime.SpatialEnvironmentExt
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.TextureResource
 import androidx.xr.scenecore.runtime.TextureSampler
-import com.google.common.util.concurrent.Futures.immediateFailedFuture
-import com.google.common.util.concurrent.Futures.immediateFuture
-import com.google.common.util.concurrent.ListenableFuture
+import java.nio.ByteBuffer
 
 /**
  * Test-only implementation of [androidx.xr.scenecore.runtime.RenderingRuntime].
@@ -46,7 +50,8 @@ import com.google.common.util.concurrent.ListenableFuture
  *   [androidx.xr.scenecore.runtime.SceneRuntime] instance, which must also implement
  *   [androidx.xr.scenecore.runtime.RenderingEntityFactory].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FakeRenderingRuntime(
     private val sceneRuntime: SceneRuntime,
     private val entityFactory: RenderingEntityFactory = sceneRuntime as RenderingEntityFactory,
@@ -60,33 +65,38 @@ public class FakeRenderingRuntime(
         )
     }
 
-    @Suppress("AsyncSuffixFuture")
-    override fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource> =
-        immediateFuture(FakeGltfModelResource(0))
+    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource {
+        val gltfModelResource = FakeGltfModelResource(0)
+        gltfModelResource.assetName = assetName
+        return gltfModelResource
+    }
 
-    @Suppress("AsyncSuffixFuture")
-    override fun loadGltfByByteArray(
+    override suspend fun loadGltfByByteArray(
         assetData: ByteArray,
         assetKey: String,
-    ): ListenableFuture<GltfModelResource> = immediateFuture(FakeGltfModelResource(0))
+    ): GltfModelResource {
+        val gltfModelResource = FakeGltfModelResource(0)
+        gltfModelResource.assetData = assetData
+        gltfModelResource.assetKey = assetKey
+        return gltfModelResource
+    }
 
     override fun destroyGltfModel(gltfModel: GltfModelResource) {}
 
-    @Suppress("AsyncSuffixFuture")
-    override fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource> =
-        immediateFuture(FakeExrImageResource(0))
+    override suspend fun loadExrImageByAssetName(assetName: String): ExrImageResource {
+        val exrImageResource = FakeExrImageResource(0)
+        exrImageResource.assetName = assetName
+        return exrImageResource
+    }
 
-    @Suppress("AsyncSuffixFuture")
-    override fun loadExrImageByByteArray(
+    override suspend fun loadExrImageByByteArray(
         assetData: ByteArray,
         assetKey: String,
-    ): ListenableFuture<ExrImageResource> = immediateFuture(FakeExrImageResource(1))
+    ): ExrImageResource = FakeExrImageResource(1)
 
     override fun destroyExrImage(exrImage: ExrImageResource) {}
 
-    @Suppress("AsyncSuffixFuture")
-    override fun loadTexture(assetName: String): ListenableFuture<TextureResource> =
-        immediateFailedFuture(NotImplementedError())
+    override suspend fun loadTexture(assetName: String): TextureResource = FakeResource()
 
     /**
      * For test purposes only.
@@ -117,7 +127,7 @@ public class FakeRenderingRuntime(
      * For test purposes only.
      *
      * A fake implementation of [androidx.xr.scenecore.runtime.MaterialResource] used to simulate a
-     * water material within the test senvironment.
+     * water material within the test environment.
      *
      * <p>Instances of this class are created by [createWaterMaterial] and can be accessed for
      * verification via the [createdWaterMaterials] list. Tests can inspect the public properties of
@@ -127,6 +137,7 @@ public class FakeRenderingRuntime(
      * @param isAlphaMapVersion The value provided during creation, indicating which version of the
      *   water material was requested.
      */
+    @Deprecated("Use SceneCoreTestRule instead.")
     public class FakeWaterMaterial(public val isAlphaMapVersion: Boolean) : MaterialResource {
         public var reflectionMap: TextureResource? = null
         public var reflectionMapSampler: TextureSampler? = null
@@ -165,6 +176,7 @@ public class FakeRenderingRuntime(
      * @param spec The [androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec] provided during
      *   creation, which defines the initial configuration of the material.
      */
+    @Deprecated("Use SceneCoreTestRule instead.")
     public class FakeKhronosPbrMaterial(public val spec: KhronosPbrMaterialSpec) :
         MaterialResource {
         public var baseColorTexture: TextureResource? = null
@@ -214,13 +226,10 @@ public class FakeRenderingRuntime(
     public val createdKhronosPbrMaterials: MutableList<FakeKhronosPbrMaterial> =
         mutableListOf<FakeKhronosPbrMaterial>()
 
-    @Suppress("AsyncSuffixFuture")
-    override fun createWaterMaterial(
-        isAlphaMapVersion: Boolean
-    ): ListenableFuture<MaterialResource> {
+    override suspend fun createWaterMaterial(isAlphaMapVersion: Boolean): MaterialResource {
         val newMaterial = FakeWaterMaterial(isAlphaMapVersion)
         createdWaterMaterials.add(newMaterial)
-        return immediateFuture(newMaterial)
+        return newMaterial
     }
 
     override fun destroyWaterMaterial(material: MaterialResource) {
@@ -280,13 +289,10 @@ public class FakeRenderingRuntime(
         (material as? FakeWaterMaterial)?.normalBoundary = normalBoundary
     }
 
-    @Suppress("AsyncSuffixFuture")
-    override fun createKhronosPbrMaterial(
-        spec: KhronosPbrMaterialSpec
-    ): ListenableFuture<MaterialResource> {
+    override suspend fun createKhronosPbrMaterial(spec: KhronosPbrMaterialSpec): MaterialResource {
         val newMaterial = FakeKhronosPbrMaterial(spec)
         createdKhronosPbrMaterials.add(newMaterial)
-        return immediateFuture(newMaterial)
+        return newMaterial
     }
 
     override fun destroyKhronosPbrMaterial(material: MaterialResource) {
@@ -520,18 +526,19 @@ public class FakeRenderingRuntime(
     override fun createGltfEntity(
         pose: Pose,
         loadedGltf: GltfModelResource,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): GltfEntity {
         return entityFactory.createGltfEntity(FakeGltfFeature(createNode()), pose, parentEntity)
     }
 
     override fun createSurfaceEntity(
         stereoMode: Int,
+        mediaBlendingMode: Int,
         pose: Pose,
         shape: SurfaceEntity.Shape,
         surfaceProtection: Int,
         superSampling: Int,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): SurfaceEntity {
         val surfaceFeature = FakeSurfaceFeature(createNode())
         surfaceFeature.stereoMode = stereoMode
@@ -542,6 +549,50 @@ public class FakeRenderingRuntime(
         surfaceEntity.stereoMode = stereoMode
         surfaceEntity.shape = shape
         return surfaceEntity
+    }
+
+    override fun createMeshBuffer(
+        attributeIds: IntArray,
+        attributeTypes: IntArray,
+        bufferIndices: ByteArray,
+        maxVertices: Int,
+        maxIndices: Int,
+        vertexData: Array<ByteBuffer>?,
+        vertexDataOffsets: IntArray?,
+        vertexDataSizes: IntArray?,
+        indexData: ByteBuffer?,
+        indexDataOffset: Int,
+        indexDataSize: Int,
+    ): MeshBufferResource = object : MeshBufferResource {}
+
+    override fun destroyMeshBuffer(meshBuffer: MeshBufferResource) {}
+
+    override fun createCustomMesh(
+        meshBuffer: MeshBufferResource,
+        subsetOffsets: IntArray,
+        subsetCounts: IntArray,
+        subsetTopologies: IntArray,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
+    ): CustomMeshResource = object : CustomMeshResource {}
+
+    override fun getCustomMeshBoundingBox(customMesh: CustomMeshResource): BoundingBox =
+        BoundingBox.fromMinMax(Vector3(0f, 0f, 0f), Vector3(0f, 0f, 0f))
+
+    override fun destroyCustomMesh(customMesh: CustomMeshResource) {}
+
+    override fun createMeshEntity(
+        customMesh: CustomMeshResource,
+        materials: List<MaterialResource>,
+        boneCount: Int,
+        pose: Pose,
+        parent: Entity?,
+    ): MeshEntity {
+        return entityFactory.createMeshEntity(FakeMeshFeature(createNode()), pose, parent)
     }
 
     /* Tracks the current state of the adapter according to where it is in its lifecycle. */
@@ -556,9 +607,9 @@ public class FakeRenderingRuntime(
 
     /**
      * The current state of the adapter will transition based on the lifecycle of the adapter. It
-     * starts off as [State.CREATED] and transitions to [State.STARTED] when startRenderer is
-     * called. When stopRenderer is called, it transitions to [State.PAUSED]. When dispose is
-     * called, it transitions to [State.DESTROYED].
+     * starts off as [State.CREATED] and transitions to [State.STARTED] when [resume] is called.
+     * When [pause] is called, it transitions to [State.PAUSED]. When [destroy] is called, it
+     * transitions to [State.DESTROYED].
      */
     public val state: Enum<State>
         get() = _state

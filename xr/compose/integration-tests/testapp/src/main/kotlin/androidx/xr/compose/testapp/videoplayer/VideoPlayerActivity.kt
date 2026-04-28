@@ -74,15 +74,18 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.xr.arcore.ArDevice
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.transformingMovable
 import androidx.xr.compose.testapp.R
+import androidx.xr.compose.testapp.common.isDrmSupported
+import androidx.xr.compose.testapp.common.isMvHevcSupported
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.FloatSize2d
@@ -95,7 +98,6 @@ import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.Texture
-import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.scene
 import java.io.File
 import java.nio.file.Paths
@@ -103,6 +105,7 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "JXR-SurfaceEntity-VideoPlayerActivity"
 
+@SuppressLint("RestrictedApiAndroidX") // SurfaceEntity.primaryAlphaMaskTexture
 class VideoPlayerActivity : ComponentActivity() {
     private var exoPlayer: ExoPlayer? = null
     private val activity = this
@@ -129,7 +132,7 @@ class VideoPlayerActivity : ComponentActivity() {
 
         session = (Session.create(this) as SessionCreateSuccess).session
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
-        session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
+        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
         arDevice = ArDevice.getInstance(session)
 
         checkExternalStoragePermission()
@@ -153,8 +156,9 @@ class VideoPlayerActivity : ComponentActivity() {
         Subspace {
             SpatialColumn {
                 SpatialPanel(
-                    modifier = SubspaceModifier.size(DpVolumeSize(960.dp, 720.dp, 0.dp)),
-                    dragPolicy = MovePolicy(),
+                    modifier =
+                        SubspaceModifier.size(DpVolumeSize(960.dp, 720.dp, 0.dp))
+                            .transformingMovable()
                 ) {
                     VideoPlayerTestActivityUI(true, getString(R.string.video_player_test))
                 }
@@ -222,7 +226,7 @@ class VideoPlayerActivity : ComponentActivity() {
         videoPlaying = false
         exoPlayer?.release()
         exoPlayer = null
-        surfaceEntity!!.dispose()
+        surfaceEntity!!.parent = null
         surfaceEntity = null
     }
 
@@ -352,13 +356,13 @@ class VideoPlayerActivity : ComponentActivity() {
                         VideoButton(
                             VideoPlayerButtons.MVHEVC_LEFT_PRIMARY_BUTTON.ordinal,
                             modifier,
-                            true,
+                            isMvHevcSupported(),
                         )
 
                         VideoButton(
                             VideoPlayerButtons.MVHEVC_RIGHT_PRIMARY_BUTTON.ordinal,
                             modifier,
-                            true,
+                            isMvHevcSupported(),
                         )
                     }
                 }
@@ -382,7 +386,7 @@ class VideoPlayerActivity : ComponentActivity() {
                         VideoButton(
                             VideoPlayerButtons.NAVER_180_MVHEVC_BUTTON.ordinal,
                             modifier,
-                            true,
+                            isMvHevcSupported(),
                         )
                     }
                 }
@@ -414,7 +418,7 @@ class VideoPlayerActivity : ComponentActivity() {
                         VideoButton(
                             VideoPlayerButtons.GALAXY_360_MVHEVC_BUTTON.ordinal,
                             modifier,
-                            true,
+                            isMvHevcSupported(),
                         )
                     }
                 }
@@ -445,9 +449,15 @@ class VideoPlayerActivity : ComponentActivity() {
                         VideoButton(
                             VideoPlayerButtons.DRM_PROTECTED_MVHEVC_LEFT_PRIMARY_BUTTON.ordinal,
                             modifier,
-                            true,
+                            isMvHevcSupported(),
                         )
                     }
+                }
+                if (!isMvHevcSupported()) {
+                    ApiText(text = "MV-HEVC is not supported on this device")
+                }
+                if (!isDrmSupported()) {
+                    ApiText(text = "DRM is not supported on this device")
                 }
             }
         }
@@ -587,10 +597,10 @@ class VideoPlayerActivity : ComponentActivity() {
             VideoPlayerButtons.GALAXY_360_MVHEVC_BUTTON.ordinal,
             VideoPlayerButtons.NAVER_180_MVHEVC_BUTTON.ordinal,
             VideoPlayerButtons.NAVER_180_BUTTON.ordinal -> {
-                session.scene.spatialUser.head?.transformPoseTo(
-                    Pose.Identity,
+                session.scene.perceptionSpace.transformPoseTo(
+                    arDevice.state.value.devicePose,
                     session.scene.activitySpace,
-                )!!
+                )
             }
 
             else -> {
@@ -747,8 +757,7 @@ class VideoPlayerActivity : ComponentActivity() {
                                 FloatSize2d(dimensions.width, dimensions.height)
                             )
                         movableComponent?.size =
-                            (surfaceEntity?.dimensions ?: Dimensions(1.0f, 1.0f, 1.0f))
-                                as FloatSize3d
+                            (surfaceEntity?.dimensions ?: FloatSize3d(1.0f, 1.0f, 1.0f))
                     }
                 }
 

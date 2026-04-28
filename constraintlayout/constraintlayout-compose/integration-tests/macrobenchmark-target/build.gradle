@@ -18,13 +18,12 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     defaultConfig {
-        minSdk = 26
+        minSdk { version = release(26) }
     }
     namespace = "androidx.constraintlayout.compose.integration.macrobenchmark.target"
 
@@ -32,8 +31,7 @@ android {
         release {
             minifyEnabled = true
             shrinkResources = true
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"),
-                    'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
 }

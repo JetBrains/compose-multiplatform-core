@@ -24,6 +24,7 @@ import org.robolectric.RobolectricTestRunner
 
 @Suppress("DEPRECATION") // Tests must still test deprecated fields/methods.
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SectionedItemTemplateTest {
     class MyCustomSection : Section<Row>()
 
@@ -141,7 +142,7 @@ class SectionedItemTemplateTest {
         val template = SectionedItemTemplate.Builder().build()
 
         assertThat(template.scrollStatePersistenceStrategy)
-            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_RESET_TO_TOP)
+            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_PRESERVE_INDEX)
     }
 
     @Test
@@ -165,6 +166,61 @@ class SectionedItemTemplateTest {
         } catch (e: IllegalArgumentException) {
             assertThat(e.message).contains("are allowed in SectionedItemTemplate")
         }
+    }
+
+    @Test
+    fun build_allowsSpotlightSection() {
+        val section =
+            SpotlightSection.Builder(CarIcon.APP_ICON)
+                .setTitle("Spotlight")
+                .addItem(CondensedItem.Builder().setTitle("Item").build())
+                .build()
+        val template = SectionedItemTemplate.Builder().addSection(section).build()
+
+        assertThat(template.sections).containsExactly(section)
+    }
+
+    @Test
+    fun build_throwsException_whenChipSectionIsNotFirst() {
+        try {
+            SectionedItemTemplate.Builder()
+                .addSection(RowSection.Builder().build())
+                .addSection(buildChipSection())
+                .build()
+            assertWithMessage("Expected builder to throw exception, but it didn't").fail()
+        } catch (e: IllegalArgumentException) {
+            assertThat(e.message).contains("must be the first section")
+        }
+    }
+
+    @Test
+    fun build_throwsException_whenMultipleChipSections() {
+        try {
+            SectionedItemTemplate.Builder()
+                .addSection(buildChipSection())
+                .addSection(buildChipSection())
+                .build()
+            assertWithMessage("Expected builder to throw exception, but it didn't").fail()
+        } catch (e: IllegalArgumentException) {
+            assertThat(e.message).contains("Only one ChipSection is allowed")
+        }
+    }
+
+    @Test
+    fun build_allowsChipSectionAsFirstSection() {
+        val section = buildChipSection()
+        val template = SectionedItemTemplate.Builder().addSection(section).build()
+
+        assertThat(template.sections).containsExactly(section)
+    }
+
+    @Test
+    fun build_withCondensedSection_containsCondensedSection() {
+        val item = CondensedItem.Builder().setTitle("Title").build()
+        val section = CondensedSection.Builder().addItem(item).build()
+        val template = SectionedItemTemplate.Builder().addSection(section).build()
+
+        assertThat(template.sections).containsExactly(section)
     }
 
     @Test
@@ -265,4 +321,10 @@ class SectionedItemTemplateTest {
 
     private fun createRowWithMediaAction(): Row =
         Row.Builder().setTitle("Bananas").addAction(Action.MEDIA_PLAYBACK).build()
+
+    private fun buildChipSection(): ChipSection {
+        return ChipSection.Builder()
+            .addItem(Chip.Builder().setTitle("Chip").setOnClickListener {}.build())
+            .build()
+    }
 }

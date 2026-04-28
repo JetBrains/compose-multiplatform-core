@@ -43,6 +43,10 @@ public class CanvasContent extends Component {
         super(parent, componentId, animationId, x, y, width, height);
     }
 
+    public CanvasContent(int componentId) {
+        super(null, componentId, 0, -1, 0, 0, 0);
+    }
+
     /**
      * The name of the class
      *
@@ -86,7 +90,7 @@ public class CanvasContent extends Component {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int componentId = buffer.readInt();
+        int componentId = buffer.readId();
         operations.add(new CanvasContent(componentId, 0, 0, 0, 0, null, -1));
     }
 

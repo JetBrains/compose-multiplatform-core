@@ -67,10 +67,9 @@ import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.click
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -106,7 +105,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
 @ContextMenuFlagSuppress(suppressedFlagValue = true)
@@ -315,7 +314,6 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
         rule.runOnIdle { assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Hidden) }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun toolbarDisappears_whenTextIsEntered_throughHardwareKeyboard() {
         val textToolbar = FakeTextToolbar()
@@ -332,7 +330,6 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
         rule.runOnIdle { assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Hidden) }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun toolbarDoesNotShow_ifSelectionInitiatedByHardwareKeyboard() {
         val textToolbar = FakeTextToolbar()
@@ -448,6 +445,7 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
             advanceEventTime(1_000) // avoid this being interpreted as a multi-tap
             down(center)
             moveBy(Offset(-viewConfiguration.touchSlop - fontSizePx, 0f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
         rule.runOnIdle {
@@ -643,7 +641,6 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun toolbarDoesNotShowCopyOrCut_whenSelectionIsCollapsed() {
         var cutOptionAvailable = false
@@ -798,12 +795,13 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
             toolbar = textToolbar,
             singleLine = true,
             clipboard = clipboard,
-        ) {
-            // only reject text changes, accept selection
-            val initialSelection = selection
-            replace(0, length, originalValue.toString())
-            selection = initialSelection
-        }
+            filter = {
+                // only reject text changes, accept selection
+                val initialSelection = selection
+                replace(0, length, originalValue.toString())
+                selection = initialSelection
+            },
+        )
 
         rule.onNodeWithTag(TAG).requestFocus()
         rule.onNodeWithTag(TAG).performTextInputSelectionShowingToolbar(TextRange(1, 5))
@@ -946,6 +944,54 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
         rule.runOnIdle { assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Shown) }
     }
 
+    // regression test for b/497724722
+    @Test
+    fun toolbarDoesNotHide_whenSelectingNewlineAtStart() {
+        val textToolbar = FakeTextToolbar()
+        val state = TextFieldState("\n")
+        setupContent(state, textToolbar)
+
+        rule.onNodeWithTag(TAG).requestFocus()
+        // Select the newline character
+        rule.onNodeWithTag(TAG).performTextInputSelectionShowingToolbar(TextRange(0, 1))
+
+        rule.runOnIdle {
+            assertThat(state.selection).isEqualTo(TextRange(0, 1))
+            assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Shown)
+        }
+    }
+
+    // regression test for b/497724722
+    @Test
+    fun toolbarDoesNotHide_whenSelectAll_withEmptyFinalLine() {
+        var selectAllOption: (() -> Unit)? = null
+        val textToolbar =
+            FakeTextToolbar(
+                onShowMenu = { _, _, _, _, onSelectAllRequested, _ ->
+                    selectAllOption = onSelectAllRequested
+                },
+                onHideMenu = {},
+            )
+        val state = TextFieldState("Hello\nWorld\nCompose\nText\n")
+        setupContent(
+            state = state,
+            toolbar = textToolbar,
+            lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 1, maxHeightInLines = 10),
+        )
+
+        rule.onNodeWithTag(TAG).performTouchInput { click() }
+        rule.onNode(isSelectionHandle(Handle.Cursor)).performClick()
+
+        rule.runOnIdle { assertThat(selectAllOption).isNotNull() }
+
+        selectAllOption?.invoke()
+
+        rule.runOnIdle {
+            assertThat(state.selection).isEqualTo(TextRange(0, 25))
+            assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Shown)
+        }
+    }
+
     private fun setupContent(
         state: TextFieldState = TextFieldState(),
         toolbar: TextToolbar = FakeTextToolbar(),
@@ -954,6 +1000,12 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
         clipboard: Clipboard = FakeClipboard(),
         modifier: Modifier = Modifier,
         filter: InputTransformation? = null,
+        lineLimits: TextFieldLineLimits =
+            if (singleLine) {
+                TextFieldLineLimits.SingleLine
+            } else {
+                TextFieldLineLimits.Default
+            },
     ) {
         rule.setTextFieldTestContent {
             view = LocalView.current
@@ -966,12 +1018,7 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
                     modifier = modifier.width(100.dp).testTag(TAG),
                     textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = fontSize),
                     enabled = enabled,
-                    lineLimits =
-                        if (singleLine) {
-                            TextFieldLineLimits.SingleLine
-                        } else {
-                            TextFieldLineLimits.Default
-                        },
+                    lineLimits = lineLimits,
                     inputTransformation = filter,
                     readOnly = readOnly,
                 )

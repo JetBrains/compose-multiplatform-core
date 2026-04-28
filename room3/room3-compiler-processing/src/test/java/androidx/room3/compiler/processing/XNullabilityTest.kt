@@ -42,35 +42,35 @@ class XNullabilityTest {
             Source.java(
                 "foo.bar.Baz",
                 """
-            package foo.bar;
+                package foo.bar;
 
-            import androidx.annotation.*;
-            import java.util.List;
-            class Baz {
-                public static int primitiveInt;
-                public static Integer boxedInt;
-                @NonNull
-                public static List<String> nonNullAnnotated;
-                @Nullable
-                public static List<String> nullableAnnotated;
-                @NonNull
-                public String returnsNonNull() {
-                    return "";
-                }
-                public int returnsPrimitiveInt() {
-                    return 0;
-                }
+                import androidx.annotation.*;
+                import java.util.List;
+                class Baz {
+                    public static int primitiveInt;
+                    public static Integer boxedInt;
+                    @NonNull
+                    public static List<String> nonNullAnnotated;
+                    @Nullable
+                    public static List<String> nullableAnnotated;
+                    @NonNull
+                    public String returnsNonNull() {
+                        return "";
+                    }
+                    public int returnsPrimitiveInt() {
+                        return 0;
+                    }
 
-                public String parameters(
-                    int primitiveParam,
-                    @Nullable String nullableParam,
-                    @NonNull String nonNullParam,
-                    List<String> unknown
-                ) {
-                    return "";
+                    public String parameters(
+                        int primitiveParam,
+                        @Nullable String nullableParam,
+                        @NonNull String nonNullParam,
+                        List<String> unknown
+                    ) {
+                        return "";
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         // TODO run with KSP once https://github.com/google/ksp/issues/167 is fixed
@@ -142,36 +142,36 @@ class XNullabilityTest {
             Source.kotlin(
                 "Baz.kt",
                 """
-            package foo.bar;
+                package foo.bar;
 
-            import androidx.annotation.*;
-            import java.util.List;
-            class Baz(
-                val intField: Int,
-                val nullableIntField: Int?,
-                val genericFieldWithNullableTypeParam: List<Int?>
-            ) {
-                fun nullableReturn(): Int? = TODO()
-                suspend fun suspendNullableReturn(): Int? = TODO()
-                fun genericWithNullableTypeArgReturn(): Map<String, Long?> = TODO()
-                suspend fun suspendGenericWithNullableTypeArgReturn(): Map<String, Long?> = TODO()
-                
-                fun nonNullReturn(): Int = TODO()
-                suspend fun suspendNonNullReturn(): Int = TODO()
-                
-                fun methodParams(
-                    nonNull: Int,
-                    nullable: Int?,
-                    nullableGenericWithNonNullType: List<Int>?,
-                    nullableGenericWithNullableType: List<Int?>?,
-                    nonNullGenericWithNonNullType: List<Int>,
-                    nonNullGenericWithNullableType: List<Int?>
+                import androidx.annotation.*;
+                import java.util.List;
+                class Baz(
+                    val intField: Int,
+                    val nullableIntField: Int?,
+                    val genericFieldWithNullableTypeParam: List<Int?>
                 ) {
-                }
+                    fun nullableReturn(): Int? = TODO()
+                    suspend fun suspendNullableReturn(): Int? = TODO()
+                    fun genericWithNullableTypeArgReturn(): Map<String, Long?> = TODO()
+                    suspend fun suspendGenericWithNullableTypeArgReturn(): Map<String, Long?> = TODO()
+                    
+                    fun nonNullReturn(): Int = TODO()
+                    suspend fun suspendNonNullReturn(): Int = TODO()
+                    
+                    fun methodParams(
+                        nonNull: Int,
+                        nullable: Int?,
+                        nullableGenericWithNonNullType: List<Int>?,
+                        nullableGenericWithNullableType: List<Int?>?,
+                        nonNullGenericWithNonNullType: List<Int>,
+                        nonNullGenericWithNullableType: List<Int?>
+                    ) {
+                    }
 
-                val nullableLambda: ((String) -> Int)? = null
-            }
-            """
+                    val nullableLambda: ((String) -> Int)? = null
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(source)) {
@@ -185,7 +185,7 @@ class XNullabilityTest {
             element.getField("genericFieldWithNullableTypeParam").let { field ->
                 assertThat(field.type.nullability).isEqualTo(NONNULL)
                 val declared = field.type
-                assertThat(declared.typeArguments.first().nullability).isEqualTo(NULLABLE)
+                assertThat(declared.typeArguments.first().type.nullability).isEqualTo(NULLABLE)
             }
             element.getMethodByJvmName("nullableReturn").let { method ->
                 assertThat(method.returnType.nullability).isEqualTo(NULLABLE)
@@ -203,8 +203,8 @@ class XNullabilityTest {
             element.getMethodByJvmName("genericWithNullableTypeArgReturn").let { method ->
                 listOf(method.returnType, method.executableType.returnType).forEach { type ->
                     assertThat(type.nullability).isEqualTo(NONNULL)
-                    assertThat(type.typeArguments[0].nullability).isEqualTo(NONNULL)
-                    assertThat(type.typeArguments[1].nullability).isEqualTo(NULLABLE)
+                    assertThat(type.typeArguments[0].type.nullability).isEqualTo(NONNULL)
+                    assertThat(type.typeArguments[1].type.nullability).isEqualTo(NULLABLE)
                 }
             }
             element.getMethodByJvmName("suspendGenericWithNullableTypeArgReturn").let { method ->
@@ -212,8 +212,8 @@ class XNullabilityTest {
                 check(executableType.isSuspendFunction())
                 executableType.getSuspendFunctionReturnType().let { type ->
                     assertThat(type.nullability).isEqualTo(NONNULL)
-                    assertThat(type.typeArguments[0].nullability).isEqualTo(NONNULL)
-                    assertThat(type.typeArguments[1].nullability).isEqualTo(NULLABLE)
+                    assertThat(type.typeArguments[0].type.nullability).isEqualTo(NONNULL)
+                    assertThat(type.typeArguments[1].type.nullability).isEqualTo(NULLABLE)
                 }
                 listOf(method.returnType, executableType.returnType).forEach { type ->
                     // kotlin suspend functions return nullable in jvm stub
@@ -244,7 +244,7 @@ class XNullabilityTest {
                                 Triple(
                                     first = it.name,
                                     second = it.type.nullability,
-                                    third = it.type.typeArguments.single().nullability,
+                                    third = it.type.typeArguments.single().type.nullability,
                                 )
                             }
                     )
@@ -300,7 +300,7 @@ class XNullabilityTest {
                 "KotlinClas.kt",
                 """
                 class KotlinClass(val subject: List<Int?>)
-            """
+                """
                     .trimIndent(),
             )
         val javaSrc =
@@ -310,7 +310,7 @@ class XNullabilityTest {
                 class JavaClass {
                     java.util.List<Integer> subject;
                 }
-            """
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(javaSrc, kotlinSrc)) { invocation ->
@@ -319,21 +319,21 @@ class XNullabilityTest {
                     invocation.processingEnv.requireTypeElement(it).getField("subject").type
                 val typeArg = subject.typeArguments.first()
                 assertThat(typeArg.asTypeName().java).isEqualTo(JTypeName.INT.box())
-                typeArg.makeNonNullable().let {
+                typeArg.type.makeNonNullable().let {
                     assertThat(it.asTypeName().java).isEqualTo(JTypeName.INT.box())
                     assertThat(it.nullability).isEqualTo(NONNULL)
                 }
-                typeArg.makeNonNullable().makeNullable().let {
+                typeArg.type.makeNonNullable().makeNullable().let {
                     assertThat(it.asTypeName().java).isEqualTo(JTypeName.INT.box())
                     assertThat(it.nullability).isEqualTo(NULLABLE)
                 }
                 if (invocation.isKsp) {
                     assertThat(typeArg.asTypeName().kotlin).isEqualTo(INT.copy(nullable = true))
 
-                    typeArg.makeNonNullable().let {
+                    typeArg.type.makeNonNullable().let {
                         assertThat(it.asTypeName().kotlin).isEqualTo(INT)
                     }
-                    typeArg.makeNonNullable().makeNullable().let {
+                    typeArg.type.makeNonNullable().makeNullable().let {
                         assertThat(it.asTypeName().kotlin).isEqualTo(INT.copy(nullable = true))
                     }
                 }
@@ -385,10 +385,10 @@ class XNullabilityTest {
             Source.java(
                 "Foo",
                 """
-            class Foo {
-                void subject() {}
-            }
-            """
+                class Foo {
+                    void subject() {}
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
@@ -418,19 +418,19 @@ class XNullabilityTest {
             Source.java(
                 "foo.bar.Foo",
                 """
-                    package foo.bar;
-                    import org.jspecify.annotations.NonNull;
-                    import org.jspecify.annotations.Nullable;
-                    class Foo {
-                        public @NonNull String nonNullField = "";
-                        public @NonNull String returnsNonNull() {
-                            return "";
-                        }
-                        public String @Nullable [] returnsNullableArray() {
-                            return null;
-                        }
-                        public void hasNullableParam(@Nullable String param) {}
+                package foo.bar;
+                import org.jspecify.annotations.NonNull;
+                import org.jspecify.annotations.Nullable;
+                class Foo {
+                    public @NonNull String nonNullField = "";
+                    public @NonNull String returnsNonNull() {
+                        return "";
                     }
+                    public String @Nullable [] returnsNullableArray() {
+                        return null;
+                    }
+                    public void hasNullableParam(@Nullable String param) {}
+                }
                 """
                     .trimIndent(),
             )
@@ -438,11 +438,11 @@ class XNullabilityTest {
             Source.java(
                 "NonNull",
                 """
-                    package org.jspecify.annotations;
-                    import java.lang.annotation.ElementType;
-                    import java.lang.annotation.Target;
-                    @Target(ElementType.TYPE_USE)
-                    public @interface NonNull {}
+                package org.jspecify.annotations;
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Target;
+                @Target(ElementType.TYPE_USE)
+                public @interface NonNull {}
                 """
                     .trimIndent(),
             )
@@ -450,11 +450,11 @@ class XNullabilityTest {
             Source.java(
                 "Nullable",
                 """
-                    package org.jspecify.annotations;
-                    import java.lang.annotation.ElementType;
-                    import java.lang.annotation.Target;
-                    @Target(ElementType.TYPE_USE)
-                    public @interface Nullable {}
+                package org.jspecify.annotations;
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Target;
+                @Target(ElementType.TYPE_USE)
+                public @interface Nullable {}
                 """
                     .trimIndent(),
             )

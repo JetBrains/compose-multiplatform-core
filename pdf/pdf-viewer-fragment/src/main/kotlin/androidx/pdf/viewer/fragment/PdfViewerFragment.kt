@@ -23,6 +23,7 @@ import android.content.res.Resources.ID_NULL
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.ext.SdkExtensions
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.AttributeSet
@@ -34,18 +35,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
-import android.widget.FrameLayout
 import android.widget.LinearLayout.GONE
 import android.widget.LinearLayout.VISIBLE
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.core.content.ContextCompat
 import androidx.core.os.OperationCanceledException
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE
-import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -54,10 +53,11 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.withStarted
 import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfFeature
 import androidx.pdf.content.ExternalLink
 import androidx.pdf.event.PdfTrackingEvent
 import androidx.pdf.event.RequestFailureEvent
-import androidx.pdf.featureflag.PdfFeatureFlags.isExternalHardwareInteractionEnabled
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.selection.Selection
 import androidx.pdf.util.AnnotationUtils
 import androidx.pdf.util.Uris
@@ -72,7 +72,6 @@ import androidx.pdf.viewer.fragment.model.PdfFragmentUiState.DocumentError
 import androidx.pdf.viewer.fragment.model.PdfFragmentUiState.DocumentLoaded
 import androidx.pdf.viewer.fragment.model.PdfFragmentUiState.Loading
 import androidx.pdf.viewer.fragment.model.PdfFragmentUiState.PasswordRequested
-import androidx.pdf.viewer.fragment.model.PdfFragmentUiState.SavingEdits
 import androidx.pdf.viewer.fragment.model.SearchViewUiState
 import androidx.pdf.viewer.fragment.search.PdfSearchViewManager
 import androidx.pdf.viewer.fragment.toolbox.ToolboxGestureEventProcessor
@@ -81,7 +80,6 @@ import androidx.pdf.viewer.fragment.toolbox.ToolboxGestureEventProcessor.MotionE
 import androidx.pdf.viewer.fragment.toolbox.ToolboxGestureEventProcessor.ToolboxGestureDelegate
 import androidx.pdf.viewer.fragment.util.getCenter
 import androidx.pdf.viewer.fragment.view.PdfViewManager
-import androidx.window.layout.WindowMetricsCalculator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -108,7 +106,6 @@ import kotlinx.coroutines.launch
  *
  * @see documentUri
  */
-@RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
 public open class PdfViewerFragment constructor() : Fragment() {
 
     /**
@@ -175,6 +172,9 @@ public open class PdfViewerFragment constructor() : Fragment() {
     public var isTextSearchActive: Boolean
         get() = documentViewModel.isTextSearchActiveFromState
         set(value) {
+            if (pdfView.pdfDocument?.isFeatureSupported(PdfFeature.SEARCH) == false) {
+                return
+            }
             if (isTextSearchActive != value) {
                 // entering the immersive mode when search is active and exiting when search closes
                 documentViewModel.setImmersiveModeDesired(enterImmersive = value)
@@ -221,17 +221,26 @@ public open class PdfViewerFragment constructor() : Fragment() {
      * destroyed, i.e., after [onCreate] has fully run and before [onDestroy] runs, and only on the
      * main thread.
      */
+    @Deprecated(
+        message =
+            "Use onLoadDocumentSuccess(PdfDocument) to directly access the loaded document instance."
+    )
     public open fun onLoadDocumentSuccess() {}
 
     /**
-     * Called when the document has been parsed and processed.
+     * Invoked when the document has been fully loaded and processed.
      *
      * <p>Note that this callback is dispatched only when the fragment is fully created and not yet
      * destroyed, i.e., after [onCreate] has fully run and before [onDestroy] runs, and only on the
      * main thread.
+     *
+     * @param document The [PdfDocument] instance representing the loaded PDF content. This
+     *   reference will be valid till a new [documentUri] is set or the fragment is destroyed.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    protected open fun onLoadDocumentSuccess(document: PdfDocument) {}
+    public open fun onLoadDocumentSuccess(document: PdfDocument) {
+        // Trigger the deprecated parameterless callback to maintain backward compatibility
+        @Suppress("DEPRECATION") onLoadDocumentSuccess()
+    }
 
     /**
      * Invoked when a problem arises during the loading process of the PDF document. This callback
@@ -296,7 +305,6 @@ public open class PdfViewerFragment constructor() : Fragment() {
     private lateinit var _pdfContainer: PdfContentLayout
     private lateinit var errorView: TextView
     private lateinit var loadingView: ProgressBar
-    private lateinit var savingOverlay: FrameLayout
     private lateinit var pdfViewManager: PdfViewManager
     private lateinit var pdfSearchViewManager: PdfSearchViewManager
 
@@ -387,14 +395,11 @@ public open class PdfViewerFragment constructor() : Fragment() {
         with(view) {
             errorView = findViewById(R.id.errorTextView)
             loadingView = findViewById(R.id.pdfLoadingProgressBar)
-            savingOverlay = findViewById(R.id.savingProgressOverlay)
             _pdfContainer = findViewById(R.id.pdfContentLayout)
             _pdfSearchView = findViewById(R.id.pdfSearchView)
             _toolboxView = findViewById(R.id.toolBoxView)
             _pdfView = pdfContainer.pdfView
         }
-
-        applyResponsiveMargins()
 
         val stylingOptions = pdfStylingOptions
         if (stylingOptions != null) {
@@ -402,7 +407,6 @@ public open class PdfViewerFragment constructor() : Fragment() {
         }
 
         setupPdfView()
-        setupSearchView(_pdfSearchView)
         setupToolbox()
 
         lifecycleScope.launch { collectFragmentUiScreenState() }
@@ -410,31 +414,6 @@ public open class PdfViewerFragment constructor() : Fragment() {
         // Call onPdfViewCreated last to allow host apps to override any internal PdfView listeners
         // set by fragment.
         onPdfViewCreated(pdfView)
-    }
-
-    /**
-     * Applies responsive horizontal margins to the PDF container based on the window width,
-     * ensuring optimal content readability across different devices.
-     */
-    private fun applyResponsiveMargins() {
-        val windowMetrics =
-            WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(requireActivity())
-
-        val windowWidthPx = windowMetrics.bounds.width()
-        val density = resources.displayMetrics.density
-        val windowWidthDp = windowWidthPx / density
-
-        val dimenResId =
-            if (windowWidthDp >= 840) {
-                androidx.pdf.R.dimen.pdf_horizontal_margin_w840dp
-            } else {
-                androidx.pdf.R.dimen.pdf_horizontal_margin
-            }
-        val marginPx = resources.getDimensionPixelSize(dimenResId)
-        _pdfContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-            leftMargin = marginPx
-            rightMargin = marginPx
-        }
     }
 
     private fun applyPdfViewStyledAttributes(resId: Int) {
@@ -551,8 +530,8 @@ public open class PdfViewerFragment constructor() : Fragment() {
             PdfViewManager(
                 pdfView = _pdfView,
                 selectedHighlightColor =
-                    requireContext().getColor(R.color.selected_highlight_color),
-                highlightColor = requireContext().getColor(R.color.highlight_color),
+                    ContextCompat.getColor(requireContext(), R.color.selected_highlight_color),
+                highlightColor = ContextCompat.getColor(requireContext(), R.color.highlight_color),
             )
         /**
          * Closes any active search session if the user selects anything in the PdfView. This
@@ -577,11 +556,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
 
         // Activates text search when PdfView receives Ctrl + F key press
         _pdfView.setOnKeyListener { _, keyCode, event ->
-            if (
-                isExternalHardwareInteractionEnabled &&
-                    keyCode == KeyEvent.KEYCODE_F &&
-                    event.action == KeyEvent.ACTION_DOWN
-            ) {
+            if (keyCode == KeyEvent.KEYCODE_F && event.action == KeyEvent.ACTION_DOWN) {
                 isTextSearchActive = true
                 return@setOnKeyListener true
             }
@@ -618,10 +593,20 @@ public open class PdfViewerFragment constructor() : Fragment() {
                     }
                 }
             }
+
+        val onFormWidgetInfoUpdatedListener =
+            object : PdfView.OnFormWidgetInfoUpdatedListener {
+                override fun onFormWidgetInfoUpdated(formEditInfo: FormEditInfo) {
+                    documentViewModel.applyFormEdit(formEditInfo)
+                }
+            }
+        pdfView.addOnFormWidgetInfoUpdatedListener(onFormWidgetInfoUpdatedListener)
     }
 
     private fun setupSearchViewListeners(searchView: PdfSearchView) {
         with(searchView) {
+            onSearchCloseRequested = { isTextSearchActive = false }
+
             searchQueryBox.addTextChangedListener(searchQueryTextWatcher)
 
             searchQueryBox.setOnEditorActionListener { _, actionId, _ ->
@@ -657,20 +642,24 @@ public open class PdfViewerFragment constructor() : Fragment() {
         _toolboxView.setOnCurrentPageRequested { _pdfView.visiblePages.getCenter() }
     }
 
-    private fun collectViewStates() {
-        searchStateCollector = collectFlowOnLifecycleScope {
-            documentViewModel.searchViewUiState.collect { uiState ->
-                pdfSearchViewManager.setState(uiState)
+    private fun collectViewStates(document: PdfDocument) {
+        if (document.isFeatureSupported(PdfFeature.SEARCH)) {
+            searchStateCollector = collectFlowOnLifecycleScope {
+                documentViewModel.searchViewUiState.collect { uiState ->
+                    pdfSearchViewManager.setState(uiState)
 
-                /** Clear selection when we start a search session. Also hide the fast scroller. */
-                if (uiState !is SearchViewUiState.Closed) {
-                    _pdfView.apply {
-                        clearCurrentSelection()
-                        fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_HIDE
+                    /**
+                     * Clear selection when we start a search session. Also hide the fast scroller.
+                     */
+                    if (uiState !is SearchViewUiState.Closed) {
+                        _pdfView.apply {
+                            clearCurrentSelection()
+                            fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_HIDE
+                        }
+                    } else {
+                        // Let PdfView internally control fast scroller visibility.
+                        _pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.AUTO_HIDE
                     }
-                } else {
-                    // Let PdfView internally control fast scroller visibility.
-                    _pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.AUTO_HIDE
                 }
             }
         }
@@ -756,7 +745,6 @@ public open class PdfViewerFragment constructor() : Fragment() {
                         is PasswordRequested -> handlePasswordRequested(uiState)
                         is DocumentLoaded -> handleDocumentLoaded(uiState)
                         is DocumentError -> handleDocumentError(uiState)
-                        is SavingEdits -> handleSavingEdits()
                     }
                 }
             }
@@ -764,25 +752,24 @@ public open class PdfViewerFragment constructor() : Fragment() {
     }
 
     private fun handleLoading() {
-        setViewVisibility(
-            pdfView = GONE,
-            loadingView = VISIBLE,
-            errorView = GONE,
-            savingOverlay = GONE,
-        )
+        setViewVisibility(pdfView = GONE, loadingView = VISIBLE, errorView = GONE)
         // Cancel view state collection upon new document load.
         // These state should only be relevant if document is loaded successfully.
         cancelViewStateCollection()
     }
 
     private fun handlePasswordRequested(uiState: PasswordRequested) {
+        if (
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.R ||
+                SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) < 13
+        ) {
+            errorView.text =
+                context?.getString(androidx.pdf.R.string.error_cannot_open_password_protected_pdf)
+            setViewVisibility(pdfView = GONE, loadingView = GONE, errorView = VISIBLE)
+            return
+        }
         requestPassword(uiState.passwordFailed)
-        setViewVisibility(
-            pdfView = GONE,
-            loadingView = GONE,
-            errorView = GONE,
-            savingOverlay = GONE,
-        )
+        setViewVisibility(pdfView = GONE, loadingView = GONE, errorView = GONE)
         onPasswordRequestedState()
         // Utilize retry param to show incorrect password on PasswordDialog
     }
@@ -790,27 +777,16 @@ public open class PdfViewerFragment constructor() : Fragment() {
     private fun handleDocumentLoaded(uiState: DocumentLoaded) {
         dismissPasswordDialog()
         onLoadDocumentSuccess(uiState.pdfDocument)
-        onLoadDocumentSuccess()
+
         _pdfView.pdfDocument = uiState.pdfDocument
         _toolboxView.setPdfDocument(uiState.pdfDocument)
         setAnnotationIntentResolvability(uiState.pdfDocument.uri)
-        setViewVisibility(
-            pdfView = VISIBLE,
-            loadingView = GONE,
-            errorView = GONE,
-            savingOverlay = GONE,
-        )
+        setViewVisibility(pdfView = VISIBLE, loadingView = GONE, errorView = GONE)
+        if (uiState.pdfDocument.isFeatureSupported(PdfFeature.SEARCH)) {
+            setupSearchView(_pdfSearchView)
+        }
         // Start collection of view states like search, toolbox, etc. once document is loaded.
-        collectViewStates()
-    }
-
-    private fun handleSavingEdits() {
-        setViewVisibility(
-            pdfView = VISIBLE,
-            loadingView = GONE,
-            errorView = GONE,
-            savingOverlay = VISIBLE,
-        )
+        collectViewStates(uiState.pdfDocument)
     }
 
     private fun setAnnotationIntentResolvability(uri: Uri) {
@@ -835,24 +811,13 @@ public open class PdfViewerFragment constructor() : Fragment() {
             )
         }
 
-        setViewVisibility(
-            pdfView = GONE,
-            loadingView = GONE,
-            errorView = VISIBLE,
-            savingOverlay = GONE,
-        )
+        setViewVisibility(pdfView = GONE, loadingView = GONE, errorView = VISIBLE)
     }
 
-    private fun setViewVisibility(
-        pdfView: Int,
-        loadingView: Int,
-        errorView: Int,
-        savingOverlay: Int,
-    ) {
+    private fun setViewVisibility(pdfView: Int, loadingView: Int, errorView: Int) {
         this._pdfView.visibility = pdfView
         this.loadingView.visibility = loadingView
         this.errorView.visibility = errorView
-        this.savingOverlay.visibility = savingOverlay
     }
 
     private fun collectFlowOnLifecycleScope(block: suspend () -> Unit): Job {

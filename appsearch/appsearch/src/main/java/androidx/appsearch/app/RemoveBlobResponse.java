@@ -16,7 +16,7 @@
 package androidx.appsearch.app;
 
 import android.os.Parcel;
-import android.os.Parcelable;
+import android.os.Parcelable.Creator;
 
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.aidl.AppSearchBatchResultParcelV2;
@@ -41,7 +41,7 @@ import org.jspecify.annotations.NonNull;
 @SafeParcelable.Class(creator = "RemoveBlobResponseCreator")
 public final class RemoveBlobResponse extends AbstractSafeParcelable {
 
-    public static final Parcelable.@NonNull Creator<RemoveBlobResponse> CREATOR =
+    public static final @NonNull Creator<RemoveBlobResponse> CREATOR =
             new RemoveBlobResponseCreator();
 
     @Field(id = 1, getter = "getResponseParcel")

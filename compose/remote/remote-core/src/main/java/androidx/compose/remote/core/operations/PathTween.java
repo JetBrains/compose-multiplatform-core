@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations;
 
+import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 import static androidx.compose.remote.core.operations.Utils.floatToString;
 
@@ -24,6 +25,7 @@ import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
 import androidx.compose.remote.core.PaintOperation;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
@@ -37,7 +39,8 @@ import java.util.List;
 
 /** Operation to deal with Path data */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class PathTween extends PaintOperation implements VariableSupport, Serializable {
+public class PathTween extends PaintOperation
+        implements VariableSupport, Serializable, VariableProvider, ComponentData {
     private static final int OP_CODE = Operations.PATH_TWEEN;
     private static final String CLASS_NAME = "PathTween";
     public int mOutId;
@@ -45,6 +48,16 @@ public class PathTween extends PaintOperation implements VariableSupport, Serial
     public int mPathId2;
     public float mTween;
     public float mTweenOut;
+
+    @Override
+    public int getId() {
+        return mOutId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mOutId = id;
+    }
 
     public PathTween(int outId, int pathId1, int pathId2, float tween) {
         this.mOutId = outId;
@@ -128,10 +141,10 @@ public class PathTween extends PaintOperation implements VariableSupport, Serial
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int outId1 = buffer.readInt();
-        int pathId1 = buffer.readInt();
-        int pathId2 = buffer.readInt();
-        float tween = buffer.readFloat();
+        int outId1 = buffer.readId();
+        int pathId1 = buffer.readId();
+        int pathId2 = buffer.readId();
+        float tween = buffer.readNanId();
 
         operations.add(new PathTween(outId1, pathId1, pathId2, tween));
     }
@@ -142,11 +155,16 @@ public class PathTween extends PaintOperation implements VariableSupport, Serial
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Data Operations", OP_CODE, CLASS_NAME)
-                .description("Merge two string into one")
-                .field(DocumentedOperation.INT, "pathId", "id of the path")
-                .field(INT, "srcPathId1", "id of the path")
-                .field(INT, "srcPathId1", "x Shift of the path");
+        doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
+                .additionalDocumentation("path_tween")
+                .description("Interpolate between two paths and store the result in a new path ID")
+                .field(
+                        DocumentedOperation.INT,
+                        "outId",
+                        "The ID of the resulting interpolated path")
+                .field(INT, "pathId1", "The ID of the first source path")
+                .field(INT, "pathId2", "The ID of the second source path")
+                .field(FLOAT, "tween", "The interpolation factor [0..1]");
     }
 
     @NonNull

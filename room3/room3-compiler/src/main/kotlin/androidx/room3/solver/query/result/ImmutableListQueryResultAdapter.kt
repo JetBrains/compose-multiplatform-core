@@ -39,8 +39,7 @@ class ImmutableListQueryResultAdapter(
             )
 
             val tmpVarName = scope.getTmpVar("_item")
-            val stepName = "step"
-            beginControlFlow("while (%L.$stepName())", stmtVarName).apply {
+            beginControlFlow("while (%L.step())", stmtVarName).apply {
                 addLocalVariable(name = tmpVarName, typeName = typeArg.asTypeName())
                 rowAdapter.convert(tmpVarName, stmtVarName, scope)
                 addStatement("%L.add(%L)", immutableListBuilderName, tmpVarName)

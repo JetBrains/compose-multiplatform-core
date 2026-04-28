@@ -24,7 +24,7 @@ import androidx.xr.compose.subspace.node.Logger
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.subspace.node.SubspaceMeasureAndLayoutDelegate
 import androidx.xr.compose.subspace.node.SubspaceOwner
-import androidx.xr.compose.unit.VolumeConstraints
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -43,15 +43,17 @@ import kotlinx.coroutines.launch
  *
  * This class draws inspiration from the [androidx/compose/ui/platform/AndroidComposeView].
  */
-internal class AndroidComposeSpatialElement :
-    SpatialElement(), SubspaceOwner, DefaultLifecycleObserver {
-    override val root: SubspaceLayoutNode = SubspaceLayoutNode()
+internal class AndroidComposeSpatialElement(
+    override val coroutineContext: CoroutineContext = AndroidUiDispatcher.Main
+) : SpatialElement(), SubspaceOwner, DefaultLifecycleObserver {
+    override val root: SubspaceLayoutNode =
+        SubspaceLayoutNode().apply { measurePolicy = SubspaceLayoutNode.RootMeasurePolicy }
 
     // For debug output set this to androidx.xr.compose.subspace.node.DebugLogger().
     override var logger: Logger? = null
 
     // This coroutine scope will launch tasks to the Choreographer on the main thread.
-    private val uiCoroutineScope = CoroutineScope(AndroidUiDispatcher.Main)
+    private val coroutineScope = CoroutineScope(coroutineContext)
 
     internal var wrappedComposition: WrappedComposition? = null
 
@@ -66,12 +68,6 @@ internal class AndroidComposeSpatialElement :
     private val measureAndLayoutDelegate = SubspaceMeasureAndLayoutDelegate(root)
 
     private var isMeasureAndLayoutScheduled: Boolean = false
-
-    internal var rootVolumeConstraints: VolumeConstraints
-        get() = measureAndLayoutDelegate.rootVolumeConstraints
-        set(value) {
-            measureAndLayoutDelegate.rootVolumeConstraints = value
-        }
 
     init {
         root.attach(this)
@@ -134,7 +130,7 @@ internal class AndroidComposeSpatialElement :
 
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
-        // TODO: "Refresh the layout hierarchy." <- Can we just call scheduleMeasureAndLayout()?
+        scheduleMeasureAndLayout()
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
@@ -162,13 +158,19 @@ internal class AndroidComposeSpatialElement :
         }
     }
 
+    override fun requestEntityUpdate(node: SubspaceLayoutNode, forceRequest: Boolean) {
+        if (measureAndLayoutDelegate.requestEntityUpdate(node, forceRequest)) {
+            scheduleMeasureAndLayout()
+        }
+    }
+
     // TODO: Consider adding stricter control over how this is called here, or at call sites, if it
     // becomes too easy to generate superfluous layouts.
     private fun scheduleMeasureAndLayout() {
         if (isMeasureAndLayoutScheduled) return
 
         isMeasureAndLayoutScheduled = true
-        uiCoroutineScope.launch {
+        coroutineScope.launch {
             isMeasureAndLayoutScheduled = false
             measureAndLayoutDelegate.measureAndLayout()
         }

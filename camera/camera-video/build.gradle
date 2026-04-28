@@ -20,14 +20,15 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     api(project(":camera:camera-core"))
-    api(libs.guavaListenableFuture)
+    // Expose guava as an "api" dependency to prevent "Cannot access ListenableFuture" errors for
+    // consumers due to media3's full guava dependency. See b/497571473.
+    api(libs.guavaAndroid)
     implementation("androidx.core:core:1.1.0")
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
@@ -35,6 +36,8 @@ dependencies {
     implementation(libs.kotlinCoroutinesAndroid)
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation("androidx.arch.core:core-common:2.2.0")
+    implementation("androidx.media3:media3-container:1.9.0")
+    implementation("androidx.media3:media3-muxer:1.9.0")
 
     annotationProcessor(libs.autoValue)
 
@@ -64,7 +67,6 @@ dependencies {
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
     androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     androidTestImplementation(project(":internal-testutils-truth"))
-    androidTestImplementation(project(":camera:camera-camera2-pipe-integration"))
     androidTestImplementation libs.mockitoKotlin, {
         exclude group: 'org.mockito' // to keep control on the mockito version
     }
@@ -77,7 +79,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(36) }
 
     lint {
         enable.add("CameraXQuirksClassDetector")

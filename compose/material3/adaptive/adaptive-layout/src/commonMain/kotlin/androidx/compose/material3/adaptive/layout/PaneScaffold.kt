@@ -351,6 +351,7 @@ private class PreferredWidthElement(private val width: PreferredSize) :
     }
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private class PreferredWidthNode(var width: PreferredSize) :
     ParentDataModifierNode, Modifier.Node() {
     override fun Density.modifyParentData(parentData: Any?) =
@@ -389,6 +390,7 @@ private class PreferredHeightElement(private val height: PreferredSize) :
     }
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private class PreferredHeightNode(var height: PreferredSize) :
     ParentDataModifierNode, Modifier.Node() {
     override fun Density.modifyParentData(parentData: Any?) =
@@ -397,6 +399,7 @@ private class PreferredHeightNode(var height: PreferredSize) :
         }
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 private fun Modifier.paneMargins(fixedMargins: PaddingValues, insets: List<RectRulers>) =
     this.then(
@@ -410,6 +413,7 @@ private fun Modifier.paneMargins(fixedMargins: PaddingValues, insets: List<RectR
         )
     )
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private data class PaneMarginsElement(val paneMargins: PaneMargins) :
     ModifierNodeElement<PaneMarginsNode>() {
     private val inspectorInfo = debugInspectorInfo {
@@ -430,6 +434,7 @@ private data class PaneMarginsElement(val paneMargins: PaneMargins) :
     }
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private class PaneMarginsNode(var paneMargins: PaneMargins) :
     ParentDataModifierNode, Modifier.Node() {
     override fun Density.modifyParentData(parentData: Any?) =
@@ -438,21 +443,32 @@ private class PaneMarginsNode(var paneMargins: PaneMargins) :
         }
 }
 
-@Suppress("ModifierFactoryExtensionFunction") // This is not a modifier factory function
-internal fun extractPaneScaffoldSizeModifiers(original: Modifier): Modifier {
-    var result: Modifier = Modifier
-    original.all { element ->
+internal fun Modifier.splitPaneAndContentModifiers(): Pair<Modifier, Modifier> {
+    var paneModifier: Modifier = Modifier
+    var contentModifier: Modifier = Modifier
+    all { element ->
         if (
             element is PreferredWidthElement ||
                 element is PreferredHeightElement ||
-                element is PaneMarginsElement
+                element is PaneMarginsElement ||
+                // This is a workaround to b/375496210 - shadows cannot be faded so we have to apply
+                // shadows on AnimatedVisibility instead of the content, which forces us to apply
+                // graphic layer transformation to AnimatedVisibility as well, so the shadow will be
+                // rendered correctly.
+                element.isGraphicsLayerElement()
         ) {
-            result = result.then(element)
+            paneModifier = paneModifier.then(element)
+        } else {
+            contentModifier = contentModifier.then(element)
         }
         true
     }
-    return result
+    return Pair(paneModifier, contentModifier)
 }
+
+// K/Wasm doesn't support qualifiedName until Kotlin 2.3.0, so need target-specific implementations.
+// element::class.qualifiedName == "androidx.compose.ui.graphics.GraphicsLayerElement"
+internal expect inline fun Modifier.Element.isGraphicsLayerElement(): Boolean
 
 internal fun Modifier.animatedPane(): Modifier {
     return this.then(AnimatedPaneElement)
@@ -483,6 +499,7 @@ private object AnimatedPaneElement : ModifierNodeElement<AnimatedPaneNode>() {
     }
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private class AnimatedPaneNode : ParentDataModifierNode, Modifier.Node() {
     override fun Density.modifyParentData(parentData: Any?) =
         ((parentData as? PaneScaffoldParentDataImpl) ?: PaneScaffoldParentDataImpl()).also {

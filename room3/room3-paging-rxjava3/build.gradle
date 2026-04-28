@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -31,8 +30,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    // Remove when b/442128557 is fixed
-    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
 
@@ -58,17 +55,8 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "RxJava3 integration in Room Paging"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {
     namespace = "androidx.room3.paging.rxjava3"
-}
-
-// TODO(b/430983364): Workaround KSP incremental issues
-tasks.withType(KotlinCompile).configureEach {
-    incremental = false
-}
-tasks.withType(KspAATask).configureEach {
-    it.kspConfig.incremental.set(false)
 }

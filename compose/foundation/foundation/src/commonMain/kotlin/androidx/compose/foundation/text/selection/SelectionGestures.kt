@@ -30,7 +30,7 @@ import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputScope
-import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
+import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.isPrimaryPressed
@@ -140,7 +140,7 @@ internal suspend fun AwaitPointerEventScope.touchSelectionFirstPress(
         val firstDown = downEvent.changes.first()
         val longPress = awaitLongPressOrCancellation(firstDown.id)
         if (longPress != null && distanceIsTolerable(viewConfiguration, firstDown, longPress)) {
-            observer.onStart(longPress.position, SelectionAdjustment.Word)
+            observer.onStart(longPress.position, FirstLongPressSelectionAdjustment)
             val dragCompletedWithUp =
                 drag(longPress.id) {
                     observer.onDrag(it.positionChange())
@@ -338,7 +338,7 @@ private suspend fun AwaitPointerEventScope.awaitDown(): PointerEvent {
     var event: PointerEvent
     do {
         event = awaitPointerEvent(PointerEventPass.Main)
-    } while (!event.changes.fastAll { it.changedToDownIgnoreConsumed() })
+    } while (!event.changes.fastAll { it.changedToDown() })
     return event
 }
 
@@ -352,3 +352,10 @@ private fun distanceIsTolerable(
 }
 
 internal expect fun PointerEvent.isMouseOrTouchPad(): Boolean
+
+/**
+ * Platform-defined selection adjustment during the first long press action.
+ *
+ * @see SelectionAdjustment
+ */
+internal expect val FirstLongPressSelectionAdjustment: SelectionAdjustment

@@ -24,7 +24,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.material.Text
+import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
 import androidx.compose.runtime.retain.LocalRetainedValuesStore
+import androidx.compose.runtime.retain.ManagedRetainedValuesStore
 import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.retain.retain
 import androidx.compose.ui.Modifier
@@ -32,7 +34,7 @@ import androidx.compose.ui.test.CountingRetainObject
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasTextExactly
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.testing.FragmentScenario
 import androidx.fragment.app.testing.launchFragmentInContainer
@@ -300,3 +302,12 @@ class TestRetainFragment : Fragment() {
         var viewCreationCounter = 0
     }
 }
+
+private val RetainedValuesStore.isRetainingExitedValues
+    get() =
+        when (this) {
+            is ForgetfulRetainedValuesStore -> false
+            is ManagedRetainedValuesStore -> this.isRetainingExitedValues
+            is LifecycleRetainedValuesStore -> this.isRetainingExitedValues
+            else -> throw UnsupportedOperationException("Cannot resolve retaining state for $this")
+        }

@@ -219,13 +219,16 @@ internal class TextContextMenuToolbarHandlerNode(
     override fun position(destinationCoordinates: LayoutCoordinates): Offset =
         contentBounds(destinationCoordinates).topLeft
 
-    // This can update as the modifier is getting disposed,
-    // so return zero if we aren't attached to avoid crashing.
+    /**
+     * This can update as the modifier is getting disposed, so return zero if we aren't attached to
+     * avoid crashing. However the caller is responsible for providing a valid and attached
+     * [destinationCoordinates].
+     */
     override fun contentBounds(destinationCoordinates: LayoutCoordinates): Rect {
         if (!isAttached) return previousContentBounds
 
-        val computedContentBounds = computeContentBounds(destinationCoordinates)
-        if (computedContentBounds == null) return previousContentBounds
+        val computedContentBounds =
+            computeContentBounds(destinationCoordinates) ?: return previousContentBounds
 
         previousContentBounds = computedContentBounds
         return computedContentBounds
@@ -246,10 +249,12 @@ internal fun translateRootToDestination(
     if (!localCoordinates.isAttached || !destinationCoordinates.isAttached) return Rect.Zero
     val rootContentPosition = rootContentBounds.topLeft
     val rootCoordinates = localCoordinates.findRootCoordinates()
-    val destinationContentPosition =
-        destinationCoordinates.localPositionOf(
-            sourceCoordinates = rootCoordinates,
-            relativeToSource = rootContentPosition,
-        )
+    // The destinationCoordinates is not necessarily at the same LayoutNode tree with the
+    // localCoordinates of this node. e.g. The TextField is in a Dialog.
+    // We assume that the context menu's destinationCoordinates shares the same screen
+    // as the localCoordinates.
+    // Check b/441759435 for details.
+    val screenCoordinates = rootCoordinates.localToScreen(rootContentPosition)
+    val destinationContentPosition = destinationCoordinates.screenToLocal(screenCoordinates)
     return Rect(destinationContentPosition, rootContentBounds.size)
 }

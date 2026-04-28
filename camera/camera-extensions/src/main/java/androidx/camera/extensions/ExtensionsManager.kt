@@ -18,6 +18,7 @@ package androidx.camera.extensions
 import android.content.Context
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.params.StreamConfigurationMap
+import android.os.Build
 import android.util.Range
 import androidx.annotation.GuardedBy
 import androidx.annotation.RestrictTo
@@ -31,16 +32,12 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureCapabilities
-import androidx.camera.core.Logger
 import androidx.camera.core.Preview
+import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.ExtendedCameraConfigProviderStore
 import androidx.camera.core.impl.utils.ContextUtil
-import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.futures.Futures
-import androidx.camera.extensions.impl.InitializerImpl
-import androidx.camera.extensions.internal.ClientVersion
-import androidx.camera.extensions.internal.ExtensionVersion
-import androidx.camera.extensions.internal.Version
+import androidx.camera.extensions.ExtensionsManager.Companion.getInstanceAsync
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.concurrent.futures.await
 import androidx.lifecycle.LifecycleOwner
@@ -71,30 +68,7 @@ import java.util.concurrent.ExecutionException
  * bound [Preview] and [ImageCapture]. The following sample code describes how to enable an
  * extension mode for use cases.
  *
- * ```kotlin
- * suspend fun bindUseCasesWithBokehMode(context: Context, lifecycleOwner: LifecycleOwner) {
- *     // Create a camera provider.
- *     val cameraProvider = ProcessCameraProvider.awaitInstance(context)
- *
- *     // Retrieve the ExtensionsManager instance.
- *     val extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
- *
- *     val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
- *     // Query if extension is available.
- *     if (extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.BOKEH)) {
- *         // Create an ExtensionSessionConfig.
- *         val imageCapture = ImageCapture.Builder().build()
- *         val preview = Preview.Builder().build()
- *         ExtensionSessionConfig sessionConfig = ExtensionSessionConfig(
- *                 ExtensionMode.BOKEH,
- *                 extensionsManager,
- *                 imageCapture,
- *                 preview
- *         )
- *         cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, sessionConfig)
- *     }
- * }
- * ```
+ * @sample androidx.camera.extensions.samples.bindUseCasesWithBokehMode
  *
  * Without enabling `CameraX Extensions`, any device should be able to support the use cases
  * combination of [ImageCapture], [Preview] and [ImageAnalysis]. To support the `CameraX Extensions`
@@ -121,7 +95,6 @@ public final class ExtensionsManager
 internal constructor(
     internal val extensionsAvailability: ExtensionsAvailability,
     cameraProvider: CameraProvider,
-    applicationContext: Context,
 ) {
     internal enum class ExtensionsAvailability {
         /** The device extensions library exists and has been correctly loaded. */
@@ -138,7 +111,7 @@ internal constructor(
         NONE,
     }
 
-    private val extensionsInfo: ExtensionsInfo = ExtensionsInfo(cameraProvider, applicationContext)
+    private val extensionsInfo: ExtensionsInfo = ExtensionsInfo(cameraProvider)
 
     /**
      * Shutdown the extensions.
@@ -155,15 +128,6 @@ internal constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun shutdown(): ListenableFuture<Void> {
         synchronized(EXTENSIONS_LOCK) {
-            if (ExtensionVersion.getRuntimeVersion() == null) {
-                sInitializeFuture = null
-                sExtensionsManager = null
-                ExtensionVersion.injectInstance(null)
-                return Futures.immediateFuture<Void>(null)
-            }
-            // Reset the ExtensionsVersion.
-            ExtensionVersion.injectInstance(null)
-
             // If initialization not yet attempted then deinit should succeed immediately.
             if (sInitializeFuture == null) {
                 return Futures.immediateFuture<Void>(null)
@@ -191,37 +155,8 @@ internal constructor(
                 return sDeinitializeFuture!!
             }
 
-            // Once extension has been initialized start the deinit call
-            if (availability == ExtensionsAvailability.LIBRARY_AVAILABLE) {
-                ExtendedCameraConfigProviderStore.clear()
-                sDeinitializeFuture =
-                    CallbackToFutureAdapter.getFuture {
-                        completer: CallbackToFutureAdapter.Completer<Void> ->
-                        try {
-                            InitializerImpl.deinit(
-                                object : InitializerImpl.OnExtensionsDeinitializedCallback {
-                                    override fun onSuccess() {
-                                        completer.set(null)
-                                    }
-
-                                    override fun onFailure(error: Int) {
-                                        completer.setException(
-                                            Exception("Failed to " + "deinitialize extensions.")
-                                        )
-                                    }
-                                },
-                                CameraXExecutors.directExecutor(),
-                            )
-                        } catch (e: NoSuchMethodError) {
-                            completer.setException(e)
-                        } catch (e: NoClassDefFoundError) {
-                            completer.setException(e)
-                        }
-                        null
-                    }
-            } else {
-                sDeinitializeFuture = Futures.immediateFuture<Void>(null)
-            }
+            ExtendedCameraConfigProviderStore.clear()
+            sDeinitializeFuture = Futures.immediateFuture<Void>(null)
             return sDeinitializeFuture!!
         }
     }
@@ -346,7 +281,7 @@ internal constructor(
             return null
         }
 
-        return extensionsInfo.getEstimatedCaptureLatencyRange(cameraSelector, mode, null)
+        return extensionsInfo.getEstimatedCaptureLatencyRangeMillis(cameraSelector, mode, null)
     }
 
     /**
@@ -405,14 +340,9 @@ internal constructor(
     public fun getCameraExtensionsInfo(cameraInfo: CameraInfo): CameraExtensionsInfo =
         CameraExtensionsInfos.from(cameraInfo)
 
-    @VisibleForTesting
-    @Suppress("EXPOSED_PACKAGE_PRIVATE_TYPE_FROM_INTERNAL_WARNING")
-    internal fun setVendorExtenderFactory(vendorExtenderFactory: VendorExtenderFactory) {
-        extensionsInfo.setVendorExtenderFactory(vendorExtenderFactory)
-    }
-
     public companion object {
         private const val TAG = "ExtensionsManager"
+        private const val MINIMUM_SUPPORTED_API_LEVEL = Build.VERSION_CODES.TIRAMISU
 
         // Singleton instance of the Extensions object
         private val EXTENSIONS_LOCK = Any()
@@ -443,76 +373,18 @@ internal constructor(
             context: Context,
             cameraProvider: CameraProvider,
         ): ListenableFuture<ExtensionsManager> {
-            return getInstanceAsync(context, cameraProvider, ClientVersion.getCurrentVersion())
-        }
-
-        /**
-         * Retrieves the [ExtensionsManager] associated with the current process and initializes
-         * with the given client extensions-interface version.
-         *
-         * This is for testing purpose. Since CameraX uses the latest extensions-interface version,
-         * we need a way to emulate the earlier version to see if OEM implementation can be
-         * compatible. For example, CameraX uses 1.3.0 and OEM implements 1.3.0 as well. We can use
-         * this API to emulate the situation that CameraX uses 1.2.0 and invokes the older version
-         * of API.
-         *
-         * @param context The context to initialize the extensions library.
-         * @param cameraProvider A [CameraProvider] will be used to query the information of cameras
-         *   on the device. The [CameraProvider] can be the
-         *   [androidx.camera.lifecycle.ProcessCameraProvider] which is obtained by*
-         *   [androidx.camera.lifecycle.ProcessCameraProvider.getInstance].
-         * @param clientVersionStr the extensions-interface version used to initialize the
-         *   extensions.
-         */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        @VisibleForTesting
-        @JvmStatic
-        public fun getInstanceAsync(
-            context: Context,
-            cameraProvider: CameraProvider,
-            clientVersionStr: String,
-        ): ListenableFuture<ExtensionsManager> {
-            val clientVersion = ClientVersion(clientVersionStr)
-            ClientVersion.setCurrentVersion(clientVersion)
-            return getInstanceAsync(context, cameraProvider, clientVersion)
-        }
-
-        @VisibleForTesting
-        @JvmStatic
-        internal fun getInstanceAsync(
-            context: Context,
-            cameraProvider: CameraProvider,
-            clientVersion: ClientVersion,
-        ): ListenableFuture<ExtensionsManager> {
             synchronized(EXTENSIONS_LOCK) {
                 val deinitInProgress = sDeinitializeFuture?.isDone == false
                 check(!deinitInProgress) { "Not yet done deinitializing extensions" }
                 sDeinitializeFuture = null
-                val applicationContext = ContextUtil.getApplicationContext(context)
+                val applicationContext = ContextUtil.getPersistentApplicationContext(context)
 
-                // Will be initialized, with an empty implementation which will report all
-                // extensions as unavailable
-                if (ExtensionVersion.getRuntimeVersion() == null) {
+                // CameraX Extensions run on CameraPipe with Camera2 Extensions API. Only devices
+                // with API level 33+ can be supported. For devices with API level < 33, we will
+                // return an empty implementation which will report all extensions as unavailable
+                if (Build.VERSION.SDK_INT < MINIMUM_SUPPORTED_API_LEVEL) {
                     return Futures.immediateFuture<ExtensionsManager>(
-                        getOrCreateExtensionsManager(
-                            ExtensionsAvailability.NONE,
-                            cameraProvider,
-                            applicationContext,
-                        )
-                    )
-                }
-
-                // Prior to 1.1 no additional initialization logic required
-                if (
-                    ClientVersion.isMaximumCompatibleVersion(Version.VERSION_1_0) ||
-                        ExtensionVersion.isMaximumCompatibleVersion(Version.VERSION_1_0)
-                ) {
-                    return Futures.immediateFuture<ExtensionsManager>(
-                        getOrCreateExtensionsManager(
-                            ExtensionsAvailability.LIBRARY_AVAILABLE,
-                            cameraProvider,
-                            applicationContext,
-                        )
+                        getOrCreateExtensionsManager(ExtensionsAvailability.NONE, cameraProvider)
                     )
                 }
 
@@ -520,98 +392,23 @@ internal constructor(
                     sInitializeFuture =
                         CallbackToFutureAdapter.getFuture {
                             completer: CallbackToFutureAdapter.Completer<ExtensionsManager> ->
-                            try {
-                                InitializerImpl.init(
-                                    clientVersion.toVersionString(),
-                                    applicationContext,
-                                    object : InitializerImpl.OnExtensionsInitializedCallback {
-                                        override fun onSuccess() {
-                                            Logger.d(TAG, "Successfully initialized extensions")
-                                            completer.set(
-                                                getOrCreateExtensionsManager(
-                                                    ExtensionsAvailability.LIBRARY_AVAILABLE,
-                                                    cameraProvider,
-                                                    applicationContext,
-                                                )
-                                            )
-                                        }
+                            val isCamera2ExtensionsSupported =
+                                cameraProvider.availableCameraInfos.any { cameraInfo ->
+                                    (cameraInfo as CameraInfoInternal)
+                                        .supportedExtensions
+                                        .isNotEmpty()
+                                }
 
-                                        override fun onFailure(error: Int) {
-                                            Logger.e(TAG, "Failed to initialize extensions")
-                                            completer.set(
-                                                getOrCreateExtensionsManager(
-                                                    ExtensionsAvailability
-                                                        .LIBRARY_UNAVAILABLE_ERROR_LOADING,
-                                                    cameraProvider,
-                                                    applicationContext,
-                                                )
-                                            )
-                                        }
+                            completer.set(
+                                getOrCreateExtensionsManager(
+                                    if (!isCamera2ExtensionsSupported) {
+                                        ExtensionsAvailability.NONE
+                                    } else {
+                                        ExtensionsAvailability.LIBRARY_AVAILABLE
                                     },
-                                    CameraXExecutors.directExecutor(),
+                                    cameraProvider,
                                 )
-                            } catch (e: NoSuchMethodError) {
-                                Logger.e(
-                                    TAG,
-                                    ("Failed to initialize extensions. Some classes or methods " +
-                                        "are missed in the vendor library. " +
-                                        e),
-                                )
-                                completer.set(
-                                    getOrCreateExtensionsManager(
-                                        ExtensionsAvailability
-                                            .LIBRARY_UNAVAILABLE_MISSING_IMPLEMENTATION,
-                                        cameraProvider,
-                                        applicationContext,
-                                    )
-                                )
-                            } catch (e: NoClassDefFoundError) {
-                                Logger.e(
-                                    TAG,
-                                    ("Failed to initialize extensions. Some classes or methods " +
-                                        "are missed in the vendor library. " +
-                                        e),
-                                )
-                                completer.set(
-                                    getOrCreateExtensionsManager(
-                                        ExtensionsAvailability
-                                            .LIBRARY_UNAVAILABLE_MISSING_IMPLEMENTATION,
-                                        cameraProvider,
-                                        applicationContext,
-                                    )
-                                )
-                            } catch (e: AbstractMethodError) {
-                                Logger.e(
-                                    TAG,
-                                    ("Failed to initialize extensions. Some classes or methods " +
-                                        "are missed in the vendor library. " +
-                                        e),
-                                )
-                                completer.set(
-                                    getOrCreateExtensionsManager(
-                                        ExtensionsAvailability
-                                            .LIBRARY_UNAVAILABLE_MISSING_IMPLEMENTATION,
-                                        cameraProvider,
-                                        applicationContext,
-                                    )
-                                )
-                            } catch (e: RuntimeException) {
-                                // Catches all unexpected runtime exceptions and still returns an
-                                // ExtensionsManager instance which performs default behavior.
-                                Logger.e(
-                                    TAG,
-                                    ("Failed to initialize extensions. Something wents wrong when " +
-                                        "initializing the vendor library. " +
-                                        e),
-                                )
-                                completer.set(
-                                    getOrCreateExtensionsManager(
-                                        ExtensionsAvailability.LIBRARY_UNAVAILABLE_ERROR_LOADING,
-                                        cameraProvider,
-                                        applicationContext,
-                                    )
-                                )
-                            }
+                            )
                             "Initialize extensions"
                         }
                 }
@@ -622,12 +419,12 @@ internal constructor(
         private fun getOrCreateExtensionsManager(
             extensionsAvailability: ExtensionsAvailability,
             cameraProvider: CameraProvider,
-            applicationContext: Context,
         ): ExtensionsManager =
             synchronized(EXTENSIONS_LOCK) {
                 sExtensionsManager
-                    ?: ExtensionsManager(extensionsAvailability, cameraProvider, applicationContext)
-                        .also { sExtensionsManager = it }
+                    ?: ExtensionsManager(extensionsAvailability, cameraProvider).also {
+                        sExtensionsManager = it
+                    }
             }
 
         /**

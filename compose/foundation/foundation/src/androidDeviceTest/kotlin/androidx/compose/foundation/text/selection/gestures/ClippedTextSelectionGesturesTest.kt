@@ -31,8 +31,6 @@ import androidx.compose.foundation.text.selection.gestures.util.TextSelectionAss
 import androidx.compose.foundation.text.selection.gestures.util.applyAndAssert
 import androidx.compose.foundation.text.selection.gestures.util.longPress
 import androidx.compose.foundation.text.selection.gestures.util.to
-import androidx.compose.foundation.text.selection.getSelectionHandleInfo
-import androidx.compose.foundation.text.selection.isSelectionHandle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
@@ -52,6 +50,14 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * Test class for text selection gestures when the text is clipped or overflowing.
+ *
+ * This class verifies the behavior of selection drag gestures and handle movements when dealing
+ * with text that exceeds its visible bounds (e.g., due to `maxLines` restrictions and
+ * `TextOverflow.Clip` or `TextOverflow.Visible`). It acts as a regression test for crashes and
+ * incorrect selection states that can occur when interacting with overflowed text.
+ */
 @MediumTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
 internal class ClippedTextSelectionGesturesTest : AbstractSelectionGesturesTest() {
@@ -145,24 +151,22 @@ internal class ClippedTextSelectionGesturesTest : AbstractSelectionGesturesTest(
             startSelectionHandleShown = true
             endSelectionHandleShown = true
             magnifierShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(position = bottomStart)
         asserter.applyAndAssert {
             selection = 0 to text.length
-            endSelectionHandleShown = false
             magnifierShown = false
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         // drag back to ensure the gesture continues on
         touchDragTo(position = characterPosition(2))
         asserter.applyAndAssert {
             selection = 0 to 4
-            endSelectionHandleShown = true
             magnifierShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         performTouchGesture { up() }
@@ -185,7 +189,8 @@ internal class ClippedTextSelectionGesturesTest : AbstractSelectionGesturesTest(
         asserter.applyAndAssert {
             selection = 0 to text.length
             startSelectionHandleShown = true
-            hapticsCount++
+            endSelectionHandleShown = true
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(characterPosition(offset = 2))
@@ -211,16 +216,14 @@ internal class ClippedTextSelectionGesturesTest : AbstractSelectionGesturesTest(
             asserter.applyAndAssert {
                 selection = 0 to text.length
                 magnifierShown = false
-                endSelectionHandleShown = false
-                hapticsCount++
+                hapticsTextHandleMoveCount++
             }
 
             moveHandleToCharacter(characterOffset = 2)
             asserter.applyAndAssert {
                 selection = 0 to 4
                 magnifierShown = true
-                endSelectionHandleShown = true
-                hapticsCount++
+                hapticsTextHandleMoveCount++
             }
         }
 
@@ -228,120 +231,6 @@ internal class ClippedTextSelectionGesturesTest : AbstractSelectionGesturesTest(
             magnifierShown = false
             textToolbarShown = true
         }
-    }
-
-    @SdkSuppress(minSdkVersion = 26)
-    @Test
-    fun whenDragStartHandle_withNoEndHandle_selectionAndHandleUpdates() {
-        maxLinesState.value = 2
-        overflowState.value = TextOverflow.Clip
-        rule.waitForIdle()
-        asserter.assert()
-
-        performTouchGesture {
-            longPress(characterPosition(offset = 2))
-            moveTo(bottomStart)
-            up()
-        }
-
-        asserter.applyAndAssert {
-            selection = 0 to text.length
-            startSelectionHandleShown = true
-            textToolbarShown = true
-            hapticsCount++
-        }
-
-        withHandlePressed(Handle.SelectionStart) {
-            asserter.applyAndAssert {
-                magnifierShown = true
-                textToolbarShown = false
-            }
-
-            moveHandleToCharacter(characterOffset = 6)
-            asserter.applyAndAssert {
-                selection = 5 to text.length
-                magnifierShown = true
-                hapticsCount++
-            }
-
-            moveHandleTo(bottomEnd)
-            asserter.applyAndAssert {
-                selection = (text.length - 1) to text.length
-                magnifierShown = false
-                startSelectionHandleShown = false
-                hapticsCount++
-            }
-
-            moveHandleToCharacter(characterOffset = 6)
-            asserter.applyAndAssert {
-                selection = 5 to text.length
-                magnifierShown = true
-                startSelectionHandleShown = true
-                hapticsCount++
-            }
-        }
-
-        asserter.applyAndAssert {
-            magnifierShown = false
-            textToolbarShown = true
-        }
-    }
-
-    @SdkSuppress(minSdkVersion = 26)
-    @Test
-    fun whenDragInvisibleEndHandle_noSelectionChanges() {
-        maxLinesState.value = 2
-        overflowState.value = TextOverflow.Clip
-        rule.waitForIdle()
-        asserter.assert()
-
-        performTouchGesture {
-            longPress(characterPosition(offset = 2))
-            moveTo(characterPosition(offset = 6))
-        }
-
-        asserter.applyAndAssert {
-            selection = 0 to text.length
-            startSelectionHandleShown = true
-            hapticsCount++
-        }
-
-        val offsetTwoPosition = characterPosition(offset = 2)
-        touchDragTo(offsetTwoPosition)
-        asserter.applyAndAssert {
-            selection = 0 to 4
-            magnifierShown = true
-            endSelectionHandleShown = true
-        }
-
-        // last position where the handle is shown
-        val initialPosition =
-            rule
-                .onNode(isSelectionHandle(Handle.SelectionEnd))
-                .fetchSemanticsNode()
-                .getSelectionHandleInfo()
-                .position
-
-        // drag straight down, out of text bounds
-        touchDragTo(offsetTwoPosition.copy(y = bottomEnd.y))
-        asserter.applyAndAssert {
-            selection = 0 to text.length
-            magnifierShown = false
-            endSelectionHandleShown = false
-        }
-
-        performTouchGesture { up() }
-        asserter.applyAndAssert { textToolbarShown = true }
-
-        withHandlePressed(Handle.SelectionEnd) {
-            setInitialGesturePosition(initialPosition)
-            asserter.assert()
-            moveHandleToCharacter(4)
-            asserter.assert()
-            moveHandleToCharacter(2)
-            asserter.assert()
-        }
-        asserter.assert()
     }
 
     private fun HandlePressedScope.moveHandleToCharacter(characterOffset: Int) {

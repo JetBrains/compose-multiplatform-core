@@ -39,9 +39,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnAnchorType
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnDefaults
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
@@ -55,6 +59,31 @@ fun SimpleTransformingLazyColumnSample() {
     val transformationSpec = rememberTransformationSpec()
     TransformingLazyColumn(contentPadding = PaddingValues(20.dp)) {
         items(count = 10) { index ->
+            Button(
+                modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                transformation = SurfaceTransformation(transformationSpec),
+                onClick = {},
+            ) {
+                Text(text = "Item $index")
+            }
+        }
+    }
+}
+
+@Sampled
+@Preview
+@Composable
+fun TransformingLazyColumnWithSnapSample() {
+    val transformationSpec = rememberTransformationSpec()
+    val state = rememberTransformingLazyColumnState()
+    TransformingLazyColumn(
+        rotaryScrollableBehavior = RotaryScrollableDefaults.snapBehavior(scrollableState = state),
+        flingBehavior = TransformingLazyColumnDefaults.snapFlingBehavior(state = state),
+        modifier = Modifier.fillMaxWidth(),
+        state = state,
+        contentPadding = PaddingValues(20.dp),
+    ) {
+        items(count = 20) { index ->
             Button(
                 modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
                 transformation = SurfaceTransformation(transformationSpec),
@@ -147,4 +176,97 @@ fun TransformingLazyColumnScrollToItemSample() {
     }
 
     LaunchedEffect(state.anchorItemIndex) { println("Anchor item index: ${state.anchorItemIndex}") }
+}
+
+@Sampled
+@Preview
+@Composable
+fun TransformingLazyColumnMinimumVerticalContentPaddingSample() {
+    val transformationSpec = rememberTransformationSpec()
+
+    TransformingLazyColumn(contentPadding = PaddingValues(horizontal = 20.dp)) {
+        items(count = 20) { index ->
+            Button(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(
+                            ButtonDefaults.minimumVerticalListContentPadding
+                        ),
+                transformation = SurfaceTransformation(transformationSpec),
+                onClick = {},
+            ) {
+                Text(text = "Item $index")
+            }
+        }
+    }
+}
+
+@Sampled
+@Preview
+@Composable
+fun TransformingLazyColumnRequestAnchorItemSample() {
+    // This sample demonstrates how to use requestAnchorItem to control the expansion direction
+    // of an item. When the "input_box" Button is clicked, its text content grows, causing its
+    // intrinsic height to increase. By requesting ItemBottom as the layout anchor immediately
+    // before the state change, the visual bottom edge of the button remains pinned in place on
+    // the screen, and the new height expands upwards.
+    val state = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
+
+    var textLines by remember { mutableIntStateOf(1) }
+
+    TransformingLazyColumn(
+        state = state,
+        contentPadding = PaddingValues(20.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        items(3, key = { "item_$it" }) { index ->
+            Button(
+                onClick = {},
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(
+                            ButtonDefaults.minimumVerticalListContentPadding
+                        ),
+                transformation = SurfaceTransformation(transformationSpec),
+            ) {
+                Text(text = "Item $index")
+            }
+        }
+
+        // The expanding item
+        item(key = "input_box") {
+            Button(
+                onClick = {
+                    state.requestAnchorItem(
+                        key = "input_box",
+                        anchorType = TransformingLazyColumnAnchorType.ItemBottom,
+                    )
+                    textLines = if (textLines < 4) textLines + 1 else 1
+                },
+                modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                transformation = SurfaceTransformation(transformationSpec),
+            ) {
+                val text = List(textLines) { "Input line ${it + 1}" }.joinToString("\n")
+                Text(text = text)
+            }
+        }
+
+        items(3, key = { "item_${it + 4}" }) { index ->
+            Button(
+                onClick = {},
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(
+                            ButtonDefaults.minimumVerticalListContentPadding
+                        ),
+                transformation = SurfaceTransformation(transformationSpec),
+            ) {
+                Text(text = "Item ${index + 4}")
+            }
+        }
+    }
 }

@@ -56,6 +56,21 @@ public interface RcPlatformServices {
      */
     boolean isAlpha8Image(@NonNull Object image);
 
+    /** This defines the interface for path array creators. */
+    interface RcPathArrayCreator {
+        /** returns an array of float is remote compose format */
+        float @NonNull [] createFloatArray();
+
+        /**
+         * Return the winding DEFAULT = 0 EVEN_ODD = 1 INVERSE_EVEN_ODD = 2 INVERSE_WINDING = 3
+         *
+         * @return winding number
+         */
+        default int winding() {
+            return 0;
+        }
+    }
+
     /**
      * Converts a platform-specific path object into a platform-independent float buffer
      *
@@ -94,19 +109,25 @@ public interface RcPlatformServices {
      * pass.
      */
     interface ComputedTextLayout {
-        /**
-         * Horizontal dimension of this text layout
-         *
-         * @return
-         */
+        /** Horizontal dimension of this text layout */
         float getWidth();
 
+        /** Vertical dimension of this text layout */
+        float getHeight();
+
         /**
-         * Vertical dimension of this text layout
+         * Returns the visible line count of this text layout
          *
          * @return
          */
-        float getHeight();
+        int getVisibleLineCount();
+
+        /**
+         * Returns true if contains hyphenated text
+         *
+         * @return
+         */
+        boolean isHyphenatedText();
     }
 
     RcPlatformServices None =

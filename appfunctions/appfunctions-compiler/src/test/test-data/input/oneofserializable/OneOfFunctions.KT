@@ -26,6 +26,7 @@ class OneOfFunctions {
     fun oneOfSealedParam(
         appFunctionContext: AppFunctionContext,
         oneOfSealedInterface: OneOfSealedInterface,
+        oneOfSealedInterfaceNullable: OneOfSealedInterface?,
         oneOfSealedInterfaceList: List<OneOfSealedInterface>,
     ) {}
 
@@ -42,6 +43,14 @@ class OneOfFunctions {
         appFunctionContext: AppFunctionContext,
         oneOfSealedNestedSerializable: OneOfSealedNestedSerializable,
     ) = OneOfSealedNestedSerializable(BSubclass("", 0))
+
+    @AppFunction
+    fun oneOfNonSealedOneOfSerializableParam(
+        appFunctionContext: AppFunctionContext,
+        nonSealedOneOfSerializable: NonSealedOneOfSerializable,
+        nonSealedOneOfSerializableNullable: NonSealedOneOfSerializable?,
+        nonSealedOneOfSerializableList: List<NonSealedOneOfSerializable>,
+    ) {}
 }
 
 @AppFunctionSerializable

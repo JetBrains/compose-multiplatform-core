@@ -35,40 +35,37 @@ import java.util.function.Consumer
 public class PointerCaptureComponent
 private constructor(
     private val sceneRuntime: SceneRuntime,
-    private val entityManager: EntityManager,
+    private val entityRegistry: EntityRegistry,
     private val executor: Executor,
     private val stateListener: Consumer<PointerCaptureState>,
     private val inputEventListener: Consumer<InputEvent>,
-) : Component {
+) : Component() {
 
     /** Defines the possible states of a [PointerCaptureComponent]. */
-    public class PointerCaptureState private constructor(private val name: String) {
+    public class PointerCaptureState private constructor(private val value: Int) {
 
         public companion object {
             /**
              * Pointer Capture is temporarily disabled for this component. The component can resume
              * capture from this state.
              */
-            @JvmField public val PAUSED: PointerCaptureState = PointerCaptureState("PAUSED")
+            @JvmField public val PAUSED: PointerCaptureState = PointerCaptureState(1)
 
             /** Pointer Capture is enabled for this component. */
-            @JvmField public val ACTIVE: PointerCaptureState = PointerCaptureState("STOPPED")
+            @JvmField public val ACTIVE: PointerCaptureState = PointerCaptureState(2)
 
             /**
              * Pointer Capture has been stopped for this component and no more callbacks will get
              * triggered. The component will not recover from this state. This can occur if the
              * underlying system replaces this pointer capture request by another one.
              */
-            @JvmField public val STOPPED: PointerCaptureState = PointerCaptureState("STOPPED")
+            @JvmField public val STOPPED: PointerCaptureState = PointerCaptureState(3)
         }
-
-        override fun toString(): String = name
     }
 
     private var attachedEntity: Entity? = null
-
     private val rtInputEventListener = RtInputEventListener { rtEvent ->
-        inputEventListener.accept(rtEvent.toInputEvent(entityManager))
+        inputEventListener.accept(rtEvent.toInputEvent(entityRegistry))
     }
 
     private val rtStateListener =
@@ -85,7 +82,6 @@ private constructor(
                 }
             }
         }
-
     private val rtComponent by lazy {
         sceneRuntime.createPointerCaptureComponent(executor, rtStateListener, rtInputEventListener)
     }
@@ -96,14 +92,14 @@ private constructor(
         }
         attachedEntity = entity
 
-        return (entity as BaseEntity<*>).rtEntity!!.addComponent(rtComponent)
+        return (entity as BaseEntity<*>).rtEntity.addComponent(rtComponent)
     }
 
     override fun onDetach(entity: Entity) {
         if (entity != attachedEntity) {
             return
         }
-        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtComponent)
+        (entity as BaseEntity<*>).rtEntity.removeComponent(rtComponent)
         attachedEntity = null
     }
 
@@ -128,7 +124,7 @@ private constructor(
         ): PointerCaptureComponent =
             PointerCaptureComponent(
                 session.sceneRuntime,
-                session.scene.entityManager,
+                session.scene.entityRegistry,
                 executor,
                 stateListener,
                 inputListener,

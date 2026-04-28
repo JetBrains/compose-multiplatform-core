@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// TODO(b/502276582): Remove Suppression once the rest of aosp/4029203 are submitted
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.compose.platform
 
@@ -23,13 +25,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.createFakeSession
-import androidx.xr.compose.testing.disableXr
-import androidx.xr.compose.testing.session
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.unit.DpVolumeSize
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Quaternion
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.scene
+import androidx.xr.scenecore.testing.FakeSceneRuntime
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,13 +42,18 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SpatialConfigurationTest {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     private val hasXrSpatialFeatureText = "Has XR Spatial Feature"
 
     @Test
     fun hasXrSpatialFeature_nonXr_isFalse() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
 
         composeTestRule.setContent {
             if (LocalSpatialConfiguration.current.hasXrSpatialFeature) {
@@ -56,22 +66,22 @@ class SpatialConfigurationTest {
 
     @Test
     fun requestFullSpaceMode_nonXr_throwsException() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
 
         composeTestRule.setContent {
             assertFailsWith<UnsupportedOperationException> {
-                LocalSpatialConfiguration.current.requestFullSpaceMode()
+                @Suppress("DEPRECATION") LocalSpatialConfiguration.current.requestFullSpaceMode()
             }
         }
     }
 
     @Test
     fun requestHomeSpaceMode_nonXr_throwsException() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
 
         composeTestRule.setContent {
             assertFailsWith<UnsupportedOperationException> {
-                LocalSpatialConfiguration.current.requestHomeSpaceMode()
+                @Suppress("DEPRECATION") LocalSpatialConfiguration.current.requestHomeSpaceMode()
             }
         }
     }
@@ -90,9 +100,9 @@ class SpatialConfigurationTest {
         }
 
         composeTestRule.onNodeWithText("Full").assertExists()
-        composeTestRule.runOnIdle { configuration?.requestHomeSpaceMode() }
+        composeTestRule.runOnIdle { @Suppress("DEPRECATION") configuration?.requestHomeSpaceMode() }
         composeTestRule.onNodeWithText("Home").assertExists()
-        composeTestRule.runOnIdle { configuration?.requestFullSpaceMode() }
+        composeTestRule.runOnIdle { @Suppress("DEPRECATION") configuration?.requestFullSpaceMode() }
         composeTestRule.onNodeWithText("Full").assertExists()
     }
 
@@ -109,8 +119,7 @@ class SpatialConfigurationTest {
 
     @Test
     fun hasXrSpatialFeature_homeSpaceMode_returnsTrue() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             if (LocalSpatialConfiguration.current.hasXrSpatialFeature) {
@@ -123,8 +132,7 @@ class SpatialConfigurationTest {
 
     @Test
     fun bounds_homeSpaceMode_isPositiveAndNotMax() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         var bounds: DpVolumeSize? = null
         composeTestRule.setContent { bounds = LocalSpatialConfiguration.current.bounds }
@@ -153,7 +161,7 @@ class SpatialConfigurationTest {
 
     @Test
     fun bounds_nonXr_equalsViewSize() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
 
         var bounds: DpVolumeSize? = null
         composeTestRule.setContent { bounds = LocalSpatialConfiguration.current.bounds }
@@ -164,5 +172,36 @@ class SpatialConfigurationTest {
         assertThat(bounds1.width).isEqualTo(320.dp)
         assertThat(bounds1.height).isEqualTo(470.dp)
         assertThat(bounds1.depth).isEqualTo(0.dp)
+    }
+
+    @Test
+    fun recommendedPoseAndScale_whenSpatialModeChanges_updatesReactively() {
+        val session = composeTestRule.configureFakeSession()
+        val fakeSceneRuntime = session.runtimes.filterIsInstance<FakeSceneRuntime>().first()
+
+        val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion.Identity)
+        val expectedScale = 2.5f
+
+        var actualPose: Pose? = null
+        var actualScale: Float? = null
+
+        composeTestRule.setContent {
+            val config =
+                assertNotNull(LocalSpatialConfiguration.current as? SessionSpatialConfiguration)
+            actualPose = config.recommendedPose
+            actualScale = config.recommendedScale
+        }
+
+        composeTestRule.runOnIdle {
+            fakeSceneRuntime.spatialModeChangeListener?.onSpatialModeChanged(
+                recommendedPose = expectedPose,
+                recommendedScale = Vector3(expectedScale, expectedScale, expectedScale),
+            )
+        }
+
+        composeTestRule.waitForIdle()
+
+        assertThat(actualPose).isEqualTo(expectedPose)
+        assertThat(actualScale).isEqualTo(expectedScale)
     }
 }

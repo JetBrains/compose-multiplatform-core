@@ -17,14 +17,14 @@
 package androidx.xr.arcore.projected
 
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
-import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.VpsAvailabilityAvailable
-import androidx.xr.runtime.VpsAvailabilityErrorInternal
-import androidx.xr.runtime.VpsAvailabilityNetworkError
-import androidx.xr.runtime.VpsAvailabilityNotAuthorized
-import androidx.xr.runtime.VpsAvailabilityResourceExhausted
-import androidx.xr.runtime.VpsAvailabilityResult
-import androidx.xr.runtime.VpsAvailabilityUnavailable
+import androidx.xr.arcore.runtime.TrackingState
+import androidx.xr.arcore.runtime.VpsAvailabilityAvailable
+import androidx.xr.arcore.runtime.VpsAvailabilityErrorInternal
+import androidx.xr.arcore.runtime.VpsAvailabilityNetworkError
+import androidx.xr.arcore.runtime.VpsAvailabilityNotAuthorized
+import androidx.xr.arcore.runtime.VpsAvailabilityResourceExhausted
+import androidx.xr.arcore.runtime.VpsAvailabilityResult
+import androidx.xr.arcore.runtime.VpsAvailabilityUnavailable
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -60,7 +60,7 @@ class ProjectedGeospatialTest {
         xrResources = XrResources()
         xrResources.service = service
         projectedGeospatial = xrResources.geospatial
-        xrResources.deviceTrackingState = TrackingState.TRACKING
+        xrResources.trackingState = TrackingState.TRACKING
         xrResources.geospatialTrackingState = TrackingState.TRACKING
     }
 
@@ -147,7 +147,7 @@ class ProjectedGeospatialTest {
 
     @Test
     fun createPoseFromGeospatialPose_notTracking_throwsException() {
-        xrResources.deviceTrackingState = TrackingState.STOPPED
+        xrResources.trackingState = TrackingState.STOPPED
         xrResources.geospatialTrackingState = TrackingState.STOPPED
         assertFailsWith<GeospatialPoseNotTrackingException> {
             projectedGeospatial.createPoseFromGeospatialPose(GeospatialPose())
@@ -157,14 +157,14 @@ class ProjectedGeospatialTest {
     @Test
     fun createPoseFromGeospatialPose_partiallyTracking_throwsException() {
         // This should throw
-        xrResources.deviceTrackingState = TrackingState.STOPPED
+        xrResources.trackingState = TrackingState.STOPPED
         xrResources.geospatialTrackingState = TrackingState.TRACKING
         assertFailsWith<GeospatialPoseNotTrackingException> {
             projectedGeospatial.createPoseFromGeospatialPose(GeospatialPose())
         }
 
         // This should also throw
-        xrResources.deviceTrackingState = TrackingState.TRACKING
+        xrResources.trackingState = TrackingState.TRACKING
         xrResources.geospatialTrackingState = TrackingState.STOPPED
         assertFailsWith<GeospatialPoseNotTrackingException> {
             projectedGeospatial.createPoseFromGeospatialPose(GeospatialPose())

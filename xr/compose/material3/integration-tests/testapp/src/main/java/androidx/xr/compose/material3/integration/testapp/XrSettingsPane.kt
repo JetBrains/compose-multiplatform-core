@@ -93,6 +93,8 @@ private fun NavigationSuiteTypeDropdown(
             listOf(
                 null,
                 NavigationSuiteType.NavigationRail,
+                NavigationSuiteType.WideNavigationRailExpanded,
+                NavigationSuiteType.WideNavigationRailCollapsed,
                 NavigationSuiteType.NavigationBar,
                 NavigationSuiteType.ShortNavigationBarCompact,
                 NavigationSuiteType.ShortNavigationBarMedium,
@@ -103,6 +105,8 @@ private fun NavigationSuiteTypeDropdown(
             when (it) {
                 null -> "Default"
                 NavigationSuiteType.NavigationRail -> "Rail"
+                NavigationSuiteType.WideNavigationRailExpanded -> "Expressive Rail (Expanded)"
+                NavigationSuiteType.WideNavigationRailCollapsed -> "Expressive Rail (Collapsed)"
                 NavigationSuiteType.NavigationBar -> "Bar"
                 NavigationSuiteType.ShortNavigationBarCompact -> "Expressive Bar (Compact)"
                 NavigationSuiteType.ShortNavigationBarMedium -> "Expressive Bar (Medium)"

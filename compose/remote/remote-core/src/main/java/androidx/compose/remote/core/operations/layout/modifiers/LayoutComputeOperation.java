@@ -15,6 +15,9 @@
  */
 package androidx.compose.remote.core.operations.layout.modifiers;
 
+import static androidx.compose.remote.core.documentation.DocumentedOperation.BOOLEAN;
+import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
+
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.LayoutCompute;
 import androidx.compose.remote.core.Operation;
@@ -47,14 +50,13 @@ public class LayoutComputeOperation extends Operation
     private static final String CLASS_NAME = "LayoutComputeOperation";
     private static final boolean DEBUG = false;
 
-    @NonNull
-    public ArrayList<Operation> mList = new ArrayList<>();
+    @NonNull public ArrayList<Operation> mList = new ArrayList<>();
 
     public static final int TYPE_MEASURE = 0;
     public static final int TYPE_POSITION = 1;
 
     private final int mType;
-    private final int mBoundsId;
+    private int mBoundsId;
     private final boolean mAnimateChanges;
     private LayoutComponent mParent;
 
@@ -156,8 +158,8 @@ public class LayoutComputeOperation extends Operation
      *
      * @param buffer a WireBuffer
      */
-    public static void apply(@NonNull WireBuffer buffer, int type, int boundsId,
-            boolean animateChanges) {
+    public static void apply(
+            @NonNull WireBuffer buffer, int type, int boundsId, boolean animateChanges) {
         buffer.start(OP_CODE);
         buffer.writeInt(type);
         buffer.writeInt(boundsId);
@@ -167,12 +169,12 @@ public class LayoutComputeOperation extends Operation
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
         int type = buffer.readInt();
-        int boundsId = buffer.readInt();
+        int boundsId = buffer.readId();
         boolean animateChanges = buffer.readBoolean();
         operations.add(new LayoutComputeOperation(type, boundsId, animateChanges));
     }
@@ -183,8 +185,13 @@ public class LayoutComputeOperation extends Operation
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Operations", OP_CODE, "LayoutCompute")
-                .description("This operation runs child actions");
+        doc.operation("Modifier Operations", OP_CODE, "LayoutCompute")
+                .addedVersion(7)
+                .experimental(true)
+                .description("Compute component position and measure via dynamic expressions")
+                .field(INT, "type", "Type of computation (0=MEASURE, 1=POSITION)")
+                .field(INT, "boundsId", "The ID of the float list variable to store the bounds")
+                .field(BOOLEAN, "animateChanges", "Whether to animate layout changes");
     }
 
     @Override
@@ -204,14 +211,10 @@ public class LayoutComputeOperation extends Operation
 
     float[] mBounds = new float[6];
 
-    /**
-     * Aoply the modifier to the component measure
-     * @param context
-     * @param m
-     * @param parent
-     * @return
-     */
-    public boolean applyToMeasure(@NonNull PaintContext context, @NonNull ComponentMeasure m,
+    /** Aoply the modifier to the component measure */
+    public boolean applyToMeasure(
+            @NonNull PaintContext context,
+            @NonNull ComponentMeasure m,
             @NonNull ComponentMeasure parent) {
         if (DEBUG) {
             System.out.println("apply to measure, type " + mType);

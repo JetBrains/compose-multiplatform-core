@@ -26,7 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -35,6 +35,7 @@ import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +44,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TransformingLazyColumnLayoutInfoTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     private var itemSizePx: Int = 50
     private var itemSizeDp: Dp = Dp.Infinity
@@ -284,6 +285,128 @@ class TransformingLazyColumnLayoutInfoTest {
         }
 
         rule.runOnIdle { assertThat(state.layoutInfo.reverseLayout).isTrue() }
+    }
+
+    @Test
+    fun layoutInfo_reflectsDynamicPadding() {
+        lateinit var state: TransformingLazyColumnState
+        val minimumVerticalContentPaddingPx = 50
+        val minimumVerticalContentPaddingDp =
+            with(rule.density) { minimumVerticalContentPaddingPx.toDp() }
+        rule.setContent {
+            state = rememberTransformingLazyColumnState()
+            TransformingLazyColumn(
+                state = state,
+                modifier = Modifier.requiredSize(itemSizeDp * 5f),
+            ) {
+                items(100) { index ->
+                    Box(
+                        Modifier.requiredSize(itemSizeDp)
+                            .minimumVerticalContentPadding(minimumVerticalContentPaddingDp)
+                    )
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.beforeContentPadding)
+                .isEqualTo(minimumVerticalContentPaddingPx)
+            assertThat(state.layoutInfo.afterContentPadding).isEqualTo(0)
+        }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(10) } }
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.beforeContentPadding).isEqualTo(0)
+            assertThat(state.layoutInfo.afterContentPadding).isEqualTo(0)
+        }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(99) } }
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.beforeContentPadding).isEqualTo(0)
+            assertThat(state.layoutInfo.afterContentPadding)
+                .isEqualTo(minimumVerticalContentPaddingPx)
+        }
+    }
+
+    @Test
+    fun layoutInfo_reflectsDynamicPaddingWithAnimation() {
+        lateinit var state: TransformingLazyColumnState
+        val minimumVerticalContentPaddingPx = 50
+        val minimumVerticalContentPaddingDp =
+            with(rule.density) { minimumVerticalContentPaddingPx.toDp() }
+        rule.setContent {
+            state = rememberTransformingLazyColumnState()
+            TransformingLazyColumn(
+                state = state,
+                modifier = Modifier.requiredSize(itemSizeDp * 5f),
+            ) {
+                items(100) { index ->
+                    Box(
+                        Modifier.requiredSize(itemSizeDp)
+                            .animateItem()
+                            .minimumVerticalContentPadding(minimumVerticalContentPaddingDp)
+                    )
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.beforeContentPadding)
+                .isEqualTo(minimumVerticalContentPaddingPx)
+            assertThat(state.layoutInfo.afterContentPadding).isEqualTo(0)
+        }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(10) } }
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.beforeContentPadding).isEqualTo(0)
+            assertThat(state.layoutInfo.afterContentPadding).isEqualTo(0)
+        }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(99) } }
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.beforeContentPadding).isEqualTo(0)
+            assertThat(state.layoutInfo.afterContentPadding)
+                .isEqualTo(minimumVerticalContentPaddingPx)
+        }
+    }
+
+    @Test
+    fun layoutInfo_reflectsDynamicPaddingWithAnimationAfter() {
+        lateinit var state: TransformingLazyColumnState
+        val minimumVerticalContentPaddingPx = 50
+        val minimumVerticalContentPaddingDp =
+            with(rule.density) { minimumVerticalContentPaddingPx.toDp() }
+        rule.setContent {
+            state = rememberTransformingLazyColumnState()
+            TransformingLazyColumn(
+                state = state,
+                modifier = Modifier.requiredSize(itemSizeDp * 5f),
+            ) {
+                items(100) { index ->
+                    Box(
+                        Modifier.requiredSize(itemSizeDp)
+                            .minimumVerticalContentPadding(minimumVerticalContentPaddingDp)
+                            .animateItem()
+                    )
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.beforeContentPadding)
+                .isEqualTo(minimumVerticalContentPaddingPx)
+            assertThat(state.layoutInfo.afterContentPadding).isEqualTo(0)
+        }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(10) } }
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.beforeContentPadding).isEqualTo(0)
+            assertThat(state.layoutInfo.afterContentPadding).isEqualTo(0)
+        }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(99) } }
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.beforeContentPadding).isEqualTo(0)
+            assertThat(state.layoutInfo.afterContentPadding)
+                .isEqualTo(minimumVerticalContentPaddingPx)
+        }
     }
 
     private fun TransformingLazyColumnLayoutInfo.assertVisibleItems(

@@ -19,9 +19,10 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
+import androidx.compose.remote.core.RemoteClock;
 import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.core.RemoteContext;
-import androidx.compose.remote.core.SystemClock;
+import androidx.compose.remote.core.operations.ColorTheme;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.serialize.MapSerializer;
 
@@ -30,28 +31,26 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Map;
 
-/**
- * Public API to create a new RemoteComposeDocument coming from an input stream
- */
+/** Public API to create a new RemoteComposeDocument coming from an input stream */
 @RestrictTo(LIBRARY_GROUP)
 public class RemoteDocument {
 
     private @NonNull CoreDocument mDocument;
 
     public RemoteDocument(byte @NonNull [] inputStream) {
-        this(new ByteArrayInputStream(inputStream), new SystemClock());
+        this(new ByteArrayInputStream(inputStream), RemoteClock.SYSTEM);
     }
 
     @RestrictTo(LIBRARY_GROUP)
     public RemoteDocument(@NonNull InputStream inputStream) {
-        this(inputStream, new SystemClock());
+        this(inputStream, RemoteClock.SYSTEM);
     }
 
     @RestrictTo(LIBRARY_GROUP)
-    public RemoteDocument(@NonNull InputStream inputStream, @NonNull Clock clock) {
+    public RemoteDocument(@NonNull InputStream inputStream, @NonNull RemoteClock clock) {
         mDocument = new CoreDocument(clock);
         RemoteComposeBuffer buffer = RemoteComposeBuffer.fromInputStream(inputStream);
         mDocument.initFromBuffer(buffer);
@@ -75,7 +74,7 @@ public class RemoteDocument {
      */
     @RestrictTo(LIBRARY_GROUP)
     public void initializeContext(@NonNull RemoteContext context) {
-        mDocument.initializeContext(context, null);
+        mDocument.initializeContext(context);
     }
 
     /**
@@ -83,22 +82,27 @@ public class RemoteDocument {
      * them.
      */
     @RestrictTo(LIBRARY_GROUP)
-    public void initializeContext(@NonNull RemoteContext context,
-                                  @Nullable Map<Integer, Object> map) {
+    public void initializeContext(
+            @NonNull RemoteContext context, @Nullable Map<Integer, Object> map) {
         mDocument.initializeContext(context, map);
     }
 
     /**
-     * Returns the width of the document in pixels
+     * Apply operations in data mode. Used in the initialization phase.
+     *
+     * @param context
      */
+    public void applyDataOperations(@NonNull RemoteContext context) {
+        mDocument.applyDataOperations(context);
+    }
+
+    /** Returns the width of the document in pixels */
     @RestrictTo(LIBRARY_GROUP)
     public int getWidth() {
         return mDocument.getWidth();
     }
 
-    /**
-     * Returns the height of the document in pixels
-     */
+    /** Returns the height of the document in pixels */
     @RestrictTo(LIBRARY_GROUP)
     public int getHeight() {
         return mDocument.getHeight();
@@ -112,7 +116,7 @@ public class RemoteDocument {
      * Paint the document
      *
      * @param context the provided PaintContext
-     * @param theme   the theme we want to use for this document.
+     * @param theme the theme we want to use for this document.
      */
     @RestrictTo(LIBRARY_GROUP)
     public void paint(@NonNull RemoteContext context, int theme) {
@@ -158,6 +162,17 @@ public class RemoteDocument {
     }
 
     /**
+     * Gets a array of Names of the Themed Colors defined in the loaded doc.
+     *
+     * @return
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    @NonNull
+    public ArrayList<ColorTheme> getThemedColors() {
+        return mDocument.getThemedColors();
+    }
+
+    /**
      * Gets a array of Names of the named variables of a specific type defined in the doc.
      *
      * @param type the type of variable NamedVariable.COLOR_TYPE, STRING_TYPE, etc
@@ -181,9 +196,7 @@ public class RemoteDocument {
         return mDocument.getComponent(id);
     }
 
-    /**
-     * Invalidate the document for layout measures. This will trigger a layout remeasure pass.
-     */
+    /** Invalidate the document for layout measures. This will trigger a layout remeasure pass. */
     @RestrictTo(LIBRARY_GROUP)
     public void invalidate() {
         mDocument.invalidateMeasure();
@@ -219,7 +232,7 @@ public class RemoteDocument {
      *
      * @return
      */
-    public @NonNull Clock getClock() {
+    public @NonNull RemoteClock getClock() {
         return getDocument().getClock();
     }
 
@@ -241,5 +254,19 @@ public class RemoteDocument {
     @RestrictTo(LIBRARY_GROUP)
     public void serialize(@NonNull MapSerializer serializer) {
         mDocument.serialize(serializer);
+    }
+
+    /**
+     * Ask the document for the usage of a feature indicated in the header
+     *
+     * @return
+     */
+    public boolean useFeature(short featureId) {
+        return mDocument.useFeature(featureId);
+    }
+
+    /** Re-inflate the document */
+    public void reinflate() {
+        mDocument.reinflate();
     }
 }

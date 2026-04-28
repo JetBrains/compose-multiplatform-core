@@ -29,7 +29,7 @@ import androidx.annotation.RestrictTo
  * If the Entity is disposed, attempting to set any values on it will result in
  * [kotlin.IllegalStateException].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface SurfaceFeature : RenderingFeature {
     /**
      * Specifies how the surface content will be routed for stereo viewing. Applications must render
@@ -37,6 +37,9 @@ public interface SurfaceFeature : RenderingFeature {
      * correctly produce a stereoscopic view to the user.
      */
     @SurfaceEntity.StereoMode public var stereoMode: Int
+
+    /** Specifies the blending mode of the content. */
+    @SurfaceEntity.MediaBlendingMode public var mediaBlendingMode: Int
 
     /** Specifies the geometry of the spatial canvas which the surface is texture mapped to. */
     public var shape: SurfaceEntity.Shape

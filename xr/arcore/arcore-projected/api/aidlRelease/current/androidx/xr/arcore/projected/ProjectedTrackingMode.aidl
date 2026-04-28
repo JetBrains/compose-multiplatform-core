@@ -36,4 +36,5 @@ package androidx.xr.arcore.projected;
 enum ProjectedTrackingMode {
   PROJECTED_TRACKING_6DOF,
   PROJECTED_TRACKING_3DOF,
+  PROJECTED_TRACKING_DISABLED,
 }

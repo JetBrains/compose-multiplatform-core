@@ -29,24 +29,28 @@ public class AndroidComputedTextLayout implements RcPlatformServices.ComputedTex
     StaticLayout mStaticLayout;
     float mWidth;
     float mHeight;
+    int mLineCount;
+    boolean mIsHyphenatedText;
 
-    public AndroidComputedTextLayout(@NonNull StaticLayout staticLayout, float width,
-            float height) {
+    public AndroidComputedTextLayout(
+            @NonNull StaticLayout staticLayout,
+            float width,
+            float height,
+            int lineCount,
+            boolean isHyphenatedText) {
         mStaticLayout = staticLayout;
         mWidth = width;
         mHeight = height;
+        mLineCount = lineCount;
+        mIsHyphenatedText = isHyphenatedText;
     }
 
-    /**
-     * Set a StaticLayout on this container
-     */
+    /** Set a StaticLayout on this container */
     public void set(@NonNull StaticLayout layout) {
         mStaticLayout = layout;
     }
 
-    /**
-     * Retrieve the stored StaticLayout
-     */
+    /** Retrieve the stored StaticLayout */
     @NonNull
     public StaticLayout get() {
         return mStaticLayout;
@@ -60,5 +64,15 @@ public class AndroidComputedTextLayout implements RcPlatformServices.ComputedTex
     @Override
     public float getHeight() {
         return mHeight;
+    }
+
+    @Override
+    public int getVisibleLineCount() {
+        return mLineCount;
+    }
+
+    @Override
+    public boolean isHyphenatedText() {
+        return mIsHyphenatedText;
     }
 }

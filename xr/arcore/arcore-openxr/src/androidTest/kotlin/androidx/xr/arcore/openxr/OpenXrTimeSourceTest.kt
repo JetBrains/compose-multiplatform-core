@@ -27,7 +27,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.runtime.openxr.test"
+// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.arcore.openxr.test"
 // supports a
 // lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
@@ -37,14 +37,14 @@ class OpenXrTimeSourceTest {
 
     companion object {
         init {
-            System.loadLibrary("androidx.xr.runtime.openxr.test")
+            System.loadLibrary("androidx.xr.arcore.openxr.test")
         }
     }
 
     @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
     private lateinit var underTest: OpenXrTimeSource
-    private lateinit var openXrManager: OpenXrManager
+    private lateinit var openXrRuntime: OpenXrRuntime
 
     @Before
     fun setUp() {
@@ -54,7 +54,7 @@ class OpenXrTimeSourceTest {
     @Test
     // TODO - b/346615429: Control the values returned by the OpenXR stub instead of relying on the
     // stub's current implementation.
-    fun read_usesTheOpenXrClock() = initOpenXrManagerAndRunTest {
+    fun read_usesTheOpenXrClock() = initOpenXrRuntimeAndRunTest {
         // The OpenXR stub returns a different value for each call to [OpenXrTimeSource::read] in
         // increments of 1000ns when `xrConvertTimespecTimeToTimeKHR` is executed. The first call
         // returns 1000ns and is the value associated with [timeMark]. The second call returns
@@ -75,7 +75,7 @@ class OpenXrTimeSourceTest {
     @Test
     // TODO - b/346615429: Control the values returned by the OpenXR stub instead of relying on the
     // stub's current implementation.
-    fun getXrTime_returnsTheOpenXrTime() = initOpenXrManagerAndRunTest {
+    fun getXrTime_returnsTheOpenXrTime() = initOpenXrRuntimeAndRunTest {
         // The OpenXR stub returns a different value for each call to [OpenXrTimeSource::read] in
         // increments of 1000ns when `xrConvertTimespecTimeToTimeKHR` is executed. The first call
         // returns 1000ns and is the value associated with [firstTimeMark]. The second call returns
@@ -95,18 +95,19 @@ class OpenXrTimeSourceTest {
         assertThat(thirdTimeMark).isEqualTo(firstTimeMark + 3000L)
     }
 
-    private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
+    private fun initOpenXrRuntimeAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            openXrManager = OpenXrManager(it, OpenXrPerceptionManager(underTest), underTest)
-            openXrManager.create()
-            openXrManager.resume()
+            openXrRuntime = OpenXrRuntime(it, OpenXrPerceptionManager(underTest), underTest)
+            openXrRuntime.initialize()
+            openXrRuntime.resume()
 
             testBody()
 
-            // Pause and stop the OpenXR manager here in lieu of an @After method to ensure that the
-            // calls to the OpenXR manager are coming from the same thread.
-            openXrManager.pause()
-            openXrManager.stop()
+            // Pause and destroy the OpenXR runtime here in lieu of an @After method to ensure that
+            // the
+            // calls to the OpenXR runtime are coming from the same thread.
+            openXrRuntime.pause()
+            openXrRuntime.destroy()
         }
     }
 }

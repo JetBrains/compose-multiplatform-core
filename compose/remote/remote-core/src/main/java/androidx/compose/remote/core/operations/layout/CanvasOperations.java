@@ -56,7 +56,9 @@ public class CanvasOperations extends PaintOperation
             }
             if (operation instanceof ComponentValue) {
                 ComponentValue v = (ComponentValue) operation;
-                mComponent.addComponentValue(v);
+                if (mComponent != null) {
+                    mComponent.addComponentValue(v);
+                }
             }
         }
     }
@@ -152,8 +154,8 @@ public class CanvasOperations extends PaintOperation
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Operations", OP_CODE, name())
-                .description("Impulse Process that runs a list of operations");
+        doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
+                .description("A collection of canvas operations");
     }
 
     @Override

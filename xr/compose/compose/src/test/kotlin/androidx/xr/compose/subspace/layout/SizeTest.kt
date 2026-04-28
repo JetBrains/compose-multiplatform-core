@@ -18,17 +18,19 @@ package androidx.xr.compose.subspace.layout
 
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.assertDepthIsEqualTo
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.unit.DpVolumeSize
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,7 +39,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SizeTest {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun size_individualModifiers_panelsAreSizedCorrectly() {
@@ -71,6 +78,67 @@ class SizeTest {
             .assertWidthIsEqualTo(20.dp)
             .assertHeightIsEqualTo(20.dp)
             .assertDepthIsEqualTo(20.dp)
+    }
+
+    @Test
+    fun size_dpValues_panelsAreSizedCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel").size(20.dp, 30.dp, 40.dp)) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(20.dp)
+            .assertHeightIsEqualTo(30.dp)
+            .assertDepthIsEqualTo(40.dp)
+    }
+
+    @Test
+    fun size_unspecifiedDpValues_doesNotOverrideParentSize() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .size(width = 40.dp, height = 50.dp, depth = 60.dp)
+                        .size(
+                            width = Dp.Unspecified,
+                            height = Dp.Unspecified,
+                            depth = Dp.Unspecified,
+                        )
+                ) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(40.dp)
+            .assertHeightIsEqualTo(50.dp)
+            .assertDepthIsEqualTo(60.dp)
+    }
+
+    @Test
+    fun size_dpVolumeSize_panelsAreSizedCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").size(DpVolumeSize(20.dp, 30.dp, 40.dp))
+                ) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(20.dp)
+            .assertHeightIsEqualTo(30.dp)
+            .assertDepthIsEqualTo(40.dp)
     }
 
     @Test
@@ -129,6 +197,70 @@ class SizeTest {
             .assertWidthIsEqualTo(20.dp)
             .assertHeightIsEqualTo(20.dp)
             .assertDepthIsEqualTo(20.dp)
+    }
+
+    @Test
+    fun requiredSize_dpValues_panelsAreSizedCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel").requiredSize(20.dp, 30.dp, 40.dp)) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(20.dp)
+            .assertHeightIsEqualTo(30.dp)
+            .assertDepthIsEqualTo(40.dp)
+    }
+
+    @Test
+    fun requiredSize_unspecifiedDpValues_doesNotOverrideParentSize() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialRow(SubspaceModifier.size(10.dp, 20.dp, 30.dp)) {
+                    SpatialPanel(
+                        SubspaceModifier.testTag("panel")
+                            .requiredSize(width = 40.dp, height = 50.dp, depth = 60.dp)
+                            .requiredSize(
+                                width = Dp.Unspecified,
+                                height = Dp.Unspecified,
+                                depth = Dp.Unspecified,
+                            )
+                    ) {
+                        Text(text = "Panel")
+                    }
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(40.dp)
+            .assertHeightIsEqualTo(50.dp)
+            .assertDepthIsEqualTo(60.dp)
+    }
+
+    @Test
+    fun requiredSize_dpVolumeSize_panelsAreSizedCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .requiredSize(DpVolumeSize(20.dp, 30.dp, 40.dp))
+                ) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(20.dp)
+            .assertHeightIsEqualTo(30.dp)
+            .assertDepthIsEqualTo(40.dp)
     }
 
     @Test
@@ -239,7 +371,7 @@ class SizeTest {
     @Test
     fun sizeIn_respectsUpperBounds() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
                         .sizeIn(maxWidth = 40.dp, maxHeight = 35.dp, maxDepth = 30.dp)
@@ -258,7 +390,7 @@ class SizeTest {
     @Test
     fun sizeIn_respectsLowerBounds() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
                         .sizeIn(minWidth = 10.dp, minHeight = 15.dp, minDepth = 20.dp)
@@ -277,7 +409,7 @@ class SizeTest {
     @Test
     fun sizeIn_contentWithinBounds_isUnchanged() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
                         .sizeIn(minWidth = 10.dp, maxWidth = 40.dp)
@@ -292,7 +424,7 @@ class SizeTest {
     @Test
     fun sizeIn_respectsStricterParentMaxConstraint() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialRow(SubspaceModifier.size(30.dp)) {
                     SpatialPanel(
                         SubspaceModifier.testTag("panel")
@@ -313,7 +445,7 @@ class SizeTest {
     @Test
     fun widthIn_respectsUpperBounds() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").widthIn(max = 40.dp).width(50.dp)) {}
             }
         }
@@ -324,7 +456,7 @@ class SizeTest {
     @Test
     fun widthIn_respectsLowerBounds() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").widthIn(min = 10.dp).width(5.dp)) {}
             }
         }
@@ -335,7 +467,7 @@ class SizeTest {
     @Test
     fun widthIn_contentWithinBounds_isUnchanged() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel").widthIn(min = 10.dp, max = 40.dp).width(25.dp)
                 ) {}
@@ -348,7 +480,7 @@ class SizeTest {
     @Test
     fun widthIn_respectsStricterParentMaxConstraint() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialRow(SubspaceModifier.width(30.dp)) {
                     SpatialPanel(
                         SubspaceModifier.testTag("panel").widthIn(max = 50.dp).fillMaxWidth()
@@ -363,7 +495,7 @@ class SizeTest {
     @Test
     fun widthIn_respectsStricterModifierMaxConstraint() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialRow(SubspaceModifier.width(50.dp)) {
                     SpatialPanel(
                         SubspaceModifier.testTag("panel").widthIn(max = 30.dp).fillMaxWidth()
@@ -378,7 +510,7 @@ class SizeTest {
     @Test
     fun heightIn_respectsUpperBounds() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel").heightIn(max = 40.dp).height(50.dp)
                 ) {}
@@ -391,7 +523,7 @@ class SizeTest {
     @Test
     fun heightIn_respectsLowerBounds() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel").heightIn(min = 10.dp).height(5.dp)
                 ) {}
@@ -404,7 +536,7 @@ class SizeTest {
     @Test
     fun heightIn_contentWithinBounds_isUnchanged() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
                         .heightIn(min = 10.dp, max = 40.dp)
@@ -419,7 +551,7 @@ class SizeTest {
     @Test
     fun heightIn_respectsStricterParentMaxConstraint() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialRow(SubspaceModifier.height(30.dp)) {
                     SpatialPanel(
                         SubspaceModifier.testTag("panel").heightIn(max = 50.dp).fillMaxHeight()
@@ -434,7 +566,7 @@ class SizeTest {
     @Test
     fun heightIn_respectsStricterModifierMaxConstraint() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialRow(SubspaceModifier.height(50.dp)) {
                     SpatialPanel(
                         SubspaceModifier.testTag("panel").heightIn(max = 30.dp).fillMaxHeight()
@@ -449,7 +581,7 @@ class SizeTest {
     @Test
     fun depthIn_respectsUpperBounds() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").depthIn(max = 40.dp).depth(50.dp)) {}
             }
         }
@@ -460,7 +592,7 @@ class SizeTest {
     @Test
     fun depthIn_respectsLowerBounds() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel").depthIn(min = 10.dp).depth(5.dp)) {}
             }
         }
@@ -471,7 +603,7 @@ class SizeTest {
     @Test
     fun depthIn_contentWithinBounds_isUnchanged() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel").depthIn(min = 10.dp, max = 40.dp).depth(25.dp)
                 ) {}
@@ -484,7 +616,7 @@ class SizeTest {
     @Test
     fun depthIn_respectsStricterParentMaxConstraint() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialRow(SubspaceModifier.depth(30.dp)) {
                     SpatialPanel(
                         SubspaceModifier.testTag("panel").depthIn(max = 50.dp).fillMaxDepth()
@@ -499,7 +631,7 @@ class SizeTest {
     @Test
     fun depthIn_respectsStricterModifierMaxConstraint() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialRow(SubspaceModifier.depth(50.dp)) {
                     SpatialPanel(
                         SubspaceModifier.testTag("panel").depthIn(max = 30.dp).fillMaxDepth()

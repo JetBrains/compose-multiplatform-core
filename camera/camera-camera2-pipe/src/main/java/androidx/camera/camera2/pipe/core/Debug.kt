@@ -19,6 +19,7 @@
 package androidx.camera.camera2.pipe.core
 
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
 import android.hardware.camera2.CameraCharacteristics.LENS_FACING
 import android.hardware.camera2.CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES
 import android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA
@@ -26,9 +27,12 @@ import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.os.Build
 import android.os.Trace
+import android.view.Surface
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraMetadata
+import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.core.Timestamps.formatMs
+import androidx.camera.camera2.pipe.media.ImageReaderImageSource
 
 /** Internal debug utilities, constants, and checks. */
 public object Debug {
@@ -90,6 +94,12 @@ public object Debug {
                 }
             }
         }
+    }
+
+    public fun formatSurfaceMap(surfaceMap: Map<StreamId, Surface>): String {
+        return surfaceMap
+            .map { "${it.key}".padStart(10, ' ') + " -> ${it.value}" }
+            .joinToString(separator = "\n")
     }
 
     /**
@@ -161,6 +171,16 @@ public object Debug {
                 else -> "Unknown"
             }
 
+        val hardwareLevel =
+            when (metadata[INFO_SUPPORTED_HARDWARE_LEVEL]) {
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED -> "Limited"
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL -> "Full"
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY -> "Legacy"
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_3 -> "Level 3"
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL -> "External"
+                else -> "Unknown"
+            }
+
         val operatingMode =
             when (graphConfig.sessionMode) {
                 CameraGraph.OperatingMode.HIGH_SPEED -> "High Speed"
@@ -186,10 +206,16 @@ public object Debug {
                 if (allCameraIds != null) {
                     append("  Concurrent: $allCameraIds\n")
                 }
-                append("  Facing:    $lensFacing ($cameraType)\n")
+                append("  Facing:    $lensFacing ($cameraType, $hardwareLevel)\n")
                 append("  Mode:      $operatingMode\n")
                 append("Outputs:\n")
                 for (stream in cameraGraph.streams.streams) {
+                    val imageReaderImageSource =
+                        cameraGraph.streams
+                            .getImageSource(stream.id)
+                            ?.unwrapAs(ImageReaderImageSource::class)
+                    val maxImages = imageReaderImageSource?.maxImages
+                    val usageFlags = imageReaderImageSource?.usageFlags
                     stream.outputs.forEachIndexed { i, output ->
                         append("  ")
                         val streamId = if (i == 0) output.stream.id.toString() else ""
@@ -202,6 +228,8 @@ public object Debug {
                         output.dynamicRangeProfile?.let { append(" [$it]") }
                         output.streamUseCase?.let { append(" [$it]") }
                         output.streamUseHint?.let { append(" [$it]") }
+                        maxImages?.let { append(" $it images/stream") }
+                        usageFlags?.let { append(" (usageFlags: $it [0x${it.toString(16)}])") }
                         if (output.camera != graphConfig.camera) {
                             append(" [")
                             append(output.camera)

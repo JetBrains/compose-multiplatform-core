@@ -31,30 +31,55 @@ import org.jspecify.annotations.Nullable;
 public class RemoteComposeWriterAndroid extends RemoteComposeWriter {
     private final @NonNull Painter mPainter = new Painter(this);
 
-    public RemoteComposeWriterAndroid(int width, int height,
-            @NonNull String contentDescription,
+    public RemoteComposeWriterAndroid(
+            @NonNull CreationDisplayInfo creationDisplayInfo,
+            @Nullable String contentDescription,
+            @NonNull Profile profile,
+            @Nullable Object writerCallback) {
+        super(creationDisplayInfo, contentDescription, profile, writerCallback);
+    }
+
+    public RemoteComposeWriterAndroid(
+            @NonNull CreationDisplayInfo creationDisplayInfo,
+            @Nullable String contentDescription,
+            @NonNull Profile profile) {
+        super(creationDisplayInfo, contentDescription, profile, null);
+    }
+
+    public RemoteComposeWriterAndroid(@NonNull Profile profile, HTag @NonNull ... tags) {
+        super(profile, tags);
+    }
+
+    public RemoteComposeWriterAndroid(
+            int width,
+            int height,
+            @Nullable String contentDescription,
             @NonNull RcPlatformServices platform) {
         super(width, height, contentDescription, platform);
     }
 
-    public RemoteComposeWriterAndroid(int width, int height, @NonNull String contentDescription,
-            int apiLevel, int profiles, @NonNull RcPlatformServices platform) {
+    public RemoteComposeWriterAndroid(
+            int width,
+            int height,
+            @NonNull String contentDescription,
+            int apiLevel,
+            int profiles,
+            @NonNull RcPlatformServices platform) {
         super(width, height, contentDescription, apiLevel, profiles, platform);
     }
 
-    public RemoteComposeWriterAndroid(@NonNull RcPlatformServices platform, int apiLevel,
-            HTag @NonNull ... tags) {
+    public RemoteComposeWriterAndroid(
+            @NonNull RcPlatformServices platform, int apiLevel, HTag @NonNull ... tags) {
         super(platform, apiLevel, tags);
     }
 
-    public RemoteComposeWriterAndroid(@NonNull RcPlatformServices platform,
-            HTag @NonNull ... tags) {
+    public RemoteComposeWriterAndroid(
+            @NonNull RcPlatformServices platform, HTag @NonNull ... tags) {
         super(platform, tags);
     }
 
     protected RemoteComposeWriterAndroid(
-            @NonNull Profile profile,
-            @NonNull RemoteComposeBuffer buffer, HTag @NonNull ... tags) {
+            @NonNull Profile profile, @NonNull RemoteComposeBuffer buffer, HTag @NonNull ... tags) {
         super(profile, buffer, tags);
     }
 
@@ -81,7 +106,6 @@ public class RemoteComposeWriterAndroid extends RemoteComposeWriter {
         mBuffer.addMatrixConst(id, values);
         return Utils.asNan(id);
     }
-
 
     /**
      * Reuse the painter associated with this connection

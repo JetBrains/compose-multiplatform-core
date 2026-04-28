@@ -16,9 +16,11 @@
 
 package androidx.compose.material3
 
+import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertAgainstGolden
@@ -32,7 +34,7 @@ import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isSelectable
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
@@ -43,7 +45,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -100,7 +101,6 @@ class RadioButtonScreenshotTest {
     }
 
     @Test
-    @Ignore("b/355413615")
     fun radioButton_lightTheme_pressed() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(wrap.testTag(wrapperTestTag)) { RadioButton(selected = false, onClick = {}) }
@@ -117,11 +117,14 @@ class RadioButtonScreenshotTest {
         // synchronization. Instead just wait until after the ripples are finished animating.
         Thread.sleep(300)
 
-        assertSelectableAgainstGolden("radioButton_lightTheme_pressed")
+        if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            assertSelectableAgainstGolden("radioButton_lightTheme_pressed_post_api_34")
+        } else {
+            assertSelectableAgainstGolden("radioButton_lightTheme_pressed")
+        }
     }
 
     @Test
-    @Ignore("b/355413615")
     fun radioButton_darkTheme_pressed() {
         rule.setMaterialContent(darkColorScheme()) {
             Box(wrap.testTag(wrapperTestTag)) { RadioButton(selected = false, onClick = {}) }
@@ -138,7 +141,11 @@ class RadioButtonScreenshotTest {
         // synchronization. Instead just wait until after the ripples are finished animating.
         Thread.sleep(300)
 
-        assertSelectableAgainstGolden("radioButton_darkTheme_pressed")
+        if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            assertSelectableAgainstGolden("radioButton_darkTheme_pressed_post_api_34")
+        } else {
+            assertSelectableAgainstGolden("radioButton_darkTheme_pressed")
+        }
     }
 
     @Test
@@ -183,6 +190,36 @@ class RadioButtonScreenshotTest {
         }
 
         assertSelectableAgainstGolden("radioButton_lightTheme_focused")
+    }
+
+    @Test
+    fun radioButton_lightTheme_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+
+        rule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+                Box(wrap.testTag(wrapperTestTag)) {
+                    RadioButton(
+                        selected = false,
+                        onClick = {},
+                        modifier = Modifier.focusRequester(focusRequester),
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        assertSelectableAgainstGolden("radioButton_lightTheme_focused_insetFocusRings")
     }
 
     @Test

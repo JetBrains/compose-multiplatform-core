@@ -52,6 +52,8 @@ data class ApiLocation(
     val aidlApiDirectory: File,
     // File where the API version history is recorded, for use in docs
     val apiLevelsFile: File,
+    // Directory where the API files for each source set of a multiplatform codebase are recorded
+    val multiplatformApiDirectory: File,
 ) : Serializable {
 
     /**
@@ -83,6 +85,10 @@ data class ApiLocation(
             return filename.startsWith(PREFIX_RESOURCE)
         }
 
+        fun fromMultiplatformApiDirectory(dir: File): ApiLocation {
+            return fromBaseName(dir.parentFile, dir.name.substringAfter(PREFIX_MULTIPLATFORM))
+        }
+
         private fun fromBaseName(apiFileDir: File, baseName: String): ApiLocation {
             return ApiLocation(
                 apiFileDirectory = apiFileDir,
@@ -91,6 +97,7 @@ data class ApiLocation(
                 resourceFile = File(apiFileDir, "$PREFIX_RESOURCE$baseName$EXTENSION"),
                 aidlApiDirectory = File(apiFileDir, AIDL_API_DIRECTORY_NAME).resolve(baseName),
                 apiLevelsFile = File(apiFileDir, API_LEVELS),
+                multiplatformApiDirectory = File(apiFileDir, "$PREFIX_MULTIPLATFORM$baseName"),
             )
         }
 
@@ -111,6 +118,9 @@ data class ApiLocation(
 
         /** File name for API version history file. */
         private const val API_LEVELS = "apiLevels.json"
+
+        /** Prefix used for a directory of multiplatform API files. */
+        private const val PREFIX_MULTIPLATFORM = "multiplatform-"
     }
 }
 

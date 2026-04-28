@@ -25,12 +25,11 @@ import androidx.annotation.RestrictTo
     SpatialPointerIcon.TYPE_CIRCLE,
 )
 @Retention(AnnotationRetention.SOURCE)
-@Suppress("PublicTypedef")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public annotation class SpatialPointerIconType
 
 /** The type of the pointer icon to render. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object SpatialPointerIcon {
     /** Hides the pointer icon. */
     public const val TYPE_NONE: Int = 0
@@ -43,10 +42,8 @@ public object SpatialPointerIcon {
 }
 
 /** Runtime interface for component that modifies the pointer. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface SpatialPointerComponent : Component {
 
-    public fun setSpatialPointerIcon(@SpatialPointerIconType iconType: Int)
-
-    @SpatialPointerIconType public fun getSpatialPointerIcon(): Int
+    @SpatialPointerIconType public var spatialPointerIcon: Int
 }

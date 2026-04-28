@@ -66,7 +66,8 @@ import java.util.Set;
  * @see AppSearchSession#getByDocumentIdAsync
  * @see AppSearchSession#search
  */
-// TODO(b/384721898): Switch to JSpecify annotations
+// TODO(b/384721898): Switching to JSpecify annotations changes APIs once synced to platform.
+//  Do not switch unless you've checked that no APIs are affected.
 @SuppressWarnings("JSpecifyNullness")
 public class GenericDocument {
     private static final String TAG = "AppSearchGenericDocumen";

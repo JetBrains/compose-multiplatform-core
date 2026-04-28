@@ -62,7 +62,7 @@ class FaceObjectRenderer(
 
             objectMesh = Mesh.createFromAsset(render, meshObjAssetPath)
         } catch (e: IOException) {
-            Log.e(TAG, "Failed to initialize FaceMesh assets")
+            Log.e("JetpackXR", "Failed to initialize FaceMesh assets", e)
         }
     }
 

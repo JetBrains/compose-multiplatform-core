@@ -21,29 +21,32 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     implementation(project(":xr:projected:projected"))
 
-    implementation(project(":activity:activity"))
-    implementation(project(":activity:activity-compose"))
+    implementation("androidx.activity:activity:1.12.1")
+    implementation("androidx.activity:activity-compose:1.12.1")
     implementation(project(":appcompat:appcompat"))
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:material3:material3"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:ui:ui"))
     implementation(project(":compose:ui:ui-unit"))
+    implementation(project(":camera:camera-camera2"))
+    implementation(project(":camera:camera-core"))
+    implementation(project(":camera:camera-view"))
+    implementation(project(":camera:camera-lifecycle"))
+
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(37) }
     namespace = "androidx.xr.projected.testapp"
 
     defaultConfig {
-        minSdk = 36
-        targetSdk = 36
+        minSdk { version = release(36) }
     }
 
     buildTypes {

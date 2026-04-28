@@ -33,7 +33,7 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 
-@OptIn(ExperimentalInkCustomBrushApi::class)
+@OptIn(ExperimentalInkCustomBrushApi::class, ExperimentalCustomShapeWorkflowApi::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.TIRAMISU)
@@ -72,25 +72,19 @@ class InkInProgressShapeRendererTest {
                         colorIntArgb = Color.BLUE,
                         size = 10F,
                         epsilon = 0.1F,
-                    )
+                    ),
+                    systemElapsedTimeMillis = 100L,
                 )
             }
 
-        shape.update(
-            inputElapsedTimeMillis = -56,
-            systemElapsedTimeMillis = 0,
-            forceCompletion = false,
-        )
+        // 100ms + 140ms = 240ms, which loops back to progress 0 of the 240ms animation duration
+        shape.update(shapeDurationMillis = 140)
         shapeRenderer.draw(canvas, shape, identityTransform)
         verify(canvasStrokeRenderer)
             .draw(canvas, shape.inProgressStroke, identityTransform, textureAnimationProgress = 0F)
 
-        shape.update(
-            inputElapsedTimeMillis = 64,
-            // Half of 240ms animation duration
-            systemElapsedTimeMillis = 120,
-            forceCompletion = false,
-        )
+        // 100ms + 260ms = 360ms - half of the looped 240ms animation duration
+        shape.update(shapeDurationMillis = 260)
         shapeRenderer.draw(canvas, shape, identityTransform)
         verify(canvasStrokeRenderer)
             .draw(
@@ -100,12 +94,9 @@ class InkInProgressShapeRendererTest {
                 textureAnimationProgress = 0.5F,
             )
 
-        shape.update(
-            inputElapsedTimeMillis = 126,
-            // 3/4 of 240ms animation duration
-            systemElapsedTimeMillis = 180,
-            forceCompletion = false,
-        )
+        // 100ms + 320ms = 420ms - 3/4 of the looped 240ms animation duration
+        // 180 more than initial update value - 3/4 of 240ms animation duration
+        shape.update(shapeDurationMillis = 320)
         shapeRenderer.draw(canvas, shape, identityTransform)
         verify(canvasStrokeRenderer)
             .draw(

@@ -21,6 +21,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -34,18 +35,18 @@ import org.junit.runner.RunWith
 class OpenXrEyeTest {
     companion object {
         init {
-            System.loadLibrary("androidx.xr.runtime.openxr.test")
+            System.loadLibrary("androidx.xr.arcore.openxr.test")
         }
     }
 
     @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
-    private lateinit var openXrManager: OpenXrManager
+    private lateinit var openXrRuntime: OpenXrRuntime
     private lateinit var perceptionManager: OpenXrPerceptionManager
 
     @Test
     fun update_updatesCoarseTrackingState() =
-        initOpenXrManagerAndRunTest(Config.EyeTrackingMode.COARSE_TRACKING) {
+        initOpenXrRuntimeAndRunTest(EyeTrackingMode.COARSE_TRACKING) {
             val underTestLeft: OpenXrEye = perceptionManager.leftEye as OpenXrEye
             val underTestRight: OpenXrEye = perceptionManager.rightEye as OpenXrEye
             val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
@@ -58,7 +59,7 @@ class OpenXrEyeTest {
 
     @Test
     fun update_updatesCoarsePose() =
-        initOpenXrManagerAndRunTest(Config.EyeTrackingMode.COARSE_TRACKING) {
+        initOpenXrRuntimeAndRunTest(EyeTrackingMode.COARSE_TRACKING) {
             val underTestLeft: OpenXrEye = perceptionManager.leftEye as OpenXrEye
             val underTestRight: OpenXrEye = perceptionManager.rightEye as OpenXrEye
             val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
@@ -73,7 +74,7 @@ class OpenXrEyeTest {
 
     @Test
     fun update_updatesFineTrackingState() =
-        initOpenXrManagerAndRunTest(Config.EyeTrackingMode.FINE_TRACKING) {
+        initOpenXrRuntimeAndRunTest(EyeTrackingMode.FINE_TRACKING) {
             val underTestLeft: OpenXrEye = perceptionManager.leftEye as OpenXrEye
             val underTestRight: OpenXrEye = perceptionManager.rightEye as OpenXrEye
             val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
@@ -86,7 +87,7 @@ class OpenXrEyeTest {
 
     @Test
     fun update_updatesFinePose() =
-        initOpenXrManagerAndRunTest(Config.EyeTrackingMode.FINE_TRACKING) {
+        initOpenXrRuntimeAndRunTest(EyeTrackingMode.FINE_TRACKING) {
             val underTestLeft: OpenXrEye = perceptionManager.leftEye as OpenXrEye
             val underTestRight: OpenXrEye = perceptionManager.rightEye as OpenXrEye
             val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
@@ -109,24 +110,21 @@ class OpenXrEyeTest {
                 )
         }
 
-    private fun initOpenXrManagerAndRunTest(
-        trackingMode: Config.EyeTrackingMode,
-        testBody: () -> Unit,
-    ) {
+    private fun initOpenXrRuntimeAndRunTest(trackingMode: EyeTrackingMode, testBody: () -> Unit) {
         activityRule.scenario.onActivity {
             val timeSource = OpenXrTimeSource()
             perceptionManager = OpenXrPerceptionManager(timeSource)
-            openXrManager = OpenXrManager(it, perceptionManager, timeSource)
-            openXrManager.create()
-            openXrManager.resume()
-            openXrManager.configure(Config(eyeTracking = trackingMode))
+            openXrRuntime = OpenXrRuntime(it, perceptionManager, timeSource)
+            openXrRuntime.initialize()
+            openXrRuntime.resume()
+            openXrRuntime.configure(Config(eyeTracking = trackingMode))
 
             testBody()
 
-            // Pause and stop the OpenXR manager here in lieu of an @After method to ensure that the
-            // calls to the OpenXR manager are coming from the same thread.
-            openXrManager.pause()
-            openXrManager.stop()
+            // Pause and stop the OpenXR runtime here in lieu of an @After method to ensure that the
+            // calls to the OpenXR runtime are coming from the same thread.
+            openXrRuntime.pause()
+            openXrRuntime.destroy()
         }
     }
 }

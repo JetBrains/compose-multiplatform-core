@@ -22,6 +22,7 @@ import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.SerializableToString;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.documentation.DocumentedOperation;
@@ -34,13 +35,19 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ComponentValue extends Operation implements SerializableToString, Serializable,
-        ComponentData {
+public class ComponentValue extends Operation
+        implements SerializableToString, Serializable, ComponentData, VariableProvider {
     private static final int OP_CODE = Operations.COMPONENT_VALUE;
     private static final String CLASS_NAME = "ComponentValue";
 
     public static final int WIDTH = 0;
     public static final int HEIGHT = 1;
+    public static final int POS_X = 2;
+    public static final int POS_Y = 3;
+    public static final int POS_ROOT_X = 4;
+    public static final int POS_ROOT_Y = 5;
+    public static final int CONTENT_WIDTH = 6;
+    public static final int CONTENT_HEIGHT = 7;
 
     private int mType = WIDTH;
     private int mComponentID = -1;
@@ -100,13 +107,13 @@ public class ComponentValue extends Operation implements SerializableToString, S
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
         int type = buffer.readInt();
-        int componentId = buffer.readInt();
-        int valueId = buffer.readInt();
+        int componentId = buffer.readId();
+        int valueId = buffer.readId();
         ComponentValue op = new ComponentValue(type, componentId, valueId);
         operations.add(op);
     }
@@ -117,18 +124,30 @@ public class ComponentValue extends Operation implements SerializableToString, S
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Expressions Operations", OP_CODE, CLASS_NAME)
-                .description("Encode a component-related value (eg its width, height etc.)")
-                .field(
-                        DocumentedOperation.INT,
-                        "TYPE",
-                        "The type of value, either WIDTH(0) or HEIGHT(1)")
-                .field(INT, "COMPONENT_ID", "The component id to reference")
-                .field(
-                        INT,
-                        "VALUE_ID",
-                        "The id of the RemoteFloat representing the described"
-                                + " component value, which can be used in expressions");
+        doc.operation("Logic & Expressions Operations", OP_CODE, CLASS_NAME)
+                .description(
+                        "Expose a component's layout property (width, height, etc.) as a variable")
+                .field(DocumentedOperation.INT, "type", "The type of value to expose")
+                .possibleValues("WIDTH", WIDTH)
+                .possibleValues("HEIGHT", HEIGHT)
+                .possibleValues("POS_X", POS_X)
+                .possibleValues("POS_Y", POS_Y)
+                .possibleValues("POS_ROOT_X", POS_ROOT_X)
+                .possibleValues("POS_ROOT_Y", POS_ROOT_Y)
+                .possibleValues("CONTENT_WIDTH", CONTENT_WIDTH)
+                .possibleValues("CONTENT_HEIGHT", CONTENT_HEIGHT)
+                .field(INT, "componentId", "The ID of the component to reference")
+                .field(INT, "valueId", "The ID of the variable to store the value in");
+    }
+
+    @Override
+    public int getId() {
+        return mValueId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mValueId = id;
     }
 
     public ComponentValue(int type, int componentId, int valueId) {
@@ -140,10 +159,10 @@ public class ComponentValue extends Operation implements SerializableToString, S
     /**
      * Writes out the ComponentValue to the buffer
      *
-     * @param buffer      buffer to write to
-     * @param type        type of value (WIDTH or HEIGHT)
+     * @param buffer buffer to write to
+     * @param type type of value (WIDTH or HEIGHT)
      * @param componentId component id to reference
-     * @param valueId     remote float used to represent the component value
+     * @param valueId remote float used to represent the component value
      */
     public static void apply(@NonNull WireBuffer buffer, int type, int componentId, int valueId) {
         buffer.start(OP_CODE);

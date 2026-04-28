@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import androidx.xr.runtime.math.Pose
@@ -23,6 +25,7 @@ import androidx.xr.scenecore.runtime.HitTestResult
 import androidx.xr.scenecore.runtime.HitTestResult.HitTestSurfaceType
 import androidx.xr.scenecore.runtime.ScenePose
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -78,7 +81,9 @@ class FakeScenePoseTest {
         val direction = Vector3(4f, 5f, 6f)
         val filter = ScenePose.HitTestFilter.SELF_SCENE
 
-        assertThat(underTest.hitTest(origin, direction, filter).get()).isEqualTo(expectedValue)
+        runBlocking {
+            assertThat(underTest.hitTest(origin, direction, filter)).isEqualTo(expectedValue)
+        }
     }
 
     @Test
@@ -97,6 +102,8 @@ class FakeScenePoseTest {
         val direction = Vector3(4f, 5f, 6f)
         val filter = ScenePose.HitTestFilter.SELF_SCENE
 
-        assertThat(underTest.hitTest(origin, direction, filter).get()).isEqualTo(expectedValue)
+        runBlocking {
+            assertThat(underTest.hitTest(origin, direction, filter)).isEqualTo(expectedValue)
+        }
     }
 }

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -39,7 +40,7 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
@@ -440,6 +441,39 @@ class FloatingActionButtonScreenshotTest {
         rule.waitForIdle()
 
         assertRootAgainstGolden("fab_focus")
+    }
+
+    @Test
+    fun fab_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+
+        rule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+                Box(Modifier.requiredSize(100.dp, 100.dp).wrapContentSize()) {
+                    FloatingActionButton(
+                        onClick = {},
+                        modifier = Modifier.focusRequester(focusRequester),
+                    ) {
+                        Icon(Icons.Filled.Favorite, contentDescription = null)
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        rule.waitForIdle()
+
+        assertRootAgainstGolden("fab_focused_insetFocusRings")
     }
 
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)

@@ -36,7 +36,6 @@ import androidx.room3.RoomRawQuery
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performSuspending
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.testutils.TestExecutor
@@ -56,7 +55,6 @@ import kotlinx.coroutines.rx3.await
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -77,7 +75,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun initialLoad_empty() = setupAndRun { db ->
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.refresh()
@@ -86,7 +83,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun initialLoad() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -96,7 +92,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun simpleAppend() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -106,7 +101,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun simplePrepend() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -116,7 +110,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun refresh_singleImmediatelyReturn() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -136,7 +129,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun append_singleImmediatelyReturn() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -156,7 +148,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun prepend_singleImmediatelyReturn() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -176,7 +167,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun dbUpdate_invalidatesPagingSource() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -198,7 +188,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun append_returnsInvalid() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -217,7 +206,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun prepend_returnsInvalid() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -238,7 +226,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun refresh_consecutively() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -253,7 +240,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun append_consecutively() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -272,7 +258,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun prepend_consecutively() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -291,7 +276,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun refreshAgain_afterDispose() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -317,7 +301,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun appendAgain_afterDispose() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -343,7 +326,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun prependAgain_afterDispose() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
@@ -369,13 +351,10 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun assert_usesQueryExecutor() {
         val queryExecutor = TestExecutor()
         val testDb =
-            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
-                )
+            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>()
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(queryExecutor.asCoroutineDispatcher())
                 .build()
@@ -410,12 +389,9 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun cancelledCoroutine_disposesSingle() {
         val testDb =
-            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
-                )
+            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>()
                 .setDriver(AndroidSQLiteDriver())
                 .build()
 
@@ -446,7 +422,6 @@ class LimitOffsetRxPagingSourceTest {
     }
 
     @Test
-    @Ignore // 410015038
     fun jumping_enabled() = setupAndRun { db ->
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         assertTrue(pagingSource.jumpingSupported)
@@ -454,9 +429,7 @@ class LimitOffsetRxPagingSourceTest {
 
     private fun setupAndRun(test: suspend (LimitOffsetTestDb) -> Unit) {
         val db =
-            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
-                )
+            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>()
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(
                     ArchTaskExecutor.getIOThreadExecutor().asCoroutineDispatcher()

@@ -134,6 +134,7 @@ public constructor() {
          * stabilization mode that applies to the preview as well.
          *
          * @see Preview.Builder.setPreviewStabilizationEnabled
+         * @see androidx.camera.video.GroupableFeatures.VIDEO_STABILIZATION
          */
         @JvmField
         public val PREVIEW_STABILIZATION: GroupableFeature =
@@ -184,10 +185,10 @@ public constructor() {
          * Represents the recording quality feature that can be used to select a specific quality
          * for video recording.
          *
-         * @see androidx.camera.video.UHD_RECORDING
-         * @see androidx.camera.video.FHD_RECORDING
-         * @see androidx.camera.video.HD_RECORDING
-         * @see androidx.camera.video.SD_RECORDING
+         * @see androidx.camera.video.GroupableFeatures.UHD_RECORDING
+         * @see androidx.camera.video.GroupableFeatures.FHD_RECORDING
+         * @see androidx.camera.video.GroupableFeatures.HD_RECORDING
+         * @see androidx.camera.video.GroupableFeatures.SD_RECORDING
          */
         public const val FEATURE_TYPE_RECORDING_QUALITY: Int = 4
     }

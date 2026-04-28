@@ -29,12 +29,12 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.padding
+import androidx.xr.compose.subspace.layout.transformingMovable
 
 /**
  * XR-specific Navigation Suite Scaffold that wraps its content in a [SpatialPanel].
@@ -65,10 +65,10 @@ public fun NavigationSuiteScaffold(
     content: @Composable () -> Unit = {},
 ) {
     Subspace {
-        // TODO(kmost): Expose DragPolicy and ResizePolicy params
+        // TODO(b/454025889): Expose DragPolicy and ResizePolicy params
         SpatialPanel(
-            modifier = modifier.getPaddingForLayoutType(layoutType).fillMaxSize(),
-            dragPolicy = MovePolicy(),
+            modifier =
+                modifier.getPaddingForLayoutType(layoutType).fillMaxSize().transformingMovable(),
             resizePolicy = ResizePolicy(),
         ) {
             // TODO(b/395684702): Support show/hide animation
@@ -90,7 +90,7 @@ private fun SubspaceModifier.getPaddingForLayoutType(
     return if (layoutType.isNavigationBar) {
         this.padding(bottom = XrNavigationSuiteScaffoldTokens.PaddingForNavigationBarOrbiter)
     } else { // Layout is NavigationRail
-        this.padding(left = XrNavigationSuiteScaffoldTokens.PaddingForNavigationRailOrbiter)
+        this.padding(start = XrNavigationSuiteScaffoldTokens.PaddingForNavigationRailOrbiter)
     }
 }
 
