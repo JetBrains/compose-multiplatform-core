@@ -23,8 +23,9 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.Plane
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -39,7 +40,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.runtime.openxr.test"
+// TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.arcore.openxr.test"
 // supports a
 // lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
@@ -49,7 +50,7 @@ class OpenXrPlaneTest {
 
     companion object {
         init {
-            System.loadLibrary("androidx.xr.runtime.openxr.test")
+            System.loadLibrary("androidx.xr.arcore.openxr.test")
         }
     }
 
@@ -57,20 +58,17 @@ class OpenXrPlaneTest {
 
     private val planeId = 1L
 
-    private lateinit var openXrManager: OpenXrManager
+    private lateinit var openXrRuntime: OpenXrRuntime
     private lateinit var xrResources: XrResources
     private lateinit var underTest: OpenXrPlane
+    private lateinit var timeSource: OpenXrTimeSource
 
     @Before
     fun setUp() {
-        xrResources = XrResources()
+        timeSource = OpenXrTimeSource()
+        xrResources = XrResources(timeSource)
         underTest =
-            OpenXrPlane(
-                planeId,
-                Plane.Type.HORIZONTAL_UPWARD_FACING,
-                OpenXrTimeSource(),
-                xrResources,
-            )
+            OpenXrPlane(planeId, Plane.Type.HORIZONTAL_UPWARD_FACING, timeSource, xrResources)
         xrResources.addTrackable(planeId, underTest)
         xrResources.addUpdatable(underTest as Updatable)
     }
@@ -81,7 +79,7 @@ class OpenXrPlaneTest {
     }
 
     @Test
-    fun createAnchor_addsAnchor() = initOpenXrManagerAndRunTest {
+    fun createAnchor_addsAnchor() = initOpenXrRuntimeAndRunTest {
         check(xrResources.updatables.size == 1)
         check(xrResources.updatables.contains(underTest))
 
@@ -91,7 +89,7 @@ class OpenXrPlaneTest {
     }
 
     @Test
-    fun createAnchor_anchorResourcesExhausted_throwsException() = initOpenXrManagerAndRunTest {
+    fun createAnchor_anchorResourcesExhausted_throwsException() = initOpenXrRuntimeAndRunTest {
         check(xrResources.updatables.size == 1)
         check(xrResources.updatables.contains(underTest))
 
@@ -105,7 +103,7 @@ class OpenXrPlaneTest {
     }
 
     @Test
-    fun detachAnchor_removesAnchorWhenItDetaches() = initOpenXrManagerAndRunTest {
+    fun detachAnchor_removesAnchorWhenItDetaches() = initOpenXrRuntimeAndRunTest {
         val anchor = underTest.createAnchor(Pose())
         check(xrResources.updatables.size == 2)
         check(xrResources.updatables.contains(underTest))
@@ -117,7 +115,7 @@ class OpenXrPlaneTest {
     }
 
     @Test
-    fun update_updatesTrackingState() = initOpenXrManagerAndRunTest {
+    fun update_updatesTrackingState() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         check(underTest.trackingState.equals(TrackingState.PAUSED))
 
@@ -127,7 +125,7 @@ class OpenXrPlaneTest {
     }
 
     @Test
-    fun update_updatesCenterPose() = initOpenXrManagerAndRunTest {
+    fun update_updatesCenterPose() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         check(underTest.centerPose == Pose())
 
@@ -141,7 +139,7 @@ class OpenXrPlaneTest {
     }
 
     @Test
-    fun update_updatesExtents() = initOpenXrManagerAndRunTest {
+    fun update_updatesExtents() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         check(underTest.centerPose == Pose())
 
@@ -154,7 +152,7 @@ class OpenXrPlaneTest {
     }
 
     @Test
-    fun update_updatesVertices() = initOpenXrManagerAndRunTest {
+    fun update_updatesVertices() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         check(underTest.vertices.isEmpty())
 
@@ -171,7 +169,7 @@ class OpenXrPlaneTest {
     }
 
     @Test
-    fun update_updatesSubsumedBy() = initOpenXrManagerAndRunTest {
+    fun update_updatesSubsumedBy() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         val planeSubsumedId = 67890L
         val planeSubsumed: OpenXrPlane =
@@ -192,7 +190,7 @@ class OpenXrPlaneTest {
     }
 
     @Test
-    fun update_noSubsumedByPlanes_setsSubsumedByToNull() = initOpenXrManagerAndRunTest {
+    fun update_noSubsumedByPlanes_setsSubsumedByToNull() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         check(underTest.subsumedBy == null)
 
@@ -225,23 +223,22 @@ class OpenXrPlaneTest {
         assertFailsWith<IllegalArgumentException> { Plane.Label.fromOpenXrLabel(5) }
     }
 
-    private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
+    private fun initOpenXrRuntimeAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            val timeSource = OpenXrTimeSource()
             val perceptionManager = OpenXrPerceptionManager(timeSource)
-            openXrManager = OpenXrManager(it, perceptionManager, timeSource)
-            openXrManager.create()
-            openXrManager.resume()
-            openXrManager.configure(
-                Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+            openXrRuntime = OpenXrRuntime(it, perceptionManager, timeSource)
+            openXrRuntime.initialize()
+            openXrRuntime.resume()
+            openXrRuntime.configure(
+                Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
             )
 
             testBody()
 
-            // Pause and stop the OpenXR manager here in lieu of an @After method to ensure that the
-            // calls to the OpenXR manager are coming from the same thread.
-            openXrManager.pause()
-            openXrManager.stop()
+            // Pause and stop the OpenXR runtime here in lieu of an @After method to ensure that the
+            // calls to the OpenXR runtime are coming from the same thread.
+            openXrRuntime.pause()
+            openXrRuntime.destroy()
         }
     }
 }

@@ -21,6 +21,7 @@ import android.hardware.camera2.CameraExtensionCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.os.Build
+import android.util.Range
 import android.util.Size
 import androidx.annotation.GuardedBy
 import androidx.annotation.RequiresApi
@@ -29,6 +30,7 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.core.lazyOrEmptySet
 import androidx.camera.camera2.pipe.core.lazyOrFalse
+import androidx.camera.camera2.pipe.core.lazyOrNull
 import kotlin.reflect.KClass
 
 /**
@@ -51,7 +53,11 @@ internal class Camera2CameraExtensionMetadata(
     private val supportedExtensionSizesByClass = mutableMapOf<Class<*>, Lazy<Set<Size>>>()
 
     @GuardedBy("supportedPostviewSizes")
-    private val supportedPostviewSizes = mutableMapOf<Size, Lazy<Set<Size>>>()
+    private val supportedPostviewSizes = mutableMapOf<Pair<Size, Int>, Lazy<Set<Size>>>()
+
+    @GuardedBy("estimatedCaptureLatencyRangeMillis")
+    private val estimatedCaptureLatencyRangeMillis =
+        mutableMapOf<Pair<Size, Int>, Lazy<Range<Long>?>>()
 
     override fun <T> get(key: CameraCharacteristics.Key<T>): T? {
         return null // TODO: Add support for this when VIC can be targeted in AndroidX
@@ -130,7 +136,7 @@ internal class Camera2CameraExtensionMetadata(
 
         val lazySizes =
             synchronized(supportedPostviewSizes) {
-                supportedPostviewSizes.getOrPut(captureSize) {
+                supportedPostviewSizes.getOrPut(captureSize to format) {
                     lazyOrEmptySet("$camera#getPostviewSupportedSizes($captureSize, $format)") {
                         Api34Compat.getPostviewSupportedSizes(
                                 extensionCharacteristics,
@@ -143,6 +149,28 @@ internal class Camera2CameraExtensionMetadata(
                 }
             }
         return lazySizes.value
+    }
+
+    override fun getEstimatedCaptureLatencyRangeMillis(
+        captureSize: Size,
+        imageFormat: Int,
+    ): Range<Long>? {
+        val lazyRange =
+            synchronized(estimatedCaptureLatencyRangeMillis) {
+                estimatedCaptureLatencyRangeMillis.getOrPut(captureSize to imageFormat) {
+                    lazyOrNull(
+                        "$camera#getEstimatedCaptureLatencyRangeMillis($captureSize, $imageFormat)"
+                    ) {
+                        Api31Compat.getEstimatedCaptureLatencyRangeMillis(
+                            extensionCharacteristics,
+                            cameraExtension,
+                            captureSize,
+                            imageFormat,
+                        )
+                    }
+                }
+            }
+        return lazyRange.value
     }
 
     private val _requestKeys: Lazy<Set<CaptureRequest.Key<*>>> =

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package androidx.xr.glimmer.samples
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -33,25 +32,23 @@ import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.list.VerticalList
 
 @Composable
-fun TypographySample() {
+fun TypographyDefaultUsage() {
     val typography = GlimmerTheme.typography
-    VerticalList(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
+    VerticalList {
         item { TypeItem("titleLarge", style = typography.titleLarge) }
         item { TypeItem("titleMedium", style = typography.titleMedium) }
         item { TypeItem("titleSmall", style = typography.titleSmall) }
         item { TypeItem("bodyLarge", style = typography.bodyLarge) }
         item { TypeItem("bodyMedium", style = typography.bodyMedium) }
         item { TypeItem("bodySmall", style = typography.bodySmall) }
+        item { TypeItem("caption", style = typography.caption) }
     }
 }
 
 @Preview
 @Composable
-private fun TypographyPreview() {
-    GlimmerTheme { TypographySample() }
+private fun TypographyDefaultPreview() {
+    TypographyDefaultUsage()
 }
 
 @Composable

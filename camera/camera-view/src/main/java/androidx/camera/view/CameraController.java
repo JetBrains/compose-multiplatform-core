@@ -57,6 +57,7 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExperimentalLensFacing;
+import androidx.camera.core.ExperimentalUseCaseApi;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.ImageAnalysis;
@@ -69,11 +70,13 @@ import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.MirrorMode;
 import androidx.camera.core.Preview;
+import androidx.camera.core.SessionConfig;
 import androidx.camera.core.TorchState;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.UseCaseGroup;
 import androidx.camera.core.ViewPort;
 import androidx.camera.core.ZoomState;
+import androidx.camera.core.impl.ImageCaptureConfig;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.utils.AspectRatioUtil;
@@ -81,6 +84,7 @@ import androidx.camera.core.impl.utils.CameraOrientationUtil;
 import androidx.camera.core.impl.utils.ContextUtil;
 import androidx.camera.core.impl.utils.LiveDataUtil;
 import androidx.camera.core.impl.utils.Threads;
+import androidx.camera.core.impl.utils.UseCaseUtil;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.core.resolutionselector.AspectRatioStrategy;
@@ -89,6 +93,7 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.video.FileDescriptorOutputOptions;
 import androidx.camera.video.FileOutputOptions;
+import androidx.camera.video.HighSpeedVideoSessionConfig;
 import androidx.camera.video.MediaStoreOutputOptions;
 import androidx.camera.video.OutputOptions;
 import androidx.camera.video.PendingRecording;
@@ -112,8 +117,10 @@ import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -141,6 +148,23 @@ import java.util.concurrent.TimeUnit;
  * video capture feature can be enabled. Disabling/enabling {@link UseCase}s freezes the preview for
  * a short period of time. To avoid the glitch, the {@link UseCase}s need to be enabled/disabled
  * before the controller is set on {@link PreviewView}.
+ *
+ * <p>There are two main approaches to configure the {@link CameraController}:
+ * <ol>
+ *     <li><b>Use {@link #setEnabledUseCases(int)}</b>: This is for basic usage scenarios. The
+ *     {@link CameraController} will manage the {@link UseCase} lifecycles and configurations for
+ *     you. You can enable or disable features like image capture, image analysis, and video
+ *     capture as needed.
+ *     </li>
+ *     <li><b>Use {@link #setSessionConfig(SessionConfig, CameraSelector)}</b>: This approach is
+ *     for apps where the methods exposed from the CameraController can't fulfill their
+ *     requirements. Apps can use this to configure the UseCases via SessionConfig and then they
+ *     can access those methods via the UseCases directly. If apps need to access many advanced
+ *     methods from UseCases that are not exposed from the CameraController, it is recommended to
+ *     directly use UseCases, PreviewView and setViewPort to do the implementation. When using
+ *     this approach, a {@link Preview} use case is mandatory.
+ *     </li>
+ * </ol>
  */
 public abstract class CameraController {
 
@@ -319,13 +343,6 @@ public abstract class CameraController {
     @SuppressWarnings("WeakerAccess")
     Preview.@Nullable SurfaceProvider mSurfaceProvider;
 
-    private final RotationProvider mRotationProvider;
-
-    @VisibleForTesting
-    final RotationProvider.@NonNull Listener mDeviceRotationListener;
-
-    private int mLastKnownRotation = ImageOutputConfig.INVALID_ROTATION;
-
     private boolean mPinchToZoomEnabled = true;
     private boolean mTapToFocusEnabled = true;
     private FocusMeteringResultCallback mFocusMeteringResultCallback;
@@ -355,6 +372,11 @@ public abstract class CameraController {
     private long mTapToFocusAutoCancelDurationNanos = TimeUnit.MILLISECONDS.toNanos(
             FocusMeteringAction.DEFAULT_AUTO_CANCEL_DURATION_MILLIS);
 
+    private boolean mAutoRotationEnabled = true;
+
+    private @Nullable SessionConfig mSessionConfig = null;
+    private @Nullable SessionConfig mBoundSessionConfig = null;
+
     CameraController(@NonNull Context context) {
         this(context, transform(ProcessCameraProvider.getInstance(context),
                 ProcessCameraProviderWrapperImpl::new, directExecutor()));
@@ -362,7 +384,7 @@ public abstract class CameraController {
 
     CameraController(@NonNull Context context,
             @NonNull ListenableFuture<ProcessCameraProviderWrapper> cameraProviderFuture) {
-        mAppContext = ContextUtil.getApplicationContext(context);
+        mAppContext = ContextUtil.getPersistentApplicationContext(context);
         mPreview = createPreview();
         mImageCapture = createImageCapture(null);
         mImageAnalysis = createImageAnalysis(null, null, null);
@@ -373,21 +395,12 @@ public abstract class CameraController {
                 cameraProviderFuture,
                 provider -> {
                     mCameraProvider = provider;
-                    unbindAllAndRecreate();
+                    if (mSessionConfig == null) {
+                        unbindAllAndRecreate();
+                    }
                     startCameraAndTrackStates();
                     return null;
                 }, mainThreadExecutor());
-
-        // Listen for device rotation changes and set target rotation for non-preview use cases.
-        // The output of non-preview use cases need to be corrected in fixed landscape/portrait
-        // mode.
-        mRotationProvider = new RotationProvider(mAppContext);
-        mDeviceRotationListener = rotation -> {
-            mLastKnownRotation = rotation;
-            mImageAnalysis.setTargetRotation(rotation);
-            mImageCapture.setTargetRotation(rotation);
-            mVideoCapture.setTargetRotation(rotation);
-        };
     }
 
     /**
@@ -436,6 +449,48 @@ public abstract class CameraController {
     }
 
     /**
+     * Sets whether to enable auto-rotation.
+     *
+     * <p>When enabled, {@link CameraController} will monitor the device rotation changes and set
+     * the target rotation for non-preview use cases (e.g. image capture, video capture, and image
+     * analysis). This ensures the output images/videos are oriented correctly relative to the
+     * device.
+     *
+     * <p>Auto-rotation is enabled by default.
+     *
+     * <p>If a {@link SessionConfig} is set via
+     * {@link #setSessionConfig(SessionConfig, CameraSelector)}, the auto-rotation setting in the
+     * provided {@link SessionConfig} will be overridden by the state of this controller.
+     *
+     * <p>Changing the value will reconfigure the camera which will cause additional latency. To
+     * avoid this, set the value before controller is bound to the lifecycle.
+     *
+     * @param enabled {@code true} to enable auto-rotation, {@code false} to disable.
+     */
+    @MainThread
+    public void setAutoRotationEnabled(boolean enabled) {
+        checkMainThread();
+        if (mAutoRotationEnabled == enabled) {
+            return;
+        }
+        mAutoRotationEnabled = enabled;
+        unbindSessionConfig();
+        startCameraAndTrackStates();
+    }
+
+    /**
+     * Returns whether auto-rotation is enabled.
+     *
+     * @return {@code true} if auto-rotation is enabled, {@code false} otherwise.
+     * @see #setAutoRotationEnabled(boolean)
+     */
+    @MainThread
+    public boolean isAutoRotationEnabled() {
+        checkMainThread();
+        return mAutoRotationEnabled;
+    }
+
+    /**
      * Enables or disables use cases.
      *
      * <p>Use cases need to be enabled before they can be used. By default, {@link #IMAGE_CAPTURE}
@@ -463,7 +518,8 @@ public abstract class CameraController {
      * @param enabledUseCases one or more of the following use cases, bitwise-OR-ed together:
      * {@link #IMAGE_CAPTURE}, {@link #IMAGE_ANALYSIS} and/or {@link #VIDEO_CAPTURE}.
      * @throws IllegalStateException If the current camera selector is unable to resolve a camera
-     * to be used for the enabled use cases.
+     * to be used for the enabled use cases, or if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see UseCase
      * @see ImageCapture
      * @see ImageAnalysis
@@ -471,6 +527,7 @@ public abstract class CameraController {
     @MainThread
     public void setEnabledUseCases(@UseCases int enabledUseCases) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setEnabledUseCases");
         if (enabledUseCases == mEnabledUseCases) {
             return;
         }
@@ -487,6 +544,186 @@ public abstract class CameraController {
                             + ", restoring back previous values " + Integer.toBinaryString(
                             oldEnabledUseCases));
         });
+    }
+
+    /**
+     * Sets the {@link SessionConfig} with the {@link CameraSelector} for the CameraController.
+     *
+     * <p>When a {@link SessionConfig} is provided, CameraController will connect to the
+     * {@link UseCase}s in the session config. This is useful for accessing the methods that are
+     * not exposed from the CameraController directly.
+     *
+     * <p>The following code sample shows how to create a {@link SessionConfig} with a
+     * {@link Preview} and an {@link ImageCapture} use case and set it to the controller.
+     * <pre><code>
+     *     // Create a LifecycleCameraController instance.
+     *     LifecycleCameraController controller = new LifecycleCameraController(context);
+     *
+     *     // Create the UseCases.
+     *     Preview preview = new Preview.Builder().build();
+     *     ImageCapture imageCapture = new ImageCapture.Builder().build();
+     *
+     *     // Create the SessionConfig.
+     *     SessionConfig sessionConfig = new SessionConfig.Builder()
+     *             .addUseCase(preview)
+     *             .addUseCase(imageCapture)
+     *             .build();
+     *
+     *     // Set the SessionConfig to the controller.
+     *     controller.setSessionConfig(sessionConfig, CameraSelector.DEFAULT_BACK_CAMERA);
+     *
+     *     // The controller can now be used with a PreviewView to display the preview.
+     *     previewView.setController(controller);
+     *
+     *     // Bind the controller to a LifecycleOwner.
+     *     controller.bindToLifecycle(lifecycleOwner);
+     * </code></pre>
+     *
+     * <p><b>Requirements:</b>
+     * <ul>
+     * <li>The provided {@link SessionConfig} must contain a {@link Preview}.
+     * <li>The controller must be set on a {@link PreviewView} for the preview to be displayed.
+     * The {@link PreviewView}'s {@link Preview.SurfaceProvider} will overwrite the one in the
+     * {@link Preview} use case within the {@code SessionConfig}.
+     * <li>If the {@link SessionConfig} includes a {@link VideoCapture} use case, it must be
+     * created with a {@link Recorder} instance for video recording to work correctly.
+     * </ul>
+     *
+     * <p>Once a {@link SessionConfig} is set, most setter functions will result in an
+     * {@link IllegalStateException} because the {@link UseCase} configuration is considered
+     * immutable. The only exceptions are methods that do not modify the {@link UseCase}
+     * configuration. These methods are:
+     * <ul>
+     * <li>{@link #setImageCaptureFlashMode(int)}</li>
+     * <li>{@link #setCameraSelector(CameraSelector)}</li>
+     * <li>{@link #setPinchToZoomEnabled(boolean)}</li>
+     * <li>{@link #setTapToFocusEnabled(boolean)}</li>
+     * <li>{@link #setTapToFocusAutoCancelDuration(long, TimeUnit)}</li>
+     * <li>{@link #setZoomRatio(float)}</li>
+     * <li>{@link #setLinearZoom(float)}</li>
+     * <li>{@link #enableTorch(boolean)}</li>
+     * </ul>
+     *
+     * <p>The {@link ViewPort} in the given {@link SessionConfig} will be overwritten by the
+     * value according to layout of the associated {@link PreviewView}. This is to maintain the
+     * WYSIWYG design purpose of CameraController.
+     *
+     * <p>For {@link SessionConfig} with advanced settings that might only be supported on specific
+     * camera devices, it is recommended to check whether it can be supported via
+     * {@link CameraInfo#isSessionConfigSupported(SessionConfig)} before setting to the
+     * CameraController.
+     *
+     * <p>{@link HighSpeedVideoSessionConfig} is not supported because it is not compatible with
+     * {@link ViewPort}, which is always enabled by CameraController.
+     *
+     * <p>CameraController will override the autoRotationEnabled setting in the provided
+     * SessionConfig to match its current state. See {@link #setAutoRotationEnabled(boolean)} for
+     * more information.
+     *
+     * @param sessionConfig  The {@link SessionConfig} to be used. This can be a standard
+     *                       {@link SessionConfig} or an
+     *                       {@link androidx.camera.extensions.ExtensionSessionConfig}.
+     * @param cameraSelector The {@link CameraSelector} for choosing the camera to which the
+     *                       {@code sessionConfig} is applied.
+     * @throws IllegalArgumentException if the provided {@code sessionConfig} is invalid (e.g.
+     *                                  missing a required {@link Preview}, or containing an
+     *                                  unsupported {@link UseCase} combination) or cannot be used
+     *                                  to create a functional camera capture session.
+     */
+    @MainThread
+    public void setSessionConfig(@NonNull SessionConfig sessionConfig,
+            @NonNull CameraSelector cameraSelector) {
+        checkMainThread();
+        if (mSessionConfig == sessionConfig && mCameraSelector == cameraSelector) {
+            return;
+        }
+
+        if (sessionConfig instanceof HighSpeedVideoSessionConfig) {
+            throw new IllegalArgumentException(
+                    "CameraController does not support HighSpeedVideoSessionConfig!");
+        }
+
+        ImageCapture imageCapture = UseCaseUtil.findImageCapture(sessionConfig.getUseCases());
+        if (imageCapture != null) {
+            validateFlashModeScreenConditions(imageCapture, cameraSelector);
+        }
+
+        if (isRecording()) {
+            stopRecording();
+        }
+
+        unbindSessionConfig();
+
+        if (isCameraInitialized()) {
+            if (!isConfigurationSupported(cameraSelector, sessionConfig)) {
+                throw new IllegalArgumentException(
+                        "The camera resolved by the camera selector can not support the session "
+                                + "config.");
+            }
+        }
+        int oldEnabledUseCases = mEnabledUseCases;
+        mEnabledUseCases = initializeStateFromSessionConfig(sessionConfig);
+
+        SessionConfig oldSessionConfig = mSessionConfig;
+        CameraSelector oldCameraSelector = mCameraSelector;
+        mSessionConfig = sessionConfig;
+        mCameraSelector = cameraSelector;
+
+        startCameraAndTrackStates(() -> {
+            mEnabledUseCases = oldEnabledUseCases;
+            mSessionConfig = oldSessionConfig;
+            mCameraSelector = oldCameraSelector;
+            if (mSessionConfig != null) {
+                initializeStateFromSessionConfig(mSessionConfig);
+            }
+            Logger.w(TAG, "Failed to set the session config, restoring back previous values!");
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private int initializeStateFromSessionConfig(@NonNull SessionConfig sessionConfig) {
+        List<UseCase> useCases = sessionConfig.getUseCases();
+        Preview preview = UseCaseUtil.findPreview(useCases);
+
+        // Preview with PreviewView surface provider must be included.
+        Preconditions.checkArgument(preview != null,
+                "A Preview is required for using CameraController!");
+
+        int enabledUseCases = 0;
+
+        // If VideoCapture is included, it must use Recorder as its Output.
+        UseCase videoCapture = UseCaseUtil.findVideoCapture(useCases);
+        if (videoCapture instanceof VideoCapture) {
+            Preconditions.checkArgument(
+                    ((VideoCapture<?>) videoCapture).getOutput() instanceof Recorder,
+                    "To set a SessionConfig to the CameraController, the VideoCapture inside must"
+                            + " use a Recorder as its Output!");
+            enabledUseCases |= VIDEO_CAPTURE;
+            //noinspection unchecked
+            mVideoCapture = (VideoCapture<Recorder>) videoCapture;
+        } else {
+            mVideoCapture = createVideoCapture();
+        }
+
+        mPreview = preview;
+        mPreview.setSurfaceProvider(mSurfaceProvider);
+
+        ImageCapture imageCapture = UseCaseUtil.findImageCapture(useCases);
+        if (imageCapture != null) {
+            enabledUseCases |= IMAGE_CAPTURE;
+            mImageCapture = imageCapture;
+        } else {
+            mImageCapture = createImageCapture(null);
+        }
+        ImageAnalysis imageAnalysis = UseCaseUtil.findImageAnalysis(useCases);
+        if (imageAnalysis != null) {
+            enabledUseCases |= IMAGE_ANALYSIS;
+            mImageAnalysis = imageAnalysis;
+        } else {
+            mImageAnalysis = createImageAnalysis(null, null, null);
+        }
+
+        return enabledUseCases;
     }
 
     /**
@@ -572,11 +809,11 @@ public abstract class CameraController {
             mSurfaceProvider = surfaceProvider;
             mPreview.setSurfaceProvider(surfaceProvider);
         }
-        boolean shouldUpdateAspectRatio = mViewPort == null || getViewportAspectRatioStrategy(
-                viewPort) != getViewportAspectRatioStrategy(mViewPort);
+        boolean shouldUnbindAndRecreate =
+                mSessionConfig == null && (mViewPort == null || getViewportAspectRatioStrategy(
+                        viewPort) != getViewportAspectRatioStrategy(mViewPort));
         mViewPort = viewPort;
-        startListeningToRotationEvents();
-        if (shouldUpdateAspectRatio) {
+        if (shouldUnbindAndRecreate) {
             unbindAllAndRecreate();
         }
         startCameraAndTrackStates();
@@ -588,25 +825,11 @@ public abstract class CameraController {
     @MainThread
     void clearPreviewSurface() {
         checkMainThread();
-        if (mCameraProvider != null) {
-            // Preview is required. Unbind everything if Preview is down.
-            mCameraProvider.unbind(mPreview, mImageCapture, mImageAnalysis, mVideoCapture);
-        }
+        unbindSessionConfig();
         mPreview.setSurfaceProvider(null);
         mCamera = null;
         mSurfaceProvider = null;
         mViewPort = null;
-        stopListeningToRotationEvents();
-    }
-
-    private void startListeningToRotationEvents() {
-        if (!mRotationProvider.addListener(mainThreadExecutor(), mDeviceRotationListener)) {
-            Logger.w(TAG, "The device cannot detect rotation changes.");
-        }
-    }
-
-    private void stopListeningToRotationEvents() {
-        mRotationProvider.removeListener(mDeviceRotationListener);
     }
 
     /**
@@ -622,6 +845,8 @@ public abstract class CameraController {
      * avoid this, set the value before controller is bound to lifecycle.
      *
      * @param targetSize the intended output size for {@link Preview}.
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see Preview.Builder#setTargetAspectRatio(int)
      * @see Preview.Builder#setTargetResolution(Size)
      * @deprecated Use {@link #setPreviewResolutionSelector(ResolutionSelector)} instead.
@@ -630,11 +855,12 @@ public abstract class CameraController {
     @Deprecated
     public void setPreviewTargetSize(@Nullable OutputSize targetSize) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setPreviewTargetSize");
         if (isOutputSizeEqual(mPreviewTargetSize, targetSize)) {
             return;
         }
         mPreviewTargetSize = targetSize;
-        unbindPreviewAndRecreate();
+        recreatePreview(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -648,7 +874,7 @@ public abstract class CameraController {
     @Deprecated
     public @Nullable OutputSize getPreviewTargetSize() {
         checkMainThread();
-        return mPreviewTargetSize;
+        return mSessionConfig == null ? mPreviewTargetSize : null;
     }
 
     /**
@@ -663,16 +889,19 @@ public abstract class CameraController {
      * <p>Changing the value will reconfigure the camera which will cause additional latency. To
      * avoid this, set the value before controller is bound to lifecycle.
      *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see Preview.Builder#setResolutionSelector(ResolutionSelector)
      */
     @MainThread
     public void setPreviewResolutionSelector(@Nullable ResolutionSelector resolutionSelector) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setPreviewResolutionSelector");
         if (mPreviewResolutionSelector == resolutionSelector) {
             return;
         }
         mPreviewResolutionSelector = resolutionSelector;
-        unbindPreviewAndRecreate();
+        recreatePreview(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -686,7 +915,11 @@ public abstract class CameraController {
     @MainThread
     public @Nullable ResolutionSelector getPreviewResolutionSelector() {
         checkMainThread();
-        return mPreviewResolutionSelector;
+        if (mSessionConfig != null) {
+            return mPreview.getResolutionSelector();
+        } else {
+            return mPreviewResolutionSelector;
+        }
     }
 
     /**
@@ -703,6 +936,8 @@ public abstract class CameraController {
      * {@link DynamicRange#HDR_UNSPECIFIED_10_BIT}. If the dynamic range is not provided, the
      * default value is {@link DynamicRange#SDR}.
      *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see Preview.Builder#setDynamicRange(DynamicRange)
      *
      * TODO: make this public in the next release.
@@ -711,8 +946,9 @@ public abstract class CameraController {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void setPreviewDynamicRange(@NonNull DynamicRange dynamicRange) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setPreviewDynamicRange");
         mPreviewDynamicRange = dynamicRange;
-        unbindPreviewAndRecreate();
+        recreatePreview(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -725,17 +961,18 @@ public abstract class CameraController {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public @NonNull DynamicRange getPreviewDynamicRange() {
         checkMainThread();
-        return mPreviewDynamicRange;
+        return mSessionConfig == null ? mPreviewDynamicRange : mPreview.getDynamicRange();
     }
 
     /**
-     * Unbinds {@link Preview} and recreates with the latest parameters.
+     * Recreates {@link Preview} with the latest parameters.
      */
     @MainThread
-    private void unbindPreviewAndRecreate() {
-        if (isCameraInitialized()) {
-            mCameraProvider.unbind(mPreview);
+    private void recreatePreview(boolean shouldUnbind) {
+        if (shouldUnbind) {
+            unbindSessionConfig();
         }
+
         mPreview = createPreview();
         if (mSurfaceProvider != null) {
             mPreview.setSurfaceProvider(mSurfaceProvider);
@@ -803,6 +1040,11 @@ public abstract class CameraController {
     @MainThread
     public void setImageCaptureFlashMode(@ImageCapture.FlashMode int flashMode) {
         checkMainThread();
+
+        if (mSessionConfig != null && !isImageCaptureEnabled()) {
+            throw new IllegalStateException(
+                    "A SessionConfig is set and it doesn't contain an ImageCapture.");
+        }
 
         if (flashMode == ImageCapture.FLASH_MODE_SCREEN) {
             Integer lensFacing = mCameraSelector.getLensFacing();
@@ -975,15 +1217,18 @@ public abstract class CameraController {
      * <p>Changing the value will reconfigure the camera which will cause additional latency. To
      * avoid this, set the value before controller is bound to lifecycle.
      *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @param captureMode The requested image capture mode.
      */
     @MainThread
     public void setImageCaptureMode(@ImageCapture.CaptureMode int captureMode) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setImageCaptureMode");
         if (mImageCapture.getCaptureMode() == captureMode) {
             return;
         }
-        unbindImageCaptureAndRecreate(captureMode);
+        recreateImageCapture(captureMode, /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1012,17 +1257,20 @@ public abstract class CameraController {
      * avoid this, set the value before controller is bound to lifecycle.
      *
      * @param targetSize The intended image size for {@link ImageCapture}.
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @deprecated Use {@link #setImageCaptureResolutionSelector(ResolutionSelector)} instead.
      */
     @MainThread
     @Deprecated
     public void setImageCaptureTargetSize(@Nullable OutputSize targetSize) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setImageCaptureTargetSize");
         if (isOutputSizeEqual(mImageCaptureTargetSize, targetSize)) {
             return;
         }
         mImageCaptureTargetSize = targetSize;
-        unbindImageCaptureAndRecreate(getImageCaptureMode());
+        recreateImageCapture(getImageCaptureMode(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1036,7 +1284,7 @@ public abstract class CameraController {
     @MainThread
     public @Nullable OutputSize getImageCaptureTargetSize() {
         checkMainThread();
-        return mImageCaptureTargetSize;
+        return mSessionConfig == null ? mImageCaptureTargetSize : null;
     }
 
     /**
@@ -1052,16 +1300,19 @@ public abstract class CameraController {
      * <p>Changing the value will reconfigure the camera which will cause additional latency. To
      * avoid this, set the value before controller is bound to lifecycle.
      *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see ImageCapture.Builder#setResolutionSelector(ResolutionSelector)
      */
     @MainThread
     public void setImageCaptureResolutionSelector(@Nullable ResolutionSelector resolutionSelector) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setImageCaptureResolutionSelector");
         if (mImageCaptureResolutionSelector == resolutionSelector) {
             return;
         }
         mImageCaptureResolutionSelector = resolutionSelector;
-        unbindImageCaptureAndRecreate(getImageCaptureMode());
+        recreateImageCapture(getImageCaptureMode(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1075,7 +1326,11 @@ public abstract class CameraController {
     @MainThread
     public @Nullable ResolutionSelector getImageCaptureResolutionSelector() {
         checkMainThread();
-        return mImageCaptureResolutionSelector;
+        if (mSessionConfig != null) {
+            return mImageCapture.getResolutionSelector();
+        } else {
+            return mImageCaptureResolutionSelector;
+        }
     }
 
     /**
@@ -1089,16 +1344,19 @@ public abstract class CameraController {
      * <p>Changing the value will reconfigure the camera which will cause additional latency.
      * To avoid this, set the value before controller is bound to lifecycle.
      *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @param executor The executor which will be used for IO tasks.
      */
     @MainThread
     public void setImageCaptureIoExecutor(@Nullable Executor executor) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setImageCaptureIoExecutor");
         if (mImageCaptureIoExecutor == executor) {
             return;
         }
         mImageCaptureIoExecutor = executor;
-        unbindImageCaptureAndRecreate(getImageCaptureMode());
+        recreateImageCapture(getImageCaptureMode(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1108,17 +1366,21 @@ public abstract class CameraController {
     @MainThread
     public @Nullable Executor getImageCaptureIoExecutor() {
         checkMainThread();
+        if (mSessionConfig != null) {
+            return ((ImageCaptureConfig) mImageCapture.getCurrentConfig()).getIoExecutor(null);
+        }
         return mImageCaptureIoExecutor;
     }
 
     /**
-     * Unbinds {@link ImageCapture} and recreates with the latest parameters.
+     * Recreates {@link ImageCapture} with the latest parameters.
      */
     @MainThread
-    private void unbindImageCaptureAndRecreate(Integer imageCaptureMode) {
-        if (isCameraInitialized()) {
-            mCameraProvider.unbind(mImageCapture);
+    private void recreateImageCapture(Integer imageCaptureMode, boolean shouldUnbind) {
+        if (shouldUnbind) {
+            unbindSessionConfig();
         }
+
         int flashMode = mImageCapture.getFlashMode();
         mImageCapture = createImageCapture(imageCaptureMode);
         setImageCaptureFlashMode(flashMode);
@@ -1133,9 +1395,6 @@ public abstract class CameraController {
         configureResolution(builder, mImageCaptureResolutionSelector, mImageCaptureTargetSize);
         if (mImageCaptureIoExecutor != null) {
             builder.setIoExecutor(mImageCaptureIoExecutor);
-        }
-        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
-            builder.setTargetRotation(mLastKnownRotation);
         }
 
         return builder.build();
@@ -1179,12 +1438,15 @@ public abstract class CameraController {
      * @param executor The executor in which the
      * {@link ImageAnalysis.Analyzer#analyze(ImageProxy)} will be run.
      * @param analyzer of the images.
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see ImageAnalysis#setAnalyzer(Executor, ImageAnalysis.Analyzer)
      */
     @MainThread
     public void setImageAnalysisAnalyzer(@NonNull Executor executor,
             ImageAnalysis.@NonNull Analyzer analyzer) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setImageAnalysisAnalyzer");
         if (mAnalysisAnalyzer == analyzer && mAnalysisExecutor == executor) {
             return;
         }
@@ -1204,11 +1466,14 @@ public abstract class CameraController {
      * non-null value, calling this method will reconfigure the camera which might cause additional
      * latency. To avoid this, call this method when the lifecycle is not active.
      *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see ImageAnalysis#clearAnalyzer().
      */
     @MainThread
     public void clearImageAnalysisAnalyzer() {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("clearImageAnalysisAnalyzer");
         ImageAnalysis.Analyzer oldAnalyzer = mAnalysisAnalyzer;
         mAnalysisExecutor = null;
         mAnalysisAnalyzer = null;
@@ -1225,8 +1490,9 @@ public abstract class CameraController {
                 newAnalyzer.getDefaultTargetResolution();
         if (!Objects.equals(oldResolution, newResolution)) {
             // Rebind ImageAnalysis to reconfigure target resolution.
-            unbindImageAnalysisAndRecreate(mImageAnalysis.getBackpressureStrategy(),
-                    mImageAnalysis.getImageQueueDepth(), mImageAnalysis.getOutputImageFormat());
+            recreateImageAnalysis(mImageAnalysis.getBackpressureStrategy(),
+                    mImageAnalysis.getImageQueueDepth(), mImageAnalysis.getOutputImageFormat(),
+                    /* shouldUnbind= */ true);
             startCameraAndTrackStates();
         }
     }
@@ -1258,18 +1524,21 @@ public abstract class CameraController {
      * avoid this, set the value before controller is bound to lifecycle.
      *
      * @param strategy The strategy to use.
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see ImageAnalysis.Builder#setBackpressureStrategy(int)
      */
     @MainThread
     public void setImageAnalysisBackpressureStrategy(
             @ImageAnalysis.BackpressureStrategy int strategy) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setImageAnalysisBackpressureStrategy");
         if (mImageAnalysis.getBackpressureStrategy() == strategy) {
             return;
         }
 
-        unbindImageAnalysisAndRecreate(strategy, mImageAnalysis.getImageQueueDepth(),
-                mImageAnalysis.getOutputImageFormat());
+        recreateImageAnalysis(strategy, mImageAnalysis.getImageQueueDepth(),
+                mImageAnalysis.getOutputImageFormat(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1284,16 +1553,19 @@ public abstract class CameraController {
      * avoid this, set the value before controller is bound to lifecycle.
      *
      * @param depth The total number of images available.
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see ImageAnalysis.Builder#setImageQueueDepth(int)
      */
     @MainThread
     public void setImageAnalysisImageQueueDepth(int depth) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setImageAnalysisImageQueueDepth");
         if (mImageAnalysis.getImageQueueDepth() == depth) {
             return;
         }
-        unbindImageAnalysisAndRecreate(mImageAnalysis.getBackpressureStrategy(), depth,
-                mImageAnalysis.getOutputImageFormat());
+        recreateImageAnalysis(mImageAnalysis.getBackpressureStrategy(), depth,
+                mImageAnalysis.getOutputImageFormat(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1324,20 +1596,24 @@ public abstract class CameraController {
      * @param targetSize The intended output size for {@link ImageAnalysis}.
      * @see ImageAnalysis.Builder#setTargetAspectRatio(int)
      * @see ImageAnalysis.Builder#setTargetResolution(Size)
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @deprecated Use {@link #setImageAnalysisResolutionSelector(ResolutionSelector)} instead.
      */
     @MainThread
     @Deprecated
     public void setImageAnalysisTargetSize(@Nullable OutputSize targetSize) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setImageAnalysisTargetSize");
         if (isOutputSizeEqual(mImageAnalysisTargetSize, targetSize)) {
             return;
         }
         mImageAnalysisTargetSize = targetSize;
-        unbindImageAnalysisAndRecreate(
+        recreateImageAnalysis(
                 mImageAnalysis.getBackpressureStrategy(),
                 mImageAnalysis.getImageQueueDepth(),
-                mImageAnalysis.getOutputImageFormat());
+                mImageAnalysis.getOutputImageFormat(),
+                /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1351,7 +1627,7 @@ public abstract class CameraController {
     @Deprecated
     public @Nullable OutputSize getImageAnalysisTargetSize() {
         checkMainThread();
-        return mImageAnalysisTargetSize;
+        return mSessionConfig == null ? mImageAnalysisTargetSize : null;
     }
 
     /**
@@ -1366,20 +1642,24 @@ public abstract class CameraController {
      * <p>Changing the value will reconfigure the camera which will cause additional latency. To
      * avoid this, set the value before controller is bound to lifecycle.
      *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see ImageAnalysis.Builder#setResolutionSelector(ResolutionSelector)
      */
     @MainThread
     public void setImageAnalysisResolutionSelector(
             @Nullable ResolutionSelector resolutionSelector) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setImageAnalysisResolutionSelector");
         if (mImageAnalysisResolutionSelector == resolutionSelector) {
             return;
         }
         mImageAnalysisResolutionSelector = resolutionSelector;
-        unbindImageAnalysisAndRecreate(
+        recreateImageAnalysis(
                 mImageAnalysis.getBackpressureStrategy(),
                 mImageAnalysis.getImageQueueDepth(),
-                mImageAnalysis.getOutputImageFormat());
+                mImageAnalysis.getOutputImageFormat(),
+                /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1393,7 +1673,11 @@ public abstract class CameraController {
     @MainThread
     public @Nullable ResolutionSelector getImageAnalysisResolutionSelector() {
         checkMainThread();
-        return mImageAnalysisResolutionSelector;
+        if (mSessionConfig != null) {
+            return mImageAnalysis.getResolutionSelector();
+        } else {
+            return mImageAnalysisResolutionSelector;
+        }
     }
 
     /**
@@ -1406,17 +1690,21 @@ public abstract class CameraController {
      * avoid this, set the value before controller is bound to lifecycle.
      *
      * @param executor The executor for {@link ImageAnalysis} background tasks.
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see ImageAnalysis.Builder#setBackgroundExecutor(Executor)
      */
     @MainThread
     public void setImageAnalysisBackgroundExecutor(@Nullable Executor executor) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setImageAnalysisBackgroundExecutor");
         if (mAnalysisBackgroundExecutor == executor) {
             return;
         }
         mAnalysisBackgroundExecutor = executor;
-        unbindImageAnalysisAndRecreate(mImageAnalysis.getBackpressureStrategy(),
-                mImageAnalysis.getImageQueueDepth(), mImageAnalysis.getOutputImageFormat());
+        recreateImageAnalysis(mImageAnalysis.getBackpressureStrategy(),
+                mImageAnalysis.getImageQueueDepth(),
+                mImageAnalysis.getOutputImageFormat(), /* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1425,10 +1713,15 @@ public abstract class CameraController {
      *
      * @see ImageAnalysis.Builder#setBackgroundExecutor(Executor)
      */
+    @OptIn(markerClass = ExperimentalUseCaseApi.class)
     @MainThread
     public @Nullable Executor getImageAnalysisBackgroundExecutor() {
         checkMainThread();
-        return mAnalysisBackgroundExecutor;
+        if (mSessionConfig != null) {
+            return mImageAnalysis.getBackgroundExecutor();
+        } else {
+            return mAnalysisBackgroundExecutor;
+        }
     }
 
     /**
@@ -1450,6 +1743,8 @@ public abstract class CameraController {
      * when the camera is active, check the {@link ImageProxy#getFormat()} value to determine
      * when the new format takes effect.
      *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see ImageAnalysis.Builder#setOutputImageFormat(int)
      * @see ImageAnalysis.Builder#getOutputImageFormat()
      * @see ImageAnalysis#getOutputImageFormat()
@@ -1458,12 +1753,14 @@ public abstract class CameraController {
     public void setImageAnalysisOutputImageFormat(
             @ImageAnalysis.OutputImageFormat int imageAnalysisOutputImageFormat) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setImageAnalysisOutputImageFormat");
         if (imageAnalysisOutputImageFormat == mImageAnalysis.getOutputImageFormat()) {
             // No-op if the value is not changed.
             return;
         }
-        unbindImageAnalysisAndRecreate(mImageAnalysis.getBackpressureStrategy(),
-                mImageAnalysis.getImageQueueDepth(), imageAnalysisOutputImageFormat);
+        recreateImageAnalysis(mImageAnalysis.getBackpressureStrategy(),
+                mImageAnalysis.getImageQueueDepth(),
+                imageAnalysisOutputImageFormat, /* shouldUnbind= */ true);
     }
 
     /**
@@ -1486,15 +1783,17 @@ public abstract class CameraController {
     }
 
     /**
-     * Unbinds {@link ImageAnalysis} and recreates with the latest parameters.
+     * Recreates {@link ImageAnalysis} with the latest parameters.
      */
     @MainThread
-    private void unbindImageAnalysisAndRecreate(Integer strategy, Integer imageQueueDepth,
-            Integer outputFormat) {
+    private void recreateImageAnalysis(Integer strategy, Integer imageQueueDepth,
+            Integer outputFormat, boolean shouldUnbind) {
         checkMainThread();
-        if (isCameraInitialized()) {
-            mCameraProvider.unbind(mImageAnalysis);
+
+        if (shouldUnbind) {
+            unbindSessionConfig();
         }
+
         mImageAnalysis = createImageAnalysis(strategy, imageQueueDepth, outputFormat);
         if (mAnalysisExecutor != null && mAnalysisAnalyzer != null) {
             mImageAnalysis.setAnalyzer(mAnalysisExecutor, mAnalysisAnalyzer);
@@ -1517,9 +1816,6 @@ public abstract class CameraController {
         configureResolution(builder, mImageAnalysisResolutionSelector, mImageAnalysisTargetSize);
         if (mAnalysisBackgroundExecutor != null) {
             builder.setBackgroundExecutor(mAnalysisBackgroundExecutor);
-        }
-        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
-            builder.setTargetRotation(mLastKnownRotation);
         }
 
         return builder.build();
@@ -1814,13 +2110,16 @@ public abstract class CameraController {
      * avoid this, set the value before controller is bound to lifecycle.
      *
      * @param qualitySelector The quality selector for {@link #VIDEO_CAPTURE}.
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see QualitySelector
      */
     @MainThread
     public void setVideoCaptureQualitySelector(@NonNull QualitySelector qualitySelector) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setVideoCaptureQualitySelector");
         mVideoCaptureQualitySelector = qualitySelector;
-        unbindVideoAndRecreate();
+        recreateVideoCapture(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1834,7 +2133,11 @@ public abstract class CameraController {
     @MainThread
     public @NonNull QualitySelector getVideoCaptureQualitySelector() {
         checkMainThread();
-        return mVideoCaptureQualitySelector;
+        if (mSessionConfig != null) {
+            return mVideoCapture.getOutput().getQualitySelector();
+        } else {
+            return mVideoCaptureQualitySelector;
+        }
     }
 
     /**
@@ -1844,13 +2147,16 @@ public abstract class CameraController {
      * {@link MirrorMode#MIRROR_MODE_ON} and {@link MirrorMode#MIRROR_MODE_ON_FRONT_ONLY}.
      * If not set, it defaults to {@link MirrorMode#MIRROR_MODE_OFF}.
      *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see VideoCapture.Builder#setMirrorMode(int)
      */
     @MainThread
     public void setVideoCaptureMirrorMode(@MirrorMode.Mirror int mirrorMode) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setVideoCaptureMirrorMode");
         mVideoCaptureMirrorMode = mirrorMode;
-        unbindVideoAndRecreate();
+        recreateVideoCapture(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1861,7 +2167,11 @@ public abstract class CameraController {
     @MirrorMode.Mirror
     public int getVideoCaptureMirrorMode() {
         checkMainThread();
-        return mVideoCaptureMirrorMode;
+        if (mSessionConfig != null) {
+            return mVideoCapture.getMirrorMode();
+        } else {
+            return mVideoCaptureMirrorMode;
+        }
     }
 
     /**
@@ -1882,13 +2192,16 @@ public abstract class CameraController {
      *
      * <p>If the dynamic range is not provided, the default value is {@link DynamicRange#SDR}.
      *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see VideoCapture.Builder#setDynamicRange(DynamicRange)
      */
     @MainThread
     public void setVideoCaptureDynamicRange(@NonNull DynamicRange dynamicRange) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setVideoCaptureDynamicRange");
         mVideoCaptureDynamicRange = dynamicRange;
-        unbindVideoAndRecreate();
+        recreateVideoCapture(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1898,7 +2211,11 @@ public abstract class CameraController {
     @MainThread
     public @NonNull DynamicRange getVideoCaptureDynamicRange() {
         checkMainThread();
-        return mVideoCaptureDynamicRange;
+        if (mSessionConfig != null) {
+            return mVideoCapture.getDynamicRange();
+        } else {
+            return mVideoCaptureDynamicRange;
+        }
     }
 
     /**
@@ -1914,13 +2231,16 @@ public abstract class CameraController {
      * <p>By default, the value is {@link StreamSpec#FRAME_RATE_RANGE_UNSPECIFIED}. For supported
      * frame rates, see {@link CameraInfo#getSupportedFrameRateRanges()}.
      *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see VideoCapture.Builder#setTargetFrameRate(Range)
      */
     @MainThread
     public void setVideoCaptureTargetFrameRate(@NonNull Range<Integer> targetFrameRate) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setVideoCaptureTargetFrameRate");
         mVideoCaptureTargetFrameRate = targetFrameRate;
-        unbindVideoAndRecreate();
+        recreateVideoCapture(/* shouldUnbind= */ true);
         startCameraAndTrackStates();
     }
 
@@ -1930,17 +2250,22 @@ public abstract class CameraController {
     @MainThread
     public @NonNull Range<Integer> getVideoCaptureTargetFrameRate() {
         checkMainThread();
-        return mVideoCaptureTargetFrameRate;
+        if (mSessionConfig != null) {
+            return mVideoCapture.getTargetFrameRate();
+        } else {
+            return mVideoCaptureTargetFrameRate;
+        }
     }
 
     /**
-     * Unbinds VideoCapture and recreate with the latest parameters.
+     * Recreates VideoCapture with the latest parameters.
      */
     @MainThread
-    private void unbindVideoAndRecreate() {
-        if (isCameraInitialized()) {
-            mCameraProvider.unbind(mVideoCapture);
+    private void recreateVideoCapture(boolean shouldUnbind) {
+        if (shouldUnbind) {
+            unbindSessionConfig();
         }
+
         mVideoCapture = createVideoCapture();
     }
 
@@ -1961,9 +2286,6 @@ public abstract class CameraController {
                 .setTargetFrameRate(mVideoCaptureTargetFrameRate)
                 .setMirrorMode(mVideoCaptureMirrorMode)
                 .setDynamicRange(mVideoCaptureDynamicRange);
-        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
-            builder.setTargetRotation(mLastKnownRotation);
-        }
         return builder.build();
     }
 
@@ -2050,14 +2372,15 @@ public abstract class CameraController {
     }
 
     @MainThread
-    private void unbindAllUseCases() {
-        if (!isCameraInitialized()) {
+    private void unbindSessionConfig() {
+        if (!isCameraInitialized() || mBoundSessionConfig == null) {
             return;
         }
 
         // Invokes the unbind() method to unbind all use cases created by the CameraController.
         // This can avoid to unbind the UseCases bound with the other lifecycle owner unexpectedly.
-        mCameraProvider.unbind(mPreview, mImageCapture, mImageAnalysis, mVideoCapture);
+        mCameraProvider.unbind(mBoundSessionConfig);
+        mBoundSessionConfig = null;
     }
 
     /**
@@ -2065,11 +2388,13 @@ public abstract class CameraController {
      */
     @MainThread
     private void unbindAllAndRecreate() {
-        unbindPreviewAndRecreate();
-        unbindImageCaptureAndRecreate(getImageCaptureMode());
-        unbindImageAnalysisAndRecreate(mImageAnalysis.getBackpressureStrategy(),
-                mImageAnalysis.getImageQueueDepth(), mImageAnalysis.getOutputImageFormat());
-        unbindVideoAndRecreate();
+        unbindSessionConfig();
+        recreatePreview(/* shouldUnbind= */ false);
+        recreateImageCapture(getImageCaptureMode(), /* shouldUnbind= */ false);
+        recreateImageAnalysis(mImageAnalysis.getBackpressureStrategy(),
+                mImageAnalysis.getImageQueueDepth(),
+                mImageAnalysis.getOutputImageFormat(), /* shouldUnbind= */ false);
+        recreateVideoCapture(/* shouldUnbind= */ false);
     }
 
     // -----------------
@@ -2086,6 +2411,14 @@ public abstract class CameraController {
      *
      * <p>The default value is {@link CameraSelector#DEFAULT_BACK_CAMERA}.
      *
+     * <p>If a {@link SessionConfig} with advanced settings is set, it might only be supported on
+     * specific camera devices, it is recommended to check whether it can be supported via
+     * {@link CameraInfo#isSessionConfigSupported(SessionConfig)} before switching the camera
+     * selector. It is also recommended to use
+     * {@link #setSessionConfig(SessionConfig, CameraSelector)} to switch camera with
+     * SessionConfig in one function call, in case the camera resolved by the new CameraSelector
+     * can't support current SessionConfig and then make the camera switching operation failed.
+     *
      * @throws IllegalStateException If the provided camera selector is unable to resolve a camera
      * to be used for the enabled use cases.
      * @see CameraSelector
@@ -2097,20 +2430,30 @@ public abstract class CameraController {
             return;
         }
 
-        Integer lensFacing = cameraSelector.getLensFacing();
-        if (mImageCapture.getFlashMode() == ImageCapture.FLASH_MODE_SCREEN && lensFacing != null
-                && lensFacing != CameraSelector.LENS_FACING_FRONT) {
-            throw new IllegalStateException("Not a front camera despite setting FLASH_MODE_SCREEN");
-        }
+        validateFlashModeScreenConditions(mImageCapture, cameraSelector);
 
         CameraSelector oldCameraSelector = mCameraSelector;
         mCameraSelector = cameraSelector;
 
-        if (mCameraProvider == null) {
-            return;
-        }
-        mCameraProvider.unbind(mPreview, mImageCapture, mImageAnalysis, mVideoCapture);
+        unbindSessionConfig();
         startCameraAndTrackStates(() -> mCameraSelector = oldCameraSelector);
+    }
+
+    private void validateFlashModeScreenConditions(@NonNull ImageCapture imageCapture,
+            @NonNull CameraSelector cameraSelector) {
+        Integer lensFacing = cameraSelector.getLensFacing();
+        if (imageCapture.getFlashMode() == ImageCapture.FLASH_MODE_SCREEN && lensFacing != null
+                && lensFacing != CameraSelector.LENS_FACING_FRONT) {
+            throw new IllegalStateException("Not a front camera despite setting FLASH_MODE_SCREEN");
+        }
+    }
+
+    private boolean isConfigurationSupported(@NonNull CameraSelector cameraSelector,
+            @NonNull SessionConfig sessionConfig) {
+        Preconditions.checkState(isCameraInitialized(), CAMERA_NOT_INITIALIZED);
+        CameraInfo cameraInfo = mCameraProvider.getCameraInfo(cameraSelector);
+
+        return cameraInfo.isSessionConfigSupported(sessionConfig);
     }
 
     /**
@@ -2652,35 +2995,62 @@ public abstract class CameraController {
      *
      * @param effects The effects applied to camera output.
      * @throws IllegalArgumentException if the combination of effects is not supported by CameraX.
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      * @see UseCaseGroup.Builder#addEffect
      */
     @MainThread
     public void setEffects(@NonNull Set<CameraEffect> effects) {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("setEffects");
         if (Objects.equals(mEffects, effects)) {
             // Same effect. No change needed.
             return;
         }
         if (mCameraProvider != null) {
             // Unbind to make sure the pipelines will be recreated.
-            mCameraProvider.unbindAll();
+            unbindSessionConfig();
         }
+        validateEffects(effects);
         mEffects.clear();
         mEffects.addAll(effects);
         startCameraAndTrackStates();
     }
 
     /**
+     * Checks effect targets and throw {@link IllegalArgumentException}.
+     *
+     * <p>Throws exception if the effects 1) contains conflicting targets or 2) contains
+     * effects that is not in the allowlist.
+     */
+    private void validateEffects(@NonNull Set<CameraEffect> effects) {
+        UseCaseGroup.Builder builder = new UseCaseGroup.Builder();
+        // UseCaseGroup does not allow empty UseCases. Add mPreview to run the check because
+        // CameraController should always have Preview.
+        builder.addUseCase(mPreview);
+        for (CameraEffect effect : effects) {
+            builder.addEffect(effect);
+        }
+        // Throws exception if the effects 1) contains conflicting targets or 2) contains effects
+        // that is not in the allowlist.
+        builder.build();
+    }
+
+    /**
      * Removes all effects.
      *
      * <p>Once called, CameraX will remove all the effects and rebind the {@link UseCase}.
+     *
+     * @throws IllegalStateException if a {@link SessionConfig} has been set to the
+     * CameraController.
      */
     @MainThread
     public void clearEffects() {
         checkMainThread();
+        throwExceptionIfSessionConfigExists("clearEffects");
         if (mCameraProvider != null) {
             // Unbind to make sure the pipelines will be recreated.
-            mCameraProvider.unbindAll();
+            unbindSessionConfig();
         }
         mEffects.clear();
         startCameraAndTrackStates();
@@ -2725,13 +3095,10 @@ public abstract class CameraController {
     }
 
     /**
-     * Creates {@link UseCaseGroup} from all the use cases.
-     *
-     * <p>Preview is required. If it is {@code null}, then controller is not ready. Return
-     * {@code null} and ignore other use cases.
+     * Obtains a session config for calling bindToLifecycle.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    protected @Nullable UseCaseGroup createUseCaseGroup() {
+    protected @Nullable SessionConfig getBoundSessionConfig() {
         if (!isCameraInitialized()) {
             Logger.d(TAG, CAMERA_NOT_INITIALIZED);
             return null;
@@ -2742,29 +3109,47 @@ public abstract class CameraController {
             return null;
         }
 
-        // Always unbinds all UseCases to allow the resolution selection logic to re-select a
-        // workable resolutions set for the new UseCases combination.
-        unbindAllUseCases();
+        SessionConfig.Builder builder;
+        if (mSessionConfig != null) {
+            builder = new SessionConfig.Builder(mSessionConfig);
+        } else {
+            List<UseCase> useCases = new ArrayList<>();
+            useCases.add(mPreview);
 
-        UseCaseGroup.Builder builder = new UseCaseGroup.Builder().addUseCase(mPreview);
+            if (isImageCaptureEnabled()) {
+                useCases.add(mImageCapture);
+            }
 
-        if (isImageCaptureEnabled()) {
-            builder.addUseCase(mImageCapture);
+            if (isImageAnalysisEnabled()) {
+                useCases.add(mImageAnalysis);
+            }
+
+            if (isVideoCaptureEnabled()) {
+                useCases.add(mVideoCapture);
+            }
+
+            builder = new SessionConfig.Builder(useCases);
+
+            for (CameraEffect effect : mEffects) {
+                builder.addEffect(effect);
+            }
         }
 
-        if (isImageAnalysisEnabled()) {
-            builder.addUseCase(mImageAnalysis);
-        }
+        mBoundSessionConfig = builder
+                .setViewPort(mViewPort)
+                .setAutoRotationEnabled(mAutoRotationEnabled)
+                .build();
+        return mBoundSessionConfig;
+    }
 
-        if (isVideoCaptureEnabled()) {
-            builder.addUseCase(mVideoCapture);
+    private void throwExceptionIfSessionConfigExists(@NonNull String functionName) {
+        if (mSessionConfig != null) {
+            throw new IllegalStateException(functionName
+                    + " function call is not allowed when a SessionConfig has been set because "
+                    + "this might cause UseCases to be recreated and conflict with the UseCases "
+                    + "set by the SessionConfig. Please clear the session config if you want "
+                    + "CameraController to help you create and manage the UseCases.");
         }
-
-        builder.setViewPort(mViewPort);
-        for (CameraEffect effect : mEffects) {
-            builder.addEffect(effect);
-        }
-        return builder.build();
     }
 
     /**

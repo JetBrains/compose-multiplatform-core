@@ -16,42 +16,36 @@
 package androidx.room3
 
 import android.content.Context
+import android.content.Intent
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.room3.Room.databaseBuilder
 import androidx.room3.Room.inMemoryDatabaseBuilder
 import androidx.room3.migration.Migration
+import androidx.room3.util.isMigrationRequired
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.SupportSQLiteOpenHelper
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import instantiateImpl
 import java.io.File
-import java.util.concurrent.Executor
-import java.util.concurrent.TimeUnit
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlinx.coroutines.Dispatchers
-import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 @RunWith(JUnit4::class)
 class BuilderTest {
     @Test
     fun nullName() {
-        try {
-            databaseBuilder(mock(), RoomDatabase::class.java, null).build()
-        } catch (e: IllegalArgumentException) {
-            assertThat(e.message)
-                .isEqualTo(
-                    "Cannot build a database with null or empty name. If you are trying to create an " +
-                        "in memory database, use Room.inMemoryDatabaseBuilder"
-                )
-        }
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder(mock(), RoomDatabase::class.java, null).build()
+            }
+            .hasMessageThat()
+            .isEqualTo(
+                "Cannot build a database with null or empty name. If you are trying to create an " +
+                    "in memory database, use Room.inMemoryDatabaseBuilder"
+            )
     }
 
     @Test
@@ -69,102 +63,26 @@ class BuilderTest {
 
     @Test
     fun emptyName() {
-        try {
-            databaseBuilder(mock(), RoomDatabase::class.java, "  ").build()
-        } catch (e: IllegalArgumentException) {
-            assertThat(e.message)
-                .isEqualTo(
-                    "Cannot build a database with null or empty name. If you are trying to create an " +
-                        "in memory database, use Room.inMemoryDatabaseBuilder"
-                )
-        }
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder(mock(), RoomDatabase::class.java, "  ").build()
+            }
+            .hasMessageThat()
+            .isEqualTo(
+                "Cannot build a database with null or empty name. If you are trying to create an " +
+                    "in memory database, use Room.inMemoryDatabaseBuilder"
+            )
     }
 
     @Test
     fun specialMemoryName() {
-        try {
-            databaseBuilder(mock(), RoomDatabase::class.java, ":memory:").build()
-        } catch (e: IllegalArgumentException) {
-            assertThat(e.message)
-                .isEqualTo(
-                    "Cannot build a database with the special name ':memory:'. If you are trying " +
-                        "to create an in memory database, use Room.inMemoryDatabaseBuilder"
-                )
-        }
-    }
-
-    @Test
-    fun executors_setQueryExecutor() {
-        val executor: Executor = mock()
-        val db =
-            databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                .setQueryExecutor(executor)
-                .build()
-
-        assertThat(db.databaseConfiguration.queryExecutor).isEqualTo(executor)
-        assertThat(db.databaseConfiguration.transactionExecutor).isEqualTo(executor)
-    }
-
-    @Test
-    fun executors_setTransactionExecutor() {
-        val executor: Executor = mock()
-        val db =
-            databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                .setTransactionExecutor(executor)
-                .build()
-
-        assertThat(db.databaseConfiguration.queryExecutor).isEqualTo(executor)
-        assertThat(db.databaseConfiguration.transactionExecutor).isEqualTo(executor)
-    }
-
-    @Test
-    fun executors_setBothExecutors() {
-        val executor1: Executor = mock()
-        val executor2: Executor = mock()
-        val db =
-            databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                .setQueryExecutor(executor1)
-                .setTransactionExecutor(executor2)
-                .build()
-
-        assertThat(db.databaseConfiguration.queryExecutor).isEqualTo(executor1)
-        assertThat(db.databaseConfiguration.transactionExecutor).isEqualTo(executor2)
-    }
-
-    @Test
-    fun executors_setCoroutineContext() {
         assertThrows<IllegalArgumentException> {
-                databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                    .setQueryCoroutineContext(Dispatchers.IO)
-                    .setTransactionExecutor(mock())
-                    .build()
+                databaseBuilder(mock(), RoomDatabase::class.java, ":memory:").build()
             }
             .hasMessageThat()
-            .contains("This builder has already been configured with a CoroutineContext.")
-    }
-
-    @Test
-    fun coroutineContext_setQueryExecutor() {
-        assertThrows<IllegalArgumentException> {
-                databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                    .setQueryExecutor(mock())
-                    .setQueryCoroutineContext(Dispatchers.IO)
-                    .build()
-            }
-            .hasMessageThat()
-            .contains("This builder has already been configured with an Executor.")
-    }
-
-    @Test
-    fun coroutineContext_setTransactionExecutor() {
-        assertThrows<IllegalArgumentException> {
-                databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                    .setTransactionExecutor(mock())
-                    .setQueryCoroutineContext(Dispatchers.IO)
-                    .build()
-            }
-            .hasMessageThat()
-            .contains("This builder has already been configured with an Executor.")
+            .isEqualTo(
+                "Cannot build a database with the special name ':memory:'. If you are trying " +
+                    "to create an in memory database, use Room.inMemoryDatabaseBuilder"
+            )
     }
 
     @Test
@@ -185,7 +103,7 @@ class BuilderTest {
         val db =
             databaseBuilder(mock(), TestDatabase::class.java, "foo").addMigrations(m1, m2).build()
 
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         val migrations = config.migrationContainer
 
         assertThat(migrations.findMigrationPath(0, 1)).containsExactlyElementsIn(listOf(m1))
@@ -205,7 +123,7 @@ class BuilderTest {
                 .addMigrations(m1, m2, m3)
                 .build()
 
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         val migrations = config.migrationContainer
 
         assertThat(migrations.findMigrationPath(0, 1)).containsExactlyElementsIn(listOf(m3))
@@ -224,7 +142,7 @@ class BuilderTest {
                 .addMigrations(m1, m2, m3, m4)
                 .build()
 
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         val migrations = config.migrationContainer
 
         assertThat(migrations.findMigrationPath(0, 3)).containsExactlyElementsIn(listOf(m4))
@@ -242,7 +160,7 @@ class BuilderTest {
             databaseBuilder(mock(), TestDatabase::class.java, "foo")
                 .addMigrations(m1_2, m2_3, m3_4, m3_2, m2_1)
                 .build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         val migrations = config.migrationContainer
         assertThat(migrations.findMigrationPath(3, 2)).containsExactlyElementsIn(listOf(m3_2))
         assertThat(migrations.findMigrationPath(3, 1)).containsExactlyElementsIn(listOf(m3_2, m2_1))
@@ -255,8 +173,8 @@ class BuilderTest {
             inMemoryDatabaseBuilder(context, TestDatabase::class.java)
                 .fallbackToDestructiveMigration(false)
                 .build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
-        assertThat(config.requireMigration).isFalse()
+        val config: DatabaseConfiguration = db.getConfiguration()
+        assertThat(config.isMigrationRequired).isFalse()
     }
 
     @Test
@@ -266,7 +184,7 @@ class BuilderTest {
             inMemoryDatabaseBuilder(context, TestDatabase::class.java)
                 .fallbackToDestructiveMigrationFrom(true, 1, 2)
                 .build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         assertThat(config.isMigrationRequired(1, 2)).isFalse()
         assertThat(config.isMigrationRequired(2, 3)).isFalse()
     }
@@ -279,7 +197,7 @@ class BuilderTest {
                 .fallbackToDestructiveMigrationFrom(true, 1, 2)
                 .fallbackToDestructiveMigrationFrom(true, 3, 4)
                 .build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         assertThat(config.isMigrationRequired(1, 2)).isFalse()
         assertThat(config.isMigrationRequired(2, 3)).isFalse()
         assertThat(config.isMigrationRequired(3, 4)).isFalse()
@@ -293,7 +211,7 @@ class BuilderTest {
             inMemoryDatabaseBuilder(context, TestDatabase::class.java)
                 .fallbackToDestructiveMigration(false)
                 .build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
 
         assertThat(config.isMigrationRequired(0, 1)).isFalse()
         assertThat(config.isMigrationRequired(1, 2)).isFalse()
@@ -316,7 +234,7 @@ class BuilderTest {
             inMemoryDatabaseBuilder(context, TestDatabase::class.java)
                 .fallbackToDestructiveMigrationOnDowngrade(false)
                 .build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
 
         // isMigrationRequiredFrom doesn't know about downgrade only so it always returns true
         assertThat(config.isMigrationRequired(0, 1)).isTrue()
@@ -334,7 +252,7 @@ class BuilderTest {
             inMemoryDatabaseBuilder(context, TestDatabase::class.java)
                 .fallbackToDestructiveMigrationOnDowngrade(false)
                 .build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
 
         // isMigrationRequiredFrom doesn't know about downgrade only so it always returns true
         assertThat(config.isMigrationRequired(1, 0)).isFalse()
@@ -348,7 +266,7 @@ class BuilderTest {
     fun isMigrationRequiredFrom_byDefault_alwaysReturnsTrue() {
         val context: Context = mock()
         val db = inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
 
         assertThat(config.isMigrationRequired(0, 1)).isTrue()
         assertThat(config.isMigrationRequired(1, 2)).isTrue()
@@ -370,7 +288,7 @@ class BuilderTest {
             inMemoryDatabaseBuilder(context, TestDatabase::class.java)
                 .fallbackToDestructiveMigrationFrom(true, 1, 4, 81)
                 .build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         assertThat(config.isMigrationRequired(1, 2)).isFalse()
         assertThat(config.isMigrationRequired(4, 8)).isFalse()
         assertThat(config.isMigrationRequired(81, 90)).isFalse()
@@ -383,7 +301,7 @@ class BuilderTest {
             inMemoryDatabaseBuilder(context, TestDatabase::class.java)
                 .fallbackToDestructiveMigrationFrom(true, 1, 4, 81)
                 .build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         assertThat(config.isMigrationRequired(2, 3)).isTrue()
         assertThat(config.isMigrationRequired(3, 4)).isTrue()
         assertThat(config.isMigrationRequired(73, 80)).isTrue()
@@ -396,7 +314,7 @@ class BuilderTest {
             inMemoryDatabaseBuilder(context, TestDatabase::class.java)
                 .addMigrations(EmptyMigration(1, 0))
                 .build() as BuilderTest_TestDatabase_Impl
-        val config: DatabaseConfiguration = db.databaseConfiguration
+        val config: DatabaseConfiguration = db.getConfiguration()
         assertThat(config.migrationContainer.findMigrationPath(1, 2))
             .isEqualTo((db.mAutoMigrations))
     }
@@ -409,7 +327,7 @@ class BuilderTest {
                 .fallbackToDestructiveMigrationOnDowngrade(false)
                 .fallbackToDestructiveMigrationFrom(true, 2, 4)
                 .build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         assertThat(config.isMigrationRequired(1, 2)).isTrue()
         assertThat(config.isMigrationRequired(2, 3)).isFalse()
         assertThat(config.isMigrationRequired(3, 4)).isTrue()
@@ -427,13 +345,12 @@ class BuilderTest {
         val context: Context = mock()
         val db = inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
         assertThat(db).isInstanceOf<BuilderTest_TestDatabase_Impl>()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         assertThat(config).isNotNull()
         assertThat(config.context).isEqualTo(context)
         assertThat(config.name).isNull()
         assertThat(config.allowMainThreadQueries).isFalse()
-        assertThat(config.journalMode).isEqualTo(RoomDatabase.JournalMode.TRUNCATE)
-        assertThat(config.sqliteOpenHelperFactory).isInstanceOf<FrameworkSQLiteOpenHelperFactory>()
+        assertThat(config.journalMode).isEqualTo(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
     }
 
     @Test
@@ -443,7 +360,7 @@ class BuilderTest {
             inMemoryDatabaseBuilder(context, TestDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         assertThat(config.allowMainThreadQueries).isTrue()
     }
 
@@ -455,76 +372,45 @@ class BuilderTest {
                 .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
                 .build()
         assertThat(db).isInstanceOf<BuilderTest_TestDatabase_Impl>()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         assertThat(config.journalMode).isEqualTo(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
     }
 
     @Test
-    fun createWithFactoryAndVersion() {
-        val context: Context = mock()
-        val factory: SupportSQLiteOpenHelper.Factory = mock()
-        whenever(factory.create(any())).thenReturn(mock())
-        val db =
-            inMemoryDatabaseBuilder(context, TestDatabase::class.java)
-                .openHelperFactory(factory)
-                .build()
-        assertThat(db).isInstanceOf<BuilderTest_TestDatabase_Impl>()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
-        assertThat(config).isNotNull()
-        assertThat(config.sqliteOpenHelperFactory).isEqualTo(factory)
-    }
-
-    @Test
     fun createFromAssetAndFromFile() {
-        var exception: Exception? = null
-        try {
-            databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                .createFromAsset("assets-path")
-                .createFromFile(File("not-a--real-file"))
-                .build()
-            Assert.fail("Build should have thrown")
-        } catch (e: Exception) {
-            exception = e
-        }
-        assertThat(exception).isInstanceOf<IllegalArgumentException>()
-        assertThat(exception)
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder(mock(), TestDatabase::class.java, "foo")
+                    .createFromAsset("assets-path")
+                    .createFromFile(File("not-a--real-file"))
+                    .build()
+            }
             .hasMessageThat()
-            .contains(
-                "More than one of createFromAsset(), " +
-                    "createFromInputStream(), and createFromFile() were called on this Builder"
+            .isEqualTo(
+                "More than one of createFromAsset(), createFromInputStream() and " +
+                    "createFromFile() were called on this Builder, but the database can " +
+                    "only be created using one of the " +
+                    "three configurations."
             )
     }
 
     @Test
     fun createInMemoryFromAsset() {
-        var exception: Exception? = null
-        try {
-            inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
-                .createFromAsset("assets-path")
-                .build()
-            Assert.fail("Build should have thrown")
-        } catch (e: Exception) {
-            exception = e
-        }
-        assertThat(exception).isInstanceOf<IllegalArgumentException>()
-        assertThat(exception)
+        assertThrows<IllegalArgumentException> {
+                inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
+                    .createFromAsset("assets-path")
+                    .build()
+            }
             .hasMessageThat()
             .contains("Cannot create from asset or file for an in-memory")
     }
 
     @Test
     fun createInMemoryFromFile() {
-        var exception: Exception? = null
-        try {
-            inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
-                .createFromFile(File("not-a--real-file"))
-                .build()
-            Assert.fail("Build should have thrown")
-        } catch (e: Exception) {
-            exception = e
-        }
-        assertThat(exception).isInstanceOf<IllegalArgumentException>()
-        assertThat(exception)
+        assertThrows<IllegalArgumentException> {
+                inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
+                    .createFromFile(File("not-a--real-file"))
+                    .build()
+            }
             .hasMessageThat()
             .contains("Cannot create from asset or file for an in-memory")
     }
@@ -534,76 +420,101 @@ class BuilderTest {
         val driver: SQLiteDriver = mock()
         val db = inMemoryDatabaseBuilder(mock(), TestDatabase::class.java).setDriver(driver).build()
         assertThat(db).isInstanceOf<BuilderTest_TestDatabase_Impl>()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        val config: DatabaseConfiguration = db.getConfiguration()
         assertThat(config.sqliteDriver).isEqualTo(driver)
-        assertThat(config.sqliteOpenHelperFactory).isNull()
     }
 
     @Test
-    fun bothDriverAndFactoryProvided() {
-        try {
-            inMemoryDatabaseBuilder(mock(), RoomDatabase::class.java)
-                .setDriver(mock())
-                .openHelperFactory(mock())
+    fun driverDefaultsToAndroid() {
+        val db = inMemoryDatabaseBuilder(mock(), TestDatabase::class.java).build()
+        assertThat(db).isInstanceOf<BuilderTest_TestDatabase_Impl>()
+        val config: DatabaseConfiguration = db.getConfiguration()
+        assertThat(config.sqliteDriver).isInstanceOf<AndroidSQLiteDriver>()
+    }
+
+    @Test
+    @OptIn(ExperimentalRoomApi::class)
+    fun multiInstanceInvalidationWithoutContext() {
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder<TestDatabase>("test.db")
+                    .setMultiInstanceInvalidationServiceIntent(Intent())
+            }
+            .hasMessageThat()
+            .isEqualTo(
+                "Multi-instance invalidation cannot be enabled when no Context is provided to this Builder."
+            )
+    }
+
+    @Test
+    fun createFromAssetWithoutContext() {
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder<TestDatabase>("test.db").createFromAsset("assets-path")
+            }
+            .hasMessageThat()
+            .contains("Cannot create from asset when no Context is provided to this Builder.")
+    }
+
+    @Test
+    fun defaultPoolConfiguration() {
+        val automaticDb =
+            databaseBuilder<TestDatabase>("test.db")
+                .setJournalMode(RoomDatabase.JournalMode.AUTOMATIC)
                 .build()
-        } catch (e: IllegalArgumentException) {
-            assertThat(e.message)
-                .isEqualTo(
-                    "A RoomDatabase cannot be configured with both a SQLiteDriver and a " +
-                        "SupportOpenHelper.Factory."
-                )
-        }
+        assertThat(automaticDb.getConfiguration().connectionPoolConfiguration)
+            .isEqualTo(MultipleConnection(4, 1))
+        automaticDb.close()
+
+        val truncateDb =
+            databaseBuilder<TestDatabase>("test.db")
+                .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
+                .build()
+        assertThat(truncateDb.getConfiguration().connectionPoolConfiguration)
+            .isEqualTo(SingleConnection)
+        truncateDb.close()
+
+        val walDb =
+            databaseBuilder<TestDatabase>("test.db")
+                .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                .build()
+        assertThat(walDb.getConfiguration().connectionPoolConfiguration)
+            .isEqualTo(MultipleConnection(4, 1))
+        walDb.close()
+
+        val memDb = inMemoryDatabaseBuilder<TestDatabase>().build()
+        assertThat(memDb.getConfiguration().connectionPoolConfiguration).isEqualTo(SingleConnection)
+        memDb.close()
     }
 
-    @OptIn(ExperimentalRoomApi::class)
     @Test
-    fun driverProvidedAutoClose() {
+    fun setMultiplePoolConnection() {
+        val myDb =
+            databaseBuilder<TestDatabase>("test.db")
+                .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                .setMultipleConnectionPool(2, 1)
+                .build()
+        assertThat(myDb.getConfiguration().connectionPoolConfiguration)
+            .isEqualTo(MultipleConnection(2, 1))
+        myDb.close()
+    }
+
+    @Test
+    fun setInvalidMultiplePoolConnection() {
         assertThrows<IllegalArgumentException> {
-                inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
-                    .setAutoCloseTimeout(3, TimeUnit.SECONDS)
-                    .setDriver(mock())
-                    .build()
+                databaseBuilder<TestDatabase>("test.db").setMultipleConnectionPool(0, 1)
             }
             .hasMessageThat()
-            .isEqualTo("Auto Closing Database is not supported when an SQLiteDriver is configured.")
-    }
+            .isEqualTo("Number of readers must be greater than 0")
 
-    @OptIn(ExperimentalRoomApi::class)
-    @Test
-    fun driverProvidedPrePackaged() {
         assertThrows<IllegalArgumentException> {
-                inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
-                    .createFromAsset("asset.db")
-                    .setDriver(mock())
-                    .build()
+                databaseBuilder<TestDatabase>("test.db").setMultipleConnectionPool(1, 0)
             }
             .hasMessageThat()
-            .isEqualTo("Pre-Package Database is not supported when an SQLiteDriver is configured.")
+            .isEqualTo("Number of writers must be greater than 0")
     }
 
-    @OptIn(ExperimentalRoomApi::class)
-    @Test
-    fun driverProvidedQueryCallback() {
-        assertThrows<IllegalArgumentException> {
-                inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
-                    .setQueryCallback(Dispatchers.IO) { _, _ -> }
-                    .setDriver(mock())
-                    .build()
-            }
-            .hasMessageThat()
-            .isEqualTo("Query Callback is not supported when an SQLiteDriver is configured.")
-    }
-
-    internal abstract class TestDatabase : RoomDatabase() {
-        lateinit var databaseConfiguration: DatabaseConfiguration
-
-        override fun init(configuration: DatabaseConfiguration) {
-            super.init(configuration)
-            databaseConfiguration = configuration
-        }
-    }
+    internal abstract class TestDatabase : RoomDatabase()
 
     internal class EmptyMigration(start: Int, end: Int) : Migration(start, end) {
-        override fun migrate(db: SupportSQLiteDatabase) {}
+        override suspend fun migrate(connection: SQLiteConnection) {}
     }
 }

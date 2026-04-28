@@ -20,7 +20,7 @@ import android.graphics.Canvas
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.VariableSupport
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
 import com.google.common.truth.Truth.assertThat
@@ -29,13 +29,13 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RemoteLongTest {
     val context =
         AndroidRemoteContext().apply {
             useCanvas(Canvas(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)))
         }
-    val creationState =
-        RemoteComposeCreationState(AndroidxPlatformServices(), density = 1f, Size(1f, 1f))
+    val creationState = RemoteComposeCreationState(AndroidxRcPlatformServices(), Size(1f, 1f))
 
     @Test
     fun namedRemoteLong_initialValue() {
@@ -52,9 +52,17 @@ class RemoteLongTest {
         val namedRemoteLong = RemoteLong.createNamedRemoteLong("testLong", 100)
         val longId = namedRemoteLong.getIdForCreationState(creationState)
 
-        makeAndUpdateCoreDocument { context.setNamedLong("testLong", 20) }
+        makeAndUpdateCoreDocument { context.setNamedLong("USER:testLong", 20) }
 
         assertThat(context.getLong(longId)).isEqualTo(20L)
+    }
+
+    @Test
+    fun remoteLong_cacheKey() {
+        val long1 = RemoteLong(10L)
+        val long2 = RemoteLong(10L)
+        assertThat(long1.cacheKey).isNotNull()
+        assertThat(long1.cacheKey).isEqualTo(long2.cacheKey)
     }
 
     private fun makeAndPaintCoreDocument() =

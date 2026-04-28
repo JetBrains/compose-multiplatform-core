@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -47,10 +48,9 @@ import androidx.compose.ui.unit.dp
  * @sample androidx.xr.glimmer.samples.ButtonWithLeadingIconSample
  *
  * There are multiple button size variants - providing a different [ButtonSize] will affect default
- * values used inside this button, such as the minimum height and the size of icons inside this
- * button. Note that you can still provide a size modifier such as
- * [androidx.compose.foundation.layout.size] to change the layout size of this button, [buttonSize]
- * affects default values and values internal to the button.
+ * values used inside this button, such as the minimum height. Note that you can still provide a
+ * size modifier such as [androidx.compose.foundation.layout.size] to change the layout size of this
+ * button, [buttonSize] affects default values and values internal to the button.
  *
  * @sample androidx.xr.glimmer.samples.LargeButtonSample
  * @param onClick called when this button is clicked
@@ -71,7 +71,8 @@ import androidx.compose.ui.unit.dp
  * @param shape the [Shape] used to clip this button, and also used to draw the background and
  *   border
  * @param color background color of this button
- * @param contentColor content color used by components inside [content]
+ * @param contentColor content color used by components inside [content], [leadingIcon], and
+ *   [trailingIcon].
  * @param border the border to draw around this button
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content
@@ -97,23 +98,15 @@ public fun Button(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val colors = GlimmerTheme.colors
-    val iconSizes = GlimmerTheme.iconSizes
-    val iconSize =
-        if (buttonSize == ButtonSize.Medium) {
-            iconSizes.medium
-        } else {
-            iconSizes.large
-        }
+    val iconSize = ButtonDefaults.iconSize
+    val iconSpacing = ButtonDefaults.iconSpacing
+    val minHeight = ButtonDefaults.minimumHeight(buttonSize)
 
-    val minHeight =
-        if (buttonSize == ButtonSize.Medium) {
-            MediumMinimumHeight
-        } else {
-            LargeMinimumHeight
-        }
-
-    val depth = SurfaceDepth(depth = null, focusedDepth = GlimmerTheme.depthLevels.level1)
+    val depth =
+        SurfaceDepthEffect(
+            depthEffect = null,
+            focusedDepthEffect = GlimmerTheme.depthEffectLevels.level1,
+        )
 
     CompositionLocalProvider(LocalTextStyle provides GlimmerTheme.typography.bodySmall) {
         Row(
@@ -124,7 +117,7 @@ public fun Button(
                     shape = shape,
                     color = color,
                     contentColor = contentColor,
-                    depth = depth,
+                    depthEffect = depth,
                     border = border,
                     interactionSource = interactionSource,
                     onClick = onClick,
@@ -135,13 +128,13 @@ public fun Button(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (leadingIcon != null) {
-                Box(Modifier.padding(end = IconSpacing).contentColorProvider(colors.primary)) {
+                Box(Modifier.padding(end = iconSpacing)) {
                     CompositionLocalProvider(LocalIconSize provides iconSize, content = leadingIcon)
                 }
             }
             content()
             if (trailingIcon != null) {
-                Box(Modifier.padding(start = IconSpacing).contentColorProvider(colors.primary)) {
+                Box(Modifier.padding(start = iconSpacing)) {
                     CompositionLocalProvider(
                         LocalIconSize provides iconSize,
                         content = trailingIcon,
@@ -170,26 +163,35 @@ public value class ButtonSize internal constructor(private val value: Int) {
 /** Default values used for [Button]. */
 public object ButtonDefaults {
     /** Default content padding used for a [Button] with the specified [buttonSize]. */
+    @Composable
     public fun contentPadding(buttonSize: ButtonSize): PaddingValues {
+        val componentSpacingValues = GlimmerTheme.componentSpacingValues
         return if (buttonSize == ButtonSize.Medium) {
-            MediumContentPadding
+            PaddingValues(
+                horizontal = componentSpacingValues.large,
+                vertical = componentSpacingValues.small,
+            )
         } else {
-            LargeContentPadding
+            PaddingValues(componentSpacingValues.large)
         }
     }
+
+    /** Default minimum height for [Button] and [ToggleButton] with the specified [buttonSize]. */
+    internal fun minimumHeight(buttonSize: ButtonSize): Dp {
+        return when (buttonSize) {
+            ButtonSize.Medium -> 48.dp
+            ButtonSize.Large -> 72.dp
+            else -> throw IllegalArgumentException("Unknown size $buttonSize.")
+        }
+    }
+
+    /** Default icon size for buttons with non-icon content: [Button], [ToggleButton]. */
+    @get:Composable
+    internal val iconSize: Dp
+        get() = GlimmerTheme.iconSizes.small
+
+    /** Default spacing between icon and content for [Button] and [ToggleButton]. */
+    @get:Composable
+    internal val iconSpacing: Dp
+        get() = GlimmerTheme.componentSpacingValues.extraSmall
 }
-
-/** Default content padding for a medium [Button] */
-private val MediumContentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-
-/** Default content padding for a large [Button] */
-private val LargeContentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
-
-/** Default minimum height for a medium [Button] */
-private val MediumMinimumHeight = 56.dp
-
-/** Default minimum height for a large [Button] */
-private val LargeMinimumHeight = 72.dp
-
-/** Spacing between icons and the text in a [Button] */
-private val IconSpacing = 8.dp

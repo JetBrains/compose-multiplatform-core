@@ -23,6 +23,7 @@ import androidx.room3.RoomDatabase
 import androidx.room3.integration.kotlintestapp.TestDatabase
 import androidx.room3.integration.kotlintestapp.test.TestDatabaseTest.UseDriver
 import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteException
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
@@ -52,13 +53,12 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
         with(TestDatabaseCallback()) {
             val db =
                 Room.databaseBuilder<TestDatabase>(context, "test")
-                    .apply {
-                        if (useDriver == UseDriver.ANDROID) {
-                            setDriver(AndroidSQLiteDriver())
-                        } else if (useDriver == UseDriver.BUNDLED) {
-                            setDriver(BundledSQLiteDriver())
+                    .setDriver(
+                        when (useDriver) {
+                            UseDriver.ANDROID -> AndroidSQLiteDriver()
+                            UseDriver.BUNDLED -> BundledSQLiteDriver()
                         }
-                    }
+                    )
                     .addCallback(this)
                     .build()
             assertThat(created).isFalse()
@@ -74,13 +74,12 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
         with(TestDatabaseCallback()) {
             val db =
                 Room.databaseBuilder<TestDatabase>(context, "test")
-                    .apply {
-                        if (useDriver == UseDriver.ANDROID) {
-                            setDriver(AndroidSQLiteDriver())
-                        } else if (useDriver == UseDriver.BUNDLED) {
-                            setDriver(BundledSQLiteDriver())
+                    .setDriver(
+                        when (useDriver) {
+                            UseDriver.ANDROID -> AndroidSQLiteDriver()
+                            UseDriver.BUNDLED -> BundledSQLiteDriver()
                         }
-                    }
+                    )
                     .addCallback(this)
                     .build()
             assertThat(created).isFalse()
@@ -98,16 +97,15 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val db =
             Room.inMemoryDatabaseBuilder<TestDatabase>(context)
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .addCallback(
                     object : RoomDatabase.Callback() {
-                        override fun onCreate(connection: SQLiteConnection) {
+                        override suspend fun onCreate(connection: SQLiteConnection) {
                             connection.execSQL(
                                 "INSERT INTO publisher (publisherId, name) VALUES ('p1', 'pub1')"
                             )
@@ -124,18 +122,17 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val db =
             Room.inMemoryDatabaseBuilder<TestDatabase>(context)
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .addCallback(
                     object : RoomDatabase.Callback() {
                         var isBadInsertDone = false
 
-                        override fun onCreate(connection: SQLiteConnection) {
+                        override suspend fun onCreate(connection: SQLiteConnection) {
                             if (!isBadInsertDone) {
                                 isBadInsertDone = true
                                 connection.execSQL("INSERT INTO fake_table (c1) VALUES (1)")
@@ -154,15 +151,62 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
         db.close()
     }
 
+    @Test
+    fun closeConnectionOnException() {
+        class CloseTrackingConnection(val delegate: SQLiteConnection) :
+            SQLiteConnection by delegate {
+            var isClosed = false
+
+            override fun close() {
+                delegate.close()
+                isClosed = true
+            }
+        }
+        val connections = mutableListOf<CloseTrackingConnection>()
+        val actualDriver =
+            when (useDriver) {
+                UseDriver.ANDROID -> AndroidSQLiteDriver()
+                UseDriver.BUNDLED -> BundledSQLiteDriver()
+            }
+        val driver =
+            object : SQLiteDriver by actualDriver {
+                override fun open(fileName: String): SQLiteConnection {
+                    return CloseTrackingConnection(actualDriver.open(fileName)).also {
+                        connections.add(it)
+                    }
+                }
+            }
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db =
+            Room.inMemoryDatabaseBuilder<TestDatabase>(context)
+                .setDriver(driver)
+                .addCallback(
+                    object : RoomDatabase.Callback() {
+
+                        override suspend fun onCreate(connection: SQLiteConnection) {
+                            connection.execSQL("INSERT INTO fake_table (c1) VALUES (1)")
+                        }
+                    }
+                )
+                .build()
+
+        // Open database, catching callback error
+        assertThrows<SQLiteException> { db.booksDao().getAllBooks() }
+        // Check all opened connections were closed due to bad startup (no connection leaks)
+        assertThat(connections.all { it.isClosed }).isTrue()
+
+        db.close()
+    }
+
     class TestDatabaseCallback : RoomDatabase.Callback() {
         var created = false
         var opened = false
 
-        override fun onCreate(connection: SQLiteConnection) {
+        override suspend fun onCreate(connection: SQLiteConnection) {
             created = true
         }
 
-        override fun onOpen(connection: SQLiteConnection) {
+        override suspend fun onOpen(connection: SQLiteConnection) {
             opened = true
         }
     }

@@ -21,7 +21,6 @@ import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Delete
 import androidx.room3.Entity
-import androidx.room3.ExperimentalRoomApi
 import androidx.room3.ForeignKey
 import androidx.room3.Index
 import androidx.room3.Insert
@@ -34,7 +33,6 @@ import androidx.room3.withWriteTransaction
 import androidx.sqlite.SQLiteException
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SmallTest
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -165,14 +163,13 @@ class ForeignKeyTest(private val useDriver: UseDriver) {
     @Before
     fun openDb() {
         db =
-            Room.inMemoryDatabaseBuilder<ForeignKeyDb>(ApplicationProvider.getApplicationContext())
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+            Room.inMemoryDatabaseBuilder<ForeignKeyDb>()
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .build()
         dao = db.dao()
     }
@@ -193,7 +190,6 @@ class ForeignKeyTest(private val useDriver: UseDriver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun immediateForeignKeyFailure() = runTest {
         assertThrowsForeignKeyError {
             db.withWriteTransaction {
@@ -204,7 +200,6 @@ class ForeignKeyTest(private val useDriver: UseDriver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun deferredForeignKeySuccess() = runTest {
         db.withWriteTransaction {
             dao.insert(C(aName = "foo"))
@@ -223,7 +218,6 @@ class ForeignKeyTest(private val useDriver: UseDriver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun onDelete_noAction_withTransaction() = runTest {
         dao.insert(A(name = "a1"))
         val a = checkNotNull(dao.loadA(1))
@@ -246,7 +240,6 @@ class ForeignKeyTest(private val useDriver: UseDriver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun onDelete_noAction__deferredWithTransaction() = runTest {
         dao.insert(A(name = "a1"))
         val a = checkNotNull(dao.loadA(1))

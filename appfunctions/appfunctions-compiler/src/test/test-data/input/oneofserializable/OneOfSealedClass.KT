@@ -16,19 +16,25 @@
 
 package com.testdata.oneofserializable
 
+import androidx.appfunctions.AppFunctionResourceContainer
 import androidx.appfunctions.AppFunctionSerializable
+import androidx.appfunctions.AppFunctionTextResource
 
 /** I am a KDoc for OneOfSealedClass */
-@AppFunctionSerializable(isDescribedByKdoc = true)
+@AppFunctionSerializable(isDescribedByKDoc = true)
 sealed class OneOfSealedClass {
 
     abstract val interfaceProperty: String
 
     /** I am a KDoc for OneOfSealedClass.ASubclass */
-    @AppFunctionSerializable(isDescribedByKdoc = true)
-    class ASubclass(override val interfaceProperty: String, val str: String) : OneOfSealedClass()
+    @AppFunctionSerializable(isDescribedByKDoc = true)
+    class ASubclass(
+        override val interfaceProperty: String,
+        val str: String,
+        override val resources: List<AppFunctionTextResource> = emptyList(),
+    ) : OneOfSealedClass(), AppFunctionResourceContainer
 
     /** I am a KDoc for OneOfSealedClass.BSubclass */
-    @AppFunctionSerializable(isDescribedByKdoc = true)
+    @AppFunctionSerializable(isDescribedByKDoc = true)
     class BSubclass(override val interfaceProperty: String, val integer: Int) : OneOfSealedClass()
 }

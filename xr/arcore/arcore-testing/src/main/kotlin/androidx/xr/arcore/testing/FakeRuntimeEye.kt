@@ -18,13 +18,37 @@ package androidx.xr.arcore.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Eye
-import androidx.xr.arcore.runtime.EyeStatus
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+// TODO b/500091606 Remove when no longer used in G3
+/**
+ * Fake implementation of [Eye] for testing purposes. This should not be used to unit test [Eye]
+ * APIs. Instead, use an [ArCoreTestRule]. Example:
+ * ```
+ * @Rule @JvmField val arCoreTestRule = ArCoreTestRule()
+ *
+ * @Test
+ * fun left_trackingStateMatchesRuntime() = runTest(testDispatcher) {
+ *     val underTest = Eye.left(session)
+ *     arCoreTestRule.leftEye.isOpen = false
+ *     advanceUntilIdle()
+ *     assertThat(underTest.state.value.trackingState.toRuntimeTrackingState())
+ *         .isEqualTo(TrackingState.PAUSED)
+ * }
+ * ```
+ *
+ * @deprecated This will be removed in a future release. In order to test androidx.xr.arcore APIs,
+ *   use an [ArCoreTestRule] in your tests.
+ */
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class FakeRuntimeEye : Eye {
-    override var coarseStatus: EyeStatus? = EyeStatus.GAZING
-    override var coarsePose: Pose? = Pose()
-    override var fineStatus: EyeStatus? = EyeStatus.GAZING
-    override var finePose: Pose? = Pose()
+    override var isOpen: Boolean = true
+
+    override var pose: Pose = Pose()
+
+    override var trackingState: TrackingState = TrackingState.TRACKING
 }

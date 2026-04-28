@@ -16,14 +16,20 @@
 
 package androidx.appsearch.platformstorage.converter;
 
+import android.app.appsearch.AppSearchResult;
 import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBlobHandle;
+import androidx.collection.ArraySet;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Translates a jetpack {@link AppSearchBlobHandle} into a platform
@@ -63,5 +69,55 @@ public class AppSearchBlobHandleToPlatformConverter {
                 platformBlobHandle.getPackageName(),
                 platformBlobHandle.getDatabaseName(),
                 platformBlobHandle.getNamespace());
+    }
+
+    /**
+     * Converts Jetpack {@link AppSearchBlobHandle}s to platform handles and partitions them into
+     * smaller batches to satisfy IPC limits based on the device build version.
+     *
+     * <p>On Android Baklava (API 36), there is a known issue (b/444290368) where large response
+     * objects (> 16KiB) containing maps of {@link AppSearchBlobHandle} and {@link AppSearchResult}
+     * cause marshalling crashes.
+     *
+     * <p>To mitigate this, this method limits the batch size to 10 for Baklava devices. For other
+     * versions, the batch size defaults to the total size of the input (no partitioning).
+     *
+     * @param handles The set of Jetpack {@link AppSearchBlobHandle}s to convert and batch.
+     * @return A list of sets, where each set contains a batch of platform handles ready for
+     * IPC calls.
+     */
+    @NonNull
+    public static List<Set<android.app.appsearch.AppSearchBlobHandle>>
+                convertBlobHandleToSmallBatch(@NonNull Set<AppSearchBlobHandle> handles) {
+        int batchSize = handles.size();
+        //TODO(b/444290368) add SdkExtensions check for BAKLAVA when 26M02 version number is ready
+        // in SdkExtensions
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.BAKLAVA && handles.size() > 10) {
+            // b/444290368, if the size of response object > 16KiB, it will be marshalled and crash.
+            // The response object contains a map of <AppSearchBlobHandle, AppSearchResult>, the
+            // normal size of BlobHandle is 200 ~ 500 Byte and an AppSearchResult is ~ 200 Byte. An
+            // entry will be < 800 Byte, it could allow most of 20 entries in the response object.
+            // Set it to be 10 for safety.
+            // It is fixed in C and above.
+            batchSize = 10;
+        }
+        int totalBatches = handles.size() / batchSize + (handles.size() % batchSize == 0 ? 0 : 1);
+        List<Set<android.app.appsearch.AppSearchBlobHandle>> platformBlobHandlesBuckets =
+                new ArrayList<>(totalBatches);
+        Set<android.app.appsearch.AppSearchBlobHandle> platformBlobHandlesBucket =
+                new ArraySet<>(batchSize);
+        for (AppSearchBlobHandle jetpackHandle : handles) {
+            platformBlobHandlesBucket.add(AppSearchBlobHandleToPlatformConverter
+                    .toPlatformBlobHandle(jetpackHandle));
+            if (platformBlobHandlesBucket.size() == batchSize) {
+                platformBlobHandlesBuckets.add(platformBlobHandlesBucket);
+                platformBlobHandlesBucket = new ArraySet<>(batchSize);
+            }
+        }
+        // Add the last bucket if there is any.
+        if (!platformBlobHandlesBucket.isEmpty()) {
+            platformBlobHandlesBuckets.add(platformBlobHandlesBucket);
+        }
+        return  platformBlobHandlesBuckets;
     }
 }

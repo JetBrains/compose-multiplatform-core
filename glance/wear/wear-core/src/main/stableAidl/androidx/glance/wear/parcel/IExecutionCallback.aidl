@@ -28,6 +28,8 @@ interface IExecutionCallback {
 
     /**
       * Called to inform another process that the execution has failed.
+      *
+      * <p>The error codes should be defined by each site using this callback.
       */
-    oneway void onError() = 1;
+    oneway void onError(in int errorCode, in String message) = 1;
 }

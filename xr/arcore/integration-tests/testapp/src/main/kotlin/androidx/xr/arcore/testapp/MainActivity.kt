@@ -59,11 +59,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.xr.arcore.testapp.capabilities.CapabilitiesActivity
 import androidx.xr.arcore.testapp.common.TestCaseButton
-import androidx.xr.arcore.testapp.depthmaps.DepthMapActivity
+import androidx.xr.arcore.testapp.depth.DepthActivity
 import androidx.xr.arcore.testapp.eyetracking.EyeTrackingActivity
 import androidx.xr.arcore.testapp.facetracking.FaceTrackingActivity
+import androidx.xr.arcore.testapp.geospatial.GeospatialActivity
 import androidx.xr.arcore.testapp.handtracking.HandTrackingActivity
+import androidx.xr.arcore.testapp.helloar.HelloArAugmentedImageActivity
 import androidx.xr.arcore.testapp.helloar.HelloArObjectActivity
 import androidx.xr.arcore.testapp.helloar.HelloArPlaneActivity
 import androidx.xr.arcore.testapp.persistentanchors.PersistentAnchorsActivity
@@ -185,11 +188,17 @@ class MainActivity : ComponentActivity() {
                 TestCaseColumnRowItem(R.string.face_tracking) {
                     startTest<FaceTrackingActivity>(it)
                 }
-                TestCaseColumnRowItem(R.string.depth_maps) { startTest<DepthMapActivity>(it) }
+                TestCaseColumnRowItem(R.string.depth) { startTest<DepthActivity>(it) }
                 TestCaseColumnRowItem(R.string.object_tracking) {
                     startTest<HelloArObjectActivity>(it)
                 }
                 TestCaseColumnRowItem(R.string.eye_tracking) { startTest<EyeTrackingActivity>(it) }
+                TestCaseColumnRowItem(R.string.blend_mode) { startTest<HelloArPlaneActivity>(it) }
+                TestCaseColumnRowItem(R.string.geospatial) { startTest<GeospatialActivity>(it) }
+                TestCaseColumnRowItem(R.string.capabilities) { startTest<CapabilitiesActivity>(it) }
+                TestCaseColumnRowItem(R.string.augmented_image_tracking) {
+                    startTest<HelloArAugmentedImageActivity>(it)
+                }
             }
         }
     }

@@ -52,7 +52,7 @@ public class SampleRender(
                 }
 
                 override fun onSurfaceChanged(gl: GL10, w: Int, h: Int) {
-                    Log.d(TAG, "onSurfaceChanged: $w x $h")
+                    Log.d("JetpackXR", "onSurfaceChanged: $w x $h")
                     viewportWidth = w
                     viewportHeight = h
                     renderer.onSurfaceChanged(this@SampleRender, w, h)

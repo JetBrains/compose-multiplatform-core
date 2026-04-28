@@ -34,6 +34,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraPipeSimulatorTest {
     private val testScope = TestScope()
     private val backCameraMetadata =
@@ -212,6 +213,19 @@ class CameraPipeSimulatorTest {
                     ConfigQueryResult.UNKNOWN
                 }
             assertThat(unsupportedResult).isEqualTo(expectedResult)
+        }
+    }
+
+    @Test
+    fun cameraDevicesCanBeDisconnectedAfterGraphClose() {
+        testScope.runTest {
+            val cameraGraphSimulator = cameraPipe.createCameraGraph(graphConfig)
+            cameraGraphSimulator.start()
+            cameraGraphSimulator.simulateCameraStarted()
+            cameraGraphSimulator.initializeSurfaces()
+
+            cameraGraphSimulator.close()
+            cameraPipe.cameras().disconnectAll()
         }
     }
 }

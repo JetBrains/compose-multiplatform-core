@@ -19,7 +19,6 @@ package androidx.camera.core.featuregroup
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.camera.core.DynamicRange
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
@@ -37,8 +36,8 @@ import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal
 import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature
 import androidx.camera.core.featuregroup.impl.feature.ImageFormatFeature
 import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature
-import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature.StabilizationMode
 import androidx.camera.core.impl.CameraInfoInternal
+import androidx.camera.core.impl.stabilization.VideoStabilization
 
 /**
  * Represents distinct, groupable camera functionalities that can be requested for a camera session.
@@ -54,14 +53,13 @@ import androidx.camera.core.impl.CameraInfoInternal
  * supported, or some/all features from [SessionConfig.preferredFeatureGroup] will be dropped based
  * on priority).
  *
- * Additionally, the [androidx.camera.core.CameraInfo.isFeatureGroupSupported] API can be used to
+ * Additionally, the [androidx.camera.core.CameraInfo.isSessionConfigSupported] API can be used to
  * check if a group of features is supported together on a device.
  *
  * @sample androidx.camera.core.samples.startCameraWithSomeHighQualityFeatures
  * @see androidx.camera.core.SessionConfig.Builder.setRequiredFeatureGroup
  * @see androidx.camera.core.SessionConfig.Builder.setPreferredFeatureGroup
  */
-@ExperimentalSessionConfig
 public abstract class GroupableFeature
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public constructor() {
@@ -110,7 +108,6 @@ public constructor() {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public annotation class FeatureType
 
-    @ExperimentalSessionConfig
     public companion object {
         /**
          * A feature object of type [FEATURE_TYPE_DYNAMIC_RANGE] representing the 10-bit High
@@ -137,10 +134,11 @@ public constructor() {
          * stabilization mode that applies to the preview as well.
          *
          * @see Preview.Builder.setPreviewStabilizationEnabled
+         * @see androidx.camera.video.GroupableFeatures.VIDEO_STABILIZATION
          */
         @JvmField
         public val PREVIEW_STABILIZATION: GroupableFeature =
-            VideoStabilizationFeature(StabilizationMode.PREVIEW)
+            VideoStabilizationFeature(VideoStabilization.PREVIEW)
 
         /**
          * A feature object of type [FEATURE_TYPE_IMAGE_FORMAT] that makes the [ImageCapture] use
@@ -186,8 +184,12 @@ public constructor() {
         /**
          * Represents the recording quality feature that can be used to select a specific quality
          * for video recording.
+         *
+         * @see androidx.camera.video.GroupableFeatures.UHD_RECORDING
+         * @see androidx.camera.video.GroupableFeatures.FHD_RECORDING
+         * @see androidx.camera.video.GroupableFeatures.HD_RECORDING
+         * @see androidx.camera.video.GroupableFeatures.SD_RECORDING
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public const val FEATURE_TYPE_RECORDING_QUALITY: Int = 4
     }
 }

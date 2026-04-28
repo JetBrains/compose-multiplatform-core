@@ -46,9 +46,11 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 internal class Controller3ALock3ATest {
     private val graphTestContext = GraphTestContext()
     private val graphState3A = GraphState3A()
@@ -121,7 +123,7 @@ internal class Controller3ALock3ATest {
         cameraResponse.await()
         assertThat(result.isCompleted).isFalse()
 
-        // One we we are notified that the AE and AF are in locked state, the result of lock3A call
+        // Once we are notified that the AE and AF are in locked state, the result of lock3A call
         // will complete.
         launch {
             listener3A.onRequestSequenceCreated(
@@ -834,6 +836,7 @@ internal class Controller3ALock3ATest {
 
             return@convergeCondition aeUnlocked && afUnlocked && awbUnlocked
         }
+
         val lockCondition: (FrameMetadata) -> Boolean = lockCondition@{ frameMetadata ->
             val aeUnlocked =
                 frameMetadata[CaptureResult.CONTROL_AE_STATE]?.let {

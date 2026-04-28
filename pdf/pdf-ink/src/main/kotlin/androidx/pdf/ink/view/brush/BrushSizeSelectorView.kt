@@ -28,6 +28,7 @@ import com.google.android.material.R as MaterialR
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.slider.LabelFormatter
 import com.google.android.material.slider.Slider
+import com.google.android.material.slider.SliderOrientation
 
 /**
  * A composite [android.view.ViewGroup] for selecting a brush size.
@@ -53,6 +54,23 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         addView(brushPreviewView)
     }
 
+    override fun setOrientation(orientation: Int) {
+        if (this.orientation == orientation) return
+        super.setOrientation(orientation)
+
+        brushSizeSlider.applyOrientation(orientation)
+
+        // Reorder views based on orientation
+        removeAllViews()
+        if (orientation == VERTICAL) {
+            addView(brushPreviewView)
+            addView(brushSizeSlider)
+        } else {
+            addView(brushSizeSlider)
+            addView(brushPreviewView)
+        }
+    }
+
     private fun setupContainerView() {
         orientation = HORIZONTAL
         background =
@@ -69,8 +87,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                             ),
                         )
                     )
-                cornerRadius =
-                    context.resources.getDimension(R.dimen.brush_selector_container_corner_radius)
+                cornerRadius = context.resources.getDimension(R.dimen.corner_radius_20dp)
             }
 
         val defaultPadding = context.resources.getDimensionPixelSize(R.dimen.padding_8dp)
@@ -80,16 +97,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private fun createSliderView(): Slider =
         Slider(context).apply {
-            layoutParams =
-                LayoutParams(0, LayoutParams.WRAP_CONTENT).also {
-                    // Let slider occupy the remaining width of the container
-                    it.weight = 1f
-                }
+            applyOrientation(orientation)
             // By default, there are only 5 steps sizes
             valueFrom = 0f
             valueTo = 4f
             stepSize = 1f
             labelBehavior = LabelFormatter.LABEL_GONE
+            contentDescription = context.getString(R.string.pdf_brush_slider_content_description)
+            isFocusableInTouchMode = true
         }
 
     private fun createBrushPreviewView(): BrushPreviewView =
@@ -100,7 +115,28 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     resources.getDimensionPixelSize(R.dimen.brush_preview_height),
                 )
             // Brush preview is for static visual appearance; mark it unfocusable
-            focusable = NOT_FOCUSABLE
+            isFocusable = false
             gravity = Gravity.CENTER
         }
+
+    private fun Slider.applyOrientation(orientation: Int) {
+        when (orientation) {
+            VERTICAL -> {
+                layoutParams =
+                    LayoutParams(LayoutParams.WRAP_CONTENT, 0).also {
+                        // Let slider occupy the remaining height of the container
+                        it.weight = 1f
+                    }
+                setOrientation(SliderOrientation.VERTICAL)
+            }
+            HORIZONTAL -> {
+                layoutParams =
+                    LayoutParams(0, LayoutParams.WRAP_CONTENT).also {
+                        // Let slider occupy the remaining width of the container
+                        it.weight = 1f
+                    }
+                setOrientation(SliderOrientation.HORIZONTAL)
+            }
+        }
+    }
 }

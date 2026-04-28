@@ -14,15 +14,20 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import android.graphics.ImageFormat
 import android.media.ImageReader
 import android.view.Surface
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult
+import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.SurfaceEntity.Shape
 import androidx.xr.scenecore.runtime.SurfaceFeature
@@ -37,7 +42,8 @@ import androidx.xr.scenecore.runtime.TextureResource
  * can render stereoscopic content into the Surface and specify how it is routed to the User's eyes
  * for stereo viewing using the [stereoMode] property.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
     FakeEntity(), SurfaceEntity {
     private var _stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE
@@ -57,6 +63,19 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
             } else {
                 feature.stereoMode = value
             }
+        }
+
+    @SurfaceEntity.MediaBlendingMode
+    private var _mediaBlendingMode = SurfaceEntity.MediaBlendingMode.TRANSPARENT
+
+    /** Specifies the blending mode of the content. */
+    @SurfaceEntity.MediaBlendingMode
+    override var mediaBlendingMode: Int
+        get() {
+            return _mediaBlendingMode
+        }
+        set(value) {
+            _mediaBlendingMode = value
         }
 
     private var _shape: Shape = Shape.Quad(FloatSize2d(0f, 0f))
@@ -103,6 +122,24 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
                 return feature.surface
             }
         }
+
+    /** For test purposes only. Caches the input of [setSurfacePixelDimensions]. */
+    private var _surfacePixelDimensions: IntSize2d = IntSize2d(0, 0)
+
+    /**
+     * Sets the dimensions of the Surface in pixels.
+     *
+     * @param width The width of the Surface in pixels.
+     * @param height The height of the Surface in pixels.
+     * @throws IllegalArgumentException if the dimensions are invalid.
+     */
+    override fun setSurfacePixelDimensions(width: Int, height: Int) {
+        if (feature == null) {
+            _surfacePixelDimensions = IntSize2d(width, height)
+        } else {
+            feature.setSurfacePixelDimensions(width, height)
+        }
+    }
 
     /**
      * For test purposes only. Sets or replaces the underlying [Surface] for this fake entity.
@@ -153,31 +190,46 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
      * [getPerceivedResolution]. This can be modified in tests to simulate different perceived
      * resolution.
      */
-    public var perceivedResolutionResult: PerceivedResolutionResult =
-        PerceivedResolutionResult.InvalidCameraView()
+    private var perceivedResolutionResult: PerceivedResolutionResult =
+        PerceivedResolutionResult.InvalidRenderViewpoint()
+
+    /**
+     * For test purposes only.
+     *
+     * Sets the [androidx.xr.scenecore.runtime.PerceivedResolutionResult] that will be returned by
+     * [getPerceivedResolution].
+     */
+    public fun setPerceivedResolution(perceivedResolution: PerceivedResolutionResult) {
+        this.perceivedResolutionResult = perceivedResolution
+    }
 
     /**
      * Gets the perceived resolution of the entity in the camera view.
      *
      * This API is only intended for use in Full Space Mode and will return
-     * [androidx.xr.scenecore.runtime.PerceivedResolutionResult.InvalidCameraView] in Home Space
-     * Mode.
+     * [androidx.xr.scenecore.runtime.PerceivedResolutionResult.InvalidRenderViewpoint] in Home
+     * Space Mode.
      *
      * The entity's own rotation and the camera's viewing direction are disregarded; this value
      * represents the dimensions of the entity on the camera view if its largest surface was facing
      * the camera without changing the distance of the entity to the camera.
      *
+     * @param renderViewScenePose The [ScenePose] that represents the camera pose.
+     * @param renderViewFov The [FieldOfView] of the camera.
      * @return A [androidx.xr.scenecore.runtime.PerceivedResolutionResult] which encapsulates the
      *   outcome:
-     *     - [PerceivedResolutionResult.Success] containing the [PixelDimensions] if the calculation
-     *       is successful.
+     *     - [PerceivedResolutionResult.Success] containing the
+     *       [androidx.xr.scenecore.runtime.PixelDimensions] if the calculation is successful.
      *     - [PerceivedResolutionResult.EntityTooClose] if the entity is too close to the camera.
-     *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
-     *       the calculation is invalid or unavailable.
+     *     - [PerceivedResolutionResult.InvalidRenderViewpoint] if the camera information required
+     *       for the calculation is invalid or unavailable.
      *
      * @see androidx.xr.scenecore.runtime.PerceivedResolutionResult
      */
-    override fun getPerceivedResolution(): PerceivedResolutionResult {
+    override fun getPerceivedResolution(
+        renderViewScenePose: ScenePose,
+        renderViewFov: FieldOfView,
+    ): PerceivedResolutionResult {
         return perceivedResolutionResult
     }
 

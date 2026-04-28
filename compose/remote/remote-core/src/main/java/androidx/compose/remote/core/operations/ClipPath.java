@@ -23,6 +23,7 @@ import androidx.compose.remote.core.PaintOperation;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.documentation.DocumentedOperation;
+import androidx.compose.remote.core.operations.loom.LoomWireBuffer;
 import androidx.compose.remote.core.serialize.MapSerializer;
 import androidx.compose.remote.core.serialize.Serializable;
 
@@ -82,6 +83,10 @@ public class ClipPath extends PaintOperation implements Serializable {
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
         int pack = buffer.readInt();
         int id = pack & 0xFFFFF;
+        // Manual remapping since we extracted it from a packed int
+        if (buffer instanceof LoomWireBuffer) {
+            id = ((LoomWireBuffer) buffer).getRemapContext().resolveId(id);
+        }
         int regionOp = pack >> 24;
         ClipPath op = new ClipPath(id, regionOp);
         operations.add(op);
@@ -124,8 +129,8 @@ public class ClipPath extends PaintOperation implements Serializable {
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
-                .description("Intersect the current clip with the path")
-                .field(DocumentedOperation.INT, "id", "id of the path");
+                .description("Intersect the current clip with the specified path")
+                .field(DocumentedOperation.INT, "id", "The ID of the path to clip with");
     }
 
     @Override

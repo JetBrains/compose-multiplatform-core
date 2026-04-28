@@ -22,12 +22,15 @@ import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import kotlinx.coroutines.launch
 
@@ -37,6 +40,18 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
 
     internal val state
         get() = stateMachine.state
+
+    /**
+     * Each entry comes from a call site of sharedElement/sharedBounds of the same key. In most
+     * cases there will be 1 (i.e. no match) or 2 (i.e. match found) entries. In the interrupted
+     * cases, there may be multiple scenes showing simultaneously, resulting in more than 2 shared
+     * element entries for the same key to be present. In those cases, we expect there to be only 1
+     * state that is becoming visible, which we will use to derive target bounds. If none is
+     * becoming visible, then we consider this an error case for the lack of target, and
+     * consequently animate none of them.
+     */
+    private var _allEntries by mutableStateOf<List<SharedElementEntry>>(emptyList())
+    private var _enabledEntries by mutableStateOf<List<SharedElementEntry>>(emptyList())
 
     // Read-only entries
     val enabledEntries: List<SharedElementEntry>
@@ -52,13 +67,16 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
 
     internal fun updateMatch() {
         @Suppress("VisibleForTests") scope.testBlockToRun?.invoke()
-        _enabledEntries.removeAll { !allEntries.contains(it) || !it.isEnabled }
+        val allEntries = _allEntries
+        val newEnabledEntries = mutableListOf<SharedElementEntry>()
+        var hasVisibleContent = false
         allEntries.fastForEach {
-            if (it.isEnabled && !enabledEntries.contains(it)) {
-                _enabledEntries.add(it)
+            if (it.isEnabled) {
+                newEnabledEntries.add(it)
+                if (it.boundsAnimation.target) hasVisibleContent = true
             }
         }
-        val hasVisibleContent = _enabledEntries.hasVisibleContent()
+        _enabledEntries = newEnabledEntries
         stateMachine.checkForAndDeferStateUpdates(hasVisibleContent)
     }
 
@@ -85,7 +103,7 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
     val momentumAnimationOffset: () -> Offset = {
         if (!animationSpecFinalized && scope.isTransitionActive && momentumAnimation.isRunning) {
             enabledEntries
-                .firstOrNull { it.target }
+                .fastFirstOrNull { it.target }
                 ?.let {
                     val targetSpec = it.boundsAnimation.animationSpec
                     // New target animation acquired. Finalize the animation spec for the momentum
@@ -158,30 +176,18 @@ internal class SharedElement(val key: Any, val scope: SharedTransitionScopeImpl)
         }
     }
 
-    /**
-     * Each entry comes from a call site of sharedElement/sharedBounds of the same key. In most
-     * cases there will be 1 (i.e. no match) or 2 (i.e. match found) entries. In the interrupted
-     * cases, there may be multiple scenes showing simultaneously, resulting in more than 2 shared
-     * element entries for the same key to be present. In those cases, we expect there to be only 1
-     * state that is becoming visible, which we will use to derive target bounds. If none is
-     * becoming visible, then we consider this an error case for the lack of target, and
-     * consequently animate none of them.
-     */
-    private val _allEntries = mutableStateListOf<SharedElementEntry>()
-    private val _enabledEntries = mutableStateListOf<SharedElementEntry>()
-
     internal val observingVisibilityChange: () -> Unit = {
         allEntries.fastAny { it.target && it.isEnabled }
     }
 
     fun addEntry(sharedElementState: SharedElementEntry) {
-        _allEntries.add(sharedElementState)
+        _allEntries += sharedElementState
         updateMatch()
     }
 
     fun removeEntry(sharedElementState: SharedElementEntry) {
-        _allEntries.remove(sharedElementState)
-        _enabledEntries.remove(sharedElementState)
+        _allEntries -= sharedElementState
+        _enabledEntries -= sharedElementState
         updateMatch()
     }
 }

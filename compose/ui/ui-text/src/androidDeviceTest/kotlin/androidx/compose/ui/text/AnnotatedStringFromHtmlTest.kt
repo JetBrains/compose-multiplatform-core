@@ -40,7 +40,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -194,8 +194,8 @@ class AnnotatedStringFromHtmlTest {
             val actual =
                 AnnotatedString.fromHtml(
                     """
-                <annotation key1="value1" key2=value2 keyThree="valueThree">a</annotation>
-            """
+                    <annotation key1="value1" key2=value2 keyThree="valueThree">a</annotation>
+                    """
                         .trimIndent()
                 )
 
@@ -215,8 +215,8 @@ class AnnotatedStringFromHtmlTest {
             val actual =
                 AnnotatedString.fromHtml(
                     """
-                <annotation key1=val1>a</annotation>a<annotation key2="val2">a</annotation>
-                """
+                    <annotation key1=val1>a</annotation>a<annotation key2="val2">a</annotation>
+                    """
                         .trimIndent()
                 )
 

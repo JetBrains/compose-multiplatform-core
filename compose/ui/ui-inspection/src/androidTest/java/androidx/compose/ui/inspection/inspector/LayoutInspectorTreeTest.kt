@@ -74,7 +74,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.text
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -1159,7 +1159,7 @@ class LayoutInspectorTreeTest {
 
     private fun createLayoutInspectorTree(): LayoutInspectorTree {
         val anchorMap = AnchorMap()
-        return LayoutInspectorTree(anchorMap)
+        return LayoutInspectorTree(anchorMap, InlineClassConverter())
     }
 
     // region DEBUG print methods
@@ -1340,5 +1340,5 @@ fun InlineParameters(size: Dp, fontSize: TextUnit) {
     Text("$size $fontSize")
 }
 
-fun LayoutInspectorTree.convert(view: View): List<InspectorNode> =
+internal fun LayoutInspectorTree.convert(view: View): List<InspectorNode> =
     convert(listOf(view))[view.uniqueDrawingId] ?: emptyList()

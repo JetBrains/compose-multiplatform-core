@@ -20,7 +20,6 @@ import androidx.room3.Room
 import androidx.room3.integration.multiplatformtestapp.test.util.UseDriver
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.Dispatchers
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -29,10 +28,8 @@ import org.junit.runners.Parameterized.Parameters
 @RunWith(Parameterized::class)
 class QueryTest(private val driver: UseDriver) : BaseQueryTest() {
 
-    private val instrumentation = InstrumentationRegistry.getInstrumentation()
-
     override fun getRoomDatabase(): SampleDatabase {
-        return Room.inMemoryDatabaseBuilder<SampleDatabase>(context = instrumentation.targetContext)
+        return Room.inMemoryDatabaseBuilder<SampleDatabase>()
             .setDriver(
                 when (driver) {
                     UseDriver.BUNDLED -> BundledSQLiteDriver()

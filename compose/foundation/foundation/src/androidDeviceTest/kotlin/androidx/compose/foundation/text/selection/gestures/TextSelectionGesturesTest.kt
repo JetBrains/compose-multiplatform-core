@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.selection.gestures
 
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
 import androidx.compose.foundation.text.selection.Selection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.selection.gestures.AbstractSelectionGesturesTest.HorizontalDirection.START
@@ -117,7 +118,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
 
         asserter.applyAndAssert {
             selection = 6.collapsed
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         // we want to test at least one drag that shouldn't affect selection as well
@@ -142,7 +143,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = 7.collapsed
             selectionHandlesShown = false
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         // we want to test at least one drag that shouldn't affect selection as well
@@ -155,14 +156,14 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = 7 to 6
             selectionHandlesShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(topEnd)
 
         asserter.applyAndAssert {
             selection = 7 to 0
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(topStart)
@@ -179,7 +180,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
 
         asserter.applyAndAssert {
             selection = 7 to 6
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         performTouchGesture { up() }
@@ -193,7 +194,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
             selection = 12 to 17
             selectionHandlesShown = true
             textToolbarShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         performTouchGesture { click(characterPosition(14)) }
@@ -202,7 +203,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
             selection = null
             selectionHandlesShown = false
             textToolbarShown = false
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
     }
 
@@ -215,7 +216,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
             selection = 6 to 11
             selectionHandlesShown = true
             magnifierShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         // beginning of middle line
@@ -226,7 +227,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         touchDragTo(characterPosition(0) + Offset(-2f, 0f))
         asserter.applyAndAssert {
             selection = 11 to 0
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         // above top line
@@ -237,7 +238,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         touchDragTo(bottomStart.nudge(START, DOWN))
         asserter.applyAndAssert {
             selection = 6 to 29
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         performTouchGesture { up() }
@@ -251,7 +252,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
             selection = 12 to 17
             selectionHandlesShown = true
             textToolbarShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
     }
 
@@ -265,7 +266,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
 
             asserter.applyAndAssert {
                 this.selection = selection
-                hapticsCount++
+                hapticsTextHandleMoveCount++
             }
         }
 
@@ -326,14 +327,14 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
             selection = 12 to 17
             selectionHandlesShown = true
             magnifierShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(forwardOffset)
 
         asserter.applyAndAssert {
             selection = expectedSelection
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(backwardOffset)
@@ -370,7 +371,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
             selection = 12 to 17
             selectionHandlesShown = true
             magnifierShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(endOffset)
@@ -378,7 +379,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = endSelection
             magnifierShown = false
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         performTouchGesture { up() }
@@ -393,7 +394,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = 0 to 5
             selectionHandlesShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         // we want to test at least one drag that shouldn't affect selection as well
@@ -413,14 +414,14 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = 18 to 23
             selectionHandlesShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(topEnd)
 
         asserter.applyAndAssert {
             selection = 23 to 0
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         // do it again for a regression where selection was only wrong the second time
@@ -429,14 +430,14 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = 18 to 23
             selectionHandlesShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(topEnd)
 
         asserter.applyAndAssert {
             selection = 23 to 0
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         performTouchGesture { up() }
@@ -451,14 +452,14 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = 18 to 23
             selectionHandlesShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(bottomEnd)
 
         asserter.applyAndAssert {
             selection = 18 to 29
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         // do it again for a regression where selection was only wrong the second time
@@ -467,14 +468,14 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = 18 to 23
             selectionHandlesShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(bottomEnd)
 
         asserter.applyAndAssert {
             selection = 18 to 29
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         performTouchGesture { up() }
@@ -489,7 +490,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = 24 to 29
             selectionHandlesShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         // we want to test at least one drag that shouldn't affect selection as well
@@ -511,14 +512,14 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = 24 to 29
             selectionHandlesShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(centerEnd)
 
         asserter.applyAndAssert {
             selection = 29 to 18
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         // do it again for a regression where selection was only wrong the second time
@@ -527,14 +528,14 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = 24 to 29
             selectionHandlesShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         touchDragTo(centerEnd)
 
         asserter.applyAndAssert {
             selection = 29 to 18
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         performTouchGesture { up() }
@@ -550,12 +551,129 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
         asserter.applyAndAssert {
             selection = 18 to 23
             selectionHandlesShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         performTouchGesture { up() }
 
         asserter.applyAndAssert { textToolbarShown = true }
+    }
+
+    @Test
+    fun whenTouch_withDoubleClick_selectsWord() {
+        performTouchGesture { repeat(2) { click(characterPosition(13)) } }
+
+        asserter.applyAndAssert {
+            selection = 12 to 17
+            selectionHandlesShown = true
+            textToolbarShown = true
+        }
+    }
+
+    @Test
+    fun whenTouch_withDoubleClickThenDragLeft_selectsWords() {
+        touchDoubleClickThenDragTest(endOffset = characterPosition(8), endSelection = 17 to 6)
+    }
+
+    @Test
+    fun whenTouch_withDoubleClickThenDragUp_selectsWords() {
+        touchDoubleClickThenDragTest(endOffset = characterPosition(2), endSelection = 17 to 0)
+    }
+
+    @Test
+    fun whenTouch_withDoubleClickThenDragRight_selectsWords() {
+        touchDoubleClickThenDragTest(endOffset = characterPosition(20), endSelection = 12 to 23)
+    }
+
+    @Test
+    fun whenTouch_withDoubleClickThenDragDown_selectsWords() {
+        touchDoubleClickThenDragTest(endOffset = characterPosition(26), endSelection = 12 to 29)
+    }
+
+    private fun touchDoubleClickThenDragTest(endOffset: Offset, endSelection: TextRange) {
+        touchTapsThenDragTest(
+            numTaps = 2,
+            startOffset = characterPosition(13),
+            endOffset = endOffset,
+            startSelection = 12 to 17,
+            endSelection = endSelection,
+        )
+    }
+
+    @Test
+    fun whenTouch_withTripleClick_selectsParagraph() {
+        performMouseGesture { repeat(3) { click(characterPosition(13)) } }
+
+        asserter.applyAndAssert { selection = 6 to 23 }
+    }
+
+    @Test
+    fun whenTouch_withTripleClickThenDragLeft_selectsParagraphs() {
+        touchTripleClickThenDragTest(endOffset = characterPosition(8), endSelection = 6 to 23)
+    }
+
+    @Test
+    fun whenTouch_withTripleClickThenDragUp_selectsParagraphs() {
+        touchTripleClickThenDragTest(endOffset = characterPosition(2), endSelection = 23 to 0)
+    }
+
+    @Test
+    fun whenTouch_withTripleClickThenDragRight_selectsParagraphs() {
+        touchTripleClickThenDragTest(endOffset = characterPosition(20), endSelection = 6 to 23)
+    }
+
+    @Test
+    fun whenTouch_withTripleClickThenDragDown_selectsParagraphs() {
+        touchTripleClickThenDragTest(endOffset = characterPosition(26), endSelection = 6 to 29)
+    }
+
+    private fun touchTripleClickThenDragTest(endOffset: Offset, endSelection: TextRange) {
+        touchTapsThenDragTest(
+            numTaps = 3,
+            startOffset = characterPosition(13),
+            endOffset = endOffset,
+            startSelection = 6 to 23,
+            endSelection = endSelection,
+        )
+    }
+
+    private fun touchTapsThenDragTest(
+        numTaps: Int,
+        startOffset: Offset,
+        endOffset: Offset,
+        startSelection: TextRange,
+        endSelection: TextRange,
+    ) {
+        check(numTaps > 0) { "Must be at least one tap" }
+        performTouchGesture {
+            down(startOffset)
+            repeat(numTaps - 1) {
+                advanceEventTime()
+                up()
+                advanceEventTime()
+                down(startOffset)
+            }
+        }
+
+        rule.mainClock.advanceTimeBy(1000)
+
+        asserter.applyAndAssert {
+            magnifierShown = true
+            selection = startSelection
+            selectionHandlesShown = true
+        }
+
+        touchDragTo(endOffset)
+
+        asserter.applyAndAssert { selection = endSelection }
+
+        performTouchGesture { up() }
+
+        asserter.applyAndAssert {
+            selectionHandlesShown = true
+            textToolbarShown = true
+            magnifierShown = false
+        }
     }
 
     // Regression test for a mouse long click resulting in touch behaviors for selection.
@@ -775,7 +893,7 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
             selection = 12 to 17
             selectionHandlesShown = true
             textToolbarShown = true
-            hapticsCount++
+            hapticsTextHandleMoveCount++
         }
 
         enterMouseMode()
@@ -832,6 +950,297 @@ internal abstract class TextSelectionGesturesTest : AbstractSelectionGesturesTes
     @Test
     fun whenMouse_thenTripleClickInEndPadding_selectsOnlyCurrentParagraph() {
         performMouseGesture {
+            moveTo(position = centerEnd)
+            press()
+            repeat(2) {
+                advanceEventTime()
+                release()
+                advanceEventTime()
+                press()
+            }
+            release()
+        }
+
+        asserter.applyAndAssert { selection = 6 to 23 }
+    }
+
+    // Regression test for a trackpad long click resulting in touch behaviors for selection.
+    @Test
+    fun whenTrackpad_withLongClick_collapsedSelectionAtClick() {
+        performTrackpadGesture { longClick(characterPosition(13)) }
+
+        asserter.applyAndAssert { selection = 13.collapsed }
+    }
+
+    @Test
+    fun whenTrackpad_withClick_collapsedSelectionAtClick() {
+        performTrackpadGesture { click(characterPosition(13)) }
+
+        asserter.applyAndAssert { selection = 13.collapsed }
+    }
+
+    @Test
+    fun whenTrackpad_withSingleClick_collapsedSelection() {
+        performTrackpadGesture {
+            moveTo(position = characterPosition(13))
+            press()
+        }
+
+        asserter.applyAndAssert { selection = 13.collapsed }
+
+        performTrackpadGesture { release() }
+
+        asserter.assert()
+    }
+
+    @Test
+    fun whenTrackpad_withSingleClickThenDragLeft_selectsCharacters() {
+        trackpadSingleClickThenDragTest(endOffset = characterPosition(8), endSelection = 13 to 8)
+    }
+
+    @Test
+    fun whenTrackpad_withSingleClickThenDragUp_selectsCharacters() {
+        trackpadSingleClickThenDragTest(endOffset = characterPosition(2), endSelection = 13 to 2)
+    }
+
+    @Test
+    fun whenTrackpad_withSingleClickThenDragRight_selectsCharacters() {
+        trackpadSingleClickThenDragTest(endOffset = characterPosition(20), endSelection = 13 to 20)
+    }
+
+    @Test
+    fun whenTrackpad_withSingleClickThenDragDown_selectsCharacters() {
+        trackpadSingleClickThenDragTest(endOffset = characterPosition(26), endSelection = 13 to 26)
+    }
+
+    private fun trackpadSingleClickThenDragTest(endOffset: Offset, endSelection: TextRange?) {
+        trackpadClicksThenDragTest(
+            numClicks = 1,
+            startOffset = characterPosition(13),
+            endOffset = endOffset,
+            startSelection = 13.collapsed,
+            endSelection = endSelection,
+        )
+    }
+
+    @Test
+    fun whenTrackpad_withDoubleClick_selectsWord() {
+        performTrackpadGesture { repeat(2) { click(characterPosition(13)) } }
+
+        asserter.applyAndAssert { selection = 12 to 17 }
+    }
+
+    @Test
+    fun whenTrackpad_withDoubleClickThenDragLeft_selectsWords() {
+        trackpadDoubleClickThenDragTest(endOffset = characterPosition(8), endSelection = 17 to 6)
+    }
+
+    @Test
+    fun whenTrackpad_withDoubleClickThenDragUp_selectsWords() {
+        trackpadDoubleClickThenDragTest(endOffset = characterPosition(2), endSelection = 17 to 0)
+    }
+
+    @Test
+    fun whenTrackpad_withDoubleClickThenDragRight_selectsWords() {
+        trackpadDoubleClickThenDragTest(endOffset = characterPosition(20), endSelection = 12 to 23)
+    }
+
+    @Test
+    fun whenTrackpad_withDoubleClickThenDragDown_selectsWords() {
+        trackpadDoubleClickThenDragTest(endOffset = characterPosition(26), endSelection = 12 to 29)
+    }
+
+    private fun trackpadDoubleClickThenDragTest(endOffset: Offset, endSelection: TextRange?) {
+        trackpadClicksThenDragTest(
+            numClicks = 2,
+            startOffset = characterPosition(13),
+            endOffset = endOffset,
+            startSelection = 12 to 17,
+            endSelection = endSelection,
+        )
+    }
+
+    @Test
+    fun whenTrackpad_withTripleClick_selectsParagraph() {
+        performTrackpadGesture { repeat(3) { click(characterPosition(13)) } }
+
+        asserter.applyAndAssert { selection = 6 to 23 }
+    }
+
+    @Test
+    fun whenTrackpad_withTripleClickThenDragLeft_selectsParagraphs() {
+        trackpadTripleClickThenDragTest(endOffset = characterPosition(8), endSelection = 6 to 23)
+    }
+
+    @Test
+    fun whenTrackpad_withTripleClickThenDragUp_selectsParagraphs() {
+        trackpadTripleClickThenDragTest(endOffset = characterPosition(2), endSelection = 23 to 0)
+    }
+
+    @Test
+    fun whenTrackpad_withTripleClickThenDragRight_selectsParagraphs() {
+        trackpadTripleClickThenDragTest(endOffset = characterPosition(20), endSelection = 6 to 23)
+    }
+
+    @Test
+    fun whenTrackpad_withTripleClickThenDragDown_selectsParagraphs() {
+        trackpadTripleClickThenDragTest(endOffset = characterPosition(26), endSelection = 6 to 29)
+    }
+
+    private fun trackpadTripleClickThenDragTest(endOffset: Offset, endSelection: TextRange?) {
+        trackpadClicksThenDragTest(
+            numClicks = 3,
+            startOffset = characterPosition(13),
+            endOffset = endOffset,
+            startSelection = 6 to 23,
+            endSelection = endSelection,
+        )
+    }
+
+    private fun trackpadClicksThenDragTest(
+        numClicks: Int,
+        startOffset: Offset,
+        endOffset: Offset,
+        startSelection: TextRange?,
+        endSelection: TextRange?,
+    ) {
+        check(numClicks > 0) { "Must be at least one click" }
+        performTrackpadGesture {
+            moveTo(startOffset)
+            press()
+            repeat(numClicks - 1) {
+                advanceEventTime()
+                release()
+                advanceEventTime()
+                press()
+            }
+        }
+
+        asserter.applyAndAssert { selection = startSelection }
+
+        trackpadDragTo(endOffset)
+
+        asserter.applyAndAssert { selection = endSelection }
+
+        performTrackpadGesture { release() }
+
+        asserter.assert()
+    }
+
+    @ContextMenuFlagSuppress(false)
+    @Test
+    fun whenTrackpad_thenSingleClickAndDragUpToEndPadding_selectsCharacters() {
+        trackpadClickThenDragUpToPaddingTest(numClicks = 1, endSelection = 13 to 5)
+    }
+
+    @ContextMenuFlagSuppress(false)
+    @Test
+    fun whenTrackpad_thenDoubleClickAndDragUpToEndPadding_selectsWords() {
+        trackpadClickThenDragUpToPaddingTest(numClicks = 2, endSelection = 17 to 0)
+    }
+
+    @ContextMenuFlagSuppress(false)
+    @Test
+    fun whenTrackpad_thenTripleClickAndDragUpToEndPadding_selectsParagraph() {
+        trackpadClickThenDragUpToPaddingTest(numClicks = 3, endSelection = 23 to 0)
+    }
+
+    private fun trackpadClickThenDragUpToPaddingTest(numClicks: Int, endSelection: TextRange?) {
+        performTrackpadGesture {
+            moveTo(position = characterPosition(13))
+            press()
+            repeat(numClicks - 1) {
+                advanceEventTime()
+                release()
+                advanceEventTime()
+                press()
+            }
+        }
+
+        trackpadDragTo(position = topEnd)
+
+        asserter.applyAndAssert { selection = endSelection }
+    }
+
+    @Test
+    fun whenTrackpad_thenTouch_touchBehaviorsAppear() {
+        performTrackpadGesture { repeat(2) { click(characterPosition(13)) } }
+
+        asserter.applyAndAssert { selection = 12 to 17 }
+
+        performTouchGesture { enterTouchMode() }
+
+        asserter.applyAndAssert {
+            selectionHandlesShown = true
+            textToolbarShown = true
+        }
+    }
+
+    @Test
+    fun whenTouch_thenTrackpad_touchBehaviorsDisappear() {
+        performTouchGesture { longClick(characterPosition(13)) }
+
+        asserter.applyAndAssert {
+            selection = 12 to 17
+            selectionHandlesShown = true
+            textToolbarShown = true
+            hapticsTextHandleMoveCount++
+        }
+
+        enterTrackpadMode()
+
+        asserter.applyAndAssert {
+            selectionHandlesShown = false
+            textToolbarShown = false
+        }
+    }
+
+    // Regression test for when this would result in text toolbar showing instead of the cursor.
+    @Test
+    fun whenTrackpadCollapsedSelection_thenTouch_noUiElements() {
+        performTrackpadGesture { click(characterPosition(13)) }
+
+        asserter.applyAndAssert { selection = 13.collapsed }
+
+        performTouchGesture { enterTouchMode() }
+
+        asserter.assert()
+    }
+
+    @Test
+    fun whenTouchCollapsedSelection_thenTrackpad_noUiElements() {
+        performTouchGesture { click(characterPosition(13)) }
+
+        asserter.assert()
+        enterTrackpadMode()
+        asserter.assert()
+    }
+
+    // this is a collapsed selection in multi-text and a selection of just a newline in single text.
+    @Test
+    open fun whenTrackpadCollapsedSelectionAcrossLines_thenTouch_showUi() {
+        performTrackpadGesture {
+            moveTo(centerEnd)
+            press()
+        }
+
+        asserter.applyAndAssert { selection = 23.collapsed }
+
+        trackpadDragTo(characterPosition(offset = 24))
+
+        asserter.applyAndAssert { selection = 23 to 24 }
+
+        performTouchGesture { enterTouchMode() }
+
+        asserter.applyAndAssert {
+            selectionHandlesShown = true
+            textToolbarShown = true
+        }
+    }
+
+    @Test
+    fun whenTrackpad_thenTripleClickInEndPadding_selectsOnlyCurrentParagraph() {
+        performTrackpadGesture {
             moveTo(position = centerEnd)
             press()
             repeat(2) {

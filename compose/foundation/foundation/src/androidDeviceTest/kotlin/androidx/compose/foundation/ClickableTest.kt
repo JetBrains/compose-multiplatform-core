@@ -19,6 +19,7 @@ package androidx.compose.foundation
 import android.os.Build.VERSION.SDK_INT
 import android.os.Looper
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -38,6 +39,7 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.input.elementFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReusableContent
@@ -57,6 +59,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -65,11 +68,19 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputMode.Companion.Keyboard
 import androidx.compose.ui.input.InputMode.Companion.Touch
 import androidx.compose.ui.input.InputModeManager
-import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
+import androidx.compose.ui.input.indirect.IndirectPointerEvent
+import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis
+import androidx.compose.ui.input.indirect.IndirectPointerEventType
+import androidx.compose.ui.input.indirect.IndirectPointerInputModifierNode
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.DelegatingNode
+import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
@@ -93,15 +104,17 @@ import androidx.compose.ui.test.assertTouchHeightIsEqualTo
 import androidx.compose.ui.test.assertTouchWidthIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.click
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -252,7 +265,7 @@ class ClickableTest {
     }
 
     @Test
-    fun click_withIndirectTouchEvent() {
+    fun click_withIndirectPointerEvent() {
         var counter = 0
         val onClick: () -> Unit = { ++counter }
         val focusRequester = FocusRequester()
@@ -430,7 +443,7 @@ class ClickableTest {
     }
 
     @Test
-    fun interactionSource_noScrollableContainer_indirectTouch() {
+    fun interactionSource_noScrollableContainer_indirectPointer() {
         val interactionSource = MutableInteractionSource()
 
         lateinit var scope: CoroutineScope
@@ -464,7 +477,7 @@ class ClickableTest {
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
         val downEvent =
-            rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, currentTime = 0L)
+            rule.onNodeWithTag("myClickable").sendIndirectPointerPressEvent(rule, currentTime = 0L)
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)
@@ -473,7 +486,7 @@ class ClickableTest {
 
         rule
             .onNodeWithTag("myClickable")
-            .sendIndirectTouchReleaseEvent(rule, currentTime = 16L, previousEvent = downEvent)
+            .sendIndirectPointerReleaseEvent(rule, currentTime = 16L, previousEvent = downEvent)
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -528,7 +541,7 @@ class ClickableTest {
     }
 
     @Test
-    fun interactionSource_immediateRelease_noScrollableContainer_indirectTouch() {
+    fun interactionSource_immediateRelease_noScrollableContainer_indirectPointer() {
         val interactionSource = MutableInteractionSource()
 
         lateinit var scope: CoroutineScope
@@ -563,10 +576,10 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        val downEvent = rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L)
+        val downEvent = rule.onNodeWithTag("myClickable").sendIndirectPointerPressEvent(rule, 0L)
         rule
             .onNodeWithTag("myClickable")
-            .sendIndirectTouchReleaseEvent(rule, 16L, previousEvent = downEvent)
+            .sendIndirectPointerReleaseEvent(rule, 16L, previousEvent = downEvent)
 
         // Press finished so we should see both press and release
         rule.runOnIdle {
@@ -622,7 +635,7 @@ class ClickableTest {
     }
 
     @Test
-    fun interactionSource_immediateCancel_noScrollableContainer_indirectTouch() {
+    fun interactionSource_immediateCancel_noScrollableContainer_indirectPointer() {
         val interactionSource = MutableInteractionSource()
 
         lateinit var scope: CoroutineScope
@@ -655,7 +668,9 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(rule, sendMoveEvents = false)
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerCancelEvent(rule, sendMoveEvents = false)
 
         // We are not in a scrollable container, so we should see a press and immediate cancel
         rule.runOnIdle {
@@ -668,7 +683,7 @@ class ClickableTest {
     }
 
     @Test
-    fun interactionSource_immediateDrag_noScrollableContainer() {
+    fun interactionSource_immediateDrag_insideDraggable() {
         val interactionSource = MutableInteractionSource()
 
         lateinit var scope: CoroutineScope
@@ -702,14 +717,10 @@ class ClickableTest {
             moveTo(centerRight)
         }
 
-        // The press should fire, and then the drag should instantly cancel it
-        rule.runOnIdle {
-            assertThat(interactions).hasSize(2)
-            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
-            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
-            assertThat((interactions[1] as PressInteraction.Cancel).press)
-                .isEqualTo(interactions[0])
-        }
+        rule.mainClock.advanceTimeBy(TapIndicationDelay)
+
+        // We started a drag before the timeout, so no press should be emitted
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
     }
 
     @Test
@@ -769,7 +780,7 @@ class ClickableTest {
     }
 
     @Test
-    fun interactionSource_scrollableContainer_indirectTouch() {
+    fun interactionSource_scrollableContainer_indirectPointer() {
         val interactionSource = MutableInteractionSource()
         lateinit var inputModeManager: InputModeManager
         val focusRequester = FocusRequester()
@@ -802,7 +813,7 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        val pressEvent = rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L)
+        val pressEvent = rule.onNodeWithTag("myClickable").sendIndirectPointerPressEvent(rule, 0L)
 
         val halfTapIndicationDelay = TapIndicationDelay / 2
 
@@ -821,7 +832,7 @@ class ClickableTest {
 
         rule
             .onNodeWithTag("myClickable")
-            .sendIndirectTouchReleaseEvent(
+            .sendIndirectPointerReleaseEvent(
                 rule,
                 halfTapIndicationDelay + 16L,
                 previousEvent = pressEvent,
@@ -881,7 +892,7 @@ class ClickableTest {
     }
 
     @Test
-    fun interactionSource_immediateRelease_scrollableContainer_indirectTouch() {
+    fun interactionSource_immediateRelease_scrollableContainer_indirectPointer() {
         val interactionSource = MutableInteractionSource()
         lateinit var inputModeManager: InputModeManager
         val focusRequester = FocusRequester()
@@ -914,10 +925,10 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        val downEvent = rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L)
+        val downEvent = rule.onNodeWithTag("myClickable").sendIndirectPointerPressEvent(rule, 0L)
         rule
             .onNodeWithTag("myClickable")
-            .sendIndirectTouchReleaseEvent(rule, 16L, previousEvent = downEvent)
+            .sendIndirectPointerReleaseEvent(rule, 16L, previousEvent = downEvent)
 
         // We haven't reached the tap delay, but we have finished a press so we should have
         // emitted both press and release
@@ -969,7 +980,7 @@ class ClickableTest {
     }
 
     @Test
-    fun interactionSource_immediateCancel_scrollableContainer_indirectTouch() {
+    fun interactionSource_immediateCancel_scrollableContainer_indirectPointer() {
         val interactionSource = MutableInteractionSource()
         lateinit var inputModeManager: InputModeManager
         val focusRequester = FocusRequester()
@@ -1002,7 +1013,9 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(rule, sendMoveEvents = false)
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerCancelEvent(rule, sendMoveEvents = false)
 
         // We haven't reached the tap delay, and a cancel was emitted, so no press should ever be
         // shown
@@ -1051,7 +1064,7 @@ class ClickableTest {
     }
 
     @Test
-    fun interactionSource_immediateDrag_scrollableContainer_indirectTouch() {
+    fun interactionSource_immediateDrag_scrollableContainer_indirectPointer() {
         val interactionSource = MutableInteractionSource()
         lateinit var inputModeManager: InputModeManager
         val focusRequester = FocusRequester()
@@ -1085,17 +1098,17 @@ class ClickableTest {
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
         val pressPosition = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f)
-        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L, pressPosition)
+        rule.onNodeWithTag("myClickable").sendIndirectPointerPressEvent(rule, 0L, pressPosition)
         rule
             .onNodeWithTag("myClickable")
-            .sendIndirectTouchMoveEvents(
+            .sendIndirectPointerMoveEvents(
                 rule,
                 3,
                 16L,
                 pressPosition,
                 16L,
                 Offset(50f, 0f),
-                IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             )
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
@@ -1156,7 +1169,7 @@ class ClickableTest {
     }
 
     @Test
-    fun interactionSource_dragAfterTimeout_scrollableContainer_indirectTouch() {
+    fun interactionSource_dragAfterTimeout_scrollableContainer_indirectPointer() {
         val interactionSource = MutableInteractionSource()
         lateinit var inputModeManager: InputModeManager
         val focusRequester = FocusRequester()
@@ -1190,7 +1203,7 @@ class ClickableTest {
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
         val pressPosition = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f)
-        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L, pressPosition)
+        rule.onNodeWithTag("myClickable").sendIndirectPointerPressEvent(rule, 0L, pressPosition)
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
 
@@ -1201,14 +1214,14 @@ class ClickableTest {
 
         rule
             .onNodeWithTag("myClickable")
-            .sendIndirectTouchMoveEvents(
+            .sendIndirectPointerMoveEvents(
                 rule,
                 3,
                 16L,
                 pressPosition,
                 16L,
                 Offset(50f, 0f),
-                IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             )
 
         // The drag should cancel the press
@@ -1270,7 +1283,7 @@ class ClickableTest {
     }
 
     @Test
-    fun interactionSource_cancelledGesture_scrollableContainer_indirectTouch() {
+    fun interactionSource_cancelledGesture_scrollableContainer_indirectPointer() {
         val interactionSource = MutableInteractionSource()
         lateinit var inputModeManager: InputModeManager
         val focusRequester = FocusRequester()
@@ -1304,7 +1317,7 @@ class ClickableTest {
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
         val pressPosition = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f)
-        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L, pressPosition)
+        rule.onNodeWithTag("myClickable").sendIndirectPointerPressEvent(rule, 0L, pressPosition)
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
 
@@ -1313,7 +1326,9 @@ class ClickableTest {
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
 
-        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(rule, sendMoveEvents = false)
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerCancelEvent(rule, sendMoveEvents = false)
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -1599,11 +1614,11 @@ class ClickableTest {
 
         rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
 
-        // Haven't reached the tap delay yet, so we shouldn't have started a press, we should only
-        // see the hover
+        // Scrollables don't process Mouse Press Events, so there's no need to delay.
         rule.runOnIdle {
-            assertThat(interactions).hasSize(1)
+            assertThat(interactions).hasSize(2)
             assertThat(interactions[0]).isInstanceOf(HoverInteraction.Enter::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Press::class.java)
         }
 
         // Advance past the tap delay
@@ -4700,7 +4715,6 @@ class ClickableTest {
     }
 
     @Test
-    @OptIn(ExperimentalTestApi::class)
     fun otherKey_doesNotEmitInteraction() {
         val interactionSource = MutableInteractionSource()
         val focusRequester = FocusRequester()
@@ -4865,7 +4879,6 @@ class ClickableTest {
      * still be passed up to a non-focused parent, so we test this scenario here and make sure that
      * this key event bubbling up causes indication to be created.
      */
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun localIndication_noInteractionSource_lazilyCreated_keyInput() {
         var created = false
@@ -4920,15 +4933,16 @@ class ClickableTest {
     }
 
     /**
-     * Test case for initializing indication when an IndirectTouchEvent is received. Focus is
-     * required for indirect touch, so normally just focusing the clickable will cause indication to
-     * be initialized via focus logic, but if a focused child receives indirect touch and doesn't
-     * consume it, it will still be passed up to a non-focused parent, so we test this scenario here
-     * and make sure that this indirect touch event bubbling up causes indication to be created.
+     * Test case for initializing indication when an IndirectPointerEvent is received. Focus is
+     * required for indirect pointer, so normally just focusing the clickable will cause indication
+     * to be initialized via focus logic, but if a focused child receives indirect pointer and
+     * doesn't consume it, it will still be passed up to a non-focused parent, so we test this
+     * scenario here and make sure that this indirect pointer event bubbling up causes indication to
+     * be created.
      */
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun localIndication_noInteractionSource_lazilyCreated_indirectTouch() {
+    fun localIndication_noInteractionSource_lazilyCreated_indirectPointer() {
         var created = false
         val focusRequester = FocusRequester()
         lateinit var inputModeManager: InputModeManager
@@ -4970,8 +4984,8 @@ class ClickableTest {
             assertThat(created).isFalse()
         }
 
-        // The indirect touch event should cause the indication node to be created
-        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(rule, 0L, Offset.Zero)
+        // The indirect pointer event should cause the indication node to be created
+        rule.onNodeWithTag("clickable").sendIndirectPointerPressEvent(rule, 0L, Offset.Zero)
 
         rule.runOnIdle {
             assertThat(created).isTrue()
@@ -5872,7 +5886,6 @@ class ClickableTest {
      * still be passed up to a non-focused parent, so we test this scenario here and make sure that
      * this key event bubbling up causes indication to be created.
      */
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun indicationNodeFactory_noInteractionSource_lazilyCreated_keyInput() {
         var created = false
@@ -5928,15 +5941,16 @@ class ClickableTest {
     }
 
     /**
-     * Test case for initializing indication when an IndirectTouchEvent is received. Focus is
-     * required for indirect touch, so normally just focusing the clickable will cause indication to
-     * be initialized via focus logic, but if a focused child receives indirect touch and doesn't
-     * consume it, it will still be passed up to a non-focused parent, so we test this scenario here
-     * and make sure that this indirect touch event bubbling up causes indication to be created.
+     * Test case for initializing indication when an IndirectPointerEvent is received. Focus is
+     * required for indirect pointer, so normally just focusing the clickable will cause indication
+     * to be initialized via focus logic, but if a focused child receives indirect pointer and
+     * doesn't consume it, it will still be passed up to a non-focused parent, so we test this
+     * scenario here and make sure that this indirect pointer event bubbling up causes indication to
+     * be created.
      */
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun indicationNodeFactory_noInteractionSource_lazilyCreated_indirectTouch() {
+    fun indicationNodeFactory_noInteractionSource_lazilyCreated_indirectPointer() {
         var created = false
         val focusRequester = FocusRequester()
         lateinit var inputModeManager: InputModeManager
@@ -5979,8 +5993,8 @@ class ClickableTest {
             assertThat(created).isFalse()
         }
 
-        // The indirect touch event should cause the indication node to be created
-        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(rule, 0L, Offset.Zero)
+        // The indirect pointer event should cause the indication node to be created
+        rule.onNodeWithTag("clickable").sendIndirectPointerPressEvent(rule, 0L, Offset.Zero)
 
         rule.runOnIdle {
             assertThat(created).isTrue()
@@ -7325,37 +7339,6 @@ class ClickableTest {
         rule.onNodeWithTag(tag).assertIsFocused()
     }
 
-    @Test
-    fun lazilyCreatedIndicatorReceivesPressedInteraction() {
-        var created = false
-        val interactions = mutableListOf<Interaction>()
-        val indication = TestIndicationNodeFactory { interactionSource, coroutineScope ->
-            created = true
-            coroutineScope.launch {
-                interactionSource.interactions.collect { interaction ->
-                    interactions.add(interaction)
-                }
-            }
-        }
-
-        rule.setContent {
-            CompositionLocalProvider(LocalIndication provides indication) {
-                Box(modifier = Modifier.testTag("clickable").clickable {})
-            }
-        }
-
-        rule.runOnIdle { assertThat(created).isFalse() }
-
-        // The touch event should cause the indication node to be created
-        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
-
-        rule.runOnIdle {
-            assertThat(created).isTrue()
-            assertThat(interactions).hasSize(1)
-            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
-        }
-    }
-
     /**
      * Regression test for b/414319919 - when inside a scrollable container (presses are delayed),
      * if a press, release, and press happen before coroutines are dispatched (in real life this is
@@ -7420,6 +7403,135 @@ class ClickableTest {
             assertThat((interactions[3] as PressInteraction.Release).press)
                 .isEqualTo(interactions[2])
         }
+    }
+
+    @Test
+    fun indirectPointerDrag_cancelsPressInteraction() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerPressEvent(
+                rule = rule,
+                currentTime = 0L,
+                currentValue = Offset.Zero,
+            )
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerMoveEvents(
+                rule = rule,
+                stepCount = 3,
+                currentTime = 16L,
+                currentValue = Offset.Zero,
+                delayTimeMills = 16L,
+                stepSize = Offset(50f, 0f),
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            )
+
+        // The press should fire, and then the drag should instantly cancel it
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun immediateIndirectDrag_doesNotTriggerOnClick() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        var onClickCounter = 0
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .clickable(onClick = { onClickCounter++ }),
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerPressEvent(
+                rule = rule,
+                currentTime = 0L,
+                currentValue = Offset.Zero,
+            )
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerMoveEvents(
+                rule = rule,
+                stepCount = 3,
+                currentTime = 16L,
+                currentValue = Offset.Zero,
+                delayTimeMills = 16L,
+                stepSize = Offset(50f, 0f),
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            )
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerReleaseEvent(
+                rule = rule,
+                currentTime = 64L,
+                currentValue = Offset(150f, 0f),
+                primaryAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            )
+
+        rule.runOnIdle { assertThat(onClickCounter).isEqualTo(0) }
     }
 
     /**
@@ -7498,6 +7610,475 @@ class ClickableTest {
                 .isEqualTo(interactions[0])
         }
     }
+
+    @Test
+    fun childConsumesIndirectPointerEvent_cancelsPress() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var scope: CoroutineScope
+        var counter = 0
+        val onClick: () -> Unit = { ++counter }
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            inputModeManager = LocalInputModeManager.current
+            Box(Modifier.clickable(onClick = onClick, interactionSource = interactionSource)) {
+                Box(
+                    Modifier.elementFor(
+                            object : IndirectPointerInputModifierNode, Modifier.Node() {
+                                override fun onIndirectPointerEvent(
+                                    event: IndirectPointerEvent,
+                                    pass: PointerEventPass,
+                                ) {
+                                    if (
+                                        pass == PointerEventPass.Main &&
+                                            event.type == IndirectPointerEventType.Move
+                                    ) {
+                                        // Consume moves in the main pass
+                                        event.changes.forEach { it.consume() }
+                                    }
+                                }
+
+                                override fun onCancelIndirectPointerInput() {}
+                            }
+                        )
+                        .size(100.dp)
+                        .focusRequester(focusRequester)
+                        .focusTarget()
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        val downEvent =
+            rule
+                .onRoot()
+                .sendIndirectPointerPressEvent(rule, currentTime = 0L, currentValue = Offset.Zero)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        // The move should be consumed by the child, which should cancel the click in the main pass
+        val (_, _, lastMove) =
+            rule
+                .onRoot()
+                .sendIndirectPointerMoveEvents(
+                    rule,
+                    stepCount = 1,
+                    currentTime = 16L,
+                    currentValue = Offset.Zero,
+                    delayTimeMills = 16L,
+                    stepSize = Offset(1f, 1f),
+                    primaryDirectionalMotionAxis =
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                    previousEvent = downEvent,
+                )
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+
+        // The up will not be consumed
+        rule
+            .onRoot()
+            .sendIndirectPointerReleaseEvent(
+                rule,
+                currentTime = 32L,
+                currentValue = Offset.Zero,
+                previousEvent = lastMove,
+            )
+
+        // The child consumed the move, so the click should be canceled and not triggered by the up
+        rule.runOnIdle { assertThat(counter).isEqualTo(0) }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun parentConsumesIndirectPointerEvent_cancelsPress() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var scope: CoroutineScope
+        var counter = 0
+        val onClick: () -> Unit = { ++counter }
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            inputModeManager = LocalInputModeManager.current
+            Box(
+                Modifier.elementFor(
+                    object : IndirectPointerInputModifierNode, Modifier.Node() {
+                        override fun onIndirectPointerEvent(
+                            event: IndirectPointerEvent,
+                            pass: PointerEventPass,
+                        ) {
+                            if (
+                                pass == PointerEventPass.Main &&
+                                    event.type == IndirectPointerEventType.Move
+                            ) {
+                                // Consume moves in the main pass
+                                event.changes.forEach { it.consume() }
+                            }
+                        }
+
+                        override fun onCancelIndirectPointerInput() {}
+                    }
+                )
+            ) {
+                Box(
+                    Modifier.size(100.dp)
+                        .focusRequester(focusRequester)
+                        .clickable(onClick = onClick, interactionSource = interactionSource)
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        val downEvent =
+            rule
+                .onRoot()
+                .sendIndirectPointerPressEvent(rule, currentTime = 0L, currentValue = Offset.Zero)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        // The move should be consumed by the parent (in the main pass), which should cancel the
+        // click in the final pass (since the move will be consumed after the clickable sees it in
+        // the main pass)
+        val (_, _, lastMove) =
+            rule
+                .onRoot()
+                .sendIndirectPointerMoveEvents(
+                    rule,
+                    stepCount = 1,
+                    currentTime = 16L,
+                    currentValue = Offset.Zero,
+                    delayTimeMills = 16L,
+                    stepSize = Offset(1f, 1f),
+                    primaryDirectionalMotionAxis =
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                    previousEvent = downEvent,
+                )
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+
+        // The up will not be consumed
+        rule
+            .onRoot()
+            .sendIndirectPointerReleaseEvent(
+                rule,
+                currentTime = 32L,
+                currentValue = Offset.Zero,
+                previousEvent = lastMove,
+            )
+
+        // The parent consumed the move, so the click should be canceled and not triggered by the up
+        rule.runOnIdle { assertThat(counter).isEqualTo(0) }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun gestureState_shouldReflectClickableBehavior_regularBehavior() {
+        class InspectingNode(val isParent: Boolean) : DelegatingNode(), PointerInputModifierNode {
+            var gestureStateOnInitialPass: GestureState? = null
+            var gestureStateOnMainPass: GestureState? = null
+            var gestureStateOnFinalPass: GestureState? = null
+
+            val suspendingPointerInput =
+                delegate(
+                    SuspendingPointerInputModifierNode {
+                        // for each pointer event, save what was the gesture state in each pass.
+                        awaitEachGesture {
+                            while (true) {
+                                awaitPointerEvent(pass = PointerEventPass.Initial)
+                                gestureStateOnInitialPass =
+                                    if (isParent) {
+                                        getChildGestureConnection()?.gestureState
+                                    } else {
+                                        getParentGestureConnection()?.gestureState
+                                    }
+
+                                awaitPointerEvent(pass = PointerEventPass.Main)
+                                gestureStateOnMainPass =
+                                    if (isParent) {
+                                        getChildGestureConnection()?.gestureState
+                                    } else {
+                                        getParentGestureConnection()?.gestureState
+                                    }
+
+                                awaitPointerEvent(pass = PointerEventPass.Final)
+                                gestureStateOnFinalPass =
+                                    if (isParent) {
+                                        getChildGestureConnection()?.gestureState
+                                    } else {
+                                        getParentGestureConnection()?.gestureState
+                                    }
+                            }
+                        }
+                    }
+                )
+
+            override fun onPointerEvent(
+                pointerEvent: PointerEvent,
+                pass: PointerEventPass,
+                bounds: IntSize,
+            ) {
+                suspendingPointerInput.onPointerEvent(pointerEvent, pass, bounds)
+            }
+
+            override fun onCancelPointerInput() {
+                suspendingPointerInput.onCancelPointerInput()
+            }
+        }
+
+        val childNode = InspectingNode(false)
+        val parentNode = InspectingNode(true)
+
+        var enabled by mutableStateOf(true)
+
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.testTag("myClickable").size(300.dp).elementFor(parentNode).clickable(
+                        enabled = enabled
+                    ) {}
+            ) {
+                Box(Modifier.size(300.dp).elementFor(childNode))
+            }
+        }
+
+        // haven't received any input yet so node isn't initialized
+        rule.runOnIdle { assertThat(childNode.getParentGestureConnection()).isNull() }
+
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
+
+        assertThat(parentNode.gestureStateOnInitialPass).isEqualTo(null)
+        assertThat(childNode.gestureStateOnInitialPass).isEqualTo(GestureState.Idle)
+
+        assertThat(parentNode.gestureStateOnMainPass).isEqualTo(GestureState.Waiting)
+        assertThat(childNode.gestureStateOnMainPass).isEqualTo(GestureState.Idle)
+
+        assertThat(parentNode.gestureStateOnFinalPass).isEqualTo(GestureState.Waiting)
+        assertThat(childNode.gestureStateOnFinalPass).isEqualTo(GestureState.Waiting)
+
+        rule.onNodeWithTag("myClickable").performTouchInput { up() }
+
+        assertThat(parentNode.gestureStateOnInitialPass).isEqualTo(GestureState.Waiting)
+        assertThat(childNode.gestureStateOnInitialPass).isEqualTo(GestureState.Waiting)
+
+        assertThat(parentNode.gestureStateOnMainPass).isEqualTo(GestureState.Recognized)
+        assertThat(childNode.gestureStateOnMainPass).isEqualTo(GestureState.Waiting)
+
+        assertThat(parentNode.gestureStateOnFinalPass).isEqualTo(GestureState.Recognized)
+        assertThat(childNode.gestureStateOnFinalPass).isEqualTo(GestureState.Idle)
+
+        enabled = false
+
+        rule.runOnIdle { assertThat(childNode.getParentGestureConnection()).isNull() }
+
+        enabled = true
+
+        // need to receive a new event after enabled to get it back to reporting.
+        rule.runOnIdle { assertThat(childNode.getParentGestureConnection()).isNull() }
+
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
+
+        assertThat(parentNode.gestureStateOnInitialPass).isEqualTo(null)
+        assertThat(childNode.gestureStateOnInitialPass).isEqualTo(GestureState.Idle)
+
+        assertThat(parentNode.gestureStateOnMainPass).isEqualTo(GestureState.Waiting)
+        assertThat(childNode.gestureStateOnMainPass).isEqualTo(GestureState.Idle)
+
+        assertThat(parentNode.gestureStateOnFinalPass).isEqualTo(GestureState.Waiting)
+        assertThat(childNode.gestureStateOnFinalPass).isEqualTo(GestureState.Waiting)
+    }
+
+    @Test
+    fun gestureState_shouldReflectClickableBehavior_cancelledByMove() {
+        val node = object : DelegatingNode() {}
+        var enabled by mutableStateOf(true)
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.testTag("myClickable").size(30.dp).clickable(enabled = enabled) {}
+            ) {
+                Box(Modifier.size(30.dp).elementFor(node))
+            }
+        }
+
+        // haven't received any input yet so node isn't initialized
+        rule.runOnIdle { assertThat(node.getParentGestureConnection()).isNull() }
+
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
+
+        assertThat(node.getParentGestureConnection()?.gestureState).isEqualTo(GestureState.Waiting)
+
+        rule.onNodeWithTag("myClickable").performTouchInput {
+            moveBy(Offset(0f, 2f * with(rule.density) { 30.dp.roundToPx() }))
+        }
+
+        rule.runOnIdle {
+            assertThat(node.getParentGestureConnection()?.gestureState).isEqualTo(GestureState.Idle)
+        }
+    }
+
+    @Test
+    fun gestureState_shouldReflectClickableBehavior_cancelledByConsumption() {
+        val node = object : DelegatingNode() {}
+        var enabled by mutableStateOf(true)
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.testTag("myClickable").size(30.dp).clickable(enabled = enabled) {}
+            ) {
+                Box(Modifier.size(30.dp).elementFor(node).clickable() {})
+            }
+        }
+
+        // haven't received any input yet so node isn't initialized
+        rule.runOnIdle { assertThat(node.getParentGestureConnection()).isNull() }
+
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(node.getParentGestureConnection()?.gestureState).isEqualTo(GestureState.Idle)
+        }
+    }
+
+    /**
+     * Test to ensure that indirect pointer cancellation (triggered when we lose focus, such as when
+     * a clickable loses focus when moving to touch mode) doesn't also cancel ongoing clicks from
+     * pointer input.
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun switchingToTouchModeFromNonTouchMode_doesNotCancelOngoingClick() {
+        val interactionSource = MutableInteractionSource()
+        var counter = 0
+        val onClick: () -> Unit = { ++counter }
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        lateinit var focusManager: FocusManager
+
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            inputModeManager = LocalInputModeManager.current
+            focusManager = LocalFocusManager.current
+            Box(Modifier.focusTarget()) {
+                Box(
+                    Modifier.size(100.dp)
+                        .testTag("myClickable")
+                        .focusRequester(focusRequester)
+                        .clickable(onClick = onClick, interactionSource = interactionSource)
+                )
+            }
+        }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        // Start in keyboard mode and request focus
+        rule.runOnIdle { assertThat(inputModeManager.requestInputMode(Keyboard)).isTrue() }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        rule.onNodeWithTag("myClickable").assertIsFocused()
+
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(FocusInteraction.Focus::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        // b/438742567 - currently touch mode isn't reset when injecting touch input. Resetting
+        // touch mode through InstrumentationRegistry doesn't seem to work here mid-activity,
+        // so instead we manually clear focus to simulate this. (this will move focus to the root
+        // box). In the future this test should actually move to touch mode.
+        rule.runOnIdle { focusManager.clearFocus() }
+
+        // The clickable should no longer be focused
+        rule.onNodeWithTag("myClickable").assertIsNotFocused()
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(3)
+            assertThat(interactions.first()).isInstanceOf(FocusInteraction.Focus::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[2]).isInstanceOf(FocusInteraction.Unfocus::class.java)
+            assertThat((interactions[2] as FocusInteraction.Unfocus).focus)
+                .isEqualTo(interactions[0])
+        }
+
+        // No click should be invoked yet
+        rule.runOnIdle { assertThat(counter).isEqualTo(0) }
+
+        // Perform an up event - this should trigger the click
+        rule.onNodeWithTag("myClickable").performTouchInput { up() }
+
+        rule.runOnIdle { assertThat(counter).isEqualTo(1) }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(4)
+            assertThat(interactions.first()).isInstanceOf(FocusInteraction.Focus::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[2]).isInstanceOf(FocusInteraction.Unfocus::class.java)
+            assertThat((interactions[2] as FocusInteraction.Unfocus).focus)
+                .isEqualTo(interactions[0])
+            assertThat(interactions[3]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[3] as PressInteraction.Release).press)
+                .isEqualTo(interactions[1])
+        }
+    }
 }
 
 /**
@@ -7565,4 +8146,22 @@ internal fun SemanticsNodeInteraction.assertOnClickLabelMatches(
             it.config.getOrElseNullable(SemanticsActions.OnClick) { null }?.label == expectedValue
         }
     )
+}
+
+private fun DelegatingNode.getParentGestureConnection(): GestureConnection? {
+    var gestureConnection: GestureConnection? = null
+    traverseAncestorGestures {
+        gestureConnection = it
+        false
+    }
+    return gestureConnection
+}
+
+private fun DelegatingNode.getChildGestureConnection(): GestureConnection? {
+    var gestureConnection: GestureConnection? = null
+    traverseChildrenGestures {
+        gestureConnection = it
+        false
+    }
+    return gestureConnection
 }

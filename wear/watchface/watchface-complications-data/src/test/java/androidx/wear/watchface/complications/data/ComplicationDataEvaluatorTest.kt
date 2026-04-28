@@ -16,6 +16,7 @@
 
 package androidx.wear.watchface.complications.data
 
+import android.content.ComponentName
 import android.support.wearable.complications.ComplicationData as WireComplicationData
 import android.support.wearable.complications.ComplicationData.Companion.TYPE_NO_DATA
 import android.support.wearable.complications.ComplicationData.Companion.TYPE_SHORT_TEXT
@@ -53,6 +54,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.shadows.ShadowLog
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class ComplicationDataEvaluatorTest {
     @get:Rule val expect = Expect.create()
 
@@ -424,6 +426,7 @@ class ComplicationDataEvaluatorTest {
             WireComplicationData.Builder(TYPE_SHORT_TEXT)
                 .setShortText(WireComplicationText(DynamicString.from(AppDataKey("missing_key"))))
                 .setPlaceholder(constantData("Placeholder"))
+                .setDataSource(ComponentName("pkg", "cls"))
                 .build()
         val evaluator = ComplicationDataEvaluator(keepDynamicValues = true)
 
@@ -433,6 +436,7 @@ class ComplicationDataEvaluatorTest {
                     .setInvalidatedData(expressed)
                     // Keeps the placeholder too.
                     .setPlaceholder(evaluatedWithConstantData("Placeholder"))
+                    .setDataSource(ComponentName("pkg", "cls"))
                     .build()
             )
     }

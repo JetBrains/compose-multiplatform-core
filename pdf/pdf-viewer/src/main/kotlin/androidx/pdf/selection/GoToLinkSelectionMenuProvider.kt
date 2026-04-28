@@ -51,7 +51,7 @@ internal class GoToLinkSelectionMenuProvider(private val context: Context) :
                 pdfView.scrollToPosition(destination)
             }
             close()
-            pdfView.clearSelection()
+            pdfView.clearCurrentSelection()
         }
     }
 }

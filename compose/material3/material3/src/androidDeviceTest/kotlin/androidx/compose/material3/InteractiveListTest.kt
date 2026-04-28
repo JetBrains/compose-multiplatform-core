@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertIsEqualTo
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -43,7 +44,7 @@ import androidx.compose.ui.test.assertIsSelectable
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsToggleable
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -123,7 +124,10 @@ class InteractiveListTest {
 
     @Test
     fun clickableListItem_verticalAlignmentCenter_positioning() {
-        val height = InteractiveListVerticalAlignmentBreakpoint - 10.dp
+        val height =
+            InteractiveListVerticalAlignmentBreakpoint +
+                InteractiveListTopPadding +
+                InteractiveListBottomPadding - 10.dp
         rule.setMaterialContent(lightColorScheme()) {
             ListItem(
                 modifier = Modifier.height(height),
@@ -164,7 +168,11 @@ class InteractiveListTest {
 
     @Test
     fun clickableListItem_verticalAlignmentTop_positioning() {
-        val height = InteractiveListVerticalAlignmentBreakpoint + 10.dp
+        val height =
+            InteractiveListVerticalAlignmentBreakpoint +
+                InteractiveListTopPadding +
+                InteractiveListBottomPadding +
+                10.dp
         rule.setMaterialContent(lightColorScheme()) {
             ListItem(
                 modifier = Modifier.height(height),
@@ -203,7 +211,10 @@ class InteractiveListTest {
 
     @Test
     fun clickableListItem_verticalAlignmentCenter_positioning_rtl() {
-        val height = InteractiveListVerticalAlignmentBreakpoint - 10.dp
+        val height =
+            InteractiveListVerticalAlignmentBreakpoint +
+                InteractiveListTopPadding +
+                InteractiveListBottomPadding - 10.dp
         rule.setMaterialContent(lightColorScheme()) {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 ListItem(
@@ -246,7 +257,11 @@ class InteractiveListTest {
 
     @Test
     fun clickableListItem_verticalAlignmentTop_positioning_rtl() {
-        val height = InteractiveListVerticalAlignmentBreakpoint + 10.dp
+        val height =
+            InteractiveListVerticalAlignmentBreakpoint +
+                InteractiveListTopPadding +
+                InteractiveListBottomPadding +
+                10.dp
         rule.setMaterialContent(lightColorScheme()) {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 ListItem(
@@ -283,6 +298,44 @@ class InteractiveListTest {
 
         trailingNodeBounds.left.assertIsEqualTo(InteractiveListEndPadding)
         trailingNodeBounds.top.assertIsEqualTo(InteractiveListTopPadding)
+    }
+
+    @Test
+    fun clickableListItem_customVerticalAlignment_positioning() {
+        rule.setMaterialContent(lightColorScheme()) {
+            ListItem(
+                modifier = Modifier.height(300.dp),
+                leadingContent = { Box(Modifier.testTag(LeadingTag).size(48.dp)) },
+                trailingContent = { Box(Modifier.testTag(TrailingTag).size(48.dp)) },
+                overlineContent = { Text("Overline", Modifier.testTag(OverlineTag)) },
+                supportingContent = { Text("Supporting", Modifier.testTag(SupportingTag)) },
+                content = { Text("Content", Modifier.testTag(ContentTag)) },
+                onClick = {},
+                verticalAlignment = Alignment.Bottom,
+            )
+        }
+
+        val leadingBounds =
+            rule.onNodeWithTag(LeadingTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val overlineBounds =
+            rule.onNodeWithTag(OverlineTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val supportingBounds =
+            rule.onNodeWithTag(SupportingTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag(ContentTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val trailingNodeBounds =
+            rule.onNodeWithTag(TrailingTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        val bottomWithoutPadding = rule.rootHeight() - InteractiveListBottomPadding
+        leadingBounds.bottom.assertIsEqualTo(bottomWithoutPadding)
+
+        supportingBounds.bottom.assertIsEqualTo(bottomWithoutPadding)
+        contentBounds.bottom.assertIsEqualTo(bottomWithoutPadding - supportingBounds.height)
+        overlineBounds.bottom.assertIsEqualTo(
+            bottomWithoutPadding - supportingBounds.height - contentBounds.height
+        )
+
+        trailingNodeBounds.bottom.assertIsEqualTo(bottomWithoutPadding)
     }
 
     @Test

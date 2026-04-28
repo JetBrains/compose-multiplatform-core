@@ -34,9 +34,9 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.ResizableComponent
@@ -52,11 +52,16 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ResizePolicy {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun resizePolicy_noComponentByDefault() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) { Text(text = "Panel") } }
         }
 
@@ -71,7 +76,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_componentIsNotNullAndOnlyContainsSingleResizable() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel"), resizePolicy = ResizePolicy()) {
                     Text(text = "Panel")
@@ -84,7 +89,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_modifierIsDisabledAndComponentDoesNotExist() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel"),
@@ -100,7 +105,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_modifierDoesNotChangeAndComponentDoesNotUpdate() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var panelWidth by remember { mutableStateOf(50.dp) }
                 SpatialPanel(
@@ -127,7 +132,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_modifierEnabledToDisabledAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(true) }
                 SpatialPanel(
@@ -154,7 +159,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_modifierOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
@@ -182,7 +187,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_modifierDisableWithOnSizeChangeUpdateAndComponentRemoved() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(true) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
@@ -217,7 +222,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_modifierEnabledWithOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(false) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
@@ -252,7 +257,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_modifierDisabledThenEnabledAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(true) }
                 SpatialPanel(
@@ -284,7 +289,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_modifierOnSizeChangeTwiceUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var onSizeReturnValue by remember { mutableStateOf(true) }
                 SpatialPanel(
@@ -316,8 +321,8 @@ class ResizePolicy {
     }
 
     @Test
-    fun resizable_modifierDisabledThenEnabledWithOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+    fun resizePolicy_modifierDisabledThenEnabledWithOnSizeChangeUpdateAndComponentUpdates() {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(true) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
@@ -336,7 +341,7 @@ class ResizePolicy {
                             onSizeReturnValue = !onSizeReturnValue
                         },
                     ) {
-                        Text(text = "Click to change resizabe and onSizeChange")
+                        Text(text = "Click to change resizable and onSizeChange")
                     }
                 }
             }
@@ -357,7 +362,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_modifierEnabledThenDisabledWithOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 var resizableEnabled by remember { mutableStateOf(false) }
                 var onSizeReturnValue by remember { mutableStateOf(true) }
@@ -376,7 +381,7 @@ class ResizePolicy {
                             onSizeReturnValue = !onSizeReturnValue
                         },
                     ) {
-                        Text(text = "Click to change resizabe and onSizeChange")
+                        Text(text = "Click to change resizable and onSizeChange")
                     }
                 }
             }
@@ -398,7 +403,7 @@ class ResizePolicy {
     @Test
     fun resizePolicy_modifierMaxSizeIsSet() {
         val maxSize = DpVolumeSize(500.dp, 500.dp, 500.dp)
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel"),
@@ -411,7 +416,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_modifierMaxSizeIsNotSet() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel"), resizePolicy = ResizePolicy()) {}
             }
@@ -422,7 +427,7 @@ class ResizePolicy {
     @Test
     fun resizePolicy_modifierMinSizeIsSet() {
         val minSize = DpVolumeSize(100.dp, 100.dp, 100.dp)
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel"),
@@ -435,7 +440,7 @@ class ResizePolicy {
 
     @Test
     fun resizePolicy_modifierMinSizeIsNotSet() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
                 SpatialPanel(SubspaceModifier.testTag("panel"), resizePolicy = ResizePolicy()) {}
             }

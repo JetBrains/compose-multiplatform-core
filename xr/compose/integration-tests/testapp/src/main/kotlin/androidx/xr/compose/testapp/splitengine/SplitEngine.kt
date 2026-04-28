@@ -63,10 +63,11 @@ import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.ExrImage
+import androidx.xr.scenecore.GltfAnimation
+import androidx.xr.scenecore.GltfAnimationStartOptions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
-import androidx.xr.scenecore.GltfModelEntity.AnimationState
+import androidx.xr.scenecore.ImageBasedLightingAsset
 import androidx.xr.scenecore.InputEvent
 import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.MovableComponent
@@ -107,7 +108,7 @@ class SplitEngine : ComponentActivity() {
         }
     }
 
-    private fun setSkyboxAndGeometry(skybox: ExrImage?, geometry: GltfModel?) {
+    private fun setSkyboxAndGeometry(skybox: ImageBasedLightingAsset?, geometry: GltfModel?) {
         spatialEnvironmentPreference = SpatialEnvironmentPreference(skybox, geometry)
         session.scene.spatialEnvironment.preferredSpatialEnvironment = spatialEnvironmentPreference
     }
@@ -198,7 +199,7 @@ class SplitEngine : ComponentActivity() {
 
     @Composable
     fun SplitEngineSkyboxApisCard() {
-        val blueSkybox = remember { mutableStateOf<ExrImage?>(null) }
+        val blueSkybox = remember { mutableStateOf<ImageBasedLightingAsset?>(null) }
 
         Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -217,7 +218,7 @@ class SplitEngine : ComponentActivity() {
                     ApiButton("Load Skybox Blue", modifier) {
                         coroutineScope.launch {
                             blueSkybox.value =
-                                ExrImage.createFromZip(
+                                ImageBasedLightingAsset.createFromZip(
                                     session,
                                     Paths.get("skyboxes", "BlueSkybox.zip"),
                                 )
@@ -269,14 +270,17 @@ class SplitEngine : ComponentActivity() {
                         ApiButton("Set Geometry Rocks", modifier) {
                             if (rocksGeometry.value != null) {
                                 setSkyboxAndGeometry(
-                                    spatialEnvironmentPreference?.skybox,
+                                    spatialEnvironmentPreference?.imageBasedLightingAsset,
                                     rocksGeometry.value,
                                 )
                             }
                         }
 
                         ApiButton("Remove Geometry Rocks", modifier) {
-                            setSkyboxAndGeometry(spatialEnvironmentPreference?.skybox, null)
+                            setSkyboxAndGeometry(
+                                spatialEnvironmentPreference?.imageBasedLightingAsset,
+                                null,
+                            )
                         }
                     }
                 }
@@ -319,7 +323,10 @@ class SplitEngine : ComponentActivity() {
                                         Pose.Identity,
                                     )
                             }
-                            glimmerEntity.value!!.startAnimation(false)
+                            glimmerEntity.value!!
+                                .animations
+                                .firstOrNull()
+                                ?.start(GltfAnimationStartOptions(shouldLoop = false))
                         }
                     }
                 }
@@ -333,7 +340,7 @@ class SplitEngine : ComponentActivity() {
         val dragonEntity = remember { mutableStateOf<GltfModelEntity?>(null) }
         var isChecked by remember { mutableStateOf(false) } // State for the switch
         val dragonAnimationState = remember {
-            androidx.compose.runtime.mutableIntStateOf(GltfModelEntity.AnimationState.STOPPED)
+            androidx.compose.runtime.mutableStateOf(GltfAnimation.AnimationState.STOPPED)
         }
         val scope = rememberCoroutineScope()
 
@@ -375,7 +382,7 @@ class SplitEngine : ComponentActivity() {
 
                         ApiButton("Destroy Dragon Entity", modifier) {
                             if (dragonEntity.value != null) {
-                                dragonEntity.value!!.dispose()
+                                dragonEntity.value!!.parent = null
                                 dragonEntity.value = null
                             }
                         }
@@ -398,17 +405,27 @@ class SplitEngine : ComponentActivity() {
                     ) {
                         val modifier = Modifier.weight(1F)
                         ApiButton("Animate Dragon Entity", modifier) {
-                            dragonEntity.value!!.startAnimation(false, "Fast_Flying")
+                            dragonEntity.value!!
+                                .animations
+                                .find { it.name == "Fast_Flying" }
+                                ?.start(GltfAnimationStartOptions(shouldLoop = false))
                         }
                         ApiButton("Loop Animate Dragon Entity", modifier) {
-                            dragonEntity.value!!.startAnimation(true, "Fast_Flying")
-                            dragonAnimationState.intValue = dragonEntity.value?.animationState ?: 1
+                            val fastFlyingAnim =
+                                dragonEntity.value!!.animations.find { it.name == "Fast_Flying" }
+                            fastFlyingAnim?.start(GltfAnimationStartOptions(shouldLoop = true))
+
+                            dragonAnimationState.value =
+                                fastFlyingAnim?.animationState
+                                    ?: GltfAnimation.AnimationState.STOPPED
                         }
                         ApiButton("Stop Animate Dragon Entity", modifier) {
-                            if (dragonEntity.value!!.animationState == AnimationState.PLAYING) {
-                                dragonEntity.value!!.stopAnimation()
+                            dragonEntity.value!!.animations.forEach { anim ->
+                                if (anim.animationState == GltfAnimation.AnimationState.PLAYING) {
+                                    anim.stop()
+                                }
                             }
-                            dragonAnimationState.intValue = dragonEntity.value?.animationState ?: 1
+                            dragonAnimationState.value = GltfAnimation.AnimationState.STOPPED
                         }
                     }
                 }
@@ -433,7 +450,7 @@ class SplitEngine : ComponentActivity() {
 
                         val interactableComponent =
                             InteractableComponent.create(session, mainExecutor) {
-                                if (it.action == InputEvent.Action.ACTION_DOWN) {
+                                if (it.action == InputEvent.Action.DOWN) {
                                     dragonEntity.value!!.setScale(
                                         dragonEntity.value!!.getScale() * 1.1f
                                     )
@@ -463,8 +480,7 @@ class SplitEngine : ComponentActivity() {
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        val stateValue =
-                            if (dragonAnimationState.intValue == 1) "STOPPED" else "STARTED"
+                        val stateValue = dragonAnimationState.value.toString()
                         Text(
                             text = "Animation State: $stateValue",
                             modifier = Modifier.weight(1f),

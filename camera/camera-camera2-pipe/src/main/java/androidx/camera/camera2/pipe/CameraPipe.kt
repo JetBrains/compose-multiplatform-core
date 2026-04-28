@@ -149,6 +149,7 @@ public interface CameraPipe {
         val cameraInteropConfig: CameraInteropConfig = CameraInteropConfig(),
         val imageSources: ImageSources? = null,
         val flags: Flags = Flags(),
+        val platformApiCompat: PlatformApiCompat? = null,
     )
 
     /**
@@ -168,6 +169,7 @@ public interface CameraPipe {
         val cameraDeviceStateCallback: CameraDevice.StateCallback? = null,
         val cameraCaptureSessionListener: CameraInterop.CaptureSessionListener? = null,
         val cameraOpenRetryMaxTimeoutNs: DurationNs? = null,
+        val cameraSystemCallbacks: CameraInterop.CameraSystemCallbacks? = null,
     )
 
     /**

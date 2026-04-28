@@ -42,13 +42,13 @@ import androidx.compose.ui.util.fastRoundToInt
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.animation.SpatialTransitionDefaults.DefaultAlphaAnimationSpec
 import androidx.xr.compose.subspace.animation.SpatialTransitionDefaults.DefaultSlideAnimationSpec
+import androidx.xr.compose.subspace.draw.alpha
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceMeasurable
 import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
 import androidx.xr.compose.subspace.layout.SubspaceMeasureResult
 import androidx.xr.compose.subspace.layout.SubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.alpha
 import androidx.xr.compose.subspace.layout.layout
 import androidx.xr.compose.unit.IntVolumeOffset
 import androidx.xr.compose.unit.IntVolumeSize
@@ -77,11 +77,7 @@ internal fun <T> AnimatedSpatialVisibilityImpl(
                     if (!visible(transition.targetState)) {
                         IntVolumeSize.Zero
                     } else {
-                        IntVolumeSize(
-                            placeable.measuredWidth,
-                            placeable.measuredHeight,
-                            placeable.measuredDepth,
-                        )
+                        IntVolumeSize(placeable.width, placeable.height, placeable.depth)
                     }
                 layout(size.width, size.height, size.depth) { placeable.place(Pose.Identity) }
             },
@@ -136,7 +132,7 @@ private fun <T> AnimatedSpatialEnterExitImpl(
                     }
             }
         if (!childTransition.exitFinished || !shouldDisposeAfterExit) {
-            val scope = remember(transition) { AnimatedSpatialVisibilityScopeImpl(childTransition) }
+            val scope = remember(transition) { AnimatedSpatialVisibilityScope(childTransition) }
             SubspaceLayout(
                 modifier = modifier.then(childTransition.createModifier(enter, exit)),
                 content = { scope.content() },
@@ -157,9 +153,9 @@ private class AnimatedSpatialEnterExitMeasurePolicy() : SubspaceMeasurePolicy {
         val placeables =
             measurables.fastMap {
                 it.measure(constraints).apply {
-                    maxWidth = max(maxWidth, measuredWidth)
-                    maxHeight = max(maxHeight, measuredHeight)
-                    maxDepth = max(maxDepth, measuredDepth)
+                    maxWidth = max(maxWidth, width)
+                    maxHeight = max(maxHeight, height)
+                    maxDepth = max(maxDepth, depth)
                 }
             }
         return layout(maxWidth, maxHeight, maxDepth) {
@@ -262,13 +258,8 @@ private fun Transition<EnterExitState>.slideAnimationModifier(
     return SubspaceModifier.layout { measurable, constraints ->
         val placeable = measurable.measure(constraints)
         // Size can only be determined in a custom layout modifier
-        fullSize =
-            IntVolumeSize(
-                placeable.measuredWidth,
-                placeable.measuredHeight,
-                placeable.measuredDepth,
-            )
-        layout(placeable.measuredWidth, placeable.measuredHeight, placeable.measuredDepth) {
+        fullSize = IntVolumeSize(placeable.width, placeable.height, placeable.depth)
+        layout(placeable.width, placeable.height, placeable.depth) {
             placeable.place(
                 Pose(
                     // Place this layout at the offset calculated by our animation
@@ -314,7 +305,3 @@ private val IntVolumeOffsetToVector: TwoWayConverter<IntVolumeOffset, AnimationV
         { AnimationVector3D(it.x.toFloat(), it.y.toFloat(), it.z.toFloat()) },
         { IntVolumeOffset(it.v1.fastRoundToInt(), it.v2.fastRoundToInt(), it.v3.fastRoundToInt()) },
     )
-
-private class AnimatedSpatialVisibilityScopeImpl(
-    override val transition: Transition<EnterExitState>
-) : AnimatedSpatialVisibilityScope

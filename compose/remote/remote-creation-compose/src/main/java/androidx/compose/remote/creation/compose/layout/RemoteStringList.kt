@@ -19,16 +19,15 @@ package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.LogTodo
-import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
 import androidx.compose.remote.creation.compose.state.RemoteInt
 import androidx.compose.remote.creation.compose.state.RemoteIntReference
-import androidx.compose.remote.creation.compose.state.rememberRemoteIntValue
+import androidx.compose.remote.creation.compose.state.rememberMutableRemoteInt
 import androidx.compose.runtime.Composable
 
 @Composable
 public fun rememberRemoteStringList(vararg items: String): RemoteStringList {
     val state = LocalRemoteComposeCreationState.current
+    // TODO: This writes to the document during composition!
     return RemoteStringList(state.document.addStringList(*items))
 }
 
@@ -39,11 +38,8 @@ public class RemoteStringList(public var listId: Float) {
     public operator fun get(value: RemoteInt): RemoteIntReference {
         val state = LocalRemoteComposeCreationState.current
 
-        if (state is NoRemoteCompose) {
-            LogTodo("Fix preview mode for RemoteStringList")
-        }
-
-        val valueId = value.id.toInt()
+        val valueId = value.getIdForCreationState(state)
+        // TODO: This writes to the document during composition!
         return RemoteIntReference(state.document.textLookup(listId, valueId))
     }
 
@@ -51,11 +47,8 @@ public class RemoteStringList(public var listId: Float) {
     public operator fun get(value: Int): RemoteIntReference {
         val state = LocalRemoteComposeCreationState.current
 
-        if (state is NoRemoteCompose) {
-            LogTodo("Fix preview mode for RemoteStringList")
-        }
-
-        val index = rememberRemoteIntValue { value }.id.toInt()
+        val index = rememberMutableRemoteInt(value).getIdForCreationState(state)
+        // TODO: This writes to the document during composition!
         return RemoteIntReference(state.document.textLookup(listId, index))
     }
 }

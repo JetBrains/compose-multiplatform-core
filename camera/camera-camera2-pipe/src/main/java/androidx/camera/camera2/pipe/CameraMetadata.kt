@@ -283,6 +283,12 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
                     availableAfModes.contains(CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
             }
 
+        public val CameraMetadata.supportsAeLock: Boolean
+            @JvmStatic get() = this[CameraCharacteristics.CONTROL_AE_LOCK_AVAILABLE] ?: false
+
+        public val CameraMetadata.supportsAwbLock: Boolean
+            @JvmStatic get() = this[CameraCharacteristics.CONTROL_AWB_LOCK_AVAILABLE] ?: false
+
         /**
          * Returns `true` if overriding zoom settings is supported on the device, otherwise `false`.
          */
@@ -342,7 +348,8 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
                 val availableAeModes =
                     this[CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES] ?: return false
                 return availableAeModes.contains(
-                    AeMode.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                    android.hardware.camera2.CameraMetadata
+                        .CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
                 )
             }
 

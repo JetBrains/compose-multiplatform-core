@@ -54,11 +54,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachReversed
+import androidx.kruth.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -2152,7 +2153,7 @@ class SeekableTransitionStateTest {
                 }
             val val2 =
                 if (val1.value < 500) {
-                    mutableFloatStateOf(0f)
+                    remember { mutableFloatStateOf(0f) }
                 } else {
                     transition.animateFloat(
                         label = "Value2",
@@ -2226,7 +2227,7 @@ class SeekableTransitionStateTest {
                 }
             val val2 =
                 if (val1.value < 500) {
-                    mutableFloatStateOf(0f)
+                    remember { mutableFloatStateOf(0f) }
                 } else {
                     transition.animateFloat(
                         label = "Value2",
@@ -2589,23 +2590,22 @@ class SeekableTransitionStateTest {
 
     @Test
     fun testCleanupAfterDispose() {
+
+        var seekableState: SeekableTransitionState<*> = SeekableTransitionState(true)
+        var disposed by mutableStateOf(false)
+
         fun isObserving(): Boolean {
             var active = false
-            SeekableStateObserver.clearIf {
+            seekableState.snapshotStateObserver?.clearIf {
                 active = true
                 false
             }
             return active
         }
 
-        var seekableState: SeekableTransitionState<*>?
-        var disposed by mutableStateOf(false)
-
         rule.setContent {
-            seekableState = remember { SeekableTransitionState(true) }
-
             if (!disposed) {
-                rememberTransition(transitionState = seekableState!!)
+                rememberTransition(transitionState = seekableState)
             }
         }
         rule.waitForIdle()
@@ -2698,5 +2698,27 @@ class SeekableTransitionStateTest {
         rule.onNodeWithTag("1").assertIsDisplayed()
         rule.onNodeWithTag("2").assertIsNotDisplayed()
         rule.onNodeWithTag("3").assertIsNotDisplayed()
+    }
+
+    @Test
+    fun exitingContentKillTransition() {
+        val seekableTransitionState = SeekableTransitionState(AnimStates.From)
+        lateinit var coroutineScope: CoroutineScope
+        lateinit var transition: Transition<AnimStates>
+
+        rule.setContent {
+            transition = rememberTransition(seekableTransitionState, label = "Test")
+            transition.AnimatedVisibility(visible = { it == AnimStates.From }) {
+                coroutineScope = rememberCoroutineScope()
+                Box(Modifier.fillMaxSize())
+            }
+        }
+
+        rule.runOnIdle {
+            coroutineScope.launch { seekableTransitionState.animateTo(AnimStates.To) }
+        }
+
+        rule.waitForIdle()
+        assertThat(transition.playTimeNanos).isEqualTo(0L)
     }
 }

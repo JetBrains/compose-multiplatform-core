@@ -43,6 +43,7 @@ import kotlin.metadata.isNullable
 import kotlin.metadata.jvm.KotlinClassMetadata
 
 /** Utilities for working with data structures representing parsed Java code. */
+@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") // intentionally using java.* types
 @OptIn(ExperimentalProcessingApi::class)
 class IntrospectionHelper internal constructor(private val env: XProcessingEnv) {
     // Non-boxable objects
@@ -122,6 +123,17 @@ class IntrospectionHelper internal constructor(private val env: XProcessingEnv) 
         @JvmField
         val DOCUMENT_CLASS_MAPPING_CONTEXT_CLASS: XClassName =
             XClassName.get(APPSEARCH_PKG, "DocumentClassMappingContext")
+
+        @JvmField
+        val REQUIRES_API_ANNOTATION_CLASS = XClassName.get("androidx.annotation", "RequiresApi")
+
+        @JvmField val OPT_IN_ANNOTATION_CLASS = XClassName.get("androidx.annotation", "OptIn")
+
+        @JvmField val KOTLIN_OPT_IN_ANNOTATION_CLASS = XClassName.get("kotlin", "OptIn")
+
+        @JvmField
+        val EXPERIMENTAL_APP_SEARCH_API_ANNOTATION_CLASS =
+            XClassName.get("androidx.appsearch.app", "ExperimentalAppSearchApi")
 
         /**
          * Returns `androidx.appsearch.annotation.Document` annotation element from the input

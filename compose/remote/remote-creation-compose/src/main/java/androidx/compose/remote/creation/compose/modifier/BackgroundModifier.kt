@@ -13,44 +13,66 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.background
-import androidx.compose.remote.creation.compose.capture.shaders.RemoteBrush
-import androidx.compose.remote.creation.compose.capture.shaders.RemoteSolidColor
-import androidx.compose.remote.creation.compose.capture.shaders.solidColor
+import androidx.compose.remote.creation.compose.painter.RemotePainter
+import androidx.compose.remote.creation.compose.painter.painterRemoteColor
+import androidx.compose.remote.creation.compose.shaders.RemoteBrush
+import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
+import androidx.compose.remote.creation.modifiers.SolidBackgroundModifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class BackgroundModifier(val brush: RemoteBrush) : RemoteModifier.Element {
-    override fun toRemoteComposeElement(): RecordingModifier.Element {
-        return if (brush is RemoteSolidColor) {
-            androidx.compose.remote.creation.modifiers.SolidBackgroundModifier(brush.color.toArgb())
-        } else {
-            // TODO specify
-            androidx.compose.remote.creation.modifiers.BackgroundModifier(
-                brush.createShader(Size(100f, 100f)),
-                0,
-            )
-        }
-    }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        return background(brush.toComposeUi())
+internal data class BackgroundModifier(val color: RemoteColor) : RemoteModifier.Element {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
+        return SolidBackgroundModifier(
+            color.red.floatId,
+            color.green.floatId,
+            color.blue.floatId,
+            color.alpha.floatId,
+        )
     }
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteModifier.background(color: Color): RemoteModifier =
-    this.then(BackgroundModifier(RemoteBrush.solidColor(color)))
+    this.then(BackgroundModifier(color.rc))
 
+/**
+ * Draws a solid [color] background behind the content.
+ *
+ * @param color The [RemoteColor] to use for the background.
+ */
+public fun RemoteModifier.background(color: RemoteColor): RemoteModifier =
+    if (color.hasConstantValue) {
+        this.background(color.constantValue)
+    } else {
+        this.drawWithContent {
+            with(painterRemoteColor(color)) { onDraw() }
+            drawContent()
+        }
+    }
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteModifier.background(brush: RemoteBrush): RemoteModifier =
-    this.then(BackgroundModifier(brush))
+    this.drawWithContent {
+        drawRect(paint = RemotePaint { with(brush) { applyTo(this@RemotePaint, size) } })
+        drawContent()
+    }
+
+/**
+ * Draws a [remotePainter] behind the content.
+ *
+ * @param remotePainter The [RemotePainter] to use for the background.
+ */
+public fun RemoteModifier.background(remotePainter: RemotePainter): RemoteModifier =
+    this.drawWithContent {
+        with(remotePainter) { onDraw() }
+        drawContent()
+    }

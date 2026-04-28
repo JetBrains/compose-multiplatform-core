@@ -50,7 +50,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.platform.LocalAccessibilityManager
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
@@ -195,8 +195,11 @@ public fun OpenOnPhoneDialogContent(
             animatedDelay(DurationShort3.toLong(), reduceMotionEnabled)
             alphaAnimatable.animateTo(1f, alphaAnimationSpec)
         }
+
         launch {
-            if (!reduceMotionEnabled) {
+            if (reduceMotionEnabled) {
+                delay(progressDuration)
+            } else {
                 progressAnimatable.animateTo(
                     targetValue = 1f,
                     animationSpec =
@@ -204,8 +207,9 @@ public fun OpenOnPhoneDialogContent(
                 ) {
                     progress = value
                 }
-                finalAnimation = true
             }
+
+            finalAnimation = true
         }
     }
 
@@ -291,7 +295,7 @@ public object OpenOnPhoneDialogDefaults {
 
     /** The default message for an [OpenOnPhoneDialog]. */
     public val text: String
-        @Composable get() = LocalContext.current.getString(R.string.wear_m3c_open_on_phone)
+        @Composable get() = stringResource(R.string.wear_m3c_open_on_phone)
 
     /**
      * A default composable used in [OpenOnPhoneDialog] that displays an open on phone icon with an
@@ -308,6 +312,7 @@ public object OpenOnPhoneDialogDefaults {
 
         LaunchedEffect(Unit) {
             animatedDelay(IconDelay, reduceMotionEnabled)
+
             atEnd = true
         }
         Icon(
@@ -459,12 +464,14 @@ private fun iconAndProgressContainer(
             .align(Alignment.Center)
     )
 
-    IconContainerProgressIndicator(
-        progress = progress,
-        progressAlpha = progressAlphaAnimationFraction.value,
-        strokeWidth = strokeWidth,
-        colors = progressIndicatorColors,
-    )
+    if (!LocalReduceMotion.current) {
+        IconContainerProgressIndicator(
+            progress = progress,
+            progressAlpha = progressAlphaAnimationFraction.value,
+            strokeWidth = strokeWidth,
+            colors = progressIndicatorColors,
+        )
+    }
 }
 
 @Composable

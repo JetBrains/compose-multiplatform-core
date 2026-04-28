@@ -22,12 +22,15 @@ import androidx.xr.scenecore.runtime.MaterialResource;
 import org.jspecify.annotations.NonNull;
 
 /** Interface defining the common functionality of all materials. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public abstract class Material extends BindingsResource implements MaterialResource {
     private final ImpressApi mImpressApi;
 
     protected Material(@NonNull ImpressApi impressApi, long nativeMaterial) {
-        super(impressApi.getBindingsResourceManager(), nativeMaterial);
+        super(
+                impressApi.getBindingsResourceManager(),
+                nativeMaterial,
+                impressApi::destroyNativeObject);
         mImpressApi = impressApi;
     }
 

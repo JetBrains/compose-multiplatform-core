@@ -18,6 +18,7 @@ package androidx.room3.integration.autovaluetestapp.test;
 
 import android.content.Context;
 
+import androidx.arch.core.executor.ArchTaskExecutor;
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule;
 import androidx.room3.Room;
 import androidx.room3.integration.autovaluetestapp.TestDatabase;
@@ -28,6 +29,8 @@ import androidx.test.core.app.ApplicationProvider;
 
 import org.junit.Before;
 import org.junit.Rule;
+
+import kotlinx.coroutines.ExecutorsKt;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class TestDatabaseTest {
@@ -43,7 +46,9 @@ public abstract class TestDatabaseTest {
     @Before
     public void createDb() {
         Context context = ApplicationProvider.getApplicationContext();
-        mDatabase = Room.inMemoryDatabaseBuilder(context, TestDatabase.class).build();
+        mDatabase = Room.inMemoryDatabaseBuilder(context, TestDatabase.class)
+                .setQueryCoroutineContext(ExecutorsKt.from(ArchTaskExecutor.getIOThreadExecutor()))
+                .build();
         mPersonDao = mDatabase.getPersonDao();
         mPetDao = mDatabase.getPetDao();
         mParcelableEntityDao = mDatabase.getParcelableEntityDao();

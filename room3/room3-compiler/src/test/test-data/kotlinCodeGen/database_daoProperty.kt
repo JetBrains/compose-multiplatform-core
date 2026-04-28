@@ -5,6 +5,7 @@ import androidx.room3.migration.Migration
 import androidx.room3.util.TableInfo
 import androidx.room3.util.TableInfo.Companion.read
 import androidx.room3.util.dropFtsSyncTriggers
+import androidx.room3.util.performClear
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 import javax.`annotation`.processing.Generated
@@ -23,7 +24,7 @@ import kotlin.collections.mutableSetOf
 import kotlin.reflect.KClass
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
 internal class MyDatabase_Impl : MyDatabase() {
   private val _myDao: Lazy<MyDao> = lazy {
     MyDao_Impl(this)
@@ -34,31 +35,31 @@ internal class MyDatabase_Impl : MyDatabase() {
 
   protected override fun createOpenDelegate(): RoomOpenDelegate {
     val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(1, "195d7974660177325bd1a32d2c7b8b8c", "7458a901120796c5bbc554e2fefd262f") {
-      public override fun createAllTables(connection: SQLiteConnection) {
+      public override suspend fun createAllTables(connection: SQLiteConnection) {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `MyEntity` (`pk` INTEGER NOT NULL, PRIMARY KEY(`pk`))")
         connection.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
         connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '195d7974660177325bd1a32d2c7b8b8c')")
       }
 
-      public override fun dropAllTables(connection: SQLiteConnection) {
+      public override suspend fun dropAllTables(connection: SQLiteConnection) {
         connection.execSQL("DROP TABLE IF EXISTS `MyEntity`")
       }
 
-      public override fun onCreate(connection: SQLiteConnection) {
+      public override suspend fun onCreate(connection: SQLiteConnection) {
       }
 
-      public override fun onOpen(connection: SQLiteConnection) {
+      public override suspend fun onOpen(connection: SQLiteConnection) {
         internalInitInvalidationTracker(connection)
       }
 
-      public override fun onPreMigrate(connection: SQLiteConnection) {
+      public override suspend fun onPreMigrate(connection: SQLiteConnection) {
         dropFtsSyncTriggers(connection)
       }
 
-      public override fun onPostMigrate(connection: SQLiteConnection) {
+      public override suspend fun onPostMigrate(connection: SQLiteConnection) {
       }
 
-      public override fun onValidateSchema(connection: SQLiteConnection): RoomOpenDelegate.ValidationResult {
+      public override suspend fun onValidateSchema(connection: SQLiteConnection): RoomOpenDelegate.ValidationResult {
         val _columnsMyEntity: MutableMap<String, TableInfo.Column> = mutableMapOf()
         _columnsMyEntity.put("pk", TableInfo.Column("pk", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY))
         val _foreignKeysMyEntity: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
@@ -86,8 +87,8 @@ internal class MyDatabase_Impl : MyDatabase() {
     return InvalidationTracker(this, _shadowTablesMap, _viewTables, "MyEntity")
   }
 
-  public override fun clearAllTables() {
-    super.performClear(false, "MyEntity")
+  public override suspend fun clearAllTables() {
+    performClear(this, false, "MyEntity")
   }
 
   protected override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {

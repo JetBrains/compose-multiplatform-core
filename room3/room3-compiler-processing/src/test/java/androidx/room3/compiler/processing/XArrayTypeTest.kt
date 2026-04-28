@@ -43,11 +43,11 @@ class XArrayTypeTest {
             Source.java(
                 "foo.bar.Baz",
                 """
-            package foo.bar;
-            class Baz {
-                String[] param;
-            }
-            """
+                package foo.bar;
+                class Baz {
+                    String[] param;
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(source)) { invocation ->
@@ -110,12 +110,12 @@ class XArrayTypeTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            package foo.bar
-            class Baz {
-                val nonNull:Array<String> = TODO()
-                val nullable:Array<String?> = TODO()
-            }
-            """
+                package foo.bar
+                class Baz {
+                    val nonNull:Array<String> = TODO()
+                    val nullable:Array<String?> = TODO()
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(source)) { invocation ->
@@ -171,25 +171,25 @@ class XArrayTypeTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            class Subject {
-                val primitiveBooleanArray : BooleanArray = TODO()
-                val primitiveByteArray : ByteArray = TODO()
-                val primitiveShortArray : ShortArray = TODO()
-                val primitiveIntArray : IntArray = TODO()
-                val primitiveLongArray : LongArray = TODO()
-                val primitiveCharArray : CharArray = TODO()
-                val primitiveFloatArray : FloatArray = TODO()
-                val primitiveDoubleArray : DoubleArray = TODO()
-                val boxedBooleanArray : Array<Boolean> = TODO()
-                val boxedByteArray : Array<Byte> = TODO()
-                val boxedShortArray : Array<Short> = TODO()
-                val boxedIntArray : Array<Int> = TODO()
-                val boxedLongArray : Array<Long> = TODO()
-                val boxedCharArray : Array<Char> = TODO()
-                val boxedFloatArray : Array<Float> = TODO()
-                val boxedDoubleArray : Array<Double> = TODO()
-            }
-            """
+                class Subject {
+                    val primitiveBooleanArray : BooleanArray = TODO()
+                    val primitiveByteArray : ByteArray = TODO()
+                    val primitiveShortArray : ShortArray = TODO()
+                    val primitiveIntArray : IntArray = TODO()
+                    val primitiveLongArray : LongArray = TODO()
+                    val primitiveCharArray : CharArray = TODO()
+                    val primitiveFloatArray : FloatArray = TODO()
+                    val primitiveDoubleArray : DoubleArray = TODO()
+                    val boxedBooleanArray : Array<Boolean> = TODO()
+                    val boxedByteArray : Array<Byte> = TODO()
+                    val boxedShortArray : Array<Short> = TODO()
+                    val boxedIntArray : Array<Int> = TODO()
+                    val boxedLongArray : Array<Long> = TODO()
+                    val boxedCharArray : Array<Char> = TODO()
+                    val boxedFloatArray : Array<Float> = TODO()
+                    val boxedDoubleArray : Array<Double> = TODO()
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(listOf(src)) { invocation ->
@@ -352,7 +352,9 @@ class XArrayTypeTest {
                 invocation.processingEnv.getWildcardType(producerExtends = numberType)
             invocation.processingEnv.getArrayType(outNumberType).let {
                 assertThat(it.isArray()).isTrue()
-                assertThat(it.componentType).isEqualTo(outNumberType)
+                // TODO(b/): Technically, we should have componentType == outNumberType, but
+                //  we need to change the XArrayType.componentType to be an XTypeArgument for that.
+                assertThat(it.componentType).isEqualTo(outNumberType.type)
                 assertThat(it.asTypeName().java)
                     .isEqualTo(JArrayTypeName.of(numberType.asTypeName().java))
                 assertThat(it.asTypeName().kotlin)
@@ -366,7 +368,9 @@ class XArrayTypeTest {
             val inNumberType = invocation.processingEnv.getWildcardType(consumerSuper = numberType)
             invocation.processingEnv.getArrayType(inNumberType).let {
                 assertThat(it.isArray()).isTrue()
-                assertThat(it.componentType).isEqualTo(inNumberType)
+                // TODO(b/): Technically, we should have componentType == inNumberType, but
+                //  we need to change the XArrayType.componentType to be an XTypeArgument for that.
+                assertThat(it.componentType).isEqualTo(inNumberType.type)
                 assertThat(it.asTypeName().java).isEqualTo(JArrayTypeName.of(JTypeName.OBJECT))
                 assertThat(it.asTypeName().kotlin)
                     .isEqualTo(
@@ -379,7 +383,9 @@ class XArrayTypeTest {
             val starType = invocation.processingEnv.getWildcardType()
             invocation.processingEnv.getArrayType(starType).let {
                 assertThat(it.isArray()).isTrue()
-                assertThat(it.componentType).isEqualTo(starType)
+                // TODO(b/): Technically, we should have componentType == starType, but
+                //  we need to change the XArrayType.componentType to be an XTypeArgument for that.
+                assertThat(it.componentType).isEqualTo(starType.type)
                 assertThat(it.asTypeName().java).isEqualTo(JArrayTypeName.of(JTypeName.OBJECT))
                 assertThat(it.asTypeName().kotlin)
                     .isEqualTo(

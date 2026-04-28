@@ -27,6 +27,8 @@ import android.os.OutcomeReceiver
 import androidx.annotation.CallSuper
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
+import androidx.appfunctions.ExecuteAppFunctionRequest.Companion.toCompatExecuteAppFunctionRequest
+import androidx.appfunctions.internal.AppFunctionInventoryProvider
 import androidx.appfunctions.internal.AppFunctionMetadataUtils.getAppFunctionMetadata
 import androidx.appfunctions.internal.Dispatchers
 import kotlinx.coroutines.CoroutineScope
@@ -50,13 +52,11 @@ import kotlinx.coroutines.withContext
  * </service>
  * ```
  *
- * For supporting AppFunction(s) on devices targeting below Android 16, use
- * [ExtensionsAppFunctionService]
- *
  * @see [android.app.appfunctions.AppFunctionService]
  */
 @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-public abstract class AppFunctionService : PlatformAppFunctionService() {
+public abstract class AppFunctionService :
+    PlatformAppFunctionService(), AppFunctionInventoryProvider {
     private val workerCoroutineScope = CoroutineScope(Dispatchers.Worker)
 
     /**
@@ -90,6 +90,7 @@ public abstract class AppFunctionService : PlatformAppFunctionService() {
                         val appFunctionMetadata =
                             getAppFunctionMetadata(
                                 this@AppFunctionService,
+                                resolveInventory(),
                                 request.functionIdentifier,
                             )
                                 ?: throw AppFunctionFunctionNotFoundException(
@@ -97,10 +98,7 @@ public abstract class AppFunctionService : PlatformAppFunctionService() {
                                 )
                         withContext(Dispatchers.Main) {
                             executeFunction(
-                                ExecuteAppFunctionRequest.fromPlatformClass(
-                                    request,
-                                    appFunctionMetadata,
-                                )
+                                request.toCompatExecuteAppFunctionRequest(appFunctionMetadata)
                             )
                         }
                     } catch (e: AppFunctionException) {
@@ -113,7 +111,7 @@ public abstract class AppFunctionService : PlatformAppFunctionService() {
                             context = this@AppFunctionService,
                             callingPackageName = callingPackage,
                         )
-                        callback.onResult(result.toPlatformClass())
+                        callback.onResult(result.toPlatformExecuteAppFunctionResponse())
                     }
                     is ExecuteAppFunctionResponse.Error ->
                         callback.onError(result.error.toPlatformClass())

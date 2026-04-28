@@ -39,7 +39,6 @@ import android.view.MotionEvent.TOOL_TYPE_FINGER
 import android.view.MotionEvent.TOOL_TYPE_MOUSE
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -88,6 +87,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.elementFor
+import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -124,7 +124,7 @@ import org.mockito.kotlin.verify
 class AndroidPointerInputTest {
     @Suppress("DEPRECATION")
     @get:Rule
-    val rule = androidx.test.rule.ActivityTestRule(AndroidPointerInputTestActivity::class.java)
+    val rule = androidx.test.rule.ActivityTestRule(TestActivity::class.java)
 
     private lateinit var container: OpenComposeView
 
@@ -507,7 +507,6 @@ class AndroidPointerInputTest {
         )
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427269985
     @Test
     fun dispatchTouchEvent_movementConsumed_requestDisallowInterceptTouchEventCalled() {
         dispatchTouchEvent_movementConsumptionInCompose(
@@ -516,7 +515,6 @@ class AndroidPointerInputTest {
         )
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427269985
     @Test
     fun dispatchTouchEvent_notMeasuredLayoutsAreMeasuredFirst() {
         val size = mutableStateOf(10)
@@ -563,7 +561,6 @@ class AndroidPointerInputTest {
         }
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427269985
     @Test
     fun dispatchTouchEvent_throughLayersOfAndroidAndCompose_hitsChildWithCorrectCoords() {
 
@@ -686,7 +683,6 @@ class AndroidPointerInputTest {
      * "offsetTopAndBottom(int)", that pointer locations are correct when dispatched down to a child
      * PointerInputModifier.
      */
-    @SdkSuppress(maxSdkVersion = 34) // b/427269985
     @Test
     fun dispatchTouchEvent_androidComposeViewOffset_positionIsCorrect() {
 
@@ -763,7 +759,6 @@ class AndroidPointerInputTest {
      *   6. Tap is triggered (that is, long press is NOT triggered because the second sleep() is
      *       NOT executed in withTimeout()).
      */
-    @SdkSuppress(maxSdkVersion = 34) // b/427269985
     @Test
     fun detectTapGestures_blockedMainThread() {
         var didLongPress = false
@@ -876,7 +871,6 @@ class AndroidPointerInputTest {
      * When a modifier is added, it should work, even when it takes the position of a previous
      * modifier.
      */
-    @SdkSuppress(maxSdkVersion = 34) // b/427269985
     @Test
     fun recomposeWithNewModifier() {
         var tap2Enabled by mutableStateOf(false)
@@ -1093,10 +1087,18 @@ class AndroidPointerInputTest {
         assertThat(event.type).isEqualTo(expectedHoverType)
     }
 
-    private fun assertScrollEvent(event: PointerEvent, scrollExpected: Offset) {
+    private fun assertScrollEvent(
+        event: PointerEvent,
+        scrollExpected: Offset,
+        buttonPressed: Boolean = false,
+    ) {
         assertThat(event.changes).hasSize(1)
         val change = event.changes[0]
-        assertThat(change.pressed).isFalse()
+        if (buttonPressed) {
+            assertThat(change.pressed).isTrue()
+        } else {
+            assertThat(change.pressed).isFalse()
+        }
         assertThat(event.type).isEqualTo(PointerEventType.Scroll)
         // we agreed to reverse Y in android to be in line with other platforms
         assertThat(change.scrollDelta).isEqualTo(scrollExpected.copy(y = scrollExpected.y * -1))
@@ -1108,10 +1110,21 @@ class AndroidPointerInputTest {
         offset: Offset = Offset.Zero,
         scrollDelta: Offset = Offset.Zero,
         eventTime: Int = 0,
+        buttonState: Int = -1,
     ) {
         rule.runOnUiThread {
             val root = layoutCoordinates.findRootCoordinates()
             val pos = root.localPositionOf(layoutCoordinates, offset)
+
+            val buttonState: Int =
+                if (buttonState >= 0) {
+                    buttonState
+                } else if (action == ACTION_DOWN || action == ACTION_MOVE) {
+                    MotionEvent.BUTTON_PRIMARY
+                } else {
+                    0
+                }
+
             val event =
                 MotionEvent(
                     eventTime,
@@ -1120,6 +1133,7 @@ class AndroidPointerInputTest {
                     0,
                     arrayOf(PointerProperties(0).also { it.toolType = TOOL_TYPE_MOUSE }),
                     arrayOf(PointerCoords(pos.x, pos.y, scrollDelta.x, scrollDelta.y)),
+                    buttonState,
                 )
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
@@ -4266,12 +4280,21 @@ class AndroidPointerInputTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS))
         // press the button first before scroll
         dispatchMouseEvent(ACTION_DOWN, layoutCoordinates!!)
-        dispatchMouseEvent(ACTION_SCROLL, layoutCoordinates!!, scrollDelta = scrollDelta)
+
+        dispatchMouseEvent(
+            action = ACTION_SCROLL,
+            layoutCoordinates = layoutCoordinates!!,
+            offset = Offset.Zero,
+            scrollDelta = scrollDelta,
+            eventTime = 0,
+            buttonState = MotionEvent.BUTTON_PRIMARY,
+        )
         rule.runOnUiThread {
-            assertThat(events).hasSize(3) // synthetic enter, button down, scroll
+            // synthetic enter, button down, scroll
+            assertThat(events).hasSize(3)
             assertHoverEvent(events[0], isEnter = true)
             assert(events[1].changes.fastAll { it.changedToDownIgnoreConsumed() })
-            assertScrollEvent(events[2], scrollExpected = scrollDelta)
+            assertScrollEvent(events[2], scrollExpected = scrollDelta, buttonPressed = true)
         }
     }
 
@@ -4309,12 +4332,16 @@ class AndroidPointerInputTest {
             dispatchMouseEvent(ACTION_SCROLL, layoutCoordinates!!, scrollDelta = it)
         }
         rule.runOnUiThread {
-            assertThat(events).hasSize(5) // 4 + synthetic enter
+            // 4 + synthetic enter/exits (4)
+            assertThat(events).hasSize(8)
             assertHoverEvent(events[0], isEnter = true)
             assertScrollEvent(events[1], scrollExpected = scrollDelta1)
-            assertScrollEvent(events[2], scrollExpected = scrollDelta2)
-            assertScrollEvent(events[3], scrollExpected = scrollDelta3)
-            assertScrollEvent(events[4], scrollExpected = scrollDelta4)
+            assertHoverEvent(events[2], isExit = true)
+            assertScrollEvent(events[3], scrollExpected = scrollDelta2)
+            assertHoverEvent(events[4], isExit = true)
+            assertScrollEvent(events[5], scrollExpected = scrollDelta3)
+            assertHoverEvent(events[6], isExit = true)
+            assertScrollEvent(events[7], scrollExpected = scrollDelta4)
         }
     }
 
@@ -6980,8 +7007,8 @@ class AndroidPointerInputTest {
         rule.runOnUiThread { assertThat(eventLog).hasSize(2) }
     }
 
-    /* Meant as a contrast to [IndirectTouchEventTest]'s test
-     * (delegated_multiple_androidTouchNavigationEvent_triggersIndirectTouchEvent()). This shows
+    /* Meant as a contrast to [IndirectPointerEventTest]'s test
+     * (delegated_multiple_androidTouchNavigationEvent_triggersIndirectPointerEvent()). This shows
      * what happens when using a Pointer Input Modifier (vs. Indirect) with two Delegating Nodes.
      * Pointer Input will pass the event to BOTH delegates whereas Indirect (because it uses a
      * focused item vs. hit testing) will only choose the first matching delegate to receive the
@@ -7170,8 +7197,6 @@ private fun countDown(block: (CountDownLatch) -> Unit) {
     block(countDownLatch)
     assertThat(countDownLatch.await(1, TimeUnit.SECONDS)).isTrue()
 }
-
-class AndroidPointerInputTestActivity : ComponentActivity()
 
 private fun MotionEvent(
     eventTime: Int,

@@ -92,8 +92,6 @@ public fun NavigationBar(
             modifier = modifier,
         ) {
             Row(
-                // XR-changed: Original NavigationBar uses fillMaxWidth() and windowInsets,
-                // which do not produce the desired result in XR.
                 modifier =
                     Modifier.width(IntrinsicSize.Min)
                         .heightIn(min = XrNavigationBarTokens.ContainerHeight)

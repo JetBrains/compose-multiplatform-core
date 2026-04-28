@@ -85,7 +85,7 @@ import androidx.compose.ui.test.assertPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.StateRestorationTester
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
@@ -111,7 +111,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -2231,7 +2230,6 @@ class SubcomposeLayoutTest {
     }
 
     @Test
-    @Ignore("b/188320755")
     fun forceMeasureOfInactiveElementFromLaunchedEffect() {
         var isActive by mutableStateOf(true)
         var forceMeasureFromLaunchedEffect by mutableStateOf(false)
@@ -3898,6 +3896,59 @@ class SubcomposeLayoutTest {
 
             p.resumeUntilCompleted()
             p.apply()
+        }
+    }
+
+    @Test
+    fun lookaheadWithPausable_reuseInApproach() {
+        val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
+        var hasContent by mutableStateOf(true)
+        var shouldRetainContentInApproach by mutableStateOf(false)
+
+        val content = @Composable { Box(Modifier.size(10.dp)) }
+
+        rule.setContent {
+            LookaheadScope {
+                SubcomposeLayout(
+                    state,
+                    modifier =
+                        Modifier.approachLayout(
+                            isMeasurementApproachInProgress = { shouldRetainContentInApproach }
+                        ) { m, c ->
+                            val p = m.measure(c)
+                            layout(p.width, p.height) { p.place(IntOffset.Zero) }
+                        },
+                ) { c ->
+                    val hasContent =
+                        (!isLookingAhead && shouldRetainContentInApproach) || hasContent
+                    val p =
+                        if (hasContent) {
+                            subcompose(Unit, content).map { it.measure(c) }
+                        } else {
+                            emptyList()
+                        }
+                    layout(10, 10) { p.forEach { it.place(0, 0) } }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            // Dispose old content
+            hasContent = false
+        }
+
+        rule.runOnIdle {
+            // start prefetching new content
+            state.createPausedPrecomposition(Unit, content)
+            // force approach to use the content
+            shouldRetainContentInApproach = true
+        }
+
+        rule.runOnIdle {
+            // finish approach pass
+            shouldRetainContentInApproach = false
+            // compose new content
+            hasContent = true
         }
     }
 

@@ -61,7 +61,7 @@ class InCallViewModel(
         callRepository.callDataFlow
             .combine(_activeLoopbackCallId) { calls, activeLoopbackId ->
                 calls.map { call ->
-                    val currentCallId = call.callId.toString()
+                    val currentCallId = call.callId
                     InCallItemUiState(
                         callId = currentCallId,
                         attributes = call.attributes,
@@ -80,6 +80,7 @@ class InCallViewModel(
                         isCallIconExtensionEnabled = call.isCallIconExtensionEnabled,
                         callIconData = call.iconData,
                         isLocallyMuted = call.isLocallyMuted,
+                        canUserUpdateSilence = call.canUserUpdateSilence,
                     )
                 }
             }
@@ -95,8 +96,7 @@ class InCallViewModel(
                 val currentLoopbackCallId = _activeLoopbackCallId.value
                 val eligibleCall: CallData? =
                     calls.firstOrNull {
-                        it.callId.toString() ==
-                            currentLoopbackCallId || // Prioritize current loopback call
+                        it.callId == currentLoopbackCallId || // Prioritize current loopback call
                             (currentLoopbackCallId == null &&
                                 it.callState == CallState.ACTIVE) // Or first active
                     }
@@ -129,7 +129,7 @@ class InCallViewModel(
                             eligibleCall.callState == CallState.ACTIVE &&
                             !effectiveMuteForLoopback
                     ) {
-                        eligibleCall.callId.toString() // Use toString() for consistency
+                        eligibleCall.callId
                     } else {
                         null
                     }
@@ -190,6 +190,11 @@ class InCallViewModel(
         Log.d(TAG, "Requesting toggleLocalMute: isMuted = $isMuted")
         maybeStopAudioLoopback(isMuted)
         callRepository.toggleLocalCallSilence(callId, isMuted)
+    }
+
+    fun toggleCanUserUpdateSilence(callId: String, canUserUpdateSilence: Boolean) {
+        Log.d(TAG, "toggleCanUserUpdateSilence: canUserUpdateSilence = $canUserUpdateSilence")
+        callRepository.toggleCanUserUpdateSilence(callId, canUserUpdateSilence)
     }
 
     fun maybeStopAudioLoopback(isMuted: Boolean) {

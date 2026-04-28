@@ -22,8 +22,8 @@ import android.view.InputDevice
 import android.view.KeyEvent as AndroidKeyEvent
 import android.view.MotionEvent
 import androidx.collection.IntObjectMap
-import androidx.compose.runtime.retain.ForgetfulRetainScope
-import androidx.compose.runtime.retain.RetainScope
+import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
+import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.Autofill
@@ -63,6 +63,7 @@ import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -121,6 +122,7 @@ class PointerInputEventProcessorTest {
     @Before
     fun setup() {
         testOwner = TestOwner()
+        testOwner.initializeRoot()
         pointerInputEventProcessor = PointerInputEventProcessor(testOwner.root)
     }
 
@@ -160,6 +162,8 @@ class PointerInputEventProcessorTest {
                         down = true,
                         pressure = 1.0f,
                         type = pointerType,
+                        scaleGestureFactor = 0f,
+                        panGestureOffset = Offset.Zero,
                     )
                 val data = previousEvents.map { it.copy(uptime = index.toLong()) }
                 PointerInputEvent(index.toLong(), data)
@@ -2648,6 +2652,8 @@ class PointerInputEventProcessorTest {
                     type = PointerType.Mouse,
                     pressure = 0f,
                     scrollDelta = Offset(0f, 100f),
+                    scaleGestureFactor = 0f,
+                    panGestureOffset = Offset.Zero,
                 )
                 .let { PointerInputEvent(uptime = 11, pointers = listOf(it)) }
 
@@ -2927,7 +2933,7 @@ private class TestOwner : Owner {
 
     private val delegate = MeasureAndLayoutDelegate(root)
 
-    init {
+    fun initializeRoot() {
         root.attach(this)
         delegate.updateRootConstraints(Constraints(maxWidth = 500, maxHeight = 500))
     }
@@ -2975,8 +2981,8 @@ private class TestOwner : Owner {
     override val autofillManager: AutofillManager?
         get() = null
 
-    override val retainScope: RetainScope
-        get() = ForgetfulRetainScope
+    override val retainedValuesStore: RetainedValuesStore
+        get() = ForgetfulRetainedValuesStore
 
     override val density: Density
         get() = Density(1f)
@@ -2985,6 +2991,9 @@ private class TestOwner : Owner {
         get() = TODO("Not yet implemented")
 
     override val softwareKeyboardController: SoftwareKeyboardController
+        get() = TODO("Not yet implemented")
+
+    override val localeList: LocaleList
         get() = TODO("Not yet implemented")
 
     override suspend fun textInputSession(

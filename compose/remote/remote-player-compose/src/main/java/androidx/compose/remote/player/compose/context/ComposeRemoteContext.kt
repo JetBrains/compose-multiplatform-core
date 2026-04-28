@@ -22,6 +22,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
+import androidx.compose.remote.core.RemoteClock
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.VariableSupport
 import androidx.compose.remote.core.operations.BitmapData
@@ -33,13 +34,12 @@ import androidx.compose.remote.core.types.LongConstant
 import androidx.compose.remote.player.core.platform.BitmapLoader
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import java.time.Clock
 
 /**
  * An implementation of [RemoteContext] for
- * [androidx.compose.remote.player.compose.RemoteComposePlayer].
+ * [androidx.compose.remote.player.compose.impl.RemoteComposePlayer].
  */
-internal class ComposeRemoteContext(clock: Clock) : RemoteContext(clock) {
+internal class ComposeRemoteContext(clock: RemoteClock) : RemoteContext(clock) {
     private lateinit var haptic: HapticFeedback
     private var varNameHashMap: HashMap<String, VarName?> = HashMap<String, VarName?>()
 

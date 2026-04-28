@@ -41,11 +41,6 @@ private val wrapperCache = WeakHashMap<RoomDatabase, RoomSupportSQLiteDatabase>(
  * compatibility with existing usages of [SupportSQLiteDatabase].
  */
 public fun RoomDatabase.getSupportWrapper(): SupportSQLiteDatabase {
-    // If Room is in compatibility mode, it has no driver configured and SupportSQLite APIs
-    // are available.
-    if (inCompatibilityMode()) {
-        return openHelper.writableDatabase
-    }
     return synchronized(wrapperCache) {
         wrapperCache.getOrPut(this) { RoomSupportSQLiteDatabase(this) }
     }
@@ -117,15 +112,11 @@ internal fun SQLiteStatement.bindQuery(query: SupportSQLiteQuery) {
 
 internal fun SQLiteStatement.toCursor(): Cursor {
     val columnNames = getColumnNames().toTypedArray()
-    var columnTypes: List<Int>? = null
     val cursor = MatrixCursor(columnNames)
     while (step()) {
-        if (columnTypes == null) {
-            columnTypes = List(columnNames.size) { getColumnType(it) }
-        }
         val row =
             Array<Any?>(columnNames.size) { i ->
-                val columnType = columnTypes[i]
+                val columnType = getColumnType(i)
                 when (columnType) {
                     SQLITE_DATA_INTEGER -> getLong(i)
                     SQLITE_DATA_FLOAT -> getDouble(i)

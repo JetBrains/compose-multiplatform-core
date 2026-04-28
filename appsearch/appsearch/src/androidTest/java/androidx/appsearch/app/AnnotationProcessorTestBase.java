@@ -3259,12 +3259,22 @@ public abstract class AnnotationProcessorTestBase {
         }
 
         public static EmailWithAccount createSampleDoc() {
-            Account account1 = new Account("", "", "com.google",
-                    "accountName1", "accountId1");
-            Account account2 = new Account("namespace", "", "com.google",
-                    "accountName2", /*accountId=*/"");
-            Account account3 = new Account("", "id", "com.google",
-                    /*accountName=*/"", "accountId3");
+
+            Account account1 = new Account.Builder("namespace", "id1")
+                    .setAccountType("com.google")
+                    .setAccountName("accountName1")
+                    .setAccountId("accountId1")
+                    .build();
+            Account account2 = new Account.Builder("namespace", "id2")
+                    .setAccountType("com.google")
+                    .setAccountName("accountName2")
+                    .setAccountId("accountId2")
+                    .build();
+            Account account3 = new Account.Builder("namespace", "id3")
+                    .setAccountType("com.google")
+                    .setAccountName("accountName3")
+                    .setAccountId("accountId3")
+                    .build();
 
             EmailWithAccount email = new EmailWithAccount();
             email.mNamespace = "namespace";
@@ -3316,8 +3326,15 @@ public abstract class AnnotationProcessorTestBase {
                 .build()).get();
 
         // Create and add 2 documents with null accountName or accountId
-        Account account1 = new Account("", "a1", "com.google", "accountName",  /*accountId=*/ "");
-        Account account2 = new Account("", "a2", "com.google", "accountName", "accountId");
+        Account account1 = new Account.Builder("namespace", "a1")
+                .setAccountType("com.google")
+                .setAccountName("accountName")
+                .build();
+        Account account2 = new Account.Builder("namespace", "a2")
+                .setAccountType("com.google")
+                .setAccountName("accountName")
+                .setAccountId("accountId")
+                .build();
 
         EmailWithAccount email1 = new EmailWithAccount();
         email1.mNamespace = "namespace";
@@ -3364,7 +3381,11 @@ public abstract class AnnotationProcessorTestBase {
 
         // Create and add a document
         EmailWithAccount email = new EmailWithAccount();
-        Account account = new Account("", "", "com.google", "accountName", "accountId");
+        Account account = new Account.Builder(/*namespace=*/"", /*id=*/"")
+                .setAccountType("com.google")
+                .setAccountName("accountName")
+                .setAccountId("accountId")
+                .build();
         email.mNamespace = "namespace";
         email.mId = "id";
         email.mCreationTimestampMillis = 1000;
@@ -3399,7 +3420,10 @@ public abstract class AnnotationProcessorTestBase {
 
         // Create and add a document
         EmailWithAccount email = new EmailWithAccount();
-        Account account = new Account("", "", "com.google", "accountName", /*accountId=*/"");
+        Account account = new Account.Builder(/*namespace=*/"", /*id=*/"")
+                .setAccountType("com.google")
+                .setAccountName("accountName")
+                .build();
         email.mNamespace = "namespace";
         email.mId = "id";
         email.mCreationTimestampMillis = 1000;

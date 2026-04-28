@@ -18,6 +18,8 @@ package androidx.compose.material3
 
 import androidx.activity.BackEventCompat
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
@@ -25,21 +27,29 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.test.screenshot.matchers.MSSIMMatcher
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
@@ -79,6 +89,47 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
             )
         }
         assertAgainstGolden("searchBar_inactive_${scheme.name}")
+    }
+
+    @Test
+    fun searchBar_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+
+        rule.setMaterialContent(scheme.colorScheme) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+                val expanded = false
+                val onExpandedChange: (Boolean) -> Unit = {}
+                SearchBar(
+                    modifier = Modifier.testTag(testTag),
+                    inputField = {
+                        SearchBarDefaults.InputField(
+                            modifier = Modifier.focusRequester(focusRequester),
+                            state = rememberTextFieldState(),
+                            onSearch = {},
+                            expanded = expanded,
+                            onExpandedChange = onExpandedChange,
+                            placeholder = { Text("Hint") },
+                        )
+                    },
+                    expanded = expanded,
+                    onExpandedChange = onExpandedChange,
+                    content = {},
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        assertAgainstGolden("searchBar_focused_insetFocusRings_${scheme.name}")
     }
 
     @Test
@@ -692,6 +743,96 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("appBarWithSearch_withNavigationIconAndActions_${scheme.name}")
     }
 
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun appBarWithSearch_withNavigationIconAndActions_dockedAndExpanded_withGap() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            val searchBarState =
+                rememberSearchBarWithGapState(initialValue = SearchBarValue.Expanded)
+            val inputField =
+                @Composable {
+                    SearchBarDefaults.InputField(
+                        searchBarState = searchBarState,
+                        textFieldState = rememberTextFieldState(),
+                        onSearch = {},
+                        placeholder = { Text("Hint") },
+                    )
+                }
+            AppBarWithSearch(state = searchBarState, inputField = inputField)
+            ExpandedDockedSearchBarWithGap(
+                modifier = Modifier.testTag(testTag),
+                state = searchBarState,
+                inputField = inputField,
+            ) {
+                repeat(4) { idx ->
+                    val resultText = "Suggestion $idx"
+                    ListItem(
+                        headlineContent = { Text(resultText) },
+                        supportingContent = { Text("Additional info") },
+                        leadingContent = { Icon(Icons.Filled.Star, contentDescription = null) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        modifier =
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
+            }
+        }
+
+        assertAgainstGolden(
+            "appBarWithSearch_withNavigationIconAndActions_dockedAndExpanded_withGap_${scheme.name}",
+            threshold = 0.95,
+        )
+    }
+
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun appBarWithSearch_withNavigationIconAndActions_fullScreenAndExpanded_contained() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            val searchBarState =
+                rememberContainedSearchBarState(initialValue = SearchBarValue.Expanded)
+            val appBarWithSearchColors =
+                SearchBarDefaults.appBarWithSearchColors(
+                    searchBarColors = SearchBarDefaults.containedColors(state = searchBarState)
+                )
+            val inputField =
+                @Composable {
+                    SearchBarDefaults.InputField(
+                        searchBarState = searchBarState,
+                        textFieldState = rememberTextFieldState(),
+                        onSearch = {},
+                        placeholder = { Text("Hint") },
+                        colors = appBarWithSearchColors.searchBarColors.inputFieldColors,
+                    )
+                }
+            AppBarWithSearch(
+                state = searchBarState,
+                inputField = inputField,
+                colors = appBarWithSearchColors,
+            )
+            ExpandedFullScreenContainedSearchBar(
+                modifier = Modifier.testTag(testTag),
+                state = searchBarState,
+                inputField = inputField,
+                colors = appBarWithSearchColors.searchBarColors,
+            ) {
+                repeat(4) { idx ->
+                    val resultText = "Suggestion $idx"
+                    ListItem(
+                        headlineContent = { Text(resultText) },
+                        supportingContent = { Text("Additional info") },
+                        leadingContent = { Icon(Icons.Filled.Star, contentDescription = null) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        modifier =
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
+            }
+        }
+        assertAgainstGolden(
+            "appBarWithSearch_withNavigationIconAndActions_fullScreenAndExpanded_contained_${scheme.name}"
+        )
+    }
+
     @Test
     fun appBarWithSearch_withoutNavigationIconAndActions() {
         rule.setMaterialContent(scheme.colorScheme) {
@@ -739,8 +880,15 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("appBarWithSearch_withScrolledContainerColor_${scheme.name}")
     }
 
-    private fun assertAgainstGolden(goldenName: String) {
-        rule.onNodeWithTag(testTag).captureToImage().assertAgainstGolden(screenshotRule, goldenName)
+    private fun assertAgainstGolden(goldenName: String, threshold: Double = 0.98) {
+        rule
+            .onNodeWithTag(testTag, useUnmergedTree = true)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                goldenName,
+                matcher = MSSIMMatcher(threshold = threshold),
+            )
     }
 
     companion object {

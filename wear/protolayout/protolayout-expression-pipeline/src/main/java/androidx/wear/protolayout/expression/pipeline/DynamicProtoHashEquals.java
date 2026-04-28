@@ -18,6 +18,8 @@ package androidx.wear.protolayout.expression.pipeline;
 
 import android.util.Log;
 
+import androidx.annotation.RestrictTo;
+import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.proto.DynamicProto.AnimatableDynamicColor;
 import androidx.wear.protolayout.expression.proto.DynamicProto.AnimatableDynamicFloat;
 import androidx.wear.protolayout.expression.proto.DynamicProto.AnimatableDynamicInt32;
@@ -59,7 +61,8 @@ import java.util.Objects;
  * A utility class for providing content-based equality for dynamic proto messages. This is needed
  * because the default proto equals method is slow.
  */
-final class DynamicProtoHashEquals {
+@RestrictTo(Scope.LIBRARY_GROUP)
+public final class DynamicProtoHashEquals {
     private static final String TAG = "DynamicProtoHashEquals";
 
     private DynamicProtoHashEquals() {}

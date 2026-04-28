@@ -16,10 +16,8 @@
 
 package androidx.room3.solver.types
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XTypeName
-import androidx.room3.compiler.codegen.buildCodeBlock
 import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.solver.CodeGenScope
 
@@ -30,26 +28,12 @@ object BoxedBooleanToBoxedIntConverter {
         val tInt = processingEnvironment.requireType(XTypeName.BOXED_INT).makeNullable()
         return listOf(
             object : SingleStatementTypeConverter(tBoolean, tInt) {
-                override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
-                    return buildCodeBlock { language ->
-                        when (language) {
-                            CodeLanguage.JAVA ->
-                                add("%L == null ? null : (%L ? 1 : 0)", inputVarName, inputVarName)
-                            CodeLanguage.KOTLIN -> add("%L?.let { if (it) 1 else 0 }", inputVarName)
-                        }
-                    }
-                }
+                override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock =
+                    XCodeBlock.of("%L?.let { if (it) 1 else 0 }", inputVarName)
             },
             object : SingleStatementTypeConverter(tInt, tBoolean) {
-                override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
-                    return buildCodeBlock { language ->
-                        when (language) {
-                            CodeLanguage.JAVA ->
-                                add("%L == null ? null : %L != 0", inputVarName, inputVarName)
-                            CodeLanguage.KOTLIN -> add("%L?.let { it != 0 }", inputVarName)
-                        }
-                    }
-                }
+                override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock =
+                    XCodeBlock.of("%L?.let { it != 0 }", inputVarName)
             },
         )
     }

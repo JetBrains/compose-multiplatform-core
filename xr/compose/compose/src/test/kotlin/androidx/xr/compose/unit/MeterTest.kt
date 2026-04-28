@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.compose.testing.XrExtensionsProvider
 import androidx.xr.compose.unit.Meter.Companion.centimeters
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.compose.unit.Meter.Companion.millimeters
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
 import com.android.extensions.xr.ShadowConfig
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -36,7 +36,7 @@ class MeterTest {
 
     @Before
     fun setUp() {
-        ShadowConfig.extract(XrExtensionsProvider.getXrExtensions()!!.config!!)
+        ShadowConfig.extract(XrExtensionsProvider.getXrExtensions().config!!)
             .setDefaultDpPerMeter(1f)
     }
 

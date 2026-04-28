@@ -21,15 +21,15 @@ import static org.junit.Assert.assertTrue;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.Limits;
+import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.core.RemoteContext;
-import androidx.compose.remote.core.operations.BitmapData;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.creation.RemoteComposeContext;
 import androidx.compose.remote.creation.RemoteComposeContextAndroid;
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
-import androidx.compose.remote.player.core.RemoteComposeDocument;
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices;
+import androidx.compose.remote.player.core.RemoteDocument;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
@@ -49,10 +49,10 @@ import java.util.Random;
 @RunWith(AndroidJUnit4.class)
 public class ImageErrorTest {
 
-    private final Platform mPlatform = new AndroidxPlatformServices();
+    private final RcPlatformServices mPlatform = new AndroidxRcPlatformServices();
 
     // ########################### TEST UTILS ######################################
-    private RemoteComposeDocument createDocument(
+    private RemoteDocument createDocument(
             RemoteContext context, Bitmap lightImage, Bitmap darkImage) {
         byte[] buffer = create(lightImage, darkImage);
         System.out.println("size of doc " + buffer.length / 1024 + "KB");
@@ -87,15 +87,14 @@ public class ImageErrorTest {
         return Arrays.copyOf(buffer, bufferSize);
     }
 
-    private RemoteComposeDocument createDocument(
-            byte[] buffer, int bufferSize, RemoteContext context) {
-        RemoteComposeDocument recreatedDocument =
-                new RemoteComposeDocument(new ByteArrayInputStream(buffer, 0, bufferSize));
+    private RemoteDocument createDocument(byte[] buffer, int bufferSize, RemoteContext context) {
+        RemoteDocument recreatedDocument =
+                new RemoteDocument(new ByteArrayInputStream(buffer, 0, bufferSize));
         recreatedDocument.initializeContext(context);
         return recreatedDocument;
     }
 
-    ByteBuffer docGetBuffer(RemoteComposeDocument doc) {
+    ByteBuffer docGetBuffer(RemoteDocument doc) {
         RemoteComposeBuffer buff = doc.getDocument().getBuffer();
         int size = buff.getBuffer().getSize();
         ByteBuffer b = ByteBuffer.allocate(size);
@@ -113,7 +112,7 @@ public class ImageErrorTest {
         Bitmap lightImage = TestUtils.createImage(tw, th, false);
         Bitmap darkImage = TestUtils.createImage(tw, th, true);
         DebugPlayerContext debugContext = new DebugPlayerContext();
-        RemoteComposeDocument doc = createDocument(debugContext, lightImage, darkImage);
+        RemoteDocument doc = createDocument(debugContext, lightImage, darkImage);
         doc.paint(debugContext, Theme.UNSPECIFIED);
 
         String result = TestUtils.removeTime(debugContext.getTestResults());
@@ -159,7 +158,7 @@ public class ImageErrorTest {
 
     ByteBuffer createDoc(Bitmap lightImage, Bitmap darkImage) {
         DebugPlayerContext debugContext = new DebugPlayerContext();
-        RemoteComposeDocument doc = createDocument(debugContext, lightImage, darkImage);
+        RemoteDocument doc = createDocument(debugContext, lightImage, darkImage);
         doc.paint(debugContext, Theme.UNSPECIFIED);
         ByteBuffer b = docGetBuffer(doc);
         return b;
@@ -174,7 +173,7 @@ public class ImageErrorTest {
 
         byte[] b = create(lightImage, darkImage);
         InputStream is = new ByteArrayInputStream(b);
-        RemoteComposeDocument rdoc = new RemoteComposeDocument(is);
+        RemoteDocument rdoc = new RemoteDocument(is);
         android.content.Context appContext =
                 InstrumentationRegistry.getInstrumentation().getTargetContext();
 
@@ -217,7 +216,7 @@ public class ImageErrorTest {
             }
             InputStream is = new ByteArrayInputStream(b);
             try {
-                RemoteComposeDocument rdoc = new RemoteComposeDocument(is);
+                RemoteDocument rdoc = new RemoteDocument(is);
             } catch (Exception ex) {
                 System.out.println(" caught " + seed + " " + ex.toString());
                 continue;
@@ -230,12 +229,12 @@ public class ImageErrorTest {
     @Test
     public void testImageTooLargeCreating1() {
         int tw = 400;
-        int th = BitmapData.MAX_IMAGE_DIMENSION + 1;
+        int th = Limits.MAX_IMAGE_DIMENSION + 1;
         Bitmap lightImage = TestUtils.createImage(tw, th, false);
         Bitmap darkImage = TestUtils.createImage(tw, th, true);
         DebugPlayerContext debugContext = new DebugPlayerContext();
 
-        RemoteComposeDocument doc = null;
+        RemoteDocument doc = null;
         try {
             doc = createDocument(debugContext, lightImage, darkImage);
         } catch (Exception e) {
@@ -247,13 +246,13 @@ public class ImageErrorTest {
 
     @Test
     public void testImageTooLargeCreating2() {
-        int tw = BitmapData.MAX_IMAGE_DIMENSION + 1;
+        int tw = Limits.MAX_IMAGE_DIMENSION + 1;
         int th = 60;
         Bitmap lightImage = TestUtils.createImage(tw, th, false);
         Bitmap darkImage = TestUtils.createImage(tw, th, true);
         DebugPlayerContext debugContext = new DebugPlayerContext();
 
-        RemoteComposeDocument doc = null;
+        RemoteDocument doc = null;
         try {
             doc = createDocument(debugContext, lightImage, darkImage);
         } catch (Exception e) {
@@ -266,12 +265,12 @@ public class ImageErrorTest {
     @Test
     public void testNonSquareImageThroughPlayer() {
         int tw = 400;
-        int th = BitmapData.MAX_IMAGE_DIMENSION + 1;
+        int th = Limits.MAX_IMAGE_DIMENSION + 1;
         Bitmap lightImage = TestUtils.createImage(tw, th, false);
         Bitmap darkImage = TestUtils.createImage(tw, th, true);
         DebugPlayerContext debugContext = new DebugPlayerContext();
 
-        RemoteComposeDocument doc = null;
+        RemoteDocument doc = null;
         try {
             doc = createDocument(debugContext, lightImage, darkImage);
         } catch (Exception e) {

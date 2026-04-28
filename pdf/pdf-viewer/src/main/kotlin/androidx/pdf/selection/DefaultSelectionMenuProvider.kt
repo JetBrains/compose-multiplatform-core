@@ -42,7 +42,7 @@ internal object DefaultSelectionMenuProvider {
                     // close the context menu upon copy action
                     close()
                     // After completion of action the selection should be cleared.
-                    pdfView.clearSelection()
+                    pdfView.clearCurrentSelection()
                 },
                 DefaultSelectionMenuComponent(
                     key = PdfSelectionMenuKeys.SelectAllKey,
@@ -56,7 +56,7 @@ internal object DefaultSelectionMenuProvider {
                         // Action mode for old selection should be closed which will be triggered
                         // after select all is completed with current selection.
                         close()
-                        pdfView.selectAllTextOnPage(page)
+                        pdfView.selectAllText()
                     }
                 },
             )

@@ -44,7 +44,7 @@ internal class HyperLinkSelectionMenuProvider(private val context: Context) :
                 ClipboardUtils.copyToClipboard(context, localCurrentSelection.link.toString())
             }
             close()
-            pdfView.clearSelection()
+            pdfView.clearCurrentSelection()
         }
     }
 

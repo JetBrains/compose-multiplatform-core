@@ -20,7 +20,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.kruth.assertThat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State
@@ -247,5 +247,22 @@ class LifecycleOwnerTest {
         parentLifecycleOwner.currentState = State.DESTROYED
         rule.awaitIdle()
         assertThat(childLifecycle.currentState).isEqualTo(State.DESTROYED)
+    }
+
+    @Test
+    fun rememberLifecycleOwner_whenOnDestroyWhileInitialized_ignoresEvent() = runTest {
+        lateinit var childOwner: LifecycleOwner
+        var inComposition by mutableStateOf(true)
+
+        rule.setContent {
+            if (inComposition) {
+                childOwner = rememberLifecycleOwner(parent = null, maxLifecycle = State.INITIALIZED)
+            }
+        }
+
+        inComposition = false
+        rule.awaitIdle()
+
+        assertThat(childOwner.lifecycle.currentState).isEqualTo(State.INITIALIZED)
     }
 }

@@ -17,6 +17,7 @@
 package androidx.compose.foundation
 
 import android.os.SystemClock
+import androidx.compose.foundation.gestures.DraggableGestureConnection
 import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.awaitAllPointersUp
@@ -25,12 +26,14 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitVerticalPointerSlopOrCancellation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.traverseParentDraggableGestures
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.input.elementFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -38,6 +41,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.testutils.assertModifierIsPure
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,18 +50,19 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
+import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performMouseInput
@@ -175,7 +180,7 @@ class DraggableTest {
     }
 
     @Test
-    fun draggable_indirectTouchDrag_worksOnBothOrientations_primaryXAxis() {
+    fun draggable_indirectPointerDrag_worksOnBothOrientations_primaryXAxis() {
         var total = 0f
         var orientation by mutableStateOf(Orientation.Horizontal)
         setDraggableContent(enableInitialFocus = true) {
@@ -188,7 +193,7 @@ class DraggableTest {
                 rule,
                 Offset(TouchPadStart, 0f),
                 Offset(TouchPadEnd, 0f),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -197,7 +202,7 @@ class DraggableTest {
                 rule,
                 Offset(TouchPadEnd, 0f),
                 Offset(TouchPadStart, 0f),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
 
@@ -212,7 +217,7 @@ class DraggableTest {
                 rule,
                 Offset(TouchPadStart, 0f),
                 Offset(TouchPadEnd, 0f),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -221,13 +226,13 @@ class DraggableTest {
                 rule,
                 Offset(TouchPadEnd, 0f),
                 Offset(TouchPadStart, 0f),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
     @Test
-    fun draggable_indirectTouchDrag_worksOnBothOrientations_primaryYAxis() {
+    fun draggable_indirectPointerDrag_worksOnBothOrientations_primaryYAxis() {
         var total = 0f
         var orientation by mutableStateOf(Orientation.Horizontal)
         setDraggableContent(enableInitialFocus = true) {
@@ -240,7 +245,7 @@ class DraggableTest {
                 rule,
                 Offset(0f, TouchPadStart),
                 Offset(0f, TouchPadEnd),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.Y,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -249,7 +254,7 @@ class DraggableTest {
                 rule,
                 Offset(0f, TouchPadEnd),
                 Offset(0f, TouchPadStart),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.Y,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
 
@@ -264,7 +269,7 @@ class DraggableTest {
                 rule,
                 Offset(0f, TouchPadStart),
                 Offset(0f, TouchPadEnd),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.Y,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -273,13 +278,13 @@ class DraggableTest {
                 rule,
                 Offset(0f, TouchPadEnd),
                 Offset(0f, TouchPadStart),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.Y,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.Y,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
     @Test
-    fun draggable_indirectTouchDrag_worksOnBothOrientations_noPrimaryAxis() {
+    fun draggable_indirectPointerDrag_worksOnBothOrientations_noPrimaryAxis() {
         var total = 0f
         var orientation by mutableStateOf(Orientation.Horizontal)
         setDraggableContent(enableInitialFocus = true) {
@@ -292,7 +297,7 @@ class DraggableTest {
                 rule,
                 Offset(TouchPadStart, 0f),
                 Offset(TouchPadEnd, 0f),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.None,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -301,7 +306,7 @@ class DraggableTest {
                 rule,
                 Offset(TouchPadEnd, 0f),
                 Offset(TouchPadStart, 0f),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.None,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
 
@@ -316,7 +321,7 @@ class DraggableTest {
                 rule,
                 Offset(0f, TouchPadStart),
                 Offset(0f, TouchPadEnd),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.None,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None,
             )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
         rule
@@ -325,13 +330,13 @@ class DraggableTest {
                 rule,
                 Offset(0f, TouchPadEnd),
                 Offset(0f, TouchPadStart),
-                primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.None,
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None,
             )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
     @Test
-    fun draggable_indirectTouchDrag_notFocused_shouldNotReceiveEvents() {
+    fun draggable_indirectPointerDrag_notFocused_shouldNotReceiveEvents() {
         var total = 0f
         var orientation by mutableStateOf(Orientation.Horizontal)
         setDraggableContent(enableInitialFocus = false) {
@@ -407,7 +412,7 @@ class DraggableTest {
     }
 
     @Test
-    fun draggable_indirectTouchDrag_startStop() {
+    fun draggable_indirectPointerDrag_startStop() {
         var startTrigger = 0
         var stopTrigger = 0
         setDraggableContent(enableInitialFocus = true) {
@@ -430,7 +435,7 @@ class DraggableTest {
     }
 
     @Test
-    fun draggable_indirectTouchDrag_shouldResetOnOrientationChanged() {
+    fun draggable_indirectPointerDrag_shouldResetOnOrientationChanged() {
         var startTrigger = 0
         var stopTrigger = 0
         var orientation by mutableStateOf(Orientation.Horizontal)
@@ -497,7 +502,7 @@ class DraggableTest {
     }
 
     @Test
-    fun draggable_indirectTouchEvent_disabledWontCallLambda() {
+    fun draggable_indirectPointerEvent_disabledWontCallLambda() {
         var total = 0f
         val enabled = mutableStateOf(true)
         setDraggableContent(enableInitialFocus = true) {
@@ -536,7 +541,7 @@ class DraggableTest {
     }
 
     @Test
-    fun draggable_indirectTouchEvent_velocityProxy() {
+    fun draggable_indirectPointerEvent_velocityProxy() {
         var velocityTriggered = 0f
         setDraggableContent(enableInitialFocus = true) {
             Modifier.draggable(
@@ -592,7 +597,7 @@ class DraggableTest {
     }
 
     @Test
-    fun draggable_indirectTouchCancel_callsDragStop() {
+    fun draggable_indirectPointerCancel_callsDragStop() {
         var total = 0f
         var dragStopped = 0
         setDraggableContent(enableInitialFocus = true) {
@@ -604,7 +609,7 @@ class DraggableTest {
                 total += it
             }
         }
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectTouchCancelEvent(rule)
+        rule.onNodeWithTag(draggableBoxTag).sendIndirectPointerCancelEvent(rule)
 
         rule.runOnIdle {
             assertThat(total).isGreaterThan(0f)
@@ -860,7 +865,7 @@ class DraggableTest {
         }
 
     @Test
-    fun draggable_resumesNormally_whenInterruptedWithHigherPriority_indirectTouch() =
+    fun draggable_resumesNormally_whenInterruptedWithHigherPriority_indirectPointer() =
         runTest(testDispatcher) {
             var total = 0f
             var dragStopped = 0f
@@ -883,21 +888,21 @@ class DraggableTest {
             val downEvent =
                 rule
                     .onNodeWithTag(draggableBoxTag)
-                    .sendIndirectTouchPressEvent(rule, currentTime, currentValue)
+                    .sendIndirectPointerPressEvent(rule, currentTime, currentValue)
             currentTime += 16L
             currentValue += stepSize
 
             val (newCurrentTime, newCurrentValue, lastMove) =
                 rule
                     .onNodeWithTag(draggableBoxTag)
-                    .sendIndirectTouchMoveEvents(
+                    .sendIndirectPointerMoveEvents(
                         rule,
                         5,
                         currentTime,
                         currentValue,
                         16L,
                         stepSize,
-                        IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
                         previousEvent = downEvent,
                     )
 
@@ -915,7 +920,7 @@ class DraggableTest {
 
             rule
                 .onNodeWithTag(draggableBoxTag)
-                .sendIndirectTouchReleaseEvent(
+                .sendIndirectPointerReleaseEvent(
                     rule,
                     newCurrentTime,
                     newCurrentValue,
@@ -1001,7 +1006,7 @@ class DraggableTest {
     }
 
     @Test
-    fun draggable_interactionSource_withIndirectTouches() {
+    fun draggable_interactionSource_withIndirectPointers() {
         val interactionSource = MutableInteractionSource()
 
         var scope: CoroutineScope? = null
@@ -1024,21 +1029,21 @@ class DraggableTest {
         val downEvent =
             rule
                 .onNodeWithTag(draggableBoxTag)
-                .sendIndirectTouchPressEvent(rule, currentTime, currentValue)
+                .sendIndirectPointerPressEvent(rule, currentTime, currentValue)
         currentTime += 16L
         currentValue += stepSize
 
         val (newCurrentTime, newCurrentValue, lastMove) =
             rule
                 .onNodeWithTag(draggableBoxTag)
-                .sendIndirectTouchMoveEvents(
+                .sendIndirectPointerMoveEvents(
                     rule,
                     5,
                     currentTime,
                     currentValue,
                     16L,
                     stepSize,
-                    IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                    IndirectPointerEventPrimaryDirectionalMotionAxis.X,
                     previousEvent = downEvent,
                 )
 
@@ -1049,7 +1054,7 @@ class DraggableTest {
 
         rule
             .onNodeWithTag(draggableBoxTag)
-            .sendIndirectTouchReleaseEvent(
+            .sendIndirectPointerReleaseEvent(
                 rule,
                 newCurrentTime,
                 newCurrentValue,
@@ -1194,7 +1199,7 @@ class DraggableTest {
     }
 
     @Test
-    fun draggable_indirectTouch_velocityIsLimitedByViewConfiguration() {
+    fun draggable_indirectPointer_velocityIsLimitedByViewConfiguration() {
         var latestVelocity = 0f
         val maxVelocity = 10f
 
@@ -1681,7 +1686,7 @@ class DraggableTest {
     }
 
     @Test
-    fun assertDraggableCallbackOrder_usingIndirectTouch() {
+    fun assertDraggableCallbackOrder_usingIndirectPointer() {
         var onStartCalled = false
         val draggableController = DraggableState { assertTrue { onStartCalled } }
 
@@ -1988,6 +1993,549 @@ class DraggableTest {
         rule.runOnIdle { assertThat(deltas).isNonZero() }
     }
 
+    @Test
+    fun competingNestedDrags_shouldBenefitVerticalIfEventIsMostlyVertical() {
+        var innerDrag = 0f
+        var outerDrag = 0f
+        var touchSlop by mutableFloatStateOf(5f)
+        rule.setContent {
+            WithTouchSlop(touchSlop) {
+                Box {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier =
+                            Modifier.testTag(draggableBoxTag).size(300.dp).draggable(
+                                Orientation.Vertical
+                            ) {
+                                outerDrag += it
+                            },
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier.size(300.dp).draggable(Orientation.Horizontal) { delta ->
+                                    innerDrag += delta
+                                }
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 100f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(0f)
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(100f, 0f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(95f)
+        }
+
+        outerDrag = 0f
+        innerDrag = 0f
+        touchSlop = 20f
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(5f, 5f)) // event that is at an angle
+            moveBy(Offset(10f, 0f)) // event becomes mostly horizontal
+
+            // vertical movement takes over.
+            moveBy(Offset(0f, 30f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(15f) // 35 - 20 (touch slop)
+            assertThat(innerDrag).isEqualTo(0f)
+        }
+    }
+
+    @Test
+    fun competingNestedDrags_shouldBenefitHorizontalIfEventIsMostlyHorizontal() {
+        var innerDrag = 0f
+        var outerDrag = 0f
+        var touchSlop by mutableFloatStateOf(5f)
+        rule.setContent {
+            WithTouchSlop(touchSlop) {
+                Box {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier =
+                            Modifier.testTag(draggableBoxTag).size(300.dp).draggable(
+                                Orientation.Vertical
+                            ) {
+                                outerDrag += it
+                            },
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier.size(300.dp).draggable(Orientation.Horizontal) { delta ->
+                                    innerDrag += delta
+                                }
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 100f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(0f)
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(100f, 0f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(95f)
+        }
+
+        outerDrag = 0f
+        innerDrag = 0f
+        touchSlop = 20f
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(5f, 5f)) // event that is at an angle
+            moveBy(Offset(0f, 10f)) // event becomes mostly vertical
+
+            // horizontal movement takes over.
+            moveBy(Offset(25f, 0f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(0f)
+            assertThat(innerDrag).isEqualTo(10f) // 30 - 20 (touch slop)
+        }
+    }
+
+    @Test
+    fun competingNestedDrags_threeLevels_shouldBenefitVerticalIfEventIsMostlyVertical() {
+        var innerDrag = 0f
+        var middleDrag = 0f
+        var outerDrag = 0f
+        var touchSlop by mutableFloatStateOf(5f)
+        rule.setContent {
+            WithTouchSlop(touchSlop) {
+                Box {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier =
+                            Modifier.testTag(draggableBoxTag).size(300.dp).draggable(
+                                Orientation.Vertical
+                            ) {
+                                outerDrag += it
+                            },
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier.size(300.dp).draggable(Orientation.Horizontal) { delta ->
+                                    middleDrag += delta
+                                }
+                        ) {
+                            Box(
+                                modifier =
+                                    Modifier.size(300.dp).draggable(Orientation.Horizontal) { delta
+                                        ->
+                                        innerDrag += delta
+                                    }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 100f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(0f)
+            assertThat(middleDrag).isEqualTo(0f)
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(100f, 0f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(95f)
+            assertThat(middleDrag).isEqualTo(0f)
+        }
+
+        outerDrag = 0f
+        innerDrag = 0f
+        middleDrag = 0f
+        touchSlop = 20f
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(5f, 5f)) // event that is at an angle
+            moveBy(Offset(10f, 0f)) // event becomes mostly horizontal
+
+            // vertical movement takes over.
+            moveBy(Offset(0f, 30f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(15f) // 35 - 20 (touch slop)
+            assertThat(innerDrag).isEqualTo(0f)
+            assertThat(middleDrag).isEqualTo(0f)
+        }
+    }
+
+    @Test
+    fun competingNestedDrags_threeLevels_shouldBenefitInnerHorizontalIfEventIsMostlyHorizontal() {
+        var innerDrag = 0f
+        var middleDrag = 0f
+        var outerDrag = 0f
+        var touchSlop by mutableFloatStateOf(5f)
+        rule.setContent {
+            WithTouchSlop(touchSlop) {
+                Box {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier =
+                            Modifier.testTag(draggableBoxTag).size(300.dp).draggable(
+                                Orientation.Vertical
+                            ) {
+                                outerDrag += it
+                            },
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier.size(300.dp).draggable(Orientation.Horizontal) { delta ->
+                                    middleDrag += delta
+                                }
+                        ) {
+                            Box(
+                                modifier =
+                                    Modifier.size(300.dp).draggable(Orientation.Horizontal) { delta
+                                        ->
+                                        innerDrag += delta
+                                    }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 100f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(0f)
+            assertThat(middleDrag).isEqualTo(0f)
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(100f, 0f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(95f)
+            assertThat(middleDrag).isEqualTo(0f)
+        }
+
+        outerDrag = 0f
+        innerDrag = 0f
+        middleDrag = 0f
+        touchSlop = 20f
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(5f, 5f)) // event that is at an angle
+            moveBy(Offset(0f, 10f)) // event becomes mostly vertical
+
+            // horizontal movement takes over.
+            moveBy(Offset(25f, 0f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(0f)
+            assertThat(middleDrag).isEqualTo(0f)
+            assertThat(innerDrag).isEqualTo(10f) // 30 - 20 (touch slop)
+        }
+    }
+
+    @Test
+    fun competingNestedDrags_shouldBenefitHorizontalOnlyForEventsBelowAngle() {
+        var innerDrag = 0f
+        var outerDrag = 0f
+        var touchSlop by mutableFloatStateOf(5f)
+        rule.setContent {
+            WithTouchSlop(touchSlop) {
+                Box {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier =
+                            Modifier.testTag(draggableBoxTag).size(300.dp).draggable(
+                                Orientation.Vertical
+                            ) {
+                                outerDrag += it
+                            },
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier.size(300.dp).draggable(Orientation.Horizontal) { delta ->
+                                    innerDrag += delta
+                                }
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 100f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(0f)
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(100f, 0f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(95f)
+        }
+
+        outerDrag = 0f
+        innerDrag = 0f
+        touchSlop = 20f
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(5f, 5f)) // event that is at an angle
+            moveBy(Offset(0f, 10f)) // event becomes mostly vertical
+
+            // horizontal movement takes over. At this time, both vertical and horizontal will cross
+            // the touch slop, but the horizontal event is within the threshold angle.
+            // total x = 45 and total y = 25 which yields an angle of about 30 degrees
+            moveBy(Offset(40f, 10f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(0f)
+            assertThat(innerDrag).isEqualTo(25f) // 45 - 20 (touch slop)
+        }
+    }
+
+    @Test
+    fun competingNestedDrags_shouldBenefitVerticalOnlyForEventsAboveAngle() {
+        var innerDrag = 0f
+        var outerDrag = 0f
+        var touchSlop by mutableFloatStateOf(5f)
+        rule.setContent {
+            WithTouchSlop(touchSlop) {
+                Box {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier =
+                            Modifier.testTag(draggableBoxTag).size(300.dp).draggable(
+                                Orientation.Vertical
+                            ) {
+                                outerDrag += it
+                            },
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier.size(300.dp).draggable(Orientation.Horizontal) { delta ->
+                                    innerDrag += delta
+                                }
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 100f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(0f)
+        }
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(100f, 0f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(95f)
+            assertThat(innerDrag).isEqualTo(95f)
+        }
+
+        outerDrag = 0f
+        innerDrag = 0f
+        touchSlop = 20f
+
+        rule.onRoot().performTouchInput {
+            down(center)
+            moveBy(Offset(5f, 5f)) // event that is at an angle
+            moveBy(Offset(0f, 10f)) // event becomes mostly vertical
+
+            // horizontal movement takes over. At this time, both vertical and horizontal will cross
+            // the touch slop, but the horizontal event is outside the threshold angle.
+            // total x = 45 and total y = 35 which yields an angle of about 37 degrees
+            moveBy(Offset(40f, 20f))
+            up()
+        }
+
+        rule.runOnUiThread {
+            assertThat(outerDrag).isEqualTo(15f) // 35 - 20 (touch slop)
+            assertThat(innerDrag).isEqualTo(0f)
+        }
+    }
+
+    @Test
+    fun gestureState_shouldReflectDraggableBehavior() {
+        var outerDrag = 0f
+        val node = object : DelegatingNode() {}
+        var enabled by mutableStateOf(true)
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.testTag(draggableBoxTag).size(300.dp).draggable(
+                        enabled = enabled,
+                        orientation = Orientation.Vertical,
+                    ) {
+                        outerDrag += it
+                    }
+            ) {
+                Box(Modifier.size(300.dp).elementFor(node))
+            }
+        }
+
+        // haven't received any input yet so node isn't initialized
+        rule.runOnIdle { assertThat(node.getParentDraggableGestureConnection()).isNull() }
+
+        rule.onNodeWithTag(draggableBoxTag).performTouchInput { down(center) }
+
+        assertThat(node.getParentDraggableGestureConnection()?.gestureState)
+            .isEqualTo(GestureState.Waiting)
+
+        // haven't crossed touch slop yet
+        rule.onNodeWithTag(draggableBoxTag).performTouchInput { moveBy(Offset(0f, 10f)) }
+
+        assertThat(node.getParentDraggableGestureConnection()?.gestureState)
+            .isEqualTo(GestureState.Waiting)
+
+        // crossed touch slop
+        rule.onNodeWithTag(draggableBoxTag).performTouchInput { moveBy(Offset(0f, 50f)) }
+
+        assertThat(node.getParentDraggableGestureConnection()?.gestureState)
+            .isEqualTo(GestureState.Recognized)
+
+        // crossed touch slop
+        rule.onNodeWithTag(draggableBoxTag).performTouchInput { up() }
+
+        assertThat(node.getParentDraggableGestureConnection()?.gestureState)
+            .isEqualTo(GestureState.Idle)
+
+        enabled = false
+
+        rule.runOnIdle { assertThat(node.getParentDraggableGestureConnection()).isNull() }
+
+        enabled = true
+
+        // need to receive a new event after enabled to get it back to reporting.
+        rule.runOnIdle { assertThat(node.getParentDraggableGestureConnection()).isNull() }
+
+        rule.onNodeWithTag(draggableBoxTag).performTouchInput { down(center) }
+
+        assertThat(node.getParentDraggableGestureConnection()?.gestureState)
+            .isEqualTo(GestureState.Waiting)
+    }
+
+    @Test
+    fun gestureNode_orientationLock_shouldReportCorrectValue() {
+        var outerDrag = 0f
+        val node = object : DelegatingNode() {}
+        var orientation by mutableStateOf(Orientation.Vertical)
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.testTag(draggableBoxTag).size(300.dp).draggable(
+                        orientation = orientation
+                    ) {
+                        outerDrag += it
+                    }
+            ) {
+                Box(Modifier.size(300.dp).elementFor(node))
+            }
+        }
+
+        rule.onNodeWithTag(draggableBoxTag).performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(node.getParentDraggableGestureConnection()?.orientation)
+                .isEqualTo(Orientation.Vertical)
+        }
+
+        orientation = Orientation.Horizontal
+
+        rule.runOnIdle {
+            assertThat(node.getParentDraggableGestureConnection()?.orientation)
+                .isEqualTo(Orientation.Horizontal)
+        }
+    }
+
     private fun setDraggableContent(
         enableInitialFocus: Boolean = false,
         draggableFactory: @Composable () -> Modifier,
@@ -2037,4 +2585,13 @@ class DraggableTest {
             state = state,
         )
     }
+}
+
+internal fun DelegatingNode.getParentDraggableGestureConnection(): DraggableGestureConnection? {
+    var gestureConnection: DraggableGestureConnection? = null
+    traverseParentDraggableGestures {
+        gestureConnection = it
+        false
+    }
+    return gestureConnection
 }

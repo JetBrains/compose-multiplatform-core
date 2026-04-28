@@ -18,7 +18,7 @@ package androidx.navigation3.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.kruth.assertThat
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
@@ -31,6 +31,7 @@ import androidx.navigationevent.testing.TestNavigationEventDispatcherOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.test.Test
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
@@ -38,7 +39,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 internal class NavDisplayInfoTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun testPredictiveBackSwipePopulatesSceneInfoCorrectly() {
@@ -61,7 +62,7 @@ internal class NavDisplayInfoTest {
             CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides childOwner) {
                 NavDisplay(
                     backStack = backStack,
-                    sceneStrategy = sceneStrategy,
+                    sceneStrategies = listOf(sceneStrategy),
                     onBack = { backStack.removeAt(backStack.lastIndex) },
                     entryProvider = { key -> NavEntry(key) {} },
                 )

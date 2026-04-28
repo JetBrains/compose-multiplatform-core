@@ -16,7 +16,7 @@
 
 package androidx.compose.remote.integration.view.demos.utils;
 
-import androidx.compose.remote.player.core.RemoteComposeDocument;
+import androidx.compose.remote.player.core.RemoteDocument;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -47,6 +47,12 @@ public interface RCDoc {
     int size();
 
     /**
+     * size of the document
+     * @return
+     */
+    int zipSize();
+
+    /**
      * Run the doc
      */
     void run();
@@ -55,7 +61,7 @@ public interface RCDoc {
      * get the looper
      * @return
      */
-    default @Nullable RemoteComposeDocument getLooper() {
+    default @Nullable RemoteDocument getLooper() {
         return null;
     }
 
@@ -71,5 +77,12 @@ public interface RCDoc {
      * Return the RemoteComposeDocument
      * @return
      */
-    @Nullable RemoteComposeDocument getDoc();
+    @Nullable
+    RemoteDocument getDoc();
+
+    /**
+     * Return the time to create the document
+     * @return time in ms
+     */
+    float getBuildTime();
 }

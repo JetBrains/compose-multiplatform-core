@@ -110,12 +110,12 @@ public class DrawBitmap extends PaintOperation implements VariableSupport {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int id = buffer.readInt();
-        float sLeft = buffer.readFloat();
-        float srcTop = buffer.readFloat();
-        float srcRight = buffer.readFloat();
-        float srcBottom = buffer.readFloat();
-        int descriptionId = buffer.readInt();
+        int id = buffer.readId();
+        float sLeft = buffer.readNanId();
+        float srcTop = buffer.readNanId();
+        float srcRight = buffer.readNanId();
+        float srcBottom = buffer.readNanId();
+        int descriptionId = buffer.readId();
 
         DrawBitmap op = new DrawBitmap(id, sLeft, srcTop, srcRight, srcBottom, descriptionId);
         operations.add(op);
@@ -174,14 +174,14 @@ public class DrawBitmap extends PaintOperation implements VariableSupport {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Draw Operations", OP_CODE, CLASS_NAME)
+        doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
                 .description("Draw a bitmap")
-                .field(INT, "id", "id of float")
+                .field(INT, "imageId", "The ID of the bitmap")
                 .field(FLOAT, "left", "The left side of the image")
                 .field(FLOAT, "top", "The top of the image")
                 .field(FLOAT, "right", "The right side of the image")
                 .field(FLOAT, "bottom", "The bottom of the image")
-                .field(INT, "descriptionId", "id of string");
+                .field(INT, "descriptionId", "The ID of the content description string");
     }
 
     @Override

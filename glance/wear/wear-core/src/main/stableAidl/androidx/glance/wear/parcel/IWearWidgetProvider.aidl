@@ -19,6 +19,7 @@ import androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel;
 import androidx.glance.wear.parcel.IExecutionCallback;
 import androidx.glance.wear.parcel.IWearWidgetCallback;
 import androidx.glance.wear.parcel.WearWidgetRequestParcel;
+import androidx.glance.wear.parcel.WearWidgetEventBatchParcel;
 
 /**
   * Interface to be implemented by a service which provides Widgets on a Wear
@@ -28,6 +29,9 @@ import androidx.glance.wear.parcel.WearWidgetRequestParcel;
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 interface IWearWidgetProvider {
     const int API_VERSION = 1;
+
+    const int ERROR_CODE_INTERNAL_ERROR = 1;
+    const int ERROR_CODE_INVALID_ARGUMENT = 2;
 
     /**
       * Gets the version of this WearWidgetProvider interface implemented by
@@ -48,6 +52,8 @@ interface IWearWidgetProvider {
     /**
      * Called when the widget becomes active in the Host.
      *
+     * There are currently no Hosts that send this event.
+     *
      * @since version 1
      */
     oneway void onActivated(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 2;
@@ -55,7 +61,30 @@ interface IWearWidgetProvider {
     /**
      * Called when the widget becomes de-activated in the Host.
      *
+     * There are currently no Hosts that send this event.
+     *
      * @since version 1
      */
     oneway void onDeactivated(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 3;
+
+    /**
+     * Called when the widget is added to the Host.
+     *
+     * @since version 1
+     */
+    oneway void onAdded(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 4;
+
+    /**
+     * Called when the widget is removed from the Host.
+     *
+     * @since version 1
+     */
+    oneway void onRemoved(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 5;
+
+    /**
+     * Called periodically when the Host sends batched interaction events.
+     *
+     * @since version 1
+     */
+    oneway void onEvents(in WearWidgetEventBatchParcel eventBatchParcel, IExecutionCallback callback) = 6;
 }

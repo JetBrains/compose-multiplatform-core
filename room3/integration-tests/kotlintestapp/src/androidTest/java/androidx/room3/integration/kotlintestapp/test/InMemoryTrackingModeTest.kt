@@ -77,13 +77,12 @@ class InMemoryTrackingModeTest(private val useDriver: UseDriver) {
     private fun createDatabase(inMemoryTrackingMode: Boolean) =
         Room.databaseBuilder<TestDatabase>(context, DB_NAME)
             .setInMemoryTrackingMode(inMemoryTrackingMode)
-            .apply {
-                if (useDriver == UseDriver.ANDROID) {
-                    setDriver(AndroidSQLiteDriver())
-                } else if (useDriver == UseDriver.BUNDLED) {
-                    setDriver(BundledSQLiteDriver())
+            .setDriver(
+                when (useDriver) {
+                    UseDriver.ANDROID -> AndroidSQLiteDriver()
+                    UseDriver.BUNDLED -> BundledSQLiteDriver()
                 }
-            }
+            )
             .build()
 
     private suspend fun findCreateSql(database: RoomDatabase, masterTable: String) =

@@ -36,7 +36,7 @@
           - {type: BackgroundModifierOperation, x: 0.0, y: 0.0, width: 1000.0, height: 1000.0,
             color: '0xffffff00', shapeType: RECTANGLE}
           - {type: PaddingModifierOperation, left: 8.0, top: 8.0, right: 8.0, bottom: 8.0}
-        - type: TEXT_LAYOUT
+        - type: CORE_TEXT
           id: -5
           x: 116.8
           y: 487.0
@@ -52,13 +52,14 @@
           paddingTop: 0.0
           paddingBottom: 0.0
           textId: 42
+          flags: 0
           color: '0xff000000'
           fontSize: {type: Value, value: 36.0}
           fontStyle: 0
           fontWeight: 400.0
           fontFamilyId: -1
           textAlign: 1
-        - type: TEXT_LAYOUT
+        - type: CORE_TEXT
           id: -7
           x: 333.6
           y: 487.0
@@ -74,13 +75,14 @@
           paddingTop: 0.0
           paddingBottom: 0.0
           textId: 43
+          flags: 0
           color: '0xff000000'
           fontSize: {type: Value, value: 100.0}
           fontStyle: 0
           fontWeight: 400.0
           fontFamilyId: -1
           textAlign: 1
-        - type: TEXT_LAYOUT
+        - type: CORE_TEXT
           id: -9
           x: 550.4
           y: 487.0
@@ -96,13 +98,14 @@
           paddingTop: 0.0
           paddingBottom: 0.0
           textId: 44
+          flags: 0
           color: '0xff000000'
           fontSize: {type: Value, value: 30.0}
           fontStyle: 0
           fontWeight: 400.0
           fontFamilyId: -1
           textAlign: 1
-        - type: TEXT_LAYOUT
+        - type: CORE_TEXT
           id: -11
           x: 767.2
           y: 487.0
@@ -118,6 +121,7 @@
           paddingTop: 0.0
           paddingBottom: 0.0
           textId: 45
+          flags: 0
           color: '0xff000000'
           fontSize: {type: Value, value: 36.0}
           fontStyle: 0

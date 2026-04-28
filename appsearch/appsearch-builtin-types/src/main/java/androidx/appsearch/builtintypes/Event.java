@@ -56,7 +56,7 @@ public class Event extends Thing {
     private @Nullable ImageObject mLogo;
 
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    protected Event(
+    Event(
         @NonNull String namespace, @NonNull String id, int documentScore,
         long creationTimestampMillis, long documentTtlMillis,
         @Nullable String name, @Nullable List<String> alternateNames,

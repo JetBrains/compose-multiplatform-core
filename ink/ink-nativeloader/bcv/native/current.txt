@@ -1,0 +1,27 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <androidx.ink:ink-brush>
+final class androidx.ink.brush/InputToolType { // androidx.ink.brush/InputToolType|null[0]
+    final val value // androidx.ink.brush/InputToolType.value|{}value[0]
+        final fun <get-value>(): kotlin/Int // androidx.ink.brush/InputToolType.value.<get-value>|<get-value>(){}[0]
+
+    final fun toString(): kotlin/String // androidx.ink.brush/InputToolType.toString|toString(){}[0]
+
+    final object Companion { // androidx.ink.brush/InputToolType.Companion|null[0]
+        final val MOUSE // androidx.ink.brush/InputToolType.Companion.MOUSE|{}MOUSE[0]
+            final fun <get-MOUSE>(): androidx.ink.brush/InputToolType // androidx.ink.brush/InputToolType.Companion.MOUSE.<get-MOUSE>|<get-MOUSE>(){}[0]
+        final val STYLUS // androidx.ink.brush/InputToolType.Companion.STYLUS|{}STYLUS[0]
+            final fun <get-STYLUS>(): androidx.ink.brush/InputToolType // androidx.ink.brush/InputToolType.Companion.STYLUS.<get-STYLUS>|<get-STYLUS>(){}[0]
+        final val TOUCH // androidx.ink.brush/InputToolType.Companion.TOUCH|{}TOUCH[0]
+            final fun <get-TOUCH>(): androidx.ink.brush/InputToolType // androidx.ink.brush/InputToolType.Companion.TOUCH.<get-TOUCH>|<get-TOUCH>(){}[0]
+        final val UNKNOWN // androidx.ink.brush/InputToolType.Companion.UNKNOWN|{}UNKNOWN[0]
+            final fun <get-UNKNOWN>(): androidx.ink.brush/InputToolType // androidx.ink.brush/InputToolType.Companion.UNKNOWN.<get-UNKNOWN>|<get-UNKNOWN>(){}[0]
+
+        final fun fromInt(kotlin/Int): androidx.ink.brush/InputToolType // androidx.ink.brush/InputToolType.Companion.fromInt|fromInt(kotlin.Int){}[0]
+    }
+}

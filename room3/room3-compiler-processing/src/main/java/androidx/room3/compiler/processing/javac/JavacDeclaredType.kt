@@ -25,40 +25,18 @@ import javax.lang.model.type.DeclaredType
  * types). Even thought XProcessing does not distinguish between these these, in the java
  * implementation, it is handy to have a separate type for explicit typeMirror information.
  */
-internal class JavacDeclaredType
-private constructor(
+internal class JavacDeclaredType(
     env: JavacProcessingEnv,
     override val typeMirror: DeclaredType,
-    nullability: XNullability?,
-    override val kotlinType: KmTypeContainer?,
+    nullability: XNullability? = null,
+    override val kotlinType: KmTypeContainer? = null,
 ) : JavacType(env, typeMirror, nullability) {
-    constructor(
-        env: JavacProcessingEnv,
-        typeMirror: DeclaredType,
-    ) : this(env = env, typeMirror = typeMirror, nullability = null, kotlinType = null)
-
-    constructor(
-        env: JavacProcessingEnv,
-        typeMirror: DeclaredType,
-        kotlinType: KmTypeContainer,
-    ) : this(
-        env = env,
-        typeMirror = typeMirror,
-        nullability = kotlinType.nullability,
-        kotlinType = kotlinType,
-    )
-
-    constructor(
-        env: JavacProcessingEnv,
-        typeMirror: DeclaredType,
-        nullability: XNullability,
-    ) : this(env = env, typeMirror = typeMirror, nullability = nullability, kotlinType = null)
 
     override val equalityItems: Array<out Any?> by lazy { arrayOf(typeMirror) }
 
-    override val typeArguments: List<JavacType> by lazy {
+    override val typeArguments: List<JavacTypeArgument> by lazy {
         typeMirror.typeArguments.mapIndexed { index, typeMirror ->
-            env.wrap<JavacType>(
+            env.wrapTypeArgument(
                 typeMirror = typeMirror,
                 kotlinType = kotlinType?.typeArguments?.getOrNull(index),
                 elementNullability = XNullability.UNKNOWN,

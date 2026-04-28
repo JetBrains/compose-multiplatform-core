@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import androidx.compose.foundation.text.input.insert
 import androidx.compose.ui.text.TextRange
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
@@ -25,6 +26,18 @@ import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 internal class DeleteSurroundingTextCommandTest : ImeEditCommandTest() {
+
+    @Test
+    fun test_delete_reversed_selection() {
+        initialize("ABCDE", TextRange(4, 2))
+
+        imeScope.deleteSurroundingText(1, 1)
+
+        assertThat(state.text.toString()).isEqualTo("ACD")
+        assertThat(state.selection.start).isEqualTo(1)
+        assertThat(state.selection.end).isEqualTo(3)
+        assertThat(state.composition).isNull()
+    }
 
     @Test
     fun test_delete_after() {
@@ -313,5 +326,101 @@ internal class DeleteSurroundingTextCommandTest : ImeEditCommandTest() {
         assertThat(state.text.toString()).isEqualTo("bcde")
         assertThat(state.selection.start).isEqualTo(0)
         assertThat(state.selection.end).isEqualTo(0)
+    }
+
+    @Test
+    fun test_delete_withOutputTransformation_deletesBeforeCursor() {
+        initialize(
+            text = "abc 123 def",
+            selection = TextRange(7),
+            outputTransformation = {
+                val deleteIndex = toString().indexOf("123")
+                if (deleteIndex != -1) {
+                    replace(deleteIndex, deleteIndex + 3, "x")
+                }
+            },
+        )
+
+        // What IME sees => abc x| def
+        imeScope.deleteSurroundingText(5, 0)
+
+        // The character to be deleted is 'A' in the original text.
+        assertThat(state.text.toString()).isEqualTo(" def")
+        assertThat(state.selection.start).isEqualTo(0)
+        assertThat(state.selection.end).isEqualTo(0)
+        assertThat(state.composition).isNull()
+    }
+
+    @Test
+    fun test_delete_withOutputTransformation_deletesAfterCursor() {
+        initialize(
+            text = "abc 123 def",
+            selection = TextRange(0),
+            outputTransformation = {
+                val deleteIndex = toString().indexOf("123")
+                if (deleteIndex != -1) {
+                    replace(deleteIndex, deleteIndex + 3, "x")
+                }
+            },
+        )
+
+        // What IME sees => |abc x def
+        imeScope.deleteSurroundingText(0, 6)
+
+        assertThat(state.text.toString()).isEqualTo("def")
+        assertThat(state.selection.start).isEqualTo(0)
+        assertThat(state.selection.end).isEqualTo(0)
+        assertThat(state.composition).isNull()
+    }
+
+    @Test
+    fun test_delete_withOutputTransformation_deletesBeforeCursor_additive() {
+        initialize(
+            text = "abcdef",
+            selection = TextRange(6),
+            outputTransformation = { insert(2, " ") },
+        )
+
+        // What IME sees => ab cdef|
+        imeScope.deleteSurroundingText(7, 0)
+
+        assertThat(state.text.toString()).isEqualTo("")
+        assertThat(state.selection.start).isEqualTo(0)
+        assertThat(state.selection.end).isEqualTo(0)
+        assertThat(state.composition).isNull()
+    }
+
+    @Test
+    fun test_delete_withOutputTransformation_deletesBeforeCursor_additive_intMax() {
+        initialize(
+            text = "abcdef",
+            selection = TextRange(6),
+            outputTransformation = { insert(2, " ") },
+        )
+
+        // What IME sees => ab cdef|
+        imeScope.deleteSurroundingText(Int.MAX_VALUE, 0)
+
+        assertThat(state.text.toString()).isEqualTo("")
+        assertThat(state.selection.start).isEqualTo(0)
+        assertThat(state.selection.end).isEqualTo(0)
+        assertThat(state.composition).isNull()
+    }
+
+    @Test
+    fun test_delete_withOutputTransformation_deletesAfterCursor_additive_intMax() {
+        initialize(
+            text = "abcdef",
+            selection = TextRange(0),
+            outputTransformation = { insert(2, " ") },
+        )
+
+        // What IME sees => |ab cdef
+        imeScope.deleteSurroundingText(0, Int.MAX_VALUE)
+
+        assertThat(state.text.toString()).isEqualTo("")
+        assertThat(state.selection.start).isEqualTo(0)
+        assertThat(state.selection.end).isEqualTo(0)
+        assertThat(state.composition).isNull()
     }
 }

@@ -64,7 +64,8 @@ import androidx.compose.ui.unit.dp
  * @param shape the [Shape] used to clip this list item, and also used to draw the background and
  *   border
  * @param color background color of this list item
- * @param contentColor content color used by components inside [content], and [supportingLabel].
+ * @param contentColor content color used by components inside [content], [supportingLabel],
+ *   [leadingIcon], and [trailingIcon].
  * @param border the border to draw around this list item
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content
@@ -84,7 +85,7 @@ public fun ListItem(
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
-    contentPadding: PaddingValues = ListItemDefaults.ContentPadding,
+    contentPadding: PaddingValues = ListItemDefaults.contentPadding,
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
@@ -136,7 +137,8 @@ public fun ListItem(
  * @param shape the [Shape] used to clip this list item, and also used to draw the background and
  *   border
  * @param color background color of this list item
- * @param contentColor content color used by components inside [content], and [supportingLabel].
+ * @param contentColor content color used by components inside [content], [supportingLabel],
+ *   [leadingIcon], and [trailingIcon].
  * @param border the border to draw around this list item
  * @param contentPadding the spacing values to apply internally between the container and the
  *   content
@@ -157,7 +159,7 @@ public fun ListItem(
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
-    contentPadding: PaddingValues = ListItemDefaults.ContentPadding,
+    contentPadding: PaddingValues = ListItemDefaults.contentPadding,
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
@@ -192,10 +194,14 @@ private fun ListItemImpl(
     interactionSource: MutableInteractionSource?,
     content: @Composable () -> Unit,
 ) {
-    val colors = GlimmerTheme.colors
     val iconSize = GlimmerTheme.iconSizes.large
     val typography = GlimmerTheme.typography
-    val depth = SurfaceDepth(depth = null, focusedDepth = GlimmerTheme.depthLevels.level4)
+    val innerPadding = GlimmerTheme.componentSpacingValues.small
+    val depthEffect =
+        SurfaceDepthEffect(
+            depthEffect = null,
+            focusedDepthEffect = GlimmerTheme.depthEffectLevels.level4,
+        )
 
     val surfaceModifier =
         if (onClick != null) {
@@ -204,7 +210,7 @@ private fun ListItemImpl(
                 shape = shape,
                 color = color,
                 contentColor = contentColor,
-                depth = depth,
+                depthEffect = depthEffect,
                 border = border,
                 interactionSource = interactionSource,
             )
@@ -213,7 +219,7 @@ private fun ListItemImpl(
                 shape = shape,
                 color = color,
                 contentColor = contentColor,
-                depth = depth,
+                depthEffect = depthEffect,
                 border = border,
                 interactionSource = interactionSource,
             )
@@ -228,16 +234,11 @@ private fun ListItemImpl(
         verticalAlignment = CenterVertically,
     ) {
         if (leadingIcon != null) {
-            Box(
-                Modifier.align(Alignment.Top)
-                    .padding(end = IconSpacing)
-                    .contentColorProvider(colors.primary),
-                contentAlignment = Alignment.TopStart,
-            ) {
+            Box(modifier = Modifier.align(Alignment.Top), contentAlignment = Alignment.TopStart) {
                 CompositionLocalProvider(LocalIconSize provides iconSize, content = leadingIcon)
             }
         }
-        Column(Modifier.weight(1f)) {
+        Column(Modifier.weight(1f).padding(horizontal = innerPadding)) {
             if (supportingLabel == null) {
                 CompositionLocalProvider(
                     LocalTextStyle provides typography.bodySmall,
@@ -255,12 +256,7 @@ private fun ListItemImpl(
             }
         }
         if (trailingIcon != null) {
-            Box(
-                Modifier.align(Alignment.Top)
-                    .padding(start = IconSpacing)
-                    .contentColorProvider(colors.primary),
-                Alignment.TopEnd,
-            ) {
+            Box(modifier = Modifier.align(Alignment.Top), contentAlignment = Alignment.TopEnd) {
                 CompositionLocalProvider(LocalIconSize provides iconSize, content = trailingIcon)
             }
         }
@@ -270,11 +266,9 @@ private fun ListItemImpl(
 /** Default values used for [ListItem] */
 public object ListItemDefaults {
     /** Default content padding used for a [ListItem] */
-    public val ContentPadding: PaddingValues = PaddingValues(horizontal = 24.dp, vertical = 20.dp)
+    public val contentPadding: PaddingValues
+        @Composable get() = PaddingValues(GlimmerTheme.componentSpacingValues.large)
 }
 
 /** Default minimum height for a [ListItem] */
-private val MinimumHeight = 72.dp
-
-/** Spacing between icons and the text in a [ListItem] */
-private val IconSpacing = 12.dp
+private val MinimumHeight = 80.dp

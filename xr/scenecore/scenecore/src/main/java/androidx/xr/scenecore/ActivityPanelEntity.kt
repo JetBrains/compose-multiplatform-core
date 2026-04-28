@@ -19,7 +19,7 @@ package androidx.xr.scenecore
 import android.app.Activity
 import android.content.Intent
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.LifecycleManager
+import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity as RtActivityPanelEntity
@@ -29,22 +29,22 @@ import androidx.xr.scenecore.runtime.SceneRuntime
  * ActivityPanelEntity creates a spatial panel for embedding an [Activity] in Android XR. Users can
  * either use an [Intent] to launch an Activity in the given panel or provide an instance of
  * Activity to move into this panel. In order to launch and embed an activity,
- * [SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY] capability is required. Calling
- * [Entity.dispose] on this Entity will destroy the underlying Activity.
+ * [SpatialCapability.EMBED_ACTIVITY] capability is required. When this Entity is destroyed it will
+ * destroy the underlying Activity.
  */
 public class ActivityPanelEntity
 private constructor(
-    private val lifecycleManager: LifecycleManager,
+    perceptionSpace: PerceptionSpace,
     private val rtActivityPanelEntity: RtActivityPanelEntity,
-    entityManager: EntityManager,
-) : PanelEntity(lifecycleManager, rtActivityPanelEntity, entityManager) {
+    entityRegistry: EntityRegistry,
+) : PanelEntity(perceptionSpace, rtActivityPanelEntity, entityRegistry) {
 
     /**
      * Starts an [Activity] in the given panel. Subsequent calls to this method will replace the
      * already existing Activity in the panel with the new one. The panel will not be visible until
      * an Activity is successfully launched. This will fail if the [Scene] does not have the
-     * [SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY] capability. This method will not
-     * provide any information about when the Activity successfully launches.
+     * [SpatialCapability.EMBED_ACTIVITY] capability. This method will not provide any information
+     * about when the Activity successfully launches.
      *
      * @param intent Intent to launch the activity.
      */
@@ -54,7 +54,7 @@ private constructor(
 
     /**
      * Transfers the given [Activity] into this panel. This will fail if the application does not
-     * have the [SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY] capability.
+     * have the [SpatialCapability.EMBED_ACTIVITY] capability.
      *
      * @param activity Activity to move into this panel.
      */
@@ -63,26 +63,37 @@ private constructor(
     }
 
     public companion object {
+        @Suppress("RestrictedApiAndroidX")
         internal fun create(
-            lifecycleManager: LifecycleManager,
             sceneRuntime: SceneRuntime,
-            entityManager: EntityManager,
+            perceptionSpace: PerceptionSpace,
+            entityRegistry: EntityRegistry,
             pixelDimensions: IntSize2d,
             name: String,
             hostActivity: Activity,
             pose: Pose = Pose.Identity,
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): ActivityPanelEntity =
             ActivityPanelEntity(
-                lifecycleManager,
-                sceneRuntime.createActivityPanelEntity(
-                    pose,
-                    pixelDimensions.toRtPixelDimensions(),
-                    name,
-                    hostActivity,
-                    sceneRuntime.activitySpace,
-                ),
-                entityManager,
-            )
+                    perceptionSpace,
+                    sceneRuntime.createActivityPanelEntity(
+                        pose,
+                        pixelDimensions.toRtPixelDimensions(),
+                        name,
+                        hostActivity,
+                        if (parent != null && parent !is BaseEntity<*>) {
+                            XrLog.warn(
+                                "The provided parent is not a BaseEntity. The ActivityPanelEntity " +
+                                    "will be created without a parent."
+                            )
+                            null
+                        } else {
+                            parent?.rtEntity
+                        },
+                    ),
+                    entityRegistry,
+                )
+                .also { it.parent = parent as? BaseEntity<*> }
 
         /**
          * Public factory function for a spatial ActivityPanelEntity.
@@ -92,24 +103,29 @@ private constructor(
          * @param name Name of the panel.
          * @param pose [Pose] of this entity relative to its parent, the default value is
          *   [Pose.Identity].
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is `null`.
          * @return an ActivityPanelEntity instance.
          */
         @JvmOverloads
         @JvmStatic
+        @Suppress("RestrictedApiAndroidX")
         public fun create(
             session: Session,
             pixelDimensions: IntSize2d,
             name: String,
             pose: Pose = Pose.Identity,
+            parent: Entity? = null,
         ): ActivityPanelEntity =
-            ActivityPanelEntity.create(
-                session.perceptionRuntime.lifecycleManager,
+            create(
                 session.sceneRuntime,
-                session.scene.entityManager,
+                session.scene.perceptionSpace,
+                session.scene.entityRegistry,
                 pixelDimensions,
                 name,
-                session.activity,
+                session.context as Activity,
                 pose,
+                parent,
             )
     }
 }
