@@ -289,11 +289,11 @@ class MacOsWindow internal constructor(
     }
 
     @ExperimentalComposeUiApi
-    var decoration: WindowDecoration by mutableStateOf(WindowDecoration.Decorated)
+    override var decoration: WindowDecoration by mutableStateOf(WindowDecoration.Decorated)
         private set
 
     @ExperimentalComposeUiApi
-    fun requestDecoration(vararg decorations: WindowDecoration) {
+    override fun requestDecoration(vararg decorations: WindowDecoration) {
         for (decoration in decorations) {
             if (decoration == this.decoration) break
             if (!decoration.isDecorated) continue // Not supported for now
