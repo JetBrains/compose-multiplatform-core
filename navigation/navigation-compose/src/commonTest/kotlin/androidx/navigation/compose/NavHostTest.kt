@@ -16,7 +16,16 @@
 
 package androidx.navigation.compose
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.BasicText
@@ -54,6 +63,7 @@ import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -843,7 +853,6 @@ class NavHostTest {
     }
 
     @Test
-    @Ignore //animations are different between platforms
     fun testNavHostAnimations() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
 
@@ -851,7 +860,14 @@ class NavHostTest {
 
         setContent {
             navController = rememberNavController()
-            NavHost(navController, startDestination = first) {
+            NavHost(
+                navController = navController,
+                enterTransition = TestNavTransitions.enterTransition,
+                exitTransition = TestNavTransitions.exitTransition,
+                popEnterTransition = TestNavTransitions.enterTransition,
+                popExitTransition = TestNavTransitions.exitTransition,
+                startDestination = first
+            ) {
                 composable(first) { BasicText(first) }
                 composable(second) { BasicText(second) }
             }
@@ -1304,3 +1320,18 @@ private class TestViewModelStoreOwnerWithDefaults(
     override val defaultViewModelProviderFactory: ViewModelProvider.Factory = TestViewModelFactory(),
     override val defaultViewModelCreationExtras: CreationExtras = CreationExtras.Empty,
 ) : ViewModelStoreOwner, HasDefaultViewModelProviderFactory
+
+private object TestNavTransitions {
+
+    val enterTransition:
+        AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
+        {
+            fadeIn(animationSpec = tween(700))
+        }
+
+    val exitTransition:
+        AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
+        {
+            fadeOut(animationSpec = tween(700))
+        }
+}
