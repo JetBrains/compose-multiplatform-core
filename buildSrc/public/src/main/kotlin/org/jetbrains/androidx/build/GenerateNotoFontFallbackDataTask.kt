@@ -18,13 +18,14 @@ package org.jetbrains.androidx.build
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
+import java.nio.file.Files
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 private const val MAX_CODE_POINT = 0x10ffff
 
@@ -42,12 +43,15 @@ private const val RANGE_VALUE_RADIX = 26
 
 private const val FONTS_GSTATIC_URL_PREFIX = "https://fonts.gstatic.com/s/"
 
-// User-Agent to spoof so that Google Fonts serves WOFF2 fonts.
+// User-Agent to spoof so that Google Fonts CSS serves WOFF2 font URLs.
 private const val WOFF2_USER_AGENT =
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"
 
 // Maximum characters per line in the generated string concatenation.
 private const val LINE_WIDTH = 120
+
+// Number of parallel threads for downloading font files.
+private const val DOWNLOAD_THREADS = 8
 
 /**
  * Fonts that are split into multiple subsets served from separate files.
@@ -87,7 +91,9 @@ private val FALLBACK_FONTS = setOf(
     "Noto Sans Chakma",
     "Noto Sans Cham",
     "Noto Sans Cherokee",
+    "Noto Sans Chorasmian",
     "Noto Sans Coptic",
+    "Noto Sans Cypro Minoan",
     "Noto Sans Cypriot",
     "Noto Sans Deseret",
     "Noto Sans Devanagari",
@@ -101,6 +107,7 @@ private val FALLBACK_FONTS = setOf(
     "Noto Sans Gujarati",
     "Noto Sans Gunjala Gondi",
     "Noto Sans Gurmukhi",
+    "Noto Sans Hanifi Rohingya",
     "Noto Sans Hanunoo",
     "Noto Sans Hatran",
     "Noto Sans Hebrew",
@@ -132,8 +139,8 @@ private val FALLBACK_FONTS = setOf(
     "Noto Sans Masaram Gondi",
     "Noto Sans Math",
     "Noto Sans Mayan Numerals",
-    "Noto Sans Medefaidrin",
     "Noto Sans Meetei Mayek",
+    "Noto Sans Mende Kikakui",
     "Noto Sans Meroitic",
     "Noto Sans Miao",
     "Noto Sans Modi",
@@ -143,6 +150,7 @@ private val FALLBACK_FONTS = setOf(
     "Noto Sans Myanmar",
     "Noto Sans NKo",
     "Noto Sans Nabataean",
+    "Noto Sans Nandinagari",
     "Noto Sans New Tai Lue",
     "Noto Sans Newa",
     "Noto Sans Nushu",
@@ -162,22 +170,25 @@ private val FALLBACK_FONTS = setOf(
     "Noto Sans Pahawh Hmong",
     "Noto Sans Palmyrene",
     "Noto Sans Pau Cin Hau",
-    "Noto Sans Phags Pa",
     "Noto Sans Phoenician",
     "Noto Sans Psalter Pahlavi",
     "Noto Sans Rejang",
     "Noto Sans Runic",
+    "Noto Sans Samaritan",
     "Noto Sans Saurashtra",
     "Noto Sans Sharada",
-    "Noto Sans Shavian",
     "Noto Sans Siddham",
+    "Noto Sans SignWriting",
     "Noto Sans Sinhala",
     "Noto Sans Sogdian",
     "Noto Sans Sora Sompeng",
     "Noto Sans Soyombo",
     "Noto Sans Sundanese",
     "Noto Sans Syloti Nagri",
+    "Noto Sans Symbols",
+    "Noto Sans Symbols 2",
     "Noto Sans Syriac",
+    "Noto Sans TC",
     "Noto Sans Tagalog",
     "Noto Sans Tagbanwa",
     "Noto Sans Tai Le",
@@ -207,6 +218,9 @@ private data class FontEntry(
     val starts: List<Int>,  // inclusive start of each supported codepoint range
     val ends: List<Int>,    // inclusive end of each supported codepoint range
 )
+
+/** (name, urlSuffix) pair collected during CSS parsing, before charset extraction. */
+private data class FontUrl(val name: String, val urlSuffix: String)
 
 private data class IndexedFont(val index: Int, val entry: FontEntry)
 
@@ -239,11 +253,14 @@ private class TrieNode {
 // ---------------- Gradle task ----------------
 
 /**
- * Generates [NotoFontFallbackData.web.kt] by fetching font metadata from Google Fonts.
+ * Generates [NotoFontFallbackData.web.kt] by fetching real glyph coverage from Google Fonts.
  *
- * Idea and some implementation details are adapted from
- * https://github.com/flutter/flutter/blob/master/engine/src/flutter/lib/web_ui/lib/src/engine/font_fallbacks.dart
+ * Unlike relying on CSS unicode-range (which can declare codepoints the font file doesn't contain),
+ * this task downloads every woff2 font file and uses Python fonttools to read the actual cmap table.
+ * This matches the approach used by Flutter's roll_fallback_fonts.dart (which uses fc-query).
  *
+ * Prerequisites: python3 with fonttools + brotli installed.
+ *   pip install fonttools brotli
  */
 abstract class GenerateNotoFontFallbackDataTask : DefaultTask() {
 
@@ -253,104 +270,240 @@ abstract class GenerateNotoFontFallbackDataTask : DefaultTask() {
 
     @TaskAction
     fun execute() {
-        val allEntries = FALLBACK_FONTS.sorted().flatMap { processCssFont(it) }
-        val (encodedSets, encodedRanges) = computeEncodedFontSets(allEntries)
-        outputFile.get().asFile.apply {
-            parentFile.mkdirs()
-            writeText(generateKotlinSource(allEntries, encodedSets, encodedRanges))
+        checkPythonFontTools()
+
+        // Step 1: Fetch CSS for each family to collect (name, urlSuffix) pairs.
+        val allFontUrls = mutableListOf<FontUrl>()
+        for (familyName in FALLBACK_FONTS.sorted()) {
+            allFontUrls.addAll(fetchFontUrls(familyName))
         }
-        logger.lifecycle("Written: ${outputFile.get().asFile.absolutePath}")
+        logger.lifecycle("${allFontUrls.size} font subsets across ${FALLBACK_FONTS.size} families.")
+
+        // Step 2: Download all font files in parallel.
+        val tempDir = Files.createTempDirectory("noto_fonts").toFile()
+        try {
+            logger.lifecycle("Downloading font files (${DOWNLOAD_THREADS} threads)…")
+            val fontFiles = downloadFontsParallel(allFontUrls, tempDir)
+
+            // Step 3: Extract real cmap charsets from font binaries via Python fonttools.
+            logger.lifecycle("Extracting charsets from ${fontFiles.size} font files…")
+            val charsets = extractCharsetsInBatch(fontFiles)
+
+            // Step 4: Build FontEntry list, skipping files that failed or have no cmap.
+            val allEntries = allFontUrls.indices.mapNotNull { i ->
+                val (starts, ends) = charsets[i]
+                if (starts.isEmpty()) null
+                else FontEntry(allFontUrls[i].name, allFontUrls[i].urlSuffix, starts, ends)
+            }
+
+            val (encodedSets, encodedRanges) = computeEncodedFontSets(allEntries)
+            outputFile.get().asFile.apply {
+                parentFile.mkdirs()
+                writeText(generateKotlinSource(allEntries, encodedSets, encodedRanges))
+            }
+            logger.lifecycle("Written: ${outputFile.get().asFile.absolutePath}")
+        } finally {
+            tempDir.deleteRecursively()
+        }
     }
 
-    // ---------------- Font fetching ----------------
+    // ---------------- Prerequisite check ----------------
+
+    private fun checkPythonFontTools() {
+        val proc = ProcessBuilder("python3", "-c",
+            "from fontTools.ttLib import TTFont; import brotli; print('ok')"
+        ).redirectErrorStream(true).start()
+        val output = proc.inputStream.bufferedReader().readText().trim()
+        val code = proc.waitFor()
+        if (code != 0 || output != "ok") {
+            throw RuntimeException(
+                "Python fonttools + brotli are required to generate font data.\n" +
+                "Install with:  pip install fonttools brotli\n" +
+                "Python output: $output"
+            )
+        }
+    }
+
+    // ---------------- CSS parsing (URL extraction only) ----------------
 
     /**
-     * Fetches the Google Fonts CSS for [fontFamily] and parses each `@font-face` block into a
-     * [FontEntry]. The User-Agent is spoofed so the server returns WOFF2 URLs.
+     * Fetches the Google Fonts CSS for [familyName] and returns the list of
+     * (name, urlSuffix) pairs — one per @font-face block with a WOFF2 src URL.
+     * The CSS unicode-range is intentionally ignored; real coverage is read from
+     * the font binaries in [extractCharsetsInBatch].
      */
-    private fun processCssFont(fontFamily: String): List<FontEntry> {
-        val familyParam = fontFamily.replace(" ", "+")
+    private fun fetchFontUrls(familyName: String): List<FontUrl> {
+        val familyParam = familyName.replace(" ", "+")
         val cssUrl = "https://fonts.googleapis.com/css2?family=$familyParam"
         logger.lifecycle("  Fetching CSS: $cssUrl")
         val css = fetchText(cssUrl, mapOf("User-Agent" to WOFF2_USER_AGENT))
-        return parseCssFontFaces(css, fontFamily)
-    }
 
-    // ---------------- CSS parsing ----------------
-
-    /**
-     * Parses all `@font-face` blocks in [css] that contain a WOFF2 `src: url(...)` and a
-     * `unicode-range` declaration.
-     *
-     * Each block becomes a separate [FontEntry] named `"$familyName $index"`.
-     */
-    private fun parseCssFontFaces(css: String, familyName: String): List<FontEntry> {
         val urlRegex = Regex("""src:\s*url\((https?://[^)]+?\.woff2)\)""")
-        val rangeRegex = Regex("""unicode-range:\s*([^;]+);""")
-
-        val result = mutableListOf<FontEntry>()
-        // Split on @font-face to isolate blocks. The first split is the CSS preamble (ignored).
-        val blocks = css.split("@font-face")
+        val result = mutableListOf<FontUrl>()
         var counter = 0
-        for (block in blocks.drop(1)) {
+        for (block in css.split("@font-face").drop(1)) {
             val urlMatch = urlRegex.find(block) ?: continue
-            val rangeMatch = rangeRegex.find(block) ?: continue
-
             val woff2Url = urlMatch.groupValues[1]
             if (!woff2Url.startsWith(FONTS_GSTATIC_URL_PREFIX)) {
-                logger.warn("Unexpected URL in CSS for $familyName: $woff2Url — skipping block.")
+                logger.warn("Unexpected URL in CSS for $familyName: $woff2Url — skipping.")
                 continue
             }
-            val urlSuffix = woff2Url.removePrefix(FONTS_GSTATIC_URL_PREFIX)
-
-            val (starts, ends) = parseUnicodeRangeList(rangeMatch.groupValues[1])
-            if (starts.isEmpty()) continue
-
-            result += FontEntry(
+            result += FontUrl(
                 name = "$familyName $counter",
-                urlSuffix = urlSuffix,
-                starts = starts,
-                ends = ends,
+                urlSuffix = woff2Url.removePrefix(FONTS_GSTATIC_URL_PREFIX),
             )
             counter++
         }
         return result
     }
 
-    // ---------------- Unicode range parsing ----------------
+    // ---------------- Font downloading ----------------
 
     /**
-     * Parses a comma-separated list of unicode ranges such as
-     * `U+0000-00FF, U+0131, U+1E00-1EFF`.
-     *
-     * Supports:
-     *  - Single code points: `U+XXXX`
-     *  - Ranges: `U+XXXX-YYYY`
-     *  - Wildcard ranges: `U+1???` (expanded to `U+1000-U+1FFF`)
-     *
-     * Returns a pair of (starts, ends) lists.
+     * Downloads every font listed in [fontUrls] to [tempDir] using [DOWNLOAD_THREADS] parallel
+     * threads. Returns the downloaded [File] at each index (null if download failed).
      */
-    private fun parseUnicodeRangeList(rangeList: String): Pair<List<Int>, List<Int>> {
+    private fun downloadFontsParallel(fontUrls: List<FontUrl>, tempDir: File): List<File?> {
+        val executor = Executors.newFixedThreadPool(DOWNLOAD_THREADS)
+        val futures = fontUrls.mapIndexed { i, fontUrl ->
+            executor.submit<File?> {
+                val url = FONTS_GSTATIC_URL_PREFIX + fontUrl.urlSuffix
+                try {
+                    val file = File(tempDir, "font_$i.woff2")
+                    file.writeBytes(fetchBytes(url))
+                    file
+                } catch (e: Exception) {
+                    logger.warn("Failed to download $url: ${e.message}")
+                    null
+                }
+            }
+        }
+        executor.shutdown()
+        executor.awaitTermination(10, TimeUnit.MINUTES)
+        return futures.map { it.get() }
+    }
+
+    // ---------------- Charset extraction via Python fonttools ----------------
+
+    // language=Python
+    private val FONTTOOLS_SCRIPT = """
+import sys
+from fontTools.ttLib import TTFont
+
+for path in sys.stdin:
+    path = path.rstrip('\n')
+    if not path:
+        print('', flush=True)
+        continue
+    try:
+        font = TTFont(path)
+        cmap = font.getBestCmap()
+        if not cmap:
+            print('', flush=True)
+            continue
+        cps = sorted(cmap.keys())
+        result = []
+        s = p = cps[0]
+        for cp in cps[1:]:
+            if cp == p + 1:
+                p = cp
+            else:
+                result.append(f'{s:X}' if s == p else f'{s:X}-{p:X}')
+                s = p = cp
+        result.append(f'{s:X}' if s == p else f'{s:X}-{p:X}')
+        print(' '.join(result), flush=True)
+    except Exception as e:
+        sys.stderr.write(f'ERROR {path}: {e}\n')
+        sys.stderr.flush()
+        print('', flush=True)
+""".trimIndent()
+
+    /**
+     * Extracts cmap charsets from [fontFiles] using [DOWNLOAD_THREADS] parallel Python fonttools
+     * processes. Each thread runs its own Python process over a contiguous slice of the list,
+     * communicating via line-by-line stdin/stdout so that every font is logged as it completes.
+     */
+    private fun extractCharsetsInBatch(fontFiles: List<File?>): List<Pair<List<Int>, List<Int>>> {
+        val results = arrayOfNulls<Pair<List<Int>, List<Int>>>(fontFiles.size)
+        val chunkSize = maxOf(1, (fontFiles.size + DOWNLOAD_THREADS - 1) / DOWNLOAD_THREADS)
+        val chunks = fontFiles.indices.toList().chunked(chunkSize)
+
+        val executor = Executors.newFixedThreadPool(DOWNLOAD_THREADS)
+        val futures = chunks.mapIndexed { threadIdx, indices ->
+            executor.submit<Unit> {
+                val batchResults = extractCharsetsForChunk(indices.map { fontFiles[it] }, threadIdx)
+                for ((i, result) in batchResults.withIndex()) {
+                    results[indices[i]] = result
+                }
+            }
+        }
+        executor.shutdown()
+        executor.awaitTermination(30, TimeUnit.MINUTES)
+        futures.forEach { it.get() }  // re-throw any exception from worker threads
+
+        return results.map { it ?: (emptyList<Int>() to emptyList()) }
+    }
+
+    /**
+     * Runs a single Python fonttools process for [fontFiles], communicating via line-by-line
+     * stdin/stdout. Logs each font as its result arrives.
+     */
+    private fun extractCharsetsForChunk(
+        fontFiles: List<File?>,
+        threadIdx: Int,
+    ): List<Pair<List<Int>, List<Int>>> {
+        val proc = ProcessBuilder("python3", "-c", FONTTOOLS_SCRIPT)
+            .redirectErrorStream(false)
+            .start()
+
+        val results = mutableListOf<Pair<List<Int>, List<Int>>>()
+
+        val writer = proc.outputStream.bufferedWriter()
+        val reader = proc.inputStream.bufferedReader()
+        try {
+            for (file in fontFiles) {
+                writer.write(if (file != null) file.absolutePath else "")
+                writer.newLine()
+                writer.flush()
+
+                val line = reader.readLine() ?: ""
+                val charset = parseCharsetLine(line)
+                results += charset
+                logger.lifecycle(
+                    "  [thread-$threadIdx] ${file?.name ?: "(null)"} → " +
+                    if (charset.first.isEmpty()) "empty" else "${charset.first.size} ranges"
+                )
+            }
+        } finally {
+            writer.close()
+        }
+
+        val errOutput = proc.errorStream.bufferedReader().readText()
+        val exitCode = proc.waitFor()
+        if (exitCode != 0) {
+            logger.warn("  [thread-$threadIdx] fonttools exited with code $exitCode. Errors:\n$errOutput")
+        } else if (errOutput.isNotBlank()) {
+            logger.warn("  [thread-$threadIdx] fonttools warnings:\n$errOutput")
+        }
+
+        return results
+    }
+
+    /**
+     * Parses one line of charset output from the Python script.
+     * Format: space-separated hex ranges, e.g. `0-FF 200-2FF AC00-D7A3`.
+     * An empty line means no coverage (returns empty lists).
+     */
+    private fun parseCharsetLine(line: String): Pair<List<Int>, List<Int>> {
+        if (line.isBlank()) return emptyList<Int>() to emptyList()
         val starts = mutableListOf<Int>()
         val ends = mutableListOf<Int>()
-        for (part in rangeList.split(",")) {
-            val token = part.trim().uppercase()
-            if (token.isEmpty()) continue
-
-            val hex = token.removePrefix("U+")
-            if (hex.contains('?')) {
-                // Wildcard: replace '?' with '0' for start, 'F' for end.
-                val start = hex.replace('?', '0').toInt(16)
-                val end = hex.replace('?', 'F').toInt(16)
-                starts += start
-                ends += end
-            } else {
-                val parts = hex.split("-")
-                val start = parts[0].toInt(16)
-                val end = if (parts.size > 1) parts[1].toInt(16) else start
-                starts += start
-                ends += end
-            }
+        for (range in line.trim().split(' ')) {
+            val parts = range.split('-')
+            val start = parts[0].toInt(16)
+            val end = if (parts.size > 1) parts[1].toInt(16) else start
+            starts += start
+            ends += end
         }
         return starts to ends
     }
@@ -490,7 +643,7 @@ abstract class GenerateNotoFontFallbackDataTask : DefaultTask() {
                 // !!! DO NOT EDIT THIS FILE MANUALLY !!!
                 // the code is auto-generated by GenerateNotoFontFallbackDataTask.kt
 
-                internal class NotoFont(val name: String, val url: String)
+                internal data class NotoFont(val name: String, val url: String)
 
                 internal fun getNotoFonts(): List<NotoFont> = listOf(
 
@@ -555,6 +708,22 @@ abstract class GenerateNotoFontFallbackDataTask : DefaultTask() {
                 error("HTTP ${conn.responseCode} for $url: ${conn.responseMessage}")
             }
             return conn.inputStream.bufferedReader().readText()
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    private fun fetchBytes(url: String): ByteArray {
+        val conn = URI(url).toURL().openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = "GET"
+            conn.connectTimeout = 30_000
+            conn.readTimeout   = 60_000
+            conn.connect()
+            if (conn.responseCode != 200) {
+                error("HTTP ${conn.responseCode} for $url: ${conn.responseMessage}")
+            }
+            return conn.inputStream.readBytes()
         } finally {
             conn.disconnect()
         }
