@@ -17,11 +17,20 @@
 package androidx.compose.ui.draganddrop
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.desktop.ClipboardEntry
+import androidx.compose.ui.desktop.ClipboardFormat
+import androidx.compose.ui.desktop.MimeTransferClipboardEntry
+import androidx.compose.ui.desktop.linuxMimeTypes
+import androidx.compose.ui.desktop.macos.MacOsClipboardEntry
+import androidx.compose.ui.desktop.macos.toUniformTypeIdentifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.DesktopPlatform
 import java.awt.datatransfer.Transferable
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
+import org.jetbrains.desktop.macos.DragInfo
+import org.jetbrains.desktop.macos.Pasteboard
 
 /**
  * Encapsulates the information needed to start a drag-and-drop session from Compose on the desktop.
@@ -192,3 +201,34 @@ interface DragData {
 
 /* internal */ actual val DragAndDropEvent.positionInRoot: Offset
     get() = positionInRootImpl
+
+
+@OptIn(ExperimentalComposeUiApi::class)
+val DragAndDropEvent.clipboardEntry: ClipboardEntry
+    get() {
+        return when (DesktopPlatform.Current) {
+            DesktopPlatform.MacOS -> MacOsClipboardEntry((nativeEvent as DragInfo).pasteboard)
+            DesktopPlatform.Linux -> nativeEvent as ClipboardEntry
+            DesktopPlatform.Windows -> throw UnsupportedOperationException("Drag and drop is not supported on Windows")
+            DesktopPlatform.Unknown -> error("Unsupported desktop platform: ${DesktopPlatform.Current}")
+        }
+    }
+
+fun DragAndDropEvent.containsFormat(format: ClipboardFormat<*>): Boolean {
+    return when (DesktopPlatform.Current) {
+        DesktopPlatform.MacOS -> {
+            val pasteboard = (nativeEvent as DragInfo).pasteboard
+            val target = format.toUniformTypeIdentifier()
+            val itemCount = Pasteboard.itemCount(pasteboard).toInt()
+            (0 until itemCount).any { target in Pasteboard.readItemTypes(it, pasteboard) }
+        }
+        DesktopPlatform.Linux -> {
+            val available = (nativeEvent as? MimeTransferClipboardEntry)?.availableMimeTypes().orEmpty()
+            format.linuxMimeTypes().any { it in available }
+        }
+        DesktopPlatform.Windows -> {
+            throw UnsupportedOperationException("Drag and drop is not supported on Windows")
+        }
+        DesktopPlatform.Unknown -> false
+    }
+}
