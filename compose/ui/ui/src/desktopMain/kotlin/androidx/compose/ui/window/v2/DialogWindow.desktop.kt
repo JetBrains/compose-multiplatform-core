@@ -135,7 +135,7 @@ fun DialogWindow(
 @Composable
 private fun defaultDialogModality() =
     if (LocalAwtWindow.current == null) {
-        DialogModalityType.Modeless
+        DialogModalityType.ApplicationModal
     } else {
         DialogModalityType.DocumentModal
     }

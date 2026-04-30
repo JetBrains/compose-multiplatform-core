@@ -114,12 +114,12 @@ fun SwingDialog(
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
     modalityType: ModalityType =
-        if (parentWindow == null) ModalityType.MODELESS else ModalityType.DOCUMENT_MODAL,
+        if (parentWindow == null) ModalityType.APPLICATION_MODAL else ModalityType.DOCUMENT_MODAL,
     init: (ComposeDialog) -> Unit,
     content: @Composable DialogWindowScope.() -> Unit
 ) {
-    if ((parentWindow == null) && (modalityType != ModalityType.MODELESS)) {
-        throw IllegalArgumentException("SwingDialog with no parent window cannot be modal")
+    if ((parentWindow == null) && (modalityType == ModalityType.DOCUMENT_MODAL)) {
+        throw IllegalArgumentException("SwingDialog with no parent window cannot be DOCUMENT_MODAL")
     }
 
     val currentState by rememberUpdatedState(state)
