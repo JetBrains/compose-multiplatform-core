@@ -242,7 +242,7 @@ fun SwingWindow(
 
                 // Need to make the window displayable, to make awt.SwingWindow render the first
                 // frame before the window is visible.
-                // Check window.isDisplayable again because initializeBounds could have already
+                // Check isDisplayable again because initializeBounds could have already
                 // called pack(), and we don't need to do it twice
                 if (!window.isDisplayable) {
                     window.preferredSize = window.size

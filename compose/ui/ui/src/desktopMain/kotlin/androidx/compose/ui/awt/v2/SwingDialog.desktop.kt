@@ -43,10 +43,12 @@ import androidx.compose.ui.window.UndecoratedWindowDecoration
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.resizerThickness
+import androidx.compose.ui.window.roundToDimensionOrNull
 import androidx.compose.ui.window.toDpRect
 import androidx.compose.ui.window.v2.DialogState
 import androidx.compose.ui.window.v2.WindowBoundsProvider
 import androidx.compose.ui.window.v2.WindowGeometryProviderScope
+import androidx.compose.ui.window.v2.WindowSizeLimits
 import androidx.compose.ui.window.v2.rememberDialogState
 import java.awt.Dialog.ModalityType
 import java.awt.Window
@@ -108,6 +110,7 @@ fun SwingDialog(
     enabled: Boolean = true,
     focusable: Boolean = true,
     alwaysOnTop: Boolean = false,
+    sizeLimits: WindowSizeLimits = WindowSizeLimits.Unlimited,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
     modalityType: ModalityType =
@@ -128,6 +131,7 @@ fun SwingDialog(
     val currentEnabled by rememberUpdatedState(enabled)
     val currentFocusable by rememberUpdatedState(focusable)
     val currentAlwaysOnTop by rememberUpdatedState(alwaysOnTop)
+    val currentSizeLimits by rememberUpdatedState(sizeLimits)
     val currentModalityType by rememberUpdatedState(modalityType)
     val currentOnCloseRequest by rememberUpdatedState(onCloseRequest)
 
@@ -220,6 +224,8 @@ fun SwingDialog(
                 set(currentEnabled, dialog::setEnabled)
                 set(currentFocusable, dialog::setFocusableWindowState)
                 set(currentAlwaysOnTop, dialog::setAlwaysOnTop)
+                set(currentSizeLimits.min) { dialog.minimumSize = it.roundToDimensionOrNull() }
+                set(currentSizeLimits.max) { dialog.maximumSize = it.roundToDimensionOrNull() }
                 set(currentModalityType, dialog::setModalityType)
                 set(currentDecoration.resizerThickness, dialog::undecoratedResizerThickness::set)
             }
@@ -229,7 +235,7 @@ fun SwingDialog(
 
                 // Need to make the dialog displayable, to make awt.SwingDialog render the first
                 // frame before the dialog is visible.
-                // Check window.isDisplayable again because initializeBounds could have already
+                // Check isDisplayable again because initializeBounds could have already
                 // called pack(), and we don't need to do it twice
                 if (!dialog.isDisplayable) {
                     dialog.preferredSize = dialog.size
