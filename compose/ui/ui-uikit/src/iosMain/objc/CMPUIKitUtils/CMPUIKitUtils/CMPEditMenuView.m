@@ -150,11 +150,7 @@ id _editInteraction;
     if (self.window != nil) {
         [[CMPEditMenuViewRegister shared] addEditMenu:self];
     } else {
-        if (@available(iOS 16.0, *)) {
-            [self cancelPresentEditMenuInteraction];
-        } else {
-            [self cancelShowMenuController];
-        }
+        [self hideEditMenu];
         [[CMPEditMenuViewRegister shared] removeEditMenu:self];
     }
 }
@@ -255,8 +251,8 @@ id _editInteraction;
 
     UIEditMenuConfiguration *config = [UIEditMenuConfiguration configurationWithIdentifier:nil
                                                                                sourcePoint:self.targetRect.origin];
-
-    NSLog(@"[CMPEditMenuView] presentEditMenuInteraction called with config: %@ || window: %@", config, [self.window description] ?: @"<no window>");
+    // hideEditMenu
+    NSLog(@"[CMPEditMenuView] presentEditMenuInteraction called with config: %@ || view: %@", config, self);
     [self.editInteraction presentEditMenuWithConfiguration:config];
 }
 
