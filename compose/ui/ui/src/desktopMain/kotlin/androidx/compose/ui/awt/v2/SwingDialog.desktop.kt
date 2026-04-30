@@ -41,16 +41,17 @@ import androidx.compose.ui.util.windowListenerRef
 import androidx.compose.ui.window.DialogWindowScope
 import androidx.compose.ui.window.UndecoratedWindowDecoration
 import androidx.compose.ui.window.WindowDecoration
-import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.resizerThickness
 import androidx.compose.ui.window.roundToDimensionOrNull
 import androidx.compose.ui.window.toDpRect
 import androidx.compose.ui.window.v2.DialogState
 import androidx.compose.ui.window.v2.WindowBoundsProvider
 import androidx.compose.ui.window.v2.WindowGeometryProviderScope
+import androidx.compose.ui.window.v2.WindowScreenProvider
 import androidx.compose.ui.window.v2.WindowSizeLimits
 import androidx.compose.ui.window.v2.rememberDialogState
 import java.awt.Dialog.ModalityType
+import java.awt.GraphicsEnvironment
 import java.awt.Window
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
@@ -157,7 +158,16 @@ fun SwingDialog(
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
         create = {
-            val graphicsConfiguration = WindowLocationTracker.lastActiveGraphicsConfiguration
+            val graphicsDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices
+            val currentDevice = currentState._screenId?.let { screenId ->
+                graphicsDevices.firstOrNull { it.iDstring == screenId }
+            }
+            val parentDevice = parentWindow?.graphicsConfiguration?.device
+            val initialDevice = currentDevice
+                ?: state.screenRequests.tryReceive().getOrNull()?.getInitialScreenDevice(parentDevice)
+                ?: WindowScreenProvider.Default.getInitialScreenDevice(parentDevice)
+            val graphicsConfiguration = initialDevice.defaultConfiguration
+
             val dlg = if (parentWindow != null) {
                 ComposeDialog(
                     owner = parentWindow,
@@ -171,6 +181,7 @@ fun SwingDialog(
                     coroutineContext = coroutineContext
                 )
             }
+
             // close state is controlled by DialogState.isOpen
             dlg.defaultCloseOperation = JDialog.DO_NOTHING_ON_CLOSE
             listeners.windowListenerRef.registerWithAndSet(
@@ -181,11 +192,15 @@ fun SwingDialog(
                     }
                 }
             )
+
             listeners.componentListenerRef.registerWithAndSet(
                 dlg,
                 object : ComponentAdapter() {
                     fun applyBoundsChanges() {
                         currentState._bounds = dlg.bounds.toDpRect()
+                        if (currentState._screenId != dlg.graphicsConfiguration.device.iDstring) {
+                            currentState._screenId = dlg.graphicsConfiguration.device.iDstring
+                        }
                     }
 
                     override fun componentShown(e: ComponentEvent) {

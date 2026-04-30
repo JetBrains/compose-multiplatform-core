@@ -55,6 +55,8 @@ import androidx.compose.ui.window.v2.WindowState
 import androidx.compose.ui.window.v2.rememberWindowState
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
+import java.awt.Toolkit
+import java.awt.Window
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import java.awt.event.WindowAdapter
@@ -163,6 +165,7 @@ fun SwingWindow(
                 graphicsConfiguration = initialDevice.defaultConfiguration,
                 coroutineContext = coroutineContext
             )
+
             // close state is controlled by WindowState.isOpen
             wnd.defaultCloseOperation = JFrame.DO_NOTHING_ON_CLOSE
             listeners.windowListenerRef.registerWithAndSet(
@@ -273,14 +276,17 @@ fun SwingWindow(
     }
 }
 
-private fun WindowScreenProvider.getInitialScreenDevice(): GraphicsDevice {
+internal fun WindowScreenProvider.getInitialScreenDevice(
+    defaultDevice: GraphicsDevice? = null
+): GraphicsDevice {
     val lastActiveConfig = WindowLocationTracker.lastActiveGraphicsConfiguration
     val env = GraphicsEnvironment.getLocalGraphicsEnvironment()
     val devices = env.screenDevices
-    val defaultDevice =
-        devices.firstOrNull { it.iDstring === lastActiveConfig?.device?.iDstring } ?:
-        env.defaultScreenDevice
-    return with(WindowScreenProviderScope(devices.toList(), defaultDevice)) {
+    val actualDefaultDevice = defaultDevice
+        ?: devices.firstOrNull { it.iDstring === lastActiveConfig?.device?.iDstring }
+        ?: env.defaultScreenDevice
+    val scope = WindowScreenProviderScope(devices.toList(), actualDefaultDevice)
+    return with(scope) {
         getScreen().device
     }
 }
@@ -320,4 +326,26 @@ private fun ComposeWindow.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
     with(scope) {
         bounds = boundsProvider.getBounds().requireReal().toAwtRectangleSizeRoundedUp()
     }
+}
+
+internal fun Window.setScreenFrom(screenProvider: WindowScreenProvider) {
+    val devices = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices
+    val defaultDevice = graphicsConfiguration.device
+
+    val scope = WindowScreenProviderScope(
+        devices = devices.toList(),
+        defaultDevice = defaultDevice
+    )
+    val device = with(scope) { screenProvider.getScreen().device }
+    setScreenFrom(device)
+}
+
+private fun Window.setScreenFrom(device: GraphicsDevice) {
+    val configuration = device.defaultConfiguration
+    val screenBounds = configuration.bounds
+    val screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(configuration)
+    setLocation(
+        x + screenBounds.x + screenInsets.left + x,
+        y + screenBounds.y + screenInsets.top + y,
+    )
 }

@@ -317,6 +317,8 @@ class WindowState private constructor(
     /**
      * Requests to set the bounds of the window.
      *
+     * This is the same as using [WindowBoundsProvider.Absolute].
+     *
      * Note that the actual bounds are set asynchronously and may be different from the requested
      * ones (e.g., if the window manager can't position as requested).
      *

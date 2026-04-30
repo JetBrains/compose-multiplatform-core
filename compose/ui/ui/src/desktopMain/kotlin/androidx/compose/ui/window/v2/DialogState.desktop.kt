@@ -74,14 +74,17 @@ fun rememberDialogStateWithBounds(
  *
  * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
  *
+ * @param initialScreenProvider Provides the initial screen on which the dialog will be placed.
  * @param initialBoundsProvider Provides the initial bounds of the dialog.
  */
 @ExperimentalComposeUiApi
 @Composable
 fun rememberDialogState(
+    initialScreenProvider: WindowScreenProvider = WindowScreenProvider.Default,
     initialBoundsProvider: WindowBoundsProvider = WindowBoundsProvider.Default,
 ): DialogState = rememberSaveable(saver = DialogState.Saver) {
     DialogState(
+        initialScreenProvider = initialScreenProvider,
         initialBoundsProvider = initialBoundsProvider,
     )
 }
@@ -121,12 +124,15 @@ fun DialogStateWithBounds(
  *
  * Note: this function may be moved to `androidx.compose.ui.window` before stabilization.
  *
+ * @param initialScreenProvider Provides the initial screen on which the dialog will be placed.
  * @param initialBoundsProvider Provides the initial bounds of the dialog.
  */
 @ExperimentalComposeUiApi
 fun DialogState(
-    initialBoundsProvider: WindowBoundsProvider,
+    initialScreenProvider: WindowScreenProvider = WindowScreenProvider.Default,
+    initialBoundsProvider: WindowBoundsProvider = WindowBoundsProvider.Default,
 ): DialogState = DialogState.createUninitialized().apply {
+    requestScreen(initialScreenProvider)
     requestBounds(initialBoundsProvider)
 }
 
@@ -139,15 +145,18 @@ fun DialogState(
 @ExperimentalComposeUiApi
 class DialogState private constructor(
     isInitialized: Boolean,
+    screenId: String?,
     bounds: DpRect?,
 ) {
     /**
      * Creates a new [DialogState] that is initialized with the specified values.
      */
     internal constructor(
+        screenId: String,
         bounds: DpRect,
     ): this(
         isInitialized = true,
+        screenId = screenId,
         bounds = bounds,
     )
 
@@ -160,6 +169,31 @@ class DialogState private constructor(
      */
     var isInitialized: Boolean by mutableStateOf(isInitialized)
         internal set
+
+    /**
+     * The id of the screen with which the dialog is currently associated; `null` if the dialog is
+     * not yet [isInitialized].
+     */
+    @Suppress("PropertyName")
+    internal var _screenId: String? by mutableStateOf(screenId)
+
+    /**
+     * The id of the screen with which the dialog is currently associated; throws
+     * [IllegalStateException] if the dialog is not yet [isInitialized].
+     */
+    val screenId: String
+        get() = _screenId ?: dialogNotInitializedError("screenId")
+
+    internal val screenRequests = Channel<WindowScreenProvider>(Channel.CONFLATED)
+
+    /**
+     * Requests to position the dialog on the specified screen.
+     *
+     * Note that the actual positioning is done asynchronously.
+     */
+    fun requestScreen(screenProvider: WindowScreenProvider) {
+        screenRequests.trySend(screenProvider)
+    }
 
     /**
      * The current bounds of the dialog; `null` if the dialog is not yet [isInitialized].
@@ -202,6 +236,9 @@ class DialogState private constructor(
 
     /**
      * Requests to set the bounds of the dialog.
+     *
+     * This is the same as using [WindowBoundsProvider.Absolute].
+     *
      *
      * Note that the actual bounds are set asynchronously and may be different from the requested
      * ones (e.g., if the window manager can't position as requested).
@@ -303,6 +340,7 @@ class DialogState private constructor(
         internal fun createUninitialized() =
             DialogState(
                 isInitialized = false,
+                screenId = null,
                 bounds = null
             )
 
@@ -314,6 +352,7 @@ class DialogState private constructor(
                 if (!it.isInitialized) return@listSaver emptyList()
                 val bounds = it.bounds
                 arrayListOf(
+                    it.screenId,
                     bounds.top.value,
                     bounds.left.value,
                     bounds.right.value,
@@ -323,11 +362,12 @@ class DialogState private constructor(
             restore = { state ->
                 if (state.isEmpty()) return@listSaver null
                 DialogState(
+                    screenId = state[0] as String,
                     bounds = DpRect(
-                        top = Dp(state[3] as Float),
-                        left = Dp(state[4] as Float),
-                        right = Dp(state[5] as Float),
-                        bottom = Dp(state[6] as Float)
+                        top = Dp(state[1] as Float),
+                        left = Dp(state[2] as Float),
+                        right = Dp(state[3] as Float),
+                        bottom = Dp(state[4] as Float)
                     )
                 )
             }

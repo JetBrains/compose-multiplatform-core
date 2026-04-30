@@ -70,5 +70,16 @@ class Screen internal constructor(
     val availableBounds: DpRect
         get() = bounds - insets
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Screen) return false
+
+        return this.id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+
     override fun toString(): String = "Screen $id"
 }

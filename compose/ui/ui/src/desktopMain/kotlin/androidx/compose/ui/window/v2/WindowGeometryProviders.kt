@@ -72,6 +72,13 @@ class WindowScreenProviderScope internal constructor(
      * The default screen, on which the window should typically be placed.
      */
     val defaultScreen: Screen = Screen(defaultDevice)
+
+    /**
+     * Evaluates the given [WindowScreenProvider] in this scope.
+     */
+    internal fun WindowScreenProvider.getScreen(): Screen = with(this) {
+        this@WindowScreenProviderScope.getScreen()
+    }
 }
 
 /**
@@ -186,21 +193,21 @@ class WindowGeometryProviderScope internal constructor(
     /**
      * Evaluates the given [WindowSizeProvider] in this scope.
      */
-    fun WindowSizeProvider.getSize(): DpSize = with(this) {
+    internal fun WindowSizeProvider.getSize(): DpSize = with(this) {
         this@WindowGeometryProviderScope.getSize()
     }
 
     /**
      * Evaluates the given [WindowPositionProvider] in this scope.
      */
-    fun WindowPositionProvider.getPosition(size: DpSize): DpOffset = with(this) {
+    internal fun WindowPositionProvider.getPosition(size: DpSize): DpOffset = with(this) {
         this@WindowGeometryProviderScope.getPosition(size)
     }
 
     /**
      * Evaluates the given [WindowBoundsProvider] in this scope.
      */
-    fun WindowBoundsProvider.getBounds(): DpRect = with(this) {
+    internal fun WindowBoundsProvider.getBounds(): DpRect = with(this) {
         this@WindowGeometryProviderScope.getBounds()
     }
 }
@@ -318,6 +325,14 @@ fun interface WindowPositionProvider {
             position.requireReal()
             return WindowPositionProvider { position }
         }
+
+        /**
+         * Positions the window at the given [position].
+         *
+         * @param x The x position of the window.
+         * @param y The y position of the window.
+         */
+        fun Absolute(x: Dp, y: Dp): WindowPositionProvider = Absolute(DpOffset(x, y))
 
         /**
          * Aligns the window within the screen according to [alignment] and [offset].
@@ -451,7 +466,7 @@ fun interface WindowSizeProvider {
          * @param width The width of the window.
          * @param height The height of the window.
          */
-        fun Fixed(width: Dp, height: Dp) = Fixed(DpSize(width, height))
+        fun Fixed(width: Dp, height: Dp): WindowSizeProvider = Fixed(DpSize(width, height))
 
         /**
          * Sets the size of the window to its preferred size, constrained only by the size of the
