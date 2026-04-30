@@ -432,8 +432,7 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.openToolbar(textFieldTag: String) {
-        findNodeWithTag(textFieldTag).tap()
-        delay(500)
+        delay(100)
         findNodeWithTag(textFieldTag).doubleTap()
         waitForContextMenu()
     }
