@@ -23,8 +23,8 @@ import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-//import androidx.compose.ui.kdt.gtk.GtkApplication
-//import androidx.compose.ui.kdt.gtk.GtkUriHandler
+import androidx.compose.ui.desktop.gtk.GtkApplication
+import androidx.compose.ui.desktop.gtk.GtkUriHandler
 import androidx.compose.ui.desktop.linux.LinuxApplication
 import androidx.compose.ui.desktop.linux.LinuxUriHandler
 import androidx.compose.ui.desktop.macos.MacOsApplication
@@ -134,8 +134,7 @@ internal actual fun defaultUriHandler(): UriHandler =
         DesktopPlatform.MacOS -> MacOsUriHandler()
         DesktopPlatform.Linux -> when (currentLinuxWindowSystem()) {
             LinuxWindowSystem.Wayland -> LinuxUriHandler()
-//            LinuxWindowSystem.Gtk -> GtkUriHandler()
-            LinuxWindowSystem.Gtk -> TODO()
+            LinuxWindowSystem.Gtk -> GtkUriHandler()
         }
 //        DesktopPlatform.Windows -> WindowsUriHandler()
         DesktopPlatform.Windows -> TODO()
@@ -181,8 +180,10 @@ private fun initializeJvmApplication(
                 LinuxApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit)
                 LinuxApplication.current()
             }
-//            LinuxWindowSystem.Gtk -> GtkApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { GtkApplication.current() }
-            LinuxWindowSystem.Gtk -> TODO()
+            LinuxWindowSystem.Gtk -> {
+                GtkApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit)
+                GtkApplication.current()
+            }
         }
 //        DesktopPlatform.Windows -> WindowsApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { WindowsApplication.current() }
         DesktopPlatform.Windows -> TODO()

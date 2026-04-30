@@ -19,6 +19,7 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.desktop.LinuxWindowSystem
 import androidx.compose.ui.desktop.currentLinuxWindowSystem
+import androidx.compose.ui.desktop.gtk.GtkApplication
 import androidx.compose.ui.desktop.linux.LinuxApplication
 import androidx.compose.ui.desktop.macos.MacOsClipboard
 import androidx.compose.ui.text.AnnotatedString
@@ -161,7 +162,7 @@ internal actual fun createPlatformClipboard(): Clipboard =
         DesktopPlatform.MacOS -> MacOsClipboard
         DesktopPlatform.Linux -> when (currentLinuxWindowSystem()) {
             LinuxWindowSystem.Wayland -> LinuxApplication.current()
-            LinuxWindowSystem.Gtk -> TODO()
+            LinuxWindowSystem.Gtk -> GtkApplication.current()
         }
         DesktopPlatform.Windows -> TODO()
         DesktopPlatform.Unknown -> error("Unsupported desktop platform: ${DesktopPlatform.Current}")
