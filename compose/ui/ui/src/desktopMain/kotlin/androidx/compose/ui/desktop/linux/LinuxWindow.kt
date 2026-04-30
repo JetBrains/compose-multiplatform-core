@@ -1,49 +1,18 @@
-@file:OptIn(ExperimentalComposeUiApi::class, InternalComposeUiApi::class)
+@file:OptIn(ExperimentalComposeUiApi::class, InternalComposeUiApi::class, InternalCoreApi::class)
 @file:Suppress("DuplicatedCode")
 
 package androidx.compose.ui.desktop.linux
 
 import androidx.annotation.MainThread
-import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.SnapshotMutableStateImpl
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.SystemTheme
-import androidx.compose.ui.draganddrop.DragAndDropImage
-import androidx.compose.ui.draganddrop.DragAndDropOwner
-import androidx.compose.ui.draganddrop.DragAndDropTransferAction
-import androidx.compose.ui.draganddrop.DragAndDropTransferDataJvm
-import androidx.compose.ui.draganddrop.LocalDragAndDropManager
-import androidx.compose.ui.focus.FocusOwnerImpl
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.renderWithLayerScope
-import androidx.compose.ui.graphics.toComposeImageBitmap
-import androidx.compose.ui.input.InputMode
-import androidx.compose.ui.input.InputModeManagerImpl
-import androidx.compose.ui.input.key.InternalKeyEvent
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isAltPressed
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.pointer.PointerEvent
-import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.desktop.ClipboardEntry
 import androidx.compose.ui.desktop.ClipboardItemsEntry
 import androidx.compose.ui.desktop.ComposeTextInputSession
 import androidx.compose.ui.desktop.InteractiveMoveInitiator
@@ -57,68 +26,62 @@ import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.WindowResizeHandle
 import androidx.compose.ui.desktop.WindowScope
+import androidx.compose.ui.desktop.draganddrop.DragAndDropImage
 import androidx.compose.ui.desktop.encodeClipboardItemsToMimeData
+import androidx.compose.ui.draganddrop.DragAndDropTransferAction
+import androidx.compose.ui.draganddrop.DragAndDropTransferData
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.InputModeManagerImpl
+import androidx.compose.ui.input.key.InternalKeyEvent
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.node.InternalCoreApi
+import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.DefaultTextToolbar
 import androidx.compose.ui.platform.InterceptPlatformTextInput
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalInputModeManager
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalPointerIconService
 import androidx.compose.ui.platform.LocalTextInputContext
-import androidx.compose.ui.platform.LocalTextToolbar
-import androidx.compose.ui.platform.LocalViewConfiguration
-import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputInterceptor
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
+import androidx.compose.ui.scene.CanvasLayersComposeScene
+import androidx.compose.ui.scene.ComposeScene
+import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextInputContext
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.takeOrElse
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
-import fleet.fastutil.ints.Int2ObjectOpenHashMap
-import fleet.reporting.shared.tracing.span
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.enableSavedStateHandles
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellableContinuation
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
-import noria.CallbackInterceptorCompositionLocal
-import noria.ID
-import noria.activeCell
-import noria.cell
-import noria.currentNoriaContext
-import noria.impl.NoriaState
-import noria.memo
-import noria.ui.core.LocalWindow
-import noria.ui.core.WindowData
-import noria.ui.core.uiRoot
-import noria.ui.draw.internal.RenderContext
-import noria.ui.input.pointer.NoriaPointerInputEventProcessor
-import noria.ui.input.pointer.PositionCalculator
-import noria.ui.input.pointer.ProcessResult
-import noria.ui.layout.internal.DebugLocation
-import noria.ui.layout.internal.LayoutNode
-import noria.ui.layout.internal.LayoutOwner
-import noria.ui.layout.internal.LayoutScope
-import noria.ui.layout.internal.rememberEmptyLayoutBuilder
-import noria.ui.layout.internal.withLayoutBuilderStack
-import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.desktop.linux.DataSource
 import org.jetbrains.desktop.linux.DesktopTitlebarAction
 import org.jetbrains.desktop.linux.DragAndDropAction
@@ -139,7 +102,6 @@ import org.jetbrains.desktop.linux.WindowDecorationMode
 import org.jetbrains.desktop.linux.WindowParams
 import org.jetbrains.desktop.linux.WindowResizeEdge
 import org.jetbrains.skia.BackendRenderTarget
-import org.jetbrains.skia.Canvas
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.ColorSpace
 import org.jetbrains.skia.DirectContext
@@ -156,7 +118,7 @@ class LinuxWindow internal constructor(
     private val application: LinuxApplication,
     internal val scene: Scene<*>,
     private val onCloseRequest: (WindowCloseRequestReason) -> Unit,
-) : InteractiveMoveInitiator, InteractiveResizeInitiator, LayoutOwner {
+) : InteractiveMoveInitiator, InteractiveResizeInitiator {
     private val nativeWindowId = application.allocateNativeWindowId()
 
     override val nativeWindow: org.jetbrains.desktop.linux.Window =
@@ -179,7 +141,6 @@ class LinuxWindow internal constructor(
     @Volatile
     internal var isFrameRequested = false
 
-    private var drawContent: (Canvas.() -> Unit)? = null
     private val fileDialogResponses =
         ConcurrentHashMap<RequestId, CancellableContinuation<List<Path>?>>()
 
@@ -232,8 +193,7 @@ class LinuxWindow internal constructor(
                 setMinSize(
                     LogicalSize(
                         minSize.width.takeOrElse { this@LinuxWindow.minSize.width }.value.roundToInt().toUInt(),
-                        minSize.height.takeOrElse { this@LinuxWindow.minSize.height }.value.roundToInt()
-                            .toUInt(),
+                        minSize.height.takeOrElse { this@LinuxWindow.minSize.height }.value.roundToInt().toUInt(),
                     ),
                 )
             }
@@ -373,14 +333,20 @@ class LinuxWindow internal constructor(
     private val pointerIconService = LinuxPointerIconService(application, nativeWindow)
     private val inputModeManager = InputModeManagerImpl(InputMode.Touch) {
         pointerIconService.setHiddenUntilPointerMoves(it == InputMode.Keyboard)
+        true
     }
-    private val dragAndDropOwner = DragAndDropOwner(KdtDragAndDropManager(this))
-    internal var dragAndDropManager: LinuxDragAndDropManager? = null
+    internal val dragAndDropManager: LinuxDragAndDropManager = LinuxDragAndDropManager(
+        rootDragAndDropNode = { composeScene.rootDragAndDropNode },
+        density = { density },
+        currentDragClipboardEntry = {
+            MimeTransferClipboardEntry { incomingDragMimeData.toMap() }
+        },
+        currentMimeTypes = { incomingDragMimeTypes },
+    )
 
     private var layoutDirection: LayoutDirection by mutableStateOf(LayoutDirection.Ltr)
 
-    val viewConfiguration: ViewConfiguration = object :
-        ViewConfiguration {
+    val viewConfiguration: ViewConfiguration = object : ViewConfiguration {
         override val longPressTimeoutMillis: Long = 500
         override val doubleTapTimeoutMillis: Long
             get() = application.doubleClickIntervalMillis
@@ -393,21 +359,53 @@ class LinuxWindow internal constructor(
         override val isWindowFocused: Boolean
             get() = isFocused
 
-        override fun requestWindowFocus() {
-            requestFocus()
-        }
-
-        @OptIn(InternalCoreApi::class)
         override val keyboardModifiers: PointerKeyboardModifiers
             get() = inputStateTracker.keyboardModifiers
 
         @ExperimentalComposeUiApi
         override val containerSize: IntSize
-            get() = contentSize.run {
-                density.run {
-                    IntSize(width.roundToPx(), height.roundToPx())
-                }
-            }
+            get() = contentSizeInPx()
+    }
+
+    private fun contentSizeInPx(): IntSize = density.run {
+        IntSize(contentSize.width.roundToPx(), contentSize.height.roundToPx())
+    }
+
+    // ----- Compose scene wiring -----
+
+    private val frameClock = BroadcastFrameClock { isFrameRequested = true }
+
+    private val architectureComponentsOwner = DefaultArchitectureComponentsOwner().apply {
+        enableSavedStateHandles()
+        setLifecycleState(Lifecycle.State.RESUMED)
+    }
+
+    private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty() {
+        override val windowInfo: WindowInfo
+            get() = this@LinuxWindow.windowInfo
+        override val viewConfiguration: ViewConfiguration
+            get() = this@LinuxWindow.viewConfiguration
+        override val inputModeManager: InputModeManager
+            get() = this@LinuxWindow.inputModeManager
+        override val architectureComponentsOwner = this@LinuxWindow.architectureComponentsOwner
+        override val textToolbar = DefaultTextToolbar()
+        override val dragAndDropManager: PlatformDragAndDropManager =
+            KdtDragAndDropManager(this@LinuxWindow)
+    }
+
+    private val composeScene: ComposeScene = CanvasLayersComposeScene(
+        density = density,
+        layoutDirection = layoutDirection,
+        size = contentSizeInPx(),
+        coroutineContext = scene.coroutineScope.coroutineContext +
+            LinuxKdtMainDispatcher.INSTANCE.immediate +
+            frameClock,
+        platformContext = platformContext,
+        invalidate = { isFrameRequested = true },
+    )
+
+    init {
+        application.windows[id] = this
     }
 
     override fun showOpenSingleDialog(
@@ -466,16 +464,20 @@ class LinuxWindow internal constructor(
         val width = maxOf(1, density.run { contentSize.width.roundToPx() })
         val height = maxOf(1, density.run { contentSize.height.roundToPx() })
         return Surface.makeRasterN32Premul(width, height).use { surface ->
-            drawContent?.let { content ->
-                surface.canvas.clear(Color.TRANSPARENT)
-                surface.canvas.content()
-            }
+            surface.canvas.clear(Color.TRANSPARENT)
+            composeScene.render(surface.canvas.asComposeCanvas(), System.nanoTime())
             surface.makeImageSnapshot().toComposeImageBitmap()
         }
     }
 
     override fun dispose() {
-        onNativeWindowAsync { close() }
+        if (!isDisposed) {
+            isDisposed = true
+            application.windows.remove(id)
+            composeScene.close()
+            architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
+            onNativeWindowAsync { close() }
+        }
     }
 
     internal fun onClosed() {
@@ -487,14 +489,12 @@ class LinuxWindow internal constructor(
         }
     }
 
-    internal fun requestFrame() = Unit
-
     internal fun activate(token: String) {
         onNativeWindowAsync { activate(token) }
     }
 
     internal fun queryDragAndDropTarget(query: DragAndDropQueryData): DragAndDropQueryResponse {
-        return dragAndDropManager?.onQuery(query) ?: DragAndDropQueryResponse(emptyList())
+        return dragAndDropManager.onQuery(query)
     }
 
     internal fun onDataTransferAvailable(event: Event.DataTransferAvailable): Boolean {
@@ -515,7 +515,6 @@ class LinuxWindow internal constructor(
         return true
     }
 
-    @OptIn(ExperimentalComposeUiApi::class, InternalCoreApi::class)
     internal fun handleEvent(event: Event): EventHandlerResult {
         return when (event) {
             is Event.WindowConfigure -> {
@@ -532,12 +531,14 @@ class LinuxWindow internal constructor(
                     WindowDecorationMode.Server -> WindowDecoration.Decorated
                     WindowDecorationMode.Client -> WindowDecoration.Undecorated()
                 }
+                composeScene.size = contentSizeInPx()
+                isFrameRequested = true
                 EventHandlerResult.Stop
             }
 
             is Event.WindowScaleChanged -> {
                 density = Density(event.newScale.toFloat())
-                dragAndDropManager?.updateDensity(density)
+                composeScene.density = density
                 EventHandlerResult.Stop
             }
 
@@ -585,14 +586,7 @@ class LinuxWindow internal constructor(
                     return EventHandlerResult.Continue
                 }
                 isFrameRequested = false
-                scene.withPreparedMainThread {
-                    application.withoutReentrancy {
-                        scene.reconcile()
-                    }
-                }
-                drawContent?.let { content ->
-                    draw(event, content)
-                }
+                draw(event)
                 EventHandlerResult.Stop
             }
 
@@ -610,14 +604,14 @@ class LinuxWindow internal constructor(
 
             is Event.DropPerformed -> {
                 event.content?.let { incomingDragMimeData[it.mimeType] = it.data }
-                dragAndDropManager?.onDrop(event)
+                dragAndDropManager.onDrop(event)
                 incomingDragMimeTypes = emptyList()
                 incomingDragMimeData.clear()
                 EventHandlerResult.Stop
             }
 
             is Event.DragAndDropLeave -> {
-                dragAndDropManager?.onLeave()
+                dragAndDropManager.onLeave()
                 incomingDragMimeTypes = emptyList()
                 incomingDragMimeData.clear()
                 EventHandlerResult.Stop
@@ -627,7 +621,6 @@ class LinuxWindow internal constructor(
         }
     }
 
-    @OptIn(InternalCoreApi::class)
     private val textInputContext: TextInputContext = object : TextInputContext {
         override fun handleKeyEvent(event: KeyEvent): Boolean {
             val nativeEvent =
@@ -709,9 +702,9 @@ class LinuxWindow internal constructor(
             cursorCodepointOffset = value.text.codePointCount(0, cursorOffset).toUShort(),
             selectionStartCodepointOffset = value.text.codePointCount(0, selectionOffset).toUShort(),
             hints = buildSet {
-              if (!isSingleLine) {
-                add(TextInputContentHint.Multiline)
-              }
+                if (!isSingleLine) {
+                    add(TextInputContentHint.Multiline)
+                }
             },
             contentPurpose = keyboardType.toTextInputContentPurpose(),
             cursorRectangle = focusedRect.toLogicalRect(density),
@@ -719,13 +712,12 @@ class LinuxWindow internal constructor(
         )
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     private val platformTextInputInterceptor = PlatformTextInputInterceptor { request, _ ->
         val session = ComposeTextInputSession(request, scene)
         currentTextInputSession = session
         scheduleNativeTextInputStateUpdate()
         try {
-            suspendCancellableCoroutine { continuation ->
+            suspendCancellableCoroutine<Nothing> { continuation ->
                 continuation.invokeOnCancellation {
                     if (currentTextInputSession === session) {
                         currentTextInputSession = null
@@ -741,217 +733,47 @@ class LinuxWindow internal constructor(
         }
     }
 
-    internal var latestRootLayoutNode: LayoutNode? = null
-        set(value) {
-            field?.let {
-                if (it.owner != null && value?.id != it.id) {
-                    it.detach()
-                }
-            }
-            if (value != null && value.owner != this) {
-                value.attach(this)
-            }
-            field = value
-        }
-
-    override fun onAttach(node: LayoutNode) {
-        if (node.id != ID.NULL) {
-            latestLayoutNodes[node.id.id] = node
-        }
-    }
-
-    override fun get(id: ID): LayoutNode? = latestLayoutNodes[id.id]
-
-    override fun onDetach(node: LayoutNode) {
-        latestLayoutNodes.remove(node.id.id)
-    }
-
-    override fun calculatePositionInWindow(localPosition: Offset): Offset = localPosition
-
-    override fun calculateLocalPosition(positionInWindow: Offset): Offset = positionInWindow
-
-    @OptIn(ExperimentalComposeUiApi::class, InternalCoreApi::class)
     @Composable
-    @ApiStatus.Internal
-    override fun Content(onLayout: (WindowData) -> Unit) {
-        CompositionLocalProvider(
-            LocalSystemTheme provides systemTheme,
-            LocalDensity provides density,
-            LocalFocusManager provides focusOwner,
-            LocalLayoutDirection provides layoutDirection,
-            LocalPointerIconService provides pointerIconService,
-            LocalInputModeManager provides inputModeManager,
-            LocalTextInputContext provides textInputContext,
-            LocalTextToolbar provides remember { DefaultTextToolbar() },
-            LocalViewConfiguration provides viewConfiguration,
-            LocalWindowInfo provides windowInfo,
-            LocalWindow provides this,
-            LocalDragAndDropManager provides dragAndDropOwner,
-        ) {
-            InterceptPlatformTextInput(platformTextInputInterceptor) {
-                cell {
-                    withLayoutBuilderStack {
-                        val uiRootCell = cell {
-                            uiRoot(focusOwner.focusRoot) {
-                                Box(
-                                    Modifier.then(dragAndDropOwner.modifier),
-                                    propagateMinConstraints = true,
-                                ) {
-                                    val windowScope = remember(this@LinuxWindow) {
-                                        object : WindowScope {
-                                            override val window: Window
-                                                get() = this@LinuxWindow
-                                        }
-                                    }
-                                    contentState.value?.let { windowScope.it() }
-                                }
-                            }
-                        }
-
-                        val rootLayoutThunkCell = cell {
-                            val rootLayoutBuilder =
-                                uiRootCell.read().layoutBuilder ?: rememberEmptyLayoutBuilder()
-                            density.run {
-                                rootLayoutBuilder.measure(
-                                    Constraints.fixed(
-                                        contentSize.width.roundToPx(),
-                                        contentSize.height.roundToPx(),
-                                    ),
-                                )
-                            }
-                        }
-
-                        activeCell {
-                            latestRootLayoutNode = memo {
-                                LayoutScope(currentNoriaContext).run {
-                                    rootLayoutThunkCell.read()
-                                        .realize(
-                                            density.run {
-                                                IntRect(
-                                                    0,
-                                                    0,
-                                                    contentSize.width.roundToPx(),
-                                                    contentSize.height.roundToPx(),
-                                                )
-                                            },
-                                        )
-                                        .apply {
-                                            node.place(IntOffset.Zero)
-                                        }
-                                        .node
-                                }
-                            }.also {
-                                dragAndDropOwner.updateCoordinates(it.coordinates)
-                            }
-
-                            /**
-                             * Refresh hit testing under a stationary pointer after relayout. We queue this
-                             * onto the effect dispatcher so new [SuspendingPointerInputFilter]s are already
-                             * waiting for events, and cancel stale refreshes as soon as a real input event
-                             * arrives.
-                             */
-                            rememberCoroutineScope().launch {
-                                inputStateTracker
-                                    .prepareSyntheticPointerEventAfterRelayoutIfNecessary()
-                                    ?.let(inputStateTracker::sendSyntheticPointerEventAfterRelayoutIfCurrent)
-                            }
-
-                            onLayout(WindowData(id, uiRootCell.read(), latestRootLayoutNode!!))
-
-                            val callbackInterceptor = CallbackInterceptorCompositionLocal.current
-                            DisposableEffect(dragAndDropOwner, density, callbackInterceptor) {
-                                dragAndDropManager = LinuxDragAndDropManager(
-                                    rootDragAndDropNode = ComposeSceneDragAndDropNode { dragAndDropOwner },
-                                    density = density,
-                                    callbackInterceptor = callbackInterceptor,
-                                    currentDragClipboardEntry = ::currentDragClipboardEntry,
-                                    currentMimeTypes = ::currentDragMimeTypes,
-                                )
-
-                                onDispose {
-                                    dragAndDropManager = null
-                                }
-                            }
-
-                            DisposableEffect(callbackInterceptor) {
-                                drawContent = {
-                                    span("drawing") {
-                                        callbackInterceptor.execute {
-                                            RenderContext(this).renderWithLayerScope(
-                                                latestRootLayoutNode!!,
-                                                density.run {
-                                                    IntRect(
-                                                        0,
-                                                        0,
-                                                        contentSize.width.roundToPx(),
-                                                        contentSize.height.roundToPx(),
-                                                    )
-                                                },
-                                            )
-                                        }
-                                    }
-                                }
-                                onDispose {
-                                    drawContent = null
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    override fun Content(onLayout: (LightweightWindowId) -> Unit) {
+        // ComposeScene drives its own composition; nothing to host here.
+        onLayout(id)
     }
 
-    private fun currentDragMimeTypes(): List<String> {
-        return if (incomingDragMimeTypes.isNotEmpty()) {
-            incomingDragMimeTypes
-        } else {
-            application.activeDragSource?.mimeData?.keys?.toList().orEmpty()
-        }
-    }
-
-    private fun currentDragClipboardEntry(): ClipboardEntry {
-        return MimeTransferClipboardEntry {
-            buildMap {
-                application.activeDragSource?.mimeData?.let(::putAll)
-                putAll(incomingDragMimeData)
-            }
-        }
-    }
-
-    @OptIn(ExperimentalComposeUiApi::class, InternalCoreApi::class)
-    private val inputStateTracker: InputStateTracker = InputStateTracker(
+    private val inputStateTracker = InputStateTracker(
         inputModeManager = inputModeManager,
         sendPointerInputEvent = { pointerInputEvent ->
-            latestRootLayoutNode?.let { rootLayoutNode ->
-                scene.withPreparedMainThread {
-                    pointerInputEventProcessor.process(
-                        pointerInputEvent,
-                        rootLayoutNode,
-                        positionCalculator,
-                    )
-                }
-            } ?: ProcessResult(0)
+            val pointer = pointerInputEvent.pointers.firstOrNull()
+            if (pointer == null) {
+                PointerEventResult()
+            } else {
+                composeScene.sendPointerEvent(
+                    eventType = pointerInputEvent.eventType,
+                    position = pointer.position,
+                    scrollDelta = pointer.scrollDelta,
+                    timeMillis = pointerInputEvent.uptime,
+                    type = pointer.type,
+                    buttons = pointerInputEvent.buttons,
+                    keyboardModifiers = pointerInputEvent.keyboardModifiers,
+                    nativeEvent = pointerInputEvent.nativeEvent,
+                    button = pointerInputEvent.button,
+                )
+            }
         },
         sendKeyEvent = { keyEvent ->
-            scene.withPreparedMainThread {
-                val previewHandled = onPreviewKeyEventState.value(keyEvent)
-                val focusHandled = !previewHandled && focusOwner.dispatchKeyEvent(keyEvent)
-                val keyEventHandled =
-                    !previewHandled && !focusHandled && onKeyEventState.value(keyEvent)
-                previewHandled || focusHandled || keyEventHandled
-            }
+            onPreviewKeyEvent(keyEvent) ||
+                composeScene.sendKeyEvent(keyEvent) ||
+                onKeyEvent(keyEvent)
         },
     )
 
     internal fun startDragSession(
         offset: Offset,
-        transferData: DragAndDropTransferDataJvm,
+        transferData: DragAndDropTransferData,
         decorationSize: Size,
         drawDragDecoration: DrawScope.() -> Unit,
     ) {
-        val clipEntry =
-            (transferData.transferable as? KdtDragAndDropTransferable)?.clipboardEntry ?: return
+        val clipEntry = (transferData.transferable as? KdtDragAndDropTransferable)
+            ?.clipboardEntry ?: return
         val itemsEntry = clipEntry.nativeClipEntry as? ClipboardItemsEntry ?: return
         val mimeData = encodeClipboardItemsToMimeData(itemsEntry.items)
         val supportedActions = transferData.supportedActions.toSet()
@@ -984,18 +806,21 @@ class LinuxWindow internal constructor(
     }
 
     private fun Iterable<DragAndDropTransferAction>.toLinuxActions(): Set<DragAndDropAction> {
-        val supportedActions = toSet()
+        val supported = toSet()
         return buildSet {
-            if (DragAndDropTransferAction.Copy in supportedActions || supportedActions.isEmpty()) {
+            if (DragAndDropTransferAction.Copy in supported || supported.isEmpty()) {
                 add(DragAndDropAction.Copy)
             }
-            if (DragAndDropTransferAction.Move in supportedActions) {
+            if (DragAndDropTransferAction.Move in supported) {
                 add(DragAndDropAction.Move)
             }
         }
     }
 
-    private fun draw(event: Event.WindowDraw, content: Canvas.() -> Unit) {
+    private fun draw(event: Event.WindowDraw) {
+        val now = System.nanoTime()
+        frameClock.sendFrame(now)
+
         val softwareDrawData = event.softwareDrawData
         if (softwareDrawData != null) {
             Surface.makeRasterDirect(
@@ -1008,7 +833,7 @@ class LinuxWindow internal constructor(
                 rowBytes = softwareDrawData.stride,
             ).use { surface ->
                 surface.canvas.clear(Color.TRANSPARENT)
-                surface.canvas.content()
+                composeScene.render(surface.canvas.asComposeCanvas(), now)
                 surface.flushAndSubmit()
             }
             return
@@ -1031,7 +856,7 @@ class LinuxWindow internal constructor(
                 surfaceProps = null,
             )!!.use { surface ->
                 surface.canvas.clear(Color.TRANSPARENT)
-                surface.canvas.content()
+                composeScene.render(surface.canvas.asComposeCanvas(), now)
                 surface.flushAndSubmit()
             }
         }
@@ -1040,24 +865,39 @@ class LinuxWindow internal constructor(
     override fun setContent(
         onPreviewKeyEvent: (KeyEvent) -> Boolean,
         onKeyEvent: (KeyEvent) -> Boolean,
-        noriaState: NoriaState?,
         content: @Composable WindowScope.() -> Unit,
     ) {
-        onPreviewKeyEventState.setValueAndScheduleDependantsRightAway(noriaState, onPreviewKeyEvent)
-        onKeyEventState.setValueAndScheduleDependantsRightAway(noriaState, onKeyEvent)
-        contentState.setValueAndScheduleDependantsRightAway(noriaState, content)
+        this.onPreviewKeyEvent = onPreviewKeyEvent
+        this.onKeyEvent = onKeyEvent
+        contentState = content
+        installSceneContentIfNeeded()
+        isFrameRequested = true
+    }
+
+    private fun installSceneContentIfNeeded() {
+        if (sceneContentInstalled) return
+        sceneContentInstalled = true
+        val windowScope = object : WindowScope {
+            override val window: Window get() = this@LinuxWindow
+        }
+        composeScene.setContent {
+            CompositionLocalProvider(
+                LocalSystemTheme provides systemTheme,
+                LocalTextInputContext provides textInputContext,
+            ) {
+                InterceptPlatformTextInput(platformTextInputInterceptor) {
+                    contentState?.invoke(windowScope)
+                }
+            }
+        }
     }
 
     override fun startInteractiveMove(pointerEvent: PointerEvent) {
-        onNativeWindowAsync {
-            startMove()
-        }
+        onNativeWindowAsync { startMove() }
     }
 
     override fun startInteractiveResize(handle: WindowResizeHandle, pointerEvent: PointerEvent) {
-        onNativeWindowAsync {
-            startResize(handle.toWindowResizeEdge())
-        }
+        onNativeWindowAsync { startResize(handle.toWindowResizeEdge()) }
     }
 
     private fun performTitleBarAction(action: DesktopTitlebarAction, pointerEvent: PointerEvent) {
@@ -1102,20 +942,10 @@ class LinuxWindow internal constructor(
         DirectContext.makeGLWithInterface(openGlInterface)
     }
 
-    private val latestLayoutNodes = Int2ObjectOpenHashMap<noria.ui.node.LayoutNode>()
-    private val pointerInputEventProcessor =
-        NoriaPointerInputEventProcessor { latestLayoutNodes[it.id] }
-    private val positionCalculator = object : PositionCalculator {
-        override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen
-        override fun localToScreen(localPosition: Offset): Offset = localPosition
-        override val rootPositionOnScreen: Offset
-            get() = Offset.Zero
-    }
-    private val focusOwner =
-        FocusOwnerImpl({ scene.coroutineScope }, DebugLocation(this::class)) { isFocused }
-    private val onPreviewKeyEventState = SnapshotMutableStateImpl<(KeyEvent) -> Boolean>({ false })
-    private val onKeyEventState = SnapshotMutableStateImpl<(KeyEvent) -> Boolean>({ false })
-    private var contentState = SnapshotMutableStateImpl<(@Composable WindowScope.() -> Unit)?>(null)
+    private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
+    private var onKeyEvent: (KeyEvent) -> Boolean = { false }
+    private var contentState by mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
+    private var sceneContentInstalled = false
 
     companion object {
         internal fun drawDragIcon(

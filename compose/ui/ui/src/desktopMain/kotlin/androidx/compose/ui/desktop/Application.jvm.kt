@@ -25,8 +25,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 //import androidx.compose.ui.kdt.gtk.GtkApplication
 //import androidx.compose.ui.kdt.gtk.GtkUriHandler
-//import androidx.compose.ui.kdt.linux.LinuxApplication
-//import androidx.compose.ui.kdt.linux.LinuxUriHandler
+import androidx.compose.ui.desktop.linux.LinuxApplication
+import androidx.compose.ui.desktop.linux.LinuxUriHandler
 import androidx.compose.ui.desktop.macos.MacOsApplication
 import androidx.compose.ui.desktop.macos.MacOsUriHandler
 //import androidx.compose.ui.kdt.windows.WindowsApplication
@@ -133,9 +133,8 @@ internal actual fun defaultUriHandler(): UriHandler =
     when (DesktopPlatform.Current) {
         DesktopPlatform.MacOS -> MacOsUriHandler()
         DesktopPlatform.Linux -> when (currentLinuxWindowSystem()) {
-//            LinuxWindowSystem.Wayland -> LinuxUriHandler()
+            LinuxWindowSystem.Wayland -> LinuxUriHandler()
 //            LinuxWindowSystem.Gtk -> GtkUriHandler()
-            LinuxWindowSystem.Wayland -> TODO()
             LinuxWindowSystem.Gtk -> TODO()
         }
 //        DesktopPlatform.Windows -> WindowsUriHandler()
@@ -178,9 +177,11 @@ private fun initializeJvmApplication(
     return when (DesktopPlatform.Current) {
         DesktopPlatform.MacOS -> MacOsApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { MacOsApplication.current() }
         DesktopPlatform.Linux -> when (currentLinuxWindowSystem()) {
-//            LinuxWindowSystem.Wayland -> LinuxApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { LinuxApplication.current() }
+            LinuxWindowSystem.Wayland -> {
+                LinuxApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit)
+                LinuxApplication.current()
+            }
 //            LinuxWindowSystem.Gtk -> GtkApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { GtkApplication.current() }
-            LinuxWindowSystem.Wayland -> TODO()
             LinuxWindowSystem.Gtk -> TODO()
         }
 //        DesktopPlatform.Windows -> WindowsApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { WindowsApplication.current() }

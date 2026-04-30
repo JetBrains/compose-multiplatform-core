@@ -17,6 +17,9 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.desktop.LinuxWindowSystem
+import androidx.compose.ui.desktop.currentLinuxWindowSystem
+import androidx.compose.ui.desktop.linux.LinuxApplication
 import androidx.compose.ui.desktop.macos.MacOsClipboard
 import androidx.compose.ui.text.AnnotatedString
 import java.awt.HeadlessException
@@ -153,6 +156,15 @@ private object EmptyTransferable : Transferable {
 @Suppress("DEPRECATION")
 internal actual fun createPlatformClipboardManager(): ClipboardManager = AwtClipboardManager()
 
-internal actual fun createPlatformClipboard(): Clipboard = MacOsClipboard
+internal actual fun createPlatformClipboard(): Clipboard =
+    when (DesktopPlatform.Current) {
+        DesktopPlatform.MacOS -> MacOsClipboard
+        DesktopPlatform.Linux -> when (currentLinuxWindowSystem()) {
+            LinuxWindowSystem.Wayland -> LinuxApplication.current()
+            LinuxWindowSystem.Gtk -> TODO()
+        }
+        DesktopPlatform.Windows -> TODO()
+        DesktopPlatform.Unknown -> error("Unsupported desktop platform: ${DesktopPlatform.Current}")
+    }
 //internal actual fun createPlatformClipboard(): Clipboard = AwtPlatformClipboard()
 

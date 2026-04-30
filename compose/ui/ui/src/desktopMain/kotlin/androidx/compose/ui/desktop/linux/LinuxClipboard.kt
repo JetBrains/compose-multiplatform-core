@@ -37,7 +37,8 @@ internal class LinuxClipboard(
 
     override suspend fun getClipEntry(): ClipEntry = getClipEntrySync()
 
-    override suspend fun setClipEntry(clipEntry: ClipEntry) {
+    override suspend fun setClipEntry(clipEntry: ClipEntry?) {
+        clipEntry ?: return
         val itemsEntry = clipEntry.nativeClipEntry as? ClipboardItemsEntry ?: return
         val mimeData = encodeClipboardItemsToMimeData(itemsEntry.items)
         synchronized(lock) {
