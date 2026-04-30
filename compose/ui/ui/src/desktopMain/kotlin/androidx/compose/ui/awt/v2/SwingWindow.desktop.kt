@@ -260,6 +260,11 @@ fun SwingWindow(
         val window = window ?: return@LaunchedEffect
         launch {
             while (isActive) {
+                window.setScreenFrom(state.screenRequests.receive())
+            }
+        }
+        launch {
+            while (isActive) {
                 window.placement = state.placementRequests.receive()
             }
         }
@@ -340,12 +345,24 @@ internal fun Window.setScreenFrom(screenProvider: WindowScreenProvider) {
     setScreenFrom(device)
 }
 
+/** Moves the window to the given screen, preserving relative position within the screen. */
 private fun Window.setScreenFrom(device: GraphicsDevice) {
+    if (device == graphicsConfiguration.device) return
+
+    val toolkit = Toolkit.getDefaultToolkit()
+
     val configuration = device.defaultConfiguration
     val screenBounds = configuration.bounds
-    val screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(configuration)
+    val screenInsets = toolkit.getScreenInsets(configuration)
+
+    val currentConfiguration = graphicsConfiguration
+    val currentScreenBounds = currentConfiguration.bounds
+    val currentScreenInsets = toolkit.getScreenInsets(currentConfiguration)
+    val currentRelativeX = x - currentScreenBounds.x - currentScreenInsets.left
+    val currentRelativeY = y - currentScreenBounds.y - currentScreenInsets.top
+
     setLocation(
-        x + screenBounds.x + screenInsets.left + x,
-        y + screenBounds.y + screenInsets.top + y,
+        screenBounds.x + screenInsets.left + currentRelativeX,
+        screenBounds.y + screenInsets.top + currentRelativeY,
     )
 }

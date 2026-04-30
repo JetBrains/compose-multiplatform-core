@@ -265,6 +265,11 @@ fun SwingDialog(
         val dialog = dialog ?: return@LaunchedEffect
         launch {
             while (isActive) {
+                dialog.setScreenFrom(state.screenRequests.receive())
+            }
+        }
+        launch {
+            while (isActive) {
                 dialog.setBoundsFrom(state.boundsRequests.receive())
             }
         }
