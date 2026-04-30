@@ -417,6 +417,7 @@ internal class UIKitTextInputService(
                     val offset = textUIView.frame.useContents { origin.asDpOffset().toOffset(density) }
                     val target = rect.translate(-offset).toDpRect(density).asCGRect()
                     println(">>>> SHOW MENU AT $target | copy: ${onCopyRequested != null}, paste: ${onPasteRequested != null}, cut: ${onCutRequested != null}, selectAll: ${onSelectAllRequested != null} ")
+                    println(">>>>>>>>>> window? ${textUIView.window} | $textUIView")
                     textUIView.showEditMenuAtRect(
                         targetRect = target,
                         copy = onCopyRequested,

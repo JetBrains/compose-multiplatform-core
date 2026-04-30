@@ -155,6 +155,8 @@ internal class IntermediateTextInputUIView(
 
     override fun didMoveToWindow() {
         super.didMoveToWindow()
+
+        println(">>>>>>>>>> sis move to? ${window} | $this")
         if (usingNativeTextInput) {
             if (window != null && !selectionInteractionAttached) {
                 // Ensure UIKit text interaction is attached early so that cursor and selection
