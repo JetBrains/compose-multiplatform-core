@@ -485,7 +485,7 @@ class MacOsWindow internal constructor(
         }
         macOsDragAndDropManager = MacOsDragAndDropManager(
             { composeScene.rootDragAndDropNode },
-            density,
+            { density },
         )
         if (nativeWindow.isVisible) {
             setupDisplayLink()
