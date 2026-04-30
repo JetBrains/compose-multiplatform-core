@@ -254,6 +254,7 @@ id _editInteraction;
     UIEditMenuConfiguration *config = [UIEditMenuConfiguration configurationWithIdentifier:nil
                                                                                sourcePoint:self.targetRect.origin];
 
+    NSLog(@"[CMPEditMenuView] presentEditMenuInteraction called with config: %@ || window: %@", config, [self.window description] ?: @"<no window>");
     [self.editInteraction presentEditMenuWithConfiguration:config];
 }
 
