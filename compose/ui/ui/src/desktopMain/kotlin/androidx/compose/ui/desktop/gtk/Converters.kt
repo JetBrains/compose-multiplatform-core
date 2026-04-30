@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.desktop.gtk
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -38,6 +39,10 @@ internal fun LogicalSize.toDpSize(): DpSize {
 
 internal fun LogicalPoint.toDpOffset(): DpOffset {
     return DpOffset(x.dp, y.dp)
+}
+
+internal fun DpOffset.toPxOffset(density: Density): Offset = with(density) {
+    Offset(x.toPx(), y.toPx())
 }
 
 internal fun Size.toLogicalSize(density: Density): LogicalSize {

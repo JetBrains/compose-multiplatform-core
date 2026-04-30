@@ -49,4 +49,8 @@ class GtkKdtMainDispatcher : GtkKdtMainDispatcherBase() {
     override fun toString(): String {
         return "Dispatchers.MainKDT"
     }
+
+    companion object {
+        val INSTANCE: GtkKdtMainDispatcher = GtkKdtMainDispatcher()
+    }
 }

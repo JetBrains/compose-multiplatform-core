@@ -26,21 +26,25 @@ internal class GtkPointerIconService(
         }
     }
 
-    override fun setHiddenUntilPointerMoves(hidden: Boolean) {
+    override fun getStylusHoverIcon(): PointerIcon? = null
+
+    override fun setStylusHoverIcon(value: PointerIcon?) {}
+
+    fun setHiddenUntilPointerMoves(hidden: Boolean) {
         hiddenUntilPointerMoves = hidden
         application.onEventLoopAsync {
             nativeWindow.setPointerShape(if (isHidden()) PointerShape.Hidden else currentIcon)
         }
     }
 
-    override fun pushHide() {
+    fun pushHide() {
         hiddenDepth += 1
         application.onEventLoopAsync {
             nativeWindow.setPointerShape(PointerShape.Hidden)
         }
     }
 
-    override fun popHide() {
+    fun popHide() {
         hiddenDepth = (hiddenDepth - 1).coerceAtLeast(0)
         application.onEventLoopAsync {
             nativeWindow.setPointerShape(if (isHidden()) PointerShape.Hidden else currentIcon)

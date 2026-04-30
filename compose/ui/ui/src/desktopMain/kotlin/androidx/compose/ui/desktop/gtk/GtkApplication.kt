@@ -3,13 +3,11 @@
 
 package androidx.compose.ui.desktop.gtk
 
-import androidx.compose.runtime.BroadcastFrameClock
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
@@ -17,66 +15,25 @@ import androidx.compose.ui.desktop.Application
 import androidx.compose.ui.desktop.DefaultDoubleClickDistance
 import androidx.compose.ui.desktop.DefaultDragThreshold
 import androidx.compose.ui.desktop.LightweightWindowId
-import androidx.compose.ui.desktop.ProvidableLocalScene
 import androidx.compose.ui.desktop.Scene
-import androidx.compose.ui.desktop.SceneHandle
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.deactivateApplication
-import androidx.compose.ui.desktop.noWindowAnimationCoroutineContext
+import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.DefaultHapticFeedback
-import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalFontFamilyResolver
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import fleet.reporting.shared.runtime.currentSpan
-import fleet.reporting.shared.tracing.span
-import fleet.reporting.shared.tracing.spannedScope
-import fleet.reporting.shared.tracing.withCurrentSpan
-import fleet.util.async.Resource
-import fleet.util.async.resource
-import fleet.util.async.withSupervisor
-import fleet.util.logging.logger
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.thread
-import kotlin.coroutines.CoroutineContext
-import kotlin.time.TimeSource
-import kotlin.time.measureTime
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CompletableJob
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import noria.DrainableUpdateQueue
-import noria.impl.EffectCoroutineContextCompositionLocal
-import noria.noria
-import noria.ui.core.RenderPerfMetrics
-import noria.ui.loop.FrameCompletionCallbacks
-import noria.ui.loop.FrameCompletionCallbacksCompositionLocal
-import noria.ui.loop.FrameInvalidationCallbacks
-import noria.ui.loop.FrameInvalidationCallbacksCompositionLocal
-import noria.ui.loop.RenderLoop
-import noria.ui.loop.internal.LocalRenderPerfMetrics
-import noria.ui.platform.DrainableCoroutineDispatcher
 import org.jetbrains.desktop.gtk.ApplicationConfig
 import org.jetbrains.desktop.gtk.ColorSchemeValue
 import org.jetbrains.desktop.gtk.DataSource
@@ -133,8 +90,11 @@ object GtkApplication : Application {
                     "GtkApplication is already initialized for $configuredLibraryFolderPath and cannot be reinitialized for $libraryFolderPath"
                 }
             } ?: run {
-                System.setProperty("skiko.library.path", libraryFolderPath.toString())
+                // Do NOT force `skiko.library.path` to the KDT-extracted folder — skiko only ships its own
+                // native dylib inside its runtime jar on the classpath, not inside `kdt-extracted`.
                 val logFilePath = logFolderPath.resolve("GtkApplication").resolve("GtkApplication.log")
+                // Native logger init fails if the parent directory doesn't exist yet, so make sure it's there.
+                Files.createDirectories(logFilePath.parent)
                 didFinishLaunchingCompletableJob = Job()
                 initializeToolkitOnce(libraryFolderPath, logFilePath)
                 nativeStateDeferred = CompletableDeferred()
@@ -203,7 +163,7 @@ object GtkApplication : Application {
     override var screens: Map<Int, GtkScreen> by mutableStateOf(emptyMap())
         private set
 
-    override var windows: Map<LightweightWindowId, GtkWindow> by mutableStateOf(emptyMap())
+    override var windows: SnapshotStateMap<LightweightWindowId, GtkWindow> = mutableStateMapOf()
         internal set
 
     override val focusedWindow: Window?
@@ -223,7 +183,7 @@ object GtkApplication : Application {
 
     override suspend fun getClipEntry(): ClipEntry = clipboard.getClipEntry()
 
-    override suspend fun setClipEntry(clipEntry: ClipEntry) {
+    override suspend fun setClipEntry(clipEntry: ClipEntry?) {
         clipboard.setClipEntry(clipEntry)
     }
 
@@ -485,8 +445,9 @@ object GtkApplication : Application {
 
     override fun showEmojiAndSymbolsPopup(): Unit = Unit
 
-    private val fontFamilyResolver: FontFamily.Resolver by lazy { createFontFamilyResolver() }
-    private val renderLoops = mutableListOf<RenderLoop>()
+    override fun close() {
+        runBlocking { stopAndJoin() }
+    }
 
     override suspend fun stopAndJoin() {
         structuredQuitInProgress = false
@@ -512,7 +473,11 @@ object GtkApplication : Application {
     override fun createWindow(
         scene: Scene<*>,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
-    ): Window = GtkWindow(this, scene, onCloseRequest)
+    ): Window {
+        val window = GtkWindow(this, scene, onCloseRequest)
+        windows[window.id] = window
+        return window
+    }
 
     override fun prepareNativeWindowResourcesForReuse(id: LightweightWindowId) {}
 
@@ -558,210 +523,12 @@ object GtkApplication : Application {
         val windowsToClose = windows.values.toList()
         windowsToClose.forEach { it.dispose() }
         windowsToClose.forEach { it.awaitNativeClosed() }
-        while (renderLoops.isNotEmpty()) {
-            renderLoops.first().stopAndJoin()
-        }
         keyboardFocusWindowId = null
         activeDragSource = null
         quitHandlers.clear()
         // The native GTK runtime persists across resetForReuse() and destroys windows asynchronously.
         // Reusing Kotlin-side window IDs before native WindowClosed arrives can collide with still-live
         // native entries in KDT's window_id_to_window map, so GTK window IDs must stay monotonic.
-    }
-
-    override fun <T> CoroutineScope.launchScene(
-        applyCoroutineContext: CoroutineContext,
-        prepareMainThread: () -> T,
-        restoreMainThread: (T) -> Unit,
-        content: @Composable () -> Unit,
-    ): SceneHandle {
-        val drainableDispatcher = DrainableCoroutineDispatcher(Dispatchers.Main)
-        lateinit var reconcile: () -> Unit
-        lateinit var scene: Scene<T>
-        val renderPerfMetrics = RenderPerfMetrics()
-        val terminationSignal = Job()
-        var frameRequested = false
-        var noWindowsFrameRequested = false
-        var nextNoWindowsFrameDeadlineNs = 0L
-
-        fun requestFrame() {
-            val windowsInScene = windows.values.filter { it.scene == scene }
-            if (windowsInScene.isNotEmpty()) {
-                if (!frameRequested) {
-                    frameRequested = true
-                    windowsInScene.forEach {
-                        it.isFrameRequested = true
-                        it.requestFrame()
-                    }
-                }
-            } else if (!noWindowsFrameRequested) {
-                noWindowsFrameRequested = true
-                val delayMs = ((nextNoWindowsFrameDeadlineNs - System.nanoTime()).coerceAtLeast(0L) + 999_999L) / 1_000_000L
-                launch {
-                    if (delayMs > 0L) {
-                        delay(delayMs)
-                    }
-                    if (terminationSignal.isCompleted) {
-                        noWindowsFrameRequested = false
-                        return@launch
-                    }
-                    nativeApplication.runOnEventLoopAsync {
-                        noWindowsFrameRequested = false
-                        nextNoWindowsFrameDeadlineNs = System.nanoTime() + noWindowsMinFrameIntervalNs
-                        scene.withPreparedMainThread {
-                            withoutReentrancy {
-                                scene.reconcile()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        val drainableUpdateQueue = DrainableUpdateQueue(::requestFrame)
-        val broadcastFrameClock = BroadcastFrameClock(::requestFrame)
-        val framesFlow = MutableSharedFlow<RenderLoop.FrameInfo>(
-            replay = 1,
-            onBufferOverflow = BufferOverflow.DROP_OLDEST,
-        )
-        val sceneJob = launch {
-            try {
-                withSupervisor(
-                    applyCoroutineContext +
-                        broadcastFrameClock +
-                        drainableDispatcher +
-                        noWindowAnimationCoroutineContext { windows.values.any { it.scene == scene } } +
-                        CoroutineName("SceneCoroutine"),
-                ) { sceneCoroutineScope ->
-                    scene = Scene(
-                        sceneCoroutineScope,
-                        prepareMainThread,
-                        restoreMainThread,
-                        reconcile = { reconcile() },
-                    )
-                    val frameInvalidationCallbacks: FrameInvalidationCallbacks = AtomicReference(null)
-                    val frameCompletionCallbacks: FrameCompletionCallbacks = AtomicReference(null)
-
-                    fun noriaResource(content: @Composable () -> Unit): Resource<Unit> {
-                        return resource { consumer ->
-                            val noria = withContext(Dispatchers.Main.immediate) {
-                                scene.withPreparedMainThread {
-                                    val noria = noria(drainableUpdateQueue) {
-                                        content()
-                                    }
-                                    val renderLoopSpan = currentSpan
-                                    reconcile = {
-                                        renderPerfMetrics.startReconcile()
-                                        drainableDispatcher.drain()
-                                        val reconcileTime = measureTime {
-                                            broadcastFrameClock.sendFrame(
-                                                initialTimestamp.elapsedNow().inWholeNanoseconds,
-                                            )
-                                            frameInvalidationCallbacks.exchange(null)?.forEach { it() }
-                                            withCurrentSpan(renderLoopSpan) {
-                                                span("frame") {
-                                                    noria.reconcile()
-                                                    frameInvalidationCallbacks.exchange(null)?.let { callbacks ->
-                                                        var shouldReconcileAgain = false
-                                                        callbacks.forEach { callback ->
-                                                            shouldReconcileAgain = callback() || shouldReconcileAgain
-                                                        }
-                                                        if (shouldReconcileAgain) {
-                                                            noria.reconcile()
-                                                        }
-                                                    }
-                                                    frameInvalidationCallbacks.exchange(null)?.let { callbacks ->
-                                                        callbacks.forEach { callback ->
-                                                            if (callback()) {
-                                                                requestFrame()
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        val frameInfo = RenderLoop.FrameInfo(reconcileTime.inWholeNanoseconds)
-                                        frameCompletionCallbacks.exchange(null)?.forEach { it(frameInfo) }
-                                        framesFlow.tryEmit(frameInfo)
-                                        renderPerfMetrics.endReconcile()
-                                        frameRequested = false
-                                    }
-                                    withoutReentrancy { reconcile() }
-                                    noria
-                                }
-                            }
-                            try {
-                                consumer(Unit)
-                            } finally {
-                                withContext(NonCancellable) {
-                                    spannedScope("destroy noria") {
-                                        val destroyCompletion = Job()
-                                        nativeApplication.runOnEventLoopAsync {
-                                            scene.withPreparedMainThread {
-                                                noria.destroy()
-                                            }
-                                            destroyCompletion.complete()
-                                        }
-                                        destroyCompletion.join()
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    noriaResource {
-                        CompositionLocalProvider(
-                            ProvidableLocalScene provides scene,
-                            LocalRenderPerfMetrics provides renderPerfMetrics,
-                            EffectCoroutineContextCompositionLocal provides sceneCoroutineScope.coroutineContext,
-                            FrameInvalidationCallbacksCompositionLocal provides frameInvalidationCallbacks,
-                            FrameCompletionCallbacksCompositionLocal provides frameCompletionCallbacks,
-                            LocalUriHandler provides this@GtkApplication,
-                            LocalClipboard provides this@GtkApplication,
-                            LocalFontFamilyResolver provides fontFamilyResolver,
-                            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
-                        ) {
-                            content()
-                        }
-                    }.use {
-                        terminationSignal.join()
-                    }
-                }
-            } finally {
-                withContext(NonCancellable) {
-                    span("complete and join drainable dispatcher") {
-                        drainableDispatcher.completeAndJoin()
-                    }
-                }
-            }
-        }
-
-        val renderLoop = object : RenderLoop {
-            override suspend fun stopAndJoin() {
-                terminationSignal.complete()
-                sceneJob.join()
-                renderLoops.remove(this)
-            }
-
-            override val framesFlow: Flow<RenderLoop.FrameInfo>
-                get() = framesFlow
-        }
-        return SceneHandle(renderLoop, broadcastFrameClock).also {
-            renderLoops.add(it.renderLoop)
-        }
-    }
-
-    private var reconcileInProgress = false
-
-    internal fun withoutReentrancy(block: () -> Unit) {
-        if (!reconcileInProgress) {
-            reconcileInProgress = true
-            try {
-                block()
-            } finally {
-                reconcileInProgress = false
-            }
-        }
     }
 
     internal fun isEventLoopThread(): Boolean = nativeApplication.isEventLoopThread()
@@ -887,6 +654,3 @@ private fun Event.windowIdOrNull(): LightweightWindowId? =
         is Event.DragAndDropFeedbackFinished -> windowId.toLightweightWindowId()
         else -> null
     }
-
-private val initialTimestamp = TimeSource.Monotonic.markNow()
-private const val noWindowsMinFrameIntervalNs = 1_000_000_000L / 60
