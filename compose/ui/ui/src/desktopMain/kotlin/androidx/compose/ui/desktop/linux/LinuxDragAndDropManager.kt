@@ -5,7 +5,7 @@ package androidx.compose.ui.desktop.linux
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.draganddrop.DragAndDropEventJvm
+import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.desktop.ClipboardEntry
@@ -13,7 +13,6 @@ import androidx.compose.ui.desktop.FileUriListMimeType
 import androidx.compose.ui.desktop.WindowLocalDragMimeType
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.unit.Density
-import noria.CallbackInterceptor
 import org.jetbrains.desktop.linux.DragAndDropAction
 import org.jetbrains.desktop.linux.DragAndDropQueryData
 import org.jetbrains.desktop.linux.DragAndDropQueryResponse
@@ -21,9 +20,8 @@ import org.jetbrains.desktop.linux.Event
 import org.jetbrains.desktop.linux.SupportedActionsForMime
 
 internal class LinuxDragAndDropManager(
-    private val rootDragAndDropNode: ComposeSceneDragAndDropNode,
-    private var density: Density,
-    private val callbackInterceptor: CallbackInterceptor,
+    private val rootDragAndDropNode: () -> ComposeSceneDragAndDropNode,
+    private val density: () -> Density,
     private val currentDragClipboardEntry: () -> ClipboardEntry,
     private val currentMimeTypes: () -> List<String>,
 ) {
@@ -31,43 +29,32 @@ internal class LinuxDragAndDropManager(
     private var lastPositionInRoot: Offset = Offset.Zero
     private var started = false
 
-    fun updateDensity(density: Density) {
-        this.density = density
-    }
-
     fun onQuery(query: DragAndDropQueryData): DragAndDropQueryResponse {
         val event = query.toDragAndDropEvent()
+        val node = rootDragAndDropNode()
 
         if (!started) {
-            val transferAccepted = callbackInterceptor.execute {
-                rootDragAndDropNode.acceptDragAndDropTransfer(event)
-            }
+            val transferAccepted = node.acceptDragAndDropTransfer(event)
             if (transferAccepted) {
-                callbackInterceptor.execute {
-                    previousAction = event.action
-                    rootDragAndDropNode.onStarted(event)
-                    // onMoved (not onEntered) sets lastChildDragAndDropModifierNode, which is
-                    // required for hasEligibleDropTarget to reflect the actual cursor position.
-                    rootDragAndDropNode.onMoved(event)
-                }
+                previousAction = event.action
+                node.onStarted(event)
+                // onMoved (not onEntered) sets lastChildDragAndDropModifierNode, which is
+                // required for hasEligibleDropTarget to reflect the actual cursor position.
+                node.onMoved(event)
                 started = true
             }
         } else {
             // Always call onMoved regardless of current hasEligibleDropTarget: the position
             // must be kept up-to-date so the check below reflects the real cursor location.
-            callbackInterceptor.execute {
-                if (event.action != previousAction) {
-                    rootDragAndDropNode.onChanged(event)
-                    previousAction = event.action
-                }
-                rootDragAndDropNode.onMoved(event)
+            if (event.action != previousAction) {
+                node.onChanged(event)
+                previousAction = event.action
             }
+            node.onMoved(event)
         }
 
         // Check hasEligibleDropTarget after onMoved has updated the position state.
-        val hasEligibleTarget = started && callbackInterceptor.execute {
-            rootDragAndDropNode.hasEligibleDropTarget
-        }
+        val hasEligibleTarget = started && node.hasEligibleDropTarget
         val selectedAction = if (hasEligibleTarget) event.action ?: DragAndDropTransferAction.Copy else null
         val supportedActions = selectedAction?.toLinuxSupportedActions().orEmpty()
         if (supportedActions.isEmpty()) {
@@ -85,41 +72,39 @@ internal class LinuxDragAndDropManager(
     }
 
     fun onDrop(event: Event.DropPerformed): Boolean {
-        val dragEvent = DragAndDropEventJvm(
+        val node = rootDragAndDropNode()
+        val dragEvent = DragAndDropEvent(
             action = event.action?.toComposeAction(),
             nativeEvent = currentDragClipboardEntry(),
             positionInRootImpl = lastPositionInRoot,
         )
-        val consumed = callbackInterceptor.execute {
-            val result = rootDragAndDropNode.onDrop(dragEvent)
-            rootDragAndDropNode.onEnded(dragEvent)
-            previousAction = null
-            started = false
-            result
-        }
+        val consumed = node.onDrop(dragEvent)
+        node.onEnded(dragEvent)
+        previousAction = null
+        started = false
         return consumed
     }
 
     fun onLeave() {
         if (!started) return
-        val event = DragAndDropEventJvm(null, currentDragClipboardEntry(), Offset.Zero)
-        callbackInterceptor.execute {
-            rootDragAndDropNode.onExited(event)
-            rootDragAndDropNode.onEnded(event)
-            previousAction = null
-            started = false
-        }
+
+        val node = rootDragAndDropNode()
+        val event = DragAndDropEvent(null, currentDragClipboardEntry(), Offset.Zero)
+        node.onExited(event)
+        node.onEnded(event)
+        previousAction = null
+        started = false
     }
 
-    private fun DragAndDropQueryData.toDragAndDropEvent(): DragAndDropEventJvm {
-        val positionInRoot = with(density) { locationInWindow.toDpOffset().toOffset() }
+    private fun DragAndDropQueryData.toDragAndDropEvent(): DragAndDropEvent {
+        val positionInRoot = locationInWindow.toDpOffset().toPxOffset(density())
         lastPositionInRoot = positionInRoot
         val selectedAction = when {
             WindowLocalDragMimeType in currentMimeTypes() -> DragAndDropTransferAction.Move
             FileUriListMimeType in currentMimeTypes() -> DragAndDropTransferAction.Copy
             else -> DragAndDropTransferAction.Copy
         }
-        return DragAndDropEventJvm(
+        return DragAndDropEvent(
             action = selectedAction,
             nativeEvent = currentDragClipboardEntry(),
             positionInRootImpl = positionInRoot,

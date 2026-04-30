@@ -1,4 +1,5 @@
 @file:Suppress("DuplicatedCode")
+@file:OptIn(InternalComposeUiApi::class)
 
 package androidx.compose.ui.desktop.linux
 
@@ -6,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
@@ -37,11 +39,11 @@ import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.isTertiary
 import androidx.compose.ui.input.pointer.isTertiaryPressed
 import androidx.compose.ui.node.InternalCoreApi
+import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import kotlin.time.Clock
-import noria.ui.input.pointer.ProcessResult
 import org.jetbrains.desktop.linux.Event
 import org.jetbrains.desktop.linux.MouseButton
 
@@ -49,7 +51,7 @@ import org.jetbrains.desktop.linux.MouseButton
 @InternalCoreApi
 internal class InputStateTracker(
     private val inputModeManager: InputModeManager,
-    private val sendPointerInputEvent: (PointerInputEvent) -> ProcessResult,
+    private val sendPointerInputEvent: (PointerInputEvent) -> PointerEventResult,
     private val sendKeyEvent: (KeyEvent) -> Boolean,
 ) {
     private var pointerInWindow: Boolean = false
@@ -84,7 +86,7 @@ internal class InputStateTracker(
                     mousePointerInputEvent(
                         type = PointerEventType.Press,
                         uptime = uptime,
-                        position = density.run { event.locationInWindow.toDpOffset().toOffset() },
+                        position = event.locationInWindow.toDpOffset().toPxOffset(density),
                         buttons = pointerButtons,
                         scrollDelta = Offset.Zero,
                         keyboardModifiers = modifiers,
@@ -93,7 +95,7 @@ internal class InputStateTracker(
                     ),
                 )
                 when {
-                    result.anyPressOrReleaseConsumed -> org.jetbrains.desktop.linux.EventHandlerResult.Stop
+                    result.anyChangeConsumed -> org.jetbrains.desktop.linux.EventHandlerResult.Stop
                     sendKeyEvent(
                         KeyEvent(
                             key = event.button.toKey(),
@@ -128,7 +130,7 @@ internal class InputStateTracker(
                     mousePointerInputEvent(
                         type = PointerEventType.Release,
                         uptime = uptime,
-                        position = density.run { event.locationInWindow.toDpOffset().toOffset() },
+                        position = event.locationInWindow.toDpOffset().toPxOffset(density),
                         buttons = pointerButtons,
                         scrollDelta = Offset.Zero,
                         keyboardModifiers = modifiers,
@@ -137,7 +139,7 @@ internal class InputStateTracker(
                     ),
                 )
                 when {
-                    result.anyPressOrReleaseConsumed -> org.jetbrains.desktop.linux.EventHandlerResult.Stop
+                    result.anyChangeConsumed -> org.jetbrains.desktop.linux.EventHandlerResult.Stop
                     sendKeyEvent(
                         KeyEvent(
                             key = event.button.toKey(),
@@ -220,29 +222,30 @@ internal class InputStateTracker(
                 if (inputModeManager.inputMode != InputMode.Touch) {
                     inputModeManager.requestInputMode(InputMode.Touch)
                 }
-                val position = density.run { event.locationInWindow.toDpOffset().toOffset() }
-                var result =
+                val position = event.locationInWindow.toDpOffset().toPxOffset(density)
+                val moveResult =
                     density.updatePointerPosition(
                         event.locationInWindow.toDpOffset(),
                         PointerEventType.Move,
                         uptime,
                         event,
                     )
-                result += sendPointerInputEvent(
+                val scrollResult = sendPointerInputEvent(
                     mousePointerInputEvent(
                         type = PointerEventType.Scroll,
                         uptime = uptime,
                         position = position,
                         buttons = pointerButtons,
-                        scrollDelta = density.run {
-                            DpOffset(event.horizontalScroll.delta.dp, event.verticalScroll.delta.dp).toOffset()
-                        },
+                        scrollDelta = DpOffset(
+                            event.horizontalScroll.delta.dp,
+                            event.verticalScroll.delta.dp,
+                        ).toPxOffset(density),
                         keyboardModifiers = keyboardModifiers,
                         button = null,
                         nativeEvent = event,
                     ),
                 )
-                if (result.anyScrollingConsumed) {
+                if (scrollResult.anyChangeConsumed || moveResult.anyChangeConsumed) {
                     sendPointerInputEventWithCurrentStateIfNecessary(PointerEventType.Move)
                     org.jetbrains.desktop.linux.EventHandlerResult.Stop
                 } else {
@@ -325,10 +328,10 @@ internal class InputStateTracker(
         pointerEventType: PointerEventType,
         uptime: Long,
         nativeEvent: Event,
-    ): ProcessResult {
+    ): PointerEventResult {
         lastNativeEventUptimeMillis = uptime
         val previous = pointerPosition
-        pointerPosition = positionInWindow.toOffset()
+        pointerPosition = positionInWindow.toPxOffset(this)
         return if (
             previous != pointerPosition ||
             pointerEventType == PointerEventType.Enter ||
@@ -347,7 +350,7 @@ internal class InputStateTracker(
                 ),
             )
         } else {
-            ProcessResult(0)
+            PointerEventResult()
         }
     }
 
@@ -374,9 +377,9 @@ internal class InputStateTracker(
 
     fun sendSyntheticPointerEventAfterRelayoutIfCurrent(
         request: PendingSyntheticPointerEventAfterRelayout,
-    ): ProcessResult {
+    ): PointerEventResult {
         if (request.generation != syntheticPointerEventAfterRelayoutGeneration) {
-            return ProcessResult(0)
+            return PointerEventResult()
         }
         return sendPointerInputEventWithCurrentStateIfNecessary(request.type)
     }
@@ -387,10 +390,10 @@ internal class InputStateTracker(
         scrollDelta: Offset = Offset.Zero,
         nativeEvent: Any? = null,
         button: PointerButton? = null,
-    ): ProcessResult {
+    ): PointerEventResult {
         val position = pointerPosition
         return if (!pointerInWindow || position == null) {
-            ProcessResult(0)
+            PointerEventResult()
         } else {
             sendPointerInputEvent(
                 mousePointerInputEvent(
@@ -407,6 +410,7 @@ internal class InputStateTracker(
         }
     }
 
+    @OptIn(kotlin.time.ExperimentalTime::class)
     private fun now(): Long = Clock.System.now().toEpochMilliseconds().also {
         lastNativeEventUptimeMillis = it
     }
@@ -443,6 +447,8 @@ private fun mousePointerInputEvent(
                 pressure = 1f,
                 type = PointerType.Mouse,
                 scrollDelta = scrollDelta,
+                scaleGestureFactor = 1f,
+                panGestureOffset = Offset.Zero,
             ),
         ),
         buttons = buttons,

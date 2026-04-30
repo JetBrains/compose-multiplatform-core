@@ -5,10 +5,9 @@ import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.desktop.linux.LinuxWindow
 import androidx.compose.ui.desktop.macos.MacOsWindow
-// import androidx.compose.ui.draganddrop.DragAndDropTransferDataJvm
 // import androidx.compose.ui.kdt.gtk.GtkWindow
-// import androidx.compose.ui.kdt.linux.LinuxWindow
 // import androidx.compose.ui.kdt.windows.WindowsWindow
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformDragAndDropSource
@@ -60,11 +59,14 @@ internal class KdtDragAndDropManager(
                 decorationSize,
                 drawDragDecoration,
             )
-            // TODO: re-enable when the Gtk / Linux / Windows backends land
+            is LinuxWindow -> window.startDragSession(
+                offset,
+                transferData,
+                decorationSize,
+                drawDragDecoration,
+            )
+            // TODO: re-enable when the Gtk / Windows backends land
             // is GtkWindow -> window.startDragSession(
-            //     offset, transferData as DragAndDropTransferDataJvm, decorationSize, drawDragDecoration,
-            // )
-            // is LinuxWindow -> window.startDragSession(
             //     offset, transferData as DragAndDropTransferDataJvm, decorationSize, drawDragDecoration,
             // )
             // is WindowsWindow -> {
