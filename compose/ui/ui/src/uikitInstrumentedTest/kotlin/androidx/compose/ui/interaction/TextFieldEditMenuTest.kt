@@ -433,12 +433,9 @@ class TextFieldEditMenuTest {
 
     private fun UIKitInstrumentedTest.openToolbar(textFieldTag: String) {
         delay(50)
-        println(">> ---------------- tap $textFieldTag")
         findNodeWithTag(textFieldTag).tap()
         delay(500)
-        println(">> ---------------- double tap $textFieldTag")
         findNodeWithTag(textFieldTag).doubleTap()
-        println(">> ---------------- double tap done $textFieldTag")
         waitForContextMenu()
     }
 
@@ -499,7 +496,6 @@ class TextFieldEditMenuTest {
         } else {
             "UICalloutBar"
         }
-        println(">> ---------------- waitForContextMenu")
         waitForIdle()
         try {
             UIKitInstrumentedTest.waitUntil {
