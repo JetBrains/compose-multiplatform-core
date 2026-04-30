@@ -123,6 +123,8 @@ id _editInteraction;
     self.selectAllBlock = selectAllBlock;
     self.customActions = customActions;
 
+    NSLog(@">>>>> OBJ-C SHOW EDIT MENU: %@", self);
+
     if (@available(iOS 16, *)) {
         [[CMPEditMenuViewRegister shared] hideAllMenusSkipping:self];
         if (self.editInteraction == nil || contextMenuItemsChanged || !self.isEditMenuShown) {
