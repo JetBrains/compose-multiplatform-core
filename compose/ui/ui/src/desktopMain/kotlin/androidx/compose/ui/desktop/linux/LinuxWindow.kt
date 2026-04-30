@@ -373,8 +373,6 @@ class LinuxWindow internal constructor(
 
     // ----- Compose scene wiring -----
 
-    private val frameClock = BroadcastFrameClock { isFrameRequested = true }
-
     private val architectureComponentsOwner = DefaultArchitectureComponentsOwner().apply {
         enableSavedStateHandles()
         setLifecycleState(Lifecycle.State.RESUMED)
@@ -398,8 +396,7 @@ class LinuxWindow internal constructor(
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
         coroutineContext = scene.coroutineScope.coroutineContext +
-            LinuxKdtMainDispatcher.INSTANCE.immediate +
-            frameClock,
+            LinuxKdtMainDispatcher.INSTANCE.immediate,
         platformContext = platformContext,
         invalidate = { isFrameRequested = true },
     )
@@ -819,7 +816,6 @@ class LinuxWindow internal constructor(
 
     private fun draw(event: Event.WindowDraw) {
         val now = System.nanoTime()
-        frameClock.sendFrame(now)
 
         val softwareDrawData = event.softwareDrawData
         if (softwareDrawData != null) {

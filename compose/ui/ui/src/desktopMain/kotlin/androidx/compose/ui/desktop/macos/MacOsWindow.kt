@@ -435,8 +435,6 @@ class MacOsWindow internal constructor(
         }
     }
 
-    private val frameClock = BroadcastFrameClock { isFrameRequested = true }
-
     private val architectureComponentsOwner = DefaultArchitectureComponentsOwner().apply {
         enableSavedStateHandles()
         setLifecycleState(Lifecycle.State.RESUMED)
@@ -469,8 +467,7 @@ class MacOsWindow internal constructor(
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
         coroutineContext = scene.coroutineScope.coroutineContext +
-            MacOsKdtMainDispatcher.INSTANCE.immediate +
-            frameClock,
+            MacOsKdtMainDispatcher.INSTANCE.immediate,
         platformContext = this@MacOsWindow.platformContext,
         invalidate = { isFrameRequested = true },
     )
@@ -781,7 +778,6 @@ class MacOsWindow internal constructor(
         val canvas = pictureRecorder.beginRecording(bounds)
         canvas.clear(org.jetbrains.skia.Color.TRANSPARENT)
         val now = System.nanoTime()
-        frameClock.sendFrame(now)
         composeScene.render(canvas.asComposeCanvas(), now)
         return PresentablePicture(pictureRecorder.finishRecordingAsPicture(), size)
     }
