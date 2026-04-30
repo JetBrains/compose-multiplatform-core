@@ -148,6 +148,11 @@ id _editInteraction;
     if (self.window != nil) {
         [[CMPEditMenuViewRegister shared] addEditMenu:self];
     } else {
+        if (@available(iOS 16.0, *)) {
+            [self cancelPresentEditMenuInteraction];
+        } else {
+            [self cancelShowMenuController];
+        }
         [[CMPEditMenuViewRegister shared] removeEditMenu:self];
     }
 }
@@ -241,8 +246,14 @@ id _editInteraction;
 - (void)presentEditMenuInteraction API_AVAILABLE(ios(16.0)) {
     NSAssert(self.editInteraction != nil, @"Edit Interaction must be initialized");
 
+    if (self.window == nil) {
+        NSLog(@"[CMPEditMenuView] presentEditMenuInteraction called with nil window. Stack trace:\n%@",
+              [NSThread callStackSymbols]);
+    }
+
     UIEditMenuConfiguration *config = [UIEditMenuConfiguration configurationWithIdentifier:nil
                                                                                sourcePoint:self.targetRect.origin];
+
     [self.editInteraction presentEditMenuWithConfiguration:config];
 }
 
