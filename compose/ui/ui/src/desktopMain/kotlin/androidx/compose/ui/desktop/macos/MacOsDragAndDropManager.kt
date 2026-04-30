@@ -15,7 +15,7 @@ import org.jetbrains.desktop.macos.DragOperation
 
 internal class MacOsDragAndDropManager(
     private val rootDragAndDropNode: () -> ComposeSceneDragAndDropNode,
-    private var density: Density,
+    private val density: () -> Density,
 ) {
     private var previousAction: DragAndDropTransferAction? = null
 
@@ -89,7 +89,7 @@ internal class MacOsDragAndDropManager(
         )
     }
 
-    private fun DpOffset.toOffset() = with(density) {
+    private fun DpOffset.toOffset() = with(density()) {
         Offset(x.toPx(), y.toPx())
     }
 }
