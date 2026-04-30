@@ -3,7 +3,7 @@
 package androidx.compose.ui.desktop.linux
 
 import androidx.compose.ui.desktop.LightweightWindowId
-import fleet.util.logging.logger
+import androidx.compose.ui.desktop.logging.logger
 import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine

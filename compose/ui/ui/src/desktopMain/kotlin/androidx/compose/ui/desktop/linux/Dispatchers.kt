@@ -49,4 +49,8 @@ class LinuxKdtMainDispatcher : LinuxKdtMainDispatcherBase() {
     override fun toString(): String {
         return "Dispatchers.MainKDT"
     }
+
+    companion object {
+        val INSTANCE: LinuxKdtMainDispatcher = LinuxKdtMainDispatcher()
+    }
 }
