@@ -1,4 +1,5 @@
 @file:Suppress("DuplicatedCode")
+@file:OptIn(InternalComposeUiApi::class)
 
 package androidx.compose.ui.desktop.gtk
 
@@ -6,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
@@ -37,11 +39,11 @@ import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.isTertiary
 import androidx.compose.ui.input.pointer.isTertiaryPressed
 import androidx.compose.ui.node.InternalCoreApi
+import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import kotlin.time.Clock
-import noria.ui.input.pointer.ProcessResult
 import org.jetbrains.desktop.gtk.Event
 import org.jetbrains.desktop.gtk.MouseButton
 
@@ -49,7 +51,7 @@ import org.jetbrains.desktop.gtk.MouseButton
 @InternalCoreApi
 internal class InputStateTracker(
     private val inputModeManager: InputModeManager,
-    private val sendPointerInputEvent: (PointerInputEvent) -> ProcessResult,
+    private val sendPointerInputEvent: (PointerInputEvent) -> PointerEventResult,
     private val sendKeyEvent: (KeyEvent) -> Boolean,
 ) {
     private var pointerInWindow: Boolean = false
@@ -77,7 +79,7 @@ internal class InputStateTracker(
                     mousePointerInputEvent(
                         type = PointerEventType.Press,
                         uptime = uptime,
-                        position = density.run { event.locationInWindow.toDpOffset().toOffset() },
+                        position = event.locationInWindow.toDpOffset().toPxOffset(density),
                         buttons = pointerButtons,
                         scrollDelta = Offset.Zero,
                         keyboardModifiers = modifiers,
@@ -86,7 +88,7 @@ internal class InputStateTracker(
                     ),
                 )
                 when {
-                    result.anyPressOrReleaseConsumed -> org.jetbrains.desktop.gtk.EventHandlerResult.Stop
+                    result.anyChangeConsumed -> org.jetbrains.desktop.gtk.EventHandlerResult.Stop
                     sendKeyEvent(
                         KeyEvent(
                             key = event.button.toKey(),
@@ -116,7 +118,7 @@ internal class InputStateTracker(
                     mousePointerInputEvent(
                         type = PointerEventType.Release,
                         uptime = uptime,
-                        position = density.run { event.locationInWindow.toDpOffset().toOffset() },
+                        position = event.locationInWindow.toDpOffset().toPxOffset(density),
                         buttons = pointerButtons,
                         scrollDelta = Offset.Zero,
                         keyboardModifiers = modifiers,
@@ -125,7 +127,7 @@ internal class InputStateTracker(
                     ),
                 )
                 when {
-                    result.anyPressOrReleaseConsumed -> org.jetbrains.desktop.gtk.EventHandlerResult.Stop
+                    result.anyChangeConsumed -> org.jetbrains.desktop.gtk.EventHandlerResult.Stop
                     sendKeyEvent(
                         KeyEvent(
                             key = event.button.toKey(),
@@ -201,12 +203,13 @@ internal class InputStateTracker(
                 val result = sendPointerInputEventWithCurrentStateIfNecessary(
                     PointerEventType.Scroll,
                     uptime = uptime,
-                    scrollDelta = density.run {
-                        DpOffset((event.scrollingDeltaX * 20).dp, (event.scrollingDeltaY * 20).dp).toOffset()
-                    },
+                    scrollDelta = DpOffset(
+                        (event.scrollingDeltaX * 20).dp,
+                        (event.scrollingDeltaY * 20).dp,
+                    ).toPxOffset(density),
                     nativeEvent = event,
                 )
-                if (result.anyScrollingConsumed) {
+                if (result.anyChangeConsumed) {
                     sendPointerInputEventWithCurrentStateIfNecessary(PointerEventType.Move)
                     org.jetbrains.desktop.gtk.EventHandlerResult.Stop
                 } else {
@@ -287,10 +290,10 @@ internal class InputStateTracker(
         pointerEventType: PointerEventType,
         uptime: Long,
         nativeEvent: Event,
-    ): ProcessResult {
+    ): PointerEventResult {
         lastNativeEventUptimeMillis = uptime
         val previous = pointerPosition
-        pointerPosition = positionInWindow.toOffset()
+        pointerPosition = positionInWindow.toPxOffset(this)
         return if (
             previous != pointerPosition ||
             pointerEventType == PointerEventType.Enter ||
@@ -309,7 +312,7 @@ internal class InputStateTracker(
                 ),
             )
         } else {
-            ProcessResult(0)
+            PointerEventResult()
         }
     }
 
@@ -319,10 +322,10 @@ internal class InputStateTracker(
         scrollDelta: Offset = Offset.Zero,
         nativeEvent: Any? = null,
         button: PointerButton? = null,
-    ): ProcessResult {
+    ): PointerEventResult {
         val position = pointerPosition
         return if (!pointerInWindow || position == null) {
-            ProcessResult(0)
+            PointerEventResult()
         } else {
             sendPointerInputEvent(
                 mousePointerInputEvent(
@@ -339,6 +342,7 @@ internal class InputStateTracker(
         }
     }
 
+    @OptIn(kotlin.time.ExperimentalTime::class)
     private fun now(): Long = Clock.System.now().toEpochMilliseconds().also {
         lastNativeEventUptimeMillis = it
     }
@@ -370,6 +374,8 @@ private fun mousePointerInputEvent(
                 pressure = 1f,
                 type = PointerType.Mouse,
                 scrollDelta = scrollDelta,
+                scaleGestureFactor = 1f,
+                panGestureOffset = Offset.Zero,
             ),
         ),
         buttons = buttons,
