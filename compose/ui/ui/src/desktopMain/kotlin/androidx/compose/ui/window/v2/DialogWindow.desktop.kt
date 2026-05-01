@@ -24,10 +24,11 @@ import androidx.compose.ui.awt.toAwtModalityType
 import androidx.compose.ui.awt.v2.SwingDialog
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.DialogModalityType
 import androidx.compose.ui.window.DialogWindowScope
 import androidx.compose.ui.window.WindowDecoration
-import androidx.compose.ui.window.ApplicationScope
 import java.awt.Window
 
 /**
@@ -77,6 +78,12 @@ import java.awt.Window
  * @param focusable Whether the dialog can receive focus.
  * @param alwaysOnTop whether the dialog will always be on top of other windows and dialogs in the
  * application.
+ * @param minSize The minimum dialog size. This will prevent the user from resizing the dialog
+ *   to smaller than the specified value. A value of [DpSize.Unspecified] means no minimum.
+ *   Note that some window managers may not respect this.
+ * @param maxSize The maximum dialog size. This will prevent the user from resizing the dialog
+ *   to larger than the specified value. A value of [DpSize.Unspecified] means no maximum.
+ *   Note that some window managers may not respect this.
  * @param modalityType Modality type for the dialog. A top-level dialog can only be
  *    [DialogModalityType.Modeless]
  * @param onPreviewKeyEvent Invoked when the dialog receives a key event, before it is sent to the
@@ -103,7 +110,8 @@ fun DialogWindow(
     enabled: Boolean = true,
     focusable: Boolean = true,
     alwaysOnTop: Boolean = false,
-    sizeLimits: WindowSizeLimits = WindowSizeLimits.Unlimited,
+    minSize: DpSize = DpSize.Unspecified,
+    maxSize: DpSize = DpSize.Unspecified,
     modalityType: DialogModalityType = defaultDialogModality(),
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
@@ -122,7 +130,8 @@ fun DialogWindow(
         enabled = enabled,
         focusable = focusable,
         alwaysOnTop = alwaysOnTop,
-        sizeLimits = sizeLimits,
+        minSize = minSize,
+        maxSize = maxSize,
         modalityType = modalityType.toAwtModalityType(),
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
@@ -130,7 +139,6 @@ fun DialogWindow(
         content = content,
     )
 }
-
 
 @Composable
 private fun defaultDialogModality() =

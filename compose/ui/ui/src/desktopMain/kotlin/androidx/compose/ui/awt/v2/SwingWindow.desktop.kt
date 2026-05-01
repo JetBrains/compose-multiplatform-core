@@ -31,6 +31,7 @@ import androidx.compose.ui.awt.SwingWindow
 import androidx.compose.ui.awt.toAwtRectangleSizeRoundedUp
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.requireReal
 import androidx.compose.ui.util.ComponentUpdater
 import androidx.compose.ui.util.componentListenerRef
@@ -50,7 +51,6 @@ import androidx.compose.ui.window.v2.WindowBoundsProvider
 import androidx.compose.ui.window.v2.WindowGeometryProviderScope
 import androidx.compose.ui.window.v2.WindowScreenProvider
 import androidx.compose.ui.window.v2.WindowScreenProviderScope
-import androidx.compose.ui.window.v2.WindowSizeLimits
 import androidx.compose.ui.window.v2.WindowState
 import androidx.compose.ui.window.v2.rememberWindowState
 import java.awt.GraphicsDevice
@@ -111,7 +111,8 @@ fun SwingWindow(
     enabled: Boolean = true,
     focusable: Boolean = true,
     alwaysOnTop: Boolean = false,
-    sizeLimits: WindowSizeLimits = WindowSizeLimits.Unlimited,
+    minSize: DpSize = DpSize.Unspecified,
+    maxSize: DpSize = DpSize.Unspecified,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
     init: (ComposeWindow) -> Unit,
@@ -126,7 +127,8 @@ fun SwingWindow(
     val currentEnabled by rememberUpdatedState(enabled)
     val currentFocusable by rememberUpdatedState(focusable)
     val currentAlwaysOnTop by rememberUpdatedState(alwaysOnTop)
-    val currentSizeLimits by rememberUpdatedState(sizeLimits)
+    val currentMinSize by rememberUpdatedState(minSize)
+    val currentMaxSize by rememberUpdatedState(maxSize)
     val currentOnCloseRequest by rememberUpdatedState(onCloseRequest)
 
     val updater = remember(::ComponentUpdater)
@@ -234,8 +236,8 @@ fun SwingWindow(
                 set(currentEnabled, window::setEnabled)
                 set(currentFocusable, window::setFocusableWindowState)
                 set(currentAlwaysOnTop, window::setAlwaysOnTop)
-                set(currentSizeLimits.min) { window.minimumSize = it.roundToDimensionOrNull() }
-                set(currentSizeLimits.max) { window.maximumSize = it.roundToDimensionOrNull() }
+                set(currentMinSize) { window.minimumSize = it.roundToDimensionOrNull() }
+                set(currentMaxSize) { window.maximumSize = it.roundToDimensionOrNull() }
                 set(currentDecoration.resizerThickness, window::undecoratedResizerThickness::set)
             }
 

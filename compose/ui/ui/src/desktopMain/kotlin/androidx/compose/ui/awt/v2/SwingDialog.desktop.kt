@@ -32,6 +32,7 @@ import androidx.compose.ui.awt.SwingDialog
 import androidx.compose.ui.awt.toAwtRectangleSizeRoundedUp
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.requireReal
 import androidx.compose.ui.util.ComponentUpdater
 import androidx.compose.ui.util.componentListenerRef
@@ -48,7 +49,6 @@ import androidx.compose.ui.window.v2.DialogState
 import androidx.compose.ui.window.v2.WindowBoundsProvider
 import androidx.compose.ui.window.v2.WindowGeometryProviderScope
 import androidx.compose.ui.window.v2.WindowScreenProvider
-import androidx.compose.ui.window.v2.WindowSizeLimits
 import androidx.compose.ui.window.v2.rememberDialogState
 import java.awt.Dialog.ModalityType
 import java.awt.GraphicsEnvironment
@@ -111,7 +111,8 @@ fun SwingDialog(
     enabled: Boolean = true,
     focusable: Boolean = true,
     alwaysOnTop: Boolean = false,
-    sizeLimits: WindowSizeLimits = WindowSizeLimits.Unlimited,
+    minSize: DpSize = DpSize.Unspecified,
+    maxSize: DpSize = DpSize.Unspecified,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
     modalityType: ModalityType =
@@ -132,7 +133,8 @@ fun SwingDialog(
     val currentEnabled by rememberUpdatedState(enabled)
     val currentFocusable by rememberUpdatedState(focusable)
     val currentAlwaysOnTop by rememberUpdatedState(alwaysOnTop)
-    val currentSizeLimits by rememberUpdatedState(sizeLimits)
+    val currentMinSize by rememberUpdatedState(minSize)
+    val currentMaxSize by rememberUpdatedState(maxSize)
     val currentModalityType by rememberUpdatedState(modalityType)
     val currentOnCloseRequest by rememberUpdatedState(onCloseRequest)
 
@@ -239,8 +241,8 @@ fun SwingDialog(
                 set(currentEnabled, dialog::setEnabled)
                 set(currentFocusable, dialog::setFocusableWindowState)
                 set(currentAlwaysOnTop, dialog::setAlwaysOnTop)
-                set(currentSizeLimits.min) { dialog.minimumSize = it.roundToDimensionOrNull() }
-                set(currentSizeLimits.max) { dialog.maximumSize = it.roundToDimensionOrNull() }
+                set(currentMinSize) { dialog.minimumSize = it.roundToDimensionOrNull() }
+                set(currentMaxSize) { dialog.maximumSize = it.roundToDimensionOrNull() }
                 set(currentModalityType, dialog::setModalityType)
                 set(currentDecoration.resizerThickness, dialog::undecoratedResizerThickness::set)
             }

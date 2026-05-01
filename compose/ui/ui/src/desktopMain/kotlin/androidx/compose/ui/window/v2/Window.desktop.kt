@@ -23,6 +23,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.v2.SwingWindow
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.SingleWindowApplicationScope
@@ -80,9 +81,12 @@ import androidx.compose.ui.window.application
  * @param focusable Whether the window can receive focus.
  * @param alwaysOnTop whether the window will always be on top of other windows and dialogs in the
  *   application.
- * @param sizeLimits Limits on the window size. This will prevent the user from resizing the window
- *   beyond the specified values. Note that some window managers may not respect either one or both
- *   of the limits.
+ * @param minSize The minimum window size. This will prevent the user from resizing the window
+ *   to smaller than the specified value. A value of [DpSize.Unspecified] means no minimum.
+ *   Note that some window managers may not respect this.
+ * @param maxSize The maximum window size. This will prevent the user from resizing the window
+ *   to larger than the specified value. A value of [DpSize.Unspecified] means no maximum.
+ *   Note that some window managers may not respect this.
  * @param onPreviewKeyEvent Invoked when the window receives a key event, before it is sent to the
  *   [content]. The return value controls whether the key event will be sent to the [content]
  *   afterward. Return `true` to consume it, preventing further processing.
@@ -107,7 +111,8 @@ fun Window(
     enabled: Boolean = true,
     focusable: Boolean = true,
     alwaysOnTop: Boolean = false,
-    sizeLimits: WindowSizeLimits = WindowSizeLimits.Unlimited,
+    minSize: DpSize = DpSize.Unspecified,
+    maxSize: DpSize = DpSize.Unspecified,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
     content: @Composable FrameWindowScope.() -> Unit
@@ -124,7 +129,8 @@ fun Window(
         enabled = enabled,
         focusable = focusable,
         alwaysOnTop = alwaysOnTop,
-        sizeLimits = sizeLimits,
+        minSize = minSize,
+        maxSize = maxSize,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
         init = { },
@@ -158,30 +164,35 @@ fun Window(
  *   composition.
  * @param title The title of the window.
  * @param icon The icon of the window (for platforms that support this).
- * On macOS individual windows can't have a separate icon. To change the icon in the Dock,
- * set it via `iconFile` in build.gradle or via an `-Xdock:icon=...` parameter to the process
- * (https://kotlinlang.org/docs/multiplatform/compose-native-distribution.html#platform-specific-options)
+ *   On macOS individual windows can't have a separate icon. To change the icon in the Dock,
+ *   set it via `iconFile` in build.gradle or via an `-Xdock:icon=...` parameter to the process
+ *   (https://kotlinlang.org/docs/multiplatform/compose-native-distribution.html#platform-specific-options)
  * @param decoration Specifies the decoration for this window.
  * @param transparent Controls window transparency. Only an undecorated window may be transparent.
- * Attempting to make a decorated window transparent will throw an exception.
+ *   Attempting to make a decorated window transparent will throw an exception.
  * @param resizable Whether the user can resize the window (application can resize the window by
- * changing [state] regardless of this parameter).
+ *   changing [state] regardless of this parameter).
  * @param enabled Whether the window reacts to input events.
  * @param focusable Whether the window can receive focus.
  * @param alwaysOnTop whether the window will always be on top of other windows and dialogs in the
- * application.
+ *   application.
+ * @param minSize The minimum window size. This will prevent the user from resizing the window
+ *   to smaller than the specified value. A value of [DpSize.Unspecified] means no minimum.
+ *   Note that some window managers may not respect this.
+ * @param maxSize The maximum window size. This will prevent the user from resizing the window
+ *   to larger than the specified value. A value of [DpSize.Unspecified] means no maximum.
+ *   Note that some window managers may not respect this.
  * @param onPreviewKeyEvent Invoked when the window receives a key event, before it is sent to the
- * [content]. The return value controls whether the key event will be sent to the [content]
- * afterward. Return `true` to consume it, preventing further processing.
+ *   [content]. The return value controls whether the key event will be sent to the [content]
+ *   afterward. Return `true` to consume it, preventing further processing.
  * @param onKeyEvent Invoked when the window receives a key event, after it has been sent to
- * [content], only if nothing there had consumed it. The return value controls whether the key event
- * will be processed further (e.g., by the system). Return `true` to consume it, preventing further
- * processing.
- * @param content Composable content of the window.
+ *   [content], only if nothing there had consumed it. The return value controls whether the key
+ *   event will be processed further (e.g., by the system). Return `true` to consume it, preventing
+ *   further processing.
  * @param exitProcessOnExit Whether `exitProcess(0)` will be called after the window is closed.
- * `exitProcess` speeds up process exit (instant instead of 1-4sec).
- * If `false`, the execution of the function will be unblocked after application is exited
- * (when the last window is closed, and all [LaunchedEffect]s are complete).
+ *   `exitProcess` speeds up process exit (instant instead of 1-4sec).
+ *   If `false`, the execution of the function will be unblocked after application is exited
+ *   (when the last window is closed, and all [LaunchedEffect]s are complete).
  * @param content Composable content of the window.
  */
 @ExperimentalComposeUiApi
@@ -196,7 +207,8 @@ fun singleWindowApplication(
     enabled: Boolean = true,
     focusable: Boolean = true,
     alwaysOnTop: Boolean = false,
-    sizeLimits: WindowSizeLimits = WindowSizeLimits.Unlimited,
+    minSize: DpSize = DpSize.Unspecified,
+    maxSize: DpSize = DpSize.Unspecified,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
     exitProcessOnExit: Boolean = true,
@@ -214,7 +226,8 @@ fun singleWindowApplication(
         enabled = enabled,
         focusable = focusable,
         alwaysOnTop = alwaysOnTop,
-        sizeLimits = sizeLimits,
+        minSize = minSize,
+        maxSize = maxSize,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
         content = {
