@@ -294,12 +294,16 @@ class WindowV2StateTest {
     }
 
     @Test
-    fun `state bounds should be specified after attach`() = runApplicationTest(
+    fun `state bounds should be initialized after show`() = runApplicationTest(
         useDelay = isLinux
     ) {
         val state = WindowState()
         launchTestApplication {
-            Window(onCloseRequest = {}, state, title = "state bounds should be specified after attach") { }
+            Window(
+                onCloseRequest = {},
+                state = state,
+                title = "state bounds should be initialized after show"
+            ) { }
         }
 
         assertThat(state.isInitialized).isFalse()
@@ -706,7 +710,7 @@ class WindowV2StateTest {
     }
 
     @Test
-    fun `set window size by its content when window is on the screen`() = runApplicationTest(
+    fun `set window size by its content when window is visible`() = runApplicationTest(
         useDelay = isLinux || isMacOs
     ) {
         lateinit var window: ComposeWindow
@@ -716,7 +720,7 @@ class WindowV2StateTest {
             Window(
                 onCloseRequest = ::exitApplication,
                 state = state,
-                title = "set window size by its content when window is on the screen"
+                title = "set window size by its content when window is visible"
             ) {
                 window = this.window
 
@@ -737,7 +741,7 @@ class WindowV2StateTest {
     }
 
     @Test
-    fun `change visible`() = runApplicationTest {
+    fun `change visibility`() = runApplicationTest {
         lateinit var window: ComposeWindow
 
         var visible by mutableStateOf(false)
@@ -746,7 +750,7 @@ class WindowV2StateTest {
             Window(
                 onCloseRequest = ::exitApplication,
                 visible = visible,
-                title = "change visible"
+                title = "change visibility"
             ) {
                 window = this.window
             }
@@ -1125,7 +1129,7 @@ private const val LinuxCoordinateTolerance = 10
 
 private val CoordinateTolerance = if (isLinux) LinuxCoordinateTolerance else 0
 
-private fun assertCoordinatesApproximatelyEqual(
+internal fun assertCoordinatesApproximatelyEqual(
     expected: Point,
     actual: Point,
 ) {
@@ -1139,7 +1143,7 @@ private fun assertCoordinatesApproximatelyEqual(
     }
 }
 
-private fun assertSizesApproximatelyEqual(
+internal fun assertSizesApproximatelyEqual(
     expected: Dimension,
     actual: Dimension,
 ) {
@@ -1153,7 +1157,7 @@ private fun assertSizesApproximatelyEqual(
     }
 }
 
-private fun assertCoordinatesNotApproximatelyEqual(
+internal fun assertCoordinatesNotApproximatelyEqual(
     expected: Point,
     actual: Point,
 ) {
@@ -1167,7 +1171,7 @@ private fun assertCoordinatesNotApproximatelyEqual(
     }
 }
 
-private fun assertSizesNotApproximatelyEqual(
+internal fun assertSizesNotApproximatelyEqual(
     expected: Dimension,
     actual: Dimension,
 ) {
