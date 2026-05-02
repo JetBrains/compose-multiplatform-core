@@ -36,6 +36,3 @@ interface MeasurableRootContent : IntrinsicMeasurable {
      */
     fun <T> measuringIn(constraints: Constraints, block: (Measured) -> T): T
 }
-
-
-
