@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.internal.requirePrecondition
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -35,7 +36,7 @@ private const val ALPHA_MASK = 0xFF000000.toInt()
  * @return the integer color value
  */
 internal fun parseColorValue(color: String): Int {
-    require(color.startsWith("#")) { "Invalid color value $color" }
+    requirePrecondition(color.startsWith("#")) { "Invalid color value $color" }
 
     return when (color.length) {
         7 -> {

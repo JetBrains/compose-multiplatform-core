@@ -19,6 +19,7 @@ package androidx.compose.ui.viewinterop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.util.fastForEach
 import java.awt.Component
@@ -59,7 +60,7 @@ private class ScheduledUpdatesSwapchain(
     inline fun preventingRedrawRequests(body: () -> Unit) {
         try {
             synchronized(lock) {
-                check(needsRequestRedrawOnUpdateScheduled) {
+                checkPrecondition(needsRequestRedrawOnUpdateScheduled) {
                     "Reentry into ignoringRedrawRequests is not allowed"
                 }
 
@@ -225,7 +226,7 @@ internal class SwingInteropContainer(
     }
 
     private fun executeScheduledUpdates() {
-        check(isEventDispatchThread())
+        checkPrecondition(isEventDispatchThread())
 
         val hasAnyUpdates = scheduledUpdatesSwapchain.execute()
 

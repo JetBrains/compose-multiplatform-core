@@ -20,6 +20,7 @@ import androidx.collection.MutableIntSet
 import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.node.HitTestResult
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.requireLayoutNode
@@ -596,7 +597,7 @@ private class AccessibilityElement(
     }
 
     fun dispose() {
-        check(!disposed) {
+        checkPrecondition(!disposed) {
             "AccessibilityElement is already disposed"
         }
 
@@ -1656,7 +1657,7 @@ internal class AccessibilityMediator(
     private fun sync() {
         val rootSemanticsNode = owner.unmergedRootSemanticsNode
 
-        check(!view.isAccessibilityElement) {
+        checkPrecondition(!view.isAccessibilityElement) {
             "Root view must not be an accessibility element"
         }
 

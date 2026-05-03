@@ -17,6 +17,7 @@
 package androidx.compose.ui.viewinterop
 
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
+import androidx.compose.ui.internal.checkPreconditionNotNull
 
 /**
  * A container that controls interop views/components.
@@ -118,7 +119,7 @@ internal class UIKitInteropContainer(
 
     override fun unplace(holder: InteropViewHolder) {
         holder as UIKitInteropElementHolder<*>
-        val interopView = requireNotNull(holder.interopView)
+        val interopView = checkPreconditionNotNull(holder.interopView)
 
         interopViews.remove(interopView)
 

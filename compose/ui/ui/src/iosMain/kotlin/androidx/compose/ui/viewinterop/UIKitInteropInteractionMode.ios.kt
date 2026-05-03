@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.viewinterop
 
+import androidx.compose.ui.internal.requirePrecondition
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode.Cooperative.Companion.DefaultDelayMillis
 import platform.UIKit.UIScrollView
 
@@ -50,7 +51,7 @@ sealed interface UIKitInteropInteractionMode {
         val delayMillis: Int = DefaultDelayMillis
     ) : UIKitInteropInteractionMode {
         init {
-            require(delayMillis > 0) { "Delay must be a positive value" }
+            requirePrecondition(delayMillis > 0) { "Delay must be a positive value" }
         }
 
         override fun equals(other: Any?): Boolean {

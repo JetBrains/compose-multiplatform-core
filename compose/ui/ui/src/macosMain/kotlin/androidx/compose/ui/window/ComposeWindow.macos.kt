@@ -27,6 +27,7 @@ import androidx.compose.ui.input.pointer.MacosCursor
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.MacosTextInputService
 import androidx.compose.ui.platform.PlatformContext
@@ -228,7 +229,7 @@ private class ComposeWindow(
 
     // TODO: need to call .dispose() on window close.
     fun dispose() {
-        check(!isDisposed) { "ComposeWindow is already disposed" }
+        checkPrecondition(!isDisposed) { "ComposeWindow is already disposed" }
         archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         archComponentsOwner.viewModelStore.clear()
         skiaLayer.detach()

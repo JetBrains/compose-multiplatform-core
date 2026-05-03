@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformDragAndDropSource
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
@@ -248,7 +249,7 @@ private class InternalStartTransferScope(
         canvasConverter.height = height
 
         val scale = density.density
-        require(scale > 0f)
+        checkPrecondition(scale > 0f)
 
         val widthNormalized = (width / scale).toInt()
         val heightNormalized = (height / scale).toInt()

@@ -18,6 +18,7 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.internal.checkPreconditionNotNull
 import kotlinx.browser.document
 import kotlinx.dom.clear
 import org.w3c.dom.Element
@@ -47,10 +48,14 @@ fun ComposeViewport(
     content: @Composable () -> Unit = { }
 ) {
     onDomReady {
-        val providedContainer = if (viewportContainerId != null) {
-            document.getElementById(viewportContainerId) ?: error("failed to find element by viewportContainerId: '$viewportContainerId'")
+        val isContainerIdNull = viewportContainerId != null
+        val providedContainer = if (isContainerIdNull) {
+            document.getElementById(viewportContainerId)
         } else {
-            document.body ?: error("failed to find <body> element")
+            document.body
+        }
+        checkPreconditionNotNull(providedContainer) {
+            if (isContainerIdNull) "Failed to find element by viewportContainerId: '$viewportContainerId'" else "Failed to find <body> element"
         }
 
         ComposeViewport(providedContainer, configure, content)

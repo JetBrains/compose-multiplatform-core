@@ -17,6 +17,8 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.FrameRateCategory
+import androidx.compose.ui.internal.checkPrecondition
+import androidx.compose.ui.internal.requirePreconditionNotNull
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.uikit.utils.CMPDrawable
 import androidx.compose.ui.util.trace
@@ -113,8 +115,9 @@ internal class SurfaceMetalRedrawer(
     private var retrieveInteropTransaction: () -> UIKitInteropTransaction,
     private var render: (Canvas, targetTimestamp: NSTimeInterval) -> Unit,
 ): MetalRedrawer {
-    private val device = metalLayer.device as? MTLDeviceProtocol
-        ?: throw IllegalStateException("MetalRedrawer requires MTLDevice")
+    private val device = requirePreconditionNotNull(metalLayer.device as? MTLDeviceProtocol){
+        "MetalRedrawer requires MTLDevice"
+    }
     private val queue = getCachedCommandQueue(device)
     private val context = DirectContext.makeMetal(device.objcPtr(), queue.objcPtr())
     private var lastRenderTimestamp: NSTimeInterval = CACurrentMediaTime()
@@ -259,14 +262,14 @@ internal class SurfaceMetalRedrawer(
      * Closes all Skia surfaces and render targets that are currently associated with drawables.
      */
     fun drainSkiaSurfaces() {
-        check(NSThread.isMainThread) { "SurfaceMetalRedrawer.drainSkiaSurfaces() must be called on main thread" }
+        checkPrecondition(NSThread.isMainThread) { "SurfaceMetalRedrawer.drainSkiaSurfaces() must be called on main thread" }
         awaitRenderingQueueTasksCompletion()
         metalLayer.drainDrawables()
         disposeDrawableAssociatedResources(metalLayer.drawablesGeneration.toInt())
     }
 
     override fun dispose() {
-        check(caDisplayLink != null) { "MetalRedrawer.dispose() was called more than once" }
+        checkPrecondition(caDisplayLink != null) { "MetalRedrawer.dispose() was called more than once" }
 
         retrieveInteropTransaction = {
             object : UIKitInteropTransaction {
@@ -329,7 +332,7 @@ internal class SurfaceMetalRedrawer(
     }
 
     private fun awaitRenderingQueueTasksCompletion() {
-        check(NSThread.isMainThread) { "MetalRedrawer.awaitRenderingQueueTasksCompletion() must be called on main thread" }
+        checkPrecondition(NSThread.isMainThread) { "MetalRedrawer.awaitRenderingQueueTasksCompletion() must be called on main thread" }
 
         // Remove the currently scheduled frame, if any
         submitNextFrameForRenderLoop(null)
@@ -347,9 +350,9 @@ internal class SurfaceMetalRedrawer(
     @OptIn(BetaInteropApi::class)
     private fun draw(waitUntilCompletion: Boolean, targetTimestamp: NSTimeInterval) =
         trace("MetalRedrawer:draw") {
-            check(NSThread.isMainThread) { "MetalRedrawer.draw() must be called on main thread" }
-            check(caDisplayLink != null) { "MetalRedrawer.draw() was called after dispose()" }
-            check(!isDrawRecursiveCall) {
+            checkPrecondition(NSThread.isMainThread) { "MetalRedrawer.draw() must be called on main thread" }
+            checkPrecondition(caDisplayLink != null) { "MetalRedrawer.draw() was called after dispose()" }
+            checkPrecondition(!isDrawRecursiveCall) {
                 "Attempt to call MetalRedrawer.draw() recursively which may lead to the PictureRecorder corruption."
             }
 
@@ -443,7 +446,7 @@ internal class SurfaceMetalRedrawer(
     }
 
     private fun submitNextFrameForRenderLoop(frame: Frame?): Boolean {
-        check(NSThread.isMainThread)
+        checkPrecondition(NSThread.isMainThread)
 
         var isDrawing = false
 
@@ -586,7 +589,7 @@ internal class SurfaceMetalRedrawer(
          * Assumed to be run on the main thread.
          */
         private fun getCachedCommandQueue(device: MTLDeviceProtocol): MTLCommandQueueProtocol {
-            check(NSThread.isMainThread) { "getCachedCommandQueue() must be called on main thread" }
+            checkPrecondition(NSThread.isMainThread) { "getCachedCommandQueue() must be called on main thread" }
             val cached = cachedCommandQueue
             if (cached != null) {
                 cached.refCount++
@@ -603,7 +606,7 @@ internal class SurfaceMetalRedrawer(
          * Assumed to be run on the main thread.
          */
         private fun releaseCachedCommandQueue(queue: MTLCommandQueueProtocol) {
-            check(NSThread.isMainThread) { "releaseCachedCommandQueue() must be called on main thread" }
+            checkPrecondition(NSThread.isMainThread) { "releaseCachedCommandQueue() must be called on main thread" }
             val cached = cachedCommandQueue ?: return
             if (cached.queue == queue) {
                 cached.refCount--

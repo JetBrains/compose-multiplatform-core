@@ -37,6 +37,7 @@ import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.node.SnapshotInvalidationTracker
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.ProvidePlatformCompositionLocals
@@ -81,7 +82,7 @@ internal abstract class BaseComposeScene(
 
     private var isInvalidationDisabled = false
     private inline fun <T> postponeInvalidation(traceTag: String, crossinline block: () -> T): T = trace(traceTag) {
-        check(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
+        checkPrecondition(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
         isInvalidationDisabled = true
         return try {
             // Try to get see the up-to-date state before running block
@@ -121,7 +122,7 @@ internal abstract class BaseComposeScene(
     }
 
     override fun close() {
-        check(!isClosed) { "ComposeScene is already closed" }
+        checkPrecondition(!isClosed) { "ComposeScene is already closed" }
         isClosed = true
 
         composition?.dispose()
@@ -132,7 +133,7 @@ internal abstract class BaseComposeScene(
 
     override fun setContent(content: @Composable () -> Unit) =
         postponeInvalidation("BaseComposeScene:setContent") {
-            check(!isClosed) { "setContent called after ComposeScene is closed" }
+            checkPrecondition(!isClosed) { "setContent called after ComposeScene is closed" }
             inputHandler.onChangeContent()
 
             /*

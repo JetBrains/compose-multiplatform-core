@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.max
@@ -54,7 +55,7 @@ internal class ComposeSceneKeyboardOffsetManager(
     }
 
     fun dispose() {
-        check(!isDisposed) { "ComposeSceneKeyboardOffsetManager is already disposed" }
+        checkPrecondition(!isDisposed) { "ComposeSceneKeyboardOffsetManager is already disposed" }
         isDisposed = true
         stop()
     }
