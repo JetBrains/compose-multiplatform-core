@@ -19,6 +19,7 @@ package androidx.compose.ui.draganddrop
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.internal.requirePrecondition
 import java.awt.datatransfer.Transferable
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
@@ -55,7 +56,7 @@ actual class DragAndDropTransferData @ExperimentalComposeUiApi constructor(
     val onTransferCompleted: ((userAction: DragAndDropTransferAction?) -> Unit)? = null,
 ) {
     init {
-        require(supportedActions.firstOrNull() != null) { "supportedActions may not be empty" }
+        requirePrecondition(supportedActions.firstOrNull() != null) { "supportedActions may not be empty" }
     }
 }
 
@@ -69,10 +70,9 @@ interface DragAndDropTransferable
  * The possible actions on the transferred object in a drag-and-drop session.
  */
 @ExperimentalComposeUiApi
-class DragAndDropTransferAction private constructor(private val name: String) {
-    override fun toString(): String {
-        return name
-    }
+@JvmInline
+value class DragAndDropTransferAction private constructor(private val name: String) {
+    override fun toString(): String = name
 
     companion object {
         /**
