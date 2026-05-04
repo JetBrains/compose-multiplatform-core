@@ -56,8 +56,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.awt.SwingPanel
-import androidx.compose.ui.awt.toAwtColor
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.awt.toAwtColor
 import androidx.compose.ui.platform.LocalLocalization
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString

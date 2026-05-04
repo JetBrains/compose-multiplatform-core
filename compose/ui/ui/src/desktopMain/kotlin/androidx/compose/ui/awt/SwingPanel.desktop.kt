@@ -20,9 +20,9 @@ import androidx.compose.runtime.CompositeKeyHashCode
 import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ComposeFeatureFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.awt.toAwtColor
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.Measurable
@@ -266,6 +266,3 @@ private class AwtContentMeasurePolicy(
         return awtToPx(component.maximumSize.height)
     }
 }
-
-@ExperimentalComposeUiApi
-fun Color.toAwtColor() = java.awt.Color(red, green, blue, alpha)
