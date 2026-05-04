@@ -72,9 +72,10 @@ internal class UIKitTextInputService(
             }
             launch {
                 snapshotFlow {
-                    Pair(
+                    Triple(
                         request.textFieldRectInRoot(),
-                        request.unclippedTextOffsetInRoot()
+                        request.textClippingRectInRoot(),
+                        request.unclippedTextOffsetInRoot(),
                     )
                 }.collect {
                     currentInputConnection?.onViewGeometryUpdated()

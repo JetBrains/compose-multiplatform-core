@@ -446,4 +446,4 @@ internal abstract class TextInputConnection(
 }
 
 internal fun PlatformTextInputMethodRequest.stateSnapshot() =
-    TextFieldValue(state.toString(), state.selection, state.composition)
+    TextFieldValue(state.text, state.selection, state.composition)
