@@ -122,8 +122,6 @@ id _editInteraction;
     self.selectAllBlock = selectAllBlock;
     self.customActions = customActions;
 
-    NSLog(@">>>>> OBJ-C SHOW EDIT MENU: %@", self);
-
     if (@available(iOS 16, *)) {
         [[CMPEditMenuViewRegister shared] hideAllMenusSkipping:self];
         if (self.editInteraction == nil || contextMenuItemsChanged || !self.isEditMenuShown) {
@@ -243,15 +241,8 @@ id _editInteraction;
 - (void)presentEditMenuInteraction API_AVAILABLE(ios(16.0)) {
     NSAssert(self.editInteraction != nil, @"Edit Interaction must be initialized");
 
-    if (self.window == nil) {
-        NSLog(@"[CMPEditMenuView] presentEditMenuInteraction called with nil window. Stack trace:\n%@",
-              [NSThread callStackSymbols]);
-    }
-
     UIEditMenuConfiguration *config = [UIEditMenuConfiguration configurationWithIdentifier:nil
                                                                                sourcePoint:self.targetRect.origin];
-    // hideEditMenu
-    NSLog(@"[CMPEditMenuView] presentEditMenuInteraction called with config: %@ || view: %@", config, self);
     [self.editInteraction presentEditMenuWithConfiguration:config];
 }
 
