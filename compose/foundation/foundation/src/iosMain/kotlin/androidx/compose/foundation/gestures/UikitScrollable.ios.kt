@@ -36,7 +36,7 @@ internal object UiKitScrollConfig : ScrollConfig {
             ) {
                 acc + c.panOffset
             } else {
-                acc + c.scrollDelta
+                acc + c.scrollDelta * -64.dp.toPx()
             }
         }
 }
