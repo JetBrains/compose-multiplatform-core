@@ -65,11 +65,7 @@ internal class NativeTextInputConnection(
 ), NativeTextEditingDelegate {
     private val scrollView by lazy { NativeTextInputScrollView() }
 
-    override val textInputView = NativeTextInputView(
-        coroutineScope = coroutineScope
-    ).also {
-        it.clipsToBounds = false
-    }
+    override val textInputView = NativeTextInputView()
 
     override fun attachInputToView() {
         view.addSubview(scrollView)

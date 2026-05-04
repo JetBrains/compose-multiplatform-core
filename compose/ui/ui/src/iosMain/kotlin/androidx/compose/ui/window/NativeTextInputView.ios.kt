@@ -115,6 +115,10 @@ internal class NativeTextInputView
         addGestureRecognizer(it)
     }
 
+    init {
+        clipsToBounds = false
+    }
+
     override fun canBecomeFirstResponder() = true
 
     private val selectionInteraction =

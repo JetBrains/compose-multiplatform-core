@@ -60,7 +60,6 @@ internal open class ComposeTextInputConnection(
     override val textInputView =
         ComposeTextInputView(
             doubleTapTimeoutMillis = viewConfiguration.doubleTapTimeoutMillis,
-            coroutineScope = coroutineScope
         ).also {
             it.setAutoresizingMask(
                 UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight
