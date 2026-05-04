@@ -542,7 +542,7 @@ class MemoryLeaksTest {
 
     @OptIn(ExperimentalForeignApi::class)
     private fun startFakeTextInputSession(useNativeInput: Boolean = false) {
-        val input = ComposeTextInputView(0, coroutineScope = mainScope)
+        val input = ComposeTextInputView(0)
         UIApplication.sharedApplication.keyWindow?.rootViewController?.view?.addSubview(input)
         input.setFrame(CGRectMake(0.0, 0.0, 100.0, 100.0))
         input.becomeFirstResponder()

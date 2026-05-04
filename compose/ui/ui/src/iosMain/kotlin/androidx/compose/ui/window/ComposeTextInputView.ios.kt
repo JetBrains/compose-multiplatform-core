@@ -33,7 +33,6 @@ import kotlin.time.DurationUnit
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
-import kotlinx.coroutines.CoroutineScope
 import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectMake
@@ -77,7 +76,6 @@ import platform.darwin.NSInteger
  */
 internal class ComposeTextInputView(
     private val doubleTapTimeoutMillis: Long,
-    private val coroutineScope: CoroutineScope
 ) : CMPEditMenuView(frame = CGRectZero.readValue()),
     UIKeyInputProtocol, UITextInputProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
@@ -347,7 +345,7 @@ internal class ComposeTextInputView(
     override fun positionWithinRange(
         range: UITextRange,
         farthestInDirection: UITextLayoutDirection
-    ): UITextPosition? = TextInputPosition(0)
+    ): UITextPosition = TextInputPosition(0)
 
     override fun characterRangeByExtendingPosition(
         position: UITextPosition,

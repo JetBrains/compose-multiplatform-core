@@ -39,7 +39,6 @@ import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
-import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -102,9 +101,8 @@ import platform.UIKit.addInteraction
 import platform.UIKit.systemBlueColor
 import platform.darwin.NSInteger
 
-internal class NativeTextInputView(
-    private val coroutineScope: CoroutineScope,
-): CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
+internal class NativeTextInputView
+    : CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
 
     var input: NativeTextEditingDelegate? = null
 
@@ -674,7 +672,7 @@ internal class NativeTextInputView(
  * This view does not handle user-driven scrolling; scrolling is still managed by Compose,
  * which then updates this scroll view's state.
  */
-internal class NativeTextInputScrollView(): UIScrollView(frame = CGRectZero.readValue()) {
+internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readValue()) {
     init {
         setScrollEnabled(false)
         setShowsVerticalScrollIndicator(false)
