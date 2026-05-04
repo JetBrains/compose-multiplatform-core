@@ -49,7 +49,7 @@ androidXMultiplatform {
         def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
         commonMain.dependencies {
             api(project(":compose:material3:adaptive:adaptive-navigation"))
-            api(project(":navigation3:navigation3-ui"))
+            api("org.jetbrains.androidx.navigation3:navigation3-ui:1.1.0")
             implementation("androidx.collection:collection:1.5.0")
             implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
         }
