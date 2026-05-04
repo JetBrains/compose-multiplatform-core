@@ -63,13 +63,6 @@ internal class UIKitTextInputService(
     val hasInvalidations: Boolean
         get() = currentInputConnection?.hasInvalidations ?: false
 
-    /**
-     * Compose 1.8+ entry point for text input. Subscribes to the request's snapshot-backed state
-     * and geometry providers and forwards updates to the active [TextInputConnection].
-     *
-     * The connection type (Compose-rendered vs UIKit-native) is selected from
-     * `request.imeOptions.platformImeOptions?.usingNativeTextInput`.
-     */
     suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
         coroutineScope {
             launch {
