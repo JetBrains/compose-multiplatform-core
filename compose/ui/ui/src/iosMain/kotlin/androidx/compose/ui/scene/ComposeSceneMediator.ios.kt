@@ -23,7 +23,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.draganddrop.UIKitDragAndDropManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -64,6 +63,7 @@ import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.toNanoSeconds
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -89,6 +89,7 @@ import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.OverlayInputView
 import androidx.compose.ui.window.TouchesEventKind
+import kotlin.Float
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.CValue
@@ -381,10 +382,12 @@ internal class ComposeSceneMediator(
         }
     }
 
-    private val textInputServiceAdapter = UIKitTextInputServiceAdapter(
-        textInputService,
-        CoroutineScope(coroutineContext)
-    )
+    private val textInputServiceAdapter by lazy {
+        UIKitTextInputServiceAdapter(
+            textInputService,
+            CoroutineScope(coroutineContext)
+        )
+    }
 
     val hasInvalidations: Boolean
         get() = scene.hasInvalidations() ||
@@ -606,7 +609,7 @@ internal class ComposeSceneMediator(
         CompositionLocalProvider(
             LocalInteropContainer provides interopContainer,
             LocalUIView provides _overlayView,
-            LocalNativeTextInputContext provides textInputService,
+            LocalNativeTextInputContext provides textInputService.nativeTextInputContext,
             content = content
         )
 
@@ -723,7 +726,7 @@ internal class ComposeSceneMediator(
         override val viewConfiguration get() = this@ComposeSceneMediator.viewConfiguration
         override val inputModeManager = DefaultInputModeManager(InputMode.Touch)
         override val textInputService get() = this@ComposeSceneMediator.textInputServiceAdapter
-        override val textToolbar get() = this@ComposeSceneMediator.textInputService
+        override val textToolbar get() = this@ComposeSceneMediator.textInputService.textToolbar
         override val semanticsOwnerListener get() = this@ComposeSceneMediator.semanticsOwnerListener
         override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
         override val windowInsets get() = this@ComposeSceneMediator.windowInsetsManager.windowInsets
