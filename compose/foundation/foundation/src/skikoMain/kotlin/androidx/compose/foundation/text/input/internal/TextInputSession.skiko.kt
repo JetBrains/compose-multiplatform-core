@@ -143,8 +143,7 @@ private inline fun (() -> TextFieldCharSequence).asTextEditorState() = object : 
     override val composition: TextRange?
         get() = this@asTextEditorState().composition
 
-    override fun toString(): String = this@asTextEditorState().toString()
-
+    override val text: String get() = this@asTextEditorState().toString()
 }
 
 @OptIn(ExperimentalComposeUiApi::class)

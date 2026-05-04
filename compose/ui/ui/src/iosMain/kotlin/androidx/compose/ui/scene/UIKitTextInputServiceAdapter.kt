@@ -125,7 +125,7 @@ internal class UIKitTextInputServiceAdapter(
             override fun get(index: Int): Char = textFieldValue.text[index]
             override fun subSequence(startIndex: Int, endIndex: Int): CharSequence =
                 textFieldValue.text.subSequence(startIndex, endIndex)
-            override fun toString(): String = textFieldValue.text
+            override val text: String get() = textFieldValue.text
         }
 
         return object : PlatformTextInputMethodRequest {

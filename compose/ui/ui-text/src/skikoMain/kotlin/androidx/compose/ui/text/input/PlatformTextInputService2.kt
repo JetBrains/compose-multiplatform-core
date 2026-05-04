@@ -39,9 +39,9 @@ interface TextEditorState : CharSequence {
     val composition: TextRange?
 
     /**
-     * Returns the current text state as a string.
+     * Current text state as a string.
      */
-    override fun toString(): String
+    val text: String
 }
 
 /**
