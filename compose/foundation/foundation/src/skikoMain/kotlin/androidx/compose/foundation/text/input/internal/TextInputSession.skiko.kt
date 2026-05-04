@@ -193,7 +193,7 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
             } else {
                 newCursor + newCursorPosition - text.length
             }
-        buffer.setSelectionCoerced(newCursorInBuffer, newCursorInBuffer)
+        setSelection(newCursorInBuffer, newCursorInBuffer)
     }
 
     override fun setComposingRegion(start: Int, end: Int) {
@@ -207,7 +207,7 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
         // removing selected text if any.
         buffer.replace(replacementRange.min, replacementRange.max, text)
         if (text.isNotEmpty()) {
-            buffer.setComposition(replacementRange.min, replacementRange.min + text.length)
+            setComposingRegion(replacementRange.min, replacementRange.min + text.length)
         }
 
         val newCursor = replacementRange.min + text.length
@@ -220,7 +220,7 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
                 newCursor + newCursorPosition - text.length
             }
 
-        buffer.setSelectionCoerced(newCursorInBuffer, newCursorInBuffer)
+        setSelection(newCursorInBuffer, newCursorInBuffer)
     }
 
     override fun finishComposingText() {
