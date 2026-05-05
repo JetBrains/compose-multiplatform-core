@@ -45,7 +45,7 @@ import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.runApplicationTest
 import androidx.compose.ui.window.toDpInsets
-import androidx.compose.ui.window.toDpOffset
+import androidx.compose.ui.window.asDpOffset
 import com.google.common.truth.Truth.assertThat
 import java.awt.Dimension
 import java.awt.Point
@@ -171,7 +171,7 @@ class WindowV2StateTest {
         val position = Point(242, 242)
         val state = WindowStateWithBounds(
             initialSize = size.toDpSize(),
-            initialPosition = position.toDpOffset()
+            initialPosition = position.asDpOffset()
         )
 
         lateinit var window: ComposeWindow
@@ -194,7 +194,7 @@ class WindowV2StateTest {
 
         val state = WindowStateWithBounds(
             initialSize = size.toDpSize(),
-            initialPosition = position.toDpOffset()
+            initialPosition = position.asDpOffset()
         )
         lateinit var window: ComposeWindow
 
@@ -207,7 +207,7 @@ class WindowV2StateTest {
         awaitIdle()
 
         val newPosition = Point(242, 242)
-        state.requestPosition(newPosition.toDpOffset())
+        state.requestPosition(newPosition.asDpOffset())
         awaitIdle()
         assertCoordinatesApproximatelyEqual(newPosition, window.location)
     }
@@ -219,7 +219,7 @@ class WindowV2StateTest {
 
         val state = WindowStateWithBounds(
             initialSize = size.toDpSize(),
-            initialPosition = position.toDpOffset()
+            initialPosition = position.asDpOffset()
         )
         lateinit var window: ComposeWindow
 
@@ -284,7 +284,7 @@ class WindowV2StateTest {
         awaitIdle()
 
         val position = Point(242, 242)
-        state.requestPosition(position.toDpOffset())
+        state.requestPosition(position.asDpOffset())
         awaitIdle()
         assertThat(window1?.location).isEqualTo(position)
 
@@ -436,7 +436,7 @@ class WindowV2StateTest {
 
         val state = WindowStateWithBounds(
             initialSize = size.toDpSize(),
-            initialPosition = position.toDpOffset()
+            initialPosition = position.asDpOffset()
         )
         lateinit var window: ComposeWindow
 
@@ -473,7 +473,7 @@ class WindowV2StateTest {
 
         val state = WindowStateWithBounds(
             initialSize = size.toDpSize(),
-            initialPosition = position.toDpOffset()
+            initialPosition = position.asDpOffset()
         )
         lateinit var window: ComposeWindow
 
@@ -517,7 +517,7 @@ class WindowV2StateTest {
         val state = WindowState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(size.toDpSize()),
-                positionProvider = WindowPositionProvider.Absolute(position.toDpOffset())
+                positionProvider = WindowPositionProvider.Absolute(position.asDpOffset())
             ),
             initialPlacement = WindowPlacement.Maximized
         )

@@ -46,7 +46,7 @@ import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.resizerThickness
 import androidx.compose.ui.window.roundToDimensionOrNull
-import androidx.compose.ui.window.toDpRect
+import androidx.compose.ui.window.asDpRect
 import androidx.compose.ui.window.v2.WindowBoundsProvider
 import androidx.compose.ui.window.v2.WindowGeometryProviderScope
 import androidx.compose.ui.window.v2.WindowScreenProvider
@@ -186,7 +186,7 @@ fun SwingWindow(
                 wnd,
                 object : ComponentAdapter() {
                     fun applyBoundsChanges() {
-                        currentState._bounds = wnd.bounds.toDpRect()
+                        currentState._bounds = wnd.bounds.asDpRect()
                         if (currentState._screenId != wnd.graphicsConfiguration.device.iDstring) {
                             currentState._screenId = wnd.graphicsConfiguration.device.iDstring
                         }
@@ -290,7 +290,7 @@ internal fun WindowScreenProvider.getInitialScreenDevice(
     val env = GraphicsEnvironment.getLocalGraphicsEnvironment()
     val devices = env.screenDevices
     val actualDefaultDevice = defaultDevice
-        ?: devices.firstOrNull { it.iDstring === lastActiveConfig?.device?.iDstring }
+        ?: devices.firstOrNull { it.iDstring == lastActiveConfig?.device?.iDstring }
         ?: env.defaultScreenDevice
     val scope = WindowScreenProviderScope(devices.toList(), actualDefaultDevice)
     return with(scope) {

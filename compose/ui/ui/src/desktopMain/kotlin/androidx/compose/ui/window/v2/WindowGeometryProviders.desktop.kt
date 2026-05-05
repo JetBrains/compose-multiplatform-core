@@ -47,8 +47,8 @@ import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.roundToDimension
 import androidx.compose.ui.window.toDpInsets
-import androidx.compose.ui.window.toDpOffset
-import androidx.compose.ui.window.toDpRect
+import androidx.compose.ui.window.asDpOffset
+import androidx.compose.ui.window.asDpRect
 import java.awt.GraphicsDevice
 import kotlin.math.roundToInt
 
@@ -123,7 +123,7 @@ class WindowMetrics internal constructor(
      * The bounds of the entire window (including insets) on the screen.
      */
     val bounds: DpRect
-        get() = window.bounds.toDpRect()
+        get() = window.bounds.asDpRect()
 
     /**
      * The window's insets (the sizes of the areas where the content isn't placed, such as the title
@@ -308,7 +308,7 @@ fun interface WindowPositionProvider {
             WindowLocationTracker.getCascadeLocationFor(
                 graphicsDevice = windowMetrics.screen.device,
                 windowSize = size.roundToDimension()
-            ).toDpOffset()
+            ).asDpOffset()
         }
 
         /**
@@ -327,7 +327,7 @@ fun interface WindowPositionProvider {
         }
 
         /**
-         * Positions the window at the given [position].
+         * Positions the window at the given coordinates.
          *
          * @param x The x position of the window.
          * @param y The y position of the window.

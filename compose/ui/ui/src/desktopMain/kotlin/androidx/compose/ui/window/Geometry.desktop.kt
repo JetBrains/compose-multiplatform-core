@@ -35,9 +35,9 @@ internal operator fun Point.minus(other: Point) = Point(x - other.x, y - other.y
 internal val Rectangle.leftTop get() = Point(x, y)
 internal val Rectangle.rightBottom get() = Point(x + width, y + height)
 
-internal fun Dimension.toDpSize() = DpSize(width.dp, height.dp)
-internal fun Point.toDpOffset() = DpOffset(x.dp, y.dp)
-internal fun Rectangle.toDpRect() = DpRect(
+internal fun Dimension.asDpSize() = DpSize(width.dp, height.dp)
+internal fun Point.asDpOffset() = DpOffset(x.dp, y.dp)
+internal fun Rectangle.asDpRect() = DpRect(
     left = x.dp,
     top = y.dp,
     right = (x + width).dp,

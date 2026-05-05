@@ -21,13 +21,13 @@ import androidx.compose.ui.unit.DpInsets
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.minus
 import androidx.compose.ui.window.toDpInsets
-import androidx.compose.ui.window.toDpRect
+import androidx.compose.ui.window.asDpRect
 import java.awt.GraphicsDevice
 import java.awt.Toolkit
 
 
 /**
- * Represents a user's screen.
+ * Represents a screen (a graphical device on which windows can be rendered).
  *
  * Note that a [Screen] holds a reference to an underlying native object representing it.
  * Additionally, screens can come and go (the user may disconnect one, for example).
@@ -56,7 +56,7 @@ class Screen internal constructor(
      * to the left or above the primary screen.
      */
     val bounds: DpRect
-        get() = configuration.bounds.toDpRect()
+        get() = configuration.bounds.asDpRect()
 
     /**
      * The insets of the screen.

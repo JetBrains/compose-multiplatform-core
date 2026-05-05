@@ -84,8 +84,8 @@ import java.awt.Window
  * @param maxSize The maximum dialog size. This will prevent the user from resizing the dialog
  *   to larger than the specified value. A value of [DpSize.Unspecified] means no maximum.
  *   Note that some window managers may not respect this.
- * @param modalityType Modality type for the dialog. A top-level dialog can only be
- *    [DialogModalityType.Modeless]
+ * @param modalityType Modality type for the dialog. A top-level dialog cannot be
+ *    [DialogModalityType.DocumentModal]
  * @param onPreviewKeyEvent Invoked when the dialog receives a key event, before it is sent to the
  *   [content]. The return value controls whether the key event will be sent to the [content]
  *   afterward. Return `true` to consume it, preventing further processing.

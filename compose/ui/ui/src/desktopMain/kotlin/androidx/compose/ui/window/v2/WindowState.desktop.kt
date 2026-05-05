@@ -380,6 +380,26 @@ class WindowState private constructor(
         )
     }
 
+    /**
+     * Requests to set the position of the window.
+     *
+     * Note that the actual position is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't position as requested).
+     *
+     * Setting the position when the window placement is not [WindowPlacement.Floating] will change
+     * the placement to floating.
+     *
+     * @param x The x coordinate. The value must be [Dp.isSpecified] and [Dp.isFinite].
+     * @param y The y coordinate. The value must be [Dp.isSpecified] and [Dp.isFinite].
+     */
+    fun requestPosition(x: Dp, y: Dp) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                positionProvider = WindowPositionProvider.Absolute(x, y),
+            )
+        )
+    }
+
 
     /**
      * The current size of the window; throws [IllegalStateException] if the window is not yet

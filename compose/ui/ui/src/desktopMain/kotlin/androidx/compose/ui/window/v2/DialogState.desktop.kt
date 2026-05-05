@@ -293,6 +293,23 @@ class DialogState private constructor(
     }
 
     /**
+     * Requests to set the position of the dialog.
+     *
+     * Note that the actual position is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't position as requested).
+     *
+     * @param x The x coordinate. The value must be [Dp.isSpecified] and [Dp.isFinite].
+     * @param y The y coordinate. The value must be [Dp.isSpecified] and [Dp.isFinite].
+     */
+    fun requestPosition(x: Dp, y: Dp) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                positionProvider = WindowPositionProvider.Absolute(x, y),
+            )
+        )
+    }
+
+    /**
      * The current size of the dialog; throws [IllegalStateException] if the dialog is not yet
      * [isInitialized].
      */

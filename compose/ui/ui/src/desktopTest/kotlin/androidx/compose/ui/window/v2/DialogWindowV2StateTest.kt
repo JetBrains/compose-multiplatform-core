@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.runApplicationTest
 import androidx.compose.ui.window.toDpInsets
-import androidx.compose.ui.window.toDpOffset
+import androidx.compose.ui.window.asDpOffset
 import com.google.common.truth.Truth.assertThat
 import java.awt.Dimension
 import java.awt.Point
@@ -166,7 +166,7 @@ class DialogWindowV2StateTest {
         val position = Point(242, 242)
         val state = DialogStateWithBounds(
             initialSize = size.toDpSize(),
-            initialPosition = position.toDpOffset()
+            initialPosition = position.asDpOffset()
         )
 
         lateinit var dialog: ComposeDialog
@@ -193,7 +193,7 @@ class DialogWindowV2StateTest {
 
         val state = DialogStateWithBounds(
             initialSize = size.toDpSize(),
-            initialPosition = position.toDpOffset()
+            initialPosition = position.asDpOffset()
         )
         lateinit var dialog: ComposeDialog
 
@@ -210,7 +210,7 @@ class DialogWindowV2StateTest {
         awaitIdle()
 
         val newPosition = Point(242, 242)
-        state.requestPosition(newPosition.toDpOffset())
+        state.requestPosition(newPosition.asDpOffset())
         awaitIdle()
         assertCoordinatesApproximatelyEqual(newPosition, dialog.location)
     }
@@ -222,7 +222,7 @@ class DialogWindowV2StateTest {
 
         val state = DialogStateWithBounds(
             initialSize = size.toDpSize(),
-            initialPosition = position.toDpOffset()
+            initialPosition = position.asDpOffset()
         )
         lateinit var dialog: ComposeDialog
 
@@ -345,7 +345,7 @@ class DialogWindowV2StateTest {
         awaitIdle()
 
         val position = Point(242, 242)
-        state.requestPosition(position.toDpOffset())
+        state.requestPosition(position.asDpOffset())
         awaitIdle()
         assertThat(dialog1?.location).isEqualTo(position)
 
