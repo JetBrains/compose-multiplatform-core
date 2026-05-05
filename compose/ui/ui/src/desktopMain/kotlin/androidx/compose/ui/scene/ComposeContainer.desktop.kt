@@ -29,6 +29,7 @@ import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.internal.requirePrecondition
 import androidx.compose.ui.internal.requirePreconditionNotNull
+import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -222,6 +223,9 @@ internal class ComposeContainer(
         mediator.dispose()
         layers.fastForEach(DesktopComposeSceneLayer::close)
     }
+
+    val measurableContent: MeasurableRootContent
+        get() = mediator.measurableSceneContent
 
     override fun windowGainedFocus(event: WindowEvent) = onWindowFocusChanged()
     override fun windowLostFocus(event: WindowEvent) = onWindowFocusChanged()

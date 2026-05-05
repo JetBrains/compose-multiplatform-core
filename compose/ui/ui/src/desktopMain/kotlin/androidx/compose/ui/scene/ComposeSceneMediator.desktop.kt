@@ -45,6 +45,7 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
+import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
 import androidx.compose.ui.platform.DefaultInputModeManager
@@ -365,6 +366,9 @@ internal class ComposeSceneMediator(
                 (contentSize.height / scale).toInt()
             )
         }
+
+    val measurableSceneContent: MeasurableRootContent
+        get() = scene.measurableContent
 
     /**
      * Keyboard modifiers state might be changed when window is not focused, so window doesn't
