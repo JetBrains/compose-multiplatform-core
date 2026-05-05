@@ -29,11 +29,9 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposeDialog
 import androidx.compose.ui.awt.LocalAwtWindow
 import androidx.compose.ui.awt.SwingDialog
-import androidx.compose.ui.awt.toAwtRectangleSizeRoundedUp
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.requireReal
 import androidx.compose.ui.util.ComponentUpdater
 import androidx.compose.ui.util.componentListenerRef
 import androidx.compose.ui.util.setIcon
@@ -42,12 +40,11 @@ import androidx.compose.ui.util.windowListenerRef
 import androidx.compose.ui.window.DialogWindowScope
 import androidx.compose.ui.window.UndecoratedWindowDecoration
 import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.asDpRect
 import androidx.compose.ui.window.resizerThickness
 import androidx.compose.ui.window.roundToDimensionOrNull
-import androidx.compose.ui.window.asDpRect
 import androidx.compose.ui.window.v2.DialogState
 import androidx.compose.ui.window.v2.WindowBoundsProvider
-import androidx.compose.ui.window.v2.WindowGeometryProviderScope
 import androidx.compose.ui.window.v2.WindowScreenProvider
 import androidx.compose.ui.window.v2.rememberDialogState
 import java.awt.Dialog.ModalityType
@@ -279,31 +276,9 @@ fun SwingDialog(
 }
 
 private fun ComposeDialog.initializeBounds(state: DialogState) {
-    val boundsRequest = state.boundsRequests.tryReceive().getOrNull()
-    val currentBounds = state._bounds
-
-    // Prioritize requests, then currentBounds
-    if ((boundsRequest == null) && (currentBounds != null)) {
-        bounds = currentBounds.toAwtRectangleSizeRoundedUp()
-    } else {
-        setBoundsFrom(boundsRequest ?: WindowBoundsProvider.Default)
-    }
+    initializeBounds(state.boundsRequests, state._bounds, owner, ::measurableContent)
 }
 
 private fun ComposeDialog.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
-    if (!isDisplayable) {
-        // Give it a preferred size to avoid measuring via ComposeSceneMediator.preferredSize
-        // when pack() is called
-        preferredSize = java.awt.Dimension(0, 0)
-        pack()
-    }
-
-    val scope = WindowGeometryProviderScope(
-        parentWindow = owner,
-        window = this,
-        measurableContentProvider = ::measurableContent
-    )
-    with(scope) {
-        bounds = boundsProvider.getBounds().requireReal().toAwtRectangleSizeRoundedUp()
-    }
+    setBoundsFrom(boundsProvider, owner, ::measurableContent)
 }

@@ -33,6 +33,7 @@ import androidx.compose.ui.awt.ComposeDialog
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.isLinux
 import androidx.compose.ui.isMacOs
+import androidx.compose.ui.toDpOffset
 import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.plus
 import androidx.compose.ui.unit.size
+import androidx.compose.ui.unit.topLeft
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.runApplicationTest
@@ -51,6 +53,8 @@ import java.awt.Dimension
 import java.awt.Point
 import java.awt.Rectangle
 import java.awt.Window
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
 import java.awt.event.WindowEvent
 import kotlin.math.abs
 import kotlin.math.max
@@ -885,4 +889,68 @@ class DialogWindowV2StateTest {
         },
         expectedWindowSizeSansInsets = DpSize(101.dp, 101.dp)
     )
+
+    private fun runBoundsOverwriteTest(
+        name: String,
+        dialogState: DialogState,
+        expectedPosition: DpOffset,
+        expectedSize: DpSize
+    ) = runApplicationTest {
+        launchTestApplication {
+            DialogWindow(
+                state = dialogState,
+                onCloseRequest = {},
+                title = name
+            ) {
+                LaunchedEffect(Unit) {
+                    window.addComponentListener(object: ComponentAdapter() {
+                        // Verify that the bounds are set correctly immediately, not just at some
+                        // point after the window is shown.
+                        override fun componentShown(e: ComponentEvent) {
+                            assertEquals(expectedSize, window.size.toDpSize())
+                            assertEquals(expectedPosition, window.location.toDpOffset())
+                        }
+                    })
+                }
+            }
+        }
+        awaitIdle()
+
+        assertEquals(expectedSize, dialogState.bounds.size)
+        assertEquals(expectedPosition, dialogState.bounds.topLeft)
+    }
+
+    @Test
+    fun `requesting size before initialization does not overwrite position`() {
+        val position = DpOffset(300.dp, 300.dp)
+        val size = DpSize(400.dp, 400.dp)
+        val dialogState = DialogStateWithBounds(
+            initialPosition = position,
+        )
+        dialogState.requestSize(size)
+
+        runBoundsOverwriteTest(
+            name = "requesting size before initialization does not overwrite position",
+            dialogState = dialogState,
+            expectedSize = size,
+            expectedPosition = position,
+        )
+    }
+
+    @Test
+    fun `requesting position before initialization does not overwrite size`() {
+        val position = DpOffset(300.dp, 300.dp)
+        val size = DpSize(400.dp, 400.dp)
+        val dialogState = DialogStateWithBounds(
+            initialSize = size,
+        )
+        dialogState.requestPosition(position)
+
+        runBoundsOverwriteTest(
+            name = "requesting position before initialization does not overwrite size",
+            dialogState = dialogState,
+            expectedSize = size,
+            expectedPosition = position,
+        )
+    }
 }

@@ -282,7 +282,7 @@ class WindowState private constructor(
     val bounds: DpRect
         get() = _bounds ?: windowNotInitializedError("bounds")
 
-    internal val boundsRequests = Channel<WindowBoundsProvider>(Channel.CONFLATED)
+    internal val boundsRequests = Channel<WindowBoundsProvider>(Channel.UNLIMITED)
 
     /**
      * Requests to set the bounds of the window via a [WindowBoundsProvider].
@@ -443,6 +443,26 @@ class WindowState private constructor(
         boundsRequests.trySend(
             WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(size),
+            )
+        )
+    }
+
+    /**
+     * Requests to set the size of the window.
+     *
+     * Note that the actual size is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't size as requested).
+     *
+     * Setting the size when the window placement is not [WindowPlacement.Floating] will change
+     * the placement to floating.
+     *
+     * @param width The width. The value must be [Dp.isSpecified] and [Dp.isFinite].
+     * @param height The height. The value must be [Dp.isSpecified] and [Dp.isFinite].
+     */
+    fun requestSize(width: Dp, height: Dp) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                sizeProvider = WindowSizeProvider.Fixed(width, height),
             )
         )
     }

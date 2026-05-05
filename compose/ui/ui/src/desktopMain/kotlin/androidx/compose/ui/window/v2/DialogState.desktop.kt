@@ -208,7 +208,7 @@ class DialogState private constructor(
     val bounds: DpRect
         get() = _bounds ?: dialogNotInitializedError("bounds")
 
-    internal val boundsRequests = Channel<WindowBoundsProvider>(Channel.CONFLATED)
+    internal val boundsRequests = Channel<WindowBoundsProvider>(Channel.UNLIMITED)
 
     /**
      * Requests to set the bounds of the dialog via a [WindowBoundsProvider].
@@ -345,6 +345,23 @@ class DialogState private constructor(
         boundsRequests.trySend(
             WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(size),
+            )
+        )
+    }
+
+    /**
+     * Requests to set the size of the dialog.
+     *
+     * Note that the actual size is set asynchronously and may be different from the requested
+     * one (e.g., if the window manager can't size as requested).
+     *
+     * @param width The width. The value must be [Dp.isSpecified] and [Dp.isFinite].
+     * @param height The height. The value must be [Dp.isSpecified] and [Dp.isFinite].
+     */
+    fun requestSize(width: Dp, height: Dp) {
+        boundsRequests.trySend(
+            WindowBoundsProvider(
+                sizeProvider = WindowSizeProvider.Fixed(width, height),
             )
         )
     }
