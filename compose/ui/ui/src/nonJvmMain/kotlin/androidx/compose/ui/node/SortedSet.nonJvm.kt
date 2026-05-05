@@ -17,6 +17,7 @@
 package androidx.compose.ui.node
 
 import androidx.collection.mutableObjectListOf
+import kotlin.collections.forEachIndexed
 
 
 /**
@@ -107,6 +108,12 @@ internal actual class SortedSet<E> actual constructor(
                 heapifyUp(index, rightMostLeafElement)
             } else {
                 heapifyDown(index, rightMostLeafElement)
+            }
+
+            // FIXME: https://youtrack.jetbrains.com/issue/KT-82783
+            if (indexByElement.size != itemTree.size) {
+                indexByElement.clear()
+                itemTree.forEachIndexed { index, element -> indexByElement[element] = index }
             }
         }
 
