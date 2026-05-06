@@ -25,34 +25,25 @@ import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
-/** Factory for creating a [FakePerceptionRuntime] for testing purposes. */
+// TODO b/500091606 Remove when no longer used in G3
+/**
+ * Factory for creating a [FakePerceptionRuntime] for testing purposes.
+ *
+ * @deprecated This will be removed in a future release. In order to test androidx.xr.arcore APIs,
+ *   use an [ArCoreTestRule] in your tests.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @Deprecated(
     "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
 )
 public class FakePerceptionRuntimeFactory() : PerceptionRuntimeFactory {
     public companion object {
-        /** Will be passed to the [FakeLifecycleManager] constructor during testing. */
+        /** Will be passed to the [FakePerceptionRuntime] constructor during testing. */
         @JvmStatic
         @get:JvmName("hasCreatePermission")
         public var hasCreatePermission: Boolean = true
 
-        /**
-         * Exception that will be thrown when [FakePerceptionRuntime.initialize] is called.
-         *
-         * Setting this value will cause the next call to [FakePerceptionRuntime.initialize] to
-         * throw this exception. Setting this value to null will clear the exception and allow the
-         * next call to succeed.
-         */
         internal var createNewFakeRuntime: Boolean = false
-
-        public var lifecycleCreateException: Exception?
-            get() {
-                return InternalFactory.runtimeInitializeException
-            }
-            set(value) {
-                InternalFactory.runtimeInitializeException = value
-            }
     }
 
     override val requirements: Set<Feature> = emptySet()

@@ -2850,8 +2850,8 @@ package androidx.core.os {
   }
 
   public final class BuildCompat {
-    method @ChecksSdkIntAtLeast(api=36, codename="Baklava") public static boolean isAtLeastB();
-    method @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES_FULL.BAKLAVA_1) public static boolean isAtLeastB_1();
+    method @Deprecated @ChecksSdkIntAtLeast(api=36, codename="Baklava") public static boolean isAtLeastB();
+    method @Deprecated @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES_FULL.BAKLAVA_1) public static boolean isAtLeastB_1();
     method @Deprecated @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.N) public static boolean isAtLeastN();
     method @Deprecated @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.N_MR1) public static boolean isAtLeastNMR1();
     method @Deprecated @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.O) public static boolean isAtLeastO();
@@ -5753,6 +5753,22 @@ package androidx.core.view.inputmethod {
     method public void requestPermission();
     method public Object? unwrap();
     method public static androidx.core.view.inputmethod.InputContentInfoCompat? wrap(Object?);
+  }
+
+  public final class TextAttributeCompat {
+    method public android.os.PersistableBundle getExtras();
+    method public java.util.List<java.lang.String!> getTextConversionSuggestions();
+    method public boolean isTextSuggestionSelected();
+    method public Object? unwrap();
+    method public static androidx.core.view.inputmethod.TextAttributeCompat? wrap(Object?);
+  }
+
+  public static final class TextAttributeCompat.Builder {
+    ctor public TextAttributeCompat.Builder();
+    method public androidx.core.view.inputmethod.TextAttributeCompat build();
+    method public androidx.core.view.inputmethod.TextAttributeCompat.Builder setExtras(android.os.PersistableBundle);
+    method public androidx.core.view.inputmethod.TextAttributeCompat.Builder setTextConversionSuggestions(java.util.List<java.lang.String!>);
+    method public androidx.core.view.inputmethod.TextAttributeCompat.Builder setTextSuggestionSelected(boolean);
   }
 
 }

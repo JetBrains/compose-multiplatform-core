@@ -86,7 +86,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
         session!!.configure(
             Config(
                 planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+                deviceTracking = DeviceTrackingMode.SPATIAL,
             )
         )
         session?.scene?.keyEntity = null
@@ -200,12 +200,6 @@ class HeadLockedUiActivity : AppCompatActivity() {
         super.onStop()
         // Unregister the animation runnable when the activity is stopped.
         this.mHeadLockedPanelView.removeCallbacks(animationRunnable)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        mHeadLockedPanel.parent = null
-        mHeadLockedPanel.dispose()
     }
 
     private fun createHeadLockedPanel() {

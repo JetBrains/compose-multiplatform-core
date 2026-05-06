@@ -24,6 +24,7 @@ import androidx.activity.ComponentActivity
 import androidx.test.filters.SdkSuppress
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.scenecore.runtime.HandlerExecutor
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.SpatialEnvironment as RtSpatialEnvironment
@@ -199,13 +200,13 @@ class SpatialEnvironmentTest {
 
         val preference1 =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(null, rtImage),
+                ImageBasedLightingAsset(null, rtImage),
                 GltfModel(null, rtModel),
                 null,
             )
         val preference2 =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(null, rtImage),
+                ImageBasedLightingAsset(null, rtImage),
                 GltfModel(null, rtModel),
                 null,
             )
@@ -223,14 +224,14 @@ class SpatialEnvironmentTest {
 
         val basePreference =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(null, rtImage1),
+                ImageBasedLightingAsset(null, rtImage1),
                 GltfModel(null, rtModel1),
                 null,
             )
 
         val preferenceDiffGeometry =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(null, rtImage1),
+                ImageBasedLightingAsset(null, rtImage1),
                 GltfModel(null, rtModel2),
                 null,
             )
@@ -239,7 +240,7 @@ class SpatialEnvironmentTest {
 
         val preferenceDiffSkybox =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(null, rtImage2),
+                ImageBasedLightingAsset(null, rtImage2),
                 GltfModel(null, rtModel1),
                 null,
             )
@@ -254,7 +255,7 @@ class SpatialEnvironmentTest {
 
         val preference =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(null, rtImage),
+                ImageBasedLightingAsset(null, rtImage),
                 GltfModel(null, rtModel),
                 gltfModelEntity,
             )
@@ -272,7 +273,11 @@ class SpatialEnvironmentTest {
     fun setSpatialEnvironmentPreferenceNull_callsRuntimeMethod() {
         check(environment!!.preferredSpatialEnvironment == null)
 
-        val preference = SpatialEnvironment.SpatialEnvironmentPreference(null, null)
+        val preference =
+            SpatialEnvironment.SpatialEnvironmentPreference(
+                imageBasedLightingAsset = null,
+                geometry = null,
+            )
 
         environment!!.preferredSpatialEnvironment = preference
 
@@ -292,7 +297,7 @@ class SpatialEnvironmentTest {
 
         val expectedPreference =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(null, rtImage),
+                ImageBasedLightingAsset(null, rtImage),
                 GltfModel(null, rtModel),
                 null,
             )
@@ -307,7 +312,7 @@ class SpatialEnvironmentTest {
 
         val preference =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(null, rtImage),
+                ImageBasedLightingAsset(null, rtImage),
                 GltfModel(null, rtModel),
                 gltfModelEntity,
             )

@@ -76,9 +76,9 @@ import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocum
 import androidx.compose.remote.creation.compose.capture.rememberRemoteDocument
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
-import androidx.compose.remote.integration.view.demos.dsl.RcDslClock
-import androidx.compose.remote.integration.view.demos.dsl.RcDslDemo
-import androidx.compose.remote.integration.view.demos.dsl.RcDslTicker
+import androidx.compose.remote.integration.view.demos.dsl.dslClock
+import androidx.compose.remote.integration.view.demos.dsl.dslDemo
+import androidx.compose.remote.integration.view.demos.dsl.dslTicker
 import androidx.compose.remote.integration.view.demos.examples.DemoPaths.pathTest
 import androidx.compose.remote.integration.view.demos.examples.LayoutModifierDemo1
 import androidx.compose.remote.integration.view.demos.examples.LayoutModifierDemo2
@@ -92,9 +92,19 @@ import androidx.compose.remote.integration.view.demos.examples.RcCollapsiblePrio
 import androidx.compose.remote.integration.view.demos.examples.RcDrawWithContent
 import androidx.compose.remote.integration.view.demos.examples.RcFitBox
 import androidx.compose.remote.integration.view.demos.examples.RcFlow
+import androidx.compose.remote.integration.view.demos.examples.RcMacroDemo
+import androidx.compose.remote.integration.view.demos.examples.RcMacroForEachDemo
+import androidx.compose.remote.integration.view.demos.examples.RcMacroLocalDemo
+import androidx.compose.remote.integration.view.demos.examples.RcNoMacroDemo
 import androidx.compose.remote.integration.view.demos.examples.RcRatio
+import androidx.compose.remote.integration.view.demos.examples.RcReferencedMacroDemo
+import androidx.compose.remote.integration.view.demos.examples.RcReferencedModifierDemo
+import androidx.compose.remote.integration.view.demos.examples.RcReferencedOperationsMacroDemo
 import androidx.compose.remote.integration.view.demos.examples.RcScrollview
 import androidx.compose.remote.integration.view.demos.examples.RcSimpleClock1
+import androidx.compose.remote.integration.view.demos.examples.RcSimpleSwitchDemo
+import androidx.compose.remote.integration.view.demos.examples.RcStyleMacroDemo
+import androidx.compose.remote.integration.view.demos.examples.RcSwitchWidgetDemo
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo2
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo2b
@@ -112,6 +122,7 @@ import androidx.compose.remote.integration.view.demos.examples.RideShare
 import androidx.compose.remote.integration.view.demos.examples.ScrollViewDemo
 import androidx.compose.remote.integration.view.demos.examples.ShaderCalendar
 import androidx.compose.remote.integration.view.demos.examples.SimplePath
+import androidx.compose.remote.integration.view.demos.examples.SlantedButtonDemo
 import androidx.compose.remote.integration.view.demos.examples.SwitchWidgetDemo
 import androidx.compose.remote.integration.view.demos.examples.TestDrawContentDemo
 import androidx.compose.remote.integration.view.demos.examples.WeatherDemo
@@ -273,7 +284,7 @@ fun getComposeDoc(
             context: Context,
             profile: Profile = DemoVersions.AndroidXCinnamonBun,
             creationDisplayInfo: RemoteCreationDisplayInfo =
-                RemoteCreationDisplayInfo(1000, 1000, 440),
+                RemoteCreationDisplayInfo(1000, 1000, 440, 1.0f),
             content: @Composable () -> Unit,
         ) {
             val result =
@@ -320,10 +331,22 @@ class ExperimentActivity : ComponentActivity() {
                 ),
             "Procedural..." to
                 listOf(
-                    getb("Rc DSL Clock Demo") { RcDslClock() },
-                    getb("Rc DSL Ticker Demo") { RcDslTicker() },
-                    getb("Rc DSL Demo") { RcDslDemo() },
+                    getb("Rc DSL Clock Demo") { dslClock() },
+                    getb("Rc DSL Ticker Demo") { dslTicker() },
+                    getb("Rc DSL Demo") { dslDemo() },
                     getpc("RcClicks") { RcClicksDemo() },
+                    getpc("RcRatio") { RcRatio() },
+                    getpc("Macros ForEach") { RcMacroForEachDemo() },
+                    getpc("Local Macros") { RcMacroLocalDemo() },
+                    getpc("No Macros") { RcNoMacroDemo() },
+                    getpc("Macros") { RcMacroDemo() },
+                    getpc("Referenced Modifiers") { RcReferencedModifierDemo() },
+                    getpc("Referenced Macro") { RcReferencedMacroDemo() },
+                    getpc("Macro Inclusion") { RcReferencedOperationsMacroDemo() },
+                    getpc("Style Macros") { RcStyleMacroDemo() },
+                    getpc("Simple Switch") { RcSimpleSwitchDemo() },
+                    getpc("Switch DSL") { RcSwitchWidgetDemo() },
+                    getpc("Slanted button") { SlantedButtonDemo() },
                     getpc("RcRatio") { RcRatio() },
                     getpc("RcScrollViewport") { RcScrollview() },
                     getpc("RcFlow") { RcFlow() },
@@ -455,7 +478,7 @@ class ExperimentActivity : ComponentActivity() {
             @Composable
             override fun getDoc(): MutableState<CoreDocument?> {
                 val time = System.nanoTime()
-                val creationDisplayInfo = RemoteCreationDisplayInfo(1000, 1000, 160)
+                val creationDisplayInfo = RemoteCreationDisplayInfo(1000, 1000, 160, 1.0f)
                 val d =
                     rememberRemoteDocument(creationDisplayInfo = creationDisplayInfo) {
                         cRun.invoke()

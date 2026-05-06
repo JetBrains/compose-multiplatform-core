@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-// TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
-// removed.
-@file:Suppress("DEPRECATION")
-
 package androidx.xr.arcore
 
 import androidx.activity.ComponentActivity
@@ -81,7 +77,7 @@ class RenderViewpointTest {
         activityController.create().start().resume()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
-        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN))
+        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
 
         arCoreTestRule.device.pose = Pose()
     }

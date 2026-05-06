@@ -21,6 +21,7 @@ import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
@@ -34,14 +35,24 @@ import java.util.List;
 
 /** Operation convert int index of a list to text */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class TextLookupInt extends Operation implements VariableSupport, ComponentData,
-        Serializable {
+public class TextLookupInt extends Operation
+        implements VariableSupport, ComponentData, Serializable, VariableProvider {
     private static final int OP_CODE = Operations.TEXT_LOOKUP_INT;
     private static final String CLASS_NAME = "TextLookupInt";
     public int mTextId;
     public int mDataSetId;
     public int mOutIndex;
     public int mIndex;
+
+    @Override
+    public int getId() {
+        return mTextId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mTextId = id;
+    }
 
     public TextLookupInt(int textId, int dataSetId, int indexId) {
         this.mTextId = textId;
@@ -98,8 +109,8 @@ public class TextLookupInt extends Operation implements VariableSupport, Compone
     /**
      * Writes out the operation to the buffer
      *
-     * @param buffer  buffer to write to
-     * @param textId  the id of the output text
+     * @param buffer buffer to write to
+     * @param textId the id of the output text
      * @param dataSet float pointer to the array/list to turn int a string
      * @param indexId index of element to return
      */
@@ -113,14 +124,14 @@ public class TextLookupInt extends Operation implements VariableSupport, Compone
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int textId = buffer.readInt();
-        int dataSetId = buffer.readInt();
-        int indexId = buffer.readInt();
-        operations.add(new TextLookupInt(textId, dataSetId, indexId));
+        int id = buffer.declareId();
+        int listId = buffer.readId();
+        int indexId = buffer.readId();
+        operations.add(new TextLookupInt(id, listId, indexId));
     }
 
     /**

@@ -16,10 +16,12 @@
 
 package androidx.xr.arcore.testing
 
+import android.graphics.Bitmap
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
-import androidx.xr.arcore.testing.internal.FakePerceptionRuntimeFactory as InternalFactory
 import androidx.xr.runtime.AnchorPersistenceMode
+import androidx.xr.runtime.AugmentedImageDatabase
+import androidx.xr.runtime.AugmentedImageDatabaseEntryMode
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
@@ -32,13 +34,15 @@ import kotlin.time.ComparableTimeMark
 import kotlin.time.TestTimeSource
 import kotlinx.coroutines.sync.Semaphore
 
+// TODO b/500091606 Remove when no longer used in G3
 /**
  * Fake implementation of [PerceptionRuntime] for testing purposes.
  *
- * @property lifecycleManager the [FakeLifecycleManager] for this fake runtime
  * @property perceptionManager the [FakePerceptionManager] for this fake runtime
  * @property xrDevicePreferredDisplayBlendMode the value that will be returned by
  *   [androidx.xr.runtime.XrDevice.getPreferredDisplayBlendMode]
+ * @deprecated This will be removed in a future release. In order to test androidx.xr.arcore APIs,
+ *   use an [ArCoreTestRule] in your tests.
  */
 @Suppress("DataClassDefinition")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -50,8 +54,6 @@ public data class FakePerceptionRuntime(
     /** If false, [initialize] will throw an exception during testing. */
     @get:JvmName("hasCreatePermission") public var hasCreatePermission: Boolean = true,
 ) : PerceptionRuntime {
-    @Suppress("DEPRECATION")
-    override val lifecycleManager: FakeLifecycleManager = FakeLifecycleManager(this)
     public var xrDevicePreferredDisplayBlendMode: DisplayBlendMode = DisplayBlendMode.NO_DISPLAY
 
     public companion object {
@@ -89,26 +91,28 @@ public data class FakePerceptionRuntime(
     @get:JvmName("shouldSupportFaceTracking")
     public var shouldSupportFaceTracking: Boolean = true
 
+    /** If false, [configure] will throw an Exception if the config enables ImageTracking. */
+    @get:JvmName("shouldSupportImageTracking") public var shouldSupportImageTracking: Boolean = true
+
+    public var augmentedImageDatabase: AugmentedImageDatabase = AugmentedImageDatabase()
+
     public override var config: Config =
         Config(
             PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
             HandTrackingMode.BOTH,
-            DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+            DeviceTrackingMode.SPATIAL,
             DepthEstimationMode.SMOOTH_AND_RAW,
             AnchorPersistenceMode.LOCAL,
             augmentedObjectCategories = setOf(AugmentedObjectCategory.MOUSE),
+            augmentedImageDatabase = augmentedImageDatabase,
         )
 
     override fun initialize() {
         check(state == State.NOT_INITIALIZED)
-        if (!hasCreatePermission) throw SecurityException()
-        if (InternalFactory.runtimeInitializeException != null) {
-            // FakeRuntimeFactory will continue to throw exception on subsequent tests unless
-            // cleared.
-            val exceptionToThrow = InternalFactory.runtimeInitializeException!!
-            InternalFactory.runtimeInitializeException = null
-            throw exceptionToThrow
-        }
+        augmentedImageDatabase.addAugmentedImageDatabaseEntry(
+            mode = AugmentedImageDatabaseEntryMode.DYNAMIC,
+            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888),
+        )
         state = State.INITIALIZED
     }
 
@@ -124,6 +128,13 @@ public data class FakePerceptionRuntime(
         }
 
         if (!shouldSupportFaceTracking && config.faceTracking == FaceTrackingMode.BLEND_SHAPES) {
+            throw UnsupportedOperationException()
+        }
+
+        if (
+            !shouldSupportImageTracking &&
+                config.augmentedImageDatabase?.entries?.isNotEmpty() == true
+        ) {
             throw UnsupportedOperationException()
         }
 

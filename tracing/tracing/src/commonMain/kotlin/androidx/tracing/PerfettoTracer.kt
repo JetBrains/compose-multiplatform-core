@@ -24,7 +24,10 @@ import kotlinx.coroutines.currentCoroutineContext
 internal expect inline fun TraceContext.currentProcessTrack(): ProcessTrack
 
 @RestrictTo(Scope.LIBRARY_GROUP)
-public class PerfettoTracer(context: TraceContext) : Tracer(isEnabled = context.isEnabled) {
+public class PerfettoTracer(
+    context: TraceContext,
+    @JvmField internal val categoryEnabled: (String) -> Boolean,
+) : Tracer() {
     // The process track
     @JvmField internal var process: ProcessTrack = context.currentProcessTrack()
 
@@ -122,11 +125,14 @@ public class PerfettoTracer(context: TraceContext) : Tracer(isEnabled = context.
         }
     }
 
+    override fun isCategoryEnabled(category: String): Boolean {
+        return this.categoryEnabled(category)
+    }
+
     override fun counter(category: String, name: String): Counter {
         // getOrCreateCounterTrack() is synchronized, so we get the same instance of the counter
         // for the provided name.
-        val counter = process.getOrCreateCounterTrack(name)
-        return PerfettoCounter(category = category, track = counter)
+        return process.getOrCreateCounterTrack(name)
     }
 
     @DelicateTracingApi

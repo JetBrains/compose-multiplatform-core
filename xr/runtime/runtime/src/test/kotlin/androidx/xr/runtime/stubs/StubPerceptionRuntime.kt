@@ -57,6 +57,9 @@ internal class StubPerceptionRuntime(internal var hasCreatePermission: Boolean =
 
     internal var shouldSupportFaceTracking: Boolean = true
 
+    @get:JvmName("shouldSupportImageTracking")
+    internal var shouldSupportImageTracking: Boolean = true
+
     override fun initialize() {
         check(state == State.NOT_INITIALIZED)
         if (!hasCreatePermission) throw SecurityException()
@@ -72,7 +75,7 @@ internal class StubPerceptionRuntime(internal var hasCreatePermission: Boolean =
         Config(
             PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
             HandTrackingMode.BOTH,
-            DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+            DeviceTrackingMode.SPATIAL,
             DepthEstimationMode.SMOOTH_AND_RAW,
             AnchorPersistenceMode.LOCAL,
             // Needs to contain at least one AugmentedObjectCategory to enable
@@ -92,6 +95,13 @@ internal class StubPerceptionRuntime(internal var hasCreatePermission: Boolean =
         }
 
         if (!shouldSupportFaceTracking && config.faceTracking == FaceTrackingMode.BLEND_SHAPES) {
+            throw UnsupportedOperationException()
+        }
+
+        if (
+            !shouldSupportImageTracking &&
+                config.augmentedImageDatabase?.entries?.isNotEmpty() == true
+        ) {
             throw UnsupportedOperationException()
         }
 

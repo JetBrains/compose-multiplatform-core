@@ -51,8 +51,8 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.transformingMovable
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
@@ -68,7 +68,7 @@ class EyeTrackingActivity : ComponentActivity() {
     private lateinit var sessionHelper: SessionLifecycleHelper
     private var config: Config =
         Config(
-            deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+            deviceTracking = DeviceTrackingMode.SPATIAL,
             eyeTracking = EyeTrackingMode.COARSE_TRACKING,
         )
 
@@ -91,7 +91,7 @@ class EyeTrackingActivity : ComponentActivity() {
                                             SubspaceModifier.size(
                                                     DpVolumeSize(640.dp, 480.dp, 0.dp)
                                                 )
-                                                .movable(),
+                                                .transformingMovable(),
                                         resizePolicy = ResizePolicy(),
                                     ) {
                                         Main(session)
@@ -128,8 +128,7 @@ class EyeTrackingActivity : ComponentActivity() {
             }
 
         // reconfigure the session
-        config =
-            Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN, eyeTracking = newMode)
+        config = Config(deviceTracking = DeviceTrackingMode.SPATIAL, eyeTracking = newMode)
         sessionHelper.tryUpdateConfig(config)
     }
 

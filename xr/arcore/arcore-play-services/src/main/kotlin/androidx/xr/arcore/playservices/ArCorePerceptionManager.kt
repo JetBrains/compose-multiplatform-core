@@ -21,7 +21,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.arcore.runtime.ConversationState
-import androidx.xr.arcore.runtime.DepthMap
+import androidx.xr.arcore.runtime.Depth
 import androidx.xr.arcore.runtime.Eye
 import androidx.xr.arcore.runtime.Face
 import androidx.xr.arcore.runtime.Hand
@@ -35,6 +35,7 @@ import androidx.xr.runtime.internal.UnsupportedDeviceException
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import com.google.ar.core.AugmentedFace as ARCore1xAugmentedFace
+import com.google.ar.core.AugmentedImage as ARCore1xAugmentedImage
 import com.google.ar.core.CameraConfig
 import com.google.ar.core.CameraConfigFilter
 import com.google.ar.core.Frame
@@ -62,9 +63,9 @@ import kotlin.time.TimeSource.Monotonic
  * @property leftRenderViewpoint the left [RenderViewpoint], or null if not available
  * @property rightRenderViewpoint the right [RenderViewpoint], or null if not available
  * @property monoRenderViewpoint the mono [RenderViewpoint], or null if not available
- * @property leftDepthMap the left [DepthMap], or null if not available
- * @property rightDepthMap the right [DepthMap], or null if not available
- * @property monoDepthMap the mono [DepthMap], or null if not available
+ * @property leftDepth the left [Depth], or null if not available
+ * @property rightDepth the right [Depth], or null if not available
+ * @property monoDepth the mono [Depth], or null if not available
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ArCorePerceptionManager
@@ -75,6 +76,8 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     internal lateinit var _latestFrame: Frame
     internal var lastFrameTimestampNs: Long = -1L
     internal lateinit var session: Session
+    internal val isSessionInitialized: Boolean
+        get() = ::session.isInitialized
 
     private val timeProvider: TimeSource.WithComparableMarks = Monotonic
     private var lastFrameTimeMark: ComparableTimeMark? = null
@@ -176,6 +179,16 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
         throw NotImplementedError("Anchor persistence is currently not supported by ARCore.")
     }
 
+    override val imageDatabaseMaxLoadedImageCount: Int
+        get() =
+            throw NotImplementedError(
+                "Image database max loaded image count is not supported by ARCore."
+            )
+
+    override val isPhysicalSizeEstimationSupported: Boolean
+        get() =
+            throw NotImplementedError("Physical size estimation check is not supported by ARCore.")
+
     override val trackables: Collection<Trackable> = xrResources.trackables.values
 
     override val leftEye: Eye? = null
@@ -198,12 +211,12 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
 
     override val monoRenderViewpoint: RenderViewpoint? = null
 
-    override val leftDepthMap: DepthMap? = null
+    override val leftDepth: Depth? = null
 
-    override val rightDepthMap: DepthMap? = null
+    override val rightDepth: Depth? = null
 
-    override val monoDepthMap: DepthMap?
-        get() = xrResources.depthMap
+    override val monoDepth: Depth?
+        get() = xrResources.depth
 
     override val conversationSceneSignal: ConversationState? = null
 
@@ -245,10 +258,22 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
             }
         augmentedFaces.forEach { xrResources.addTrackable(it, ArCoreFace(it)) }
 
+        val augmentedImages = _latestFrame.getUpdatedTrackables(ARCore1xAugmentedImage::class.java)
+        // Don't retain any AugmentedImages that the ArCore Session is no longer tracking
+        xrResources.trackables
+            .filter { it.value is ArCoreAugmentedImage }
+            .keys
+            .forEach {
+                if (!augmentedImages.contains(it)) {
+                    xrResources.removeTrackable(it)
+                }
+            }
+        augmentedImages.forEach { xrResources.addTrackable(it, ArCoreAugmentedImage(it)) }
+
         arDevice.update(_latestFrame)
 
         if (depthEstimationMode != DepthEstimationMode.DISABLED) {
-            xrResources.depthMap.update(_latestFrame)
+            xrResources.depth.update(_latestFrame)
         }
 
         geospatial.update(session)
@@ -274,23 +299,23 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     }
 
     /**
-     * Sets the Depth Estimation Mode for the Perception Manager and the [XrResources.depthMap] of
+     * Sets the Depth Estimation Mode for the Perception Manager and the [XrResources.depth] of
      * [xrResources]
      *
      * @param depthMode the desired [DepthEstimationMode]
      */
     public fun setDepthEstimationMode(depthMode: DepthEstimationMode) {
         depthEstimationMode = depthMode
-        xrResources.depthMap.updateDepthEstimationMode(depthMode)
+        xrResources.depth.updateDepthEstimationMode(depthMode)
     }
 
     /**
      * Clears any lingering resources within [xrResources].
      *
-     * @see ArCoreDepthMap.dispose
+     * @see ArCoreDepth.dispose
      */
     public fun dispose() {
-        xrResources.depthMap.dispose()
+        xrResources.depth.dispose()
     }
 
     internal fun setCameraFacingDirection(facingDirection: CameraFacingDirection) {

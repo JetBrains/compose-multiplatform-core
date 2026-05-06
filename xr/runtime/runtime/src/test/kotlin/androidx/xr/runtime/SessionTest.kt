@@ -18,6 +18,7 @@ package androidx.xr.runtime
 
 import android.Manifest
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.Lifecycle
@@ -27,6 +28,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
+import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.ContinuationInterceptor
@@ -251,6 +253,7 @@ class SessionTest {
     fun configure_returnsSuccessAndChangesConfig() {
         activityController.create().start().resume()
         underTest = createSession()
+
         val stubRuntime = getStubRuntime()
         check(
             stubRuntime.config ==
@@ -259,7 +262,7 @@ class SessionTest {
                     // Needs to contain at least one AugmentedObjectCategory to enable
                     augmentedObjectCategories = setOf(AugmentedObjectCategory.MOUSE),
                     handTracking = HandTrackingMode.BOTH,
-                    deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+                    deviceTracking = DeviceTrackingMode.SPATIAL,
                     depthEstimation = DepthEstimationMode.SMOOTH_AND_RAW,
                     anchorPersistence = AnchorPersistenceMode.LOCAL,
                 )
@@ -305,6 +308,7 @@ class SessionTest {
     fun configure_unsupportedMode_throwsUnsupportedOperationException() {
         activityController.create().start().resume()
         underTest = createSession()
+
         val stubRuntime = getStubRuntime()
 
         val currentConfig = underTest.config
@@ -317,6 +321,32 @@ class SessionTest {
         }
         assertThat(underTest.config).isEqualTo(currentConfig)
         stubRuntime.shouldSupportPlaneTracking = true
+    }
+
+    @Test
+    fun configure_unsupportedImageMode_returnsConfigurationNotSupportedResult() {
+        activityController.create().start().resume()
+        underTest = createSession()
+        val stubRuntime = getStubRuntime()
+
+        val currentConfig = underTest.config
+        stubRuntime.shouldSupportImageTracking = false
+
+        assertFailsWith<UnsupportedOperationException> {
+            underTest.configure(
+                currentConfig.copy(
+                    augmentedImageDatabase =
+                        AugmentedImageDatabase().apply {
+                            addAugmentedImageDatabaseEntry(
+                                mode = AugmentedImageDatabaseEntryMode.DYNAMIC,
+                                bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888),
+                            )
+                        }
+                )
+            )
+        }
+        assertThat(underTest.config).isEqualTo(currentConfig)
+        stubRuntime.shouldSupportImageTracking = true
     }
 
     @Test
@@ -492,6 +522,51 @@ class SessionTest {
         activityController.destroy()
 
         assertThat(sessionConnector.isClosed).isTrue()
+    }
+
+    @Test
+    fun destroy_callsCleanupsInReverseOrder() {
+        val callOrder = mutableListOf<String>()
+        val runtime1 =
+            object : JxrRuntime {
+                override fun destroy() {
+                    callOrder.add("runtime1")
+                }
+            }
+        val runtime2 =
+            object : JxrRuntime {
+                override fun destroy() {
+                    callOrder.add("runtime2")
+                }
+            }
+        val connector1 =
+            object : SessionConnector {
+                override fun initialize(runtimes: List<JxrRuntime>) {}
+
+                override fun close() {
+                    callOrder.add("connector1")
+                }
+            }
+        val extender1 =
+            object : StateExtender {
+                override fun initialize(runtimes: List<JxrRuntime>) {}
+
+                override suspend fun extend(coreState: CoreState) {}
+            }
+        val session =
+            Session(
+                activity,
+                listOf(extender1),
+                listOf(connector1),
+                listOf(runtime1, runtime2),
+                kotlinx.coroutines.test.TestScope(testDispatcher),
+                activity,
+            )
+        activity.lifecycle.addObserver(session.lifecycleObserver)
+
+        activityController.create().start().resume().pause().stop().destroy()
+
+        assertThat(callOrder).containsExactly("connector1", "runtime2", "runtime1").inOrder()
     }
 
     private fun createSession(coroutineDispatcher: CoroutineDispatcher = testDispatcher): Session {

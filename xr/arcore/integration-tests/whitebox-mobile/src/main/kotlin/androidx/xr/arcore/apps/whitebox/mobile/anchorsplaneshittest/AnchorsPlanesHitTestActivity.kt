@@ -22,6 +22,7 @@ import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import android.os.Bundle
+import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
 import androidx.activity.ComponentActivity
@@ -77,7 +78,6 @@ import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
@@ -214,11 +214,12 @@ class AnchorsPlanesHitTestActivity :
                     )
                     .setTexture("u_AlbedoTexture", virtualObjectAlbedoTexture)
         } catch (e: IOException) {
-            XrLog.error(e) { "Failed to create background renderer" }
+            Log.e("JetpackXR", "Failed to create background renderer", e)
             return
         }
     }
 
+    @Suppress("RestrictedApiAndroidX")
     override fun onSurfaceChanged(render: SampleRender, width: Int, height: Int) {
         session.runtimes
             .filterIsInstance<PerceptionRuntime>()
@@ -234,7 +235,7 @@ class AnchorsPlanesHitTestActivity :
             backgroundRenderer.setUseDepthVisualization(render, false)
             backgroundRenderer.setUseOcclusion(render, false)
         } catch (e: IOException) {
-            XrLog.error(e) { "Failed to read a required asset file" }
+            Log.e("JetpackXR", "Failed to read a required asset file", e)
             return
         }
 
@@ -296,7 +297,7 @@ class AnchorsPlanesHitTestActivity :
             for (anchor in anchors) {
                 // Get the current pose of an Anchor in world space. The Anchor pose is updated
                 // during calls to session.update() as ARCore refines its estimate of the world.
-                modelMatrix = Matrix4.fromPose(anchor.runtimeAnchor.pose)
+                modelMatrix = Matrix4.fromPose(anchor.state.value.pose)
 
                 // Calculate model/view/projection matrices
                 modelViewMatrix = viewMatrix * modelMatrix
@@ -391,11 +392,11 @@ class AnchorsPlanesHitTestActivity :
             try {
                 Anchor.create(session, anchorPose)
             } catch (e: IllegalStateException) {
-                XrLog.error(e) { "Failed to create anchor: ${e.message}" }
+                Log.e("JetpackXR", "Failed to create anchor: ${e.message}", e)
                 return
             }
         if (anchorResult !is AnchorCreateSuccess) {
-            XrLog.error { "Failed to create anchor: ${anchorResult::class.simpleName}" }
+            Log.e("JetpackXR", "Failed to create anchor: ${anchorResult::class.simpleName}")
             return
         }
         anchors.add(anchorResult.anchor)

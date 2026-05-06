@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-// TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
-// removed.
-@file:Suppress("DEPRECATION")
-
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
 import androidx.xr.arcore.runtime.RenderViewpoint as RuntimeRenderViewpoint
-import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -101,11 +97,11 @@ internal constructor(
      * This value is the underlying [ArDevice]'s pose in the global coordinate system of the
      * [Session], plus the [localPose] offset. Its update behavior is determined by the current
      * [androidx.xr.runtime.DeviceTrackingMode]:
-     * - **SPATIAL_LAST_KNOWN:** The device pose is updated each frame with the latest valid
-     *   tracking data, reflecting physical movement.
+     * - **SPATIAL:** The device pose is updated each frame with the latest valid tracking data,
+     *   reflecting physical movement.
      * - **DISABLED:** The device pose is not updated. It remains at the origin (an identity pose)
-     *   unless this mode is switched from SPATIAL_LAST_KNOWN to DISABLED mid-session, which freezes
-     *   the pose at its last known state.
+     *   unless this mode is switched from SPATIAL to DISABLED mid-session, which freezes the pose
+     *   at its last known state.
      *
      * @property localPose a local offset from the device's central tracking point
      * @property fieldOfView the camera's [FieldOfView] in radians
@@ -115,7 +111,6 @@ internal constructor(
     internal constructor(
         public val pose: Pose,
         public val localPose: Pose,
-        @Deprecated(message = "Convert to androidx.xr.runtime.math.FieldOfView")
         public val fieldOfView: FieldOfView,
         public val owner: RenderViewpoint,
     ) {

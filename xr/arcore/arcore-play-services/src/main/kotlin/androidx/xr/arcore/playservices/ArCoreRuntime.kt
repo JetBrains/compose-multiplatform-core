@@ -31,7 +31,6 @@ import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.PlaneTrackingMode
-import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
@@ -39,6 +38,7 @@ import androidx.xr.runtime.internal.LibraryNotLinkedException
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
+import com.google.ar.core.AugmentedImageDatabase
 import com.google.ar.core.Config as ArConfig
 import com.google.ar.core.Config as ArCoreConfig
 import com.google.ar.core.Config.AugmentedFaceMode
@@ -58,7 +58,6 @@ import kotlinx.coroutines.delay
  * Implementation of the [androidx.xr.arcore.runtime.PerceptionRuntime] interface using ARCore.
  *
  * @property context The [Context] instance
- * @property lifecycleManager that manages the lifecycle of the ARCore session
  * @property perceptionManager that manages the perception capabilities of a runtime using ARCore
  * @property timeSource the [ArCoreTimeSource] instance
  * @property config the current [Config] of the session
@@ -67,7 +66,6 @@ import kotlinx.coroutines.delay
 public class ArCoreRuntime
 internal constructor(
     private val context: Context,
-    override val lifecycleManager: ArCoreManager,
     override val perceptionManager: ArCorePerceptionManager,
     internal val timeSource: ArCoreTimeSource,
     private val arCoreApkInstance: ArCoreApk = ArCoreApk.getInstance(),
@@ -84,10 +82,7 @@ internal constructor(
 
     // TODO(b/392660855): Disable all features by default once this API is fully implemented.
     public override var config: Config = Config()
-        private set(value) {
-            this.lifecycleManager.configure(value)
-            field = value
-        }
+        private set
 
     override fun initialize() {
         checkARCoreSupportedAndUpToDate(context)
@@ -119,6 +114,7 @@ internal constructor(
         return timeSource.markNow()
     }
 
+    @OptIn(androidx.xr.runtime.PreviewSpatialApi::class)
     override fun configure(config: Config) {
         val arConfig = _session.config
 
@@ -151,6 +147,20 @@ internal constructor(
                 PlaneFindingMode.DISABLED
             }
 
+        config.augmentedImageDatabase?.let {
+            if (it.entries.isEmpty()) {
+                throw UnsupportedOperationException(
+                    "Failed to configure session, the image database has exceeded the maximum number of entries."
+                )
+            }
+
+            val augmentedImageDatabase = AugmentedImageDatabase(_session)
+            it.entries.forEach { entry ->
+                augmentedImageDatabase.addImage("", entry.bitmap, entry.widthInMeters)
+            }
+            arConfig.augmentedImageDatabase = augmentedImageDatabase
+        }
+
         if (config.handTracking != HandTrackingMode.DISABLED) {
             throw UnsupportedOperationException()
         }
@@ -177,10 +187,13 @@ internal constructor(
             }
 
         arConfig.geospatialMode =
-            if (config.geospatial == GeospatialMode.VPS_AND_GPS) {
-                ArGeospatialMode.ENABLED
-            } else {
-                ArGeospatialMode.DISABLED
+            when (config.geospatial) {
+                GeospatialMode.SPATIAL -> ArGeospatialMode.ENABLED
+                GeospatialMode.INERTIAL ->
+                    throw UnsupportedOperationException(
+                        "Failed to configure session, runtime does not support GeospatialMode.INERTIAL"
+                    )
+                else -> ArGeospatialMode.DISABLED
             }
 
         try {
@@ -223,9 +236,6 @@ internal constructor(
                 throw ApkNotInstalledException(ARCORE_PACKAGE_NAME)
             }
             Availability.UNSUPPORTED_DEVICE_NOT_CAPABLE -> {
-                XrLog.error {
-                    "Session cannot be created because ARCore is not supported on this device."
-                }
                 throw UnsupportedDeviceException()
             }
             Availability.UNKNOWN_CHECKING -> {
@@ -258,10 +268,12 @@ internal constructor(
         return _session.isDepthModeSupported(arCoreDepthMode)
     }
 
+    @OptIn(androidx.xr.runtime.PreviewSpatialApi::class)
     private fun isGeoSpatialModeSupportedInArCore1x(geospatialMode: GeospatialMode): Boolean {
         val arCoreGeospatialMode =
             when (geospatialMode) {
-                GeospatialMode.VPS_AND_GPS -> ArCoreConfig.GeospatialMode.ENABLED
+                GeospatialMode.SPATIAL -> ArCoreConfig.GeospatialMode.ENABLED
+                GeospatialMode.INERTIAL -> return false
                 else -> ArCoreConfig.GeospatialMode.DISABLED
             }
         return _session.isGeospatialModeSupported(arCoreGeospatialMode)
@@ -275,7 +287,7 @@ internal constructor(
                 CameraFacingDirection.WORLD,
                 CameraFacingDirection.USER,
                 DeviceTrackingMode.DISABLED,
-                DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+                DeviceTrackingMode.SPATIAL,
                 FaceTrackingMode.DISABLED,
                 FaceTrackingMode.MESHES,
                 PlaneTrackingMode.DISABLED,

@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +44,7 @@ import androidx.xr.compose.platform.LocalComposeXrOwners
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialConfiguration
 import androidx.xr.compose.platform.SceneManager
+import androidx.xr.compose.platform.SessionSpatialConfiguration
 import androidx.xr.compose.platform.SpatialComposeScene
 import androidx.xr.compose.platform.disposableValueOf
 import androidx.xr.compose.platform.findNearestParentEntity
@@ -70,13 +70,16 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Entity
-import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 
 internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
     compositionLocalWithComputedDefaultOf {
         LocalComposeXrOwners.currentValue?.subspaceRootNode
     }
+
+private object SubspaceConstants {
+    const val FOLLOWING_SUBSPACE_ROOT_CONTAINER_NAME = "FollowingSubspaceRootContainer"
+}
 
 /**
  * Create a 3D area that the app can render spatial content into.
@@ -91,13 +94,19 @@ internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
  * an embedded Subspace within a SpatialPanel, Orbiter, SpatialPopup and etc, use the
  * [PlanarEmbeddedSubspace] instead.
  *
- * By default, this Subspace is automatically bounded by the system's recommended content box. This
- * box represents a comfortable, human-scale area in front of the user, sized to occupy a
- * significant portion of their view on any given device. Using this default is the suggested way to
- * create responsive spatial layouts that look great without hardcoding dimensions.
- * SubspaceModifiers like `SubspaceModifier.fillMaxSize` will expand to fill this recommended box.
- * This default can be overridden by applying a custom size-based modifier. For unbounded behavior,
- * set `allowUnboundedSubspace = true`.
+ * By default, this Subspace is automatically bounded by the system's recommended content box. The
+ * recommended content box is a fixed 3D volume that uses the device's field of view (FOV) angles,
+ * the system's default launch distance from the user, and the default scale of the system to
+ * calculate a box that is sized to encompass the user's primary field of view.
+ *
+ * This size does not change throughout the lifecycle of the application, and it does not have an
+ * independent concept of pose. When used by Compose for XR to set the constraints of a Subspace,
+ * its effective pose is the root of the Subspace.
+ *
+ * Using this default is the suggested way to create responsive spatial layouts that look great
+ * without hardcoding dimensions. SubspaceModifiers like `SubspaceModifier.fillMaxSize` will expand
+ * to fill this recommended box. This default can be overridden by applying a custom size-based
+ * modifier. For unbounded behavior, set `allowUnboundedSubspace = true`.
  *
  * This composable is a no-op and does not render anything in non-XR environments (i.e., Phone and
  * Tablet).
@@ -111,8 +120,11 @@ internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
  *
  * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
  * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
- *   be applied, allowing the Subspace to be infinite. Defaults to false, providing a safe, bounded
- *   space.
+ *   be applied, allowing the Subspace to be infinite. Unbounded Subspaces are considered unsafe
+ *   because they can lead to poor performance or even a crash as the content expands to the maximum
+ *   volume constraint size. In addition, content placed too far away may not be visible to the
+ *   user. Defaults to false, providing a safe, bounded space within the system's recommended
+ *   content box.
  * @param content The 3D content to render within this Subspace.
  */
 @Composable
@@ -173,7 +185,6 @@ private fun Subspace(
             )
         ) {
             it.dispose()
-            subspaceRoot.dispose()
             try {
                 if (SceneManager.getSceneCount(context) == 0) {
                     session.scene.mainPanelEntity.setEnabled(true)
@@ -370,10 +381,10 @@ public annotation class ExperimentalFollowingSubspaceApi
  * content. For this API, it is required for device tracking to not be disabled in the session
  * configuration. If it is disabled, this API will not return anything. The session configuration
  * should resemble `session.configure( config = session.config.copy(deviceTracking =
- * Config.DeviceTrackingMode.SPATIAL_LAST_KNOWN) )` The [FollowTarget.ArDevice] is not compatible
- * with [FollowBehavior.Tight]. Combining these together will cause this composable to not be
- * displayed. For a near tight experience, use [FollowBehavior.Soft] with a low duration value such
- * as `FollowBehavior.Soft([FollowBehavior.Companion.MIN_SOFT_DURATION_MS])`
+ * DeviceTrackingMode.SPATIAL) )` The [FollowTarget.ArDevice] is not compatible with
+ * [FollowBehavior.Tight]. Combining these together will cause this composable to not be displayed.
+ * For a near tight experience, use [FollowBehavior.Soft] with a low duration value such as
+ * `FollowBehavior.Soft([FollowBehavior.Companion.MIN_SOFT_DURATION_MS])`
  *
  * When the target parameter is specified to be [FollowTarget.Anchor], the content will be
  * positioned around an anchor. This is useful for placing UI elements on real-world surfaces or at
@@ -416,8 +427,11 @@ public annotation class ExperimentalFollowingSubspaceApi
  *   will not be tracked. For example if translationY is not listed, this means the content will not
  *   move as the user moves vertically up and down.
  * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
- *   be applied, allowing the Subspace to be infinite. Defaults to false, providing a safe, bounded
- *   space.
+ *   be applied, allowing the Subspace to be infinite. Unbounded subspaces are considered unsafe
+ *   because they can lead to poor performance or even a crash as the content expands to the maximum
+ *   volume constraint size. In addition, content placed too far away may not be visible to the
+ *   user. Defaults to false, providing a safe, bounded space within the system's recommended
+ *   content box.
  * @param content The 3D content to render within this Subspace.
  */
 // TODO(b/446871230): Add unit tests for FollowingSubspace.
@@ -445,52 +459,59 @@ public fun FollowingSubspace(
         Subspace(
             modifier = modifier,
             subspaceRootNode = target.anchorEntity,
+            allowUnboundedSubspace = allowUnboundedSubspace,
             content = content,
-            allowUnboundedSubspace = allowUnboundedSubspace,
         )
-    } else {
-        val subspaceRoot by remember {
-            disposableValueOf(Entity.create(session, "subspaceRoot")) { it.dispose() }
-        }
-        // TODO(b/491504073): Use observers to update the scale instead of SideEffect.
-        SideEffect {
-            session.scene.keyEntity?.getScale(relativeTo = Space.ACTIVITY)?.let { scale ->
-                subspaceRoot.setScale(scale)
-            }
-        }
-        val subspaceRootNode by remember {
-            disposableValueOf(CoreGroupEntity(subspaceRoot).apply { enabled = false }) {
-                it.dispose()
-            }
-        }
+        return
+    }
 
-        LaunchedEffect(behavior, target, dimensions) {
-            behavior.configure(
-                session = session,
-                trailingEntity = subspaceRootNode,
-                target = target,
-                dimensions = dimensions,
-            )
-        }
-
-        val offsetPose = getInitialSubspaceOffset(target)
-
-        Subspace(
-            modifier = modifier,
-            allowUnboundedSubspace = allowUnboundedSubspace,
-            subspaceRootNode = subspaceRoot,
+    val subspaceRootNode by remember {
+        disposableValueOf(
+            Entity.create(session, SubspaceConstants.FOLLOWING_SUBSPACE_ROOT_CONTAINER_NAME)
         ) {
-            SpatialBox(
-                modifier =
-                    SubspaceModifier.offset(
-                            Meter(offsetPose.translation.x).toDp(),
-                            Meter(offsetPose.translation.y).toDp(),
-                            Meter(offsetPose.translation.z).toDp(),
-                        )
-                        .rotate(offsetPose.rotation),
-                content = content,
-            )
+            it.parent = null
         }
+    }
+
+    // Implicitly subscribes this Composable to scale changes.
+    val scale =
+        (LocalSpatialConfiguration.current as? SessionSpatialConfiguration)?.recommendedScale
+            ?: 1.0f
+
+    LaunchedEffect(scale) { subspaceRootNode.setScale(scale) }
+
+    val subspaceTrailingEntity by remember {
+        disposableValueOf(CoreGroupEntity(subspaceRootNode).apply { enabled = false }) {
+            it.dispose()
+        }
+    }
+
+    LaunchedEffect(behavior, target, dimensions) {
+        behavior.configure(
+            session = session,
+            trailingEntity = subspaceTrailingEntity,
+            target = target,
+            dimensions = dimensions,
+        )
+    }
+
+    val offsetPose = getInitialSubspaceOffset(target)
+
+    Subspace(
+        modifier = modifier,
+        allowUnboundedSubspace = allowUnboundedSubspace,
+        subspaceRootNode = subspaceRootNode,
+    ) {
+        SpatialBox(
+            modifier =
+                SubspaceModifier.offset(
+                        Meter(offsetPose.translation.x).toDp(),
+                        Meter(offsetPose.translation.y).toDp(),
+                        Meter(offsetPose.translation.z).toDp(),
+                    )
+                    .rotate(offsetPose.rotation),
+            content = content,
+        )
     }
 }
 

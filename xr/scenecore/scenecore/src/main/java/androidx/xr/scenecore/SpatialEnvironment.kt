@@ -21,6 +21,7 @@ package androidx.xr.scenecore
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope
 import androidx.xr.scenecore.SpatialEnvironment.Companion.NO_PASSTHROUGH_OPACITY_PREFERENCE
+import androidx.xr.scenecore.runtime.HandlerExecutor
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.SpatialEnvironment as RtSpatialEnvironment
 import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference as RtSpatialEnvironmentPreference
@@ -34,23 +35,24 @@ import java.util.function.Consumer
  * instance of this class managed by each [androidx.xr.runtime.Session] and it is accessible through
  * Session.scene.
  *
- * The SpatialEnvironment is a composite of a stand-alone skybox, and of a
- * [glTF](https://www.khronos.org/Gltf)-specified geometry. A single skybox and a single glTF can be
- * set at the same time. Applications are encouraged to supply glTFs for ground and horizon
- * visibility.
+ * The SpatialEnvironment is a composite of a [glTF](https://www.khronos.org/Gltf)-specified
+ * geometry along with image-based lighting. Applications are encouraged to supply glTFs with a
+ * skybox texture baked-in for ground and horizon visibility. The image-based lighting contributes
+ * to the overall illumination and reflections within the scene.
  *
  * The XR background can be set to display one of three configurations:
- * 1) A combination of a skybox and glTF geometry.
+ * 1) A combination of image based lighting and glTF geometry which should contain a skybox texture.
  * 2) A Passthrough surface, where the XR background is a live feed from the device's outward facing
- *    cameras. At full opacity, this surface completely occludes the skybox and geometry.
+ *    cameras. At full opacity, this surface completely occludes the geometry.
  * 3) A mixed configuration where the passthrough surface is not at full opacity nor is it at zero
- *    opacity. The passthrough surface becomes semi-transparent and alpha blends with the skybox and
- *    geometry behind it.
+ *    opacity. The passthrough surface becomes semi-transparent and alpha blends with the geometry
+ *    behind it.
  *
  * Note that methods in this class do not necessarily take effect immediately. Rather, they set a
  * preference that will be applied when the device enters a state where the XR background can be
  * changed.
  */
+@Suppress("DEPRECATION")
 public class SpatialEnvironment
 internal constructor(
     private val sceneRuntime: SceneRuntime,
@@ -61,53 +63,100 @@ internal constructor(
     /**
      * Represents the preferred spatial environment for the application.
      *
-     * @param skybox The preferred skybox for the environment based on a pre-loaded EXR Image. If
-     *   null, it will be all black.
-     * @param geometry The preferred geometry for the environment based on a pre-loaded [GltfModel].
-     *   If null, there will be no geometry.
+     * The [SpatialEnvironmentPreference] can consist of image-based lighting and geometry. Setting
+     * the image-based lighting to `null` will result in no lighting for the scene, and setting the
+     * geometry to `null` will result in black void environment.
      */
-    public class SpatialEnvironmentPreference(
-        public val skybox: ExrImage?,
-        public val geometry: GltfModel?,
-    ) {
+    public class SpatialEnvironmentPreference {
         /**
-         * The preferred geometry Entity for the environment. If null, there will be no geometry if
-         * no other geometry resource is passed.
+         * The preferred image-based lighting for the environment based on a pre-loaded
+         * [ImageBasedLightingAsset]. This lighting contributes to the overall illumination and
+         * reflections within the scene.
          */
+        public val imageBasedLightingAsset: ImageBasedLightingAsset?
+
+        /**
+         * Legacy property for the preferred image-based lighting for the environment based on a
+         * pre-loaded [ExrImage].
+         */
+        @Deprecated(
+            message = "ExrImage is being replaced by ImageBasedLightingAsset.",
+            replaceWith = ReplaceWith("imageBasedLightingAsset"),
+        )
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public val exrImage: ExrImage?
+
+        /**
+         * The preferred geometry for the environment based on a pre-loaded [GltfModel]. The
+         * geometry can include a skybox texture for the horizon of the environment.
+         */
+        public val geometry: GltfModel?
+
+        /** The preferred geometry [GltfModelEntity] for the environment. */
         internal var geometryEntity: GltfModelEntity? = null
             private set
 
         /**
-         * Represents the preferred spatial environment for the application.
+         * Creates a preference for the [SpatialEnvironment].
          *
-         * @param skybox The preferred skybox for the environment.
+         * @param imageBasedLightingAsset The preferred image-based lighting for the environment.
          * @param geometry The preferred geometry for the environment.
-         * @param geometryEntity The preferred geometry Entity for the environment.
          */
+        public constructor(
+            imageBasedLightingAsset: ImageBasedLightingAsset?,
+            geometry: GltfModel?,
+        ) {
+            this.exrImage = null
+            this.imageBasedLightingAsset = imageBasedLightingAsset
+            this.geometry = geometry
+            this.geometryEntity = null
+        }
+
+        /**
+         * Legacy internal constructor for the spatial environment preference.
+         *
+         * @param exrImage The preferred image based lighting for the environment.
+         * @param geometry The preferred geometry with optional skybox texture for the environment.
+         */
+        @Deprecated(
+            message = "Use the constructor that takes an ImageBasedLightingAsset asset instead."
+        )
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public constructor(exrImage: ExrImage?, geometry: GltfModel?) {
+            this.imageBasedLightingAsset = null
+            this.exrImage = exrImage
+            this.geometry = geometry
+            this.geometryEntity = null
+        }
+
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public constructor(
-            skybox: ExrImage?,
+            imageBasedLightingAsset: ImageBasedLightingAsset?,
             geometry: GltfModel?,
             geometryEntity: GltfModelEntity?,
-        ) : this(skybox, geometry) {
+        ) {
+            this.imageBasedLightingAsset = imageBasedLightingAsset
+            // Populate the legacy property too so old clients don't read 'null'.
+            this.exrImage = imageBasedLightingAsset?.image?.let { ExrImage(null, it) }
+            this.geometry = geometry
             this.geometryEntity = geometryEntity
         }
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
-
             other as SpatialEnvironmentPreference
-
-            if (skybox != other.skybox) return false
-            if (geometry != other.geometry) return false
-
-            return true
+            return imageBasedLightingAsset == other.imageBasedLightingAsset &&
+                exrImage == other.exrImage &&
+                geometry == other.geometry &&
+                geometryEntity == other.geometryEntity
         }
 
         override fun hashCode(): Int {
-            var result = skybox?.hashCode() ?: 0
+            var result = imageBasedLightingAsset?.hashCode() ?: 0
+            result = 31 * result + (exrImage?.hashCode() ?: 0)
             result = 31 * result + (geometry?.hashCode() ?: 0)
+            result = 31 * result + (geometryEntity?.hashCode() ?: 0)
             return result
         }
     }
@@ -254,7 +303,7 @@ internal constructor(
      * application, meaning the default system environment will be displayed instead.
      *
      * If the given [SpatialEnvironmentPreference] is not null, but all of its properties are null,
-     * then the spatial environment will consist of a black skybox and no geometry.
+     * then the spatial environment will consist of a black void.
      *
      * See [isPreferredSpatialEnvironmentActive] or the [addOnSpatialEnvironmentChangedListener]
      * listeners to know when this preference becomes active.
@@ -262,13 +311,15 @@ internal constructor(
     public var preferredSpatialEnvironment: SpatialEnvironmentPreference?
         get() {
             val rtPreference = rtEnvironment.preferredSpatialEnvironment ?: return null
-            val skybox = rtPreference.skybox?.let { ExrImage(null, it) }
+            // TODO(b/501462994): Update SpatialEnvironment runtime parameters.
+            val imageBasedLightingAsset =
+                rtPreference.skybox?.let { ImageBasedLightingAsset(null, it) }
             val geometry = rtPreference.geometry?.let { GltfModel(null, it) }
             val apiEntity =
                 rtPreference.geometryEntity?.let { rtEntity ->
                     entityRegistry.getEntityForRtEntity(rtEntity) as? GltfModelEntity
                 }
-            return SpatialEnvironmentPreference(skybox, geometry, apiEntity)
+            return SpatialEnvironmentPreference(imageBasedLightingAsset, geometry, apiEntity)
         }
         set(value) {
             rtEnvironment.preferredSpatialEnvironment = value?.toRtSpatialEnvironmentPreference()
@@ -382,7 +433,12 @@ internal constructor(
     }
 }
 
+@Suppress("DEPRECATION")
 internal fun SpatialEnvironment.SpatialEnvironmentPreference.toRtSpatialEnvironmentPreference():
     RtSpatialEnvironmentPreference {
-    return RtSpatialEnvironmentPreference(skybox?.image, geometry?.model, geometryEntity?.rtEntity)
+    return RtSpatialEnvironmentPreference(
+        imageBasedLightingAsset?.image ?: exrImage?.image,
+        geometry?.model,
+        geometryEntity?.rtEntity,
+    )
 }

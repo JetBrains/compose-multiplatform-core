@@ -24,6 +24,7 @@ import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
@@ -42,19 +43,20 @@ import java.util.Objects;
 
 /** Generates a path from expressions */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class PathExpression extends Operation implements VariableSupport, Serializable {
+public class PathExpression extends Operation
+        implements VariableSupport, Serializable, VariableProvider, ComponentData {
     private static final int OP_CODE = Operations.PATH_EXPRESSION;
     private static final String CLASS_NAME = "PathExpression";
     private final PathGenerator mPathGenerator = new PathGenerator();
-    private final int mInstanceId;
+    private int mInstanceId;
     private float[] mOutputPath = new float[0];
     private final float[] mExpressionX;
     private final float[] mExpressionY;
     private final float[] mOutExpressionX;
     private final float[] mOutExpressionY;
-    private final float mMin;
+    private float mMin;
     private float mOutMin;
-    private final float mMax;
+    private float mMax;
     private float mOutMax;
     private float mCount;
     private float mOutCount;
@@ -68,11 +70,21 @@ public class PathExpression extends Operation implements VariableSupport, Serial
     public static final int POLAR = 8;
     public static final int WINDING_MASK = 0x3000000;
 
+    @Override
+    public int getId() {
+        return mInstanceId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mInstanceId = id;
+    }
+
     @SuppressWarnings("UnknownNullness") // Annotations on a primitive array are compile error.
     public PathExpression(
             int instanceId,
-            float[] expressionX,
-            float[] expressionY,
+            float @NonNull [] expressionX,
+            float @NonNull [] expressionY,
             float min,
             float max,
             float count,
@@ -246,14 +258,14 @@ public class PathExpression extends Operation implements VariableSupport, Serial
     /**
      * add this operation to the buffer
      *
-     * @param buffer      the buffer to add to
-     * @param id          the id of the image
+     * @param buffer the buffer to add to
+     * @param id the id of the image
      * @param expressionX the x expression
      * @param expressionY the y expression
-     * @param min         the min value of the expression
-     * @param max         the max value of the expression
-     * @param count       the number of points in the expression
-     * @param flags       the flags
+     * @param min the min value of the expression
+     * @param max the max value of the expression
+     * @param count the number of points in the expression
+     * @param flags the flags
      */
     public static void apply(
             @NonNull WireBuffer buffer,
@@ -287,22 +299,22 @@ public class PathExpression extends Operation implements VariableSupport, Serial
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int imageId = buffer.readInt();
+        int imageId = buffer.readId();
         int flags = buffer.readInt();
-        float min = buffer.readFloat();
-        float max = buffer.readFloat();
-        float count = buffer.readFloat();
+        float min = buffer.readNanId();
+        float max = buffer.readNanId();
+        float count = buffer.readNanId();
         int len = buffer.readInt();
         if (len > Limits.MAX_EXPRESSION_SIZE) {
             throw new RuntimeException("Path too long");
         }
         float[] expressionX = new float[len];
         for (int i = 0; i < len; i++) {
-            expressionX[i] = buffer.readFloat();
+            expressionX[i] = buffer.readNanId();
         }
 
         len = buffer.readInt();
@@ -311,7 +323,7 @@ public class PathExpression extends Operation implements VariableSupport, Serial
         }
         float[] expressionY = new float[len];
         for (int i = 0; i < len; i++) {
-            expressionY[i] = buffer.readFloat();
+            expressionY[i] = buffer.readNanId();
         }
         operations.add(
                 new PathExpression(imageId, expressionX, expressionY, min, max, count, flags));

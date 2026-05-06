@@ -37,6 +37,7 @@ import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -108,7 +109,7 @@ class TracingTest {
     @Before
     internal fun setUp() {
         sink.packets.clear()
-        driver = TraceDriver(sink = sink, isEnabled = true)
+        driver = TraceDriver(sink = sink, isGloballyEnabled = true)
         tracer = driver.tracer
     }
 
@@ -118,7 +119,7 @@ class TracingTest {
         driver =
             TraceDriver(
                 sink = sink,
-                isEnabled = true,
+                isGloballyEnabled = true,
                 attributes = { addAttribute("isTest", "true") },
             )
         driver.use {
@@ -134,7 +135,8 @@ class TracingTest {
         driver.use { tracer.trace(category = "category", name = "section") {} }
         // 2 packets for track descriptors (process + thread)
         // 2 packets for begin and end section.
-        assertEquals(4, sink.packets.size)
+        // 2 packets for flush().
+        assertEquals(6, sink.packets.size)
         assertNotNull(sink.packets.find { it.track_descriptor?.process?.process_name != null })
         assertNotNull(sink.packets.find { it.track_descriptor?.thread?.thread_name != null })
         sink.firstStartStopWithName("section") { start, _ ->
@@ -155,7 +157,8 @@ class TracingTest {
         // 2 packets for track descriptors (process + thread)
         // 2 packets for begin and end section.
         // 1 for instant exception.
-        assertEquals(5, sink.packets.size)
+        // 2 packets for flush().
+        assertEquals(7, sink.packets.size)
         assertNotNull(sink.firstStartStopWithName("section.exception"))
     }
 
@@ -196,7 +199,8 @@ class TracingTest {
         }
         // 2 packets for track descriptors (process + thread)
         // 2 * 2 packets for begin and end section.
-        assertEquals(6, sink.packets.size)
+        // 2 packets for flush().
+        assertEquals(8, sink.packets.size)
         assertNotNull(sink.packets.find { it.track_descriptor?.process?.process_name != null })
         assertNotNull(sink.packets.find { it.track_descriptor?.thread?.thread_name != null })
         sink.firstStartStopWithName("section") { start, _ ->
@@ -219,7 +223,8 @@ class TracingTest {
         }
         // 2 packets for track descriptors (process + thread)
         // 4 packets for begin and end section.
-        assertEquals(6, sink.packets.size)
+        // 2 packets for flush().
+        assertEquals(8, sink.packets.size)
         assertNotNull(sink.packets.find { it.track_descriptor?.process?.process_name != null })
         listOf("section", "section2").forEach { name ->
             sink.firstStartStopWithName(name) { start, _ ->
@@ -282,7 +287,7 @@ class TracingTest {
                                 name = "third",
                                 token = token,
                             ) {
-                                delay(200L)
+                                delay(200L.milliseconds)
                             }
                         }
                     }
@@ -309,7 +314,7 @@ class TracingTest {
             tracer.traceCoroutine(category = "category", name = "first") {
                 val token = tracer.tokenFromCoroutineContext()
                 tracer.traceCoroutine(category = "category", name = "second", token = token) {
-                    delay(10)
+                    delay(10L.milliseconds)
                 }
             }
         }
@@ -327,10 +332,10 @@ class TracingTest {
     internal fun testCounterTrackEvents() {
         driver.use { tracer.counter(category = "counter", "counter").setValue(10L) }
         // We expect 3 packets
-        // 2 Preamble packets (process + counter tracks)
-        // Importantly **no** thread preamble packets
+        // 3 Preamble packets (process + thread (flush) + counter tracks)
         // 1 counter packet.
-        assertEquals(3, sink.packets.size)
+        // 2 packets for flush().
+        assertEquals(6, sink.packets.size)
         val packet =
             sink.packets.firstOrNull { packet ->
                 packet.track_event?.type == MutableTrackEvent.Type.TYPE_COUNTER
@@ -345,7 +350,7 @@ class TracingTest {
                 addMetadataEntry("key", "value")
             }
         }
-        assertEquals(3, sink.packets.size)
+        assertEquals(5, sink.packets.size)
         val packet =
             sink.packets.firstOrNull { packet ->
                 packet.track_event?.type == MutableTrackEvent.Type.TYPE_INSTANT
@@ -360,7 +365,7 @@ class TracingTest {
                 coroutineScope {
                     async {
                             tracer.traceCoroutine(category = "category", name = "method1") {
-                                delay(10)
+                                delay(10L.milliseconds)
                             }
                         }
                         .await()
@@ -424,7 +429,7 @@ class TracingTest {
                         coroutineContext = dispatcher,
                     )
             )
-        val driver = TraceDriver(sink = sink, isEnabled = true)
+        val driver = TraceDriver(sink = sink, isGloballyEnabled = true)
         // Create the Tracer
         val tracer = driver.tracer
         // Warm up tracks
@@ -470,7 +475,8 @@ class TracingTest {
 
         // 2 packets for track descriptors (process + thread)
         // 2 packets for begin and end section.
-        assertEquals(4, sink.packets.size)
+        // 2 packets for flush().
+        assertEquals(6, sink.packets.size)
         assertNotNull(sink.packets.find { it.track_descriptor?.process?.process_name != null })
         assertNotNull(sink.packets.find { it.track_descriptor?.thread?.thread_name != null })
         sink.firstStartStopWithName("section") { start, _ ->
@@ -487,12 +493,12 @@ class TracingTest {
     @Test
     internal fun testDisabledTracerWritesNoBytes() = runTest {
         val testSink = TestSink()
-        TraceDriver(sink = testSink, isEnabled = false).use { driver ->
+        TraceDriver(sink = testSink, isGloballyEnabled = false).use { driver ->
             val disabledTracer = driver.tracer
 
             disabledTracer.traceCoroutine("cat", "event") {
                 // Do some work
-                delay(50)
+                delay(50L.milliseconds)
             }
 
             driver.flush()
@@ -512,7 +518,7 @@ class TracingTest {
 
     @Test
     internal fun imperativeBeginEndShouldNotEmitPackets() {
-        TraceDriver(sink = sink, isEnabled = false).use { driver ->
+        TraceDriver(sink = sink, isGloballyEnabled = false).use { driver ->
             driver.tracer.beginSection(
                 category = "category",
                 name = "name",
@@ -522,6 +528,29 @@ class TracingTest {
             driver.context.process.currentThreadTrack().endSection()
         }
         // The only packet we should see is one that we eagerly emit for the process track.
+        assertEquals(1, sink.packets.size)
+        // We should not find any track event packets.
+        assertFails { sink.firstStartStopWithName("name") }
+    }
+
+    @Test
+    internal fun testCategoryFilters() {
+        // Start off with an empty sink.
+        // The setup phase creates a process track that we don't want.
+        sink.packets.clear()
+        TraceDriver(sink = sink, isGloballyEnabled = true, isCategoryEnabled = { false }).use {
+            driver ->
+            driver.tracer.trace(
+                category = "category",
+                name = "name",
+                token = null,
+                metadataBlock = {},
+            ) {
+                // Does nothing.
+            }
+        }
+        // The only packet we should see is one that we eagerly emit for the process track.
+        // Importantly no flush packets.
         assertEquals(1, sink.packets.size)
         // We should not find any track event packets.
         assertFails { sink.firstStartStopWithName("name") }

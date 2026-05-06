@@ -48,10 +48,10 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
     private val fakeMonoRenderViewpoint = FakeRuntimeRenderViewpoint()
     private val fakeUserFace = FakeRuntimeFace()
     private val fakeGeospatial = FakeRuntimeGeospatial()
-    private val fakeLeftDepthMap = FakeRuntimeDepthMap()
-    private val fakeRightDepthMap = FakeRuntimeDepthMap()
-    private val fakeMonoDepthMap = FakeRuntimeDepthMap()
     private val fakeConversationSceneSignal = ConversationState(0f, 0)
+    private val fakeLeftDepth = FakeRuntimeDepth()
+    private val fakeRightDepth = FakeRuntimeDepth()
+    private val fakeMonoDepth = FakeRuntimeDepth()
 
     override val trackables: MutableList<Trackable> = mutableListOf()
 
@@ -88,18 +88,19 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
     override val geospatial: androidx.xr.arcore.runtime.Geospatial
         get() = fakeGeospatial
 
-    override val leftDepthMap: androidx.xr.arcore.runtime.DepthMap
-        get() = fakeLeftDepthMap
+    override val leftDepth: androidx.xr.arcore.runtime.Depth
+        get() = fakeLeftDepth
 
-    override val rightDepthMap: androidx.xr.arcore.runtime.DepthMap
-        get() = fakeRightDepthMap
+    override val rightDepth: androidx.xr.arcore.runtime.Depth
+        get() = fakeRightDepth
 
-    override val monoDepthMap: androidx.xr.arcore.runtime.DepthMap
-        get() = fakeMonoDepthMap
+    override val monoDepth: androidx.xr.arcore.runtime.Depth
+        get() = fakeMonoDepth
 
     internal val persistedAnchorUUIDs: MutableMap<UUID, Pose> = mutableMapOf()
     internal val anchors: MutableList<FakeRuntimeAnchor> = mutableListOf()
     internal var isCameraTracking: Boolean = true
+    internal var isSizeEstimationSupported: Boolean = true
 
     override fun createAnchor(pose: Pose): Anchor {
         // TODO: b/349862231 - Modify it once detach is implemented.
@@ -155,6 +156,10 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
         persistedAnchorUUIDs.remove(uuid)
     }
 
+    override val imageDatabaseMaxLoadedImageCount: Int = 5
+
+    override val isPhysicalSizeEstimationSupported: Boolean = isSizeEstimationSupported
+
     override fun onAnchorPersisted(anchor: Anchor) {
         require(anchor.uuid != null)
         persistedAnchorUUIDs[anchor.uuid!!] = anchor.pose
@@ -171,8 +176,8 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
     internal fun updateTrackingStates(config: Config) {
         fakeArDevice.trackingState =
             when (config.deviceTracking) {
-                DeviceTrackingMode.SPATIAL_LAST_KNOWN -> TrackingState.TRACKING
-                DeviceTrackingMode.INERTIAL_LAST_KNOWN -> TrackingState.TRACKING_DEGRADED
+                DeviceTrackingMode.SPATIAL -> TrackingState.TRACKING
+                DeviceTrackingMode.INERTIAL -> TrackingState.TRACKING_DEGRADED
                 else -> TrackingState.PAUSED
             }
         if (config.planeTracking == PlaneTrackingMode.DISABLED) {
@@ -182,6 +187,11 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
         }
         if (config.faceTracking != FaceTrackingMode.MESHES) {
             trackables.filterIsInstance<FakeRuntimeFace>().forEach {
+                it.trackingState = TrackingState.STOPPED
+            }
+        }
+        if (config.augmentedImageDatabase == null) {
+            trackables.filterIsInstance<FakeRuntimeAugmentedImage>().forEach {
                 it.trackingState = TrackingState.STOPPED
             }
         }

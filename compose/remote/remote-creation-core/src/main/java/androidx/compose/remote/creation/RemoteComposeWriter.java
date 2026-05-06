@@ -58,6 +58,7 @@ import androidx.compose.remote.core.operations.DataMapIds;
 import androidx.compose.remote.core.operations.DrawTextOnCircle;
 import androidx.compose.remote.core.operations.FloatConstant;
 import androidx.compose.remote.core.operations.Header;
+import androidx.compose.remote.core.operations.IncludeReferencedOperations;
 import androidx.compose.remote.core.operations.NamedVariable;
 import androidx.compose.remote.core.operations.PathAppend;
 import androidx.compose.remote.core.operations.PathCombine;
@@ -68,6 +69,10 @@ import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.layout.managers.BoxLayout;
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionConstraintsModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ScrollModifierOperation;
+import androidx.compose.remote.core.operations.loom.PatternArgument;
+import androidx.compose.remote.core.operations.loom.PatternBlock;
+import androidx.compose.remote.core.operations.loom.PatternForEach;
+import androidx.compose.remote.core.operations.loom.PatternInflation;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
 import androidx.compose.remote.core.operations.utilities.ImageScaling;
@@ -1554,6 +1559,21 @@ public class RemoteComposeWriter {
     public void drawTweenPath(int path1Id, int path2Id, float tween, float start, float stop) {
         mBuffer.addDrawTweenPath(path1Id, path2Id, tween, start, stop);
     }
+    /**
+     * Add an android Path object. (It is converted to internal path)
+     *
+     * @param path Android Path object
+     * @return id of the path object to be used by drawPath, etc.
+     */
+    public int addPathData(RcPlatformServices.@NonNull RcPathArrayCreator path) {
+        float[] pathData = mPlatform.pathToFloatArray(path);
+        int id = mState.cacheData(path);
+        if (pathData == null) {
+            throw new IllegalArgumentException("Invalid path data");
+        }
+        return mBuffer.addPathData(id, pathData);
+    }
+
 
     /**
      * Add an android Path object. (It is converted to internal path)
@@ -1664,7 +1684,8 @@ public class RemoteComposeWriter {
     }
 
     /**
-     * Add an Svg Path descriptions string. (It is converted to internal path)
+     * Add a Svg Path descriptions string. (It is converted to internal path)
+     * TODO this should be deleted deprecated
      *
      * @param path SVG style Path String
      * @return id of the path object to be used by drawPath, etc.
@@ -2091,6 +2112,114 @@ public class RemoteComposeWriter {
         int id = mState.createNextAvailableId();
         mBuffer.addColorExpression(id, colorId1, colorId2, tween);
         return (short) id;
+    }
+
+    /**
+     * Add an include referenced operations operation
+     *
+     * @param id the id of the referenced operations container
+     */
+    public void addIncludeReferencedOperations(int id) {
+        IncludeReferencedOperations.apply(mBuffer.getBuffer(), id);
+    }
+
+    /**
+     * Define a pattern
+     *
+     * @param name     the name of the pattern
+     * @param paramIds the ids of the parameters
+     * @return the id of the pattern (which is the id of the name string)
+     */
+    public int definePattern(@NonNull String name, int @NonNull [] paramIds) {
+        int id = addText(name);
+        return mBuffer.definePattern(id, paramIds);
+    }
+
+    /**
+     * Define a pattern parameter
+     *
+     * @param name the name of the parameter
+     * @return the generated id of the parameter
+     */
+    public int definePatternParameter(@NonNull String name) {
+        return nextId();
+    }
+
+    /**
+     * Inflat a pattern
+     *
+     * @param id     the id of the pattern
+     * @param argIds the ids of the arguments
+     */
+    public void patternInflation(int id, int @NonNull [] argIds) {
+        PatternInflation.apply(mBuffer.getBuffer(), id, argIds);
+    }
+
+    /**
+     * Call a pattern without argument blocks.
+     *
+     * @param id     the pattern id
+     * @param argIds the arguments ids
+     */
+    public void addPatternInflation(int id, int @NonNull [] argIds) {
+        patternInflation(id, argIds);
+        endPatternInflation();
+    }
+
+    /**
+     * Define a pattern argument block
+     *
+     * @param paramIndex the index of the parameter
+     */
+    public void addPatternBlock(int paramIndex) {
+        PatternBlock.apply(mBuffer.getBuffer(), paramIndex);
+    }
+
+    /**
+     * Add a pattern argument placeholder
+     *
+     * @param paramIndex the index of the parameter
+     */
+    public void addPatternArgument(int paramIndex) {
+        PatternArgument.apply(mBuffer.getBuffer(), paramIndex);
+    }
+
+    /**
+     * Add a pattern for-each loop
+     *
+     * @param collectionId the id of the collection to iterate over
+     * @param localItemId  the local id to assign to each item
+     */
+    public void addPatternForEach(int collectionId, int localItemId) {
+        PatternForEach.apply(mBuffer.getBuffer(), collectionId, localItemId);
+    }
+
+    /**
+     * End a macro for-each loop
+     */
+    public void endPatternForEach() {
+        mBuffer.endPatternForEach();
+    }
+
+    /**
+     * End a macro definition
+     */
+    public void endPatternDefine() {
+        mBuffer.endPatternDefine();
+    }
+
+    /**
+     * End a macro call
+     */
+    public void endPatternInflation() {
+        mBuffer.endPatternInflation();
+    }
+
+    /**
+     * End a macro block
+     */
+    public void endPatternBlock() {
+        mBuffer.endPatternBlock();
     }
 
     /**
@@ -2606,16 +2735,15 @@ public class RemoteComposeWriter {
      */
     public long integerExpression(long @NonNull ... v) {
         int mask = 0;
+        int[] vint = new int[v.length];
         for (int i = 0; i < v.length; i++) {
-            if (v[i] > Integer.MAX_VALUE) {
-                mask |= 1 << i;
+            if (v[i] >= 0x100000000L) {
+                mask |= (1 << i);
+                vint[i] = (int) (v[i] - 0x100000000L);
+            } else {
+                vint[i] = (int) v[i];
             }
         }
-        int[] vint = new int[v.length];
-        for (int i = 0; i < vint.length; i++) {
-            vint[i] = (int) v[i];
-        }
-
         return integerExpression(mask, vint);
     }
 
@@ -2801,6 +2929,15 @@ public class RemoteComposeWriter {
      */
     public int nextId() {
         return mState.createNextAvailableId();
+    }
+
+    /**
+     * Allocate a macro-local ID (0x4000-0x4FFF range)
+     *
+     * @return the local ID
+     */
+    public int nextLocalId() {
+        return mState.createNextLocalId();
     }
 
     public static final long L_ADD = 0x100000000L + I_ADD;
@@ -3852,7 +3989,7 @@ public class RemoteComposeWriter {
     /**
      * Ensures the bitmap is stored.
      *
-     * @param image the bitbap to store
+     * @param image the bitmap to store
      * @return the id of the bitmap
      */
     public int storeBitmap(@NonNull Object image) {
@@ -3874,16 +4011,28 @@ public class RemoteComposeWriter {
     /**
      * Ensures the bitmap is stored.
      *
-     * @param url the bitbap to store
+     * @param url the bitmap to store
+     * @param width the bitmap width
+     * @param height the bitmap height
      * @return the id of the bitmap
      */
-    public int addBitmapUrl(@NonNull String url) {
+    public int addBitmapUrl(@NonNull String url, int width, int height) {
         int imageId = mState.dataGetId(url);
         if (imageId == -1) {
             imageId = mState.cacheData(url);
-            mBuffer.storeBitmapUrl(imageId, url);
+            mBuffer.storeBitmapUrl(imageId, url, width, height);
         }
         return imageId;
+    }
+
+    /**
+     * Ensures the bitmap is stored.
+     *
+     * @param url the bitmap to store
+     * @return the id of the bitmap
+     */
+    public int addBitmapUrl(@NonNull String url) {
+        return addBitmapUrl(url, 1, 1);
     }
 
     /**
@@ -4632,6 +4781,22 @@ public class RemoteComposeWriter {
      */
     public void addValueFloatExpressionChangeActionOperation(int mValueId, int mValue) {
         mBuffer.addValueFloatExpressionChangeActionOperation(mValueId, mValue);
+    }
+
+    /**
+     * Start a referenced operations container
+     *
+     * @param id the id of the container
+     */
+    public void startReferencedOperations(int id) {
+        mBuffer.addReferencedOperations(id);
+    }
+
+    /**
+     * End a referenced operations container
+     */
+    public void endReferencedOperations() {
+        mBuffer.addContainerEnd();
     }
 
     /**

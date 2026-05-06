@@ -20,7 +20,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.ArDevice
 import androidx.xr.arcore.runtime.ConversationState
-import androidx.xr.arcore.runtime.DepthMap
+import androidx.xr.arcore.runtime.Depth
 import androidx.xr.arcore.runtime.Eye
 import androidx.xr.arcore.runtime.Face
 import androidx.xr.arcore.runtime.Geospatial
@@ -49,9 +49,9 @@ import java.util.UUID
  * @property leftRenderViewpoint the left [RenderViewpoint], or null if not available
  * @property rightRenderViewpoint the right [RenderViewpoint], or null if not available
  * @property monoRenderViewpoint the mono [RenderViewpoint], or null if not available
- * @property leftDepthMap the left [DepthMap], or null if not available
- * @property rightDepthMap the right [DepthMap], or null if not available
- * @property monoDepthMap the mono [DepthMap], or null if not available
+ * @property leftDepth the left [Depth], or null if not available
+ * @property rightDepth the right [Depth], or null if not available
+ * @property monoDepth the mono [Depth], or null if not available
  * @property userFace the user's [Face], or null if not available
  */
 internal class ProjectedPerceptionManager
@@ -112,6 +112,18 @@ internal constructor(private val timeSource: ProjectedTimeSource) : PerceptionMa
         throw NotImplementedError("Anchor persistence is currently not supported by Projected.")
     }
 
+    override val imageDatabaseMaxLoadedImageCount: Int
+        get() =
+            throw NotImplementedError(
+                "Image database max loaded image count is not supported by Projected."
+            )
+
+    override val isPhysicalSizeEstimationSupported: Boolean
+        get() =
+            throw NotImplementedError(
+                "Physical size estimation check is not supported by Projected."
+            )
+
     override val trackables: Collection<Trackable> = emptyList()
 
     override val leftEye: Eye? = null
@@ -137,11 +149,11 @@ internal constructor(private val timeSource: ProjectedTimeSource) : PerceptionMa
     override val monoRenderViewpoint: ProjectedRuntimeRenderViewpoint? =
         ProjectedRuntimeRenderViewpoint(Pose(Vector3(0f, 0f, 1f), Quaternion.Companion.Identity))
 
-    override val leftDepthMap: DepthMap? = null
+    override val leftDepth: Depth? = null
 
-    override val rightDepthMap: DepthMap? = null
+    override val rightDepth: Depth? = null
 
-    override val monoDepthMap: DepthMap? = null
+    override val monoDepth: Depth? = null
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val userFace: Face? = null
 

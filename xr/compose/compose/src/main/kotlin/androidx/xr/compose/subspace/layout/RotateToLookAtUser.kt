@@ -42,9 +42,9 @@ import kotlinx.coroutines.launch
  * A [SubspaceModifier] that continuously rotates content so that it faces the user at all times.
  *
  * A user of this API should configure the activity's Session object with
- * [DeviceTrackingMode.SPATIAL_LAST_KNOWN] which requires `android.permission.HEAD_TRACKING` Android
- * permission be granted by the calling application. `session.configure( config =
- * session.config.copy(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN) )`
+ * [DeviceTrackingMode.SPATIAL] which requires `android.permission.HEAD_TRACKING` Android permission
+ * be granted by the calling application. `session.configure( config =
+ * session.config.copy(deviceTracking = DeviceTrackingMode.SPATIAL) )`
  *
  * This modifier might not work as expected when used on content within a
  * [androidx.xr.compose.spatial.FollowingSubspace].
@@ -99,6 +99,7 @@ internal class RotateToLookAtUserNode(var upDirection: Vector3) :
     private inline val density: Density
         get() = currentValueOf(LocalDensity)
 
+    @Suppress("RestrictedApiAndroidX")
     override fun onAttach() {
         super.onAttach()
         // Initialize the Session and ArDevice once when the node is attached

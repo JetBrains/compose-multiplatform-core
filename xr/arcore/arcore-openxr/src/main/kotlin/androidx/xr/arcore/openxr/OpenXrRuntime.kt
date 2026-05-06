@@ -46,12 +46,10 @@ import kotlinx.coroutines.delay
 /**
  * Implementation of the [PerceptionRuntime] interface using OpenXR.
  *
- * @property lifecycleManager that manages the lifecycle of the OpenXR session
  * @property perceptionManager that manages the perception capabilities of a runtime using OpenXR
  */
 internal class OpenXrRuntime(
     private val context: Context,
-    override val lifecycleManager: OpenXrManager,
     override val perceptionManager: OpenXrPerceptionManager,
     val timeSource: OpenXrTimeSource,
 ) : PerceptionRuntime {
@@ -67,7 +65,7 @@ internal class OpenXrRuntime(
                 HandTrackingMode.DISABLED,
                 HandTrackingMode.BOTH,
                 DeviceTrackingMode.DISABLED,
-                DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+                DeviceTrackingMode.SPATIAL,
                 DepthEstimationMode.DISABLED,
                 DepthEstimationMode.RAW_ONLY,
                 DepthEstimationMode.SMOOTH_ONLY,
@@ -88,7 +86,6 @@ internal class OpenXrRuntime(
      */
     var nativePointer: Long = 0L
         private set(value) {
-            this.lifecycleManager.nativePointer = value
             field = value
         }
 
@@ -98,7 +95,6 @@ internal class OpenXrRuntime(
      */
     override var sessionPointer: Long = 0L
         private set(value) {
-            this.lifecycleManager.sessionPointer = value
             field = value
         }
 
@@ -108,7 +104,6 @@ internal class OpenXrRuntime(
      */
     var instancePointer: Long = 0L
         private set(value) {
-            this.lifecycleManager.instancePointer = value
             field = value
         }
 
@@ -122,9 +117,9 @@ internal class OpenXrRuntime(
             DepthEstimationMode.DISABLED,
             AnchorPersistenceMode.LOCAL,
             augmentedObjectCategories = setOf(),
+            augmentedImageDatabase = null,
         )
         private set(value) {
-            lifecycleManager.configure(value)
             field = value
         }
 
@@ -178,6 +173,10 @@ internal class OpenXrRuntime(
             perceptionManager.updateAugmentedObjects(xrTime)
         }
 
+        if (config.augmentedImageDatabase?.entries?.isNotEmpty() == true) {
+            perceptionManager.updateAugmentedImages(xrTime)
+        }
+
         perceptionManager.update(xrTime)
         // Block the call for a time that is appropriate for OpenXR devices.
         // TODO: b/359871229 - Implement dynamic delay. We start with a fixed 20ms delay as it is
@@ -187,7 +186,14 @@ internal class OpenXrRuntime(
         return now
     }
 
+    @OptIn(androidx.xr.runtime.PreviewSpatialApi::class)
     override fun configure(config: Config) {
+        if (config.geospatial == GeospatialMode.INERTIAL) {
+            throw UnsupportedOperationException(
+                "Failed to configure session, runtime does not support GeospatialMode.INERTIAL"
+            )
+        }
+
         if (config.depthEstimation == DepthEstimationMode.SMOOTH_AND_RAW) {
             throw UnsupportedOperationException(
                 "Failed to configure session, runtime does not support raw and smooth depth simultaneously."
@@ -203,6 +209,27 @@ internal class OpenXrRuntime(
                     PackageManager.PERMISSION_GRANTED
         ) {
             throw SecurityException()
+        }
+
+        config.augmentedImageDatabase?.let {
+            if (
+                it.entries.isEmpty() ||
+                    it.entries.size > perceptionManager.imageDatabaseMaxLoadedImageCount
+            ) {
+                throw IllegalArgumentException(
+                    "Failed to configure session, the image database has exceeded the maximum number of entries."
+                )
+            }
+
+            val isPhysicalSizeEstimationSupported =
+                perceptionManager.isPhysicalSizeEstimationSupported
+            it.entries.forEach { entry ->
+                if (entry.widthInMeters <= 0f && !isPhysicalSizeEstimationSupported) {
+                    throw IllegalArgumentException(
+                        "Failed to configure session, the image database entries requires the widthInMeters parameter to be higher than 0f."
+                    )
+                }
+            }
         }
 
         val objectLabels: MutableList<Long> = mutableListOf()
@@ -229,6 +256,10 @@ internal class OpenXrRuntime(
                     objectTracking = objectMode,
                     objectLabels = objectLabels.toLongArray(),
                     geospatial = config.geospatial.mode,
+                    augmentedImageDatabase =
+                        config.augmentedImageDatabase?.let {
+                            OpenXrAugmentedImageDatabase.fromAugmentedImageDatabase(it)
+                        },
                 )
             ) {
                 -2L ->
@@ -262,7 +293,7 @@ internal class OpenXrRuntime(
         }
 
         if (config.deviceTracking != this.config.deviceTracking) {
-            if (config.deviceTracking == DeviceTrackingMode.SPATIAL_LAST_KNOWN) {
+            if (config.deviceTracking == DeviceTrackingMode.SPATIAL) {
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.arDevice)
             } else {
                 perceptionManager.xrResources.removeUpdatable(
@@ -272,10 +303,10 @@ internal class OpenXrRuntime(
         }
 
         if (config.depthEstimation != this.config.depthEstimation) {
-            perceptionManager.xrResources.leftDepthMap.updateDepthEstimationMode(
+            perceptionManager.xrResources.leftDepth.updateDepthEstimationMode(
                 config.depthEstimation
             )
-            perceptionManager.xrResources.rightDepthMap.updateDepthEstimationMode(
+            perceptionManager.xrResources.rightDepth.updateDepthEstimationMode(
                 config.depthEstimation
             )
             perceptionManager.depthEstimationMode = config.depthEstimation
@@ -299,7 +330,7 @@ internal class OpenXrRuntime(
         }
 
         if (config.geospatial != this.config.geospatial) {
-            if (config.geospatial == GeospatialMode.VPS_AND_GPS) {
+            if (config.geospatial == GeospatialMode.SPATIAL) {
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.geospatial)
             } else {
                 perceptionManager.xrResources.removeUpdatable(
@@ -311,9 +342,13 @@ internal class OpenXrRuntime(
         this.config = config
     }
 
+    @OptIn(androidx.xr.runtime.PreviewSpatialApi::class)
     override fun isSupported(configMode: ConfigMode): Boolean {
-        if (configMode == GeospatialMode.VPS_AND_GPS) {
+        if (configMode == GeospatialMode.SPATIAL) {
             return nativeIsGeospatialSupported()
+        }
+        if (configMode == GeospatialMode.INERTIAL) {
+            return false
         }
         return SUPPORTED_CONFIG_MODES.contains(configMode)
     }
@@ -335,6 +370,7 @@ internal class OpenXrRuntime(
         }
     }
 
+    @Suppress("RestrictedApiAndroidX")
     private fun setAuthentication(context: Context) {
         var apiKey: String? = null
         try {
@@ -362,9 +398,11 @@ internal class OpenXrRuntime(
         }
 
         if (apiKey == null) {
+            // TODO: b/498318910 - Replace logging with bespoke API to communicate this
             XrLog.verbose("No API Key provided, using keyless authentication.")
             nativeSetKeylessAuth()
         } else {
+            // TODO: b/498318910 - Replace logging with bespoke API to communicate this
             XrLog.verbose("Using provided API Key.")
             nativeSetApiKeyAuth(apiKey)
         }
@@ -398,6 +436,7 @@ internal class OpenXrRuntime(
         objectTracking: Int,
         objectLabels: LongArray,
         geospatial: Int,
+        augmentedImageDatabase: OpenXrAugmentedImageDatabase? = null,
     ): Long
 
     private external fun nativeGetFaceTrackerCalibration(): Boolean

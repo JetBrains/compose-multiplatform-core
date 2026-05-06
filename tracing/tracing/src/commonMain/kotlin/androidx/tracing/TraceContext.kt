@@ -30,8 +30,10 @@ public open class TraceContext
 internal constructor(
     /** The sink all the trace events are written to. */
     @JvmField public val sink: AbstractTraceSink,
-    /** Is tracing enabled ? */
-    @JvmField public val isEnabled: Boolean,
+    /** Is tracing enabled globally ? */
+    @JvmField public val isGloballyEnabled: Boolean,
+    /** Is a trace category enabled ? */
+    @JvmField public val isCategoryEnabled: (category: String) -> Boolean,
     /** Debug mode */
     // When debugging is on, we keep track of outstanding allocations in the pool,
     // and provide useful logging to help with debugging & testing.
@@ -40,18 +42,14 @@ internal constructor(
 
     public constructor(
         sink: AbstractTraceSink,
-        isEnabled: Boolean,
-    ) : this(sink, isEnabled, isDebug = false)
+        isGloballyEnabled: Boolean,
+        isCategoryEnabled: (category: String) -> Boolean,
+    ) : this(sink, isGloballyEnabled, isCategoryEnabled = isCategoryEnabled, isDebug = false)
 
     @JvmField internal val processTrackLock = Any()
 
     @JvmField @Volatile internal var isProcessInitialized: Boolean = false
     @RestrictTo(Scope.LIBRARY_GROUP) public open lateinit var process: ProcessTrack
-
-    /** Create an instance of a [Tracer] that can be used to emit trace events. */
-    public open fun createTracer(): Tracer {
-        return PerfettoTracer(context = this)
-    }
 
     /**
      * @return A [ProcessTrack] using the unique process [id], a [name] and the provided
@@ -69,7 +67,19 @@ internal constructor(
 
     /** Flushes the trace packets into the underlying [AbstractTraceSink]. */
     public fun flush() {
-        if (isEnabled) {
+        if (isGloballyEnabled) {
+            val track = process.currentThreadTrack()
+            val handle =
+                if (isCategoryEnabled(META_TRACE_CATEGORY)) {
+                    track.beginSection(
+                        category = META_TRACE_CATEGORY,
+                        name = "flush",
+                        token = PropagationUnsupportedToken,
+                    )
+                } else {
+                    null
+                }
+            handle?.metadata?.dispatchToTraceSink()
             process.flush()
             synchronized(process.threads) {
                 process.threads.forEachValue { threadTrack -> threadTrack.flush() }
@@ -77,9 +87,16 @@ internal constructor(
             synchronized(process.counters) {
                 process.counters.forEachValue { counterTrack -> counterTrack.flush() }
             }
-
             // Call flush() on the sink after all the tracks have been flushed.
             sink.flush()
+            if (handle != null) {
+                handle.closeable.close()
+                // Force a flush on the track where we emitted the last event so the sink
+                // knows to drain that.
+                track.flush()
+                // Re-flush the sink to pick up the last packet.
+                sink.flush()
+            }
         }
     }
 
@@ -123,7 +140,13 @@ internal constructor(
 
 // An empty trace context when tracing is disabled.
 @RestrictTo(Scope.LIBRARY_GROUP)
-public object EmptyTraceContext : TraceContext(sink = EmptyTraceSink(), isEnabled = false) {
+public object EmptyTraceContext :
+    TraceContext(
+        sink = EmptyTraceSink,
+        isGloballyEnabled = false,
+        isCategoryEnabled = { false },
+        isDebug = false,
+    ) {
     internal val track = EmptyProcessTrack(context = this)
     override var process: ProcessTrack = track
     internal val thread = EmptyThreadTrack(track)

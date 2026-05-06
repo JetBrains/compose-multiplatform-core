@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-// TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
-// removed.
-@file:Suppress("DEPRECATION")
-
 package androidx.xr.arcore.openxr
 
+import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -29,11 +26,13 @@ import androidx.xr.arcore.runtime.AnchorInvalidUuidException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.HandJointType
 import androidx.xr.arcore.runtime.TrackingState
+import androidx.xr.runtime.AugmentedImageDatabase
+import androidx.xr.runtime.AugmentedImageDatabaseEntryMode
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.DeviceTrackingMode
-import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
@@ -148,6 +147,36 @@ class OpenXrPerceptionManagerTest {
     }
 
     @Test
+    @Ignore("This test requires internal clock to be mocked")
+    fun updateAugmentedImages_addsIdentityAugmentedImage() = initOpenXrRuntimeAndRunTest {
+        // TODO: b/345314278 -- Add more meaningful tests once trackables are implemented properly
+        // and a
+        // fake perception library can be used mock trackables.
+        underTest.updateAugmentedImages(XR_TIME)
+
+        assertThat(underTest.trackables).hasSize(1)
+        // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
+        // they
+        // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
+        assertThat((underTest.trackables.first() as OpenXrAugmentedImage).centerPose)
+            .isEqualTo(Pose(Vector3(0f, 0f, 0f), Quaternion(0f, 0f, 0f, 1.0f)))
+    }
+
+    @Test
+    fun updateAugmentedImages_imageTrackingDisabled_doesNotAddAugmentedImage() =
+        initOpenXrRuntimeAndRunTest {
+            // TODO: b/345314278 -- Add more meaningful tests once trackables are implemented
+            // properly
+            // and
+            // a fake perception library can be used mock trackables.
+            openXrRuntime.configure(Config(augmentedImageDatabase = null))
+
+            underTest.updateAugmentedImages(XR_TIME)
+
+            assertThat(underTest.trackables).hasSize(0)
+        }
+
+    @Test
     fun update_updatesTrackables() = initOpenXrRuntimeAndRunTest {
         // TODO: b/345314278 -- Add more meaningful tests once trackables are implemented properly
         // and a
@@ -160,6 +189,23 @@ class OpenXrPerceptionManagerTest {
         // they
         // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
         assertThat((underTest.trackables.first() as OpenXrPlane).centerPose)
+            .isEqualTo(Pose(Vector3(0f, 0f, 2.0f), Quaternion(0f, 1.0f, 0f, 1.0f)))
+    }
+
+    @Test
+    @Ignore("This test requires internal clock to be mocked")
+    fun update_updatesAugmentedImagesTrackables() = initOpenXrRuntimeAndRunTest {
+        // TODO: b/345314278 -- Add more meaningful tests once trackables are implemented properly
+        // and a
+        // fake perception library can be used mock trackables.
+        underTest.updateAugmentedImages(XR_TIME)
+        underTest.update(XR_TIME)
+
+        assertThat(underTest.trackables).hasSize(1)
+        // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
+        // they
+        // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
+        assertThat((underTest.trackables.first() as OpenXrAugmentedImage).centerPose)
             .isEqualTo(Pose(Vector3(0f, 0f, 2.0f), Quaternion(0f, 1.0f, 0f, 1.0f)))
     }
 
@@ -267,63 +313,63 @@ class OpenXrPerceptionManagerTest {
     }
 
     @Test
-    fun update_withRawOnlyConfig_updatesRawDepthMaps() = initOpenXrRuntimeAndRunTest {
-        check(underTest.leftDepthMap!!.width == 0)
-        check(underTest.leftDepthMap!!.height == 0)
-        check(underTest.leftDepthMap!!.rawDepthMap == null)
-        check(underTest.leftDepthMap!!.rawConfidenceMap == null)
-        check(underTest.leftDepthMap!!.smoothDepthMap == null)
-        check(underTest.leftDepthMap!!.smoothConfidenceMap == null)
-        check(underTest.rightDepthMap!!.width == 0)
-        check(underTest.rightDepthMap!!.height == 0)
-        check(underTest.rightDepthMap!!.rawDepthMap == null)
-        check(underTest.rightDepthMap!!.rawConfidenceMap == null)
-        check(underTest.rightDepthMap!!.smoothDepthMap == null)
-        check(underTest.rightDepthMap!!.smoothConfidenceMap == null)
+    fun update_withRawOnlyConfig_updatesRawDepth() = initOpenXrRuntimeAndRunTest {
+        check(underTest.leftDepth!!.width == 0)
+        check(underTest.leftDepth!!.height == 0)
+        check(underTest.leftDepth!!.rawDepthMap == null)
+        check(underTest.leftDepth!!.rawConfidenceMap == null)
+        check(underTest.leftDepth!!.smoothDepthMap == null)
+        check(underTest.leftDepth!!.smoothConfidenceMap == null)
+        check(underTest.rightDepth!!.width == 0)
+        check(underTest.rightDepth!!.height == 0)
+        check(underTest.rightDepth!!.rawDepthMap == null)
+        check(underTest.rightDepth!!.rawConfidenceMap == null)
+        check(underTest.rightDepth!!.smoothDepthMap == null)
+        check(underTest.rightDepth!!.smoothConfidenceMap == null)
 
         openXrRuntime.configure(Config(depthEstimation = DepthEstimationMode.RAW_ONLY))
         underTest.update(XR_TIME)
 
-        assertThat(underTest.leftDepthMap!!.width).isEqualTo(80)
-        assertThat(underTest.leftDepthMap!!.height).isEqualTo(80)
+        assertThat(underTest.leftDepth!!.width).isEqualTo(80)
+        assertThat(underTest.leftDepth!!.height).isEqualTo(80)
 
         // The expected values of the raw depth and confidence buffers come from kTestRawDepthData
         // and kTestRawDepthConfidenceData in
         // //third_party/jetpack_xr_natives/openxr/openxr_stub.cc.
         val expectedRawDepthMap: FloatBuffer = FloatBuffer.wrap(FloatArray(6400) { 8.0f })
         val expectedRawConfidenceMap: ByteBuffer = ByteBuffer.wrap(ByteArray(6400) { 100 })
-        assertThat(underTest.leftDepthMap!!.rawDepthMap).isEqualTo(expectedRawDepthMap)
-        assertThat(underTest.leftDepthMap!!.rawConfidenceMap).isEqualTo(expectedRawConfidenceMap)
-        assertThat(underTest.leftDepthMap!!.smoothDepthMap).isEqualTo(null)
-        assertThat(underTest.leftDepthMap!!.smoothConfidenceMap).isEqualTo(null)
-        assertThat(underTest.rightDepthMap!!.width).isEqualTo(80)
-        assertThat(underTest.rightDepthMap!!.height).isEqualTo(80)
-        assertThat(underTest.rightDepthMap!!.rawDepthMap).isEqualTo(expectedRawDepthMap)
-        assertThat(underTest.rightDepthMap!!.rawConfidenceMap).isEqualTo(expectedRawConfidenceMap)
-        assertThat(underTest.rightDepthMap!!.smoothDepthMap).isEqualTo(null)
-        assertThat(underTest.rightDepthMap!!.smoothConfidenceMap).isEqualTo(null)
+        assertThat(underTest.leftDepth!!.rawDepthMap).isEqualTo(expectedRawDepthMap)
+        assertThat(underTest.leftDepth!!.rawConfidenceMap).isEqualTo(expectedRawConfidenceMap)
+        assertThat(underTest.leftDepth!!.smoothDepthMap).isEqualTo(null)
+        assertThat(underTest.leftDepth!!.smoothConfidenceMap).isEqualTo(null)
+        assertThat(underTest.rightDepth!!.width).isEqualTo(80)
+        assertThat(underTest.rightDepth!!.height).isEqualTo(80)
+        assertThat(underTest.rightDepth!!.rawDepthMap).isEqualTo(expectedRawDepthMap)
+        assertThat(underTest.rightDepth!!.rawConfidenceMap).isEqualTo(expectedRawConfidenceMap)
+        assertThat(underTest.rightDepth!!.smoothDepthMap).isEqualTo(null)
+        assertThat(underTest.rightDepth!!.smoothConfidenceMap).isEqualTo(null)
     }
 
     @Test
     fun update_withSmoothOnlyConfig_updatesSmoothDepthMaps() = initOpenXrRuntimeAndRunTest {
-        check(underTest.leftDepthMap!!.width == 0)
-        check(underTest.leftDepthMap!!.height == 0)
-        check(underTest.leftDepthMap!!.rawDepthMap == null)
-        check(underTest.leftDepthMap!!.rawConfidenceMap == null)
-        check(underTest.leftDepthMap!!.smoothDepthMap == null)
-        check(underTest.leftDepthMap!!.smoothConfidenceMap == null)
-        check(underTest.rightDepthMap!!.width == 0)
-        check(underTest.rightDepthMap!!.height == 0)
-        check(underTest.rightDepthMap!!.rawDepthMap == null)
-        check(underTest.rightDepthMap!!.rawConfidenceMap == null)
-        check(underTest.rightDepthMap!!.smoothDepthMap == null)
-        check(underTest.rightDepthMap!!.smoothConfidenceMap == null)
+        check(underTest.leftDepth!!.width == 0)
+        check(underTest.leftDepth!!.height == 0)
+        check(underTest.leftDepth!!.rawDepthMap == null)
+        check(underTest.leftDepth!!.rawConfidenceMap == null)
+        check(underTest.leftDepth!!.smoothDepthMap == null)
+        check(underTest.leftDepth!!.smoothConfidenceMap == null)
+        check(underTest.rightDepth!!.width == 0)
+        check(underTest.rightDepth!!.height == 0)
+        check(underTest.rightDepth!!.rawDepthMap == null)
+        check(underTest.rightDepth!!.rawConfidenceMap == null)
+        check(underTest.rightDepth!!.smoothDepthMap == null)
+        check(underTest.rightDepth!!.smoothConfidenceMap == null)
 
         openXrRuntime.configure(Config(depthEstimation = DepthEstimationMode.SMOOTH_ONLY))
         underTest.update(XR_TIME)
 
-        assertThat(underTest.leftDepthMap!!.width).isEqualTo(80)
-        assertThat(underTest.leftDepthMap!!.height).isEqualTo(80)
+        assertThat(underTest.leftDepth!!.width).isEqualTo(80)
+        assertThat(underTest.leftDepth!!.height).isEqualTo(80)
 
         // The expected values of the smooth depth and confidence buffers come from
         // kTestSmoothDepthData and kTestSmoothDepthConfidenceData in
@@ -331,17 +377,16 @@ class OpenXrPerceptionManagerTest {
         val expectedSmoothDepthMap: FloatBuffer = FloatBuffer.wrap(FloatArray(6400) { 10.0f })
         val expectedSmoothConfidenceMap: ByteBuffer =
             ByteBuffer.wrap(ByteArray(6400) { 200.toByte() })
-        assertThat(underTest.leftDepthMap!!.rawDepthMap).isEqualTo(null)
-        assertThat(underTest.leftDepthMap!!.rawConfidenceMap).isEqualTo(null)
-        assertThat(underTest.leftDepthMap!!.smoothDepthMap).isEqualTo(expectedSmoothDepthMap)
-        assertThat(underTest.leftDepthMap!!.smoothConfidenceMap)
-            .isEqualTo(expectedSmoothConfidenceMap)
-        assertThat(underTest.rightDepthMap!!.width).isEqualTo(80)
-        assertThat(underTest.rightDepthMap!!.height).isEqualTo(80)
-        assertThat(underTest.rightDepthMap!!.rawDepthMap).isEqualTo(null)
-        assertThat(underTest.rightDepthMap!!.rawConfidenceMap).isEqualTo(null)
-        assertThat(underTest.rightDepthMap!!.smoothDepthMap).isEqualTo(expectedSmoothDepthMap)
-        assertThat(underTest.rightDepthMap!!.smoothConfidenceMap)
+        assertThat(underTest.leftDepth!!.rawDepthMap).isEqualTo(null)
+        assertThat(underTest.leftDepth!!.rawConfidenceMap).isEqualTo(null)
+        assertThat(underTest.leftDepth!!.smoothDepthMap).isEqualTo(expectedSmoothDepthMap)
+        assertThat(underTest.leftDepth!!.smoothConfidenceMap).isEqualTo(expectedSmoothConfidenceMap)
+        assertThat(underTest.rightDepth!!.width).isEqualTo(80)
+        assertThat(underTest.rightDepth!!.height).isEqualTo(80)
+        assertThat(underTest.rightDepth!!.rawDepthMap).isEqualTo(null)
+        assertThat(underTest.rightDepth!!.rawConfidenceMap).isEqualTo(null)
+        assertThat(underTest.rightDepth!!.smoothDepthMap).isEqualTo(expectedSmoothDepthMap)
+        assertThat(underTest.rightDepth!!.smoothConfidenceMap)
             .isEqualTo(expectedSmoothConfidenceMap)
     }
 
@@ -427,6 +472,7 @@ class OpenXrPerceptionManagerTest {
     @Test
     fun clear_clearXrResources() = initOpenXrRuntimeAndRunTest {
         underTest.updatePlanes(XR_TIME)
+        underTest.updateAugmentedImages(XR_TIME)
         underTest.update(XR_TIME)
         underTest.createAnchor(Pose())
         check(underTest.trackables.isNotEmpty())
@@ -443,15 +489,22 @@ class OpenXrPerceptionManagerTest {
     private fun initOpenXrRuntimeAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
             val timeSource = OpenXrTimeSource()
-            val lifecycleManager = OpenXrManager(timeSource)
-            openXrRuntime = OpenXrRuntime(it, lifecycleManager, underTest, timeSource)
+
+            val augmentedImageDatabase = AugmentedImageDatabase()
+            augmentedImageDatabase.addAugmentedImageDatabaseEntry(
+                AugmentedImageDatabaseEntryMode.DYNAMIC,
+                Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888),
+            )
+
+            openXrRuntime = OpenXrRuntime(it, underTest, timeSource)
             openXrRuntime.initialize()
             openXrRuntime.resume()
             openXrRuntime.configure(
                 Config(
-                    deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+                    deviceTracking = DeviceTrackingMode.SPATIAL,
                     planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
                     //                    handTracking = Config.HandTrackingMode.BOTH,
+                    augmentedImageDatabase = augmentedImageDatabase,
                 )
             )
 

@@ -202,7 +202,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val session = (Session.create(this) as SessionCreateSuccess).session
-        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN))
+        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
         session.scene.keyEntity = session.scene.mainPanelEntity
 
@@ -274,7 +274,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
 
     private fun setupControlPanel(session: Session, arDevice: ArDevice) {
         // Dispose previous control panel if it exists
-        controlPanelEntity?.dispose()
+        controlPanelEntity?.parent = null
         controlPanelEntity = null
 
         // Technically this leaks, but it's a sample / test app.
@@ -333,10 +333,12 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
         exoPlayer?.release()
         exoPlayer = null
 
-        surfaceEntity?.dispose()
+        surfaceEntity?.removeAllComponents()
+        surfaceEntity?.parent = null
         surfaceEntity = null
 
-        controlPanelEntity?.dispose()
+        controlPanelEntity?.removeAllComponents()
+        controlPanelEntity?.parent = null
         controlPanelEntity = null
 
         currentPoseForVideo = null

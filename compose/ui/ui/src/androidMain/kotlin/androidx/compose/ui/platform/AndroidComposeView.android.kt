@@ -890,8 +890,11 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     /** List of lambdas to be called when [onEndApplyChanges] is called. */
     private val endApplyChangesListeners = mutableObjectListOf<(() -> Unit)?>()
 
-    private var currentFrameRate = 0f
-    private var currentFrameRateCategory = 0f
+    private var currentFrameRate = Float.NaN
+    private var currentFrameRateCategory = Float.NaN
+
+    private var lastSetFrameRate = Float.NaN
+    private var lastSetFrameRateCategory = Float.NaN
 
     /**
      * Runnable used to update the pointer position after layout. If another pointer event comes in
@@ -1025,6 +1028,13 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
      * from the hierarchy.
      */
     internal var composeViewContextIncrementedDuringInit = false
+
+    /**
+     * Guards against re-entering [onProvideAutofillVirtualStructure] while
+     * [dispatchProvideAutofillStructure] delegates to the framework to collect hosted Android
+     * views.
+     */
+    private var isDispatchingAutofillStructure = false
 
     init {
         addOnAttachStateChangeListener(contentCaptureManager)
@@ -2202,10 +2212,17 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
         // Used to handle frame rate information
         if (isArrEnabled) {
-            Api35Impl.setRequestedFrameRate(this, currentFrameRate)
+            // Float.NaN == Float.NaN is false, so we use compareTo to check for equality
+            if (currentFrameRate.compareTo(lastSetFrameRate) != 0) {
+                lastSetFrameRate = currentFrameRate
+                Api35Impl.setRequestedFrameRate(this, currentFrameRate)
+            }
             val frameRateCategoryView = frameRateCategoryView
             if (frameRateCategoryView != null) {
-                Api35Impl.setRequestedFrameRate(frameRateCategoryView, currentFrameRateCategory)
+                if (currentFrameRateCategory.compareTo(lastSetFrameRateCategory) != 0) {
+                    lastSetFrameRateCategory = currentFrameRateCategory
+                    Api35Impl.setRequestedFrameRate(frameRateCategoryView, currentFrameRateCategory)
+                }
 
                 if (!currentFrameRateCategory.isNaN()) {
                     frameRateCategoryView.invalidate()
@@ -2402,10 +2419,33 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     }
 
     override fun onProvideAutofillVirtualStructure(structure: ViewStructure?, flags: Int) {
-        if (autofillSupported() && structure != null) {
-            _autofillManager?.populateViewStructure(structure)
-            _autofill?.populateViewStructure(structure)
+        if (autofillSupported() && structure != null && !isDispatchingAutofillStructure) {
+            populateAutofillVirtualStructure(structure)
         }
+    }
+
+    override fun dispatchProvideAutofillStructure(structure: ViewStructure, flags: Int) {
+        if (!autofillSupported()) {
+            super.dispatchProvideAutofillStructure(structure, flags)
+            return
+        }
+
+        isDispatchingAutofillStructure = true
+        try {
+            // Let ViewGroup collect hosted AndroidView children before appending Compose virtual
+            // autofill nodes. Otherwise, the framework stops traversal once virtual children exist.
+            super.dispatchProvideAutofillStructure(structure, flags)
+        } finally {
+            isDispatchingAutofillStructure = false
+        }
+
+        populateAutofillVirtualStructure(structure)
+    }
+
+    @RequiresApi(O)
+    private fun populateAutofillVirtualStructure(structure: ViewStructure) {
+        _autofillManager?.populateViewStructure(structure)
+        _autofill?.populateViewStructure(structure)
     }
 
     override fun autofill(values: SparseArray<AutofillValue>) {

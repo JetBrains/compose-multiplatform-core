@@ -198,11 +198,10 @@ class OpenXrGeospatialTest {
 
     private fun initOpenXrRuntimeAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            val lifecycleManager = OpenXrManager(timeSource)
-            openXrRuntime = OpenXrRuntime(it, lifecycleManager, perceptionManager, timeSource)
+            openXrRuntime = OpenXrRuntime(it, perceptionManager, timeSource)
             openXrRuntime.initialize()
             openXrRuntime.resume()
-            openXrRuntime.configure(Config(geospatial = GeospatialMode.VPS_AND_GPS))
+            openXrRuntime.configure(Config(geospatial = GeospatialMode.SPATIAL))
 
             testBody()
 

@@ -68,7 +68,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, androidx.xr.runtime.PreviewSpatialApi::class)
 @RunWith(AndroidJUnit4::class)
 class ArCoreRuntimeTest {
 
@@ -99,14 +99,7 @@ class ArCoreRuntimeTest {
         activityRule.scenario.onActivity {
             val perceptionManager = ArCorePerceptionManager(timeSource)
             mockArCoreApk = mock<ArCoreApk>()
-            underTest =
-                ArCoreRuntime(
-                    context = it,
-                    ArCoreManager(ArCoreTimeSource()),
-                    perceptionManager,
-                    timeSource,
-                    mockArCoreApk,
-                )
+            underTest = ArCoreRuntime(context = it, perceptionManager, timeSource, mockArCoreApk)
         }
 
         mockSession = mock<Session>()
@@ -225,6 +218,19 @@ class ArCoreRuntimeTest {
         assert(argumentCaptor.firstValue == PlaneFindingMode.HORIZONTAL_AND_VERTICAL)
         assertThat(underTest.config.planeTracking)
             .isEqualTo(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+    }
+
+    @Test
+    fun configure_imageTracking_setsAugmentedImageDatabase_toValue_Empty() {
+        val mockArConfig = mock<ArConfig>()
+        underTest._session = mockSession
+        whenever(mockSession.config).thenReturn(mockArConfig)
+
+        val config = Config(augmentedImageDatabase = null)
+        underTest.configure(config)
+
+        assertThat(mockArConfig.augmentedImageDatabase).isEqualTo(null)
+        assertThat(underTest.config.augmentedImageDatabase?.entries).isNull()
     }
 
     @Test
@@ -514,19 +520,26 @@ class ArCoreRuntimeTest {
     }
 
     @Test
-    fun isSupported_geospatialVpsAndGps_whenFalseIn1x_returnsFalse() = initRuntimeAndRunTest {
+    fun isSupported_geospatialSpatial_whenFalseIn1x_returnsFalse() = initRuntimeAndRunTest {
         underTest._session = mockSession
         whenever(mockSession.isGeospatialModeSupported(GeospatialMode.ENABLED)).thenReturn(false)
 
-        assertThat(underTest.isSupported(androidx.xr.runtime.GeospatialMode.VPS_AND_GPS)).isFalse()
+        assertThat(underTest.isSupported(androidx.xr.runtime.GeospatialMode.SPATIAL)).isFalse()
     }
 
     @Test
-    fun isSupported_geospatialVpsAndGps_whenTrueIn1x_returnsTrue() = initRuntimeAndRunTest {
+    fun isSupported_geospatialSpatial_whenTrueIn1x_returnsTrue() = initRuntimeAndRunTest {
         underTest._session = mockSession
         whenever(mockSession.isGeospatialModeSupported(GeospatialMode.ENABLED)).thenReturn(true)
 
-        assertThat(underTest.isSupported(androidx.xr.runtime.GeospatialMode.VPS_AND_GPS)).isTrue()
+        assertThat(underTest.isSupported(androidx.xr.runtime.GeospatialMode.SPATIAL)).isTrue()
+    }
+
+    @Test
+    fun isSupported_geospatialInertial_returnsFalse() = initRuntimeAndRunTest {
+        underTest._session = mockSession
+
+        assertThat(underTest.isSupported(androidx.xr.runtime.GeospatialMode.INERTIAL)).isFalse()
     }
 
     @Test
@@ -548,14 +561,7 @@ class ArCoreRuntimeTest {
             val perceptionManager = ArCorePerceptionManager(timeSource)
             mockArCoreApk = mock<ArCoreApk>()
             mockSession = mock<Session>()
-            underTest =
-                ArCoreRuntime(
-                    it,
-                    ArCoreManager(timeSource),
-                    perceptionManager,
-                    timeSource,
-                    mockArCoreApk,
-                )
+            underTest = ArCoreRuntime(it, perceptionManager, timeSource, mockArCoreApk)
 
             testBody()
         }

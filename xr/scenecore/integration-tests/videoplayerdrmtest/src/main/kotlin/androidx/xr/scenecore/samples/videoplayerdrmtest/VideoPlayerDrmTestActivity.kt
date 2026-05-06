@@ -116,7 +116,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         Log.i(TAG, "onCreate")
 
         val session = (Session.create(this) as SessionCreateSuccess).session
-        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN))
+        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
 
         if (movableComponentMp == null) {
@@ -228,10 +228,9 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         videoPlaying = false
         exoPlayer?.release()
         exoPlayer = null
-        if (surfaceEntity != null) {
-            surfaceEntity!!.dispose()
-            surfaceEntity = null
-        }
+        surfaceEntity?.removeAllComponents()
+        surfaceEntity?.parent = null
+        surfaceEntity = null
     }
 
     fun getCanvasAspectRatio(
