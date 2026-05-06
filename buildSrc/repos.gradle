@@ -87,6 +87,12 @@ def addMavenRepositories(RepositoryHandler handler) {
         handler.maven {
             url("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
         }
+        handler.maven {
+            url = "https://www.jetbrains.com/intellij-repository/releases/"
+            content {
+                includeGroup("com.jetbrains.intellij.fleet")
+            }
+        }
         // TODO(b/280646217): Remove after official release to gmaven.
         handler.maven {
             url = "https://central.sonatype.com/repository/maven-snapshots"
