@@ -26,57 +26,87 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Contains the depth information corresponding to a specific [RenderViewpoint].
+ * Contains the depth information corresponding to a specific [RenderViewpoint] for left eye, right
+ * eye, or mono view depending on what is supported by the runtime.
  *
- * The availability of depth data depends on the [DepthEstimationMode] set in [Session.config],
- * which also allows it to be turned off by setting it to [DepthEstimationMode.DISABLED].
+ * The availability of depth data depends on the [DepthEstimationMode]. Depth Maps can include
+ * smooth, [DepthEstimationMode.SMOOTH_ONLY], raw, [DepthEstimationMode.RAW_ONLY], or both,
+ * [DepthEstimationMode.SMOOTH_AND_RAW], postprocessing options depending on the runtime.
+ *
+ * This also allows depth to be turned off by setting it to [DepthEstimationMode.DISABLED].
+ *
+ * The mode is set in a [Session.config] that is passed to [Session.configure].
  *
  * Update frequency and the dimensions of the maps provided are system-defined. The buffer
  * lifecycles are controlled by the runtime so if the data will not be used upon receiving, a copy
  * should be made.
  *
  * @property state the current [State] of the depth data.
+ * @note OpenXr does not support [DepthEstimationMode.SMOOTH_AND_RAW].
  */
 @SuppressWarnings("HiddenSuperclass")
 public class Depth internal constructor(internal val runtimeDepth: RuntimeDepth) : Updatable() {
     public companion object {
         /**
-         * Returns the Depth data associated with the left display depending on the
-         * [DepthEstimationMode] set in [Session.config].
+         * Returns the Depth data associated with the left display.
          *
          * @param session the currently active [Session]
-         * @note Supported only on devices that use stereo displays for rendering.
+         * @throws IllegalStateException if [androidx.xr.runtime.Config.depthEstimation] is set to
+         *   [DepthEstimationMode.DISABLED] or if the device does not support
+         *   [androidx.xr.runtime.RenderingMode.STEREO]
          */
         @JvmStatic
-        public fun left(session: Session): Depth? {
-            val perceptionStateExtender = Depth.Companion.getPerceptionStateExtender(session)
-            return perceptionStateExtender.xrResourcesManager.leftDepth
+        public fun left(session: Session): Depth {
+            val perceptionStateExtender = getPerceptionStateExtender(session)
+            val config = perceptionStateExtender.xrResourcesManager.perceptionRuntime.config
+            check(config.depthEstimation != DepthEstimationMode.DISABLED) {
+                "Config.DepthEstimationMode is set to DISABLED."
+            }
+            checkNotNull(perceptionStateExtender.xrResourcesManager.leftDepth) {
+                "Left depth is not available."
+            }
+            return perceptionStateExtender.xrResourcesManager.leftDepth!!
         }
 
         /**
-         * Returns the Depth data associated with the right display depending on the
-         * [DepthEstimationMode] set in [Session.config].
+         * Returns the Depth data associated with the right display.
          *
          * @param session the currently active [Session]
-         * @note Supported only on devices that use stereo displays for rendering.
+         * @throws IllegalStateException if [androidx.xr.runtime.Config.depthEstimation] is set to
+         *   [DepthEstimationMode.DISABLED] or if the device does not support
+         *   [androidx.xr.runtime.RenderingMode.STEREO]
          */
         @JvmStatic
-        public fun right(session: Session): Depth? {
-            val perceptionStateExtender = Depth.Companion.getPerceptionStateExtender(session)
-            return perceptionStateExtender.xrResourcesManager.rightDepth
+        public fun right(session: Session): Depth {
+            val perceptionStateExtender = getPerceptionStateExtender(session)
+            val config = perceptionStateExtender.xrResourcesManager.perceptionRuntime.config
+            check(config.depthEstimation != DepthEstimationMode.DISABLED) {
+                "Config.DepthEstimationMode is set to DISABLED."
+            }
+            checkNotNull(perceptionStateExtender.xrResourcesManager.rightDepth) {
+                "Right depth is not available."
+            }
+            return perceptionStateExtender.xrResourcesManager.rightDepth!!
         }
 
         /**
-         * Returns the Depth associated with the single device display depending on the
-         * [DepthEstimationMode] set in [Session.config].
+         * Returns the Depth associated with the single device display.
          *
          * @param session the currently active [Session]
-         * @note Supported only on devices that use a monocular display for rendering.
+         * @throws IllegalStateException if [Session.config] has [DepthEstimationMode] set to
+         *   DISABLED or if device does not support [androidx.xr.runtime.RenderingMode.MONO]
          */
         @JvmStatic
-        public fun mono(session: Session): Depth? {
-            val perceptionStateExtender = Depth.Companion.getPerceptionStateExtender(session)
-            return perceptionStateExtender.xrResourcesManager.monoDepth
+        public fun mono(session: Session): Depth {
+            val perceptionStateExtender = getPerceptionStateExtender(session)
+            val config = perceptionStateExtender.xrResourcesManager.perceptionRuntime.config
+            check(config.depthEstimation != DepthEstimationMode.DISABLED) {
+                "Config.DepthEstimationMode is set to DISABLED."
+            }
+            checkNotNull(perceptionStateExtender.xrResourcesManager.monoDepth) {
+                "Mono depth is not available."
+            }
+            return perceptionStateExtender.xrResourcesManager.monoDepth!!
         }
 
         // TODO(b/421240554): Combine getPerceptionStateExtender in different classes.

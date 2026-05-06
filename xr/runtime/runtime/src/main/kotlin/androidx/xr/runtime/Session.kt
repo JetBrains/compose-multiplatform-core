@@ -28,7 +28,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config.ConfigMode
-import androidx.xr.runtime.Session.Companion.create
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
@@ -360,7 +359,6 @@ public constructor(
         private val RUNTIME_FACTORY_PROVIDERS =
             listOf(
                 "androidx.xr.arcore.openxr.OpenXrRuntimeFactory",
-                "androidx.xr.arcore.projected.ProjectedRuntimeFactory",
                 "androidx.xr.arcore.playservices.ArCoreRuntimeFactory",
                 "androidx.xr.arcore.testing.FakePerceptionRuntimeFactory",
                 "androidx.xr.runtime.StubPerceptionRuntimeFactory",
@@ -511,6 +509,9 @@ public constructor(
         coroutineScope.cancel()
         for (sessionConnector in sessionConnectors.asReversed()) {
             sessionConnector.close()
+        }
+        for (stateExtender in stateExtenders.asReversed()) {
+            stateExtender.close()
         }
         for (runtime in runtimes.asReversed()) {
             runtime.destroy()

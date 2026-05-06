@@ -38,6 +38,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.Entity as RtEntity
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult as RtPerceivedResolutionResult
 import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
 import androidx.xr.scenecore.runtime.RenderingRuntime
@@ -51,6 +52,7 @@ import androidx.xr.scenecore.testing.FakeGltfModelResource
 import androidx.xr.scenecore.testing.FakePanelEntity
 import androidx.xr.scenecore.testing.FakeSurfaceEntity
 import androidx.xr.scenecore.testing.MemoryUtils
+import com.android.extensions.xr.XrExtensions
 import com.google.common.truth.Truth.assertThat
 import java.lang.ref.WeakReference
 import java.nio.file.Paths
@@ -77,6 +79,7 @@ import org.robolectric.shadows.ShadowLooper
 class EntityTest {
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
+    private lateinit var extensions: XrExtensions
     private lateinit var sceneRuntime: SceneRuntime
     private lateinit var renderingRuntime: RenderingRuntime
     private lateinit var entityRegistry: EntityRegistry
@@ -137,6 +140,7 @@ class EntityTest {
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
 
         session = (result as SessionCreateSuccess).session
+        extensions = XrExtensions()
         sceneRuntime = session.sceneRuntime
         renderingRuntime = session.renderingRuntime
         session.configure(
@@ -1636,13 +1640,8 @@ class EntityTest {
     @Test
     fun subspaceNodeEntity_garbageCollection_disposesEntity() {
         fun createSubspaceNodeEntity(): WeakReference<SubspaceNodeEntity> {
-            val xrExtensions =
-                androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions()!!
             val nodeHolder =
-                androidx.xr.runtime.NodeHolder(
-                    xrExtensions.createNode(),
-                    com.android.extensions.xr.node.Node::class.java,
-                )
+                NodeHolder(extensions.createNode(), com.android.extensions.xr.node.Node::class.java)
             val entity = SubspaceNodeEntity.create(session, nodeHolder, FloatSize3d(1f, 1f, 1f))
             return WeakReference(entity)
         }

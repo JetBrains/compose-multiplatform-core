@@ -2,16 +2,13 @@
 package androidx.xr.arcore {
 
   public final class Anchor {
-    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public Anchor(androidx.xr.arcore.runtime.Anchor runtimeAnchor);
     method public static androidx.xr.arcore.AnchorResult create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.Pose pose);
     method public void detach();
     method public static java.util.List<java.util.UUID> getPersistedAnchorUuids(androidx.xr.runtime.Session session);
-    method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.runtime.Anchor getRuntimeAnchor();
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Anchor.State> getState();
     method public static androidx.xr.arcore.AnchorResult load(androidx.xr.runtime.Session session, java.util.UUID uuid);
     method public suspend Object? persist(kotlin.coroutines.Continuation<? super java.util.UUID>);
     method public static void unpersist(androidx.xr.runtime.Session session, java.util.UUID uuid);
-    property @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public androidx.xr.arcore.runtime.Anchor runtimeAnchor;
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Anchor.State> state;
     field public static final androidx.xr.arcore.Anchor.Companion Companion;
   }
@@ -194,17 +191,17 @@ package androidx.xr.arcore {
 
   public final class Depth {
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Depth.State> getState();
-    method public static androidx.xr.arcore.Depth? left(androidx.xr.runtime.Session session);
-    method public static androidx.xr.arcore.Depth? mono(androidx.xr.runtime.Session session);
-    method public static androidx.xr.arcore.Depth? right(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.Depth left(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.Depth mono(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.Depth right(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Depth.State> state;
     field public static final androidx.xr.arcore.Depth.Companion Companion;
   }
 
   public static final class Depth.Companion {
-    method public androidx.xr.arcore.Depth? left(androidx.xr.runtime.Session session);
-    method public androidx.xr.arcore.Depth? mono(androidx.xr.runtime.Session session);
-    method public androidx.xr.arcore.Depth? right(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.Depth left(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.Depth mono(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.Depth right(androidx.xr.runtime.Session session);
   }
 
   public static final class Depth.State {
@@ -256,13 +253,13 @@ package androidx.xr.arcore {
 
   public final class Face implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Face.State> {
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> getState();
-    method public static androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.Face getUserFace(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> state;
     field public static final androidx.xr.arcore.Face.Companion Companion;
   }
 
   public static final class Face.Companion {
-    method public androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.Face getUserFace(androidx.xr.runtime.Session session);
   }
 
   public static final class Face.State implements androidx.xr.arcore.Trackable.State {
@@ -493,16 +490,16 @@ package androidx.xr.arcore {
   public final class Hand implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Hand.State> {
     method public static androidx.xr.arcore.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> getState();
-    method public static androidx.xr.arcore.Hand? left(androidx.xr.runtime.Session session);
-    method public static androidx.xr.arcore.Hand? right(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.Hand left(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.Hand right(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> state;
     field public static final androidx.xr.arcore.Hand.Companion Companion;
   }
 
   public static final class Hand.Companion {
     method public androidx.xr.arcore.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
-    method public androidx.xr.arcore.Hand? left(androidx.xr.runtime.Session session);
-    method public androidx.xr.arcore.Hand? right(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.Hand left(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.Hand right(androidx.xr.runtime.Session session);
   }
 
   @Deprecated public enum Hand.HandSide {
@@ -678,17 +675,17 @@ package androidx.xr.arcore {
 
   public final class RenderViewpoint {
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.RenderViewpoint.State> getState();
-    method public static androidx.xr.arcore.RenderViewpoint? left(androidx.xr.runtime.Session session);
-    method public static androidx.xr.arcore.RenderViewpoint? mono(androidx.xr.runtime.Session session);
-    method public static androidx.xr.arcore.RenderViewpoint? right(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.RenderViewpoint left(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.RenderViewpoint mono(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.RenderViewpoint right(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.RenderViewpoint.State> state;
     field public static final androidx.xr.arcore.RenderViewpoint.Companion Companion;
   }
 
   public static final class RenderViewpoint.Companion {
-    method public androidx.xr.arcore.RenderViewpoint? left(androidx.xr.runtime.Session session);
-    method public androidx.xr.arcore.RenderViewpoint? mono(androidx.xr.runtime.Session session);
-    method public androidx.xr.arcore.RenderViewpoint? right(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.RenderViewpoint left(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.RenderViewpoint mono(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.RenderViewpoint right(androidx.xr.runtime.Session session);
   }
 
   public static final class RenderViewpoint.State {

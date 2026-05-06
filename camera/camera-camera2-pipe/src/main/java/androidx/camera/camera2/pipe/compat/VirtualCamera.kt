@@ -36,6 +36,7 @@ import androidx.camera.camera2.pipe.core.Timestamps.formatMs
 import androidx.camera.camera2.pipe.core.Token
 import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
+import androidx.camera.common.unwrapAs
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.atomicfu.atomic
@@ -248,6 +249,7 @@ internal class AndroidCameraState(
     private val cameraErrorListener: CameraErrorListener,
     private val camera2DeviceCloser: Camera2DeviceCloser,
     private val camera2Quirks: Camera2Quirks,
+    private val camera2SystemState: Camera2SystemState,
     private val threads: Threads,
     private val audioRestrictionController: AudioRestrictionController,
     private val interopCameraDeviceStateCallback: CameraDevice.StateCallback? = null,
@@ -290,7 +292,7 @@ internal class AndroidCameraState(
                 null
             }
 
-        closeWith(device?.unwrapAs(CameraDevice::class), ClosingInfo(ClosedReason.APP_CLOSED))
+        closeWith(device?.unwrapAs<CameraDevice>(), ClosingInfo(ClosedReason.APP_CLOSED))
     }
 
     suspend fun awaitClosed() {
@@ -435,6 +437,10 @@ internal class AndroidCameraState(
 
         closeWith(cameraDevice, ClosingInfo(ClosedReason.CAMERA2_CLOSED))
         interopCameraDeviceStateCallback?.onClosed(cameraDevice)
+
+        // Synchronously do any shutdown operations that may be required.
+        camera2SystemState.onCameraClosed(CameraId(cameraDevice.id))
+
         Debug.traceStop()
     }
 

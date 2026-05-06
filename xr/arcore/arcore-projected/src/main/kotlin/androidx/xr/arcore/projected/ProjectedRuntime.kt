@@ -57,7 +57,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 /**
  * Implementation of the [PerceptionRuntime] interface using Projected.
  *
- * @property lifecycleManager that manages the lifecycle of the Projected session
  * @property perceptionManager that manages the perception capabilities of a runtime using Projected
  * @property timeSource the [ProjectedTimeSource] instance
  */
@@ -305,7 +304,7 @@ internal constructor(
         // TODO: b/452091636 - Remove hardcoded config" so we remember to address this.
         // TODO: b/455872882 - Currently, Geo is not compatible with 3DoF tracking stack.
         if (config.geospatial == GeospatialMode.SPATIAL) {
-            serviceConfig.geospatialMode = ProjectedGeospatialMode.ENABLED
+            serviceConfig.geospatialMode = ProjectedGeospatialMode.SPATIAL
             serviceConfig.trackingMode = ProjectedTrackingMode.PROJECTED_TRACKING_6DOF
         } else {
             serviceConfig.geospatialMode = ProjectedGeospatialMode.DISABLED

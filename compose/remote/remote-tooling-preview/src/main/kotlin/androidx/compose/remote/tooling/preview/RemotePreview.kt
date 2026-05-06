@@ -19,7 +19,6 @@ package androidx.compose.remote.tooling.preview
 
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.profile.Profile
@@ -32,10 +31,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.runBlocking
 
-/** Display a Remote Compose Composable in the Android Studio Preview. */
+/**
+ * Displays a Remote Compose Composable in the Android Studio Preview.
+ *
+ * This function captures the provided [content] using the specified [profile] and renders it as a
+ * [RemoteDocument] to simulate how it would appear when played back in a remote context.
+ *
+ * @param profile The [Profile] defining the target environment for the remote content. Defaults to
+ *   [RcPlatformProfiles.ANDROIDX].
+ * @param modifier The modifier to be applied to the box containing the preview.
+ * @param content The Composable content to be captured and previewed. It does not have be annotated
+ *   with [@RemoteComposable].
+ */
 @Composable
 public fun RemotePreview(
     profile: Profile = RcPlatformProfiles.ANDROIDX,
+    @Suppress("ModifierParameter") // content as last modifier is allowed
+    modifier: Modifier = Modifier,
     content: @RemoteComposable @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -51,5 +63,5 @@ public fun RemotePreview(
 
     LaunchedEffect(Unit) {}
 
-    Box(modifier = Modifier.fillMaxSize()) { RemoteDocPreview(document) }
+    Box(modifier = modifier) { RemoteDocPreview(document) }
 }

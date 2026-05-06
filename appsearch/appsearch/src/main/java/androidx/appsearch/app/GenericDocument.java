@@ -792,7 +792,6 @@ public class GenericDocument {
      * @return The first {@code EmbeddingVector[]} associated with the given path or
      * {@code null} if there is no such value or the value is of a different type.
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public @Nullable EmbeddingVector getPropertyEmbedding(@NonNull String path) {
         Preconditions.checkNotNull(path);
         EmbeddingVector[] propertyArray = getPropertyEmbeddingArray(path);
@@ -815,7 +814,6 @@ public class GenericDocument {
      * @return The first {@link AppSearchBlobHandle} associated with the given path or
      * {@code null} if there is no such value or the value is of a different type.
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
     public @Nullable AppSearchBlobHandle getPropertyBlobHandle(@NonNull String path) {
         Preconditions.checkNotNull(path);
         AppSearchBlobHandle[] propertyArray = getPropertyBlobHandleArray(path);
@@ -996,7 +994,6 @@ public class GenericDocument {
      * {@code null} if no value is set or the value is of a different type.
      */
     @SuppressLint({"ArrayReturn", "NullableCollection"})
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public @Nullable EmbeddingVector[] getPropertyEmbeddingArray(@NonNull String path) {
         Preconditions.checkNotNull(path);
         Object value = getProperty(path);
@@ -1020,7 +1017,6 @@ public class GenericDocument {
      * {@code null} if no value is set or the value is of a different type.
      */
     @SuppressLint({"ArrayReturn", "NullableCollection"})
-    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
     public @Nullable AppSearchBlobHandle[] getPropertyBlobHandleArray(@NonNull String path) {
         Preconditions.checkNotNull(path);
         Object value = getProperty(path);
@@ -1643,7 +1639,6 @@ public class GenericDocument {
          * @throws IllegalArgumentException if the name is empty or {@code null}.
          */
         @CanIgnoreReturnValue
-        @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
         @RequiresFeature(
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                 name = Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG)
@@ -1680,7 +1675,6 @@ public class GenericDocument {
          * @throws IllegalArgumentException if the name is empty or {@code null}.
          */
         @CanIgnoreReturnValue
-        @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
         @RequiresFeature(
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                 name = Features.SCHEMA_BLOB_HANDLE)
