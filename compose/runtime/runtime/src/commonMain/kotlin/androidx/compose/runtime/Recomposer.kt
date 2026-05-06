@@ -1089,7 +1089,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             // Observe data source invalidations and propagate them to known composers only from
             // this caller's dispatcher, never working with the same composer in parallel.
             // unregisterApplyObserver is called as part of the big finally below
-            val unregisterApplyObserver = DataSource.registerInvalidator { changed ->
+            val unregisterApplyObserver = Snapshot.registerApplyObserver { changed, _ ->
                 synchronized(stateLock) {
                         if (_state.value >= State.Idle) {
                             val snapshotInvalidations = snapshotInvalidations

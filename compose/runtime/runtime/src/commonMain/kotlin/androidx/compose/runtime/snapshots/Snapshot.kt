@@ -688,7 +688,7 @@ public sealed class Snapshot(
          * observer registered with [registerGlobalWriteObserver].
          */
         public fun sendApplyNotifications() {
-            DataSource.advanceGlobalSnapshot()
+            androidx.compose.runtime.snapshots.advanceGlobalSnapshot()
         }
 
         @InternalComposeApi public fun openSnapshotCount(): Int = openSnapshots.toList().size
@@ -1994,9 +1994,10 @@ private object SnapshotDataSource : DataSource {
         return Snapshot.withMutableSnapshot(block)
     }
 
-    override fun advanceGlobalSnapshot() {
+    override fun advanceGlobalSnapshot(): Set<Any> {
         val changes = sync { globalSnapshot.hasPendingChanges() }
         if (changes) androidx.compose.runtime.snapshots.advanceGlobalSnapshot()
+        return emptySet()
     }
 }
 
