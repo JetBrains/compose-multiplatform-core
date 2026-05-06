@@ -1049,7 +1049,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             // this caller's dispatcher, never working with the same composer in parallel.
             // unregisterApplyObserver is called as part of the big finally below
             val unregisterApplyObserver =
-                DataSource.registerInvalidator { changed ->
+                Snapshot.registerApplyObserver { changed, _ ->
                     synchronized(stateLock) {
                             if (_state.value >= State.Idle) {
                                 val snapshotInvalidations = snapshotInvalidations

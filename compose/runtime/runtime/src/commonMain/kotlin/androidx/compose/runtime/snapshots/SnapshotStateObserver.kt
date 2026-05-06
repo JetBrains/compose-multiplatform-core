@@ -22,7 +22,6 @@ import androidx.collection.MutableScatterSet
 import androidx.compose.runtime.DerivedState
 import androidx.compose.runtime.DerivedStateObserver
 import androidx.compose.runtime.DataSource
-import androidx.compose.runtime.ObserverHandle
 import androidx.compose.runtime.TestOnly
 import androidx.compose.runtime.collection.ScopeMap
 import androidx.compose.runtime.collection.fastForEach
@@ -330,7 +329,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
 
     /** Starts watching for state commits. */
     public fun start() {
-        applyUnsubscribe = DataSource.registerInvalidator(applyObserver)
+        applyUnsubscribe = Snapshot.registerApplyObserver { applied, _ -> applyObserver(applied) }
     }
 
     /** Stops watching for state commits. */

@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import kotlinx.io.files.Path
 import androidx.compose.runtime.Applier
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.withContext
 
 suspend fun awaitApplication(
@@ -54,7 +55,7 @@ suspend fun awaitApplication(
     val application = Application.current
     application.awaitWhenReady()
     coroutineScope {
-        launchScene(content)
+        launchScene(context = coroutineContext, { }, {}, content = content)
         terminationSignal.join()
         // Cancel the composition/recomposition coroutines so this function returns.
         this.coroutineContext.cancel()
@@ -62,11 +63,20 @@ suspend fun awaitApplication(
     application.stopAndJoin()
 }
 
-internal suspend fun launchScene(content: @Composable () -> Unit) {
+suspend fun <T> launchScene(
+    context: CoroutineContext,
+    prepareMainThread: () -> T,
+    restoreMainThread: (T) -> Unit,
+    content: @Composable () -> Unit,
+) {
     withContext(getComposeDispatcher() + YieldFrameClock) {
         GlobalSnapshotManager.ensureStarted()
-        val recomposer = Recomposer(coroutineContext)
-        val scene = Scene<Unit>(coroutineScope = this)
+        val recomposer = Recomposer(context)
+        val scene = Scene(
+            coroutineScope = this,
+            prepareMainThread = prepareMainThread,
+            restoreMainThread = restoreMainThread,
+        )
 
         launch {
             recomposer.runRecomposeAndApplyChanges()
