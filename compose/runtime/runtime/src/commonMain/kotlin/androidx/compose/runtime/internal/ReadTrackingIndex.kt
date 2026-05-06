@@ -1,14 +1,14 @@
 package androidx.compose.runtime.internal
 
 import androidx.compose.runtime.DataSource
-import fleet.fastutil.ints.Int2ObjectOpenHashMap
-import fleet.fastutil.ints.IntOpenHashSet
-import fleet.fastutil.ints.forEach
-import fleet.fastutil.ints.isEmpty
-import fleet.fastutil.ints.valuesToHashSet
-import fleet.fastutil.longs.Long2ObjectOpenHashMap
-import fleet.fastutil.longs.LongOpenHashSet
-import fleet.fastutil.longs.isEmpty
+import fastutil.ints.Int2ObjectOpenHashMap
+import fastutil.ints.IntOpenHashSet
+import fastutil.ints.forEach
+import fastutil.ints.isEmpty
+import fastutil.ints.valuesToHashSet
+import fastutil.longs.Long2ObjectOpenHashMap
+import fastutil.longs.LongOpenHashSet
+import fastutil.longs.isEmpty
 import noria.ID
 
 internal class ReadTrackingIndex {

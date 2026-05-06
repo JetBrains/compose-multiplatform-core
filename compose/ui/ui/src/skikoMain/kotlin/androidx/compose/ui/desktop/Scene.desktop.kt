@@ -27,11 +27,18 @@ import kotlinx.coroutines.CoroutineScope
 // TODO[wojciech.krystyniak] This should be internal, but we need it for TestWindow
 class Scene<T> /* internal */ constructor(
     internal val coroutineScope: CoroutineScope,
+    @PublishedApi internal val prepareMainThread: () -> T,
+    @PublishedApi internal val restoreMainThread: (T) -> Unit,
 ) {
     @OptIn(ExperimentalContracts::class)
     inline fun <R> withPreparedMainThread(block: () -> R): R {
         contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
-        return block()
+        val token = prepareMainThread()
+        try {
+            return block()
+        } finally {
+            restoreMainThread(token)
+        }
     }
 }
 

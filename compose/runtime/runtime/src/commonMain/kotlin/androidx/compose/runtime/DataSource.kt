@@ -19,9 +19,9 @@
 package androidx.compose.runtime
 
 import androidx.compose.runtime.internal.ReadTrackingIndex
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 import androidx.compose.runtime.snapshots.Snapshot
-import fleet.multiplatform.shims.MultiplatformConcurrentHashMap
-import fleet.multiplatform.shims.MultiplatformConcurrentHashSet
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.contracts.ExperimentalContracts
@@ -223,42 +223,46 @@ interface DataSource {
                     }
                 }
                 invalidateAllKeys.forEach { key ->
-                    keyToReadTrackingIndex[key]
-                        ?.toList()
-                        ?.forEach { readTrackingIndex ->
-                            readTrackingIndex.invalidateAll("DB")
-                        }
+                    snapshotIndicesFor(key)?.forEach { readTrackingIndex ->
+                        readTrackingIndex.invalidateAll("DB")
+                    }
                 }
                 patternHashesByKey.forEach { (key, patternHashes) ->
                     if (key !in invalidateAllKeys) {
-                        keyToReadTrackingIndex[key]
-                            ?.toList()
-                            ?.forEach { readTrackingIndex ->
-                                readTrackingIndex.invalidate(patternHashes.toLongArray(), "DB")
-                            }
+                        snapshotIndicesFor(key)?.forEach { readTrackingIndex ->
+                            readTrackingIndex.invalidate(patternHashes.toLongArray(), "DB")
+                        }
                     }
                 }
             }
             Snapshot.sendApplyNotifications()
         }
 
-        internal val keyToReadTrackingIndex = MultiplatformConcurrentHashMap<Any, MultiplatformConcurrentHashSet<ReadTrackingIndex>>()
+        private val readTrackingIndicesLock = makeSynchronizedObject()
+        internal val keyToReadTrackingIndex = HashMap<Any, MutableSet<ReadTrackingIndex>>()
 
         internal fun registerReadTrackingIndex(key: Any, readTrackingIndex: ReadTrackingIndex) {
-            keyToReadTrackingIndex.computeIfAbsent(key) { MultiplatformConcurrentHashSet() }.add(readTrackingIndex)
+            synchronized(readTrackingIndicesLock) {
+                keyToReadTrackingIndex.getOrPut(key) { mutableSetOf() }.add(readTrackingIndex)
+            }
         }
 
         internal fun unregisterReadTrackingIndex(key: Any, readTrackingIndex: ReadTrackingIndex) {
-            keyToReadTrackingIndex.compute(key) { _, indices ->
-                if (indices == null) return@compute null
+            synchronized(readTrackingIndicesLock) {
+                val indices = keyToReadTrackingIndex[key] ?: return
                 indices.remove(readTrackingIndex)
-                if (indices.isEmpty()) null else indices
+                if (indices.isEmpty()) keyToReadTrackingIndex.remove(key)
             }
         }
 
         internal fun clearReadTrackingIndices(key: Any) {
-            keyToReadTrackingIndex.remove(key)?.clear()
+            synchronized(readTrackingIndicesLock) {
+                keyToReadTrackingIndex.remove(key)?.clear()
+            }
         }
+
+        private fun snapshotIndicesFor(key: Any): List<ReadTrackingIndex>? =
+            synchronized(readTrackingIndicesLock) { keyToReadTrackingIndex[key]?.toList() }
 
         /**
          * Clears all recorded observations associated with [sourceKey].
