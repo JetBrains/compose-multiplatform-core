@@ -99,7 +99,7 @@ suspend fun awaitApplication(
             }
 
             coroutineScope {
-                val scene = Scene<Unit>(coroutineScope = this)
+                val scene = Scene<Unit>(coroutineScope = this, {}, {})
 
                 launch {
                     recomposer.runRecomposeAndApplyChanges()
