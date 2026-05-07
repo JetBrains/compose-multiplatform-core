@@ -273,7 +273,6 @@ internal class ComposeContainer(
         // provide the saved state to the next Compose scene when the container re-enters
         // the window hierarchy.
         savedState = architectureComponentsOwner.saveState()
-        lifecycleDelegate.onLifecycleStateUpdated = null
 
         view.updateMetalView(metalView = null)
         navigationEventInput.onDidMoveToWindow(null, view)
@@ -287,6 +286,10 @@ internal class ComposeContainer(
         layersHolder = null
 
         interfaceOrientationObserver.isObservingEnabled = false
+
+        // Propagate DESTROYED through the still-attached delegate callback, then detach.
+        lifecycleDelegate.markDisposed()
+        lifecycleDelegate.onLifecycleStateUpdated = null
     }
 
     private fun createComposeSceneContext(

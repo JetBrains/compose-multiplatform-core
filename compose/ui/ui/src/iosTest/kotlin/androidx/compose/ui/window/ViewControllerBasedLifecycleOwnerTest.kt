@@ -86,6 +86,61 @@ class ViewControllerBasedLifecycleOwnerTest {
     }
 
     @Test
+    fun markDisposedPropagatesDestroyedThroughActiveCallback() {
+        val notificationCenter = NSNotificationCenter()
+        val lifecycleOwner = DefaultArchitectureComponentsOwner()
+        val lifecycleDelegate = ComposeContainerLifecycleDelegate(notificationCenter)
+        lifecycleDelegate.onLifecycleStateUpdated = lifecycleOwner::setLifecycleState
+        val scene = UIWindowScene()
+        lifecycleDelegate.windowScene = scene
+        lifecycleDelegate.composeContainerWillAppear()
+        notificationCenter.postNotificationName(UISceneWillEnterForegroundNotification, scene)
+        notificationCenter.postNotificationName(UISceneDidActivateNotification, scene)
+        assertEquals(Lifecycle.State.RESUMED, lifecycleOwner.lifecycle.currentState)
+
+        lifecycleDelegate.markDisposed()
+        assertEquals(Lifecycle.State.DESTROYED, lifecycleOwner.lifecycle.currentState)
+    }
+
+    @Test
+    fun disposeSceneOrdering_destroyedReachesOwnerEvenAfterCallbackDetached() {
+        val notificationCenter = NSNotificationCenter()
+        val lifecycleOwner = DefaultArchitectureComponentsOwner()
+        val lifecycleDelegate = ComposeContainerLifecycleDelegate(notificationCenter)
+        lifecycleDelegate.onLifecycleStateUpdated = lifecycleOwner::setLifecycleState
+        val scene = UIWindowScene()
+        lifecycleDelegate.windowScene = scene
+        lifecycleDelegate.composeContainerWillAppear()
+        notificationCenter.postNotificationName(UISceneWillEnterForegroundNotification, scene)
+        notificationCenter.postNotificationName(UISceneDidActivateNotification, scene)
+        lifecycleDelegate.composeContainerDidDisappear()
+
+        // Simulates ComposeContainer.disposeComposeScene() ordering: mark disposed
+        // first (so DESTROYED propagates through the live callback), then detach.
+        lifecycleDelegate.markDisposed()
+        lifecycleDelegate.onLifecycleStateUpdated = null
+        assertEquals(Lifecycle.State.DESTROYED, lifecycleOwner.lifecycle.currentState)
+
+        // Subsequent dealloc must not crash and must not regress the state.
+        lifecycleDelegate.composeContainerWillDealloc()
+        assertEquals(Lifecycle.State.DESTROYED, lifecycleOwner.lifecycle.currentState)
+    }
+
+    @Test
+    fun markDisposedIsIdempotent() {
+        val notificationCenter = NSNotificationCenter()
+        val lifecycleOwner = DefaultArchitectureComponentsOwner()
+        val lifecycleDelegate = ComposeContainerLifecycleDelegate(notificationCenter)
+        lifecycleDelegate.onLifecycleStateUpdated = lifecycleOwner::setLifecycleState
+        val scene = UIWindowScene()
+        lifecycleDelegate.windowScene = scene
+
+        lifecycleDelegate.markDisposed()
+        lifecycleDelegate.markDisposed()
+        assertEquals(Lifecycle.State.DESTROYED, lifecycleOwner.lifecycle.currentState)
+    }
+
+    @Test
     fun viewDidDisappearThenBackground() {
         val notificationCenter = NSNotificationCenter()
         val lifecycleOwner = DefaultArchitectureComponentsOwner()

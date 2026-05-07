@@ -79,6 +79,17 @@ internal class ComposeContainerLifecycleDelegate(
             this.isSceneActive = activeStateListener.isSceneActive
         }
 
+    /**
+     * Marks the lifecycle as disposed, propagating [Lifecycle.State.DESTROYED] to the
+     * currently-attached [onLifecycleStateUpdated] callback (if any). Idempotent.
+     *
+     * Call this from the scene-dispose path before nulling the callback, so the owning
+     * [androidx.lifecycle.ViewModelStoreOwner] is destroyed while the wiring is still live.
+     */
+    fun markDisposed() {
+        this.isDisposed = true
+    }
+
     override fun composeContainerWillDealloc() {
         this.isDisposed = true
         activeStateListener.dispose()
