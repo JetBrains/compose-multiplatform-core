@@ -108,11 +108,6 @@ internal abstract class DesktopComposeSceneLayer(
         get() = mediator?.compositionLocalContext
         set(value) { mediator?.compositionLocalContext = value }
 
-    // Blocking pointer input outside is not supported
-    override var consumePointerInputOutside: Boolean
-        get() = false
-        set(_) {}
-
     @CallSuper
     override fun close() {
         isClosed = true

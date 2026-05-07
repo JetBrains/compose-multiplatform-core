@@ -96,7 +96,7 @@ interface ComposeSceneLayer {
      * for example, the pressing of the back button.
      *
      * This flag also influences the expected behavior of [setOutsidePointerEventListener]:
-     * when [focusable] is true, touch events outside of this layer's bounds are not propagated to
+     * when [focusable] is true, pointer events outside of this layer's bounds are not propagated to
      * the content layered below this one.
      *
      * @see PopupProperties.focusable
@@ -105,7 +105,7 @@ interface ComposeSceneLayer {
 
     /**
      * Indicates if pointer input events outside of this layer's bounds should be blocked.
-     * When set to true, touch events outside of this layer's bounds are not propagated to
+     * When set to true, pointer events outside of this layer's bounds are not propagated to
      * the content layered below this one.
      */
     var consumePointerInputOutside: Boolean

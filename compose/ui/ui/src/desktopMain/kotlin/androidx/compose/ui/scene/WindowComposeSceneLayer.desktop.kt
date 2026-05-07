@@ -113,6 +113,11 @@ internal class WindowComposeSceneLayer(
 
     override var scrimColor: Color? = null
 
+    // Blocking pointer input outside is not supported for window-based popup layers.
+    override var consumePointerInputOutside: Boolean
+        get() = false
+        set(_) {}
+
     init {
         val boundsInPx = windowContainer.sizeInPx.toRect()
         drawBounds = boundsInPx.roundToIntRect()
