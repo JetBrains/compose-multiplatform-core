@@ -246,7 +246,7 @@ internal abstract class DesktopComposeSceneLayer(
 
     private inner class BlockingInputLayerEventFilter : AwtEventFilter() {
         private val noBlockingInputLayers: Boolean
-            get() = layersAbove.all { !it.consumePointerInputOutside }
+            get() = layersAbove.none { it.consumePointerInputOutside }
 
         override fun shouldSendMouseEvent(event: MouseEvent): Boolean = noBlockingInputLayers
         override fun shouldSendKeyEvent(event: KeyEvent): Boolean = focusable && noBlockingInputLayers
