@@ -36,7 +36,7 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.platform.PlatformFrameDispatcher
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.unit.Density
@@ -234,7 +234,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         @InternalTestApi
         set
 
-    private lateinit var frameDispatcher: PlatformFrameDispatcher
+    private lateinit var frameRecomposer: FrameRecomposer
 
     private val architectureComponentsOwner =
         DefaultArchitectureComponentsOwner(enforceMainThread = false)
@@ -273,7 +273,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
                         // > Anything that might result in animation may require the MonotonicFrameClock,
                         // > and to get the timing right it should be the clock provided by the Recomposer's effect context
                         // It's covered by SkikoComposeUiTestTest.canDriveAnimationsFromTest.
-                        frameDispatcher.withMonotonicFrameClock {
+                        frameRecomposer.withMonotonicFrameClock {
                             block()
                         }
                     }
@@ -317,17 +317,17 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
      */
     private fun render(timeMillis: Long) {
         surface.canvas.clear(Color.TRANSPARENT)
-        frameDispatcher.recomposeFrame(timeMillis * NanoSecondsPerMilliSecond)
+        frameRecomposer.recomposeFrame(timeMillis * NanoSecondsPerMilliSecond)
         scene.measureAndLayout()
         scene.draw(surface.canvas.asComposeCanvas())
     }
 
     private fun createScene() {
-        frameDispatcher = PlatformFrameDispatcher(recomposerCoroutineScope.coroutineContext)
+        frameRecomposer = FrameRecomposer(recomposerCoroutineScope.coroutineContext)
         scene = CanvasLayersComposeScene(
             density = density,
             size = size,
-            coroutineContext = frameDispatcher.compositionContext.effectCoroutineContext,
+            coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
             platformContext = TestContext(),
             invalidateLayout = { },
             invalidateDraw = { },
@@ -339,7 +339,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     private fun closeScene() {
         architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         scene.close()
-        frameDispatcher.close()
+        frameRecomposer.close()
     }
 
     private fun advanceIfNeededAndRenderNextFrame() {
@@ -365,7 +365,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
         return !Snapshot.current.hasPendingChanges()
             && !Snapshot.isApplyObserverNotificationPending
-            && !frameDispatcher.hasPendingWork()
+            && !frameRecomposer.hasPendingWork()
             && !scene.hasPendingMeasureOrLayout
             && !scene.hasPendingDraw
             && areAllResourcesIdle()
@@ -563,7 +563,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
     }
 
-    private inner class TestContext : PlatformContext by PlatformContext.Empty(frameDispatcher) {
+    private inner class TestContext : PlatformContext by PlatformContext.Empty(frameRecomposer) {
         override val windowInfo: WindowInfo = TestWindowInfo()
         override val architectureComponentsOwner get() = this@SkikoComposeUiTest.architectureComponentsOwner
         override val rootForTestListener: PlatformContext.RootForTestListener

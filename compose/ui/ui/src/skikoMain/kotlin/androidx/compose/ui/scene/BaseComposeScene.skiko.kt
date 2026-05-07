@@ -35,13 +35,11 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.node.SnapshotInvalidationTracker
-import androidx.compose.ui.node.WeakReference
-import androidx.compose.ui.platform.PlatformFrameDispatcher
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.ProvidePlatformCompositionLocals
-import androidx.compose.ui.platform.platformFrameDispatcher
 import androidx.compose.ui.platform.compositionContext
-import androidx.compose.ui.platform.findPlatformFrameDispatcherInNearestAncestor
+import androidx.compose.ui.platform.findFrameRecomposerInNearestAncestor
 import androidx.compose.ui.platform.findCompositionContextInNearestAncestor
 import androidx.compose.ui.util.trace
 import kotlin.concurrent.Volatile
@@ -146,7 +144,7 @@ internal abstract class BaseComposeScene(
              * changed parameters can be applied in a separate turn and trigger double
              * recomposition when new content is installed.
              */
-            resolveFrameDispatcher().performScheduledRecomposerTasks()
+            resolveFrameRecomposer().performScheduledRecomposerTasks()
             composition?.dispose()
             composition = createComposition {
                 ProvidePlatformCompositionLocals(
@@ -157,7 +155,7 @@ internal abstract class BaseComposeScene(
                     content = content
                 )
             }
-            resolveFrameDispatcher().performScheduledRecomposerTasks()
+            resolveFrameRecomposer().performScheduledRecomposerTasks()
         }
 
     override fun measureAndLayout() {
@@ -168,7 +166,7 @@ internal abstract class BaseComposeScene(
 
             // Schedule synthetic events to be sent after measure/layout completes.
             if (inputHandler.needUpdatePointerPosition) {
-                resolveFrameDispatcher().dispatch {
+                resolveFrameRecomposer().dispatch {
                     inputHandler.updatePointerPosition()
                 }
             }
@@ -213,7 +211,7 @@ internal abstract class BaseComposeScene(
             scaleGestureFactor = scaleGestureFactor,
             panGestureOffset = panGestureOffset,
         ).also {
-            resolveFrameDispatcher().performScheduledEffects()
+            resolveFrameRecomposer().performScheduledEffects()
         }
     }
 
@@ -244,7 +242,7 @@ internal abstract class BaseComposeScene(
             scaleGestureFactor = scaleGestureFactor,
             panGestureOffset = panGestureOffset,
         ).also {
-            resolveFrameDispatcher().performScheduledEffects()
+            resolveFrameRecomposer().performScheduledEffects()
         }
     }
 
@@ -255,7 +253,7 @@ internal abstract class BaseComposeScene(
     override fun sendKeyEvent(keyEvent: KeyEvent): Boolean =
         postponeInvalidation("BaseComposeScene:sendKeyEvent") {
             inputHandler.onKeyEvent(keyEvent).also {
-                resolveFrameDispatcher().performScheduledEffects()
+                resolveFrameRecomposer().performScheduledEffects()
             }
         }
 
@@ -270,7 +268,7 @@ internal abstract class BaseComposeScene(
             uptimeMillis = timeMillis
         )
         processRotaryScrollEvent(event).also {
-            resolveFrameDispatcher().performScheduledEffects()
+            resolveFrameRecomposer().performScheduledEffects()
         }
     }
 
@@ -279,16 +277,16 @@ internal abstract class BaseComposeScene(
         parentCompositionContext ?: with(composeSceneContext.platformContext.valueStorage) {
             compositionContext
                 ?: findCompositionContextInNearestAncestor()
-                ?: findPlatformFrameDispatcherInNearestAncestor()?.compositionContext
+                ?: findFrameRecomposerInNearestAncestor()?.compositionContext
                 ?: error("Parent CompositionContext is not found")
         }
 
 
-    private var frameDispatcher: PlatformFrameDispatcher? = null
-    private fun resolveFrameDispatcher(): PlatformFrameDispatcher =
-        frameDispatcher ?: with(composeSceneContext.platformContext.valueStorage) {
-            findPlatformFrameDispatcherInNearestAncestor()
-                ?: error("PlatformFrameDispatcher is not found")
+    private var frameRecomposer: FrameRecomposer? = null
+    private fun resolveFrameRecomposer(): FrameRecomposer =
+        frameRecomposer ?: with(composeSceneContext.platformContext.valueStorage) {
+            findFrameRecomposerInNearestAncestor()
+                ?: error("FrameRecomposer is not found")
         }
 
     protected fun runMeasureAndLayout() {

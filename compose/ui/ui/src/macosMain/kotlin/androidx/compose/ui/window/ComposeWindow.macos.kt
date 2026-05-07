@@ -32,7 +32,7 @@ import androidx.compose.ui.platform.MacosTextInputService
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.platform.PlatformFrameDispatcher
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
@@ -97,9 +97,9 @@ private class ComposeWindow(
         isWindowFocused = true
     }
     private val archComponentsOwner = DefaultArchitectureComponentsOwner()
-    private val frameDispatcher = PlatformFrameDispatcher(Dispatchers.Main) { skiaLayer.needRender() }
+    private val frameRecomposer = FrameRecomposer(Dispatchers.Main) { skiaLayer.needRender() }
     private val platformContext: PlatformContext =
-        object : PlatformContext by PlatformContext.Empty(frameDispatcher) {
+        object : PlatformContext by PlatformContext.Empty(frameRecomposer) {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
             override val textInputService get() = macosTextInputService
@@ -123,7 +123,7 @@ private class ComposeWindow(
             _windowInfo.containerSize = sizeInPx
             _windowInfo.containerDpSize = sizeInPx.toSize().toDpSize(scene.density)
             scene.size = sizeInPx // TODO: Move it out from onRender to avoid extra invalidation
-            frameDispatcher.recomposeFrame(nanoTime)
+            frameRecomposer.recomposeFrame(nanoTime)
             scene.measureAndLayout()
             scene.draw(canvas.asComposeCanvas())
         }
@@ -240,7 +240,7 @@ private class ComposeWindow(
         archComponentsOwner.viewModelStore.clear()
         skiaLayer.detach()
         scene.close()
-        frameDispatcher.close()
+        frameRecomposer.close()
         isDisposed = true
     }
 

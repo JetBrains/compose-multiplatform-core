@@ -47,11 +47,11 @@ import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
-import androidx.compose.ui.platform.PlatformFrameDispatcher
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.DelegateRootForTestListener
 import androidx.compose.ui.platform.DesktopTextInputService
 import androidx.compose.ui.platform.DesktopTextInputService2
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
@@ -156,8 +156,8 @@ internal class ComposeSceneMediator(
         DesktopTextInputService2(platformComponent)
     }
 
-    private val frameDispatcher = PlatformFrameDispatcher(coroutineContext, ::onComposeInvalidation)
-    val effectCoroutineContext: CoroutineContext by frameDispatcher.compositionContext::effectCoroutineContext
+    private val frameRecomposer = FrameRecomposer(coroutineContext, ::onComposeInvalidation)
+    val effectCoroutineContext: CoroutineContext by frameRecomposer.compositionContext::effectCoroutineContext
 
     private val _platformContext = DesktopPlatformContext()
     val platformContext: PlatformContext get() = _platformContext
@@ -603,7 +603,7 @@ internal class ComposeSceneMediator(
         container.dropTarget = null
 
         scene.close()
-        frameDispatcher.close()
+        frameRecomposer.close()
         skiaLayerComponent.dispose()
 
         interopContainer.root.removeContainerListener(interopContainerListener)
@@ -712,7 +712,7 @@ internal class ComposeSceneMediator(
     override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) = catchExceptions {
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
-                frameDispatcher.recomposeFrame(nanoTime)
+                frameRecomposer.recomposeFrame(nanoTime)
                 scene.measureAndLayout()
                 scene.draw(asComposeCanvas())
             }
@@ -809,7 +809,7 @@ internal class ComposeSceneMediator(
         // host component, and make parent lookup traverse the Swing containment hierarchy.
         override val valueStorage: PlatformValueStorage =
             PlatformValueStorage.MapValueStorage(
-                parent = frameDispatcher.asPlatformValueStorage()
+                parent = frameRecomposer.asPlatformValueStorage()
             )
 
         override val windowInfo: WindowInfo get() = windowContext.windowInfo

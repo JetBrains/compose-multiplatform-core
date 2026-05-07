@@ -66,7 +66,7 @@ import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.platform.PlatformFrameDispatcher
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
@@ -219,10 +219,10 @@ internal class ComposeWindow(
 
     private val clipTarget = clipTargetElement(canvas)
 
-    private val frameDispatcher = PlatformFrameDispatcher(Dispatchers.Main, invalidate = { skiaLayer.needRender() })
+    private val frameRecomposer = FrameRecomposer(Dispatchers.Main, invalidate = { skiaLayer.needRender() })
 
     private val platformContext: PlatformContext =
-        object : PlatformContext by PlatformContext.Empty(frameDispatcher) {
+        object : PlatformContext by PlatformContext.Empty(frameRecomposer) {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
 
@@ -330,7 +330,7 @@ internal class ComposeWindow(
 
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
         renderDelegate = SkikoRenderDelegate { canvas, _, _, nanoTime ->
-            frameDispatcher.recomposeFrame(nanoTime)
+            frameRecomposer.recomposeFrame(nanoTime)
             scene.measureAndLayout()
             scene.draw(canvas.asComposeCanvas())
         }
@@ -547,7 +547,7 @@ internal class ComposeWindow(
             .navigationEventDispatcher.removeInput(navigationEventInput)
 
         scene.close()
-        frameDispatcher.close()
+        frameRecomposer.close()
         skiaLayer.detach()
 
         systemThemeObserver.dispose()

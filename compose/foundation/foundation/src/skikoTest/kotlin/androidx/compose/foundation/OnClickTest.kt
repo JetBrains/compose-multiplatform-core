@@ -31,7 +31,7 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isAltPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformFrameDispatcher
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.scene.CanvasLayersComposeScene
@@ -84,10 +84,10 @@ class OnClickTest {
     @OptIn(ExperimentalFoundationApi::class, ExperimentalCoroutinesApi::class)
     @Test
     fun simpleClickWithoutMove() = runTest {
-        val frameDispatcher = PlatformFrameDispatcher(coroutineContext)
+        val frameRecomposer = FrameRecomposer(coroutineContext)
         val scene = CanvasLayersComposeScene(
-            coroutineContext = frameDispatcher.compositionContext.effectCoroutineContext,
-            platformContext = PlatformContext.Empty(frameDispatcher),
+            coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
+            platformContext = PlatformContext.Empty(frameRecomposer),
         )
         try {
             scene.size = IntSize(100, 100)
@@ -111,7 +111,7 @@ class OnClickTest {
             )
         } finally {
             scene.close()
-            frameDispatcher.close()
+            frameRecomposer.close()
         }
     }
 

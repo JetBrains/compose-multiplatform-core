@@ -29,7 +29,7 @@ import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformFrameDispatcher
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.unit.IntSize
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
@@ -162,19 +162,19 @@ private fun createPlatformLayersScene(
     invalidateLayout: () -> Unit = {},
     invalidateDraw: () -> Unit = {},
 ): Pair<ComposeScene, AutoCloseable> {
-    val frameDispatcher = PlatformFrameDispatcher(coroutineContext)
+    val frameRecomposer = FrameRecomposer(coroutineContext)
     val scene = PlatformLayersComposeScene(
         size = size,
-        coroutineContext = frameDispatcher.compositionContext.effectCoroutineContext,
+        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         composeSceneContext = object : ComposeSceneContext {
-            override val platformContext: PlatformContext = PlatformContext.Empty(frameDispatcher)
+            override val platformContext: PlatformContext = PlatformContext.Empty(frameRecomposer)
         },
         invalidateLayout = invalidateLayout,
         invalidateDraw = invalidateDraw,
     )
     return scene to AutoCloseable {
         scene.close()
-        frameDispatcher.close()
+        frameRecomposer.close()
     }
 }
 
@@ -184,17 +184,17 @@ private fun createCanvasLayersScene(
     invalidateLayout: () -> Unit = {},
     invalidateDraw: () -> Unit = {},
 ): Pair<ComposeScene, AutoCloseable> {
-    val frameDispatcher = PlatformFrameDispatcher(coroutineContext)
+    val frameRecomposer = FrameRecomposer(coroutineContext)
     val scene = CanvasLayersComposeScene(
         size = size,
-        coroutineContext = frameDispatcher.compositionContext.effectCoroutineContext,
-        platformContext = PlatformContext.Empty(frameDispatcher),
+        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
+        platformContext = PlatformContext.Empty(frameRecomposer),
         invalidateLayout = invalidateLayout,
         invalidateDraw = invalidateDraw,
     )
     return scene to AutoCloseable {
         scene.close()
-        frameDispatcher.close()
+        frameRecomposer.close()
     }
 }
 

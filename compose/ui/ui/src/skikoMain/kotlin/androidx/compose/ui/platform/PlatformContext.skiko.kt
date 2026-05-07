@@ -237,11 +237,11 @@ interface PlatformContext {
 
     @InternalComposeUiApi
     open class Empty(
-        platformFrameDispatcher: PlatformFrameDispatcher? = null
+        frameRecomposer: FrameRecomposer? = null
     ) : PlatformContext {
         override val valueStorage: PlatformValueStorage =
             PlatformValueStorage.MapValueStorage(
-                parent = platformFrameDispatcher?.asPlatformValueStorage()
+                parent = frameRecomposer?.asPlatformValueStorage()
             )
 
         override val windowInfo: WindowInfo = WindowInfoImpl().apply {

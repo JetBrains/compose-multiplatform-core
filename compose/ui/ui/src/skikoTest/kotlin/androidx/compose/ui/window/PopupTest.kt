@@ -52,7 +52,7 @@ import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.platform.PlatformFrameDispatcher
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
@@ -770,18 +770,18 @@ class PopupTest {
         lateinit var scene: ComposeScene
         val size = IntSize(100, 100)
         val surface = Surface.makeRasterN32Premul(size.width, size.height)
-        val frameDispatcher = PlatformFrameDispatcher(coroutineContext)
+        val frameRecomposer = FrameRecomposer(coroutineContext)
         fun invalidate() {
-            frameDispatcher.recomposeFrame(1)
+            frameRecomposer.recomposeFrame(1)
             scene.measureAndLayout()
             scene.draw(surface.canvas.asComposeCanvas())
         }
         scene = CanvasLayersComposeScene(
-            platformContext = object : PlatformContext by PlatformContext.Empty(frameDispatcher) {}.also {
+            platformContext = object : PlatformContext by PlatformContext.Empty(frameRecomposer) {}.also {
                 val windowInfo = it.windowInfo as WindowInfoImpl
                 windowInfo.containerSize = IntSize(50, 50)
             },
-            coroutineContext = frameDispatcher.compositionContext.effectCoroutineContext,
+            coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
             invalidateLayout = ::invalidate,
             invalidateDraw = ::invalidate,
         )
@@ -795,7 +795,7 @@ class PopupTest {
             invalidate()
         } finally {
             scene.close()
-            frameDispatcher.close()
+            frameRecomposer.close()
         }
     }
 

@@ -41,7 +41,7 @@ import kotlinx.coroutines.withContext
  * host-dispatch contract instead of recomposer-specific scheduling details.
  */
 @InternalComposeUiApi
-class PlatformFrameDispatcher(
+class FrameRecomposer(
     coroutineContext: CoroutineContext,
     private val invalidate: () -> Unit = {},
 ) : AutoCloseable {
@@ -102,7 +102,7 @@ class PlatformFrameDispatcher(
      */
     suspend fun withMonotonicFrameClock(block: suspend () -> Unit) {
         val monotonicFrameClock = compositionContext.effectCoroutineContext[MonotonicFrameClock]
-            ?: error("No MonotonicFrameClock found in PlatformFrameDispatcher.compositionContext")
+            ?: error("No MonotonicFrameClock found in FrameRecomposer.compositionContext")
         withContext(monotonicFrameClock) {
             block()
         }
@@ -116,12 +116,12 @@ class PlatformFrameDispatcher(
     }
 
     internal fun performScheduledRecomposerTasks(): Unit =
-        trace("PlatformFrameDispatcher:performScheduledRecomposerTasks") {
+        trace("FrameRecomposer:performScheduledRecomposerTasks") {
             recomposeDispatcher.flush()
         }
 
     internal fun performScheduledEffects(): Unit =
-        trace("PlatformFrameDispatcher:performScheduledEffects") {
+        trace("FrameRecomposer:performScheduledEffects") {
             effectDispatcher.flush()
         }
 }
@@ -130,8 +130,8 @@ class PlatformFrameDispatcher(
  * Creates synthetic platform value storage backed by this host.
  */
 @InternalComposeUiApi
-fun PlatformFrameDispatcher.asPlatformValueStorage(): PlatformValueStorage =
+fun FrameRecomposer.asPlatformValueStorage(): PlatformValueStorage =
     PlatformValueStorage.MapValueStorage().also {
         it.compositionContext = compositionContext
-        it.platformFrameDispatcher = this
+        it.frameRecomposer = this
     }

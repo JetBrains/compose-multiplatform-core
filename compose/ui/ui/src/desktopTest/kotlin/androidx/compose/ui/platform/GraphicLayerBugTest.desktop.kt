@@ -47,7 +47,7 @@ class GraphicLayerBugDesktopTest {
     // sendApplyNotifications can be called anywhere. When it was called inside composition, it triggers wrongly written observers
     @Test
     fun `no crash when sendApplyNotifications performed in composition`() {
-        runLayerSceneTest { scene, frameDispatcher ->
+        runLayerSceneTest { scene, frameRecomposer ->
             val canvas = Surface.makeRasterN32Premul(100, 100).canvas
 
             var triggerApplySnapshot by mutableStateOf(false)
@@ -63,7 +63,7 @@ class GraphicLayerBugDesktopTest {
             }
 
             repeat(10) {
-                frameDispatcher.recomposeFrame(it * 100L)
+                frameRecomposer.recomposeFrame(it * 100L)
                 scene.measureAndLayout()
                 scene.draw(canvas.asComposeCanvas())
             }
@@ -71,14 +71,14 @@ class GraphicLayerBugDesktopTest {
             triggerApplySnapshot = true
 
             repeat(10) {
-                frameDispatcher.recomposeFrame(1000 + it * 100L)
+                frameRecomposer.recomposeFrame(1000 + it * 100L)
                 scene.measureAndLayout()
                 scene.draw(canvas.asComposeCanvas())
             }
         }
     }
 
-    private fun runLayerSceneTest(body: CoroutineScope.(ComposeScene, PlatformFrameDispatcher) -> Unit) {
+    private fun runLayerSceneTest(body: CoroutineScope.(ComposeScene, FrameRecomposer) -> Unit) {
         var coroutineException: Throwable? = null
 
         // catching recomposition exceptions this way because of https://youtrack.jetbrains.com/issue/CMP-6734/ComposeScene-doesnt-catch-exceptions-during-recomposition
@@ -88,16 +88,16 @@ class GraphicLayerBugDesktopTest {
                 coroutineException = throwable
             }
         ) {
-            val frameDispatcher = PlatformFrameDispatcher(coroutineContext)
+            val frameRecomposer = FrameRecomposer(coroutineContext)
             val scene = CanvasLayersComposeScene(
                 coroutineContext = coroutineContext,
-                platformContext = object : PlatformContext by PlatformContext.Empty(frameDispatcher) {},
+                platformContext = object : PlatformContext by PlatformContext.Empty(frameRecomposer) {},
             )
             try {
-                body(scene, frameDispatcher)
+                body(scene, frameRecomposer)
             } finally {
                 scene.close()
-                frameDispatcher.close()
+                frameRecomposer.close()
             }
         }
 

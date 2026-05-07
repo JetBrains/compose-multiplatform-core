@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformFrameDispatcher
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.unit.IntSize
 import kotlin.coroutines.CoroutineContext
 import androidx.compose.ui.window.Dialog
@@ -92,16 +92,16 @@ private fun createCanvasLayersScene(
     invalidateLayout: () -> Unit = {},
     invalidateDraw: () -> Unit = {},
 ): Pair<ComposeScene, AutoCloseable> {
-    val frameDispatcher = PlatformFrameDispatcher(coroutineContext)
+    val frameRecomposer = FrameRecomposer(coroutineContext)
     val scene = CanvasLayersComposeScene(
         size = size,
-        coroutineContext = frameDispatcher.compositionContext.effectCoroutineContext,
-        platformContext = PlatformContext.Empty(frameDispatcher),
+        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
+        platformContext = PlatformContext.Empty(frameRecomposer),
         invalidateLayout = invalidateLayout,
         invalidateDraw = invalidateDraw,
     )
     return scene to AutoCloseable {
         scene.close()
-        frameDispatcher.close()
+        frameRecomposer.close()
     }
 }

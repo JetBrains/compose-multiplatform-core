@@ -50,19 +50,19 @@ import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.AccessibilityMediator
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformFrameDispatcher
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformValueStorage
 import androidx.compose.ui.platform.PlatformWindowContext
-import androidx.compose.ui.platform.asPlatformValueStorage
 import androidx.compose.ui.platform.UIKitIdleTimerManager
 import androidx.compose.ui.platform.UIKitTextInputService
 import androidx.compose.ui.platform.UIKitWindowInsetsManager
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.platform.asPlatformValueStorage
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalNativeTextInputContext
@@ -218,7 +218,7 @@ internal class ComposeSceneMediator(
                 }
         }
 
-    private val frameDispatcher = PlatformFrameDispatcher(coroutineContext, redrawer::setNeedsRedraw)
+    private val frameRecomposer = FrameRecomposer(coroutineContext, redrawer::setNeedsRedraw)
 
     private val scene: ComposeScene by lazy {
         composeSceneFactory(
@@ -399,7 +399,7 @@ internal class ComposeSceneMediator(
     val hasInvalidations: Boolean
         get() = scene.hasPendingMeasureOrLayout ||
             scene.hasPendingDraw ||
-            frameDispatcher.hasPendingWork() ||
+            frameRecomposer.hasPendingWork() ||
             keyboardManager.isAnimating ||
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
@@ -658,7 +658,7 @@ internal class ComposeSceneMediator(
         _backgroundView.removeFromSuperview()
 
         scene.close()
-        frameDispatcher.close()
+        frameRecomposer.close()
         interopContainer.dispose()
         semanticsOwnerListener.dispose()
     }
@@ -724,7 +724,7 @@ internal class ComposeSceneMediator(
         // for ancestor lookup instead of relying on the synthetic map-backed storage.
         override val valueStorage: PlatformValueStorage =
             PlatformValueStorage.MapValueStorage(
-                parent = frameDispatcher.asPlatformValueStorage()
+                parent = frameRecomposer.asPlatformValueStorage()
             )
 
         override val windowInfo: WindowInfo get() = windowContext.windowInfo

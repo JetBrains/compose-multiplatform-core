@@ -88,14 +88,14 @@ var PlatformValueStorage.compositionContext: CompositionContext?
 fun PlatformValueStorage.findCompositionContextInNearestAncestor(): CompositionContext? =
     findInNearestAncestor(CompositionContextKey)
 
-private val PlatformFrameDispatcherKey =
-    Key<PlatformFrameDispatcher>("PlatformFrameDispatcher")
+private val FrameRecomposerKey =
+    Key<FrameRecomposer>("FrameRecomposer")
 
 @InternalComposeUiApi
-var PlatformValueStorage.platformFrameDispatcher: PlatformFrameDispatcher?
-    get() = get(PlatformFrameDispatcherKey)
-    set(value) = set(PlatformFrameDispatcherKey, value)
+var PlatformValueStorage.frameRecomposer: FrameRecomposer?
+    get() = get(FrameRecomposerKey)
+    set(value) = set(FrameRecomposerKey, value)
 
 @InternalComposeUiApi
-fun PlatformValueStorage.findPlatformFrameDispatcherInNearestAncestor(): PlatformFrameDispatcher? =
-    findInNearestAncestor(PlatformFrameDispatcherKey)
+fun PlatformValueStorage.findFrameRecomposerInNearestAncestor(): FrameRecomposer? =
+    findInNearestAncestor(FrameRecomposerKey)
