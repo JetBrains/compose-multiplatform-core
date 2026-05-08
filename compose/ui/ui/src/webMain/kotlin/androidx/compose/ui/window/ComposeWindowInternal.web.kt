@@ -501,6 +501,11 @@ internal class ComposeWindow(
         canvas.style.width = "${boxSize.width.value}px"
         canvas.style.height = "${boxSize.height.value}px"
 
+        a11yContainerElement?.let {
+            it.style.width = "${boxSize.width.value}px"
+            it.style.height = "${boxSize.height.value}px"
+        }
+
         _windowInfo.containerSize = sizeInPx
         _windowInfo.containerDpSize = boxSize
 
