@@ -28,6 +28,7 @@ unsplitPackage {
     splitPackageModule(project(":compose:runtime:runtime-saveable"))
 
     dependency(libs.kotlinStdlib)
+    dependency(libs.kotlinCoroutinesCore)
     dependency(libs.androidx.annotation)
     dependency("androidx.collection:collection:1.5.0")
     dependency(libs.atomicFu)

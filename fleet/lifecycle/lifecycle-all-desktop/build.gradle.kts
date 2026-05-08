@@ -32,7 +32,7 @@ unsplitPackage {
     splitPackageModule("androidx.lifecycle:lifecycle-viewmodel-compose:$originalLifecycleVersion")
 //    splitPackageModule(project(":lifecycle:lifecycle-viewmodel-navigation3"))
     splitPackageModule("androidx.lifecycle:lifecycle-viewmodel-savedstate:$originalLifecycleVersion")
-    splitPackageModule("androidx.savedstate:savedstate-compose:$originalSavedStateVersion")
+//    splitPackageModule("androidx.savedstate:savedstate-compose:$originalSavedStateVersion")
 
     dependency(libs.kotlinStdlib)
     dependency(libs.kotlinCoroutinesCore)
