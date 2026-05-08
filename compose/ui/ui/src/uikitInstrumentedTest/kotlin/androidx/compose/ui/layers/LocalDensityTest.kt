@@ -41,9 +41,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.asDpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
@@ -278,7 +278,7 @@ class LocalDensityTest {
 
         assertEquals(
             expected = interopSize,
-            actual = interopView.frame.useContents { size.asDpSize() }
+            actual = interopView.frame.useContents { size.toDpSize() }
         )
 
         densityScale = 2f
@@ -286,7 +286,7 @@ class LocalDensityTest {
 
         assertEquals(
             expected = (interopSize * densityScale),
-            actual = interopView.frame.useContents { size.asDpSize() }
+            actual = interopView.frame.useContents { size.toDpSize() }
         )
     }
 
@@ -327,7 +327,7 @@ class LocalDensityTest {
                 width = screenSize.width - padding * 2 * densityScale,
                 height = interopHeight * densityScale
             ),
-            actual = interopView.frame.useContents { size.asDpSize() },
+            actual = interopView.frame.useContents { size.toDpSize() },
         )
 
         assertEquals(
@@ -349,7 +349,7 @@ class LocalDensityTest {
                 width = screenSize.width - padding * 2 * densityScale,
                 height = interopHeight * densityScale
             ),
-            actual = interopView.frame.useContents { size.asDpSize() },
+            actual = interopView.frame.useContents { size.toDpSize() },
         )
 
         assertEquals(
