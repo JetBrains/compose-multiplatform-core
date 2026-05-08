@@ -501,10 +501,9 @@ internal class ComposeWindow(
         canvas.style.width = "${boxSize.width.value}px"
         canvas.style.height = "${boxSize.height.value}px"
 
-        a11yContainerElement?.let {
-            it.style.width = "${boxSize.width.value}px"
-            it.style.height = "${boxSize.height.value}px"
-        }
+        // The a11y container is sized via CSS (`width: 100%; height: 100%`) at construction
+        // time, so it tracks the canvas automatically without a per-resize bridge call across
+        // the wasm2js boundary. See ComposeViewport for the setup.
 
         _windowInfo.containerSize = sizeInPx
         _windowInfo.containerDpSize = boxSize
