@@ -34,12 +34,16 @@ unsplitPackage {
     dependency("androidx.collection:collection:1.5.0")
     dependency(libs.kotlinStdlib)
     dependency(libs.kotlinCoroutinesCore)
+    dependency(libs.kotlinSerializationJson)
 
     dependency(libs.skiko)
     dependency(libs.atomicFu)
+    dependency("org.jetbrains.kotlinx:kotlinx-io-core-jvm:${libs.versions.kotlinxIo.get()}")
 
     dependency(project(":compose:runtime:runtime"))
+    dependency(project(":compose:runtime:runtime-retain"))
     dependency(project(":compose:runtime:runtime-saveable"))
+    dependency(project(":savedstate:savedstate-compose"))
     dependency(project(":lifecycle:lifecycle-common"))
     dependency(project(":lifecycle:lifecycle-runtime"))
     dependency(project(":lifecycle:lifecycle-runtime-compose"))
