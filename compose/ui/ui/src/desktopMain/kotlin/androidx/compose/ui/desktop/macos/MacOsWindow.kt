@@ -93,6 +93,7 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.TimeSource
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
+import noria.ui.core.LocalWindow
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.desktop.macos.AppMenuManager
 import org.jetbrains.desktop.macos.Appearance
@@ -473,7 +474,6 @@ class MacOsWindow internal constructor(
     )
 
     init {
-        println("[MacOsWindow] init: id=$id, nativeWindow.isVisible=${nativeWindow.isVisible}, size=${nativeWindow.size}, thread=${Thread.currentThread().name}")
         nativeWindow.registerForDraggedTypes(
             listOf(
                 Pasteboard.FILE_URL_TYPE,
@@ -489,10 +489,7 @@ class MacOsWindow internal constructor(
             { density },
         )
         if (nativeWindow.isVisible) {
-            println("[MacOsWindow] init: nativeWindow IS visible -> setupDisplayLink()")
             setupDisplayLink()
-        } else {
-            println("[MacOsWindow] init: nativeWindow NOT visible -> displayLink NOT set up (waiting for visibility event)")
         }
         // Registration with the application event loop must happen after inputStateTracker is
         // initialized; see the init block at the bottom of the class.
@@ -789,7 +786,6 @@ class MacOsWindow internal constructor(
     private class TimeMarkWrapper(val timeMark: TimeSource.Monotonic.ValueTimeMark)
 
     private fun setupDisplayLink() {
-        println("[MacOsWindow] setupDisplayLink: id=$id, screenId=${nativeWindow.screenId()}, isVisible=${nativeWindow.isVisible}")
         displayLink?.close()
         displayLink = DisplayLink.create(nativeWindow.screenId()) {
             val frameStartTimeMarkWrapper = TimeMarkWrapper(TimeSource.Monotonic.markNow())
@@ -905,17 +901,19 @@ class MacOsWindow internal constructor(
                     dispatchedToAPointerInputModifier = true,
                 )
             } else {
-                composeScene.sendPointerEvent(
-                    eventType = eventType,
-                    position = position,
-                    scrollDelta = scrollDelta,
-                    timeMillis = timeMillis,
-                    type = type,
-                    buttons = buttons,
-                    keyboardModifiers = modifiers,
-                    nativeEvent = nativeEvent,
-                    button = button,
-                )
+                scene.withPreparedMainThread {
+                    composeScene.sendPointerEvent(
+                        eventType = eventType,
+                        position = position,
+                        scrollDelta = scrollDelta,
+                        timeMillis = timeMillis,
+                        type = type,
+                        buttons = buttons,
+                        keyboardModifiers = modifiers,
+                        nativeEvent = nativeEvent,
+                        button = button,
+                    )
+                }
             }
         },
         sendKeyEvent =
@@ -943,10 +941,11 @@ class MacOsWindow internal constructor(
                         false
                     }
 
-                val finalResult = textInputContextConsumedEvent ||
+                val finalResult = textInputContextConsumedEvent || scene.withPreparedMainThread {
                     onPreviewKeyEvent(keyEvent) ||
-                    composeScene.sendKeyEvent(keyEvent) ||
-                    onKeyEvent(keyEvent)
+                        composeScene.sendKeyEvent(keyEvent) ||
+                        onKeyEvent(keyEvent)
+                }
                 logger.debug { "  sendKeyEvent final result=$finalResult" }
                 finalResult
             },
@@ -1081,6 +1080,7 @@ class MacOsWindow internal constructor(
                 LocalSystemTheme provides systemTheme,
                 LocalTextToolbar provides remember { DefaultTextToolbar() },
                 LocalTextInputContext provides textInputContext,
+                LocalWindow provides this
             ) {
                 InterceptPlatformTextInput(platformTextInputInterceptor) {
                     contentState.value?.invoke(windowScope)
@@ -1094,7 +1094,6 @@ class MacOsWindow internal constructor(
         onKeyEvent: (KeyEvent) -> Boolean,
         content: @Composable WindowScope.() -> Unit,
     ) {
-        println("[MacOsWindow] setContent: id=$id, isVisible=${nativeWindow.isVisible}, displayLink=${if (displayLink == null) "null" else "set"}")
         this.onPreviewKeyEvent = onPreviewKeyEvent
         this.onKeyEvent = onKeyEvent
         contentState.value = content

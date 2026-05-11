@@ -69,9 +69,7 @@ suspend fun <T> launchScene(
     restoreMainThread: (T) -> Unit,
     content: @Composable () -> Unit,
 ) {
-    println("[launchScene] (compose-mp-core) entering")
     withContext(context + getComposeDispatcher() + YieldFrameClock) {
-        println("[launchScene] (compose-mp-core) on compose dispatcher")
         GlobalSnapshotManager.ensureStarted()
         val recomposer = Recomposer(coroutineContext)
         val scene = Scene(
@@ -81,12 +79,10 @@ suspend fun <T> launchScene(
         )
 
         launch {
-            println("[launchScene] (compose-mp-core) starting runRecomposeAndApplyChanges")
             recomposer.runRecomposeAndApplyChanges()
         }
 
         launch {
-            println("[launchScene] (compose-mp-core) creating Composition + setContent")
             val composition = Composition(ApplicationApplier(), recomposer)
             try {
                 composition.setContent {
@@ -94,7 +90,6 @@ suspend fun <T> launchScene(
                         content()
                     }
                 }
-                println("[launchScene] (compose-mp-core) setContent returned, awaiting recomposer close")
                 recomposer.close()
                 recomposer.join()
             } finally {

@@ -33,11 +33,6 @@ import kotlin.contracts.contract
 import kotlin.jvm.JvmName
 import kotlin.jvm.JvmStatic
 
-private const val DEBUG_LOG = true
-private inline fun dlog(msg: () -> String) {
-    if (DEBUG_LOG) println("[DataSource] ${msg()}")
-}
-
 /**
  * Reactively connects observable data sources and cacheable computations:
  *
@@ -109,11 +104,9 @@ interface DataSource {
          */
         @JvmStatic
         fun register(dataSource: DataSource): ObserverHandle {
-            val previous = registeredDataSources.getAndUpdate { it + dataSource }
-            dlog { "register ${dataSource::class.simpleName} (size ${previous.size} -> ${previous.size + 1})" }
+            registeredDataSources.getAndUpdate { it + dataSource }
             return ObserverHandle {
-                val prev = registeredDataSources.getAndUpdate { it - dataSource }
-                dlog { "unregister ${dataSource::class.simpleName} (size ${prev.size} -> ${prev.size - 1})" }
+                registeredDataSources.getAndUpdate { it - dataSource }
             }
         }
 
@@ -203,11 +196,9 @@ interface DataSource {
                 }
             }
             threadChangeRecorder.set(mergedChangeRecorder)
-            val sourcesAtEntry = registeredDataSources.load()
-            dlog { "observe enter (sources=${sourcesAtEntry.size} ${sourcesAtEntry.map { it::class.simpleName }})" }
             try {
                 return DataSourceObservationWrapper.run {
-                    dataSources = sourcesAtEntry
+                    dataSources = registeredDataSources.load()
                     index = 0
                     this.recordDependency = recordDependency
                     this.recordChange = recordChange
@@ -215,14 +206,9 @@ interface DataSource {
                     @Suppress("UNCHECKED_CAST")
                     invoke() as T
                 }
-            } catch (t: Throwable) {
-                dlog { "observe THROWS ${t::class.simpleName}: ${t.message}" }
-                if (DEBUG_LOG) t.printStackTrace()
-                throw t
             } finally {
                 threadDependencyRecorder.set(previousDependencyRecorder)
                 threadChangeRecorder.set(previousChangeRecorder)
-                dlog { "observe exit" }
             }
         }
 
@@ -257,22 +243,12 @@ interface DataSource {
          * thrown.
          */
         fun <T> isolate(block: () -> T): T {
-            val sourcesAtEntry = registeredDataSources.load()
-            dlog { "isolate enter (sources=${sourcesAtEntry.size} ${sourcesAtEntry.map { it::class.simpleName }})" }
-            try {
-                return DataSourceIsolationWrapper.run {
-                    dataSources = sourcesAtEntry
-                    index = 0
-                    this.block = block
-                    @Suppress("UNCHECKED_CAST")
-                    invoke() as T
-                }
-            } catch (t: Throwable) {
-                dlog { "isolate THROWS ${t::class.simpleName}: ${t.message}" }
-                if (DEBUG_LOG) t.printStackTrace()
-                throw t
-            } finally {
-                dlog { "isolate exit" }
+            return DataSourceIsolationWrapper.run {
+                dataSources = registeredDataSources.load()
+                index = 0
+                this.block = block
+                @Suppress("UNCHECKED_CAST")
+                invoke() as T
             }
         }
 
@@ -285,60 +261,46 @@ interface DataSource {
          */
         fun advanceGlobalSnapshot() {
             val sources = registeredDataSources.load()
-            dlog { "advanceGlobalSnapshot enter (sources=${sources.size})" }
-            try {
-                if (sources.isNotEmpty()) {
-                    val invalidateAllKeys = LinkedHashSet<Any>()
-                    val patternHashesByKey = LinkedHashMap<Any, MutableList<Long>>()
-                    sources.forEach { source ->
-                        val changed = source.advanceGlobalSnapshot()
-                        dlog { "  source ${source::class.simpleName} returned ${changed.size} identifiers" }
-                        changed.forEach { identifier ->
-                            when (identifier) {
-                                is Pair<*, *> -> {
-                                    val key = identifier.first ?: return@forEach
-                                    when (val payload = identifier.second) {
-                                        null -> invalidateAllKeys.add(key)
-                                        is Long -> patternHashesByKey.getOrPut(key) { mutableListOf() }.add(payload)
-                                        else -> {
-                                            dlog { "    MALFORMED payload from ${source::class.simpleName}: identifier=$identifier (payload class=${payload::class.simpleName})" }
-                                            error("Unexpected data source identifier payload: $identifier")
-                                        }
-                                    }
-                                }
-                                else -> {
-                                    dlog { "    MALFORMED identifier from ${source::class.simpleName}: $identifier (class=${identifier::class.simpleName})" }
-                                    error("Unexpected data source identifier: $identifier")
+            if (sources.isNotEmpty()) {
+                val unioned = LinkedHashSet<Any>()
+                val invalidateAllKeys = LinkedHashSet<Any>()
+                val patternHashesByKey = LinkedHashMap<Any, MutableList<Long>>()
+                sources.forEach { source ->
+                    val changed = source.advanceGlobalSnapshot()
+                    unioned.addAll(changed)
+                    changed.forEach { identifier ->
+                        when (identifier) {
+                            is Pair<*, *> -> {
+                                val key = identifier.first ?: return@forEach
+                                when (val payload = identifier.second) {
+                                    null -> invalidateAllKeys.add(key)
+                                    is Long -> patternHashesByKey.getOrPut(key) { mutableListOf() }.add(payload)
+                                    else -> error("Unexpected data source identifier payload: $identifier")
                                 }
                             }
-                        }
-                    }
-                    dlog { "  invalidateAllKeys=${invalidateAllKeys.size}, patternHashesByKey=${patternHashesByKey.size}; registered RTI keys=${keyToReadTrackingIndex.keys.map { it.hashCode() }} (total ${keyToReadTrackingIndex.size})" }
-                    invalidateAllKeys.forEach { key ->
-                        val rtis = snapshotIndicesFor(key)
-                        dlog { "  invalidateAll for key=${key.hashCode()}: rtis=${rtis?.size ?: 0}" }
-                        rtis?.forEach { readTrackingIndex ->
-                            readTrackingIndex.invalidateAll("DB")
-                        }
-                    }
-                    patternHashesByKey.forEach { (key, patternHashes) ->
-                        if (key !in invalidateAllKeys) {
-                            val rtis = snapshotIndicesFor(key)
-                            dlog { "  invalidate(${patternHashes.size} patterns) for key=${key.hashCode()}: rtis=${rtis?.size ?: 0}" }
-                            rtis?.forEach { readTrackingIndex ->
-                                readTrackingIndex.invalidate(patternHashes.toLongArray(), "DB")
-                            }
+                            else -> error("Unexpected data source identifier: $identifier")
                         }
                     }
                 }
-                Snapshot.sendApplyNotifications()
-            } catch (t: Throwable) {
-                dlog { "advanceGlobalSnapshot THROWS ${t::class.simpleName}: ${t.message}" }
-                if (DEBUG_LOG) t.printStackTrace()
-                throw t
-            } finally {
-                dlog { "advanceGlobalSnapshot exit" }
+                invalidateAllKeys.forEach { key ->
+                    snapshotIndicesFor(key)?.forEach { readTrackingIndex ->
+                        readTrackingIndex.invalidateAll("DB")
+                    }
+                }
+                patternHashesByKey.forEach { (key, patternHashes) ->
+                    if (key !in invalidateAllKeys) {
+                        snapshotIndicesFor(key)?.forEach { readTrackingIndex ->
+                            readTrackingIndex.invalidate(patternHashes.toLongArray(), "DB")
+                        }
+                    }
+                }
+                if (unioned.isNotEmpty()) {
+                    val observers = sync { applyObservers }
+                    val snapshot = Snapshot.current
+                    observers.forEach { it(unioned, snapshot) }
+                }
             }
+            Snapshot.sendApplyNotifications()
         }
 
         private val readTrackingIndicesLock = makeSynchronizedObject()
@@ -347,7 +309,6 @@ interface DataSource {
         internal fun registerReadTrackingIndex(key: Any, readTrackingIndex: ReadTrackingIndex) {
             synchronized(readTrackingIndicesLock) {
                 keyToReadTrackingIndex.getOrPut(key) { mutableSetOf() }.add(readTrackingIndex)
-                dlog { "registerReadTrackingIndex key=${key.hashCode()}($key) total-keys=${keyToReadTrackingIndex.size}" }
             }
         }
 
@@ -356,7 +317,6 @@ interface DataSource {
                 val indices = keyToReadTrackingIndex[key] ?: return
                 indices.remove(readTrackingIndex)
                 if (indices.isEmpty()) keyToReadTrackingIndex.remove(key)
-                dlog { "unregisterReadTrackingIndex key=${key.hashCode()}($key) total-keys=${keyToReadTrackingIndex.size}" }
             }
         }
 
@@ -414,13 +374,8 @@ private object DataSourceObservationWrapper : Function0<Any?> {
 
     override fun invoke(): Any? {
         return if (index < dataSources.size) {
-            val i = index
-            val src = dataSources[i]
-            index = i + 1
-            dlog { "  observe-chain step $i -> ${src::class.simpleName}" }
-            src.observe(recordDependency, recordChange, this)
+            dataSources[index++].observe(recordDependency, recordChange, this)
         } else {
-            dlog { "  observe-chain step $index -> userBlock" }
             block()
         }
     }
@@ -434,13 +389,8 @@ private object DataSourceIsolationWrapper : Function0<Any?> {
 
     override fun invoke(): Any? {
         return if (index < dataSources.size) {
-            val i = index
-            val src = dataSources[i]
-            index = i + 1
-            dlog { "  isolate-chain step $i -> ${src::class.simpleName}" }
-            src.isolate(this)
+            dataSources[index++].isolate(this)
         } else {
-            dlog { "  isolate-chain step $index -> userBlock" }
             block()
         }
     }

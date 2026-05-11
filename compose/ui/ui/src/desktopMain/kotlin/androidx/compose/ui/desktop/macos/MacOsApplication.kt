@@ -409,7 +409,6 @@ object MacOsApplication : Application,
         scene: Scene<*>,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window {
-        println("[MacOsApplication] createWindow (compose-mp-core) called from thread=${Thread.currentThread().name}")
         return MacOsWindow(
             this,
             scene,
