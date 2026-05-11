@@ -473,6 +473,7 @@ class MacOsWindow internal constructor(
     )
 
     init {
+        println("[MacOsWindow] init: id=$id, nativeWindow.isVisible=${nativeWindow.isVisible}, size=${nativeWindow.size}, thread=${Thread.currentThread().name}")
         nativeWindow.registerForDraggedTypes(
             listOf(
                 Pasteboard.FILE_URL_TYPE,
@@ -488,7 +489,10 @@ class MacOsWindow internal constructor(
             { density },
         )
         if (nativeWindow.isVisible) {
+            println("[MacOsWindow] init: nativeWindow IS visible -> setupDisplayLink()")
             setupDisplayLink()
+        } else {
+            println("[MacOsWindow] init: nativeWindow NOT visible -> displayLink NOT set up (waiting for visibility event)")
         }
         // Registration with the application event loop must happen after inputStateTracker is
         // initialized; see the init block at the bottom of the class.
@@ -785,6 +789,7 @@ class MacOsWindow internal constructor(
     private class TimeMarkWrapper(val timeMark: TimeSource.Monotonic.ValueTimeMark)
 
     private fun setupDisplayLink() {
+        println("[MacOsWindow] setupDisplayLink: id=$id, screenId=${nativeWindow.screenId()}, isVisible=${nativeWindow.isVisible}")
         displayLink?.close()
         displayLink = DisplayLink.create(nativeWindow.screenId()) {
             val frameStartTimeMarkWrapper = TimeMarkWrapper(TimeSource.Monotonic.markNow())
@@ -1089,6 +1094,7 @@ class MacOsWindow internal constructor(
         onKeyEvent: (KeyEvent) -> Boolean,
         content: @Composable WindowScope.() -> Unit,
     ) {
+        println("[MacOsWindow] setContent: id=$id, isVisible=${nativeWindow.isVisible}, displayLink=${if (displayLink == null) "null" else "set"}")
         this.onPreviewKeyEvent = onPreviewKeyEvent
         this.onKeyEvent = onKeyEvent
         contentState.value = content

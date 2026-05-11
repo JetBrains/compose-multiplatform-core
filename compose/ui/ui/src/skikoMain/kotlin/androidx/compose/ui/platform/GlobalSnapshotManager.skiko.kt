@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.snapshots.Snapshot
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
@@ -43,7 +44,7 @@ internal object GlobalSnapshotManager {
             CoroutineScope(GlobalSnapshotManagerDispatcher).launch {
                 channel.consumeEach {
                     sent.compareAndSet(1, 0)
-                    Snapshot.sendApplyNotifications()
+                    DataSource.advanceGlobalSnapshot()
                 }
             }
             Snapshot.registerGlobalWriteObserver {
