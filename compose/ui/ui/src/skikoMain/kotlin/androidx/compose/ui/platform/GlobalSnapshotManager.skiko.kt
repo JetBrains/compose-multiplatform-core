@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.snapshots.ObserverHandle
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.internal.getCurrentThreadId
@@ -119,7 +120,7 @@ internal object GlobalSnapshotManager {
                 warnIfMultipleThreads()
                 channel.consumeEach {
                     scheduled.value = false
-                    Snapshot.sendApplyNotifications()
+                    DataSource.advanceGlobalSnapshot()
                 }
             }
             writeObserverHandle = Snapshot.registerGlobalWriteObserver {

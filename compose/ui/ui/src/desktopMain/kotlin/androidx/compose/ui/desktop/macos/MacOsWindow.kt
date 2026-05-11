@@ -93,6 +93,7 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.TimeSource
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
+import noria.ui.core.LocalWindow
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.desktop.macos.AppMenuManager
 import org.jetbrains.desktop.macos.Appearance
@@ -900,17 +901,19 @@ class MacOsWindow internal constructor(
                     dispatchedToAPointerInputModifier = true,
                 )
             } else {
-                composeScene.sendPointerEvent(
-                    eventType = eventType,
-                    position = position,
-                    scrollDelta = scrollDelta,
-                    timeMillis = timeMillis,
-                    type = type,
-                    buttons = buttons,
-                    keyboardModifiers = modifiers,
-                    nativeEvent = nativeEvent,
-                    button = button,
-                )
+                scene.withPreparedMainThread {
+                    composeScene.sendPointerEvent(
+                        eventType = eventType,
+                        position = position,
+                        scrollDelta = scrollDelta,
+                        timeMillis = timeMillis,
+                        type = type,
+                        buttons = buttons,
+                        keyboardModifiers = modifiers,
+                        nativeEvent = nativeEvent,
+                        button = button,
+                    )
+                }
             }
         },
         sendKeyEvent =
@@ -938,10 +941,11 @@ class MacOsWindow internal constructor(
                         false
                     }
 
-                val finalResult = textInputContextConsumedEvent ||
+                val finalResult = textInputContextConsumedEvent || scene.withPreparedMainThread {
                     onPreviewKeyEvent(keyEvent) ||
-                    composeScene.sendKeyEvent(keyEvent) ||
-                    onKeyEvent(keyEvent)
+                        composeScene.sendKeyEvent(keyEvent) ||
+                        onKeyEvent(keyEvent)
+                }
                 logger.debug { "  sendKeyEvent final result=$finalResult" }
                 finalResult
             },
@@ -1076,6 +1080,7 @@ class MacOsWindow internal constructor(
                 LocalSystemTheme provides systemTheme,
                 LocalTextToolbar provides remember { DefaultTextToolbar() },
                 LocalTextInputContext provides textInputContext,
+                LocalWindow provides this
             ) {
                 InterceptPlatformTextInput(platformTextInputInterceptor) {
                     contentState.value?.invoke(windowScope)
