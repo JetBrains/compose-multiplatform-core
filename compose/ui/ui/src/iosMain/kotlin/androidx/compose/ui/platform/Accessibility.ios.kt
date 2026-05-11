@@ -194,73 +194,6 @@ private sealed interface AccessibilityNode {
     suspend fun scrollBy(delta: CValue<CGPoint>) {}
 
     /**
-     * Unlike Android, UIAccessibilityElement can't be a container and an element at the same time.
-     * If [isAccessibilityElement] is true, iOS accessibility services won't access the object
-     * UIAccessibilityContainer methods. To implement this behavior, flatting the container node
-     * with all its children. [Container] is used to indicate element that contains container
-     * semantic node with all its children.
-     */
-    open class Container(
-        override val semanticsNode: SemanticsNode
-    ) : AccessibilityNode {
-        override val key: AccessibilityElementKey = semanticsNode.containerKey
-
-        override val isAccessibilityElement = false
-
-        override val accessibilityContainerType: UIAccessibilityContainerType =
-            UIAccessibilityContainerTypeSemanticGroup
-
-        private val horizontalAxis: ScrollAxisRange? = semanticsNode.unmergedConfig
-            .getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
-
-        private val verticalAxis: ScrollAxisRange? = semanticsNode.unmergedConfig
-            .getOrNull(SemanticsProperties.VerticalScrollAxisRange)
-
-        private val width: Float get() = semanticsNode.size.width.toFloat()
-
-        private val height: Float get() = semanticsNode.size.height.toFloat()
-
-        override val canScroll: Boolean = horizontalAxis != null || verticalAxis != null
-
-        override val scrollContentOffset: CValue<CGPoint>
-            get() = with(semanticsNode.layoutNode.density) {
-                CGPointMake(
-                    x = (horizontalAxis?.value() ?: 0f).toDp().value.toDouble(),
-                    y = (verticalAxis?.value() ?: 0f).toDp().value.toDouble(),
-                )
-            }
-
-        override val scrollContentSize: CValue<CGSize>
-            get() {
-                return with(semanticsNode.layoutNode.density) {
-                    CGSizeMake(
-                        width = (width + (horizontalAxis?.maxValue() ?: 0f)).toDp().value.toDouble(),
-                        height = (height + (verticalAxis?.maxValue() ?: 0f)).toDp().value.toDouble(),
-                    )
-                }
-            }
-
-        override val scrollVisibleSize: CValue<CGSize>
-            get() = with(semanticsNode.layoutNode.density) {
-                CGSizeMake(
-                    width = width.toDp().value.toDouble(),
-                    height = height.toDp().value.toDouble()
-                )
-            }
-
-        override suspend fun scrollBy(delta: CValue<CGPoint>) {
-            val deltaInPx = with(semanticsNode.layoutNode.density) {
-                delta.asDpOffset().let {
-                    Offset(it.x.toPx(), it.y.toPx())
-                }
-            }
-
-            semanticsNode.unmergedConfig.getOrNull(SemanticsActions.ScrollByOffset)
-                ?.invoke(deltaInPx)
-        }
-    }
-
-    /**
      * Represents a projection of the Compose semantics node to the iOS world.
      * The object itself is a node in a generated tree that matches 1-to-1 with the [SemanticsNode].
      * @semanticsNode node associated with current accessibility element
@@ -283,6 +216,13 @@ private sealed interface AccessibilityNode {
                 false
             }
         }
+
+        override val accessibilityContainerType: UIAccessibilityContainerType
+            get() = when {
+                semanticsNode.canBeAccessibilityElement() -> UIAccessibilityContainerTypeNone
+                semanticsNode.isTraversalGroup -> UIAccessibilityContainerTypeSemanticGroup
+                else -> UIAccessibilityContainerTypeNone
+            }
 
         override val accessibilityInteropView: InteropWrappingView?
             get() = cachedConfig.getOrNull(NativeAccessibilityViewSemanticsKey)?.also {
@@ -414,6 +354,73 @@ private sealed interface AccessibilityNode {
             }
         } else {
             true
+        }
+    }
+
+    /**
+     * Unlike Android, UIAccessibilityElement can't be a container and an element at the same time.
+     * If [isAccessibilityElement] is true, iOS accessibility services won't access the object
+     * UIAccessibilityContainer methods. To implement this behavior, flatting the container node
+     * with all its children. [Container] is used to indicate element that contains container
+     * semantic node with all its children.
+     */
+    open class Container(
+        override val semanticsNode: SemanticsNode
+    ) : AccessibilityNode {
+        override val key: AccessibilityElementKey = semanticsNode.containerKey
+
+        override val isAccessibilityElement = false
+
+        override val accessibilityContainerType: UIAccessibilityContainerType =
+            UIAccessibilityContainerTypeSemanticGroup
+
+        private val horizontalAxis: ScrollAxisRange? = semanticsNode.unmergedConfig
+            .getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
+
+        private val verticalAxis: ScrollAxisRange? = semanticsNode.unmergedConfig
+            .getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+
+        private val width: Float get() = semanticsNode.size.width.toFloat()
+
+        private val height: Float get() = semanticsNode.size.height.toFloat()
+
+        override val canScroll: Boolean = horizontalAxis != null || verticalAxis != null
+
+        override val scrollContentOffset: CValue<CGPoint>
+            get() = with(semanticsNode.layoutNode.density) {
+                CGPointMake(
+                    x = (horizontalAxis?.value() ?: 0f).toDp().value.toDouble(),
+                    y = (verticalAxis?.value() ?: 0f).toDp().value.toDouble(),
+                )
+            }
+
+        override val scrollContentSize: CValue<CGSize>
+            get() {
+                return with(semanticsNode.layoutNode.density) {
+                    CGSizeMake(
+                        width = (width + (horizontalAxis?.maxValue() ?: 0f)).toDp().value.toDouble(),
+                        height = (height + (verticalAxis?.maxValue() ?: 0f)).toDp().value.toDouble(),
+                    )
+                }
+            }
+
+        override val scrollVisibleSize: CValue<CGSize>
+            get() = with(semanticsNode.layoutNode.density) {
+                CGSizeMake(
+                    width = width.toDp().value.toDouble(),
+                    height = height.toDp().value.toDouble()
+                )
+            }
+
+        override suspend fun scrollBy(delta: CValue<CGPoint>) {
+            val deltaInPx = with(semanticsNode.layoutNode.density) {
+                delta.asDpOffset().let {
+                    Offset(it.x.toPx(), it.y.toPx())
+                }
+            }
+
+            semanticsNode.unmergedConfig.getOrNull(SemanticsActions.ScrollByOffset)
+                ?.invoke(deltaInPx)
         }
     }
 }
