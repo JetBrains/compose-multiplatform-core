@@ -16,12 +16,11 @@
 
 package androidx.compose.ui.test.utils
 
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import kotlinx.cinterop.BetaInteropApi
 import platform.Foundation.NSStringFromClass
-import platform.UIKit.UIApplication
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
-import platform.UIKit.UIWindowScene
 
 internal val loupeClassNames = listOf(
     "_UITextMagnifiedLoupeView",
@@ -47,14 +46,12 @@ private fun findFirstDescendant(root: UIView, predicate: (UIView) -> Boolean): U
     return null
 }
 
-internal fun findFirstDescendant(predicate: (UIView) -> Boolean): UIView? {
-    UIApplication.sharedApplication.connectedScenes.forEach { scene ->
-        if (scene !is UIWindowScene) return@forEach
-        scene.windows.forEach { window ->
-            window as UIWindow
-            val hit = findFirstDescendant(window, predicate)
-            if (hit != null) return hit
-        }
+internal fun UIKitInstrumentedTest.findFirstDescendant(predicate: (UIView) -> Boolean): UIView? {
+    val windowScene = viewController.view.window?.windowScene ?: return null
+    windowScene.windows.forEach { window ->
+        window as UIWindow
+        val hit = findFirstDescendant(window, predicate)
+        if (hit != null) return hit
     }
     return null
 }
