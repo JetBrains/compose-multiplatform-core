@@ -46,7 +46,6 @@ import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllUncoveredSemanticsNodesToIntObjectMap
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.semantics.isImportantForAccessibility
 import androidx.compose.ui.semantics.sortByGeometryGroupings
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.toNanoSeconds
@@ -195,16 +194,83 @@ private sealed interface AccessibilityNode {
     suspend fun scrollBy(delta: CValue<CGPoint>) {}
 
     /**
+     * Unlike Android, UIAccessibilityElement can't be a container and an element at the same time.
+     * If [isAccessibilityElement] is true, iOS accessibility services won't access the object
+     * UIAccessibilityContainer methods. To implement this behavior, flatting the container node
+     * with all its children. [Container] is used to indicate element that contains container
+     * semantic node with all its children.
+     */
+    open class Container(
+        override val semanticsNode: SemanticsNode
+    ) : AccessibilityNode {
+        override val key: AccessibilityElementKey = semanticsNode.containerKey
+
+        override val isAccessibilityElement = false
+
+        override val accessibilityContainerType: UIAccessibilityContainerType =
+            UIAccessibilityContainerTypeSemanticGroup
+
+        private val horizontalAxis: ScrollAxisRange? = semanticsNode.unmergedConfig
+            .getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
+
+        private val verticalAxis: ScrollAxisRange? = semanticsNode.unmergedConfig
+            .getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+
+        private val width: Float get() = semanticsNode.size.width.toFloat()
+
+        private val height: Float get() = semanticsNode.size.height.toFloat()
+
+        override val canScroll: Boolean = horizontalAxis != null || verticalAxis != null
+
+        override val scrollContentOffset: CValue<CGPoint>
+            get() = with(semanticsNode.layoutNode.density) {
+                CGPointMake(
+                    x = (horizontalAxis?.value() ?: 0f).toDp().value.toDouble(),
+                    y = (verticalAxis?.value() ?: 0f).toDp().value.toDouble(),
+                )
+            }
+
+        override val scrollContentSize: CValue<CGSize>
+            get() {
+                return with(semanticsNode.layoutNode.density) {
+                    CGSizeMake(
+                        width = (width + (horizontalAxis?.maxValue() ?: 0f)).toDp().value.toDouble(),
+                        height = (height + (verticalAxis?.maxValue() ?: 0f)).toDp().value.toDouble(),
+                    )
+                }
+            }
+
+        override val scrollVisibleSize: CValue<CGSize>
+            get() = with(semanticsNode.layoutNode.density) {
+                CGSizeMake(
+                    width = width.toDp().value.toDouble(),
+                    height = height.toDp().value.toDouble()
+                )
+            }
+
+        override suspend fun scrollBy(delta: CValue<CGPoint>) {
+            val deltaInPx = with(semanticsNode.layoutNode.density) {
+                delta.asDpOffset().let {
+                    Offset(it.x.toPx(), it.y.toPx())
+                }
+            }
+
+            semanticsNode.unmergedConfig.getOrNull(SemanticsActions.ScrollByOffset)
+                ?.invoke(deltaInPx)
+        }
+    }
+
+    /**
      * Represents a projection of the Compose semantics node to the iOS world.
      * The object itself is a node in a generated tree that matches 1-to-1 with the [SemanticsNode].
      * @semanticsNode node associated with current accessibility element
      * @mediator reference to the containing AccessibilityMediator
      */
     class Semantics(
-        override val semanticsNode: SemanticsNode,
+        semanticsNode: SemanticsNode,
         private val mediator: AccessibilityMediator,
-        private val isBeyondBounds: Boolean
-    ) : AccessibilityNode {
+        private val isBeyondBounds: Boolean,
+    ) : Container(semanticsNode) {
         private val cachedConfig = semanticsNode.config
         private val scrollableParentNodeIds by lazy { semanticsNode.allScrollableParentNodeIds }
 
@@ -348,73 +414,6 @@ private sealed interface AccessibilityNode {
             }
         } else {
             true
-        }
-    }
-
-    /**
-     * Unlike Android, UIAccessibilityElement can't be a container and an element at the same time.
-     * If [isAccessibilityElement] is true, iOS accessibility services won't access the object
-     * UIAccessibilityContainer methods. To implement this behavior, flatting the container node
-     * with all its children. [Container] is used to indicate element that contains container
-     * semantic node with all its children.
-     */
-    class Container(
-        override val semanticsNode: SemanticsNode
-    ) : AccessibilityNode {
-        override val key: AccessibilityElementKey = semanticsNode.containerKey
-
-        override val isAccessibilityElement = false
-
-        override val accessibilityContainerType: UIAccessibilityContainerType =
-            UIAccessibilityContainerTypeSemanticGroup
-
-        private val horizontalAxis: ScrollAxisRange? = semanticsNode.unmergedConfig
-            .getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
-
-        private val verticalAxis: ScrollAxisRange? = semanticsNode.unmergedConfig
-            .getOrNull(SemanticsProperties.VerticalScrollAxisRange)
-
-        private val width: Float get() = semanticsNode.size.width.toFloat()
-
-        private val height: Float get() = semanticsNode.size.height.toFloat()
-
-        override val canScroll: Boolean = horizontalAxis != null || verticalAxis != null
-
-        override val scrollContentOffset: CValue<CGPoint>
-            get() = with(semanticsNode.layoutNode.density) {
-                CGPointMake(
-                    x = (horizontalAxis?.value() ?: 0f).toDp().value.toDouble(),
-                    y = (verticalAxis?.value() ?: 0f).toDp().value.toDouble(),
-                )
-            }
-
-        override val scrollContentSize: CValue<CGSize>
-            get() {
-                return with(semanticsNode.layoutNode.density) {
-                    CGSizeMake(
-                        width = (width + (horizontalAxis?.maxValue() ?: 0f)).toDp().value.toDouble(),
-                        height = (height + (verticalAxis?.maxValue() ?: 0f)).toDp().value.toDouble(),
-                    )
-                }
-            }
-
-        override val scrollVisibleSize: CValue<CGSize>
-            get() = with(semanticsNode.layoutNode.density) {
-                CGSizeMake(
-                    width = width.toDp().value.toDouble(),
-                    height = height.toDp().value.toDouble()
-                )
-            }
-
-        override suspend fun scrollBy(delta: CValue<CGPoint>) {
-            val deltaInPx = with(semanticsNode.layoutNode.density) {
-                delta.asDpOffset().let {
-                    Offset(it.x.toPx(), it.y.toPx())
-                }
-            }
-
-            semanticsNode.unmergedConfig.getOrNull(SemanticsActions.ScrollByOffset)
-                ?.invoke(deltaInPx)
         }
     }
 }
@@ -1551,7 +1550,7 @@ internal class AccessibilityMediator(
                     node = AccessibilityNode.Semantics(
                         semanticsNode = node,
                         mediator = this,
-                        isBeyondBounds = isBeyondBounds
+                        isBeyondBounds = isBeyondBounds,
                     ),
                     container = container,
                     children = children,
@@ -1603,25 +1602,29 @@ internal class AccessibilityMediator(
                     traverseChildren(it, isBeyondBounds = true, flatten = flattenChildren, container = node)
                 }
 
-                val allElements = beforeElements + visibleElements + afterElements
                 if (node.isTraversalGroup || node.id == rootNode.id) {
-                    val hasSemanticsNode = node.isImportantForAccessibility() ||
-                        node.config.contains(SemanticsProperties.TestTag)
-
-                    val containerChildren = if (hasSemanticsNode) {
-                        listOf(makeSemanticsNode(allElements))
+                    if (node.canBeAccessibilityElement()) {
+                        val containerElement = listOf(makeSemanticsNode(emptyList()))
+                        createOrUpdateAccessibilityElement(
+                            node = AccessibilityNode.Container(semanticsNode = node),
+                            container = container,
+                            children = beforeElements + visibleElements + containerElement + afterElements,
+                            frame = frame
+                        )
                     } else {
-                        allElements
+                        createOrUpdateAccessibilityElement(
+                            node = AccessibilityNode.Semantics(
+                                semanticsNode = node,
+                                mediator = this,
+                                isBeyondBounds = isBeyondBounds
+                            ),
+                            container = container,
+                            children = beforeElements + visibleElements + afterElements,
+                            frame = frame
+                        )
                     }
-
-                    createOrUpdateAccessibilityElement(
-                        node = AccessibilityNode.Container(semanticsNode = node),
-                        container = container,
-                        children = containerChildren,
-                        frame = frame
-                    )
                 } else {
-                    makeSemanticsNode(allElements)
+                    makeSemanticsNode(beforeElements + visibleElements + afterElements)
                 }
             } else {
                 makeSemanticsNode(emptyList())

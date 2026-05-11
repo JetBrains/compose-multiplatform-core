@@ -1144,6 +1144,41 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
+    fun testTraversalGroupWithSemantics() = runUIKitInstrumentedTest {
+        setContent {
+            Column(
+                modifier = Modifier.semantics {
+                    testTag = "group_column"
+                    isTraversalGroup = true
+                    // Should be added as a separate accessibility element
+                    contentDescription = "Group Column"
+                }
+            ) {
+                Button(
+                    onClick = {},
+                    modifier = Modifier.semantics {
+                        testTag = "button"
+                    }
+                ) {
+                    Text("Button text")
+                }
+            }
+        }
+        assertAccessibilityTree {
+            isAccessibilityElement = false
+            node {
+                identifier = "button"
+                isAccessibilityElement = true
+            }
+            node {
+                identifier = "group_column"
+                label = "Group Column"
+                isAccessibilityElement = true
+            }
+        }
+    }
+
+    @Test
     fun testMergeDescendantsWithButton() = runUIKitInstrumentedTest {
         setContent {
             Column(
