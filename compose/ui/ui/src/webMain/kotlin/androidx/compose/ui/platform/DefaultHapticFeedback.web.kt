@@ -25,48 +25,64 @@ import kotlin.js.js
 import kotlin.js.toJsArray
 import kotlin.js.toJsNumber
 
+@OptIn(ExperimentalWasmJsInterop::class)
 internal class WebHapticFeedback : HapticFeedback {
-    @OptIn(ExperimentalWasmJsInterop::class)
+    // Check if API is supported before doing anything
+    private val isVibrationSupported = isVibrationSupported()
+
+    // Declare these hardcoded patterns to avoid js-interop on every call
+    private val ConfirmVibrationPattern: JsArray<JsNumber> = vibrationPatternOf(18, 32, 36)
+    private val RejectVibrationPattern: JsArray<JsNumber> = vibrationPatternOf(18, 28, 18, 28, 18)
+    private val SinglePulseVibrationPattern: JsArray<JsNumber> = vibrationPatternOf(12)
+    private val SoftTickVibrationPattern: JsArray<JsNumber> = vibrationPatternOf(6)
+
     override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
-        vibrate(vibrationPatternFor(hapticFeedbackType))
+        if (!isVibrationSupported) return
+        val pattern = vibrationPatternFor(hapticFeedbackType) ?: return
+        vibrate(pattern)
+    }
+
+    // We don't have a high-level browser API right now. So we hardcode the patterns here.
+    // TODO: to eventually avoid the hardcoded values, follow the new browser API proposal https://github.com/WICG/web-haptics
+    // and rely on it once it's implemented
+    @OptIn(ExperimentalWasmJsInterop::class)
+    internal fun vibrationPatternFor(hapticFeedbackType: HapticFeedbackType): JsArray<JsNumber>? {
+        return when (hapticFeedbackType) {
+            HapticFeedbackType.Confirm -> ConfirmVibrationPattern
+            HapticFeedbackType.Reject -> RejectVibrationPattern
+            HapticFeedbackType.ContextClick,
+            HapticFeedbackType.GestureEnd,
+            HapticFeedbackType.GestureThresholdActivate,
+            HapticFeedbackType.LongPress,
+            HapticFeedbackType.ToggleOff,
+            HapticFeedbackType.ToggleOn,
+            HapticFeedbackType.VirtualKey -> SinglePulseVibrationPattern
+            HapticFeedbackType.KeyboardTap,
+            HapticFeedbackType.SegmentFrequentTick,
+            HapticFeedbackType.SegmentTick -> SoftTickVibrationPattern
+            HapticFeedbackType.TextHandleMove -> null
+            else -> null
+        }
     }
 }
-
-// TODO: to eventually avoid the hardcoded values, follow the new browser API proposal https://github.com/WICG/web-haptics
-// and rely on it once it's implemented
-@OptIn(ExperimentalWasmJsInterop::class)
-internal fun vibrationPatternFor(hapticFeedbackType: HapticFeedbackType): JsArray<JsNumber> =
-    when (hapticFeedbackType) {
-        HapticFeedbackType.Confirm -> vibrationPatternOf(18, 32, 36)
-        HapticFeedbackType.Reject -> vibrationPatternOf(18, 28, 18, 28, 18)
-        HapticFeedbackType.ContextClick,
-        HapticFeedbackType.GestureEnd,
-        HapticFeedbackType.GestureThresholdActivate,
-        HapticFeedbackType.LongPress,
-        HapticFeedbackType.ToggleOff,
-        HapticFeedbackType.ToggleOn,
-        HapticFeedbackType.VirtualKey -> vibrationPatternOf(12)
-        HapticFeedbackType.KeyboardTap,
-        HapticFeedbackType.SegmentFrequentTick,
-        HapticFeedbackType.SegmentTick,
-        HapticFeedbackType.TextHandleMove -> vibrationPatternOf(6)
-        else -> vibrationPatternOf(12)
-    }
 
 @OptIn(ExperimentalWasmJsInterop::class)
 private fun vibrationPatternOf(vararg durations: Int): JsArray<JsNumber> =
     durations.map { it.toDouble().toJsNumber() }.toJsArray()
 
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun isVibrationSupported(): Boolean = js(
+    //language=javascript
+    """
+        typeof window !== 'undefined' &&
+        window.navigator != null &&
+        typeof window.navigator.vibrate === 'function'
+    """
+)
+
 //language=javascript
 @OptIn(ExperimentalWasmJsInterop::class)
 private fun vibrate(pattern: JsArray<JsNumber>) {
-    js(
-        """
-        if (typeof window !== 'undefined' &&
-            window.navigator != null &&
-            typeof window.navigator.vibrate === 'function') {
-            window.navigator.vibrate(pattern)
-        }
-        """
-    )
+    // Assuming the API support has been checked in advance, we can safely call it
+    js("window.navigator.vibrate(pattern)")
 }
