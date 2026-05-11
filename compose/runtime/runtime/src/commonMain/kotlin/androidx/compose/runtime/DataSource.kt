@@ -19,9 +19,12 @@
 package androidx.compose.runtime
 
 import androidx.compose.runtime.internal.ReadTrackingIndex
+import androidx.compose.runtime.internal.SnapshotThreadLocal
 import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.platform.synchronized
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.snapshots.applyObservers
+import androidx.compose.runtime.snapshots.sync
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.contracts.ExperimentalContracts
@@ -86,7 +89,9 @@ interface DataSource {
     fun advanceGlobalSnapshot(): Set<Any>
 
     companion object {
-        private val registeredDataSource = AtomicReference<DataSource?>(null)
+        private val registeredDataSources = AtomicReference(emptyList<DataSource>())
+        private val threadDependencyRecorder = SnapshotThreadLocal<((Any) -> Boolean)>()
+        private val threadChangeRecorder = SnapshotThreadLocal<((Any) -> Unit)>()
 
         /**
          * Registers a [dataSource] so that it will be invoked when [observe] blocks
@@ -99,10 +104,10 @@ interface DataSource {
          */
         @JvmStatic
         fun register(dataSource: DataSource): ObserverHandle {
-            check(registeredDataSource.compareAndSet(null, dataSource)) {
-                "Multiple data sources aren't currently supported"
+            registeredDataSources.getAndUpdate { it + dataSource }
+            return ObserverHandle {
+                registeredDataSources.getAndUpdate { it - dataSource }
             }
-            return ObserverHandle { registeredDataSource.compareAndSet(dataSource, null) }
         }
 
         /**
@@ -119,7 +124,7 @@ interface DataSource {
          */
         @JvmStatic
         fun recordDependency(identifier: Any): Boolean {
-            return false
+            return threadDependencyRecorder.get()?.invoke(identifier) ?: false
         }
 
         /**
@@ -133,9 +138,20 @@ interface DataSource {
          */
         @JvmStatic
         fun recordChange(identifier: Any) {
+            threadChangeRecorder.get()?.invoke(identifier)
         }
 
         private var currentReadTrackingIndex: ReadTrackingIndex? = null
+
+        /**
+         * Invalidates all cacheable computations which depend on any of the given
+         * [identifiers]. Dependencies are set up by calling the `recordDependency`
+         * function passed into [DataSource.observe].
+         */
+        @JvmStatic
+        fun invalidateDependants(identifiers: Set<Any>) {
+            sync { applyObservers }.forEach { it(identifiers, Snapshot.current) }
+        }
 
         /**
          * Registers an invalidator that will be called when invalidations
@@ -147,13 +163,17 @@ interface DataSource {
          */
         @JvmStatic
         fun registerInvalidator(invalidator: (identifiers: Set<Any>) -> Unit): ObserverHandle {
-            return ObserverHandle { }
+            val snapshotApplyObserver = Snapshot.registerApplyObserver { identifiers, _ ->
+                invalidator(identifiers)
+            }
+            return ObserverHandle {
+                snapshotApplyObserver.dispose()
+            }
         }
 
         /**
          * Calls [block] with observation by all registered [DataSource]s.
          */
-        @OptIn(ExperimentalContracts::class)
         @JvmStatic
         @JvmName("staticObserve")
         fun <T> observe(
@@ -161,12 +181,34 @@ interface DataSource {
             recordChange: ((Any) -> Unit)? = null,
             block: () -> T
         ): T {
-            contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
-            val registeredDataSource = registeredDataSource.load()
-            return if (registeredDataSource != null) {
-                registeredDataSource.observe(recordDependency, recordChange, block)
-            } else {
-                block()
+            val previousDependencyRecorder = threadDependencyRecorder.get()
+            val mergedDependencyRecorder = previousDependencyRecorder?.let {
+                { identifier: Any -> recordDependency(identifier) || it(identifier) }
+            } ?: recordDependency
+            threadDependencyRecorder.set(mergedDependencyRecorder)
+            val previousChangeRecorder = threadChangeRecorder.get()
+            val mergedChangeRecorder: ((Any) -> Unit)? = when {
+                recordChange == null -> previousChangeRecorder
+                previousChangeRecorder == null -> recordChange
+                else -> { identifier: Any ->
+                    recordChange(identifier)
+                    previousChangeRecorder(identifier)
+                }
+            }
+            threadChangeRecorder.set(mergedChangeRecorder)
+            try {
+                return DataSourceObservationWrapper.run {
+                    dataSources = registeredDataSources.load()
+                    index = 0
+                    this.recordDependency = recordDependency
+                    this.recordChange = recordChange
+                    this.block = block
+                    @Suppress("UNCHECKED_CAST")
+                    invoke() as T
+                }
+            } finally {
+                threadDependencyRecorder.set(previousDependencyRecorder)
+                threadChangeRecorder.set(previousChangeRecorder)
             }
         }
 
@@ -178,7 +220,13 @@ interface DataSource {
         @JvmName("staticIsolate")
         fun <T> withoutReadObservation(block: @DisallowComposableCalls () -> T): T {
             contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
-            return Snapshot.withoutReadObservation(block)
+            val previousDependencyRecorder = threadDependencyRecorder.get()
+            threadDependencyRecorder.set { false }
+            try {
+                return Snapshot.withoutReadObservation(block)
+            } finally {
+                threadDependencyRecorder.set(previousDependencyRecorder)
+            }
         }
 
         /**
@@ -195,7 +243,13 @@ interface DataSource {
          * thrown.
          */
         fun <T> isolate(block: () -> T): T {
-            return block()
+            return DataSourceIsolationWrapper.run {
+                dataSources = registeredDataSources.load()
+                index = 0
+                this.block = block
+                @Suppress("UNCHECKED_CAST")
+                invoke() as T
+            }
         }
 
         /**
@@ -206,20 +260,26 @@ interface DataSource {
          * the composition, layout, drawing, or any other cacheable computation.
          */
         fun advanceGlobalSnapshot() {
-            registeredDataSource.load()?.advanceGlobalSnapshot()?.let { identifiers ->
+            val sources = registeredDataSources.load()
+            if (sources.isNotEmpty()) {
+                val unioned = LinkedHashSet<Any>()
                 val invalidateAllKeys = LinkedHashSet<Any>()
                 val patternHashesByKey = LinkedHashMap<Any, MutableList<Long>>()
-                identifiers.forEach { identifier ->
-                    when (identifier) {
-                        is Pair<*, *> -> {
-                            val key = identifier.first ?: return@forEach
-                            when (val payload = identifier.second) {
-                                null -> invalidateAllKeys.add(key)
-                                is Long -> patternHashesByKey.getOrPut(key) { mutableListOf() }.add(payload)
-                                else -> error("Unexpected data source identifier payload: $identifier")
+                sources.forEach { source ->
+                    val changed = source.advanceGlobalSnapshot()
+                    unioned.addAll(changed)
+                    changed.forEach { identifier ->
+                        when (identifier) {
+                            is Pair<*, *> -> {
+                                val key = identifier.first ?: return@forEach
+                                when (val payload = identifier.second) {
+                                    null -> invalidateAllKeys.add(key)
+                                    is Long -> patternHashesByKey.getOrPut(key) { mutableListOf() }.add(payload)
+                                    else -> error("Unexpected data source identifier payload: $identifier")
+                                }
                             }
+                            else -> error("Unexpected data source identifier: $identifier")
                         }
-                        else -> error("Unexpected data source identifier: $identifier")
                     }
                 }
                 invalidateAllKeys.forEach { key ->
@@ -233,6 +293,11 @@ interface DataSource {
                             readTrackingIndex.invalidate(patternHashes.toLongArray(), "DB")
                         }
                     }
+                }
+                if (unioned.isNotEmpty()) {
+                    val observers = sync { applyObservers }
+                    val snapshot = Snapshot.current
+                    observers.forEach { it(unioned, snapshot) }
                 }
             }
             Snapshot.sendApplyNotifications()
@@ -299,8 +364,47 @@ fun interface ObserverHandle {
     fun dispose()
 }
 
-private fun Set<Pair<Any, Long>>.dropKeys(): LongArray {
-    return LongArray(size).apply {
-        this@dropKeys.forEachIndexed { index, (_, patternHash) -> this[index] = patternHash }
+@Suppress("IMPLEMENTING_FUNCTION_INTERFACE")
+private object DataSourceObservationWrapper : Function0<Any?> {
+    lateinit var dataSources: List<DataSource>
+    var index = 0
+    lateinit var recordDependency: (Any) -> Boolean
+    var recordChange: ((Any) -> Unit)? = null
+    lateinit var block: () -> Any?
+
+    override fun invoke(): Any? {
+        return if (index < dataSources.size) {
+            dataSources[index++].observe(recordDependency, recordChange, this)
+        } else {
+            block()
+        }
     }
+}
+
+@Suppress("IMPLEMENTING_FUNCTION_INTERFACE")
+private object DataSourceIsolationWrapper : Function0<Any?> {
+    lateinit var dataSources: List<DataSource>
+    var index = 0
+    lateinit var block: () -> Any?
+
+    override fun invoke(): Any? {
+        return if (index < dataSources.size) {
+            dataSources[index++].isolate(this)
+        } else {
+            block()
+        }
+    }
+}
+
+private inline fun <T> AtomicReference<T>.getAndUpdate(
+    updater: (T) -> T
+): T {
+    var previousValue: T
+    var successfullySet: Boolean
+    do {
+        previousValue = load()
+        val nextValue = updater(previousValue)
+        successfullySet = compareAndSet(previousValue, nextValue)
+    } while (!successfullySet)
+    return previousValue
 }
