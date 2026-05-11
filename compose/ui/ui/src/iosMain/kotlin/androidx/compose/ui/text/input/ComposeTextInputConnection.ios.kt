@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.text.input
 
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
@@ -24,7 +23,6 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.toCGRect
 import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toDpRect
@@ -112,7 +110,7 @@ internal open class ComposeTextInputConnection(
 
     override fun onViewGeometryUpdated() {
         val rect = textFieldRectInRoot ?: return
-        textInputView.setFrame(rect.toDpRect(view.density).asCGRect())
+        textInputView.setFrame(rect.toDpRect(view.density).toCGRect())
         showMenuOrUpdatePosition()
     }
 
