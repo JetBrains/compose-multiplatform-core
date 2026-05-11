@@ -69,9 +69,9 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.asDpOffset
-import androidx.compose.ui.unit.asDpRect
-import androidx.compose.ui.unit.asDpSize
+import androidx.compose.ui.unit.toDpOffset
+import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.roundToIntRect
@@ -333,7 +333,7 @@ internal class ComposeSceneMediator(
      * @param point Point in the interaction view coordinate space.
      */
     private fun isPointInsideInteractionBounds(point: CValue<CGPoint>) =
-        interactionBounds.contains(point.asDpOffset().toOffset(screenDensity).round())
+        interactionBounds.contains(point.toDpOffset().toOffset(screenDensity).round())
 
     private val semanticsOwnerListener by lazy {
         SemanticsOwnerListenerImpl(
@@ -402,7 +402,7 @@ internal class ComposeSceneMediator(
 
     private fun hitTestInteropView(point: CValue<CGPoint>): UIView? =
         point.useContents {
-            val position = asDpOffset().toOffset(composeSceneDensity)
+            val position = toDpOffset().toOffset(composeSceneDensity)
             val interopView = scene.hitTestInteropView(position)
 
             // Find a group of a holder associated with a given interop view or view controller
@@ -661,13 +661,13 @@ internal class ComposeSceneMediator(
         windowInsetsManager.updateInsets()
         composeSceneSize = currentViewSize.roundToIntSize()
         interactionBounds = with(screenDensity) {
-            _overlayView.bounds.asDpRect().toRect().roundToIntRect()
+            _overlayView.bounds.toDpRect().toRect().roundToIntRect()
         }
     }
 
     private val currentViewSize: Size get() {
         return with(screenDensity) {
-            _overlayView.frame.useContents { size.asDpSize() }.toSize()
+            _overlayView.frame.useContents { size.toDpSize() }.toSize()
         }
     }
 

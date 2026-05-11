@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text.input
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
@@ -23,8 +24,9 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
-import androidx.compose.ui.unit.asCGRect
-import androidx.compose.ui.unit.asDpOffset
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.toCGRect
+import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.window.ComposeTextInputView
@@ -131,8 +133,8 @@ internal open class ComposeTextInputConnection(
         showMenuOrUpdatePosition = {
             textInputView.let { textInputView ->
                 val density = view.density
-                val offset = textInputView.frame.useContents { origin.asDpOffset().toOffset(density) }
-                val target = rect.translate(-offset).toDpRect(density).asCGRect()
+                val offset = textInputView.frame.useContents { origin.toDpOffset().toOffset(density) }
+                val target = rect.translate(-offset).toDpRect(density).toCGRect()
                 textInputView.showEditMenuAtRect(
                     targetRect = target,
                     copy = onCopyRequested,

@@ -22,7 +22,7 @@ import androidx.compose.ui.uikit.utils.CMPTextInputStringTokenizer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.asCGRect
+import androidx.compose.ui.unit.toCGRect
 import kotlinx.cinterop.CValue
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRect
@@ -276,7 +276,7 @@ internal class TextInputSelectionRect(
         containsEnd: Boolean,
         isVertical: Boolean
     ) : this(
-        dpRect.asCGRect(),
+        dpRect.toCGRect(),
         writingDirection.toUITextWritingDirection(),
         containsStart,
         containsEnd,
