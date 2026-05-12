@@ -50,7 +50,6 @@ import androidx.build.uptodatedness.TaskUpToDateValidator
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.attributes.BuildTypeAttr
-import com.android.build.api.dsl.AarMetadata
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
@@ -58,6 +57,7 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestBuildType
 import com.android.build.api.dsl.TestExtension
+import com.android.build.api.variant.AarMetadata
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.HasDeviceTests
@@ -450,10 +450,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.extensions.getByType<KotlinMultiplatformExtension>().apply {
                 targets.withType<KotlinMultiplatformAndroidLibraryTarget>().configureEach { t ->
                     t.compilations.configureEach { compilation ->
-                        // Replace with compilation.compileJavaTaskProvider?.configure {}
-                        // when b/438995010 is fixed
-                        @Suppress("DEPRECATION")
-                        compilation.compilerOptions.configure { jvmTarget.set(defaultJvmTarget) }
                         compilation.compileTaskProvider.configure {
                             it.compilerOptions.jvmTarget.set(defaultJvmTarget)
                         }
@@ -693,30 +689,23 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     private fun KotlinSourceSet.includesSourceSet(otherName: String): Boolean =
         name == otherName || dependsOn.any { it.includesSourceSet(otherName) }
 
-    private fun AarMetadata.configure(compileSdk: Int?) {
-        // Taken from
-        // https://developer.android.com/build/releases/gradle-plugin#api-level-support
-        fun mapToMinAgpVersion(compileSdk: Int): String {
-            return when (compileSdk) {
-                33 -> "7.2.0"
-                34 -> "8.1.1"
-                35 -> "8.6.0"
-                36 -> "8.9.1"
-                37 -> "9.1.0"
-                else -> throw Exception("Unknown compileSdk to minAgpVersion mapping")
+    private fun AarMetadata.configureMinAgpVersion() {
+        @Suppress("UnstableApiUsage") // usage of minAgpVersion
+        minAgpVersion.set(
+            minCompileSdkVersion.map { value ->
+                // Taken from
+                // https://developer.android.com/build/releases/about-agp#api-level-support
+                when (value.apiLevel) {
+                    1 -> "7.2.0"
+                    33 -> "7.2.0"
+                    34 -> "8.1.1"
+                    35 -> "8.6.0"
+                    36 -> "8.9.1"
+                    37 -> "9.1.0"
+                    else -> throw Exception("Unknown compileSdk to minAgpVersion mapping")
+                }
             }
-        }
-
-        // Propagate the compileSdk value into minCompileSdk. Don't propagate
-        // compileSdkExtension, since only one library actually depends on the extension
-        // APIs and they can explicitly declare that in their build.gradle. Note that when
-        // we're using a preview SDK, the value for compileSdk will be null and the
-        // resulting AAR metadata won't have a minCompileSdk --
-        // this is okay because AGP automatically embeds forceCompileSdkPreview in the AAR
-        // metadata and uses it instead of minCompileSdk.
-        if (compileSdk == null) return
-        minCompileSdk = compileSdk
-        minAgpVersion = mapToMinAgpVersion(compileSdk)
+        )
     }
 
     private fun configureWithKotlinMultiplatformAndroidPlugin(
@@ -752,6 +741,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.configurePublicResourcesStub(variant)
             project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
             project.configureVerifyELFRegionAlignment(variant)
+            variant.aarMetadata.configureMinAgpVersion()
         }
 
         project.configureVersionFileWriter(project.multiplatformExtension!!, androidXExtension)
@@ -912,6 +902,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 }
             }
             project.configureVerifyELFRegionAlignment(variant)
+            variant.aarMetadata.configureMinAgpVersion()
         }
         project.buildOnServerDependsOnAssembleRelease()
     }
@@ -1031,12 +1022,12 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         // Suppress output of android:compileSdkVersion and related attributes (b/277836549).
         androidResources.additionalParameters += "--no-compile-sdk-metadata"
 
-        compileSdk = project.defaultAndroidConfig.compileSdk
+        compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
 
         buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
 
         defaultConfig.ndk.abiFilters.addAll(SUPPORTED_BUILD_ABIS)
-        defaultConfig.minSdk = defaultMinSdk
+        defaultConfig.minSdk { version = release(defaultMinSdk) }
         defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         testOptions.animationsDisabled = !project.isMacrobenchmark()
@@ -1101,12 +1092,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         androidXExtension: AndroidXExtension,
     ) {
         val defaultMinSdkVersion = project.defaultAndroidConfig.minSdk
-        val defaultCompileSdk = project.defaultAndroidConfig.compileSdk
-
-        compileSdk = defaultCompileSdk
+        compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
         buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
-
-        minSdk = defaultMinSdkVersion
+        minSdk { version = release(defaultMinSdkVersion) }
 
         lint.targetSdk = project.defaultAndroidConfig.targetSdk
         compilations
