@@ -520,7 +520,7 @@ private class PinchGestureRecognizer(
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun onPinch(gestureRecognizer: UIPinchGestureRecognizer) {
-        val position = gestureRecognizer.locationInView(view).asDpOffset()
+        val position = gestureRecognizer.locationInView(view).toDpOffset()
 
         when (gestureRecognizer.state) {
             UIGestureRecognizerStateBegan -> {
