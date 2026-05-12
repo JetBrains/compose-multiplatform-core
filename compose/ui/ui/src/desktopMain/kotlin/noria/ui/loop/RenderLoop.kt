@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.configureSwingGlobalsForCompose
+import androidx.compose.ui.desktop.getComposeDispatcher
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -123,9 +124,10 @@ suspend fun <T> withRenderLoopAndFrameClock(
             recomposerJob = launch(MainUIDispatcher + applicationFrameClock) {
                 var composition: Composition? = null
                 var recomposer: Recomposer? = null
+                var globalSnapshotRegistration: AutoCloseable? = null
 
                 try {
-                    GlobalSnapshotManager.ensureStarted()
+                    globalSnapshotRegistration = GlobalSnapshotManager.register(getComposeDispatcher())
 
                     recomposer = Recomposer(coroutineContext)
 
@@ -165,6 +167,7 @@ suspend fun <T> withRenderLoopAndFrameClock(
                 } finally {
                     try {
                         composition?.dispose()
+                        globalSnapshotRegistration?.close()
                         recomposer?.close() // Terminates runRecomposeAndApplyChanges() gracefully
                         recomposer?.join()
                     } catch (e: Exception) {
