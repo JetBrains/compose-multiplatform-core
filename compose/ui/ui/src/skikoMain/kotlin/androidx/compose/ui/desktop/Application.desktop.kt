@@ -71,13 +71,15 @@ suspend fun <T> launchScene(
     content: @Composable () -> Unit,
 ) {
     withContext(context + ComposeUIDispatcher + YieldFrameClock) {
-        val globalSnapshotRegistration = GlobalSnapshotManager.register(ComposeUIDispatcher)
-        val recomposer = Recomposer(coroutineContext)
         val scene = Scene(
             coroutineScope = this,
             prepareMainThread = prepareMainThread,
             restoreMainThread = restoreMainThread,
         )
+        val globalSnapshotRegistration =
+            scene.withPreparedMainThread { GlobalSnapshotManager.register(ComposeUIDispatcher) }
+
+        val recomposer = Recomposer(coroutineContext)
 
         launch {
             recomposer.runRecomposeAndApplyChanges()
