@@ -17,22 +17,20 @@
 package androidx.compose.ui.awt
 
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.size
 import androidx.compose.ui.util.fastRoundToInt
 import java.awt.Component
 import java.awt.EventQueue
 import java.awt.Graphics
 import java.awt.Rectangle
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.swing.JComponent
-import javax.swing.JDialog
-import javax.swing.JFrame
 import javax.swing.JLayeredPane
+import javax.swing.RootPaneContainer
 import kotlin.math.ceil
 import kotlin.math.floor
-import kotlin.math.roundToInt
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.hostOs
 
@@ -63,13 +61,35 @@ internal fun toAwtRectangle(
     return Rectangle(rleft, rtop, rwidth, rheight)
 }
 
-internal fun IntRect.toAwtRectangle(density: Density = Density(1f)) = toAwtRectangle(
+internal fun IntRect.toAwtRectangle(density: Density) = toAwtRectangle(
     left = left.toFloat(),
     top = top.toFloat(),
     right = right.toFloat(),
     bottom = bottom.toFloat(),
     density = density.density
 )
+
+internal fun DpRect.toAwtRectangleRounded(): Rectangle {
+    val left = this.left.value.fastRoundToInt()
+    val top = this.top.value.fastRoundToInt()
+    val right = this.right.value.fastRoundToInt()
+    val bottom = this.bottom.value.fastRoundToInt()
+    return Rectangle(left, top, right - left, bottom - top)
+}
+
+/**
+ * Returns a [java.awt.Rectangle] corresponding to this [DpRect], in the given density.
+ *
+ * The size of the rectangle is rounded up to the nearest integer.
+ */
+internal fun DpRect.toAwtRectangleSizeRoundedUp(): Rectangle {
+    val left = this.left.value.fastRoundToInt()
+    val top = this.top.value.fastRoundToInt()
+    val size = this.size
+    val width = ceil(size.width.value).toInt()
+    val height = ceil(size.height.value).toInt()
+    return Rectangle(left, top, width, height)
+}
 
 /**
  * Returns a [java.awt.Rectangle] corresponding to this [Rect], in the given density.
@@ -85,28 +105,14 @@ internal fun Rect.toAwtRectangleRounded(density: Density): Rectangle {
     return Rectangle(left, top, right - left, bottom - top)
 }
 
-internal fun Color.toAwtColor() = java.awt.Color(red, green, blue, alpha)
-
+/**
+ * Determines whether the window has a shadow on macOS.
+ */
 // See https://developer.apple.com/library/archive/technotes/tn2007/tn2196.html#WINDOW_SHADOW
-private var JComponent.hasMacOsShadow: Boolean
-    get() = getClientProperty("Window.shadow") as? Boolean? ?: false
-    set(value) { putClientProperty("Window.shadow", value) }
-
-/**
- * Determines if the window has a shadow on macOS.
- */
-internal var JFrame.hasMacOsShadow: Boolean
+internal var RootPaneContainer.hasMacOsShadow: Boolean
     // Delegated properties don't work for extensions https://youtrack.jetbrains.com/issue/KT-6643
-    get() = rootPane.hasMacOsShadow
-    set(value) { rootPane.hasMacOsShadow = value }
-
-/**
- * Determines if the window has a shadow on macOS.
- */
-internal var JDialog.hasMacOsShadow: Boolean
-    // Delegated properties don't work for extensions https://youtrack.jetbrains.com/issue/KT-6643
-    get() = rootPane.hasMacOsShadow
-    set(value) { rootPane.hasMacOsShadow = value }
+    get() = rootPane.getClientProperty("Window.shadow") as? Boolean? ?: false
+    set(value) { rootPane.putClientProperty("Window.shadow", value) }
 
 /**
  * Windows makes clicks on transparent pixels fall through, but it doesn't work

@@ -66,9 +66,9 @@ interface UiMediaScope {
     /**
      * The type of keyboard currently available or connected.
      *
-     * This property prioritizes a physical keyboard connection ([AnyKeyboard.Physical]) over an
-     * on-screen soft keyboard ([AnyKeyboard.Virtual]). If neither is detected, it returns
-     * [AnyKeyboard.None].
+     * This property prioritizes a physical keyboard connection ([KeyboardKind.Physical]) over an
+     * on-screen soft keyboard ([KeyboardKind.Virtual]). If neither is detected, it returns
+     * [KeyboardKind.None].
      */
     val keyboardKind: KeyboardKind
 
@@ -106,21 +106,23 @@ interface UiMediaScope {
 
         companion object {
             /**
-             * Represents a flat posture, where the foldable device's screen is fully open and flat,
-             * similar to a traditional phone or tablet. It's the default posture for non-foldable
-             * devices.
+             * Represents a flat posture, where the window's display area on a foldable device is
+             * flat (either fully open or closed). It's the default posture for non-foldable
+             * devices, or when the window does not span across a hinge or fold (such as in
+             * split-screen mode on a single panel).
              */
             val Flat = Posture("Flat")
 
             /**
-             * Represents a device in a semi-open state, similar to a laptop. The flexible display
-             * area is split into two logical parts, with a fold in between.
+             * Represents a device in a semi-open state, similar to a laptop. The window spans
+             * across a horizontal fold or hinge, splitting the display area into two logical parts.
              */
             val Tabletop = Posture("Tabletop")
 
             /**
-             * The device is folded similarly to an open book, with the flexible screen area
-             * oriented vertically.
+             * Represents a device in a semi-open state, folded similarly to an open book. The
+             * window spans across a vertical fold or hinge, splitting the display area into two
+             * logical parts.
              */
             val Book = Posture("Book")
         }
@@ -213,7 +215,7 @@ val LocalUiMediaScope =
     }
 
 /**
- * Evaluates a boolean query against the current [UiMediaScope].
+ * Evaluates a query against the current [UiMediaScope].
  *
  * Avoid reading properties marked with `@FrequentlyChangingValue` (such as
  * [UiMediaScope.windowWidth] or [UiMediaScope.windowHeight]) inside the `query` block. Reading
@@ -225,31 +227,31 @@ val LocalUiMediaScope =
  * @sample androidx.compose.ui.samples.FoldableAwareSample
  * @sample androidx.compose.ui.samples.AdaptiveButtonSample
  * @param query The condition to evaluate against the [UiMediaScope].
- * @return The boolean result of the query.
+ * @return The result of the query.
  */
 @ExperimentalMediaQueryApi
 @Composable
 @ReadOnlyComposable
-fun mediaQuery(query: UiMediaScope.() -> Boolean): Boolean = LocalUiMediaScope.current.query()
+inline fun <T> mediaQuery(query: UiMediaScope.() -> T): T = LocalUiMediaScope.current.query()
 
 /**
- * Evaluates a boolean query against the current [UiMediaScope], wrapped in a [derivedStateOf].
+ * Evaluates a query against the current [UiMediaScope], wrapped in a [derivedStateOf].
  *
  * Use this function for queries that involve frequently changing values, such as
  * [UiMediaScope.windowWidth] or [UiMediaScope.windowHeight]. It ensures that compositions only
- * recompose when the boolean result of the [query] changes, not on every small change to the
- * underlying values (like a 1px size change).
+ * recompose when the result of the [query] changes, not on every small change to the underlying
+ * values (like a 1px size change).
  *
  * For queries on stable properties, you can use the simpler [mediaQuery] function.
  *
  * @sample androidx.compose.ui.samples.MediaQuerySample
  * @param query The condition to evaluate against the [UiMediaScope].
- * @return A [State] holding the boolean result of the query. The state will only update when the
- *   evaluated result of the query changes.
+ * @return A [State] holding the result of the query. The state will only update when the evaluated
+ *   result of the query changes.
  */
 @ExperimentalMediaQueryApi
 @Composable
-fun derivedMediaQuery(query: UiMediaScope.() -> Boolean): State<Boolean> {
+fun <T> derivedMediaQuery(query: UiMediaScope.() -> T): State<T> {
     val mediaScope = LocalUiMediaScope.current
     val currentQuery by rememberUpdatedState(query)
 
@@ -257,23 +259,22 @@ fun derivedMediaQuery(query: UiMediaScope.() -> Boolean): State<Boolean> {
 }
 
 /**
- * Evaluates a boolean query against the current [UiMediaScope] from a
- * [CompositionLocalAccessorScope].
+ * Evaluates a query against the current [UiMediaScope] from a [CompositionLocalAccessorScope].
  *
  * If called within a snapshot-aware context, the specific property reads within the query will be
  * tracked, and the scope will be invalidated when any of those properties change.
  *
  * @sample androidx.compose.ui.samples.AdaptiveStylesSample
  * @param query A lambda expression with [UiMediaScope] as its receiver, representing the condition
- *   to check.
- * @return The immediate boolean result of the query.
+ *   to evaluate.
+ * @return The immediate result of the query.
  */
 @ExperimentalMediaQueryApi
-inline fun CompositionLocalAccessorScope.mediaQuery(query: UiMediaScope.() -> Boolean): Boolean =
+inline fun <T> CompositionLocalAccessorScope.mediaQuery(query: UiMediaScope.() -> T): T =
     LocalUiMediaScope.currentValue.query()
 
 /**
- * Evaluates a boolean query against the current [UiMediaScope] from a [Modifier.Node].
+ * Evaluates a query against the current [UiMediaScope] from a [Modifier.Node].
  *
  * This function is designed to be used within a [Modifier.Node] that implements
  * [CompositionLocalConsumerModifierNode].
@@ -284,10 +285,9 @@ inline fun CompositionLocalAccessorScope.mediaQuery(query: UiMediaScope.() -> Bo
  *
  * @sample androidx.compose.ui.samples.MediaQueryModifierNodeSample
  * @param query A lambda expression with [UiMediaScope] as its receiver, representing the condition
- *   to check.
- * @return The immediate boolean result of the query.
+ *   to evaluate.
+ * @return The immediate result of the query.
  */
 @ExperimentalMediaQueryApi
-inline fun CompositionLocalConsumerModifierNode.mediaQuery(
-    query: UiMediaScope.() -> Boolean
-): Boolean = currentValueOf(LocalUiMediaScope).query()
+inline fun <T> CompositionLocalConsumerModifierNode.mediaQuery(query: UiMediaScope.() -> T): T =
+    currentValueOf(LocalUiMediaScope).query()

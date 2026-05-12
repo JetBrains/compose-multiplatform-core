@@ -4379,7 +4379,7 @@ class CompositionTests {
             InlineSubcomposition {
                 @Suppress("ConstantConditionIf") // Testing this case
                 if (false) {
-                    remember { "Something" }
+                    remember { @Suppress("UNUSED_EXPRESSION") "Something" }
                 }
             }
         }
@@ -4890,6 +4890,47 @@ class CompositionTests {
         } finally {
             unregisterToken.dispose()
             job.cancel()
+        }
+    }
+
+    @Test
+    fun testRecomposeToGroupEnd_withNodeGroupSibling() = compositionTest {
+        var showA by mutableStateOf(false)
+        var showB by mutableStateOf(false)
+
+        compose {
+            InlineLinear {
+                RestartGroup {
+                    if (showA) {
+                        Text("A")
+                    }
+                    repeat(10) { Text("C$it") }
+                }
+            }
+            RestartGroup {
+                if (showB) {
+                    Text("B")
+                }
+                Text("Static")
+            }
+        }
+
+        validate {
+            Linear { repeat(10) { Text("C$it") } }
+            Text("Static")
+        }
+
+        showA = true
+        showB = true
+        expectChanges()
+
+        validate {
+            Linear {
+                Text("A")
+                repeat(10) { Text("C$it") }
+            }
+            Text("B")
+            Text("Static")
         }
     }
 }

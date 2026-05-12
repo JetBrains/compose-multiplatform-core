@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
@@ -41,7 +42,6 @@ import androidx.compose.ui.window.DialogModalityType
 import androidx.compose.ui.window.DialogState
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.DialogWindowScope
-import androidx.compose.ui.window.LocalWindow
 import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
 import androidx.compose.ui.window.UndecoratedWindowDecoration
 import androidx.compose.ui.window.WindowDecoration
@@ -147,7 +147,12 @@ fun SwingDialog(
             // - Make the dialog displayable
             // - Size the dialog and the ComposeLayer correctly, so that we can draw it here
             if (!wasDisplayable && it.isDisplayable) {
-                it.renderImmediately()
+                Snapshot.withoutReadObservation {
+                    if (!it.isValid) {
+                        it.validate()
+                    }
+                    it.renderImmediately()
+                }
             }
         },
     )
@@ -201,7 +206,7 @@ fun SwingDialog(
     init: (ComposeDialog) -> Unit,
     content: @Composable DialogWindowScope.() -> Unit
 ) {
-    val owner = LocalWindow.current
+    val owner = LocalAwtWindow.current
 
     val currentState by rememberUpdatedState(state)
     val currentTitle by rememberUpdatedState(title)

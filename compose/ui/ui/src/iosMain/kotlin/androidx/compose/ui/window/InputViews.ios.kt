@@ -25,7 +25,7 @@ import androidx.compose.ui.uikit.utils.CMPPanGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPPinchGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPScrollView
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.asDpOffset
+import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
 import kotlin.getValue
@@ -438,7 +438,7 @@ private class ScrollGestureRecognizer(
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun onPan(gestureRecognizer: UIPanGestureRecognizer) {
-        val position = gestureRecognizer.locationInView(view).asDpOffset()
+        val position = gestureRecognizer.locationInView(view).toDpOffset()
 
         when (gestureRecognizer.state) {
             UIGestureRecognizerStateBegan -> {
@@ -764,7 +764,7 @@ internal class OverlayInputView(
             return null
         }
         val nativeTextInputViewHitTest = subviews.firstNotNullOfOrNull { it ->
-            (it as? IntermediateTextScrollView)?.let {
+            (it as? NativeTextInputScrollView)?.let {
                 val inputPoint = convertPoint(point, toView = it)
                 it.hitTest(inputPoint, withEvent)
             }
@@ -779,7 +779,7 @@ internal class OverlayInputView(
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun onHover(gestureRecognizer: CMPHoverGestureRecognizer) {
-        val position = gestureRecognizer.locationInView(this).asDpOffset()
+        val position = gestureRecognizer.locationInView(this).toDpOffset()
         val lastEvent = hoverGestureRecognizer.lastReceivedEvent
         when (gestureRecognizer.state) {
             UIGestureRecognizerStateBegan ->
@@ -926,7 +926,7 @@ private fun UIView.findAncestorInteractionMode(touch: UITouch): UIKitInteropInte
         if (view is InteropWrappingView) {
             return view.interactionMode
         }
-        if (view is IntermediateTextScrollView) {
+        if (view is NativeTextInputScrollView) {
             return view.interactionModeAt(touch.locationInView(view))
         }
         view = view.superview
