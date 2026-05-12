@@ -17,8 +17,6 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -29,7 +27,7 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
-    compileSdk = 35
+    compileSdk { version = release(35) }
     namespace = "androidx.benchmark.integration.macrobenchmark.target"
 }
 

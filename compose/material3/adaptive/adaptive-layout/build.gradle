@@ -21,6 +21,7 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.androidx.build.UpdateTranslationsTask
@@ -34,7 +35,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk = 35
+        compileSdk { version = release(37) }
         namespace = "androidx.compose.material3.adaptive.layout"
         androidResources.enable = true
     }

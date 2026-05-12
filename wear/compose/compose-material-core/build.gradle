@@ -29,8 +29,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -58,10 +56,10 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
 
     defaultConfig {
-        minSdk = 25
+        minSdk { version = release(25) }
     }
     namespace = "androidx.wear.compose.material.core"
 }

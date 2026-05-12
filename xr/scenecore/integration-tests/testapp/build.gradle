@@ -21,17 +21,15 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "androidx.xr.scenecore.testapp"
-    compileSdk = 35
+    compileSdk { version = release(36) }
 
     defaultConfig {
         applicationId = "androidx.xr.scenecore.testapp"
-        minSdk = 34
+        minSdk { version = release(34) }
     }
     buildTypes {
         release {

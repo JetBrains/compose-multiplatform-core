@@ -26,7 +26,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -54,11 +53,9 @@ dependencies {
 
 android {
     namespace = "androidx.pdf.compose"
+    compileSdk { version = release(37) }
     defaultConfig {
-        // TODO(b/403022712) Remove minSdk once pdf-viewer and pdf-document-service drop their
-        //   minSdk requirements
-        minSdk = 31
-        compileSdk = 36
+        minSdk { version = release(28) }
     }
 }
 

@@ -20,7 +20,6 @@
  * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -35,7 +34,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk = 36
+        compileSdk { version = release(37) }
         namespace = "androidx.navigation3.ui"
         androidResources.enable = true
     }

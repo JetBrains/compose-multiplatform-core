@@ -27,7 +27,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -60,7 +59,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     namespace = "androidx.navigation.fragment.compose"
 }
 

@@ -19,7 +19,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     id("AndroidXComposePlugin")
 }
 
@@ -34,9 +33,9 @@ androidx {
 
 android {
     namespace = "androidx.compose.remote.creation.compose"
-    compileSdk = 35
+    compileSdk { version = release(37) }
     defaultConfig {
-        minSdk = 29
+        minSdk { version = release(29) }
     }
 }
 

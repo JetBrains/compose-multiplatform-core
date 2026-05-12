@@ -17,7 +17,6 @@
 package androidx.build.sources
 
 import androidx.build.LazyInputsCopyTask
-import androidx.build.ProjectLayoutType
 import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import androidx.build.capitalize
 import androidx.build.dackka.DokkaAnalysisPlatform
