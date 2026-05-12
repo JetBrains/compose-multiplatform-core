@@ -19,7 +19,9 @@ package androidx.compose.ui
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainCoroutineDispatcher
 
 internal actual fun classKeyForObject(a: Any): Any {
     return a::class
@@ -34,4 +36,7 @@ internal actual fun InspectorInfo.tryPopulateReflectively(
 }
 
 internal actual val PostDelayedDispatcher: CoroutineContext
+    get() = Dispatchers.Main
+
+actual val ComposeUIDispatcher: MainCoroutineDispatcher
     get() = Dispatchers.Main
