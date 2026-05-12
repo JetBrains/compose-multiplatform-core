@@ -17,6 +17,7 @@
 package noria.ui.core
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,10 +52,15 @@ fun Image(
     paintModifier: Paint? = null, // dispose should be handled manually
     loader: (IntSize, Density) -> Deferred<Picture?>
 ) {
-    val specifiedPhysicalWidth = with(LocalDensity.current) { width?.roundToPx() }
-    val specifiedPhysicalHeight = with(LocalDensity.current) { height?.roundToPx() }
-    val painter = remember(loader) {
-        var picture by mutableStateOf<Picture?>(null)
+    val density = LocalDensity.current
+    val specifiedPhysicalWidth = with(density) { width?.roundToPx() }
+    val specifiedPhysicalHeight = with(density) { height?.roundToPx() }
+    var picture by remember { mutableStateOf<Picture?>(null) }
+    LaunchedEffect(loader, specifiedPhysicalWidth, specifiedPhysicalHeight, density) {
+        val size = IntSize(specifiedPhysicalWidth ?: 0, specifiedPhysicalHeight ?: 0)
+        picture = loader(size, density).await()
+    }
+    val painter = remember {
         object : Painter() {
             override val intrinsicSize: Size
                 get() = Size(
