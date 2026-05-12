@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
+import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.GlobalSnapshotManager
@@ -69,7 +70,7 @@ suspend fun <T> launchScene(
     restoreMainThread: (T) -> Unit,
     content: @Composable () -> Unit,
 ) {
-    withContext(context + getComposeDispatcher() + YieldFrameClock) {
+    withContext(context + ComposeUIDispatcher + YieldFrameClock) {
         GlobalSnapshotManager.ensureStarted()
         val recomposer = Recomposer(coroutineContext)
         val scene = Scene(
