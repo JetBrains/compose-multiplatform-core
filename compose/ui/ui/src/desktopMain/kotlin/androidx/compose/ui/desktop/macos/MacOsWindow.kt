@@ -93,6 +93,7 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.TimeSource
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
+import noria.CallbackInterceptor
 import noria.ui.core.LocalWindow
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.desktop.macos.AppMenuManager
@@ -487,6 +488,14 @@ class MacOsWindow internal constructor(
         macOsDragAndDropManager = MacOsDragAndDropManager(
             { composeScene.rootDragAndDropNode },
             { density },
+            object : CallbackInterceptor {
+                override fun <T> execute(f: () -> T): T {
+                    return scene.withPreparedMainThread {
+                        f()
+                    }
+                }
+
+            },
         )
         if (nativeWindow.isVisible) {
             setupDisplayLink()
