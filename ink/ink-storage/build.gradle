@@ -27,7 +27,7 @@ androidXMultiplatform {
 
     androidLibrary {
         namespace = "androidx.ink.storage"
-        compileSdk = 35
+        compileSdk { version = release(35) }
     }
 
     defaultPlatform(PlatformIdentifier.JVM)

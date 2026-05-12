@@ -24,8 +24,6 @@ import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
     id("com.android.library")
 }
 
@@ -40,10 +38,10 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
 
     defaultConfig {
-        minSdk = 26
+        minSdk { version = release(26) }
     }
     namespace = "androidx.wear.tiles.tooling.preview"
 }

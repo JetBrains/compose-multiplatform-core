@@ -26,8 +26,6 @@ import androidx.build.Version
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -48,7 +46,7 @@ android {
         abortOnError = false
     }
     namespace = "androidx.lint.integration.tests"
-    compileSdk = 36
+    compileSdk { version = release(36) { minorApiLevel = 1 }}
 }
 
 

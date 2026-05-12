@@ -27,8 +27,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
     id("androidx.stableaidl")
 }
 
@@ -60,7 +58,7 @@ android {
     }
 
     defaultConfig {
-        minSdk = 24
+        minSdk { version = release(24) }
     }
 }
 
