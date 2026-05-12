@@ -210,7 +210,7 @@ internal actual suspend fun TextFieldSelectionState.textFieldSelectionGestures(
     )
 }
 
-private fun TextFieldSelectionState.doSinglePressSelection(
+private fun TextFieldSelectionState.moveCaretByLongPress(
     touchPointOffset: Offset,
 ) {
     hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -306,7 +306,7 @@ private class UIKitTextFieldTextDragObserver(
         if (selectionAdjustment != SelectionAdjustment.None) {
             textFieldSelectionState.doRepeatingTapSelection(startPoint, selectionAdjustment)
         } else {
-            textFieldSelectionState.doSinglePressSelection(startPoint)
+            textFieldSelectionState.moveCaretByLongPress(startPoint)
         }
     }
 
