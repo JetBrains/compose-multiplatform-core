@@ -23,6 +23,7 @@ import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.desktop.gtk.GtkApplication
 import androidx.compose.ui.desktop.gtk.GtkUriHandler
 import androidx.compose.ui.desktop.linux.LinuxApplication
@@ -87,7 +88,7 @@ suspend fun awaitApplication(
 ) {
     withContext(MainUIDispatcher) {
         withContext(YieldFrameClock) {
-            val globalSnapshotRegistration = GlobalSnapshotManager.register(getComposeDispatcher())
+            val globalSnapshotRegistration = GlobalSnapshotManager.register(ComposeUIDispatcher)
 
             val recomposer = Recomposer(coroutineContext)
             var isOpen by mutableStateOf(true)

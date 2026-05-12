@@ -17,14 +17,18 @@
 package androidx.compose.ui
 
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 internal expect val PostDelayedDispatcher: CoroutineContext
+
+expect val ComposeUIDispatcher: MainCoroutineDispatcher
 
 @OptIn(DelicateCoroutinesApi::class)
 internal actual fun postDelayed(delayMillis: Long, block: () -> Unit): Any {

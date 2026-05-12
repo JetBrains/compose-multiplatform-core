@@ -28,8 +28,8 @@ import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.configureSwingGlobalsForCompose
-import androidx.compose.ui.desktop.getComposeDispatcher
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -127,7 +127,7 @@ suspend fun <T> withRenderLoopAndFrameClock(
                 var globalSnapshotRegistration: AutoCloseable? = null
 
                 try {
-                    globalSnapshotRegistration = GlobalSnapshotManager.register(getComposeDispatcher())
+                    globalSnapshotRegistration = GlobalSnapshotManager.register(ComposeUIDispatcher)
 
                     recomposer = Recomposer(coroutineContext)
 
