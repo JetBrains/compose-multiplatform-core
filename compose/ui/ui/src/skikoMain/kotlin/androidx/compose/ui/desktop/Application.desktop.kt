@@ -70,7 +70,7 @@ suspend fun <T> launchScene(
     content: @Composable () -> Unit,
 ) {
     withContext(context + getComposeDispatcher() + YieldFrameClock) {
-        GlobalSnapshotManager.ensureStarted()
+        val globalSnapshotRegistration = GlobalSnapshotManager.register(getComposeDispatcher())
         val recomposer = Recomposer(coroutineContext)
         val scene = Scene(
             coroutineScope = this,
@@ -94,6 +94,7 @@ suspend fun <T> launchScene(
                 recomposer.join()
             } finally {
                 composition.dispose()
+                globalSnapshotRegistration?.close()
             }
         }
     }
