@@ -10,23 +10,30 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
+import noria.CallbackInterceptor
 import org.jetbrains.desktop.macos.DragInfo
 import org.jetbrains.desktop.macos.DragOperation
 
 internal class MacOsDragAndDropManager(
     private val rootDragAndDropNode: () -> ComposeSceneDragAndDropNode,
     private val density: () -> Density,
+    private val callbackInterceptor: CallbackInterceptor,
 ) {
     private var previousAction: DragAndDropTransferAction? = null
 
     fun onDragEntered(info: DragInfo): DragOperation {
         val dndEvent = info.toDragAndDropEvent()
         val node = rootDragAndDropNode()
-        val acceptedTransfer = node.acceptDragAndDropTransfer(dndEvent)
+
+        val acceptedTransfer = callbackInterceptor.execute {
+            node.acceptDragAndDropTransfer(dndEvent)
+        }
         if (acceptedTransfer) {
-            previousAction = dndEvent.action
-            node.onStarted(dndEvent)
-            node.onEntered(dndEvent)
+            callbackInterceptor.execute {
+                previousAction = dndEvent.action
+                node.onStarted(dndEvent)
+                node.onEntered(dndEvent)
+            }
         }
 
         return if (acceptedTransfer && dndEvent.action != null) {
@@ -40,11 +47,13 @@ internal class MacOsDragAndDropManager(
         val dndEvent = info.toDragAndDropEvent()
         val node = rootDragAndDropNode()
 
-        if (dndEvent.action != previousAction) {
-            node.onChanged(dndEvent)
-            previousAction = dndEvent.action
+        callbackInterceptor.execute {
+            if (dndEvent.action != previousAction) {
+                node.onChanged(dndEvent)
+                previousAction = dndEvent.action
+            }
+            node.onMoved(dndEvent)
         }
-        node.onMoved(dndEvent)
 
         return if (node.hasEligibleDropTarget && dndEvent.action != null) {
             dndEvent.action.toDragOperation()
@@ -59,18 +68,23 @@ internal class MacOsDragAndDropManager(
         )
         val node = rootDragAndDropNode()
 
-        node.onExited(dndEvent)
-        node.onEnded(dndEvent)
-        previousAction = null
+        callbackInterceptor.execute {
+            node.onExited(dndEvent)
+            node.onEnded(dndEvent)
+            previousAction = null
+        }
     }
 
     fun onDragPerformed(info: DragInfo): Boolean {
         val dndEvent = info.toDragAndDropEvent()
         val node = rootDragAndDropNode()
 
-        val consumed = node.onDrop(dndEvent)
-        node.onEnded(dndEvent)
-        previousAction = null
+        val consumed = callbackInterceptor.execute {
+            val wasDropConsumed = node.onDrop(dndEvent)
+            node.onEnded(dndEvent)
+            previousAction = null
+            wasDropConsumed
+        }
         return consumed
     }
 
