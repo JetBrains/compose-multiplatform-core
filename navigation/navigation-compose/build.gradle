@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -28,7 +29,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk = 35
+        compileSdk { version = release(37) }
         namespace = "androidx.navigation.compose"
         androidResources.enable = true
     }

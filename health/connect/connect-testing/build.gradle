@@ -26,7 +26,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -41,11 +40,11 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdk = 26
+        minSdk { version = release(26) }
     }
     namespace = "androidx.health.connect.testing"
     testOptions.unitTests.includeAndroidResources = true
-    compileSdk = 36
+    compileSdk { version = release(37)}
 }
 
 androidx {

@@ -21,15 +21,13 @@ plugins {
     id("com.android.application")
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "androidx.xr.compose.testapp"
-    compileSdk = 35
+    compileSdk { version = release(37) }
     defaultConfig {
-        minSdk = 34
+        minSdk { version = release(34) }
     }
     buildTypes {
         release {

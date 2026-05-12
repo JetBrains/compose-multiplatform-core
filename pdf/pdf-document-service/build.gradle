@@ -26,7 +26,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("androidx.stableaidl")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -60,10 +59,9 @@ dependencies {
 
 android {
     namespace = "androidx.pdf.document.service"
-
+    compileSdk { version = release(36) { sdkExtension = 19 }}
     defaultConfig {
-        minSdk = 31
-        compileSdk = 36
+        minSdk { version = release(28) }
     }
 
     buildFeatures.aidl = true

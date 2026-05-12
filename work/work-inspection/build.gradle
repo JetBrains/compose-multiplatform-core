@@ -27,8 +27,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    //id("com.android.experimental.built-in-kotlin")
-    id("org.jetbrains.kotlin.android")
     id("androidx.inspection")
 }
 
@@ -57,10 +55,10 @@ androidx {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(35) }
     defaultConfig {
         // studio pipeline works only starting with Android O
-        minSdk = 26
+        minSdk { version = release(26) }
     }
     namespace = "androidx.work.inspection"
 }

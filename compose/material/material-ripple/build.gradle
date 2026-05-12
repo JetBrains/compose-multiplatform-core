@@ -34,7 +34,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.material.ripple"
-        compileSdk = 35
+        compileSdk { version = release(37) }
     }
     desktop()
     mac()
