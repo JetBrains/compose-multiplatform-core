@@ -374,7 +374,6 @@ internal class ComposeSceneMediator(
             viewConfiguration = viewConfiguration,
             focusedViewsList = focusedViewsList,
             onInputStarted = { animateKeyboardOffsetChanges = true },
-            onKeyboardPresses = ::onKeyboardPresses,
             focusManager = { scene.focusManager },
             coroutineContext = coroutineContext
         ).also {

@@ -47,11 +47,6 @@ internal class UIKitTextInputService(
     private val viewConfiguration: ViewConfiguration,
     private val focusedViewsList: FocusedViewsList?,
     private var onInputStarted: () -> Unit,
-    /**
-     * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
-     * Erasure happens due to K/N not supporting Obj-C lightweight generics.
-     */
-    private var onKeyboardPresses: (Set<*>) -> Unit,
     private var focusManager: () -> ComposeSceneFocusManager?,
     coroutineContext: CoroutineContext
 ) {
@@ -101,7 +96,6 @@ internal class UIKitTextInputService(
                 view = view,
                 coroutineScope = coroutineScope,
                 focusedViewsList = focusedViewsList,
-                onKeyboardPresses = onKeyboardPresses,
                 focusManager = focusManager
             )
         } else {
@@ -111,7 +105,6 @@ internal class UIKitTextInputService(
                 coroutineScope = coroutineScope,
                 viewConfiguration = viewConfiguration,
                 focusedViewsList = focusedViewsList,
-                onKeyboardPresses = onKeyboardPresses,
                 focusManager = focusManager
             )
         }
@@ -203,7 +196,6 @@ internal class UIKitTextInputService(
     fun dispose() {
         stopInput()
         onInputStarted = { }
-        onKeyboardPresses = { }
         focusManager = { null }
     }
 }
