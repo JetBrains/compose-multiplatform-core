@@ -207,7 +207,7 @@ internal class ComposeWindow(
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
 
-    private val hapticFeedback = if (isVibrationSupported()) WebHapticFeedback() else DefaultHapticFeedback()
+    private val hapticFeedback = WebHapticFeedback.webHapticFeedbackOrDefault()
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -879,11 +879,3 @@ private external interface ShadowRootExt {
     val activeElement: Element?
 }
 
-private fun isVibrationSupported(): Boolean = js(
-    //language=javascript
-    """
-        typeof window !== 'undefined' &&
-        window.navigator != null &&
-        typeof window.navigator.vibrate === 'function'
-    """
-)

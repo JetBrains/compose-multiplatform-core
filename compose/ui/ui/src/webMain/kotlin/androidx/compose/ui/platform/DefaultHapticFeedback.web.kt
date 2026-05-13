@@ -32,13 +32,15 @@ internal class WebHapticFeedback : HapticFeedback {
     // see config_longPressVibePattern in https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/core/res/res/values/config.xml
     // We don't have a high-level browser API right now. So we hardcode the patterns here.
     // TODO: to eventually avoid the hardcoded values, follow the new browser API proposal https://github.com/WICG/web-haptics
-    private companion object {
-        val ConfirmVibrationPattern = vibrationPatternOf(18, 32, 36)
-        val RejectVibrationPattern = vibrationPatternOf(18, 28, 18, 28, 18)
-        val SinglePulseVibrationPattern = vibrationPatternOf(12)
-        val SoftTickVibrationPattern = vibrationPatternOf(6)
-        val LongPressVibrationPattern = vibrationPatternOf(0, 30)
-        val VirtualKeyVibrationPattern = vibrationPatternOf(0, 20)
+    companion object {
+        private val ConfirmVibrationPattern = vibrationPatternOf(18, 32, 36)
+        private val RejectVibrationPattern = vibrationPatternOf(18, 28, 18, 28, 18)
+        private val SinglePulseVibrationPattern = vibrationPatternOf(12)
+        private val SoftTickVibrationPattern = vibrationPatternOf(6)
+        private val LongPressVibrationPattern = vibrationPatternOf(0, 30)
+        private val VirtualKeyVibrationPattern = vibrationPatternOf(0, 20)
+
+        fun webHapticFeedbackOrDefault(): HapticFeedback =  if (isVibrationSupported()) WebHapticFeedback() else DefaultHapticFeedback()
     }
 
     override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
@@ -78,3 +80,12 @@ private fun vibrate(pattern: JsArray<JsNumber>) {
     // Assuming the API support has been checked in advance, we can safely call it
     js("window.navigator.vibrate(pattern)")
 }
+
+private fun isVibrationSupported(): Boolean = js(
+    //language=javascript
+    """
+        typeof window !== 'undefined' &&
+        window.navigator != null &&
+        typeof window.navigator.vibrate === 'function'
+    """
+)
