@@ -295,6 +295,7 @@ internal class ComposeSceneMediator(
      * The view handles user touches that occur only over the interop views located on it.
      */
     private val _backgroundView = BackgroundInputView(
+        onMovedToWindow = ::focusOverlayViewIfNeeded,
         onLayoutSubviews = ::updateLayout,
         hitTestInteropView = ::hitTestInteropView,
         isPointInsideInteractionBounds = ::isPointInsideInteractionBounds,
@@ -349,7 +350,16 @@ internal class ComposeSceneMediator(
         )
     }
 
-    var isAccessibilityEnabled by semanticsOwnerListener::isEnabled
+    var isFocusEnabled: Boolean
+        get() = semanticsOwnerListener.isEnabled
+        set(value) {
+            semanticsOwnerListener.isEnabled = value
+            if (value) {
+                focusOverlayViewIfNeeded()
+            } else {
+                _overlayView.resignFirstResponder()
+            }
+        }
 
     private val keyboardManager by lazy {
         ComposeSceneKeyboardOffsetManager(
@@ -677,6 +687,29 @@ internal class ComposeSceneMediator(
 
     fun sceneWillDisappear() {
         keyboardManager.stop()
+    }
+
+    fun focusOverlayViewIfNeeded() {
+        if (!isFocusEnabled) {
+            return
+        }
+        val window = _overlayView.window ?: return
+        fun findFirstResponder(view: UIView): UIView? {
+            if (view.isFirstResponder) {
+                return view
+            }
+            for (subview in view.subviews) {
+                subview as UIView
+                val firstResponder = findFirstResponder(subview)
+                if (firstResponder != null) {
+                    return firstResponder
+                }
+            }
+            return null
+        }
+        if (findFirstResponder(window) == null) {
+            _overlayView.becomeFirstResponder()
+        }
     }
 
     fun setKeyEventListener(

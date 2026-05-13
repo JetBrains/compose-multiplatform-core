@@ -726,6 +726,7 @@ internal class OverlayInputView(
  * All other user input events should be handled by the [OverlayInputView] or with its help.
  */
 internal class BackgroundInputView(
+    private var onMovedToWindow: () -> Unit,
     private var onLayoutSubviews: () -> Unit,
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
@@ -763,6 +764,9 @@ internal class BackgroundInputView(
     override fun didMoveToWindow() {
         super.didMoveToWindow()
 
+        window?.let {
+            onMovedToWindow()
+        }
         setNeedsLayout()
     }
 
@@ -800,6 +804,7 @@ internal class BackgroundInputView(
         removeGestureRecognizer(touchesGestureRecognizer)
         touchesGestureRecognizer.dispose()
 
+        onMovedToWindow = {}
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         onLayoutSubviews = {}

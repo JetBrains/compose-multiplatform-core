@@ -22,10 +22,13 @@ import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.scene.ComposeLayersViewController
+import androidx.compose.ui.test.utils.beginKeyPress
+import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.center
 import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.mouseDown
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
+import androidx.compose.ui.test.utils.release
 import androidx.compose.ui.test.utils.resetTouches
 import androidx.compose.ui.test.utils.toCGPoint
 import androidx.compose.ui.test.utils.touchDown
@@ -86,6 +89,7 @@ import platform.UIKit.UIInterfaceOrientationPortrait
 import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIScreen
 import platform.UIKit.UITextInputProtocol
+import platform.UIKit.UIPressType
 import platform.UIKit.UITouch
 import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIView
@@ -372,6 +376,28 @@ internal class UIKitInstrumentedTest(
                 it as UIWindow
                 it.hitTest(position.toCGPoint(), it.getTouchesEvent()) != null
             } as UIWindow
+    }
+
+    // Presses:
+
+    /**
+     * Simulates a button press and release for [pressType].
+     *
+     * @param pressType buttons that a person can press.
+     */
+    fun keystroke(pressType: UIPressType) {
+        val window = appDelegate.window() ?: error("No active window in MockAppDelegate")
+        return window.beginPress(pressType).release()
+    }
+
+    /**
+     * Simulates a hardware-keyboard press and release for [char].
+     *
+     * @param char character to be typed.
+     */
+    fun keystroke(char: Char) {
+        val window = appDelegate.window() ?: error("No active window in MockAppDelegate")
+        return window.beginKeyPress(char).release()
     }
 
     /**
