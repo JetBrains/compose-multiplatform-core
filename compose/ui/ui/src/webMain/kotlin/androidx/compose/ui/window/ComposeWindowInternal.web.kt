@@ -52,6 +52,7 @@ import androidx.compose.ui.input.pointer.composeButtons
 import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.DefaultHapticFeedback
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.PlatformContext
@@ -206,7 +207,7 @@ internal class ComposeWindow(
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
 
-    private val hapticFeedback = WebHapticFeedback()
+    private val hapticFeedback = if (isVibrationSupported()) WebHapticFeedback() else DefaultHapticFeedback()
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -877,3 +878,12 @@ private fun Element.isFocused(): Boolean {
 private external interface ShadowRootExt {
     val activeElement: Element?
 }
+
+private fun isVibrationSupported(): Boolean = js(
+    //language=javascript
+    """
+        typeof window !== 'undefined' &&
+        window.navigator != null &&
+        typeof window.navigator.vibrate === 'function'
+    """
+)

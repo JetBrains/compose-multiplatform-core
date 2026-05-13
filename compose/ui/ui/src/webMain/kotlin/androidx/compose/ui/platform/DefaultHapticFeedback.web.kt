@@ -27,40 +27,42 @@ import kotlin.js.toJsNumber
 
 @OptIn(ExperimentalWasmJsInterop::class)
 internal class WebHapticFeedback : HapticFeedback {
-    // Check if API is supported before doing anything
-    private val isVibrationSupported = isVibrationSupported()
 
-    // Declare these hardcoded patterns to avoid js-interop on every call
-    private val ConfirmVibrationPattern: JsArray<JsNumber> = vibrationPatternOf(18, 32, 36)
-    private val RejectVibrationPattern: JsArray<JsNumber> = vibrationPatternOf(18, 28, 18, 28, 18)
-    private val SinglePulseVibrationPattern: JsArray<JsNumber> = vibrationPatternOf(12)
-    private val SoftTickVibrationPattern: JsArray<JsNumber> = vibrationPatternOf(6)
+    // on Android these values are configured
+    // see config_longPressVibePattern in https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/core/res/res/values/config.xml
+    // We don't have a high-level browser API right now. So we hardcode the patterns here.
+    // TODO: to eventually avoid the hardcoded values, follow the new browser API proposal https://github.com/WICG/web-haptics
+    private companion object {
+        val ConfirmVibrationPattern = vibrationPatternOf(18, 32, 36)
+        val RejectVibrationPattern = vibrationPatternOf(18, 28, 18, 28, 18)
+        val SinglePulseVibrationPattern = vibrationPatternOf(12)
+        val SoftTickVibrationPattern = vibrationPatternOf(6)
+        val LongPressVibrationPattern = vibrationPatternOf(0, 30)
+        val VirtualKeyVibrationPattern = vibrationPatternOf(0, 20)
+    }
 
     override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
-        if (!isVibrationSupported) return
         val pattern = vibrationPatternFor(hapticFeedbackType) ?: return
         vibrate(pattern)
     }
 
-    // We don't have a high-level browser API right now. So we hardcode the patterns here.
-    // TODO: to eventually avoid the hardcoded values, follow the new browser API proposal https://github.com/WICG/web-haptics
-    // and rely on it once it's implemented
+
     @OptIn(ExperimentalWasmJsInterop::class)
-    internal fun vibrationPatternFor(hapticFeedbackType: HapticFeedbackType): JsArray<JsNumber>? {
+    private fun vibrationPatternFor(hapticFeedbackType: HapticFeedbackType): JsArray<JsNumber>? {
         return when (hapticFeedbackType) {
             HapticFeedbackType.Confirm -> ConfirmVibrationPattern
+            HapticFeedbackType.ContextClick -> SinglePulseVibrationPattern
+            HapticFeedbackType.GestureEnd -> SinglePulseVibrationPattern
+            HapticFeedbackType.GestureThresholdActivate -> SinglePulseVibrationPattern
+            HapticFeedbackType.KeyboardTap -> SoftTickVibrationPattern
+            HapticFeedbackType.LongPress -> LongPressVibrationPattern
             HapticFeedbackType.Reject -> RejectVibrationPattern
-            HapticFeedbackType.ContextClick,
-            HapticFeedbackType.GestureEnd,
-            HapticFeedbackType.GestureThresholdActivate,
-            HapticFeedbackType.LongPress,
-            HapticFeedbackType.ToggleOff,
-            HapticFeedbackType.ToggleOn,
-            HapticFeedbackType.VirtualKey -> SinglePulseVibrationPattern
-            HapticFeedbackType.KeyboardTap,
-            HapticFeedbackType.SegmentFrequentTick,
+            HapticFeedbackType.SegmentFrequentTick -> SoftTickVibrationPattern
             HapticFeedbackType.SegmentTick -> SoftTickVibrationPattern
-            HapticFeedbackType.TextHandleMove -> null
+            HapticFeedbackType.TextHandleMove -> ConfirmVibrationPattern
+            HapticFeedbackType.ToggleOff -> SinglePulseVibrationPattern
+            HapticFeedbackType.ToggleOn -> SinglePulseVibrationPattern
+            HapticFeedbackType.VirtualKey -> VirtualKeyVibrationPattern
             else -> null
         }
     }
@@ -68,17 +70,7 @@ internal class WebHapticFeedback : HapticFeedback {
 
 @OptIn(ExperimentalWasmJsInterop::class)
 private fun vibrationPatternOf(vararg durations: Int): JsArray<JsNumber> =
-    durations.map { it.toDouble().toJsNumber() }.toJsArray()
-
-@OptIn(ExperimentalWasmJsInterop::class)
-private fun isVibrationSupported(): Boolean = js(
-    //language=javascript
-    """
-        typeof window !== 'undefined' &&
-        window.navigator != null &&
-        typeof window.navigator.vibrate === 'function'
-    """
-)
+    durations.map { it.toJsNumber() }.toJsArray()
 
 //language=javascript
 @OptIn(ExperimentalWasmJsInterop::class)
