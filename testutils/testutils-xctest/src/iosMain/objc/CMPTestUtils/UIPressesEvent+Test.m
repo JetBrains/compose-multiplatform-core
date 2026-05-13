@@ -261,7 +261,8 @@ static UIPress *CMPMakeKeyboardPress(NSString *characters,
 }
 
 + (nullable instancetype)keyboardPressEventForCharacter:(NSString *)character
-                                              inWindow:(UIWindow *)window {
+                                          modifierFlags:(UIKeyModifierFlags)extraModifierFlags
+                                               inWindow:(UIWindow *)window {
     if (character.length != 1) { return nil; }
     unichar c = [character characterAtIndex:0];
     NSInteger keyCode = 0;
@@ -270,6 +271,7 @@ static UIPress *CMPMakeKeyboardPress(NSString *characters,
     if (!CMPHIDKeyCodeForCharacter(c, &keyCode, &modifierFlags, &unmodifiedCharacters)) {
         return nil;
     }
+    modifierFlags |= (NSInteger)extraModifierFlags;
 
     UIResponder *target = CMPFindFirstResponder(window);
     UIPress *press = CMPMakeKeyboardPress(character, unmodifiedCharacters,
@@ -286,7 +288,12 @@ static UIPress *CMPMakeKeyboardPress(NSString *characters,
     // final hop ourselves so a focused TextField actually receives the typed
     // character; the press dispatch above still runs the standard responder
     // hooks for tests that observe pressesBegan/Ended.
-    if (target != nil &&
+    // Skip when a command/control/alt modifier is set — those are keyboard
+    // shortcuts (e.g. ⌘V), not text insertion.
+    UIKeyModifierFlags shortcutModifiers =
+        UIKeyModifierCommand | UIKeyModifierControl | UIKeyModifierAlternate;
+    BOOL isShortcut = (extraModifierFlags & shortcutModifiers) != 0;
+    if (!isShortcut && target != nil &&
         [target respondsToSelector:@selector(insertText:)]) {
         [(id<CMPUIKeyInput>)target insertText:character];
     }

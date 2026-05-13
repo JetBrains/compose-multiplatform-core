@@ -20,6 +20,7 @@ import androidx.compose.test.utils.endPress
 import androidx.compose.test.utils.keyboardPressEventForCharacter
 import androidx.compose.test.utils.pressesEventOfType
 import kotlinx.cinterop.ExperimentalForeignApi
+import platform.UIKit.UIKeyModifierFlags
 import platform.UIKit.UIPressType
 import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIWindow
@@ -31,9 +32,15 @@ internal fun UIWindow.beginPress(pressType: UIPressType): UIPressesEvent {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-internal fun UIWindow.beginKeyPress(char: Char): UIPressesEvent {
-    return UIPressesEvent.keyboardPressEventForCharacter(char.toString(), inWindow = this)
-        ?: error("Cannot synthesise a key press for '$char' — unsupported character.")
+internal fun UIWindow.beginKeyPress(
+    char: Char,
+    modifierFlags: UIKeyModifierFlags = 0,
+): UIPressesEvent {
+    return UIPressesEvent.keyboardPressEventForCharacter(
+        char.toString(),
+        modifierFlags = modifierFlags,
+        inWindow = this,
+    ) ?: error("Cannot synthesise a key press for '$char' — unsupported character.")
 }
 
 internal fun UIPressesEvent.release() = this.endPress()

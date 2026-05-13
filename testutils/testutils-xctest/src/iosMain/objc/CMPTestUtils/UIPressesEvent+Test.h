@@ -24,6 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
                                    inWindow:(UIWindow *)window;
 
 + (nullable instancetype)keyboardPressEventForCharacter:(NSString *)character
+                                          modifierFlags:(UIKeyModifierFlags)modifierFlags
                                                inWindow:(UIWindow *)window;
 
 - (void)pressChanged;

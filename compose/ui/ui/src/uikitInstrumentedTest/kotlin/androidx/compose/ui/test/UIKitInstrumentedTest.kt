@@ -89,6 +89,7 @@ import platform.UIKit.UIInterfaceOrientationPortrait
 import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIScreen
 import platform.UIKit.UITextInputProtocol
+import platform.UIKit.UIKeyModifierFlags
 import platform.UIKit.UIPressType
 import platform.UIKit.UITouch
 import platform.UIKit.UIUserInterfaceIdiomPad
@@ -398,6 +399,15 @@ internal class UIKitInstrumentedTest(
     fun keystroke(char: Char) {
         val window = appDelegate.window() ?: error("No active window in MockAppDelegate")
         return window.beginKeyPress(char).release()
+    }
+
+    /**
+     * Simulates a hardware-keyboard shortcut press and release for [char] combined with
+     * the given [modifierFlags] (e.g. `UIKeyModifierCommand` for ⌘-shortcuts).
+     */
+    fun keystroke(char: Char, modifierFlags: UIKeyModifierFlags) {
+        val window = appDelegate.window() ?: error("No active window in MockAppDelegate")
+        return window.beginKeyPress(char, modifierFlags).release()
     }
 
     /**

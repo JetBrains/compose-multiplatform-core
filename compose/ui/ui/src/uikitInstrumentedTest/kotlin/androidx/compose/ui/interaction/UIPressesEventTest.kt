@@ -20,6 +20,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,8 +44,9 @@ import kotlin.test.assertTrue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
+import platform.UIKit.UIKeyModifierCommand
+import platform.UIKit.UIPasteboard
 import platform.UIKit.UIPress
-import platform.UIKit.UIPressType
 import platform.UIKit.UIPressTypeMenu
 import platform.UIKit.UIPressTypeSelect
 import platform.UIKit.UIPressTypeUpArrow
@@ -195,5 +197,32 @@ class UIPressesEventTest {
         }
 
         assertEquals("Hello", value)
+    }
+
+    @Test
+    fun pasteTextUsingHotkeyIntoBasicTextField() = runUIKitInstrumentedTest {
+        UIPasteboard.generalPasteboard().string = "Pasted"
+
+        val requester = FocusRequester()
+        val state = TextFieldState()
+
+        setContent {
+            LaunchedEffect(Unit) {
+                requester.requestFocus()
+            }
+            BasicTextField(
+                state = state,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .focusRequester(requester),
+            )
+        }
+
+        waitForIdle()
+
+        keystroke('v', modifierFlags = UIKeyModifierCommand)
+        waitUntil("BasicTextField should contain pasteboard text") {
+            state.text.toString() == "Pasted"
+        }
     }
 }
