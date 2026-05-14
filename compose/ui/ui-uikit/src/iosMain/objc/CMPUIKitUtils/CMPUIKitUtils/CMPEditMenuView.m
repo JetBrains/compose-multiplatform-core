@@ -74,7 +74,6 @@
 
 @property (assign, nonatomic) CGRect targetRect;
 @property (assign, nonatomic) BOOL isEditMenuShown;
-@property (assign, nonatomic) BOOL shouldUseNonComposeMenuActions;
 
 @property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));
 
@@ -148,6 +147,7 @@ id _editInteraction;
     if (self.window != nil) {
         [[CMPEditMenuViewRegister shared] addEditMenu:self];
     } else {
+        [self hideEditMenu];
         [[CMPEditMenuViewRegister shared] removeEditMenu:self];
     }
 }
@@ -325,9 +325,7 @@ id _editInteraction;
     if (@selector(customAction8:) == action) return self.customActions.count > 8;
     if (@selector(customAction9:) == action) return self.customActions.count > 9;
 
-    if (self.shouldUseNonComposeMenuActions) {
-        return [super canPerformAction:action withSender:sender];
-    } else { return NO; }
+    return NO;
 }
 
 - (void)copy:(id)sender {
@@ -439,26 +437,6 @@ willPresentMenuForConfiguration:(UIEditMenuConfiguration *)configuration
     NSArray *allActions = [suggestedActions arrayByAddingObjectsFromArray:[self makeCustomMenuElements]];
     
     return [UIMenu menuWithTitle:@"" children:allActions];
-}
-
-- (void)activateTextInputInteractionIfNeeded {
-    if (@available(iOS 17, *)) {
-        for (id<UIInteraction> interaction in self.interactions) {
-            if ([interaction isKindOfClass:[UITextSelectionDisplayInteraction class]]) {
-                [((UITextSelectionDisplayInteraction *)interaction) setActivated:YES];
-            }
-        }
-    }
-}
-
-- (void)deactivateTextInputInteractionIfNeeded {
-    if (@available(iOS 17, *)) {
-        for (id<UIInteraction> interaction in self.interactions) {
-            if ([interaction isKindOfClass:[UITextSelectionDisplayInteraction class]]) {
-                [((UITextSelectionDisplayInteraction *)interaction) setActivated:NO];
-            }
-        }
-    }
 }
 
 @end

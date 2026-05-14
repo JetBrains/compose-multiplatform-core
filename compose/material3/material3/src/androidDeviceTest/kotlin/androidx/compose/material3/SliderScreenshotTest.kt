@@ -18,6 +18,7 @@ package androidx.compose.material3
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
@@ -30,6 +31,8 @@ import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -37,8 +40,11 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
@@ -73,6 +79,35 @@ class SliderScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) { Slider(remember { SliderState(0f) }) }
         }
         assertSliderAgainstGolden("slider_origin")
+    }
+
+    @Test
+    fun slider_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+
+        rule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+                Box(wrap.testTag(wrapperTestTag).padding(vertical = 4.dp)) {
+                    Slider(
+                        state = remember { SliderState(0.5f) },
+                        modifier = Modifier.focusRequester(focusRequester),
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        assertSliderAgainstGolden("slider_focused_insetFocusRings")
     }
 
     @Test
