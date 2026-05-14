@@ -17,7 +17,8 @@
 
 package androidx.compose.ui
 
-import androidx.compose.ui.node.findNearestAncestor
+import androidx.compose.ui.ComposeUiFlags.isInitialFocusOnFocusableAvailable
+import androidx.compose.ui.ComposeUiFlags.isViewFocusFixEnabled
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
 
@@ -55,6 +56,7 @@ import kotlin.jvm.JvmName
  */
 @ExperimentalComposeUiApi
 object ComposeUiFlags {
+
     /**
      * This enables fixes for View focus. The changes are large enough to require a flag to allow
      * disabling them.
@@ -84,34 +86,6 @@ object ComposeUiFlags {
     // TODO: b/485962036
     @field:Suppress("MutableBareField") @JvmField var isFocusRestorationEnabled: Boolean = false
 
-    /** Flag for enabling indirect pointer event navigation gestures in Compose. */
-    // TODO: b/455601135
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isIndirectPointerNavigationGestureDetectorEnabled: Boolean = true
-
-    /** Flag enables optimized focus change dispatching logic. */
-    // TODO: b/455603009
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isOptimizedFocusEventDispatchEnabled: Boolean = true
-
-    /** This flag enables setting the shape semantics property in the graphicsLayer modifiers. */
-    // TODO: b/455600081
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isGraphicsLayerShapeSemanticsEnabled: Boolean = true
-
-    /**
-     * Enables a fix where [androidx.compose.ui.node.TraversableNode] traversal method
-     * [findNearestAncestor] will take into consideration any delegates that might also be
-     * traversable.
-     */
-    // TODO: b/485962494
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isTraversableDelegatesFixEnabled: Boolean = true
-
     /**
      * Enables a change where off-screen children of the partially visible merging nodes (e.g. a
      * Text node of a Button) inside scrollable container are now also reported in the semantics
@@ -123,22 +97,6 @@ object ComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     var isAccessibilityShouldIncludeOffscreenChildrenEnabled: Boolean = true
-
-    /**
-     * Enables support of trackpad gesture events.
-     *
-     * If enabled, [androidx.compose.ui.input.pointer.PointerEvent]s can have type of
-     * [androidx.compose.ui.input.pointer.PointerEventType.PanMove] and
-     * [androidx.compose.ui.input.pointer.PointerEventType.ScaleChange], corresponding to
-     * system-recognized gestures on a trackpad.
-     *
-     * These trackpad gestures will also generally be treated as mouse, with the exact behavior
-     * depending on platform specifics.
-     */
-    // TODO: b/475634969 remove the temporary flag
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isTrackpadGestureHandlingEnabled: Boolean = true
 
     /**
      * Enable the integration of [LocalUiMediaScope] at the root compose view which provides various
@@ -159,4 +117,18 @@ object ComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     var isSkipNonImportantSemanticsNodesHitTestEnabled: Boolean = true
+
+    /**
+     * Return true for AndroidComposeView.dispatchHoverEvent when handleded by explore by touch.
+     *
+     * This fixes behavior where the event would be bubbled to a container view, causing explore by
+     * touch to flicker focus to Compose buttons.
+     *
+     * After this change compose buttons will correctly report they handled the hover event, and
+     * retain accessibility focus.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    // TODO(b/507533865) cleanup feature flag after 1.12
+    var isExploreByTouchHoverHandled: Boolean = true
 }

@@ -16,6 +16,7 @@
 package androidx.compose.ui.awt
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +74,7 @@ import com.google.common.truth.Truth.assertThat
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
+import java.awt.Window
 import java.awt.event.MouseEvent
 import javax.swing.BoxLayout
 import javax.swing.JFrame
@@ -83,6 +85,7 @@ import junit.framework.TestCase.assertTrue
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.skiko.ExperimentalSkikoApi
@@ -262,15 +265,15 @@ class ComposePanelTest {
                 frame.pack()
 
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(1, initialStateCounter)
 
                 frame.contentPane.remove(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(1, initialStateCounter)
 
                 frame.contentPane.add(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(1, initialStateCounter)
             } finally {
                 frame.dispose()
@@ -305,15 +308,15 @@ class ComposePanelTest {
                 frame.pack()
 
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(1, initialStateCounter)
 
                 frame.contentPane.remove(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(1, initialStateCounter)
 
                 frame.contentPane.add(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(2, initialStateCounter)
             } finally {
                 frame.dispose()
@@ -342,19 +345,19 @@ class ComposePanelTest {
                 val density = frame.contentPane.density.density
                 frame.contentPane.add(composePanel)
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(Size(100f * density, 100f * density), size)
 
                 frame.contentPane.remove(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(Size(100f * density, 100f * density), size)
 
                 frame.contentPane.add(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(Size(100f * density, 100f * density), size)
 
                 frame.size = Dimension(200, 100)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(Size(200f * density, 100f * density), size)
             } finally {
                 frame.dispose()
@@ -381,7 +384,7 @@ class ComposePanelTest {
                 frame.pack()
 
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertTrue(content.size.height > 2)
                 assertTrue(content.size.width > 2)
             } finally {
@@ -415,7 +418,7 @@ class ComposePanelTest {
                 frame.pack()
 
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertTrue(content.size.width > 2)
                 assertEquals(500, content.size.height)
             } finally {
@@ -450,7 +453,7 @@ class ComposePanelTest {
                 frame.pack()
 
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(200, content.size.width)
                 assertEquals(300, content.size.height)
             } finally {
@@ -934,6 +937,29 @@ class ComposePanelTest {
             val canvasPixel = robot.getPixelColor(frameBounds.centerX.toInt(), (0.25 * frameBounds.centerY).toInt())
             val composePixel = robot.getPixelColor(frameBounds.centerX.toInt(), (0.75 * frameBounds.centerY).toInt())
             assertThat(composePixel).isEqualTo(canvasPixel)
+        } finally {
+            frame.dispose()
+        }
+    }
+
+    @Test
+    fun `ComposePanel provides LocalAwtWindow`() = runApplicationTest {
+        var localWindow: Window? = null
+        val composePanel = ComposePanel().apply {
+            size = Dimension(300, 300)
+            setContent {
+                localWindow = LocalAwtWindow.current
+            }
+        }
+        val frame = JFrame().apply {
+            contentPane.add(composePanel)
+            size = Dimension(300, 300)
+        }
+
+        try {
+            frame.isVisible = true
+            awaitIdle()
+            assertNotNull(localWindow)
         } finally {
             frame.dispose()
         }

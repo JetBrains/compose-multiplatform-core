@@ -44,6 +44,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
+import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
 import androidx.compose.ui.platform.DefaultInputModeManager
@@ -70,7 +71,7 @@ import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.viewinterop.SwingInteropContainer
 import androidx.compose.ui.window.WindowExceptionHandler
-import androidx.compose.ui.window.asDpOffset
+import androidx.compose.ui.window.toDpOffset
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.sizeInPx
 import java.awt.Component
@@ -370,6 +371,9 @@ internal class ComposeSceneMediator(
             )
         }
 
+    val measurableSceneContent: MeasurableRootContent
+        get() = scene.measurableContent
+
     /**
      * Keyboard modifiers state might be changed when window is not focused, so window doesn't
      * receive any key events.
@@ -476,7 +480,7 @@ internal class ComposeSceneMediator(
         get() {
             val pointInContainer = SwingUtilities.convertPoint(component, point, container)
             val offset = sceneBoundsInPx?.topLeft ?: Offset.Zero
-            return pointInContainer.asDpOffset().toOffset(contentComponent.density) - offset
+            return pointInContainer.toDpOffset().toOffset(contentComponent.density) - offset
         }
 
     private fun onMouseEvent(event: MouseEvent): Unit = catchExceptions {
