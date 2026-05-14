@@ -25,7 +25,6 @@ import javax.swing.JPanel
 @Composable
 internal actual fun TestInteropView(modifier: Modifier, color: Color) {
     SwingPanel(
-        background = color,
         factory = { JPanel().apply { background = color.toAwtColor() } },
         modifier = modifier
     )
