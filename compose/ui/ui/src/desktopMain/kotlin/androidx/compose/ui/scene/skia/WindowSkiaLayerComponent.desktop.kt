@@ -84,6 +84,10 @@ internal class WindowSkiaLayerComponent(
             )
         }
 
+        override fun repaint(tm: Long, x: Int, y: Int, width: Int, height: Int) {
+            super.repaint(tm, x, y, width, height)
+        }
+
         override fun paint(g: Graphics) {
             mediator.onChangeDensity()
             super.paint(g)

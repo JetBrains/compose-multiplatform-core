@@ -267,8 +267,8 @@ internal class ComposeContainer(
 
         // Sometimes Swing displays interop views in incorrect order after resizing,
         // so we need to force re-validate it.
-        container.validate()
-        container.repaint()
+//        container.validate()
+//        container.repaint()
     }
 
     private fun onWindowPositionChanged() {

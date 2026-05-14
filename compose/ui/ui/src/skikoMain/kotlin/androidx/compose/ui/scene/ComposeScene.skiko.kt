@@ -141,7 +141,7 @@ sealed interface ComposeScene : AutoCloseable {
     val measurableContent: MeasurableRootContent
 
     /**
-     * Invalidates position of [ComposeScene] in window. It will trigger callbacks like
+     * Invalidates position of [ComposeScene] in the window. It will trigger callbacks like
      * [Modifier.onGloballyPositioned] so they can recalculate actual position in the window.
      *
      * @see PlatformContext.convertLocalToWindowPosition

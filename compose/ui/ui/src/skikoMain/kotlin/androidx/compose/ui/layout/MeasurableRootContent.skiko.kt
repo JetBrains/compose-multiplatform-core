@@ -18,13 +18,21 @@ package androidx.compose.ui.layout
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 
 /**
  * The interface through which composable content can be queried for its size preferences, such as
  * its intrinsic size.
+ *
+ * The methods of this interface may only be called from the main UI thread.
  */
 @ExperimentalComposeUiApi
 interface MeasurableRootContent : IntrinsicMeasurable {
+    /**
+     * The density of the root content.
+     */
+    val density: Density
+
     /**
      * Measures the content with the given constraints and calls [block] on the resulting
      * [Measured].

@@ -30,9 +30,13 @@ import androidx.compose.ui.awt.RenderSettings.SkiaSurface
 import androidx.compose.ui.awt.RenderSettings.SwingGraphics
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.savedstate.SavedState
 import java.awt.Color
@@ -50,20 +54,22 @@ import javax.swing.SwingUtilities
 import javax.swing.SwingUtilities.isEventDispatchThread
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.math.max
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayerAnalytics
 
 /**
- * ComposePanel is a panel for building UI using Compose for Desktop.
+ * A component for embedding Compose content into Swing applications.
  *
- * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behaviour.
- * SkiaLayer is underlying class used internally to draw Compose content.
- * Implementation usually uses third-party solution to send info to some centralized analytics gatherer.
+ * @param skiaLayerAnalytics An object to which analytics about the underlying Skia layer is
+ *   reported. Skia layer is the underlying implementation used internally to draw Compose content.
+ *   The [SkiaLayerAnalytics] could, for example, send the information to a centralized analytics
+ *   gatherer.
  * @param savedState The saved state to restore the UI state from a previous instance.
  * @param renderSettings Configuration class for rendering settings.
  * @param coroutineContext The coroutine context for Compose content rendering and effects.
  */
-class ComposePanel @ExperimentalComposeUiApi constructor(
+open class ComposePanel @ExperimentalComposeUiApi constructor(
     private val skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
     private var savedState: SavedState? = null,
     private val renderSettings: RenderSettings = DefaultRenderSettings,
@@ -147,7 +153,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
 
     /**
      * Determines whether the Compose state in [ComposePanel] should be disposed
-     * when panel is detached from Swing hierarchy (when [removeNotify] is called).
+     * when the panel is detached from the Swing hierarchy (when [removeNotify] is called).
      *
      * If it is set to false, it is developer's responsibility to call [dispose] function
      * when Compose state and all related to [ComposePanel] resources are no longer needed.
@@ -195,6 +201,20 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     fun saveState(): SavedState? {
         return _composeContainer?.saveState()
     }
+
+    /**
+     * Returns an object through which the composable content of the panel can be queried for its
+     * size preferences, such as its intrinsic size.
+     *
+     * This can only be called after the [ComposePanel] has been added to the Swing hierarchy.
+     */
+    @ExperimentalComposeUiApi
+    val measurableContent: MeasurableRootContent
+        get() {
+            return requireNotNull(_composeContainer?.measurableContent) {
+                "Cannot retrieve measurableContent before addNotify"
+            }
+        }
 
     /**
      * Disposes Compose state and rendering resources.
@@ -265,7 +285,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         }
 
     /**
-     * A container used for additional layers and as reference for window coordinate space.
+     * A container used for additional layers and as the reference for window coordinate space.
      * It might be customized only with [LayerType.OnComponent].
      *
      * See [ComposeFeatureFlags.layerType]
@@ -282,7 +302,8 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      * [ComposePanel].
      *
      * This is backed by snapshot state, so reading this property in a restartable function (e.g., a
-     * composable function) will cause the function to restart when set of semantics owners changes.
+     * composable function) will cause the function to restart when the set of semantics owners
+     * changes.
      */
     @ExperimentalComposeUiApi
     val semanticsOwners: Collection<SemanticsOwner>
@@ -299,7 +320,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     override fun addNotify() {
         super.addNotify()
 
-        // After [super.addNotify] is called we can safely initialize the bridge and composable
+        // After [super.addNotify] is called, we can safely initialize the bridge and composable
         // content.
         val composeContainer = _composeContainer ?: createComposeContainer().also {
             _composeContainer = it

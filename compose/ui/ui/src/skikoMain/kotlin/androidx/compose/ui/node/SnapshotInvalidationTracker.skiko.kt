@@ -46,9 +46,11 @@ internal class SnapshotInvalidationTracker(
     val hasInvalidations: Boolean
         get() = needMeasureAndLayout || needDraw || snapshotChanges.hasCommands
 
+    var invalidateOnRequests = true
+
     fun requestMeasureAndLayout() {
         needMeasureAndLayout = true
-        invalidate()
+        if (invalidateOnRequests) invalidate()
     }
 
     fun onMeasureAndLayout() {
