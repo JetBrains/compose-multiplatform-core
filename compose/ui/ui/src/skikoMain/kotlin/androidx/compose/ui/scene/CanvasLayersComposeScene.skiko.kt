@@ -228,7 +228,7 @@ private class CanvasLayersComposeSceneImpl(
         forEachLayerReversed { layer ->
             if (layer.contains(position)) {
                 return layer.owner.hitTestInteropView(position)
-            } else if (layer == focusedLayer) {
+            } else if (layer.consumePointerInputOutside) {
                 return null
             }
         }
@@ -300,9 +300,26 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     /**
-     * Check if [focusedLayer] blocks input for this owner.
+     * Check if any layer blocks input for this owner.
      */
     private fun isInteractive(owner: RootNodeOwner?): Boolean {
+        if (owner == null) {
+            return true
+        }
+        layers.fastForEachReversed { layer ->
+            if (layer.owner == owner) {
+                return true
+            } else if (layer.consumePointerInputOutside) {
+                return false
+            }
+        }
+        return true
+    }
+
+    /**
+     * Check if there is [focusedLayer] above.
+     */
+    private fun isUnderFocusedLayer(owner: RootNodeOwner?): Boolean {
         if (owner == null || focusedLayer == null) {
             return true
         }
@@ -340,8 +357,8 @@ private class CanvasLayersComposeSceneImpl(
             // Input event is out of bounds - send click outside notification
             layer.onOutsidePointerEvent(event)
 
-            // if the owner is in focus, do not pass the event to underlying owners
-            if (layer == focusedLayer) {
+            // if the layer blocks input, do not pass the event to underlying owners
+            if (layer.consumePointerInputOutside) {
                 return PointerEventResult(anyMovementConsumed = false)
             }
         }
@@ -446,15 +463,17 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     override fun createLayer(
+        compositionContext: CompositionContext,
         density: Density,
         layoutDirection: LayoutDirection,
         focusable: Boolean,
-        compositionContext: CompositionContext,
+        consumePointerInputOutside: Boolean,
     ): ComposeSceneLayer = AttachedComposeSceneLayer(
+        compositionContext = compositionContext,
         density = density,
         layoutDirection = layoutDirection,
         focusable = focusable,
-        compositionContext = compositionContext,
+        consumePointerInputOutside = consumePointerInputOutside,
     )
 
     private fun onOwnerAppended(owner: RootNodeOwner) {
@@ -496,7 +515,7 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     private fun requestFocus(layer: AttachedComposeSceneLayer) {
-        if (isInteractive(layer.owner)) {
+        if (isUnderFocusedLayer(layer.owner)) {
             focusedLayer = layer
 
             // Exit event to lastHoverOwner will be sent via synthetic event on next frame
@@ -512,10 +531,11 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     private inner class AttachedComposeSceneLayer(
+        private val compositionContext: CompositionContext,
         density: Density,
         layoutDirection: LayoutDirection,
         focusable: Boolean,
-        private val compositionContext: CompositionContext,
+        override var consumePointerInputOutside: Boolean,
     ) : ComposeSceneLayer {
         val owner = RootNodeOwner(
             density = density,

@@ -37,7 +37,6 @@ import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.window.Dialog
@@ -144,7 +143,7 @@ internal class ComposeContainer(
         },
         eventListener = AwtEventListeners(
             DetectEventOutsideLayer(),
-            FocusableLayerEventFilter()
+            BlockingInputLayerEventFilter()
         ),
         architectureComponentsOwner = architectureComponentsOwner,
         coroutineContext = coroutineContext + MainUIDispatcher + DesktopCoroutineExceptionHandler(),
@@ -412,29 +411,31 @@ internal class ComposeContainer(
     }
 
     private fun createPlatformLayer(
+        compositionContext: CompositionContext,
         density: Density,
         layoutDirection: LayoutDirection,
         focusable: Boolean,
-        compositionContext: CompositionContext
+        consumePointerInputOutside: Boolean,
     ): ComposeSceneLayer {
         return when (layerType) {
             LayerType.OnWindow -> WindowComposeSceneLayer(
                 composeContainer = this,
                 skiaLayerAnalytics = skiaLayerAnalytics,
+                renderSettings = renderSettings,
                 transparent = true, // TODO: Consider allowing opaque window layers
+                compositionContext = compositionContext,
                 density = density,
                 layoutDirection = layoutDirection,
                 focusable = focusable,
-                compositionContext = compositionContext,
-                renderSettings = renderSettings
             )
             LayerType.OnComponent -> SwingComposeSceneLayer(
                 composeContainer = this,
                 skiaLayerAnalytics = skiaLayerAnalytics,
+                compositionContext = compositionContext,
                 density = density,
                 layoutDirection = layoutDirection,
                 focusable = focusable,
-                compositionContext = compositionContext
+                consumePointerInputOutside = consumePointerInputOutside,
             )
             else -> error("Unexpected LayerType")
         }
@@ -509,15 +510,17 @@ internal class ComposeContainer(
         override val platformContext: PlatformContext,
     ) : ComposeSceneContext {
         override fun createLayer(
+            compositionContext: CompositionContext,
             density: Density,
             layoutDirection: LayoutDirection,
             focusable: Boolean,
-            compositionContext: CompositionContext
+            consumePointerInputOutside: Boolean,
         ): ComposeSceneLayer = createPlatformLayer(
+            compositionContext = compositionContext,
             density = density,
             layoutDirection = layoutDirection,
             focusable = focusable,
-            compositionContext = compositionContext
+            consumePointerInputOutside = consumePointerInputOutside,
         )
     }
 
@@ -530,13 +533,13 @@ internal class ComposeContainer(
 
     /**
      * Detect and trigger [DesktopComposeSceneLayer.onMouseEventOutside] if event happened below
-     * focused layer.
+     * a layer that blocks pointer input outside of its bounds.
      */
     private inner class DetectEventOutsideLayer : AwtEventListener {
         override fun onMouseEvent(event: AwtMouseEvent): Boolean {
             layers.fastForEachReversed {
                 it.onMouseEventOutside(event)
-                if (it.focusable) {
+                if (it.consumePointerInputOutside) {
                     return false
                 }
             }
@@ -544,10 +547,10 @@ internal class ComposeContainer(
         }
     }
 
-    private inner class FocusableLayerEventFilter : AwtEventFilter() {
-        private val noFocusableLayers get() = layers.fastAll { !it.focusable }
+    private inner class BlockingInputLayerEventFilter : AwtEventFilter() {
+        private val noBlockingInputLayers get() = layers.all { !it.consumePointerInputOutside }
 
-        override fun shouldSendMouseEvent(event: AwtMouseEvent): Boolean = noFocusableLayers
-        override fun shouldSendKeyEvent(event: AwtKeyEvent): Boolean = noFocusableLayers
+        override fun shouldSendMouseEvent(event: AwtMouseEvent): Boolean = noBlockingInputLayers
+        override fun shouldSendKeyEvent(event: AwtKeyEvent): Boolean = noBlockingInputLayers
     }
 }

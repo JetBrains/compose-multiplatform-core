@@ -26,21 +26,19 @@ import androidx.compose.ui.platform.NativeTextEditingDelegate
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
-import androidx.compose.ui.platform.withDeferredEditBatch
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
 import androidx.compose.ui.uikit.utils.CMPTextInputView
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.asCGRect
+import androidx.compose.ui.unit.toCGRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
 import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
-import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -103,9 +101,8 @@ import platform.UIKit.addInteraction
 import platform.UIKit.systemBlueColor
 import platform.darwin.NSInteger
 
-internal class NativeTextInputView(
-    private val coroutineScope: CoroutineScope,
-): CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
+internal class NativeTextInputView
+    : CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
 
     var input: NativeTextEditingDelegate? = null
 
@@ -116,6 +113,10 @@ internal class NativeTextInputView(
 
     private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
         addGestureRecognizer(it)
+    }
+
+    init {
+        clipsToBounds = false
     }
 
     override fun canBecomeFirstResponder() = true
@@ -244,9 +245,7 @@ internal class NativeTextInputView(
      */
     override fun replaceRange(range: UITextRange, withText: String) {
         val textRange = range.toTextRange() ?: return
-        input?.withDeferredEditBatch(coroutineScope) {
-            replaceRange(textRange, withText)
-        }
+        input?.replaceRange(textRange, withText)
     }
 
     override fun setSelectedTextRange(selectedTextRange: UITextRange?) {
@@ -260,9 +259,7 @@ internal class NativeTextInputView(
         if (notifySelectionChanges) {
             selectionWillChange()
         }
-        input?.withDeferredEditBatch(coroutineScope) {
-            setSelectedTextRange(range)
-        }
+        input?.setSelectedTextRange(range)
         if (notifySelectionChanges) {
             selectionDidChange()
         }
@@ -314,17 +311,7 @@ internal class NativeTextInputView(
         }
         val relativeTextRange = TextRange(locationRelative, locationRelative + lengthRelative)
 
-        // Due to iOS specifics, [setMarkedText] can be called several times in a row. Batching
-        // helps to avoid text input problems, when Composables use parameters set during
-        // recomposition instead of the current ones. Example:
-        // 1. State "1" -> TextField(text = "1")
-        // 2. setMarkedText "12" -> Not equal to TextField(text = "1") -> State "12"
-        // 3. setMarkedText "1" -> Equal to TextField(text = "1") -> State remains "12"
-        // scene.render() - Recomposes TextField
-        // 4. State "12" -> TextField(text = "12") - Invalid state. Should be TextField(text = "1")
-        input?.withDeferredEditBatch(coroutineScope) {
-            setMarkedText(markedText, relativeTextRange)
-        }
+        input?.setMarkedText(markedText, relativeTextRange)
     }
 
     /**
@@ -491,7 +478,7 @@ internal class NativeTextInputView(
     override fun firstRectForRange(range: UITextRange): CValue<CGRect> {
         val fallback = CGRectZero.readValue()
         val textRange = range.toTextRange() ?: return fallback
-        return input?.firstSelectionRectForRange(textRange)?.asCGRect()
+        return input?.firstSelectionRectForRange(textRange)?.toCGRect()
             ?: fallback
     }
 
@@ -499,7 +486,7 @@ internal class NativeTextInputView(
         val fallbackRect = CGRectMake(x = 1.0, y = 1.0, width = 0.0, height = 1.0)
         val position = (position as? TextInputPosition)?.position ?: return fallbackRect
         val caretDpRect = input?.caretDpRectForPosition(position)
-        return caretDpRect?.asCGRect() ?: fallbackRect
+        return caretDpRect?.toCGRect() ?: fallbackRect
     }
 
     override fun selectionRectsForRange(range: UITextRange): List<*> {
@@ -689,7 +676,7 @@ internal class NativeTextInputView(
  * This view does not handle user-driven scrolling; scrolling is still managed by Compose,
  * which then updates this scroll view's state.
  */
-internal class NativeTextInputScrollView(): UIScrollView(frame = CGRectZero.readValue()) {
+internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readValue()) {
     init {
         setScrollEnabled(false)
         setShowsVerticalScrollIndicator(false)
@@ -742,8 +729,8 @@ internal class NativeTextInputScrollView(): UIScrollView(frame = CGRectZero.read
      * - `dpInsets` is in Compose `Dp` and can be passed to UIKit as POINTS directly.
      */
     fun setFrame(dpNewFrame: DpRect, dpTextBounds: DpRect, dpInsets: DpInsets) {
-        val newFrame = dpNewFrame.asCGRect()
-        val textBounds = dpTextBounds.asCGRect()
+        val newFrame = dpNewFrame.toCGRect()
+        val textBounds = dpTextBounds.toCGRect()
 
         val textViewFrame = CGRectMake(
             x = 0.0,

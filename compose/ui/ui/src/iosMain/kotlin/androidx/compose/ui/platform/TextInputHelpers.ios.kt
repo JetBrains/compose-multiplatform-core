@@ -22,10 +22,8 @@ import androidx.compose.ui.uikit.utils.CMPTextInputStringTokenizer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.asCGRect
+import androidx.compose.ui.unit.toCGRect
 import kotlinx.cinterop.CValue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRect
 import platform.Foundation.NSCharacterSet
@@ -63,16 +61,6 @@ internal interface TextEditingDelegate {
     fun updateFloatingCursor(offset: DpOffset)
 
     fun endFloatingCursor()
-
-    /**
-     * Delays all edit commands until [endEditBatch] is being called.
-     */
-    fun beginEditBatch()
-
-    /**
-     * Performs all editing commands, starting from the [beginEditBatch] call.
-     */
-    fun endEditBatch()
 
     /**
      * A Boolean value that indicates whether the text-entry object has any text.
@@ -235,17 +223,6 @@ internal interface NativeTextEditingDelegate : TextEditingDelegate {
     fun positionWithinRange(range: TextRange, farthestInDirection: PlatformTextLayoutDirection): Int?
 }
 
-internal fun TextEditingDelegate.withDeferredEditBatch(
-    withScope: CoroutineScope,
-    update: TextEditingDelegate.() -> Unit
-) {
-    beginEditBatch()
-    update()
-    withScope.launch {
-        endEditBatch()
-    }
-}
-
 internal class TextInputPosition(val position: Int = 0) : UITextPosition() {
     override fun description(): String {
         return "IntermediateTextPosition($position)"
@@ -299,7 +276,7 @@ internal class TextInputSelectionRect(
         containsEnd: Boolean,
         isVertical: Boolean
     ) : this(
-        dpRect.asCGRect(),
+        dpRect.toCGRect(),
         writingDirection.toUITextWritingDirection(),
         containsStart,
         containsEnd,
