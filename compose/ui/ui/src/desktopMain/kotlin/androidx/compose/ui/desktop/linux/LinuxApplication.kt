@@ -3,9 +3,12 @@
 
 package androidx.compose.ui.desktop.linux
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -22,7 +25,14 @@ import androidx.compose.ui.desktop.deactivateApplication
 import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.DefaultHapticFeedback
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.WindowDecoration
 import java.nio.file.Files
@@ -164,6 +174,18 @@ object LinuxApplication : Application {
     override val nativeApplication: org.jetbrains.desktop.linux.Application
         get() = checkNotNull(nativeApplicationOrNull) { "LinuxApplication has not been initialized" }
 
+    @Composable
+    override fun withCompositionLocal(content: @Composable (() -> Unit)) {
+        CompositionLocalProvider(
+            LocalUriHandler provides this@LinuxApplication,
+            LocalClipboard provides this@LinuxApplication,
+            LocalFontFamilyResolver provides fontFamilyResolver,
+            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
+        ) {
+            content()
+        }
+    }
+
     internal data class ActiveDragSource(
         val windowId: LightweightWindowId,
         val mimeData: Map<String, ByteArray>,
@@ -180,6 +202,8 @@ object LinuxApplication : Application {
     private var notificationCenterOrNull: LinuxNotificationCenter? = null
     val notificationCenter: LinuxNotificationCenter
         get() = checkNotNull(notificationCenterOrNull) { "LinuxApplication has not been initialized" }
+
+    private val fontFamilyResolver: FontFamily.Resolver by lazy { createFontFamilyResolver() }
 
     private var didFinishLaunchingCompletableJob: CompletableJob = Job()
     private val quitHandlers = ConcurrentHashMap<String, () -> Boolean>()

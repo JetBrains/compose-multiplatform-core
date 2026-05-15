@@ -82,51 +82,6 @@ actual fun initializeApplication(
     activateApplication(application)
 }
 
-suspend fun awaitApplication(
-    content: @Composable ApplicationScope.() -> Unit
-) {
-    withContext(MainUIDispatcher) {
-        withContext(YieldFrameClock) {
-            GlobalSnapshotManager.ensureStarted()
-
-            val recomposer = Recomposer(coroutineContext)
-            var isOpen by mutableStateOf(true)
-
-            val applicationScope = object : ApplicationScope {
-                override fun exitApplication() {
-                    isOpen = false
-                }
-            }
-
-            coroutineScope {
-                val scene = Scene<Unit>(coroutineScope = this, {}, {})
-
-                launch {
-                    recomposer.runRecomposeAndApplyChanges()
-                }
-
-                launch {
-                    val applier = ApplicationApplier()
-                    val composition = Composition(applier, recomposer)
-                    try {
-                        composition.setContent {
-                            CompositionLocalProvider(ProvidableLocalScene provides scene) {
-                                if (isOpen) {
-                                    applicationScope.content()
-                                }
-                            }
-                        }
-                        recomposer.close()
-                        recomposer.join()
-                    } finally {
-                        composition.dispose()
-                    }
-                }
-            }
-        }
-    }
-}
-
 internal actual fun currentApplication(): Application = currentJvmApplication()
 
 internal actual fun defaultUriHandler(): UriHandler =
