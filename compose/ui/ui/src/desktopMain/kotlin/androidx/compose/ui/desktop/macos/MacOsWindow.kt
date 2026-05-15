@@ -85,6 +85,7 @@ import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.desktop.logging.logger
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
@@ -1089,7 +1090,8 @@ class MacOsWindow internal constructor(
                 LocalSystemTheme provides systemTheme,
                 LocalTextToolbar provides remember { DefaultTextToolbar() },
                 LocalTextInputContext provides textInputContext,
-                LocalWindow provides this
+                LocalWindow provides this,
+                LocalUriHandler provides application,
             ) {
                 InterceptPlatformTextInput(platformTextInputInterceptor) {
                     contentState.value?.invoke(windowScope)
