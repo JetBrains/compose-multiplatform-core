@@ -45,7 +45,7 @@ internal class DragAndDropOwner(
      * session by returning true in [DragAndDropTarget.onStarted].
      */
     private val interestedTargets = ArraySet<DragAndDropTarget>()
-
+    private var lastDragEvent: DragAndDropEvent? = null
     override val modifier: Modifier = RootDragAndDropElement(rootNode)
 
     override val isRequestDragAndDropTransferRequired: Boolean
@@ -63,6 +63,31 @@ internal class DragAndDropOwner(
         return interestedTargets.contains(target)
     }
 
+    override fun onNodeAttached(node: DragAndDropNode) {
+        // If there's an ongoing drag session, redispatch the last event
+        // to allow the newly attached node to participate
+        val event = lastDragEvent
+        if (event != null) {
+            val accepted = node.acceptDragAndDropTransfer(event)
+            if (accepted) {
+                node.onStarted(event)
+                // Redispatch onMoved from root so that nodes can track their potentially new children
+                this.rootNode.onMoved(event)
+            }
+        }
+    }
+
+    override fun onNodeDetached(node: DragAndDropNode) {
+        // If there's an ongoing drag session, remove the node from interested targets
+        // and redispatch the last event to update the tree
+        val event = lastDragEvent
+        if (event != null) {
+            interestedTargets.remove(node)
+            // Redispatch onMoved from root so that nodes can update their children
+            this.rootNode.onMoved(event)
+        }
+    }
+
     fun onDrop(event: DragAndDropEvent): Boolean = rootNode.onDrop(event)
 
     fun onStarted(event: DragAndDropEvent) {
@@ -71,13 +96,17 @@ internal class DragAndDropOwner(
 
     fun onEntered(event: DragAndDropEvent) = rootNode.onEntered(event)
 
-    fun onMoved(event: DragAndDropEvent) = rootNode.onMoved(event)
+    fun onMoved(event: DragAndDropEvent) {
+        lastDragEvent = event
+        rootNode.onMoved(event)
+    }
 
     fun onExited(event: DragAndDropEvent) = rootNode.onExited(event)
 
     fun onChanged(event: DragAndDropEvent) = rootNode.onChanged(event)
 
     fun onEnded(event: DragAndDropEvent) {
+        lastDragEvent = null
         rootNode.onEnded(event)
         interestedTargets.clear()
     }
@@ -120,3 +149,4 @@ private class RootDragAndDropElement(
     override fun equals(other: Any?) = other === this
     override fun hashCode(): Int = dragAndDropNode.hashCode()
 }
+

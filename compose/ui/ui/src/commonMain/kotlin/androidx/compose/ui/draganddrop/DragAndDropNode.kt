@@ -233,7 +233,13 @@ internal class DragAndDropNode(
 
     // start Node
 
+    override fun onAttach() {
+        super.onAttach()
+        dragAndDropManager.onNodeAttached(this)
+    }
+
     override fun onDetach() {
+        dragAndDropManager.onNodeDetached(this)
         // Clean up
         thisDragAndDropTarget = null
         lastChildDragAndDropModifierNode = null
