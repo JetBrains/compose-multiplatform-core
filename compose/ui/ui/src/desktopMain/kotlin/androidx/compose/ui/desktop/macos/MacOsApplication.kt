@@ -292,7 +292,7 @@ object MacOsApplication : Application,
                                 EventHandlerResult.Stop
                             }
                             is Event.ApplicationDidFinishLaunching -> {
-                                notificationCenter.init()
+                                notificationCenter = MacOsNotificationCenter.init(this@MacOsApplication)
                                 didFinishLaunchingCompletableJob.complete()
                                 EventHandlerResult.Stop
                             }
@@ -343,7 +343,7 @@ object MacOsApplication : Application,
         nativeApplication.setDockIcon(icon)
     }
 
-    val notificationCenter: MacOsNotificationCenter = MacOsNotificationCenter(this)
+    var notificationCenter: MacOsNotificationCenter? = null
 
 //    val sound: Sound = Sound
 
