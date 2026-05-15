@@ -53,4 +53,18 @@ internal interface DragAndDropManager {
      * drop session.
      */
     fun isInterestedTarget(target: DragAndDropTarget): Boolean
+
+    /**
+     * Called when a [DragAndDropNode] is attached to the composition tree.
+     * The manager should check if there's an ongoing drag session and redispatch the last event
+     * to allow the newly attached node to participate.
+     */
+    fun onNodeAttached(node: DragAndDropNode) {}
+
+    /**
+     * Called when a [DragAndDropNode] is detached from the composition tree.
+     * The manager should clean up any state related to this node and redispatch the last event
+     * if there's an ongoing drag session.
+     */
+    fun onNodeDetached(node: DragAndDropNode) {}
 }
