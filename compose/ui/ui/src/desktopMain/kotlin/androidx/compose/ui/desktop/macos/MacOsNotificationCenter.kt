@@ -1,5 +1,6 @@
 package androidx.compose.ui.desktop.macos
 
+import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.desktop.LightweightWindowId
 import androidx.compose.ui.desktop.logging.logger
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -13,19 +14,23 @@ import kotlin.collections.set
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-class MacOsNotificationCenter(private val application: MacOsApplication) {
-
+class MacOsNotificationCenter private constructor (private val application: MacOsApplication) {
     private suspend fun awaitWhenReady() {
         application.awaitWhenReady()
     }
 
-    internal fun init(): MacOsNotificationCenter? {
-        return if (NotificationCenter.isSupportedByApplication) {
-            NotificationCenter.registerNotificationCategories(emptyList())
-            NotificationCenter.setActionResponseCallback(::onNotificationAction)
-            this
-        } else {
-            null
+    init {
+        NotificationCenter.registerNotificationCategories(emptyList())
+        NotificationCenter.setActionResponseCallback(::onNotificationAction)
+    }
+
+    companion object {
+        internal fun init(application: MacOsApplication): MacOsNotificationCenter? {
+            return if (NotificationCenter.isSupportedByApplication) {
+                MacOsNotificationCenter(application)
+            } else {
+                null
+            }
         }
     }
 
@@ -59,7 +64,7 @@ class MacOsNotificationCenter(private val application: MacOsApplication) {
 
     suspend fun isNotificationsAllowed(): Boolean {
         awaitWhenReady()
-        return withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
+        return withContext(ComposeUIDispatcher) {
             when (getAuthorizationStatus()) {
                 AuthorizationStatus.NotDetermined -> {
                     requestAuthorization()
@@ -157,7 +162,7 @@ class MacOsNotificationCenter(private val application: MacOsApplication) {
         vararg actions: Action,
     ): NotificationId? {
         awaitWhenReady()
-        return withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
+        return withContext(ComposeUIDispatcher) {
             if (isNotificationsAllowed().not()) return@withContext null
 
             val categoryId = cachedCategoryId(actions)
@@ -186,7 +191,7 @@ class MacOsNotificationCenter(private val application: MacOsApplication) {
 
     suspend fun removeNotification(notificationId: NotificationId) {
         awaitWhenReady()
-        withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
+        withContext(ComposeUIDispatcher) {
             actionCallbacks.remove(notificationId)
             NotificationCenter.removeNotification(NotificationCenter.NotificationId(notificationId.value))
         }
