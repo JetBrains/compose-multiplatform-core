@@ -3,9 +3,12 @@
 
 package androidx.compose.ui.desktop.gtk
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -22,7 +25,16 @@ import androidx.compose.ui.desktop.deactivateApplication
 import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.DefaultHapticFeedback
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.LocalPointerIconService
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import java.nio.file.Files
@@ -129,6 +141,18 @@ object GtkApplication : Application {
             awaitNativeState()
             return nativeApplicationImpl
         }
+
+    @Composable
+    override fun withCompositionLocal(content: @Composable (() -> Unit)) {
+        CompositionLocalProvider(
+            LocalUriHandler provides this@GtkApplication,
+            LocalClipboard provides this@GtkApplication,
+            LocalFontFamilyResolver provides fontFamilyResolver,
+            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
+        ) {
+            content()
+        }
+    }
 
     internal data class ActiveDragSource(
         val windowId: LightweightWindowId,
@@ -444,6 +468,8 @@ object GtkApplication : Application {
     }
 
     override fun showEmojiAndSymbolsPopup(): Unit = Unit
+
+    private val fontFamilyResolver: FontFamily.Resolver by lazy { createFontFamilyResolver() }
 
     override fun close() {
         runBlocking { stopAndJoin() }

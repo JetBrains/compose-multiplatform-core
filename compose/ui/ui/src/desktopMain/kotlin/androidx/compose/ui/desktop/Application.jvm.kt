@@ -23,7 +23,6 @@ import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.desktop.gtk.GtkApplication
 import androidx.compose.ui.desktop.gtk.GtkUriHandler
 import androidx.compose.ui.desktop.linux.LinuxApplication
@@ -81,52 +80,6 @@ actual fun initializeApplication(
         customQuit = customQuit,
     )
     activateApplication(application)
-}
-
-suspend fun awaitApplication(
-    content: @Composable ApplicationScope.() -> Unit
-) {
-    withContext(MainUIDispatcher) {
-        withContext(YieldFrameClock) {
-            val globalSnapshotRegistration = GlobalSnapshotManager.register(ComposeUIDispatcher)
-
-            val recomposer = Recomposer(coroutineContext)
-            var isOpen by mutableStateOf(true)
-
-            val applicationScope = object : ApplicationScope {
-                override fun exitApplication() {
-                    isOpen = false
-                }
-            }
-
-            coroutineScope {
-                val scene = Scene<Unit>(coroutineScope = this, {}, {})
-
-                launch {
-                    recomposer.runRecomposeAndApplyChanges()
-                }
-
-                launch {
-                    val applier = ApplicationApplier()
-                    val composition = Composition(applier, recomposer)
-                    try {
-                        composition.setContent {
-                            CompositionLocalProvider(ProvidableLocalScene provides scene) {
-                                if (isOpen) {
-                                    applicationScope.content()
-                                }
-                            }
-                        }
-                        recomposer.close()
-                        recomposer.join()
-                    } finally {
-                        composition.dispose()
-                        globalSnapshotRegistration?.close()
-                    }
-                }
-            }
-        }
-    }
 }
 
 internal actual fun currentApplication(): Application = currentJvmApplication()
