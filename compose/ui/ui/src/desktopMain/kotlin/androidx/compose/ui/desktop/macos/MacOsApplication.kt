@@ -18,9 +18,12 @@
 
 package androidx.compose.ui.desktop.macos
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -39,6 +42,13 @@ import androidx.compose.ui.desktop.deactivateApplication
 import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.platform.DefaultHapticFeedback
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.LocalPointerIconService
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
@@ -381,6 +391,20 @@ object MacOsApplication : Application,
 
     override val nativeApplication: org.jetbrains.desktop.macos.Application
         get() = org.jetbrains.desktop.macos.Application
+
+    @Composable
+    override fun withCompositionLocal(content: @Composable (() -> Unit)) {
+        CompositionLocalProvider(
+            LocalUriHandler provides this@MacOsApplication,
+            LocalClipboard provides this@MacOsApplication,
+            LocalFontFamilyResolver provides fontFamilyResolver,
+            LocalHapticFeedback provides remember { DefaultHapticFeedback() },
+            LocalPointerIconService provides pointerIconService,
+            LocalInputModeManager provides inputModeManager,
+        ) {
+            content()
+        }
+    }
 
     override suspend fun stopAndJoin() {
         structuredQuitInProgress = false
