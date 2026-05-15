@@ -86,11 +86,16 @@ suspend fun <T> launchScene(
         }
 
         launch {
+            val application = Application.current
             val composition = Composition(ApplicationApplier(), recomposer)
             try {
                 composition.setContent {
-                    CompositionLocalProvider(ProvidableLocalScene provides scene) {
-                        content()
+                    application.withCompositionLocal {
+                        CompositionLocalProvider(
+                            ProvidableLocalScene provides scene,
+                        ) {
+                            content()
+                        }
                     }
                 }
                 recomposer.close()
@@ -205,6 +210,11 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
     suspend fun awaitWhenReady()
 
     val nativeApplication: Any
+
+    // these locals are provided through compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/platform/CompositionLocals.kt,
+    // but they are only available in ComposeScene, and Air uses them outside of a scene too
+    @Composable
+    fun withCompositionLocal(content: @Composable () -> Unit)
 
     suspend fun resetForReuse() {
         stopAndJoin()
