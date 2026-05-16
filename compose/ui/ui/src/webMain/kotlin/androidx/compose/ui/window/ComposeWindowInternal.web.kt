@@ -32,7 +32,6 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputMode
-import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -220,7 +219,6 @@ internal class ComposeWindow(
         object : PlatformContext by PlatformContext.Empty() {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
-            override val inputModeManager: InputModeManager = DefaultInputModeManager()
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
                 WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
@@ -247,7 +245,10 @@ internal class ComposeWindow(
                 return super.convertWindowToLocalPosition(positionInWindow)
             }
 
-            override val textToolbar: TextToolbar = WebTextToolbar()
+            private var _textToolbar: TextToolbar? = null
+            override val textToolbar: TextToolbar
+                get() = _textToolbar ?: WebTextToolbar().also { _textToolbar = it }
+
             private var _hapticFeedback: HapticFeedback? = null
             override val hapticFeedback
                 get() = _hapticFeedback ?: WebHapticFeedback.webHapticFeedbackOrDefault().also { _hapticFeedback = it }
@@ -269,27 +270,29 @@ internal class ComposeWindow(
                     null
                 }
 
-            override val textInputService: WebTextInputService = object : WebTextInputService() {
+            private var _textInputService: WebTextInputService? = null
+            override val textInputService: WebTextInputService
+                get() = _textInputService ?: object : WebTextInputService() {
 
-                override val currentTouchOffset: Offset?
-                    get() = activeTouchOffset
+                    override val currentTouchOffset: Offset?
+                        get() = activeTouchOffset
 
-                override val backingDomInputContainer: HTMLElement
-                    get() = layerRoot
+                    override val backingDomInputContainer: HTMLElement
+                        get() = layerRoot
 
-                override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
-                    val dpRect = rect.toDpRect(density)
-                    val left = dpRect.left.value
-                    val top = dpRect.top.value
+                    override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
+                        val dpRect = rect.toDpRect(density)
+                        val left = dpRect.left.value
+                        val top = dpRect.top.value
 
-                    return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
-                }
+                        return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
+                    }
 
-                override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
-                    //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
-                    return scene.sendKeyEvent(keyEvent)
-                }
-            }
+                    override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
+                        //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
+                        return scene.sendKeyEvent(keyEvent)
+                    }
+                }.also { _textInputService = it }
 
             override val viewConfiguration =
                 object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {

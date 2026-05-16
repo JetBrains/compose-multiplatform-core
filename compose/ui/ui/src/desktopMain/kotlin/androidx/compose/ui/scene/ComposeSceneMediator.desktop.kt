@@ -144,7 +144,12 @@ internal class ComposeSceneMediator(
     private val navigationEventInput = BackNavigationEventInput()
 
     private val platformComponent = DesktopPlatformComponent()
-    private val textInputService = DesktopTextInputService(platformComponent)
+
+    private var _textInputService: DesktopTextInputService? = null
+    private val textInputService
+        get() = _textInputService ?: DesktopTextInputService(platformComponent).also {
+            _textInputService = it
+        }
 
     private var _textInputService2: DesktopTextInputService2? = null
     private val textInputService2
@@ -814,6 +819,9 @@ internal class ComposeSceneMediator(
         override val viewConfiguration: ViewConfiguration = DesktopViewConfiguration()
         override val inputModeManager: InputModeManager = DefaultInputModeManager()
         override val textInputService = this@ComposeSceneMediator.textInputService
+        private var _inputModeManager: InputModeManager? = null
+        override val inputModeManager: InputModeManager
+            get() = _inputModeManager ?: DefaultInputModeManager().also { _inputModeManager = it }
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
             textInputService2.startInputMethod(request)

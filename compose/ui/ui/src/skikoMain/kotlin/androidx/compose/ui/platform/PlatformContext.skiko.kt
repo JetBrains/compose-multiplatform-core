@@ -146,7 +146,9 @@ interface PlatformContext {
         awaitCancellation()
     }
 
-    val textToolbar: TextToolbar get() = EmptyTextToolbar
+    val textToolbar: TextToolbar
+        get() = EmptyTextToolbar
+
     val hapticFeedback: HapticFeedback
         get() = DefaultHapticFeedback
 
@@ -241,7 +243,9 @@ interface PlatformContext {
             isWindowFocused = true
         }
 
-        override val inputModeManager: InputModeManager = DefaultInputModeManager()
+        private var _inputModeManager: InputModeManager? = null
+        override val inputModeManager: InputModeManager
+            get() = _inputModeManager ?: DefaultInputModeManager().also { _inputModeManager = it }
     }
 
     // This object must be immutable because it is used as a delegate in other ViewConfiguration

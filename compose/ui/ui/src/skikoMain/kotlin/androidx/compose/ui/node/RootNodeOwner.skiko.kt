@@ -68,7 +68,6 @@ import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.layout.RulerProviderModifierElement
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.DefaultAccessibilityManager
-import androidx.compose.ui.platform.DefaultHapticFeedback
 import androidx.compose.ui.platform.DelegatingSoftwareKeyboardController
 import androidx.compose.ui.platform.GraphicsLayerOwnerLayer
 import androidx.compose.ui.platform.LegacyRenderNodeLayer
@@ -79,6 +78,7 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.PlatformWindowInsetsProviderNode
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformClipboardManager
 import androidx.compose.ui.platform.setLightingInfo
@@ -477,6 +477,10 @@ internal class RootNodeOwner(
         override val inputModeManager get() = platformContext.inputModeManager
         override val hapticFeedBack
             get() = platformContext.hapticFeedback
+
+        override val inputModeManager
+            get() = platformContext.inputModeManager
+
         override val clipboardManager = createPlatformClipboardManager()
         override val clipboard = createPlatformClipboard()
         override val accessibilityManager = DefaultAccessibilityManager()
@@ -494,6 +498,19 @@ internal class RootNodeOwner(
             TextInputService(platformContext.textInputService)
         override val softwareKeyboardController =
             DelegatingSoftwareKeyboardController(textInputService)
+        private var _textInputService: TextInputService? = null
+        override val textInputService
+            get() = _textInputService ?: TextInputService(platformContext.textInputService).also {
+                _textInputService = it
+            }
+
+        private var _softwareKeyboardController: SoftwareKeyboardController? = null
+        override val softwareKeyboardController
+            get() = _softwareKeyboardController ?: DelegatingSoftwareKeyboardController(
+                textInputService
+            ).also {
+                _softwareKeyboardController = it
+            }
 
         private val textInputSessionMutex = SessionMutex<TextInputSession>()
         private inner class TextInputSession(
@@ -535,7 +552,13 @@ internal class RootNodeOwner(
         }
 
         override val dragAndDropManager = this@RootNodeOwner.dragAndDropOwner
-        override val pointerIconService = PointerIconServiceImpl()
+
+        private var _pointerIconService: PointerIconService? = null
+        override val pointerIconService
+            get() = _pointerIconService ?: PointerIconServiceImpl().also {
+                _pointerIconService = it
+            }
+
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
