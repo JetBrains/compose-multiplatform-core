@@ -817,11 +817,13 @@ internal class ComposeSceneMediator(
 
         override val measureDrawLayerBounds: Boolean = this@ComposeSceneMediator.measureDrawLayerBounds
         override val viewConfiguration: ViewConfiguration = DesktopViewConfiguration()
-        override val inputModeManager: InputModeManager = DefaultInputModeManager()
-        override val textInputService = this@ComposeSceneMediator.textInputService
+
         private var _inputModeManager: InputModeManager? = null
         override val inputModeManager: InputModeManager
             get() = _inputModeManager ?: DefaultInputModeManager().also { _inputModeManager = it }
+
+        override val textInputService
+            get() = this@ComposeSceneMediator.textInputService
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
             textInputService2.startInputMethod(request)
