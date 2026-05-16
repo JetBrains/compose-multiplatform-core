@@ -30,6 +30,7 @@ import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
@@ -52,9 +53,6 @@ import androidx.compose.ui.input.pointer.composeButtons
 import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
-import androidx.compose.ui.platform.DefaultHapticFeedback
-import androidx.compose.ui.platform.DefaultInputModeManager
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
@@ -207,8 +205,6 @@ internal class ComposeWindow(
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
 
-    private val hapticFeedback = WebHapticFeedback.webHapticFeedbackOrDefault()
-
     private val navigationEventInput = BackNavigationEventInput()
 
     private val canvasEvents = EventTargetListener(canvas)
@@ -252,6 +248,9 @@ internal class ComposeWindow(
             }
 
             override val textToolbar: TextToolbar = WebTextToolbar()
+            private var _hapticFeedback: HapticFeedback? = null
+            override val hapticFeedback
+                get() = _hapticFeedback ?: WebHapticFeedback.webHapticFeedbackOrDefault().also { _hapticFeedback = it }
 
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
@@ -469,7 +468,6 @@ internal class ComposeWindow(
         scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
-                LocalHapticFeedback provides hapticFeedback,
                 LocalInteropContainer provides interopContainer,
                 LocalActiveClipEventsTarget provides clipEventsTargetProvider,
                 content = {
