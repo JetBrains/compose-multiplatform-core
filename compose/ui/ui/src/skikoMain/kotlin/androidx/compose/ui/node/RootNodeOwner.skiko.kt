@@ -472,9 +472,9 @@ internal class RootNodeOwner(
 
         override val sharedDrawScope = LayoutNodeDrawScope()
         override val layoutNodes: MutableIntObjectMap<LayoutNode> = mutableIntObjectMapOf()
-        override val rootForTest get() = this@RootNodeOwner.rootForTest
-        override val hapticFeedBack = DefaultHapticFeedback()
-        override val inputModeManager get() = platformContext.inputModeManager
+        override val rootForTest
+            get() = this@RootNodeOwner.rootForTest
+
         override val hapticFeedBack
             get() = platformContext.hapticFeedback
 
@@ -484,20 +484,26 @@ internal class RootNodeOwner(
         override val clipboardManager = createPlatformClipboardManager()
         override val clipboard = createPlatformClipboard()
         override val accessibilityManager = DefaultAccessibilityManager()
-        override val graphicsContext get() = this@RootNodeOwner.graphicsContext
-        override val textToolbar get() = platformContext.textToolbar
+        override val graphicsContext
+            get() = this@RootNodeOwner.graphicsContext
+
+        override val textToolbar
+            get() = platformContext.textToolbar
+
         @Suppress("DEPRECATION")
         override val autofillTree = androidx.compose.ui.autofill.AutofillTree()
+
         @Suppress("DEPRECATION")
         override val autofill: androidx.compose.ui.autofill.Autofill?
             get() = null
+
         // TODO https://youtrack.jetbrains.com/issue/CMP-1572
-        override val autofillManager: AutofillManager? get() = null
-        override val density get() = this@RootNodeOwner.density
-        override val textInputService =
-            TextInputService(platformContext.textInputService)
-        override val softwareKeyboardController =
-            DelegatingSoftwareKeyboardController(textInputService)
+        override val autofillManager: AutofillManager?
+            get() = null
+
+        override val density
+            get() = this@RootNodeOwner.density
+
         private var _textInputService: TextInputService? = null
         override val textInputService
             get() = _textInputService ?: TextInputService(platformContext.textInputService).also {
@@ -513,6 +519,7 @@ internal class RootNodeOwner(
             }
 
         private val textInputSessionMutex = SessionMutex<TextInputSession>()
+
         private inner class TextInputSession(
             coroutineScope: CoroutineScope,
         ) : PlatformTextInputSessionScope, CoroutineScope by coroutineScope {
@@ -560,23 +567,36 @@ internal class RootNodeOwner(
             }
 
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
-        override val windowInfo get() = platformContext.windowInfo
-        override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
+        override val windowInfo
+            get() = platformContext.windowInfo
+
+        override val retainedValuesStore: RetainedValuesStore
+            get() = ForgetfulRetainedValuesStore
+
         override val rectManager = RectManager()
 
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
         override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
         override val fontFamilyResolver = createFontFamilyResolver()
-        override val layoutDirection get() = _layoutDirection
-        override val localeList get() = platformContext.localeList
+        override val layoutDirection
+            get() = _layoutDirection
+
+        override val localeList
+            get() = platformContext.localeList
+
         override var showLayoutBounds by mutableStateOf(false)
             @InternalCoreApi
             set
 
         override val modifierLocalManager = ModifierLocalManager(this)
-        override val snapshotObserver get() = this@RootNodeOwner.snapshotObserver
-        override val viewConfiguration get() = platformContext.viewConfiguration
-        override val measureIteration: Long get() = measureAndLayoutDelegate.measureIteration
+        override val snapshotObserver
+            get() = this@RootNodeOwner.snapshotObserver
+
+        override val viewConfiguration
+            get() = platformContext.viewConfiguration
+
+        override val measureIteration: Long
+            get() = measureAndLayoutDelegate.measureIteration
 
         override fun requestAutofill(node: LayoutNode) {
             // TODO: 1.8.0-beta01 Adopt requestAutofill API
@@ -800,10 +820,16 @@ internal class RootNodeOwner(
     }
 
     private inner class PlatformRootForTestImpl : PlatformRootForTest {
-        override val density get() = this@RootNodeOwner.density
+        override val density
+            get() = this@RootNodeOwner.density
+
         @Suppress("OVERRIDE_DEPRECATION")
-        override val textInputService get() = owner.textInputService
-        override val semanticsOwner get() = owner.semanticsOwner
+        override val textInputService
+            get() = owner.textInputService
+
+        override val semanticsOwner
+            get() = owner.semanticsOwner
+
         override val visibleBounds: Rect
             get() {
                 val windowRect = platformContext.windowInfo.containerSize.toRect()

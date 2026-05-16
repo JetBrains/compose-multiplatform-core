@@ -64,12 +64,14 @@ interface PlatformContext {
     /**
      * The value that will be provided to [LocalPlatformScreenReader] by default.
      */
-    val screenReader: PlatformScreenReader get() = EmptyPlatformScreenReader
+    val screenReader: PlatformScreenReader
+        get() = EmptyPlatformScreenReader
 
     /**
      * Provider of platform owners such as [LifecycleOwner] or [ViewModelStoreOwner].
      */
-    val architectureComponentsOwner: PlatformArchitectureComponentsOwner get() = EmptyArchitectureComponentsOwner
+    val architectureComponentsOwner: PlatformArchitectureComponentsOwner
+        get() = EmptyArchitectureComponentsOwner
 
     /**
      * Indicates if the Compose view is positioned in a transparent window.
@@ -78,7 +80,8 @@ interface PlatformContext {
      *
      * @see CanvasLayersComposeScene
      */
-    val isWindowTransparent: Boolean get() = false
+    val isWindowTransparent: Boolean
+        get() = false
 
     /**
      * Indicates whether the transformation between local and window/screen coordinate spaces
@@ -94,7 +97,8 @@ interface PlatformContext {
      * @see convertLocalToWindowPosition
      * @see convertWindowToLocalPosition
      */
-    val hasNonTranslationComponents: Boolean get() = false
+    val hasNonTranslationComponents: Boolean
+        get() = false
 
     /**
      * Converts [localPosition] relative to the [ComposeScene] into an [Offset] relative to
@@ -134,13 +138,20 @@ interface PlatformContext {
      * layout bounds (for example, shadows). It might be used to resize platform views based on
      * such bounds.
      */
-    val measureDrawLayerBounds: Boolean get() = false
+    val measureDrawLayerBounds: Boolean
+        get() = false
 
-    val localeList: LocaleList get() = LocaleList.current
-    val viewConfiguration: ViewConfiguration get() = DefaultViewConfiguration
+    val localeList: LocaleList
+        get() = LocaleList.current
+
+    val viewConfiguration: ViewConfiguration
+        get() = DefaultViewConfiguration
+
     val inputModeManager: InputModeManager
+
     @Suppress("DEPRECATION") // TODO https://youtrack.jetbrains.com/issue/CMP-9858
-    val textInputService: androidx.compose.ui.text.input.PlatformTextInputService get() = EmptyPlatformTextInputService
+    val textInputService: androidx.compose.ui.text.input.PlatformTextInputService
+        get() = EmptyPlatformTextInputService
 
     suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
         awaitCancellation()
@@ -154,15 +165,19 @@ interface PlatformContext {
 
     fun setPointerIcon(pointerIcon: PointerIcon) = Unit
 
-    val parentFocusManager: FocusManager get() = EmptyFocusManager
+    val parentFocusManager: FocusManager
+        get() = EmptyFocusManager
+
     fun requestFocus(): Boolean = true
 
-    val dragAndDropManager: PlatformDragAndDropManager get() = EmptyDragAndDropManager
+    val dragAndDropManager: PlatformDragAndDropManager
+        get() = EmptyDragAndDropManager
 
     /**
      * The value that will be provided to [LocalPlatformWindowInsets] by default.
      */
-    val windowInsets: PlatformWindowInsets get() = EmptyPlatformWindowInsets
+    val windowInsets: PlatformWindowInsets
+        get() = EmptyPlatformWindowInsets
 
     var isKeepScreenOnEnabled: Boolean
         get() = false
@@ -181,14 +196,16 @@ interface PlatformContext {
      *
      * @see RootForTestListener
      */
-    val rootForTestListener: RootForTestListener? get() = null
+    val rootForTestListener: RootForTestListener?
+        get() = null
 
     /**
      * The listener to track [SemanticsOwner]s.
      *
      * @see SemanticsOwnerListener
      */
-    val semanticsOwnerListener: SemanticsOwnerListener? get() = null
+    val semanticsOwnerListener: SemanticsOwnerListener?
+        get() = null
 
     /**
      * Returns whether mouse-down on an unfocusable element clears focus.

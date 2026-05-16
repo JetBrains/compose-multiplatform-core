@@ -217,8 +217,11 @@ internal class ComposeWindow(
 
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
-            override val windowInfo get() = _windowInfo
-            override val architectureComponentsOwner get() = archComponentsOwner
+            override val windowInfo
+                get() = _windowInfo
+
+            override val architectureComponentsOwner
+                get() = archComponentsOwner
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
                 WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
