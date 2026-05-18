@@ -51,7 +51,7 @@ internal open class ComposeTextInputConnection(
     coroutineScope,
     focusedViewsList,
     focusManager
-), TextToolbar {
+) {
     // Fixes a problem where the menu is shown before the textInputView gets its final layout.
     private var showMenuOrUpdatePosition = {}
 
@@ -112,14 +112,14 @@ internal open class ComposeTextInputConnection(
         showMenuOrUpdatePosition()
     }
 
-    override val status: TextToolbarStatus
+    val toolbarStatus: TextToolbarStatus
         get() = if (textInputView.isTextMenuShown()) {
             TextToolbarStatus.Shown
         } else {
             TextToolbarStatus.Hidden
         }
 
-    override fun showMenu(
+    fun showToolbarMenu(
         rect: Rect,
         onCopyRequested: (() -> Unit)?,
         onPasteRequested: (() -> Unit)?,
@@ -145,8 +145,7 @@ internal open class ComposeTextInputConnection(
         showMenuOrUpdatePosition()
     }
 
-
-    override fun hide() {
+    fun hideToolbar() {
         showMenuOrUpdatePosition = {}
         textInputView.let {
             it.hideTextMenu()

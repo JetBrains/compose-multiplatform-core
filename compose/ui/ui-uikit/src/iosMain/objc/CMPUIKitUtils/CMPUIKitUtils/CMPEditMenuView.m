@@ -286,6 +286,12 @@ id _editInteraction;
         [self cancelShowMenuController];
         [[UIMenuController sharedMenuController] hideMenu];
     }
+
+    self.copyBlock = nil;
+    self.cutBlock = nil;
+    self.pasteBlock = nil;
+    self.selectAllBlock = nil;
+    self.customActions = @[];
 }
 
 - (BOOL)contextMenuItemsChangedCopy:(void (^)(void))copyBlock

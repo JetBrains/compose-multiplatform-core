@@ -64,6 +64,13 @@ import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.input.key.internal
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.input.pointer.isAltPressed
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isMetaPressed
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -285,7 +292,8 @@ internal class ComposeSceneMediator(
         onCancelScroll = ::onCancelScroll,
         onHoverEvent = ::onHoverEvent,
         onKeyboardPresses = ::onKeyboardPresses,
-        ignoreTouchChanges = navigationEventInput::isBackGestureActive
+        ignoreTouchChanges = navigationEventInput::isBackGestureActive,
+        onCancelKeyboardPresses = ::onCancelKeyboardPresses,
     )
 
     val overlayView: UIView get() = _overlayView
@@ -385,7 +393,8 @@ internal class ComposeSceneMediator(
             focusedViewsList = focusedViewsList,
             onInputStarted = { animateKeyboardOffsetChanges = true },
             focusManager = { scene.focusManager },
-            coroutineContext = coroutineContext
+            hasActiveKeyDown = { pressedKeysToHandledState.values.contains(true) },
+            coroutineContext = coroutineContext,
         ).also {
             KeyboardVisibilityListener.initialize()
         }
@@ -731,12 +740,59 @@ internal class ComposeSceneMediator(
         }
     }
 
-    private fun onKeyboardEvent(keyEvent: KeyEvent): Boolean =
-        textInputService.onPreviewKeyEvent(keyEvent) // TODO: fix redundant call
+    private data class KeyIdentifier(
+        val key: Key,
+        val codePoint: Int,
+        val modifiers: PointerKeyboardModifiers
+    )
+
+    private fun KeyEvent.keyIdentifier(): KeyIdentifier {
+        val internalEvent = internal
+        return KeyIdentifier(internalEvent.key, internalEvent.codePoint, internalEvent.modifiers)
+    }
+
+    private val pressedKeysToHandledState = mutableMapOf<KeyIdentifier, Boolean>()
+
+    private fun onCancelKeyboardPresses() {
+        if (pressedKeysToHandledState.isEmpty()) {
+            return
+        }
+        pressedKeysToHandledState.toList().reversed().forEach { (key, _) ->
+            onKeyboardEvent(
+                KeyEvent(
+                    key = key.key,
+                    type = KeyEventType.KeyUp,
+                    codePoint = key.codePoint,
+                    isCtrlPressed = key.modifiers.isCtrlPressed,
+                    isMetaPressed = key.modifiers.isMetaPressed,
+                    isAltPressed = key.modifiers.isAltPressed,
+                    isShiftPressed = key.modifiers.isShiftPressed,
+                    nativeEvent = null,
+                )
+            )
+        }
+    }
+
+    private fun onKeyboardEvent(keyEvent: KeyEvent): Boolean {
+        val result = textInputService.onPreviewKeyEvent(keyEvent) // TODO: fix redundant call
             || onPreviewKeyEvent(keyEvent)
             || scene.sendKeyEvent(keyEvent)
             || onKeyEvent(keyEvent)
             || navigationEventInput.onKeyEvent(keyEvent)
+
+        val identifier = keyEvent.keyIdentifier()
+        if (keyEvent.type == KeyEventType.KeyDown) {
+            pressedKeysToHandledState[identifier] = result
+        } else if (keyEvent.type == KeyEventType.KeyUp) {
+            if (pressedKeysToHandledState.contains(identifier)) {
+                pressedKeysToHandledState.remove(identifier)
+            } else {
+                pressedKeysToHandledState.clear()
+            }
+        }
+
+        return result
+    }
 
     private inner class PlatformContextImpl : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo

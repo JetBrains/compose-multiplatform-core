@@ -37,7 +37,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import platform.UIKit.UIPress
 import platform.UIKit.UIView
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -48,6 +47,7 @@ internal class UIKitTextInputService(
     private val focusedViewsList: FocusedViewsList?,
     private var onInputStarted: () -> Unit,
     private var focusManager: () -> ComposeSceneFocusManager?,
+    private var hasActiveKeyDown: () -> Boolean,
     coroutineContext: CoroutineContext
 ) {
 
@@ -132,7 +132,7 @@ internal class UIKitTextInputService(
     val textToolbar: TextToolbar = object : TextToolbar {
 
         override val status: TextToolbarStatus
-            get() = (currentInputConnection as? TextToolbar)?.status ?: TextToolbarStatus.Hidden
+            get() = (currentInputConnection as? ComposeTextInputConnection)?.toolbarStatus ?: TextToolbarStatus.Hidden
 
         override fun showMenu(
             rect: Rect,
@@ -153,13 +153,17 @@ internal class UIKitTextInputService(
                     view, coroutineScope, viewConfiguration, focusManager
                 )
             }
-            (currentInputConnection as? TextToolbar)?.showMenu(
-                rect, onCopyRequested, onPasteRequested, onCutRequested, onSelectAllRequested
+            (currentInputConnection as? ComposeTextInputConnection)?.showToolbarMenu(
+                rect,
+                ignoringActiveKeyDown(onCopyRequested),
+                ignoringActiveKeyDown(onPasteRequested),
+                ignoringActiveKeyDown(onCutRequested),
+                ignoringActiveKeyDown(onSelectAllRequested),
             )
         }
 
         override fun hide() {
-            (currentInputConnection as? TextToolbar)?.hide()
+            (currentInputConnection as? ComposeTextInputConnection)?.hideToolbar()
 
             if (currentInputConnection is SelectionContainerConnection) {
                 // stop() removes the view from the hierarchy and resigns first responder,
@@ -182,7 +186,11 @@ internal class UIKitTextInputService(
             customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
         ) {
             (currentInputConnection as? NativeTextInputConnection)?.updateNativeTextInputEditMenuState(
-                copy, paste, cut, selectAll, customActions
+                ignoringActiveKeyDown(copy),
+                ignoringActiveKeyDown(paste),
+                ignoringActiveKeyDown(cut),
+                ignoringActiveKeyDown(selectAll),
+                customActions
             )
         }
 
@@ -193,9 +201,19 @@ internal class UIKitTextInputService(
         }
     }
 
+    private fun ignoringActiveKeyDown(action: (() -> Unit)?): (() -> Unit)? {
+        if (action == null) return null
+        return {
+            if (!hasActiveKeyDown()) {
+                action()
+            }
+        }
+    }
+
     fun dispose() {
         stopInput()
         onInputStarted = { }
         focusManager = { null }
+        hasActiveKeyDown = { false }
     }
 }

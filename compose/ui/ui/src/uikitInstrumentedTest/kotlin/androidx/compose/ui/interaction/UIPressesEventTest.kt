@@ -47,6 +47,7 @@ import platform.CoreGraphics.CGRectZero
 import platform.UIKit.UIKeyModifierCommand
 import platform.UIKit.UIPasteboard
 import platform.UIKit.UIPress
+import platform.UIKit.UIPressType
 import platform.UIKit.UIPressTypeMenu
 import platform.UIKit.UIPressTypeSelect
 import platform.UIKit.UIPressTypeUpArrow
