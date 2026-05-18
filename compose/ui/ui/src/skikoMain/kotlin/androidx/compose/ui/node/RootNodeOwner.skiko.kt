@@ -164,7 +164,7 @@ internal class RootNodeOwner(
 
     private var _rootForTest: PlatformRootForTest? = null
     private val rootForTest get() = _rootForTest ?: PlatformRootForTestImpl().also {
-          _rootForTest = it
+        _rootForTest = it
     }
     private val ownedLayerManager = OwnedLayerManagerImpl()
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
@@ -473,7 +473,7 @@ internal class RootNodeOwner(
         override val layoutNodes: MutableIntObjectMap<LayoutNode> = mutableIntObjectMapOf()
         override val rootForTest get() = this@RootNodeOwner.rootForTest
         override val hapticFeedBack get() = platformContext.hapticFeedback
-        override val inputModeManager  get() = platformContext.inputModeManager
+        override val inputModeManager get() = platformContext.inputModeManager
         override val clipboardManager = createPlatformClipboardManager()
         override val clipboard = createPlatformClipboard()
         override val accessibilityManager = DefaultAccessibilityManager()
@@ -542,9 +542,10 @@ internal class RootNodeOwner(
         override val dragAndDropManager = this@RootNodeOwner.dragAndDropOwner
 
         private var _pointerIconService: PointerIconService? = null
-        override val pointerIconService get() = _pointerIconService ?: PointerIconServiceImpl().also {
-             _pointerIconService = it
-        }
+        override val pointerIconService get() = _pointerIconService
+            ?: PointerIconServiceImpl().also {
+                _pointerIconService = it
+            }
 
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo

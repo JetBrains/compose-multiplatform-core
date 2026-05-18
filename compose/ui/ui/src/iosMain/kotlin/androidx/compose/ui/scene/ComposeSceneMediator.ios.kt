@@ -730,9 +730,8 @@ internal class ComposeSceneMediator(
         override val viewConfiguration get() = this@ComposeSceneMediator.viewConfiguration
 
         private var _inputModeManager: InputModeManager? = null
-        override val inputModeManager
-            get() = _inputModeManager
-                ?: DefaultInputModeManager(InputMode.Touch).also { _inputModeManager = it }
+        override val inputModeManager get() = _inputModeManager
+            ?: DefaultInputModeManager(InputMode.Touch).also { _inputModeManager = it }
 
         override val textInputService get() = this@ComposeSceneMediator.textInputServiceAdapter
         override val textToolbar get() = this@ComposeSceneMediator.textInputService.textToolbar

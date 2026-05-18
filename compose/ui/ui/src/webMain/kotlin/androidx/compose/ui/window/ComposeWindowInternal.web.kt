@@ -246,10 +246,12 @@ internal class ComposeWindow(
             }
 
             private var _textToolbar: TextToolbar? = null
-            override val textToolbar: TextToolbar get() = _textToolbar ?: WebTextToolbar().also { _textToolbar = it }
+            override val textToolbar: TextToolbar get() = _textToolbar
+                ?: WebTextToolbar().also { _textToolbar = it }
 
             private var _hapticFeedback: HapticFeedback? = null
-            override val hapticFeedback get() = _hapticFeedback ?: WebHapticFeedback.webHapticFeedbackOrDefault().also { _hapticFeedback = it }
+            override val hapticFeedback get() = _hapticFeedback
+                ?: WebHapticFeedback.webHapticFeedbackOrDefault().also { _hapticFeedback = it }
 
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
@@ -269,27 +271,28 @@ internal class ComposeWindow(
                 }
 
             private var _textInputService: WebTextInputService? = null
-            override val textInputService: WebTextInputService get() = _textInputService ?: object : WebTextInputService() {
+            override val textInputService: WebTextInputService get() = _textInputService ?: object :
+                WebTextInputService() {
 
-                    override val currentTouchOffset: Offset?
-                        get() = activeTouchOffset
+                override val currentTouchOffset: Offset?
+                    get() = activeTouchOffset
 
-                    override val backingDomInputContainer: HTMLElement
-                        get() = layerRoot
+                override val backingDomInputContainer: HTMLElement
+                    get() = layerRoot
 
-                    override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
-                        val dpRect = rect.toDpRect(density)
-                        val left = dpRect.left.value
-                        val top = dpRect.top.value
+                override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
+                    val dpRect = rect.toDpRect(density)
+                    val left = dpRect.left.value
+                    val top = dpRect.top.value
 
-                        return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
-                    }
+                    return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
+                }
 
-                    override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
-                        //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
-                        return scene.sendKeyEvent(keyEvent)
-                    }
-                }.also { _textInputService = it }
+                override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
+                    //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
+                    return scene.sendKeyEvent(keyEvent)
+                }
+            }.also { _textInputService = it }
 
             override val viewConfiguration =
                 object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {

@@ -240,7 +240,8 @@ interface PlatformContext {
         }
 
         private var _inputModeManager: InputModeManager? = null
-        override val inputModeManager: InputModeManager get() = _inputModeManager ?: DefaultInputModeManager().also { _inputModeManager = it }
+        override val inputModeManager: InputModeManager get() = _inputModeManager
+            ?: DefaultInputModeManager().also { _inputModeManager = it }
     }
 
     // This object must be immutable because it is used as a delegate in other ViewConfiguration
