@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package androidx.navigationevent.compose
+package androidx.lifecycle.viewmodel.internal
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.CreationExtras
+import kotlin.reflect.KClass
 
-@Composable internal actual fun isInspectionMode(): Boolean = LocalInspectionMode.current
+internal actual object DefaultViewModelProviderFactory : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T =
+        JvmViewModelProviders.createViewModel(modelClass.java)
+}

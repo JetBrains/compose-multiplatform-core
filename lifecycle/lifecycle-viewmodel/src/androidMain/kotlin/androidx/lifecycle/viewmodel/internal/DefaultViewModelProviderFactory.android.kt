@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package androidx.navigationevent.compose
+package androidx.lifecycle.viewmodel.internal
 
-import androidx.compose.runtime.Composable
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 
-@Composable internal actual fun isInspectionMode(): Boolean = false
+internal actual object DefaultViewModelProviderFactory : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+        JvmViewModelProviders.createViewModel(modelClass)
+}
