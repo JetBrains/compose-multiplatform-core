@@ -16,16 +16,29 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.WebApplicationScope
+import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class WebFallbackFontDownloaderTest {
+@OptIn(ExperimentalCoroutinesApi::class, InternalComposeApi::class)
+class WebFallbackFontDownloaderTest : OnCanvasTests {
 
     private class FakeDownloader : FallbackFontDownloader {
         val calls = mutableListOf<Set<Int>>()
@@ -143,5 +156,29 @@ class WebFallbackFontDownloaderTest {
         advanceTimeBy(200)
         assertEquals(1, loaded.size)
         assertEquals(listOf(fontFamily), loaded[0])
+    }
+
+    @Test
+    fun checkWebFontDownloaderIsConfiguredByDefault() = runTest {
+        val fake = FakeDownloader()
+        val unresolvedChar = '\uEE00'
+        val codepoint = unresolvedChar.code
+
+        val tmp = defaultFallbackFontDownloader
+        defaultFallbackFontDownloader = fake
+
+        createComposeWindow {
+            BasicText(unresolvedChar.toString(), modifier = Modifier.size(100.dp))
+        }
+        withTimeout(200.milliseconds) {
+            while (fake.calls.isEmpty()) yield()
+        }
+
+        defaultFallbackFontDownloader = tmp
+        assertContentEquals(
+            fake.calls.single(),
+            listOf(codepoint),
+            "FakeDownloader should have received codepoint 0x${codepoint.toString(16)}. Actual calls: ${fake.calls}"
+        )
     }
 }

@@ -19,8 +19,8 @@ package androidx.compose.ui.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.runtime.TestOnly
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.UnresolvedSymbolsRegistry
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.WebUnresolvedSymbolsRegistry
@@ -31,14 +31,11 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
+@set:TestOnly
+internal var defaultFallbackFontDownloader: FallbackFontDownloader = NotoFontDownloader()
+
 internal interface FallbackFontDownloader {
     suspend fun downloadFallbackFont(codepoints: Set<Int>): List<FontFamily>
-}
-
-
-// for the future public API
-private val LocalFallbackFontDownloader = staticCompositionLocalOf<FallbackFontDownloader> {
-    NotoFontDownloader()
 }
 
 internal class WebFallbackFontDownloader(
@@ -87,12 +84,11 @@ internal class WebFallbackFontDownloader(
 @Composable
 internal fun installFallbackFontDownloader() {
     val fontFamilyResolver = LocalFontFamilyResolver.current
-    val fallbackFontDownloader = LocalFallbackFontDownloader.current
     val coroutineScope = rememberCoroutineScope()
 
-    DisposableEffect(fontFamilyResolver, fallbackFontDownloader, coroutineScope) {
+    DisposableEffect(fontFamilyResolver, coroutineScope) {
         val webDownloader = WebFallbackFontDownloader(
-            downloader = fallbackFontDownloader,
+            downloader = defaultFallbackFontDownloader,
             scope = coroutineScope,
             onFontsLoaded = { fonts ->
                 if (fonts.isNotEmpty()) {
