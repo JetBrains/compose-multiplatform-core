@@ -146,20 +146,21 @@ internal class ComposeSceneMediator(
     private val platformComponent = DesktopPlatformComponent()
 
     private var _textInputService: DesktopTextInputService? = null
-    private val textInputService
-        get() = _textInputService ?: DesktopTextInputService(platformComponent).also {
-            _textInputService = it
-        }
+    private val textInputService get() = _textInputService ?: DesktopTextInputService(
+        platformComponent
+    ).also {
+        _textInputService = it
+    }
 
     private var _textInputService2: DesktopTextInputService2? = null
-    private val textInputService2
-        get() = _textInputService2 ?: DesktopTextInputService2(platformComponent).also {
-            _textInputService2 = it
-        }
+    private val textInputService2 get() = _textInputService2 ?: DesktopTextInputService2(
+        platformComponent
+    ).also {
+        _textInputService2 = it
+    }
 
     private val _platformContext = DesktopPlatformContext()
-    val platformContext: PlatformContext
-        get() = _platformContext
+    val platformContext: PlatformContext get() = _platformContext
 
     val accessibility = ComposeSceneAccessibility(
         platformComponent = platformComponent,
@@ -343,9 +344,7 @@ internal class ComposeSceneMediator(
         }
 
     private val scene by lazy { composeSceneFactory(this) }
-    val focusManager
-        get() = scene.focusManager
-
+    val focusManager get() = scene.focusManager
     var compositionLocalContext: CompositionLocalContext?
         get() = scene.compositionLocalContext
         set(value) { scene.compositionLocalContext = value }
@@ -803,14 +802,9 @@ internal class ComposeSceneMediator(
     }
 
     private inner class DesktopPlatformContext : PlatformContext {
-        override val windowInfo: WindowInfo
-            get() = windowContext.windowInfo
-
-        override val architectureComponentsOwner
-            get() = this@ComposeSceneMediator.architectureComponentsOwner
-
-        override val isWindowTransparent: Boolean
-            get() = windowContext.isWindowTransparent
+        override val windowInfo: WindowInfo get() = windowContext.windowInfo
+        override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
+        override val isWindowTransparent: Boolean get() = windowContext.isWindowTransparent
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =
             windowContext.convertLocalToWindowPosition(container, localPosition)
@@ -824,17 +818,13 @@ internal class ComposeSceneMediator(
         override fun convertScreenToLocalPosition(positionOnScreen: Offset): Offset =
             windowContext.convertScreenToLocalPosition(container, positionOnScreen)
 
-        override val measureDrawLayerBounds: Boolean
-            get() = this@ComposeSceneMediator.measureDrawLayerBounds
-
+        override val measureDrawLayerBounds: Boolean = this@ComposeSceneMediator.measureDrawLayerBounds
         override val viewConfiguration: ViewConfiguration = DesktopViewConfiguration()
 
         private var _inputModeManager: InputModeManager? = null
-        override val inputModeManager: InputModeManager
-            get() = _inputModeManager ?: DefaultInputModeManager().also { _inputModeManager = it }
+        override val inputModeManager: InputModeManager get() = _inputModeManager ?: DefaultInputModeManager().also { _inputModeManager = it }
 
-        override val textInputService
-            get() = this@ComposeSceneMediator.textInputService
+        override val textInputService get() = this@ComposeSceneMediator.textInputService
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
             textInputService2.startInputMethod(request)
@@ -858,13 +848,10 @@ internal class ComposeSceneMediator(
 
         override val dragAndDropManager: PlatformDragAndDropManager
             get() = this@ComposeSceneMediator.dragAndDropManager
-
         override val rootForTestListener
             get() = this@ComposeSceneMediator.rootForTestListener
-
         override val semanticsOwnerListener
             get() = this@ComposeSceneMediator.semanticsOwnerManager
-
         override val isClearFocusOnMouseDownEnabled: Boolean
             get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
     }

@@ -542,7 +542,6 @@ internal class ComposeSceneMediator(
             }
         }
     }
-
     private var previousButtonMask: Long = 0L
     private var previousTouchEventKind: TouchesEventKind? = null
 
@@ -667,12 +666,11 @@ internal class ComposeSceneMediator(
         }
     }
 
-    private val currentViewSize: Size
-        get() {
-            return with(screenDensity) {
-                _overlayView.frame.useContents { size.toDpSize() }.toSize()
-            }
+    private val currentViewSize: Size get() {
+        return with(screenDensity) {
+            _overlayView.frame.useContents { size.toDpSize() }.toSize()
         }
+    }
 
     fun sceneDidAppear() {
         redrawer.setNeedsRedraw()
@@ -710,18 +708,12 @@ internal class ComposeSceneMediator(
             || navigationEventInput.onKeyEvent(keyEvent)
 
     private inner class PlatformContextImpl : PlatformContext {
-        override val windowInfo: WindowInfo
-            get() = windowContext.windowInfo
-
-        override val architectureComponentsOwner
-            get() = this@ComposeSceneMediator.architectureComponentsOwner
-
-        override val screenReader: PlatformScreenReader
-            get() = platformScreenReader
+        override val windowInfo: WindowInfo get() = windowContext.windowInfo
+        override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
+        override val screenReader: PlatformScreenReader get() = platformScreenReader
 
         private var _hapticFeedback: HapticFeedback? = null
-        override val hapticFeedback: HapticFeedback
-            get() = _hapticFeedback ?: CupertinoHapticFeedback.also { _hapticFeedback = it }
+        override val hapticFeedback: HapticFeedback get() = _hapticFeedback ?: CupertinoHapticFeedback.also { _hapticFeedback = it }
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =
             windowContext.convertLocalToWindowPosition(_overlayView, localPosition)
@@ -735,29 +727,18 @@ internal class ComposeSceneMediator(
         override fun convertScreenToLocalPosition(positionOnScreen: Offset): Offset =
             windowContext.convertScreenToLocalPosition(_overlayView, positionOnScreen)
 
-        override val viewConfiguration
-            get() = this@ComposeSceneMediator.viewConfiguration
+        override val viewConfiguration get() = this@ComposeSceneMediator.viewConfiguration
 
         private var _inputModeManager: InputModeManager? = null
         override val inputModeManager
             get() = _inputModeManager
                 ?: DefaultInputModeManager(InputMode.Touch).also { _inputModeManager = it }
 
-        override val textInputService
-            get() = this@ComposeSceneMediator.textInputServiceAdapter
-
-        override val textToolbar
-            get() = this@ComposeSceneMediator.textInputService.textToolbar
-
-        override val semanticsOwnerListener
-            get() = this@ComposeSceneMediator.semanticsOwnerListener
-
-        override val dragAndDropManager
-            get() = this@ComposeSceneMediator.dragAndDropManager
-
-        override val windowInsets
-            get() = this@ComposeSceneMediator.windowInsetsManager.windowInsets
-
+        override val textInputService get() = this@ComposeSceneMediator.textInputServiceAdapter
+        override val textToolbar get() = this@ComposeSceneMediator.textInputService.textToolbar
+        override val semanticsOwnerListener get() = this@ComposeSceneMediator.semanticsOwnerListener
+        override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
+        override val windowInsets get() = this@ComposeSceneMediator.windowInsetsManager.windowInsets
         override val isClearFocusOnMouseDownEnabled: Boolean
             get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
 
@@ -794,14 +775,13 @@ private fun UIEvent.getButton(
         null
     }
 
-private val UIEvent?.timeMillis: Long
-    get() {
-        // If the touches were cancelled due to gesture failure, the timestamp is not available,
-        // because no actual event with touch updates happened. We just use the current time in
-        // this case.
-        val timestamp = this?.timestamp ?: CACurrentMediaTime()
-        return (timestamp * 1e3).toLong()
-    }
+private val UIEvent?.timeMillis: Long get() {
+    // If the touches were cancelled due to gesture failure, the timestamp is not available,
+    // because no actual event with touch updates happened. We just use the current time in
+    // this case.
+    val timestamp = this?.timestamp ?: CACurrentMediaTime()
+    return (timestamp * 1e3).toLong()
+}
 
 private val FOCUS_CHANGE_ANIMATION_DURATION = 0.15.seconds
 private val SCROLL_DELTA_MULTIPLIER = 0.01f
@@ -838,21 +818,19 @@ private fun UIEvent.historicalChangesForTouch(
     }
 }
 
-private val UIEvent?.buttonMaskOrZero: Long
-    get() =
-        if (available(OS.Ios to OSVersion(13, 4))) {
-            this?.buttonMask ?: 0L
-        } else {
-            0L
-        }
+private val UIEvent?.buttonMaskOrZero: Long get() =
+    if (available(OS.Ios to OSVersion(13, 4))) {
+        this?.buttonMask ?: 0L
+    } else {
+        0L
+    }
 
-private val UIEvent?.modifierFlagsOrZero: Long
-    get() =
-        if (available(OS.Ios to OSVersion(13, 4))) {
-            this?.modifierFlags ?: 0L
-        } else {
-            0L
-        }
+private val UIEvent?.modifierFlagsOrZero: Long get() =
+    if (available(OS.Ios to OSVersion(13, 4))) {
+        this?.modifierFlags ?: 0L
+    } else {
+        0L
+    }
 
 private val UITouch.isPressed
     get() = when (phase) {

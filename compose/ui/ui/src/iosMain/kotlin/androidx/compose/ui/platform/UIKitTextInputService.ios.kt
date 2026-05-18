@@ -137,47 +137,45 @@ internal class UIKitTextInputService(
         currentInputConnection?.onPreviewKeyEvent(event) ?: false
 
     private var _textToolbar: TextToolbar? = null
-    val textToolbar: TextToolbar
-        get() = _textToolbar ?: object : TextToolbar {
+    val textToolbar: TextToolbar get() = _textToolbar ?: object : TextToolbar {
+        override val status: TextToolbarStatus
+            get() = (currentInputConnection as? TextToolbar)?.status ?: TextToolbarStatus.Hidden
 
-            override val status: TextToolbarStatus
-                get() = (currentInputConnection as? TextToolbar)?.status ?: TextToolbarStatus.Hidden
-
-            override fun showMenu(
-                rect: Rect,
-                onCopyRequested: (() -> Unit)?,
-                onPasteRequested: (() -> Unit)?,
-                onCutRequested: (() -> Unit)?,
-                onSelectAllRequested: (() -> Unit)?
-            ) {
-                if (currentInputConnection == null) {
-                    // Entry point for showing the context menu in SelectionContainer scenarios, where
-                    // there is no active text input session. iOS requires a UIView that can become first
-                    // responder in order to host the context menu, so we create a dedicated connection
-                    // backed by a hidden view for this purpose.
-                    // Note: start() is intentionally not called here — it establishes a text editing
-                    // session (requiring a PlatformTextInputMethodRequest) which is not applicable for
-                    // SelectionContainer.
-                    currentInputConnection = SelectionContainerConnection(
-                        view, coroutineScope, viewConfiguration, focusManager
-                    )
-                }
-                (currentInputConnection as? TextToolbar)?.showMenu(
-                    rect, onCopyRequested, onPasteRequested, onCutRequested, onSelectAllRequested
+        override fun showMenu(
+            rect: Rect,
+            onCopyRequested: (() -> Unit)?,
+            onPasteRequested: (() -> Unit)?,
+            onCutRequested: (() -> Unit)?,
+            onSelectAllRequested: (() -> Unit)?
+        ) {
+            if (currentInputConnection == null) {
+                // Entry point for showing the context menu in SelectionContainer scenarios, where
+                // there is no active text input session. iOS requires a UIView that can become first
+                // responder in order to host the context menu, so we create a dedicated connection
+                // backed by a hidden view for this purpose.
+                // Note: start() is intentionally not called here — it establishes a text editing
+                // session (requiring a PlatformTextInputMethodRequest) which is not applicable for
+                // SelectionContainer.
+                currentInputConnection = SelectionContainerConnection(
+                    view, coroutineScope, viewConfiguration, focusManager
                 )
             }
+            (currentInputConnection as? TextToolbar)?.showMenu(
+                rect, onCopyRequested, onPasteRequested, onCutRequested, onSelectAllRequested
+            )
+        }
 
-            override fun hide() {
-                (currentInputConnection as? TextToolbar)?.hide()
+        override fun hide() {
+            (currentInputConnection as? TextToolbar)?.hide()
 
-                if (currentInputConnection is SelectionContainerConnection) {
-                    // stop() removes the view from the hierarchy and resigns first responder,
-                    // without requiring a prior start() call.
-                    currentInputConnection?.stop()
-                    currentInputConnection = null
-                }
+            if (currentInputConnection is SelectionContainerConnection) {
+                // stop() removes the view from the hierarchy and resigns first responder,
+                // without requiring a prior start() call.
+                currentInputConnection?.stop()
+                currentInputConnection = null
             }
-        }.also { _textToolbar = it }
+        }
+    }.also { _textToolbar = it }
 
     val nativeTextInputContext = object : UIKitNativeTextInputContext {
         override fun usingNativeTextInput(): Boolean =

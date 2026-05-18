@@ -217,11 +217,8 @@ internal class ComposeWindow(
 
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
-            override val windowInfo
-                get() = _windowInfo
-
-            override val architectureComponentsOwner
-                get() = archComponentsOwner
+            override val windowInfo get() = _windowInfo
+            override val architectureComponentsOwner get() = archComponentsOwner
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
                 WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
@@ -249,12 +246,10 @@ internal class ComposeWindow(
             }
 
             private var _textToolbar: TextToolbar? = null
-            override val textToolbar: TextToolbar
-                get() = _textToolbar ?: WebTextToolbar().also { _textToolbar = it }
+            override val textToolbar: TextToolbar get() = _textToolbar ?: WebTextToolbar().also { _textToolbar = it }
 
             private var _hapticFeedback: HapticFeedback? = null
-            override val hapticFeedback
-                get() = _hapticFeedback ?: WebHapticFeedback.webHapticFeedbackOrDefault().also { _hapticFeedback = it }
+            override val hapticFeedback get() = _hapticFeedback ?: WebHapticFeedback.webHapticFeedbackOrDefault().also { _hapticFeedback = it }
 
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
@@ -274,8 +269,7 @@ internal class ComposeWindow(
                 }
 
             private var _textInputService: WebTextInputService? = null
-            override val textInputService: WebTextInputService
-                get() = _textInputService ?: object : WebTextInputService() {
+            override val textInputService: WebTextInputService get() = _textInputService ?: object : WebTextInputService() {
 
                     override val currentTouchOffset: Offset?
                         get() = activeTouchOffset
