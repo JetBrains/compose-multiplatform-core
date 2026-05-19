@@ -381,8 +381,6 @@ internal class UIKitInstrumentedTest(
             } as UIWindow
     }
 
-    // Presses:
-
     /**
      * Simulates a button press and release for [pressType].
      *
@@ -420,10 +418,7 @@ internal class UIKitInstrumentedTest(
      * @param modifierFlags The modifier keys held while pressing [char] (e.g. `UIKeyModifierShift`).
      *   Defaults to no modifiers.
      */
-    fun beginKeyPress(
-        char: Char,
-        modifierFlags: UIKeyModifierFlags = 0,
-    ): UIPressesEvent {
+    fun beginKeyPress(char: Char, modifierFlags: UIKeyModifierFlags = 0): UIPressesEvent {
         val window = appDelegate.window() ?: error("No active window in MockAppDelegate")
         return window.beginKeyPress(char, modifierFlags)
     }
@@ -432,9 +427,9 @@ internal class UIKitInstrumentedTest(
      * Simulates pressing a single modifier key (Shift, Cmd, Alt, Control) down and returns the
      * in-flight [UIPressesEvent] so the caller can release it later.
      *
-     * @param newModifierFlags A single [UIKeyModifierFlags] constant (e.g. `UIKeyModifierShift`).
-     * @param currentModifiers The accumulated modifier state after this key is applied.
-     *   Defaults to [newModifierFlags] itself.
+     * @param newModifierFlags A new [UIKeyModifierFlags] that will be added to previous modifiers.
+     * @param currentModifiers The accumulated modifier state before this key is applied.
+     *   Defaults to no flags.
      */
     fun beginModifierKeyPress(
         newModifierFlags: UIKeyModifierFlags,

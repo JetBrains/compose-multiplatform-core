@@ -698,7 +698,10 @@ internal class ComposeSceneMediator(
         keyboardManager.stop()
     }
 
-    fun focusOverlayViewIfNeeded() {
+    // The Overlay View needs to be focused to be able to handle keyboard actions.
+    // In general, the iOS system automatically reassigns the first responder focus to the overlay
+    // view when other views resign the first responder focus, except at the time of initial appearance.
+    private fun focusOverlayViewIfNeeded() {
         if (!isFocusEnabled) {
             return
         }

@@ -155,10 +155,10 @@ internal class UIKitTextInputService(
             }
             (currentInputConnection as? ComposeTextInputConnection)?.showToolbarMenu(
                 rect,
-                ignoringActiveKeyDown(onCopyRequested),
-                ignoringActiveKeyDown(onPasteRequested),
-                ignoringActiveKeyDown(onCutRequested),
-                ignoringActiveKeyDown(onSelectAllRequested),
+                ignoringWhenActiveKeyDown(onCopyRequested),
+                ignoringWhenActiveKeyDown(onPasteRequested),
+                ignoringWhenActiveKeyDown(onCutRequested),
+                ignoringWhenActiveKeyDown(onSelectAllRequested),
             )
         }
 
@@ -186,10 +186,10 @@ internal class UIKitTextInputService(
             customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
         ) {
             (currentInputConnection as? NativeTextInputConnection)?.updateNativeTextInputEditMenuState(
-                ignoringActiveKeyDown(copy),
-                ignoringActiveKeyDown(paste),
-                ignoringActiveKeyDown(cut),
-                ignoringActiveKeyDown(selectAll),
+                ignoringWhenActiveKeyDown(copy),
+                ignoringWhenActiveKeyDown(paste),
+                ignoringWhenActiveKeyDown(cut),
+                ignoringWhenActiveKeyDown(selectAll),
                 customActions
             )
         }
@@ -201,7 +201,9 @@ internal class UIKitTextInputService(
         }
     }
 
-    private fun ignoringActiveKeyDown(action: (() -> Unit)?): (() -> Unit)? {
+    // To prevent double-hotkey processing, prevent any edit actions if any active and handled
+    // key is down.
+    private fun ignoringWhenActiveKeyDown(action: (() -> Unit)?): (() -> Unit)? {
         if (action == null) return null
         return {
             if (!hasActiveKeyDown()) {
