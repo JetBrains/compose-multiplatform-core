@@ -16,24 +16,24 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.InternalComposeApi
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
-import androidx.compose.ui.WebApplicationScope
-import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 
@@ -42,9 +42,16 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
 
     private class FakeDownloader : FallbackFontDownloader {
         val calls = mutableListOf<Set<Int>>()
+        private var continuation: CancellableContinuation<Unit>? = null
+
         override suspend fun downloadFallbackFont(codepoints: Set<Int>): List<FontFamily> {
             calls += codepoints.toSet()
+            continuation?.resume(Unit)
             return emptyList()
+        }
+
+        suspend fun awaitNextDownloadCall(): Unit = suspendCancellableCoroutine {
+            continuation = it
         }
     }
 
@@ -168,10 +175,13 @@ class WebFallbackFontDownloaderTest : OnCanvasTests {
         defaultFallbackFontDownloader = fake
 
         createComposeWindow {
-            BasicText(unresolvedChar.toString(), modifier = Modifier.size(100.dp))
+            BasicText(unresolvedChar.toString())
         }
-        withTimeout(200.milliseconds) {
-            while (fake.calls.isEmpty()) yield()
+
+        withContext(Dispatchers.Default) {
+            withTimeout(200.milliseconds) {
+                fake.awaitNextDownloadCall()
+            }
         }
 
         defaultFallbackFontDownloader = tmp
