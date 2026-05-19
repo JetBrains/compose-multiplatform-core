@@ -27,6 +27,10 @@ NS_ASSUME_NONNULL_BEGIN
                                           modifierFlags:(UIKeyModifierFlags)modifierFlags
                                                inWindow:(UIWindow *)window;
 
++ (nullable instancetype)keyboardPressEventForModifierKey:(UIKeyModifierFlags)modifierKey
+                                         currentModifiers:(UIKeyModifierFlags)currentModifiers
+                                                 inWindow:(UIWindow *)window;
+
 - (void)pressChanged;
 - (void)endPress;
 - (void)cancelPress;

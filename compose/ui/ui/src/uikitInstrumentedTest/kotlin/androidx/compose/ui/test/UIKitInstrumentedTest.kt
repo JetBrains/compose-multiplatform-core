@@ -23,6 +23,7 @@ import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.scene.ComposeLayersViewController
 import androidx.compose.ui.test.utils.beginKeyPress
+import androidx.compose.ui.test.utils.beginModifierKeyPress
 import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.center
 import androidx.compose.ui.test.utils.getTouchesEvent
@@ -90,6 +91,7 @@ import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIScreen
 import platform.UIKit.UITextInputProtocol
 import platform.UIKit.UIKeyModifierFlags
+import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIPressType
 import platform.UIKit.UITouch
 import platform.UIKit.UIUserInterfaceIdiomPad
@@ -411,6 +413,48 @@ internal class UIKitInstrumentedTest(
     }
 
     /**
+     * Simulates pressing a character key on the hardware keyboard and returns the
+     * in-flight [UIPressesEvent] so the caller can release it later.
+     *
+     * @param char The character to press.
+     * @param modifierFlags The modifier keys held while pressing [char] (e.g. `UIKeyModifierShift`).
+     *   Defaults to no modifiers.
+     */
+    fun beginKeyPress(
+        char: Char,
+        modifierFlags: UIKeyModifierFlags = 0,
+    ): UIPressesEvent {
+        val window = appDelegate.window() ?: error("No active window in MockAppDelegate")
+        return window.beginKeyPress(char, modifierFlags)
+    }
+
+    /**
+     * Simulates pressing a single modifier key (Shift, Cmd, Alt, Control) down and returns the
+     * in-flight [UIPressesEvent] so the caller can release it later.
+     *
+     * @param newModifierFlags A single [UIKeyModifierFlags] constant (e.g. `UIKeyModifierShift`).
+     * @param currentModifiers The accumulated modifier state after this key is applied.
+     *   Defaults to [newModifierFlags] itself.
+     */
+    fun beginModifierKeyPress(
+        newModifierFlags: UIKeyModifierFlags,
+        currentModifiers: UIKeyModifierFlags = 0,
+    ): UIPressesEvent {
+        val window = appDelegate.window() ?: error("No active window in MockAppDelegate")
+        return window.beginModifierKeyPress(newModifierFlags, currentModifiers)
+    }
+
+    /**
+     * Type text using [keystroke] events
+     *
+     * @param text to type on keyboard
+     */
+    fun typeWithKeyboard(text: String) {
+        text.forEach(::keystroke)
+        waitForIdle()
+    }
+
+    /**
      * Simulates a tap gesture at the specified position on the screen.
      *
      * @param position The position on the root hosting controller.
@@ -667,4 +711,19 @@ internal fun UIKitInstrumentedTest.captureScreenshot(): UIImage? {
     UIGraphicsEndImageContext()
 
     return screenshot
+}
+
+internal fun UIKitInstrumentedTest.waitForContextMenu() {
+    val menuClassName = if (available(OS.Ios to OSVersion(16))) {
+        "_UIEditMenuContainerView"
+    } else {
+        "UICalloutBar"
+    }
+    waitForIdle()
+    waitUntil {
+        firstNodeOrNull { node ->
+            node.element?.let { it::class.simpleName } == menuClassName
+        } != null
+    }
+    delay(500) // wait for toolbar animation
 }

@@ -601,6 +601,11 @@ internal class OverlayInputView(
         super.pressesEnded(presses, withEvent)
     }
 
+    override fun pressesCancelled(presses: Set<*>, withEvent: UIPressesEvent?) {
+        onKeyboardPresses(presses)
+        super.pressesCancelled(presses, withEvent)
+    }
+
     private val trackedTouchesOutside: MutableSet<UITouch> = mutableSetOf()
     private fun handleTouchesEvent(
         touches: Set<*>, event: UIEvent?, phase: TouchesEventKind

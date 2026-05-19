@@ -186,6 +186,17 @@ static UIKey *CMPMakeUIKey(NSString *characters,
     return key;
 }
 
+static BOOL CMPHIDKeyCodeForModifier(UIKeyModifierFlags modifierKey,
+                                     NSInteger *outKeyCode) {
+    // Map a single modifier flag to the HID usage code of the left-side key.
+    if (modifierKey == UIKeyModifierAlphaShift) { *outKeyCode = 57;  return YES; } // Caps Lock
+    if (modifierKey == UIKeyModifierShift)      { *outKeyCode = 225; return YES; } // Left Shift
+    if (modifierKey == UIKeyModifierControl)    { *outKeyCode = 224; return YES; } // Left Control
+    if (modifierKey == UIKeyModifierAlternate)  { *outKeyCode = 226; return YES; } // Left Alt
+    if (modifierKey == UIKeyModifierCommand)    { *outKeyCode = 227; return YES; } // Left GUI (Cmd)
+    return NO;
+}
+
 static BOOL CMPHIDKeyCodeForCharacter(unichar c,
                                       NSInteger *outKeyCode,
                                       NSInteger *outModifierFlags,
@@ -298,6 +309,23 @@ static UIPress *CMPMakeKeyboardPress(NSString *characters,
         [(id<CMPUIKeyInput>)target insertText:character];
     }
 
+    return event;
+}
+
++ (nullable instancetype)keyboardPressEventForModifierKey:(UIKeyModifierFlags)modifierKey
+                                         currentModifiers:(UIKeyModifierFlags)currentModifiers
+                                                 inWindow:(UIWindow *)window {
+    NSInteger keyCode = 0;
+    if (!CMPHIDKeyCodeForModifier(modifierKey, &keyCode)) { return nil; }
+
+    UIResponder *target = CMPFindFirstResponder(window);
+    UIPress *press = CMPMakeKeyboardPress(@"", @"", keyCode, (NSInteger)(currentModifiers | modifierKey), window, target);
+    if (press == nil) { return nil; }
+
+    UIPressesEvent *event = CMPMakePressesEvent(press);
+    if (event == nil) { return nil; }
+
+    CMPDispatchPresses(event, press, UIPressPhaseBegan);
     return event;
 }
 

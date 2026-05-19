@@ -16,8 +16,10 @@
 
 package androidx.compose.ui.test.utils
 
+import androidx.compose.test.utils.cancelPress
 import androidx.compose.test.utils.endPress
 import androidx.compose.test.utils.keyboardPressEventForCharacter
+import androidx.compose.test.utils.keyboardPressEventForModifierKey
 import androidx.compose.test.utils.pressesEventOfType
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UIKeyModifierFlags
@@ -31,6 +33,14 @@ internal fun UIWindow.beginPress(pressType: UIPressType): UIPressesEvent {
         ?: error("UIPressesEvent unavailable on this runtime")
 }
 
+/**
+ * Simulates pressing a character key on the hardware keyboard and returns the
+ * in-flight [UIPressesEvent] so the caller can [release] it later.
+ *
+ * @param char The character to press.
+ * @param modifierFlags The modifier keys held while pressing [char] (e.g. [UIKeyModifierShift]).
+ *   Defaults to no modifiers.
+ */
 @OptIn(ExperimentalForeignApi::class)
 internal fun UIWindow.beginKeyPress(
     char: Char,
@@ -43,4 +53,26 @@ internal fun UIWindow.beginKeyPress(
     ) ?: error("Cannot synthesise a key press for '$char' — unsupported character.")
 }
 
+/**
+ * Simulates pressing a single modifier key (Shift, Cmd, Alt, Control) and returns the
+ * in-flight [UIPressesEvent] so the caller can [release] it later.
+ *
+ * @param newModifierFlags A single [UIKeyModifierFlags] constant (e.g. [UIKeyModifierShift]).
+ * @param currentModifiersFlags The accumulated modifier state **after** this key is pressed.
+ *   Defaults to [newModifierFlags] itself (i.e. only this modifier is held).
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun UIWindow.beginModifierKeyPress(
+    newModifierFlags: UIKeyModifierFlags,
+    currentModifiersFlags: UIKeyModifierFlags,
+): UIPressesEvent {
+    return UIPressesEvent.keyboardPressEventForModifierKey(
+        newModifierFlags,
+        currentModifiers = currentModifiersFlags,
+        inWindow = this,
+    ) ?: error("Cannot synthesise a modifier key press for flags=$newModifierFlags — unsupported modifier.")
+}
+
 internal fun UIPressesEvent.release() = this.endPress()
+
+internal fun UIPressesEvent.cancel() = this.cancelPress()

@@ -20,7 +20,6 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +36,7 @@ import androidx.compose.ui.test.MockAppDelegate
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.beginPress
+import androidx.compose.ui.test.utils.cancel
 import androidx.compose.ui.test.utils.release
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -45,9 +45,8 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
 import platform.UIKit.UIKeyModifierCommand
-import platform.UIKit.UIPasteboard
+import platform.UIKit.UIKeyModifierShift
 import platform.UIKit.UIPress
-import platform.UIKit.UIPressType
 import platform.UIKit.UIPressTypeMenu
 import platform.UIKit.UIPressTypeSelect
 import platform.UIKit.UIPressTypeUpArrow
@@ -60,10 +59,10 @@ import platform.UIKit.UIWindow
 class UIPressesEventTest {
 
     private class PressTrackingView : UIView(frame = CGRectZero.readValue()) {
-        val began = mutableListOf<UIPressType>()
-        val changed = mutableListOf<UIPressType>()
-        val ended = mutableListOf<UIPressType>()
-        val cancelled = mutableListOf<UIPressType>()
+        val began = mutableListOf<platform.UIKit.UIPressType>()
+        val changed = mutableListOf<platform.UIKit.UIPressType>()
+        val ended = mutableListOf<platform.UIKit.UIPressType>()
+        val cancelled = mutableListOf<platform.UIKit.UIPressType>()
 
         override fun canBecomeFirstResponder(): Boolean = true
 
@@ -98,7 +97,7 @@ class UIPressesEventTest {
     @Test
     fun cancelPressDispatchesCancelled() = withPressTrackingView { trackingView, window ->
         val event = window.beginPress(UIPressTypeSelect)
-        event.release()
+        event.cancel()
 
         assertEquals(listOf(UIPressTypeSelect), trackingView.began)
         assertEquals(listOf(UIPressTypeSelect), trackingView.cancelled)
@@ -192,38 +191,68 @@ class UIPressesEventTest {
             )
         }
 
-        "Hello".forEach { char ->
-            keystroke(char)
-            waitForIdle()
-        }
+        typeWithKeyboard("Hello")
 
         assertEquals("Hello", value)
     }
 
     @Test
-    fun pasteTextUsingHotkeyIntoBasicTextField() = runUIKitInstrumentedTest {
-        UIPasteboard.generalPasteboard().string = "Pasted"
-
+    fun testMultipleKeyDownSimultaneously() = runUIKitInstrumentedTest {
         val requester = FocusRequester()
-        val state = TextFieldState()
+        val keyEvents = mutableListOf<Pair<KeyEventType, Key>>()
 
         setContent {
             LaunchedEffect(Unit) {
                 requester.requestFocus()
             }
-            BasicTextField(
-                state = state,
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .focusRequester(requester),
+                    .focusRequester(requester)
+                    .focusable()
+                    .onKeyEvent { event ->
+                        keyEvents += event.type to event.key
+                        true
+                    }
             )
         }
 
-        waitForIdle()
-
-        keystroke('v', modifierFlags = UIKeyModifierCommand)
-        waitUntil("BasicTextField should contain pasteboard text") {
-            state.text.toString() == "Pasted"
+        fun assertReceived(typeWithEvent: Pair<KeyEventType, Key>) {
+            assertEquals(listOf(typeWithEvent), keyEvents)
+            keyEvents.clear()
         }
+
+        // Press Shift
+        val shiftEvent = beginModifierKeyPress(UIKeyModifierShift)
+        waitForIdle()
+        assertReceived(KeyEventType.KeyDown to Key.ShiftLeft)
+
+        // Press Cmd
+        val cmdEvent = beginModifierKeyPress(
+            UIKeyModifierCommand,
+            currentModifiers = UIKeyModifierShift,
+        )
+        waitForIdle()
+        assertReceived(KeyEventType.KeyDown to Key.MetaLeft)
+
+        // Press 'a'
+        val aEvent = beginKeyPress('a', modifierFlags = UIKeyModifierShift or UIKeyModifierCommand)
+        waitForIdle()
+        assertReceived(KeyEventType.KeyDown to Key.A)
+
+        // Release 'a'
+        aEvent.release()
+        waitForIdle()
+        assertReceived(KeyEventType.KeyUp to Key.A)
+
+        // Release Cmd
+        cmdEvent.release()
+        waitForIdle()
+        assertReceived(KeyEventType.KeyUp to Key.MetaLeft)
+
+        // Release Shift
+        shiftEvent.release()
+        waitForIdle()
+        assertReceived(KeyEventType.KeyUp to Key.ShiftLeft)
     }
 }
