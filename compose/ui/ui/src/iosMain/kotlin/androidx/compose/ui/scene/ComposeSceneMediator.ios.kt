@@ -712,8 +712,9 @@ internal class ComposeSceneMediator(
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val screenReader: PlatformScreenReader get() = platformScreenReader
 
-        private var _hapticFeedback: HapticFeedback? = null
-        override val hapticFeedback: HapticFeedback get() = _hapticFeedback ?: CupertinoHapticFeedback.also { _hapticFeedback = it }
+        override val hapticFeedback: HapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
+            CupertinoHapticFeedback
+        }
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =
             windowContext.convertLocalToWindowPosition(_overlayView, localPosition)
@@ -729,9 +730,9 @@ internal class ComposeSceneMediator(
 
         override val viewConfiguration get() = this@ComposeSceneMediator.viewConfiguration
 
-        private var _inputModeManager: InputModeManager? = null
-        override val inputModeManager get() = _inputModeManager
-            ?: DefaultInputModeManager(InputMode.Touch).also { _inputModeManager = it }
+        override val inputModeManager by lazy(LazyThreadSafetyMode.NONE) {
+            DefaultInputModeManager(InputMode.Touch)
+        }
 
         override val textInputService get() = this@ComposeSceneMediator.textInputServiceAdapter
         override val textToolbar get() = this@ComposeSceneMediator.textInputService.textToolbar

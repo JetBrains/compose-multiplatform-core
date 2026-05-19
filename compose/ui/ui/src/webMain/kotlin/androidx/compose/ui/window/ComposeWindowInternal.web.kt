@@ -30,7 +30,6 @@ import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposeCanvas
-import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -84,11 +83,6 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsArray
-import kotlin.js.js
-import kotlin.js.toInt
-import kotlin.js.toList
 import kotlin.math.absoluteValue
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -245,13 +239,13 @@ internal class ComposeWindow(
                 return super.convertWindowToLocalPosition(positionInWindow)
             }
 
-            private var _textToolbar: TextToolbar? = null
-            override val textToolbar: TextToolbar get() = _textToolbar
-                ?: WebTextToolbar().also { _textToolbar = it }
+            override val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
+                WebTextToolbar()
+            }
 
-            private var _hapticFeedback: HapticFeedback? = null
-            override val hapticFeedback get() = _hapticFeedback
-                ?: WebHapticFeedback.webHapticFeedbackOrDefault().also { _hapticFeedback = it }
+            override val hapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
+                WebHapticFeedback.webHapticFeedbackOrDefault()
+            }
 
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
@@ -270,29 +264,29 @@ internal class ComposeWindow(
                     null
                 }
 
-            private var _textInputService: WebTextInputService? = null
-            override val textInputService: WebTextInputService get() = _textInputService ?: object :
-                WebTextInputService() {
+            override val textInputService: WebTextInputService by lazy(LazyThreadSafetyMode.NONE) {
+                object : WebTextInputService() {
 
-                override val currentTouchOffset: Offset?
-                    get() = activeTouchOffset
+                    override val currentTouchOffset: Offset?
+                        get() = activeTouchOffset
 
-                override val backingDomInputContainer: HTMLElement
-                    get() = layerRoot
+                    override val backingDomInputContainer: HTMLElement
+                        get() = layerRoot
 
-                override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
-                    val dpRect = rect.toDpRect(density)
-                    val left = dpRect.left.value
-                    val top = dpRect.top.value
+                    override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
+                        val dpRect = rect.toDpRect(density)
+                        val left = dpRect.left.value
+                        val top = dpRect.top.value
 
-                    return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
+                        return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
+                    }
+
+                    override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
+                        //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
+                        return scene.sendKeyEvent(keyEvent)
+                    }
                 }
-
-                override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
-                    //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
-                    return scene.sendKeyEvent(keyEvent)
-                }
-            }.also { _textInputService = it }
+            }
 
             override val viewConfiguration =
                 object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {

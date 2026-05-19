@@ -239,9 +239,9 @@ interface PlatformContext {
             isWindowFocused = true
         }
 
-        private var _inputModeManager: InputModeManager? = null
-        override val inputModeManager: InputModeManager get() = _inputModeManager
-            ?: DefaultInputModeManager().also { _inputModeManager = it }
+        override val inputModeManager: InputModeManager by lazy(LazyThreadSafetyMode.NONE) {
+            DefaultInputModeManager()
+        }
     }
 
     // This object must be immutable because it is used as a delegate in other ViewConfiguration

@@ -145,18 +145,12 @@ internal class ComposeSceneMediator(
 
     private val platformComponent = DesktopPlatformComponent()
 
-    private var _textInputService: DesktopTextInputService? = null
-    private val textInputService get() = _textInputService ?: DesktopTextInputService(
-        platformComponent
-    ).also {
-        _textInputService = it
+    private val textInputService by lazy(LazyThreadSafetyMode.NONE) {
+        DesktopTextInputService(platformComponent)
     }
 
-    private var _textInputService2: DesktopTextInputService2? = null
-    private val textInputService2 get() = _textInputService2 ?: DesktopTextInputService2(
-        platformComponent
-    ).also {
-        _textInputService2 = it
+    private val textInputService2 by lazy(LazyThreadSafetyMode.NONE) {
+        DesktopTextInputService2(platformComponent)
     }
 
     private val _platformContext = DesktopPlatformContext()
@@ -821,8 +815,9 @@ internal class ComposeSceneMediator(
         override val measureDrawLayerBounds: Boolean = this@ComposeSceneMediator.measureDrawLayerBounds
         override val viewConfiguration: ViewConfiguration = DesktopViewConfiguration()
 
-        private var _inputModeManager: InputModeManager? = null
-        override val inputModeManager: InputModeManager get() = _inputModeManager ?: DefaultInputModeManager().also { _inputModeManager = it }
+        override val inputModeManager: InputModeManager by lazy(LazyThreadSafetyMode.NONE) {
+            DefaultInputModeManager()
+        }
 
         override val textInputService get() = this@ComposeSceneMediator.textInputService
 
