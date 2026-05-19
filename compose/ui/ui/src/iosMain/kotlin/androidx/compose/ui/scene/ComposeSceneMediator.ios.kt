@@ -809,7 +809,6 @@ internal class ComposeSceneMediator(
             if (pressedKeysToHandledState.contains(identifier)) {
                 pressedKeysToHandledState.remove(identifier)
             } else {
-                println(">>>>> CLEAR???")
                 // Dirty state - remove all events to prevent further errors
                 pressedKeysToHandledState.clear()
             }
