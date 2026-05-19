@@ -714,7 +714,7 @@ internal class ComposeSceneMediator(
         override val screenReader: PlatformScreenReader get() = platformScreenReader
 
         override val hapticFeedback: HapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
-            CupertinoHapticFeedback
+            CupertinoHapticFeedback()
         }
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =
