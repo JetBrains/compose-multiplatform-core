@@ -104,6 +104,7 @@ import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -209,6 +210,8 @@ internal class ComposeSceneMediator(
         override var isActive by mutableStateOf(false)
     }
 
+    private val coroutineScope = CoroutineScope(coroutineContext)
+
     private val isActive get() = coroutineContext.isActive
 
     private val viewConfiguration: ViewConfiguration =
@@ -293,7 +296,11 @@ internal class ComposeSceneMediator(
         onHoverEvent = ::onHoverEvent,
         onKeyboardPresses = ::onKeyboardPresses,
         ignoreTouchChanges = navigationEventInput::isBackGestureActive,
-        onCancelKeyboardPresses = ::onCancelKeyboardPresses,
+        onViewHierarchyWillChange = {
+            coroutineScope.launch {
+                finishUnattachedKeysPresses()
+            }
+        },
     )
 
     val overlayView: UIView get() = _overlayView
@@ -403,7 +410,7 @@ internal class ComposeSceneMediator(
     private val textInputServiceAdapter by lazy {
         UIKitTextInputServiceAdapter(
             textInputService,
-            CoroutineScope(coroutineContext)
+            coroutineScope
         )
     }
 
@@ -746,21 +753,33 @@ internal class ComposeSceneMediator(
     private data class KeyIdentifier(
         val key: Key,
         val codePoint: Int,
-        val modifiers: PointerKeyboardModifiers
-    )
+        val modifiers: PointerKeyboardModifiers,
+    ) {
+        var press: UIPress? = null // Should not be part of the identifier
+
+        val isAttachedToWindow: Boolean get() = (press?.responder as? UIView)?.window != null
+    }
 
     private fun KeyEvent.keyIdentifier(): KeyIdentifier {
         val internalEvent = internal
-        return KeyIdentifier(internalEvent.key, internalEvent.codePoint, internalEvent.modifiers)
+        return KeyIdentifier(
+            key = internalEvent.key,
+            codePoint = internalEvent.codePoint,
+            modifiers = internalEvent.modifiers,
+        ).also {
+            it.press = internalEvent.nativeEvent as? UIPress
+        }
     }
 
     private val pressedKeysToHandledState = mutableMapOf<KeyIdentifier, Boolean>()
 
-    private fun onCancelKeyboardPresses() {
+    // iOS does not complete or cancels key events which are attached to a view that is not in
+    //  the window hierarchy.
+    private fun finishUnattachedKeysPresses() {
         if (pressedKeysToHandledState.isEmpty()) {
             return
         }
-        pressedKeysToHandledState.toList().reversed().forEach { (key, _) ->
+        pressedKeysToHandledState.filter { !it.key.isAttachedToWindow }.forEach { (key, _) ->
             onKeyboardEvent(
                 KeyEvent(
                     key = key.key,
@@ -770,7 +789,7 @@ internal class ComposeSceneMediator(
                     isMetaPressed = key.modifiers.isMetaPressed,
                     isAltPressed = key.modifiers.isAltPressed,
                     isShiftPressed = key.modifiers.isShiftPressed,
-                    nativeEvent = null,
+                    nativeEvent = key.press,
                 )
             )
         }
@@ -790,6 +809,8 @@ internal class ComposeSceneMediator(
             if (pressedKeysToHandledState.contains(identifier)) {
                 pressedKeysToHandledState.remove(identifier)
             } else {
+                println(">>>>> CLEAR???")
+                // Dirty state - remove all events to prevent further errors
                 pressedKeysToHandledState.clear()
             }
         }

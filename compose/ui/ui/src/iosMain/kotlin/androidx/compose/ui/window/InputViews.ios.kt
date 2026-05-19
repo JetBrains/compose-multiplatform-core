@@ -513,8 +513,8 @@ internal class OverlayInputView(
     onCancelScroll: () -> Unit,
     private var onHoverEvent: (position: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     private var onKeyboardPresses: (Set<*>) -> Unit,
-    private var onCancelKeyboardPresses: () -> Unit,
     ignoreTouchChanges: () -> Boolean,
+    private var onViewHierarchyWillChange: () -> Unit,
 ) : CMPScrollView(CGRectZero.readValue()) {
     /**
      * Gesture recognizer responsible for processing touches
@@ -577,19 +577,15 @@ internal class OverlayInputView(
         scrollsToTop = false
     }
 
+    override fun willRemoveSubview(subview: UIView) {
+        super.willRemoveSubview(subview)
+
+        onViewHierarchyWillChange()
+    }
+
     override fun canBecomeFirstResponder() = true
 
     override fun canBecomeFocused(): Boolean = false
-
-    override fun resignFirstResponder(): Boolean {
-        onCancelKeyboardPresses()
-        return super.resignFirstResponder()
-    }
-
-    override fun becomeFirstResponder(): Boolean {
-        onCancelKeyboardPresses()
-        return super.becomeFirstResponder()
-    }
 
     override fun pressesBegan(presses: Set<*>, withEvent: UIPressesEvent?) {
         onKeyboardPresses(presses)
@@ -732,7 +728,7 @@ internal class OverlayInputView(
         onOutsidePointerEvent = {}
         onTouchesEvent = { _, _, _ -> PointerEventResult() }
         onCancelAllTouches = {}
-        onCancelKeyboardPresses = {}
+        onViewHierarchyWillChange = {}
         trackedTouchesOutside.clear()
     }
 }

@@ -18,6 +18,7 @@ package androidx.compose.ui.interaction
 
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +32,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.test.MockAppDelegate
 import androidx.compose.ui.test.UIKitInstrumentedTest
@@ -197,6 +199,55 @@ class UIPressesEventTest {
     }
 
     @Test
+    fun simulateInterruptedKeyPressEvent() = runUIKitInstrumentedTest {
+        val requester1 = FocusRequester()
+        val requester2 = FocusRequester()
+        val keyEvents = mutableListOf<Pair<KeyEventType, Key>>()
+
+        setContent {
+            LaunchedEffect(Unit) {
+                requester1.requestFocus()
+            }
+            Column(
+                modifier = Modifier.focusable().onPreviewKeyEvent { event ->
+                    keyEvents += event.type to event.key
+                    true
+                }
+            ) {
+                BasicTextField(
+                    value = "",
+                    onValueChange = {},
+                    modifier = Modifier.focusRequester(requester1)
+                )
+                BasicTextField(
+                    value = "",
+                    onValueChange = {},
+                    modifier = Modifier.focusRequester(requester2)
+                )
+            }
+        }
+
+        // Press 'x' and verify key down is dispatched to the onKeyEvent modifier
+        val xPress = beginKeyPress('x')
+        waitForIdle()
+        assertEquals(listOf(KeyEventType.KeyDown to Key.X), keyEvents)
+        keyEvents.clear()
+
+        // Remove focus from text field while 'x' is still held down
+        requester2.requestFocus()
+        waitForIdle()
+
+        // Key up must be received when focus is removed (press is cancelled by UIKit)
+        assertEquals(listOf(KeyEventType.KeyUp to Key.X), keyEvents)
+        keyEvents.clear()
+
+        // Release the physical key — no additional event should arrive
+        xPress.release()
+        waitForIdle()
+        assertTrue(keyEvents.isEmpty(), "Expected no additional key events after physical release, got: $keyEvents")
+    }
+
+    @Test
     fun testMultipleKeyDownSimultaneously() = runUIKitInstrumentedTest {
         val requester = FocusRequester()
         val keyEvents = mutableListOf<Pair<KeyEventType, Key>>()
@@ -240,15 +291,15 @@ class UIPressesEventTest {
         waitForIdle()
         assertReceived(KeyEventType.KeyDown to Key.A)
 
-        // Release 'a'
-        aEvent.release()
-        waitForIdle()
-        assertReceived(KeyEventType.KeyUp to Key.A)
-
         // Release Cmd
         cmdEvent.release()
         waitForIdle()
         assertReceived(KeyEventType.KeyUp to Key.MetaLeft)
+
+        // Release 'a'
+        aEvent.release()
+        waitForIdle()
+        assertReceived(KeyEventType.KeyUp to Key.A)
 
         // Release Shift
         shiftEvent.release()
