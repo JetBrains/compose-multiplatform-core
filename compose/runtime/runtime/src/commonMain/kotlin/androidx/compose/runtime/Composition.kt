@@ -389,6 +389,21 @@ public fun ControlledComposition(
     parent: CompositionContext,
 ): ControlledComposition = CompositionImpl(parent, applier)
 
+/**
+ * Marks a composition whose content is refreshed directly by its parent via [Composition.setContent]
+ * or [ReusableComposition.setContentWithReuse], such as subcompositions managed by
+ * `SubcomposeLayout`.
+ */
+@InternalComposeApi
+public fun Composition.markParentDrivenContent(enabled: Boolean = true) {
+    (this as? CompositionImpl)?.parentDrivenContent = enabled
+}
+
+@InternalComposeApi
+public fun Composition.setOnSkippedParentDrivenRecompose(block: (() -> Unit)?) {
+    (this as? CompositionImpl)?.onSkippedParentDrivenRecompose = block
+}
+
 private val PendingApplyNoModifications = Any()
 
 @OptIn(ExperimentalComposeRuntimeApi::class)
@@ -504,6 +519,9 @@ internal class CompositionImpl(
 
     // Held when making changes to self or composer
     private val lock = makeSynchronizedObject()
+
+    internal var parentDrivenContent: Boolean = false
+    internal var onSkippedParentDrivenRecompose: (() -> Unit)? = null
 
     /**
      * A set of remember observers that were potentially abandoned between [composeContent] or
