@@ -17,19 +17,32 @@ package androidx.compose.ui.platform
 
 import androidx.compose.runtime.AbstractApplier
 import androidx.compose.runtime.CompositionContext
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.PausableComposition
 import androidx.compose.runtime.ReusableComposition
+import androidx.compose.runtime.markParentDrivenContent
+import androidx.compose.runtime.setOnSkippedParentDrivenRecompose
 import androidx.compose.ui.node.LayoutNode
 
 internal expect fun createApplier(container: LayoutNode): AbstractApplier<LayoutNode>
 
 /*@MainThread*/
+@OptIn(InternalComposeApi::class)
 internal fun createSubcomposition(
     container: LayoutNode,
     parent: CompositionContext,
-): ReusableComposition = ReusableComposition(createApplier(container), parent)
+): ReusableComposition =
+    ReusableComposition(createApplier(container), parent).also {
+        it.markParentDrivenContent()
+        it.setOnSkippedParentDrivenRecompose(container::invalidateMeasurements)
+    }
 
+@OptIn(InternalComposeApi::class)
 internal fun createPausableSubcomposition(
     container: LayoutNode,
     parent: CompositionContext,
-): PausableComposition = PausableComposition(createApplier(container), parent)
+): PausableComposition =
+    PausableComposition(createApplier(container), parent).also {
+        it.markParentDrivenContent()
+        it.setOnSkippedParentDrivenRecompose(container::invalidateMeasurements)
+    }

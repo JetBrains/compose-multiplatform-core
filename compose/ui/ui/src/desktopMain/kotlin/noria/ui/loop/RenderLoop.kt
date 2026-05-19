@@ -74,10 +74,10 @@ fun tryToInvalidateCurrentFrame(f: () -> Boolean = { true }) {
 
 @OptIn(InternalComposeApi::class)
 fun tryToInvalidateCurrentFrame(composer: Composer, f: () -> Boolean) {
-    val interceptor = composer.currentCompositionLocalMap[CallbackInterceptorCompositionLocal]
-    composer.recordSideEffect {
-        interceptor.execute(f)
-    }
+//    val interceptor = composer.currentCompositionLocalMap[CallbackInterceptorCompositionLocal]
+//    composer.recordSideEffect {
+//        interceptor.execute(f)
+//    }
 }
 
 @OptIn(InternalComposeApi::class)

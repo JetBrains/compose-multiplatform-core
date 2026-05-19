@@ -571,6 +571,30 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             val modifiedValues = MutableScatterSet<Any>()
             val modifiedValuesSet = modifiedValues.wrapIntoSet()
             val alreadyComposed = mutableScatterSetOf<ControlledComposition>()
+            val skippedParentDriven = mutableScatterSetOf<ControlledComposition>()
+
+            fun enqueueForRecompose(composition: ControlledComposition) {
+                if (composition !in toRecompose && composition !in skippedParentDriven) {
+                    toRecompose += composition
+                }
+            }
+
+            fun parentCompositionOf(
+                composition: ControlledComposition
+            ): ControlledComposition? =
+                ((composition as? CompositionImpl)?.parent?.composition as? ControlledComposition)
+
+            fun shouldSkipParentDrivenComposition(
+                composition: ControlledComposition
+            ): Boolean {
+                if ((composition as? CompositionImpl)?.parentDrivenContent != true) return false
+                val parent = parentCompositionOf(composition) ?: return false
+                return parent in toApply || parent in skippedParentDriven
+            }
+
+            fun onParentDrivenCompositionSkipped(composition: ControlledComposition) {
+                (composition as? CompositionImpl)?.onSkippedParentDrivenRecompose?.invoke()
+            }
 
             fun clearRecompositionState() {
                 synchronized(stateLock) {
@@ -593,6 +617,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                     toComplete.clear()
 
                     modifiedValues.clear()
+                    skippedParentDriven.clear()
 
                     alreadyComposed.forEach {
                         it.abandonChanges()
@@ -637,11 +662,13 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                     }
 
                     trace("Recomposer:recompose") {
+                        skippedParentDriven.clear()
+
                         // Drain any composer invalidations from snapshot changes and record
                         // composers to work on
                         recordComposerModifications()
                         synchronized(stateLock) {
-                            compositionInvalidations.forEach { toRecompose += it }
+                            compositionInvalidations.forEach(::enqueueForRecompose)
                             compositionInvalidations.clear()
                         }
 
@@ -651,10 +678,15 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                         while (toRecompose.isNotEmpty() || toInsert.isNotEmpty()) {
                             try {
                                 toRecompose.fastForEach { composition ->
-                                    performRecompose(composition, modifiedValues)?.let {
-                                        toApply += it
+                                    if (shouldSkipParentDrivenComposition(composition)) {
+                                        skippedParentDriven.add(composition)
+                                        onParentDrivenCompositionSkipped(composition)
+                                    } else {
+                                        performRecompose(composition, modifiedValues)?.let {
+                                            toApply += it
+                                        }
+                                        alreadyComposed.add(composition)
                                     }
-                                    alreadyComposed.add(composition)
                                 }
                             } catch (e: Throwable) {
                                 processCompositionError(e, recoverable = true)
@@ -675,9 +707,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                     knownCompositionsLocked().fastForEach { value ->
                                         if (
                                             value !in alreadyComposed &&
+                                                value !in skippedParentDriven &&
                                                 value.observesAnyOf(modifiedValuesSet)
                                         ) {
-                                            toRecompose += value
+                                            enqueueForRecompose(value)
                                         }
                                     }
 
@@ -686,8 +719,12 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                     // by the snapshot system, but invalidates composition scope
                                     // directly instead.
                                     compositionInvalidations.removeIf { value ->
-                                        if (value !in alreadyComposed && value !in toRecompose) {
-                                            toRecompose += value
+                                        if (
+                                            value !in alreadyComposed &&
+                                                value !in skippedParentDriven &&
+                                                value !in toRecompose
+                                        ) {
+                                            enqueueForRecompose(value)
                                             true
                                         } else {
                                             false
@@ -783,6 +820,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                         // snapshot are also considered changed after this point.
                         Snapshot.notifyObjectsInitialized()
                         alreadyComposed.clear()
+                        skippedParentDriven.clear()
                         modifiedValues.clear()
                         compositionsRemoved = null
                     }
