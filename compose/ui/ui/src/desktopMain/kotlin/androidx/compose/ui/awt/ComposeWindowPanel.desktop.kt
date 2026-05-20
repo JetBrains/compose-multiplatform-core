@@ -19,12 +19,13 @@ package androidx.compose.ui.awt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.ComposeFeatureFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.scene.ComposeContainer
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.window.roundToDimension
 import androidx.savedstate.SavedState
 import java.awt.Component
 import java.awt.Container
@@ -126,8 +127,8 @@ internal class ComposeWindowPanel(
         composeContainer.setBounds(0, 0, width, height)
     }
 
-    var minimumSizeComputation: ((MeasurableRootContent) -> Dimension)? = null
-    var preferredSizeComputation: ((MeasurableRootContent) -> Dimension)? = null
+    var minimumSizeComputation: ((MeasurableRootContent) -> DpSize)? = null
+    var preferredSizeComputation: ((MeasurableRootContent) -> DpSize)? = null
 
     override fun getMinimumSize(): Dimension {
         val minSizeComputation = this.minimumSizeComputation
@@ -135,7 +136,7 @@ internal class ComposeWindowPanel(
             return super.getMinimumSize()
         }
 
-        return minSizeComputation.invoke(measurableContent)
+        return minSizeComputation.invoke(measurableContent).roundToDimension()
     }
 
     override fun getPreferredSize(): Dimension {
@@ -143,7 +144,7 @@ internal class ComposeWindowPanel(
             return super.getPreferredSize()
         }
 
-        return preferredSizeComputation?.invoke(measurableContent)
+        return preferredSizeComputation?.invoke(measurableContent)?.roundToDimension()
             ?: try {
                 composeContainer.preferredSize
             } catch (e: Exception) {

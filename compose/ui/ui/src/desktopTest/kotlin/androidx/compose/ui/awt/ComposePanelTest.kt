@@ -61,6 +61,8 @@ import androidx.compose.ui.sendMouseEvent
 import androidx.compose.ui.sendMousePress
 import androidx.compose.ui.sendMouseRelease
 import androidx.compose.ui.sendMouseWheelEvent
+import androidx.compose.ui.toDpSize
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.ThrowUncaughtExceptionRule
@@ -971,7 +973,7 @@ class ComposePanelTest {
     }
 
     private fun testComposePanelSizeComputation(
-        sizeComputation: KMutableProperty1<ComposePanel, ((MeasurableRootContent) -> Dimension)?>,
+        sizeComputation: KMutableProperty1<ComposePanel, ((MeasurableRootContent) -> DpSize)?>,
         awtSizeFunction: (Component) -> Dimension,
     ) = runApplicationTest {
         val size = Dimension(300, 300)
@@ -979,7 +981,7 @@ class ComposePanelTest {
             setContent {
                 Box(Modifier.fillMaxSize())
             }
-            sizeComputation.set(this, value = { size })
+            sizeComputation.set(this, value = { size.toDpSize() })
         }
         val frame = JFrame().apply {
             contentPane.layout = LayoutManager(awtSizeFunction)

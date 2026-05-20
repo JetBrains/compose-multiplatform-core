@@ -34,7 +34,9 @@ import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.WindowExceptionHandler
+import androidx.compose.ui.window.roundToDimension
 import androidx.savedstate.SavedState
 import java.awt.Color
 import java.awt.Component
@@ -239,7 +241,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      * Note that it's not called if an explicit minimum size has been set via [setMinimumSize].
      */
     @ExperimentalComposeUiApi
-    var minimumSizeComputation: ((MeasurableRootContent) -> Dimension)? = null
+    var minimumSizeComputation: ((MeasurableRootContent) -> DpSize)? = null
 
     /**
      * The function called by [getPreferredSize] to compute the preferred size of the panel.
@@ -247,7 +249,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      * Note that it's not called if an explicit preferred size has been set via [setPreferredSize].
      */
     @ExperimentalComposeUiApi
-    var preferredSizeComputation: ((MeasurableRootContent) -> Dimension)? = null
+    var preferredSizeComputation: ((MeasurableRootContent) -> DpSize)? = null
 
     /**
      * The function called by [getMaximumSize] to compute the maximum size of the panel.
@@ -255,7 +257,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      * Note that it's not called if an explicit maximum size has been set via [setMaximumSize].
      */
     @ExperimentalComposeUiApi
-    var maximumSizeComputation: ((MeasurableRootContent) -> Dimension)? = null
+    var maximumSizeComputation: ((MeasurableRootContent) -> DpSize)? = null
 
     override fun getMinimumSize(): Dimension {
         val minSizeComputation = this.minimumSizeComputation
@@ -263,7 +265,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
             return super.getMinimumSize()
         }
 
-        return minSizeComputation.invoke(measurableContent)
+        return minSizeComputation.invoke(measurableContent).roundToDimension()
     }
 
     override fun getPreferredSize(): Dimension {
@@ -272,7 +274,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
             return super.getPreferredSize()
         }
 
-        return preferredSizeComputation?.invoke(measurableContent)
+        return preferredSizeComputation?.invoke(measurableContent)?.roundToDimension()
             ?: try {
                 container.preferredSize
             } catch (e: Exception) {
@@ -291,7 +293,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
             return super.getMaximumSize()
         }
 
-        return maxSizeComputation.invoke(measurableContent)
+        return maxSizeComputation.invoke(measurableContent).roundToDimension()
     }
 
     override fun setBackground(bg: Color?) {

@@ -25,6 +25,8 @@ import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.UndecoratedWindowResizer
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -212,7 +214,7 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
      * Note that it's not called if an explicit minimum size has been set via [setMinimumSize].
      */
     @ExperimentalComposeUiApi
-    var minimumSizeComputation: ((MeasurableRootContent) -> Dimension)?
+    var minimumSizeComputation: ((MeasurableRootContent) -> DpSize)?
         get() = composePanel.minimumSizeComputation
         set(value) { composePanel.minimumSizeComputation = value }
 
@@ -222,7 +224,7 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
      * Note that it's not called if an explicit preferred size has been set via [setPreferredSize].
      */
     @ExperimentalComposeUiApi
-    var preferredSizeComputation: ((MeasurableRootContent) -> Dimension)?
+    var preferredSizeComputation: ((MeasurableRootContent) -> DpSize)?
         get() = composePanel.preferredSizeComputation
         set(value) { composePanel.preferredSizeComputation = value }
 

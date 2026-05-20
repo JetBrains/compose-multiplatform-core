@@ -37,7 +37,9 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.sendMouseEvent
 import androidx.compose.ui.sendMousePress
 import androidx.compose.ui.sendMouseRelease
+import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.density
@@ -322,7 +324,7 @@ class ComposeDialogTest {
     }
 
     private fun testDialogSizeComputation(
-        sizeComputation: KMutableProperty1<ComposeDialog, ((MeasurableRootContent) -> Dimension)?>,
+        sizeComputation: KMutableProperty1<ComposeDialog, ((MeasurableRootContent) -> DpSize)?>,
         awtSizeFunction: (ComposeDialog) -> Dimension,
     ) = runApplicationTest {
         val size = Dimension(300, 300)
@@ -330,7 +332,7 @@ class ComposeDialogTest {
             setContent {
                 Box(Modifier.fillMaxSize())
             }
-            sizeComputation.set(this, value = { size })
+            sizeComputation.set(this, value = { size.toDpSize() })
         }
 
         try {
