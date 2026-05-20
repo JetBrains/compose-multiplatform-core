@@ -402,7 +402,6 @@ internal class SkiaParagraph(
                             val nextBox = paragraph.getRectsForRange(
                                 offset, offset + 1,
                                 RectHeightMode.STRUT, RectWidthMode.TIGHT
-//                            ).first()
                             ).firstOrNull() ?: return null
                             val rect = SkRect(
                                 nextBox.rect.left, nextBox.rect.top,
