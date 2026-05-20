@@ -588,6 +588,8 @@ public final class androidx/compose/ui/awt/ComposePanel : javax/swing/JLayeredPa
 	public fun addFocusListener (Ljava/awt/event/FocusListener;)V
 	public fun addNotify ()V
 	public fun getFocusTraversalKeysEnabled ()Z
+	public fun getMaximumSize ()Ljava/awt/Dimension;
+	public fun getMinimumSize ()Ljava/awt/Dimension;
 	public fun getPreferredSize ()Ljava/awt/Dimension;
 	public final fun getRenderApi ()Lorg/jetbrains/skiko/GraphicsApi;
 	public fun hasFocus ()Z
