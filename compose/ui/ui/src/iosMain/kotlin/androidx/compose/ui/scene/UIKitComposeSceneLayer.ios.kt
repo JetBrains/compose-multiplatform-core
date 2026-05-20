@@ -116,12 +116,13 @@ internal class UIKitComposeSceneLayer(
 
     private fun createComposeScene(
         invalidate: () -> Unit,
-        platformContext: PlatformContext
+        platformContext: PlatformContext,
+        coroutineContext: CoroutineContext
     ): ComposeScene =
         PlatformLayersComposeScene(
             density = mediator.screenDensity,
             layoutDirection = initialLayoutDirection,
-            coroutineContext = layerCoroutineContext,
+            coroutineContext = coroutineContext,
             composeSceneContext = createComposeSceneContext(platformContext),
             // TODO: Split these into UIKit layout vs display invalidation instead of using the
             // same invalidation callback for both phases.

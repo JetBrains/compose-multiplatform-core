@@ -112,9 +112,10 @@ class ComposeSceneMediatorTest {
                 endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
             ),
             interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
-            composeSceneFactory = { invalidate, platformContext ->
+            composeSceneFactory = { invalidate, platformContext, coroutineContext ->
                 PlatformLayersComposeScene(
                     density = Density(1f),
+                    coroutineContext = coroutineContext,
                     composeSceneContext = object : ComposeSceneContext {
                         override val platformContext = platformContext
                     },

@@ -712,7 +712,7 @@ internal class ComposeSceneMediator(
     override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) = catchExceptions {
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
-                frameRecomposer.recomposeFrame(nanoTime)
+                frameRecomposer.performFrame(nanoTime)
                 scene.measureAndLayout()
                 scene.draw(asComposeCanvas())
             }

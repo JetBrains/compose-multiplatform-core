@@ -330,14 +330,14 @@ internal class ComposeWindow(
 
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
         renderDelegate = SkikoRenderDelegate { canvas, _, _, nanoTime ->
-            frameRecomposer.recomposeFrame(nanoTime)
+            frameRecomposer.performFrame(nanoTime)
             scene.measureAndLayout()
             scene.draw(canvas.asComposeCanvas())
         }
     }
 
     private val scene = CanvasLayersComposeScene(
-        coroutineContext = Dispatchers.Main,
+        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         platformContext = platformContext,
         density = density,
         // TODO: Split layout invalidation from draw invalidation once the web host has distinct

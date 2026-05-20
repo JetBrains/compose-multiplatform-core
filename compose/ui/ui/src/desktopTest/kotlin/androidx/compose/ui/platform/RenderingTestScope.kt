@@ -53,19 +53,30 @@ internal class RenderingTestScope(
 ) {
     var currentTimeMillis = 0L
 
+    private var isRendering = false
+    private var needsFrameAfterRender = false
+
+    private fun requestFrame() {
+        if (isRendering) {
+            needsFrameAfterRender = true
+        } else {
+            frameDispatcher.scheduleFrame()
+        }
+    }
+
     private val frameDispatcher = FrameDispatcher(coroutineContext) {
         onRender(currentTimeMillis * 1_000_000)
     }
 
-    private val frameRecomposer = FrameRecomposer(coroutineContext, frameDispatcher::scheduleFrame)
+    private val frameRecomposer = FrameRecomposer(coroutineContext, ::requestFrame)
 
     val surface: Surface = Surface.makeRasterN32Premul(width, height)
     private val canvas = surface.canvas.asComposeCanvas()
     val scene = CanvasLayersComposeScene(
-        coroutineContext = coroutineContext,
+        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         platformContext = PlatformContext.Empty(frameRecomposer),
-        invalidateLayout = frameDispatcher::scheduleFrame,
-        invalidateDraw = frameDispatcher::scheduleFrame,
+        invalidateLayout = ::requestFrame,
+        invalidateDraw = ::requestFrame,
     ).apply {
         size = IntSize(width = width, height = height)
     }
@@ -91,10 +102,16 @@ internal class RenderingTestScope(
     }
 
     private fun onRender(timeNanos: Long) {
+        isRendering = true
+        needsFrameAfterRender = false
         canvas.skiaCanvas.clear(Color.Transparent.toArgb())
-        frameRecomposer.recomposeFrame(timeNanos)
+        frameRecomposer.performFrame(timeNanos)
         scene.measureAndLayout()
         scene.draw(canvas)
+        isRendering = false
+        if (needsFrameAfterRender && (scene.hasPendingMeasureOrLayout || scene.hasPendingDraw)) {
+            frameDispatcher.scheduleFrame()
+        }
         onRender.complete(Unit)
     }
 

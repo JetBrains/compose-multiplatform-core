@@ -94,7 +94,7 @@ class PointerIconTest {
     fun commitsToComponent() {
         val iconContext = IconPlatformContext()
         val size = IntSize(100, 100)
-        val (scene, frameRecomposer) = createPlatformLayersScene(
+        val (scene, frameDispatcher) = createPlatformLayersScene(
             platformContext = iconContext,
         )
 
@@ -117,7 +117,7 @@ class PointerIconTest {
             assertThat(iconContext._pointerIcon).isEqualTo(PointerIcon.Text)
         } finally {
             scene.close()
-            frameRecomposer.close()
+            frameDispatcher.close()
         }
     }
 
@@ -125,7 +125,7 @@ class PointerIconTest {
     fun preservedIfSameEventDispatchedTwice() {
         val iconContext = IconPlatformContext()
         val size = IntSize(100, 100)
-        val (scene, frameRecomposer) = createPlatformLayersScene(
+        val (scene, frameDispatcher) = createPlatformLayersScene(
             platformContext = iconContext,
         )
 
@@ -149,7 +149,7 @@ class PointerIconTest {
             assertThat(iconContext._pointerIcon).isEqualTo(PointerIcon.Text)
         } finally {
             scene.close()
-            frameRecomposer.close()
+            frameDispatcher.close()
         }
     }
 
@@ -219,11 +219,11 @@ class PointerIconTest {
         val iconContext = IconPlatformContext()
         val size = IntSize(100, 100)
         val surface = Surface.makeRasterN32Premul(size.width, size.height)
-        val frameDispatcherHolder = arrayOfNulls<FrameRecomposer>(1)
+        val frameRecomposerHolder = arrayOfNulls<FrameRecomposer>(1)
         val sceneHolder = arrayOfNulls<ComposeScene>(1)
 
         val frameDispatcher = FrameDispatcher(coroutineContext) {
-            frameDispatcherHolder[0]!!.recomposeFrame(1)
+            frameRecomposerHolder[0]!!.performFrame(1)
             sceneHolder[0]!!.measureAndLayout()
             sceneHolder[0]!!.draw(surface.canvas.asComposeCanvas())
         }
@@ -235,10 +235,11 @@ class PointerIconTest {
             }
         )
         sceneHolder[0] = scene
-        frameDispatcherHolder[0] = frameRecomposer
+        frameRecomposerHolder[0] = frameRecomposer
         val iconState = mutableStateOf(PointerIcon.Text)
 
-        val recomposeChannel = Channel<Int>(Channel.CONFLATED) // helps with waiting for recomposition
+        val recomposeChannel =
+            Channel<Int>(Channel.CONFLATED) // helps with waiting for recomposition
         var count = 0
         try {
             scene.size = size
@@ -268,11 +269,11 @@ class PointerIconTest {
         val iconContext = IconPlatformContext()
         val size = IntSize(100, 100)
         val surface = Surface.makeRasterN32Premul(size.width, size.height)
-        val frameDispatcherHolder = arrayOfNulls<FrameRecomposer>(1)
+        val frameRecomposerHolder = arrayOfNulls<FrameRecomposer>(1)
         val sceneHolder = arrayOfNulls<ComposeScene>(1)
 
         val frameDispatcher = FrameDispatcher(coroutineContext) {
-            frameDispatcherHolder[0]!!.recomposeFrame(1)
+            frameRecomposerHolder[0]!!.performFrame(1)
             sceneHolder[0]!!.measureAndLayout()
             sceneHolder[0]!!.draw(surface.canvas.asComposeCanvas())
         }
@@ -284,11 +285,12 @@ class PointerIconTest {
             }
         )
         sceneHolder[0] = scene
-        frameDispatcherHolder[0] = frameRecomposer
+        frameRecomposerHolder[0] = frameRecomposer
 
         val iconState = mutableStateOf(PointerIcon.Text)
 
-        val recomposeChannel = Channel<Int>(Channel.CONFLATED) // helps with waiting for recomposition
+        val recomposeChannel =
+            Channel<Int>(Channel.CONFLATED) // helps with waiting for recomposition
         var count = 0
         try {
             scene.size = size

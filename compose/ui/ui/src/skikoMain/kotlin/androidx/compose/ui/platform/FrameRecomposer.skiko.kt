@@ -20,6 +20,7 @@ import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.util.trace
 import kotlin.coroutines.CoroutineContext
@@ -34,11 +35,11 @@ import kotlinx.coroutines.withContext
  * Owns a recomposer and frame clock shared by one or more scenes hosted by the same platform
  * container.
  *
- * Host-owned immediate dispatch loop for Compose work that should progress without ticking a frame.
- *
- * Android advances the equivalent work from the host dispatcher/recomposer loop rather than from a
- * scene object. Skiko still progresses it explicitly, so scenes depend on this narrower
- * host-dispatch contract instead of recomposer-specific scheduling details.
+ * This is the Skiko equivalent of the Android host-side recomposer/frame-clock machinery: Android
+ * drives global snapshot notifications through `GlobalSnapshotManager`, drains dispatcher work on
+ * the UI thread, then lets the recomposer resume frame-clock awaiters and apply changes. Skiko
+ * platforms do not have a shared Android-style View/Choreographer integration point, so the host
+ * calls [performFrame] explicitly before driving scene measure/layout and draw.
  */
 @InternalComposeUiApi
 class FrameRecomposer(
@@ -53,7 +54,10 @@ class FrameRecomposer(
     private val recomposer = Recomposer(coroutineContext + job + effectDispatcher)
 
     init {
-        coroutineScope.launch(recomposeDispatcher + frameClock, start = CoroutineStart.UNDISPATCHED) {
+        coroutineScope.launch(
+            recomposeDispatcher + frameClock,
+            start = CoroutineStart.UNDISPATCHED
+        ) {
             recomposer.runRecomposeAndApplyChanges()
         }
     }
@@ -65,9 +69,28 @@ class FrameRecomposer(
         get() = recomposer
 
     /**
-     * Advances the host by one frame at [frameTimeNanos].
+     * Performs one host frame. Platforms should call this once from their native frame callback
+     * before running scene measure/layout and draw phases.
+     *
+     * The snapshot checkpoints are deliberate behavior parity with the old combined render call
+     * and with Android's flow:
+     * - the first call observes global snapshot writes that were scheduled before this native
+     *   frame, like Android's `GlobalSnapshotManager` running on the UI dispatcher;
+     * - [recomposeFrame] then flushes effects/recomposer tasks and sends the frame clock, matching
+     *   the recomposer's frame-aligned work;
+     * - the second call mirrors the runtime recomposer checkpoint after `sendFrame`, so state
+     *   changes produced by frame awaiters are visible before platform layout/draw phases run.
      */
-    fun recomposeFrame(frameTimeNanos: Long) {
+    fun performFrame(frameTimeNanos: Long) {
+        Snapshot.sendApplyNotifications()
+        recomposeFrame(frameTimeNanos)
+        Snapshot.sendApplyNotifications()
+    }
+
+    /**
+     * Advances only the host recomposer and frame clock by one frame at [frameTimeNanos].
+     */
+    private fun recomposeFrame(frameTimeNanos: Long) {
         // Flush composition effects (e.g. LaunchedEffect, coroutines launched in
         // rememberCoroutineScope()) queued by the previous turn must run before
         // recomposition tasks and frame-clock awaiters.

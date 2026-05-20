@@ -110,7 +110,7 @@ private class ComposeWindow(
         }
     private val skiaLayer = SkiaLayer()
     private val scene = CanvasLayersComposeScene(
-        coroutineContext = Dispatchers.Main,
+        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         platformContext = platformContext,
         // TODO: Route these to distinct AppKit invalidation paths: layout work should use
         // native layout scheduling, while draw work should only mark display dirty.
@@ -123,7 +123,7 @@ private class ComposeWindow(
             _windowInfo.containerSize = sizeInPx
             _windowInfo.containerDpSize = sizeInPx.toSize().toDpSize(scene.density)
             scene.size = sizeInPx // TODO: Move it out from onRender to avoid extra invalidation
-            frameRecomposer.recomposeFrame(nanoTime)
+            frameRecomposer.performFrame(nanoTime)
             scene.measureAndLayout()
             scene.draw(canvas.asComposeCanvas())
         }

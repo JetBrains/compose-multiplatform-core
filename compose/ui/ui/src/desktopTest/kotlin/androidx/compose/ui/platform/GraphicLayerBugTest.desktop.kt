@@ -47,7 +47,7 @@ class GraphicLayerBugDesktopTest {
     // sendApplyNotifications can be called anywhere. When it was called inside composition, it triggers wrongly written observers
     @Test
     fun `no crash when sendApplyNotifications performed in composition`() {
-        runLayerSceneTest { scene, frameRecomposer ->
+        runLayerSceneTest { scene, frameDispatcher ->
             val canvas = Surface.makeRasterN32Premul(100, 100).canvas
 
             var triggerApplySnapshot by mutableStateOf(false)
@@ -63,7 +63,7 @@ class GraphicLayerBugDesktopTest {
             }
 
             repeat(10) {
-                frameRecomposer.recomposeFrame(it * 100L)
+                frameDispatcher.performFrame(it * 100L)
                 scene.measureAndLayout()
                 scene.draw(canvas.asComposeCanvas())
             }
@@ -71,7 +71,7 @@ class GraphicLayerBugDesktopTest {
             triggerApplySnapshot = true
 
             repeat(10) {
-                frameRecomposer.recomposeFrame(1000 + it * 100L)
+                frameDispatcher.performFrame(1000 + it * 100L)
                 scene.measureAndLayout()
                 scene.draw(canvas.asComposeCanvas())
             }

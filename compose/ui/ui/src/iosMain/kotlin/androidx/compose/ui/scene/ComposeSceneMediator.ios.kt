@@ -196,7 +196,8 @@ internal class ComposeSceneMediator(
     interfaceOrientationState: State<InterfaceOrientation>,
     composeSceneFactory: (
         invalidate: () -> Unit,
-        platformContext: PlatformContext
+        platformContext: PlatformContext,
+        coroutineContext: CoroutineContext
     ) -> ComposeScene
 ) {
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
@@ -223,7 +224,8 @@ internal class ComposeSceneMediator(
     private val scene: ComposeScene by lazy {
         composeSceneFactory(
             redrawer::setNeedsRedraw,
-            PlatformContextImpl()
+            PlatformContextImpl(),
+            frameRecomposer.compositionContext.effectCoroutineContext
         )
     }
 
@@ -374,7 +376,8 @@ internal class ComposeSceneMediator(
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                scene.recomposeAndLayout(lastRenderTime)
+                frameRecomposer.performFrame(lastRenderTime)
+                scene.measureAndLayout()
                 CATransaction.flush()
             },
             view = _overlayView,
@@ -606,7 +609,7 @@ internal class ComposeSceneMediator(
     private var lastRenderTime = CACurrentMediaTime().toNanoSeconds()
     fun render(canvas: Canvas, nanoTime: Long) {
         lastRenderTime = nanoTime
-        frameDispatcher.recomposeFrame(nanoTime)
+        frameRecomposer.performFrame(nanoTime)
         scene.measureAndLayout()
         scene.draw(canvas)
     }

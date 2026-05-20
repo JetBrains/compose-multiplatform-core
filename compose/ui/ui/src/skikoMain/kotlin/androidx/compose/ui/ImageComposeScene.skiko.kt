@@ -190,7 +190,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         density = density,
         layoutDirection = layoutDirection,
         size = imageSize,
-        coroutineContext = coroutineContext,
+        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         platformContext = _platformContext
     ).also {
         it.setContent(content = content)
@@ -287,7 +287,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
      */
     fun render(nanoTime: Long = 0): Image {
         surface.canvas.clear(Color.TRANSPARENT)
-        frameRecomposer.recomposeFrame(nanoTime)
+        frameRecomposer.performFrame(nanoTime)
         scene.measureAndLayout()
         scene.draw(surface.canvas.asComposeCanvas())
         return surface.makeImageSnapshot()

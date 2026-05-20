@@ -229,8 +229,8 @@ internal class ComposeContainer(
             architectureComponentsOwner = architectureComponentsOwner,
             coroutineContext = sceneCoroutineContext,
             redrawer = metalView.redrawer,
-            composeSceneFactory = { invalidate, context ->
-                createComposeScene(invalidate, context, holder, sceneCoroutineContext)
+            composeSceneFactory = { invalidate, context, coroutineContext ->
+                createComposeScene(invalidate, context, holder, coroutineContext)
             },
             navigationEventInput = navigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
