@@ -26,7 +26,6 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.UndecoratedWindowResizer
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -34,7 +33,6 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.savedstate.SavedState
 import java.awt.Component
 import java.awt.ComponentOrientation
-import java.awt.Dimension
 import java.awt.GraphicsConfiguration
 import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener

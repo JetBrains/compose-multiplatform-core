@@ -50,7 +50,6 @@ import androidx.savedstate.SavedState
 import com.google.common.truth.Truth.assertThat
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
-import java.awt.Insets
 import java.awt.event.MouseEvent.BUTTON1
 import java.awt.event.MouseEvent.MOUSE_ENTERED
 import java.awt.event.MouseEvent.MOUSE_MOVED
