@@ -40,12 +40,15 @@ import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.cancel
 import androidx.compose.ui.test.utils.release
+import androidx.compose.ui.viewinterop.UIKitView
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
+import platform.Foundation.NSStringFromSelector
 import platform.UIKit.UIKeyModifierCommand
 import platform.UIKit.UIKeyModifierShift
 import platform.UIKit.UIPress
@@ -58,7 +61,7 @@ import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 
 @OptIn(ExperimentalForeignApi::class)
-class UIPressesEventTest {
+class KeyboardEventsTest {
 
     private class PressTrackingView : UIView(frame = CGRectZero.readValue()) {
         val began = mutableListOf<platform.UIKit.UIPressType>()
@@ -305,5 +308,38 @@ class UIPressesEventTest {
         shiftEvent.release()
         waitForIdle()
         assertReceived(KeyEventType.KeyUp to Key.ShiftLeft)
+    }
+
+    @Test
+    fun copyEventPropagatedToNativeView() = runUIKitInstrumentedTest {
+        val view = FocusableView()
+
+        setContent {
+            UIKitView(
+                factory = { view },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        view.becomeFirstResponder()
+
+        keystroke('c', modifierFlags = UIKeyModifierCommand)
+        waitForIdle()
+
+        assertTrue(view.isCopyCalled)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private class FocusableView: UIView(frame = CGRectZero.readValue()) {
+    var isCopyCalled = false
+
+    override fun canBecomeFirstResponder(): Boolean = true
+
+    override fun canPerformAction(action: COpaquePointer?, withSender: Any?): Boolean =
+        NSStringFromSelector(action) == "copy:"
+
+    override fun copy(sender: Any?) {
+        isCopyCalled = true
     }
 }

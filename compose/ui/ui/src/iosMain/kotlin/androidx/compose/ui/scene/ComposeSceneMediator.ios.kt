@@ -400,7 +400,6 @@ internal class ComposeSceneMediator(
             focusedViewsList = focusedViewsList,
             onInputStarted = { animateKeyboardOffsetChanges = true },
             focusManager = { scene.focusManager },
-            hasActiveKeyDown = { pressedKeysToHandledState.values.contains(true) },
             coroutineContext = coroutineContext,
         ).also {
             KeyboardVisibilityListener.initialize()
@@ -771,15 +770,15 @@ internal class ComposeSceneMediator(
         }
     }
 
-    private val pressedKeysToHandledState = mutableMapOf<KeyIdentifier, Boolean>()
+    private val pressedKeysState = mutableListOf<KeyIdentifier>()
 
     // iOS does not complete or cancels key events which are attached to a view that is not in
     //  the window hierarchy.
     private fun finishUnattachedKeysPresses() {
-        if (pressedKeysToHandledState.isEmpty()) {
+        if (pressedKeysState.isEmpty()) {
             return
         }
-        pressedKeysToHandledState.filter { !it.key.isAttachedToWindow }.forEach { (key, _) ->
+        pressedKeysState.filter { !it.isAttachedToWindow }.forEach { key ->
             onKeyboardEvent(
                 KeyEvent(
                     key = key.key,
@@ -804,13 +803,13 @@ internal class ComposeSceneMediator(
 
         val identifier = keyEvent.keyIdentifier()
         if (keyEvent.type == KeyEventType.KeyDown) {
-            pressedKeysToHandledState[identifier] = result
+            pressedKeysState.add(identifier)
         } else if (keyEvent.type == KeyEventType.KeyUp) {
-            if (pressedKeysToHandledState.contains(identifier)) {
-                pressedKeysToHandledState.remove(identifier)
+            if (pressedKeysState.contains(identifier)) {
+                pressedKeysState.removeAll { it == identifier }
             } else {
                 // Dirty state - remove all events to prevent further errors
-                pressedKeysToHandledState.clear()
+                pressedKeysState.clear()
             }
         }
 

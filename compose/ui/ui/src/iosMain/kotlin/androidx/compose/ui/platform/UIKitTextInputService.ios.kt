@@ -47,7 +47,6 @@ internal class UIKitTextInputService(
     private val focusedViewsList: FocusedViewsList?,
     private var onInputStarted: () -> Unit,
     private var focusManager: () -> ComposeSceneFocusManager?,
-    private var hasActiveKeyDown: () -> Boolean,
     coroutineContext: CoroutineContext
 ) {
 
@@ -154,11 +153,7 @@ internal class UIKitTextInputService(
                 )
             }
             (currentInputConnection as? ComposeTextInputConnection)?.showToolbarMenu(
-                rect,
-                ignoringWhenActiveKeyDown(onCopyRequested),
-                ignoringWhenActiveKeyDown(onPasteRequested),
-                ignoringWhenActiveKeyDown(onCutRequested),
-                ignoringWhenActiveKeyDown(onSelectAllRequested),
+                rect, onCopyRequested, onPasteRequested, onCutRequested, onSelectAllRequested
             )
         }
 
@@ -185,12 +180,8 @@ internal class UIKitTextInputService(
             selectAll: (() -> Unit)?,
             customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
         ) {
-            (currentInputConnection as? NativeTextInputConnection)?.updateNativeTextInputEditMenuState(
-                ignoringWhenActiveKeyDown(copy),
-                ignoringWhenActiveKeyDown(paste),
-                ignoringWhenActiveKeyDown(cut),
-                ignoringWhenActiveKeyDown(selectAll),
-                customActions
+            currentInputConnection?.updateNativeTextInputEditMenuState(
+                copy, paste, cut, selectAll, customActions
             )
         }
 
@@ -201,21 +192,9 @@ internal class UIKitTextInputService(
         }
     }
 
-    // To prevent double-hotkey processing, prevent any edit actions if any active and handled
-    // key is down.
-    private fun ignoringWhenActiveKeyDown(action: (() -> Unit)?): (() -> Unit)? {
-        if (action == null) return null
-        return {
-            if (!hasActiveKeyDown()) {
-                action()
-            }
-        }
-    }
-
     fun dispose() {
         stopInput()
         onInputStarted = { }
         focusManager = { null }
-        hasActiveKeyDown = { false }
     }
 }

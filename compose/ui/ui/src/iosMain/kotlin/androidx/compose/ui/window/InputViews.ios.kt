@@ -514,7 +514,7 @@ internal class OverlayInputView(
     private var onHoverEvent: (position: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     private var onKeyboardPresses: (Set<*>) -> Unit,
     ignoreTouchChanges: () -> Boolean,
-    private var onViewHierarchyWillChange: () -> Unit,
+    private var onViewHierarchyWillChange: () -> Unit = {},
 ) : CMPScrollView(CGRectZero.readValue()) {
     /**
      * Gesture recognizer responsible for processing touches
