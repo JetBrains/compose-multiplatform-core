@@ -16,7 +16,6 @@
 package androidx.compose.ui.awt
 
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +52,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.sendCharTypedEvents
@@ -72,6 +72,8 @@ import androidx.compose.ui.window.waitForFocusGain
 import androidx.savedstate.SavedState
 import com.google.common.truth.Truth.assertThat
 import java.awt.BorderLayout
+import java.awt.Component
+import java.awt.Container
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 import java.awt.Window
@@ -82,6 +84,8 @@ import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
 import junit.framework.TestCase.assertTrue
+import kotlin.math.max
+import kotlin.reflect.KMutableProperty1
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -727,7 +731,7 @@ class ComposePanelTest {
                     JPanel().apply {
                         layout = BoxLayout(this, BoxLayout.Y_AXIS)
                         add(composePanel)
-                        add(javax.swing.Box.createVerticalStrut(1000), BorderLayout.CENTER)
+                        add(javax.swing.Box.createVerticalStrut(1000))
                     }
                 )
                 scrollPane.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
@@ -739,6 +743,7 @@ class ComposePanelTest {
                 // Scroll a little and check that compose content was scrolled
                 window.sendMouseWheelEvent(wheelRotation = 1.0)
                 awaitIdle()
+                println(composePanel.size)
                 assertThat(scrollState.value).isGreaterThan(0)
                 assertThat(scrollPane.viewport.viewPosition.y).isEqualTo(0)
 
@@ -905,7 +910,7 @@ class ComposePanelTest {
     fun `ComposePanel draws background correctly`() = runApplicationTest {
         // Show a canvas and a `ComposePanel` with the same background and compare the two colors.
         // Simply comparing to the set color doesn't work because Robot returns the color after
-        // the OS transforms it to the screen color space (which doesn't seem to be accessible from
+        // the OS transforms it to the screen color space (which doesn't seem accessible from
         // the JVM).
 
         val bgColor = java.awt.Color.RED
@@ -962,6 +967,74 @@ class ComposePanelTest {
             assertNotNull(localWindow)
         } finally {
             frame.dispose()
+        }
+    }
+
+    private fun testComposePanelSizeComputation(
+        sizeComputation: KMutableProperty1<ComposePanel, ((MeasurableRootContent) -> Dimension)?>,
+        awtSizeFunction: (Component) -> Dimension,
+    ) = runApplicationTest {
+        val size = Dimension(300, 300)
+        val composePanel = ComposePanel().apply {
+            setContent {
+                Box(Modifier.fillMaxSize())
+            }
+            sizeComputation.set(this, value = { size })
+        }
+        val frame = JFrame().apply {
+            contentPane.layout = LayoutManager(awtSizeFunction)
+            contentPane.add(composePanel)
+        }
+
+        try {
+            frame.pack()
+            assertThat(composePanel.size).isEqualTo(size)
+        } finally {
+            frame.dispose()
+        }
+    }
+
+    @Test
+    fun `ComposePanel minSizeComputation`() = testComposePanelSizeComputation(
+        sizeComputation = ComposePanel::minimumSizeComputation,
+        awtSizeFunction = Component::getMinimumSize
+    )
+
+    @Test
+    fun `ComposePanel prefSizeComputation`() = testComposePanelSizeComputation(
+        sizeComputation = ComposePanel::preferredSizeComputation,
+        awtSizeFunction = Component::getPreferredSize
+    )
+
+    @Test
+    fun `ComposePanel maxSizeComputation`() = testComposePanelSizeComputation(
+        sizeComputation = ComposePanel::maximumSizeComputation,
+        awtSizeFunction = Component::getMaximumSize
+    )
+}
+
+private fun LayoutManager(size: (Component) -> Dimension): java.awt.LayoutManager {
+    return object: java.awt.LayoutManager {
+        override fun addLayoutComponent(name: String?, comp: Component?) = Unit
+        override fun removeLayoutComponent(comp: Component?) = Unit
+
+        override fun preferredLayoutSize(parent: Container): Dimension {
+            var width = 0
+            var height = 0
+            for (child in parent.components) {
+                val childSize = size(child)
+                width = max(width, childSize.width)
+                height = max(height, childSize.height)
+            }
+            return Dimension(width, height)
+        }
+
+        override fun minimumLayoutSize(parent: Container) = Dimension(0, 0)
+
+        override fun layoutContainer(parent: Container) {
+            for (child in parent.components) {
+                child.size = size(child)
+            }
         }
     }
 }

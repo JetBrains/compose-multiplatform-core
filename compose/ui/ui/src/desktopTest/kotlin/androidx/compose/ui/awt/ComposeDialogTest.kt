@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.sendMouseEvent
 import androidx.compose.ui.sendMousePress
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.density
+import androidx.compose.ui.window.minus
 import androidx.compose.ui.window.runApplicationTest
 import androidx.savedstate.SavedState
 import com.google.common.truth.Truth.assertThat
@@ -49,6 +51,7 @@ import java.awt.event.MouseEvent.BUTTON1
 import java.awt.event.MouseEvent.MOUSE_ENTERED
 import java.awt.event.MouseEvent.MOUSE_MOVED
 import java.awt.event.WindowEvent
+import kotlin.reflect.KMutableProperty1
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.skiko.ExperimentalSkikoApi
 import org.jetbrains.skiko.GraphicsApi
@@ -313,10 +316,42 @@ class ComposeDialogTest {
             savedState = window.saveState()
         }
 
-        testWindow(savedState) { window ->
+        testWindow(savedState) {
             assertThat(lastState).isEqualTo(6)
         }
     }
+
+    private fun testDialogSizeComputation(
+        sizeComputation: KMutableProperty1<ComposeDialog, ((MeasurableRootContent) -> Dimension)?>,
+        awtSizeFunction: (ComposeDialog) -> Dimension,
+    ) = runApplicationTest {
+        val size = Dimension(300, 300)
+        val dialog = ComposeDialog().apply {
+            setContent {
+                Box(Modifier.fillMaxSize())
+            }
+            sizeComputation.set(this, value = { size })
+        }
+
+        try {
+            dialog.pack()
+            assertThat(awtSizeFunction(dialog) - dialog.insets).isEqualTo(size)
+        } finally {
+            dialog.dispose()
+        }
+    }
+
+    @Test
+    fun `ComposeDialog minSize`() = testDialogSizeComputation(
+        ComposeDialog::minimumSizeComputation,
+        ComposeDialog::getMinimumSize
+    )
+
+    @Test
+    fun `ComposeDialog prefSize`() = testDialogSizeComputation(
+        ComposeDialog::preferredSizeComputation,
+        ComposeDialog::getPreferredSize
+    )
 
     private class TestException : Exception()
 }

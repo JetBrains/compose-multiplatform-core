@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.sendMouseEvent
 import androidx.compose.ui.sendMousePress
@@ -41,16 +42,19 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.density
+import androidx.compose.ui.window.minus
 import androidx.compose.ui.window.runApplicationTest
 import androidx.savedstate.SavedState
 import com.google.common.truth.Truth.assertThat
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
+import java.awt.Insets
 import java.awt.event.MouseEvent.BUTTON1
 import java.awt.event.MouseEvent.MOUSE_ENTERED
 import java.awt.event.MouseEvent.MOUSE_MOVED
 import java.awt.event.WindowEvent
 import kotlin.math.roundToInt
+import kotlin.reflect.KMutableProperty1
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.skiko.ExperimentalSkikoApi
 import org.jetbrains.skiko.GraphicsApi
@@ -334,6 +338,38 @@ class ComposeWindowTest {
             assertThat(lastState).isEqualTo(6)
         }
     }
+
+    private fun testWindowSizeComputation(
+        sizeComputation: KMutableProperty1<ComposeWindow, ((MeasurableRootContent) -> Dimension)?>,
+        awtSizeFunction: (ComposeWindow) -> Dimension,
+    ) = runApplicationTest {
+        val size = Dimension(300, 300)
+        val window = ComposeWindow().apply {
+            setContent {
+                Box(Modifier.fillMaxSize())
+            }
+            sizeComputation.set(this, value = { size })
+        }
+
+        try {
+            window.pack()
+            assertThat(awtSizeFunction(window) - window.insets).isEqualTo(size)
+        } finally {
+            window.dispose()
+        }
+    }
+
+    @Test
+    fun `ComposeWindow minSize`() = testWindowSizeComputation(
+        ComposeWindow::minimumSizeComputation,
+        ComposeWindow::getMinimumSize
+    )
+
+    @Test
+    fun `ComposeWindow prefSize`() = testWindowSizeComputation(
+        ComposeWindow::preferredSizeComputation,
+        ComposeWindow::getPreferredSize
+    )
 
     private class TestException : Exception()
 }

@@ -19,6 +19,7 @@ package androidx.compose.ui.awt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.ComposeFeatureFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
@@ -125,10 +126,34 @@ internal class ComposeWindowPanel(
         composeContainer.setBounds(0, 0, width, height)
     }
 
-    override fun getPreferredSize(): Dimension? = if (isPreferredSizeSet) {
-        super.getPreferredSize()
-    } else {
-        composeContainer.preferredSize
+    var minimumSizeComputation: ((MeasurableRootContent) -> Dimension)? = null
+    var preferredSizeComputation: ((MeasurableRootContent) -> Dimension)? = null
+
+    override fun getMinimumSize(): Dimension {
+        val minSizeComputation = this.minimumSizeComputation
+        if (isMinimumSizeSet || (minSizeComputation == null)) {
+            return super.getMinimumSize()
+        }
+
+        return minSizeComputation.invoke(measurableContent)
+    }
+
+    override fun getPreferredSize(): Dimension {
+        if (isPreferredSizeSet) {
+            return super.getPreferredSize()
+        }
+
+        return preferredSizeComputation?.invoke(measurableContent)
+            ?: try {
+                composeContainer.preferredSize
+            } catch (e: Exception) {
+                throw IllegalStateException(
+                    "Unable to compute preferred size of Compose content." +
+                        " Consider providing a custom computation via" +
+                        " `preferredSizeComputation`",
+                    e
+                )
+            }
     }
 
     override fun addNotify() {

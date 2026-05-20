@@ -30,13 +30,10 @@ import androidx.compose.ui.awt.RenderSettings.SkiaSurface
 import androidx.compose.ui.awt.RenderSettings.SwingGraphics
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.semantics.SemanticsOwner
-import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.savedstate.SavedState
 import java.awt.Color
@@ -54,7 +51,6 @@ import javax.swing.SwingUtilities
 import javax.swing.SwingUtilities.isEventDispatchThread
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.math.max
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayerAnalytics
 
@@ -69,7 +65,7 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
  * @param renderSettings Configuration class for rendering settings.
  * @param coroutineContext The coroutine context for Compose content rendering and effects.
  */
-open class ComposePanel @ExperimentalComposeUiApi constructor(
+class ComposePanel @ExperimentalComposeUiApi constructor(
     private val skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
     private var savedState: SavedState? = null,
     private val renderSettings: RenderSettings = DefaultRenderSettings,
@@ -203,20 +199,6 @@ open class ComposePanel @ExperimentalComposeUiApi constructor(
     }
 
     /**
-     * Returns an object through which the composable content of the panel can be queried for its
-     * size preferences, such as its intrinsic size.
-     *
-     * This can only be called after the [ComposePanel] has been added to the Swing hierarchy.
-     */
-    @ExperimentalComposeUiApi
-    val measurableContent: MeasurableRootContent
-        get() {
-            return requireNotNull(_composeContainer?.measurableContent) {
-                "Cannot retrieve measurableContent before addNotify"
-            }
-        }
-
-    /**
      * Disposes Compose state and rendering resources.
      *
      * Should be called only when [ComposePanel] is detached from Swing hierarchy.
@@ -237,10 +219,79 @@ open class ComposePanel @ExperimentalComposeUiApi constructor(
         _composeContainer?.setBounds(0, 0, width, height)
     }
 
-    override fun getPreferredSize(): Dimension? = if (isPreferredSizeSet) {
-        super.getPreferredSize()
-    } else {
-        _composeContainer?.preferredSize ?: Dimension(0, 0)
+    /**
+     * Returns an object through which the composable content of the panel can be queried for its
+     * size preferences, such as its intrinsic size.
+     *
+     * This can only be called after the [ComposePanel] has been added to the Swing hierarchy.
+     */
+    @ExperimentalComposeUiApi
+    val measurableContent: MeasurableRootContent
+        get() {
+            return requireNotNull(_composeContainer?.measurableContent) {
+                "Cannot retrieve measurableContent before addNotify"
+            }
+        }
+
+    /**
+     * The function called by [getMinimumSize] to compute the minimum size of the panel.
+     *
+     * Note that it's not called if an explicit minimum size has been set via [setMinimumSize].
+     */
+    @ExperimentalComposeUiApi
+    var minimumSizeComputation: ((MeasurableRootContent) -> Dimension)? = null
+
+    /**
+     * The function called by [getPreferredSize] to compute the preferred size of the panel.
+     *
+     * Note that it's not called if an explicit preferred size has been set via [setPreferredSize].
+     */
+    @ExperimentalComposeUiApi
+    var preferredSizeComputation: ((MeasurableRootContent) -> Dimension)? = null
+
+    /**
+     * The function called by [getMaximumSize] to compute the maximum size of the panel.
+     *
+     * Note that it's not called if an explicit maximum size has been set via [setMaximumSize].
+     */
+    @ExperimentalComposeUiApi
+    var maximumSizeComputation: ((MeasurableRootContent) -> Dimension)? = null
+
+    override fun getMinimumSize(): Dimension {
+        val minSizeComputation = this.minimumSizeComputation
+        if (isMinimumSizeSet || (minSizeComputation == null) || (_composeContainer == null)) {
+            return super.getMinimumSize()
+        }
+
+        return minSizeComputation.invoke(measurableContent)
+    }
+
+    override fun getPreferredSize(): Dimension {
+        val container = _composeContainer
+        if (isPreferredSizeSet || (container == null)) {
+            return super.getPreferredSize()
+        }
+
+        return preferredSizeComputation?.invoke(measurableContent)
+            ?: try {
+                container.preferredSize
+            } catch (e: Exception) {
+                throw IllegalStateException(
+                    "Unable to compute preferred size of Compose content." +
+                        " Consider providing a custom computation via" +
+                        " `preferredSizeComputation`",
+                    e
+                )
+            }
+    }
+
+    override fun getMaximumSize(): Dimension? {
+        val maxSizeComputation = this.maximumSizeComputation
+        if (isMaximumSizeSet || (maxSizeComputation == null) || (_composeContainer == null)) {
+            return super.getMaximumSize()
+        }
+
+        return maxSizeComputation.invoke(measurableContent)
     }
 
     override fun setBackground(bg: Color?) {
@@ -256,9 +307,8 @@ open class ComposePanel @ExperimentalComposeUiApi constructor(
      */
     fun setContent(content: @Composable () -> Unit) {
         // The window (or root container) may not be ready to render composable content, so we need
-        // to keep the lambda describing composable content and set the content only when
-        // everything is ready to avoid accidental crashes and memory leaks on all supported OS
-        // types.
+        // to store the composable lambda and set the content only when everything is ready to
+        // avoid accidental crashes and memory leaks.
         val wrappedContent = wrapContent(content)
         _composeContent = wrappedContent
         _composeContainer?.setContent(wrappedContent)

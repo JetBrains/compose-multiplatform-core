@@ -208,8 +208,8 @@ internal class RootNodeOwner(
     }
 
     val measurableRootContent: MeasurableRootContent = object : MeasurableRootContent {
-        override val parentData
-            get() = null
+        override val density: Density
+            get() = this@RootNodeOwner.density
 
         override fun minIntrinsicWidth(height: Int): Int {
             // RootMeasurePolicy has LayoutNode.NoIntrinsicsMeasurePolicy, so we ask the children
@@ -244,6 +244,9 @@ internal class RootNodeOwner(
                 block(it.outerCoordinator)
             }
         }
+
+        override val parentData
+            get() = null
     }
 
     /**

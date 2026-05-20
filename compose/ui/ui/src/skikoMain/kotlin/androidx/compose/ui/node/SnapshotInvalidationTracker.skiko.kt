@@ -25,7 +25,7 @@ import kotlinx.atomicfu.atomic
 
 /**
  * SnapshotCommandList is a class that manages commands and invalidations for snapshot-based recomposition.
- * It allows postponing execution of commands and performing them in the future.
+ * It allows postponing the execution of commands and performing them in the future.
  *
  * @param invalidate a function that is called whenever an invalidation is requested
  */
@@ -46,11 +46,9 @@ internal class SnapshotInvalidationTracker(
     val hasInvalidations: Boolean
         get() = needMeasureAndLayout || needDraw || snapshotChanges.hasCommands
 
-    var invalidateOnRequests = true
-
     fun requestMeasureAndLayout() {
         needMeasureAndLayout = true
-        if (invalidateOnRequests) invalidate()
+        invalidate()
     }
 
     fun onMeasureAndLayout() {
@@ -113,7 +111,7 @@ private class CommandList(
     private val listCopy = mutableListOf<() -> Unit>()
 
     /**
-     * true if there are any commands added.
+     * Whether any commands have been added.
      *
      * Can be called concurrently from multiple threads.
      */

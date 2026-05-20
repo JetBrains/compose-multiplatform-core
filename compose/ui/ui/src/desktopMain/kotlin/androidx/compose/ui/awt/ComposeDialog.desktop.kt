@@ -32,6 +32,7 @@ import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.savedstate.SavedState
 import java.awt.Component
 import java.awt.ComponentOrientation
+import java.awt.Dimension
 import java.awt.Frame
 import java.awt.GraphicsConfiguration
 import java.awt.Window
@@ -321,6 +322,26 @@ class ComposeDialog : JDialog {
     @ExperimentalComposeUiApi
     val measurableContent: MeasurableRootContent
         get() = composePanel.measurableContent
+
+    /**
+     * The function called by [getMinimumSize] to compute the minimum size of the dialog.
+     *
+     * Note that it's not called if an explicit minimum size has been set via [setMinimumSize].
+     */
+    @ExperimentalComposeUiApi
+    var minimumSizeComputation: ((MeasurableRootContent) -> Dimension)?
+        get() = composePanel.minimumSizeComputation
+        set(value) { composePanel.minimumSizeComputation = value }
+
+    /**
+     * The function called by [getPreferredSize] to compute the preferred size of the dialog.
+     *
+     * Note that it's not called if an explicit preferred size has been set via [setPreferredSize].
+     */
+    @ExperimentalComposeUiApi
+    var preferredSizeComputation: ((MeasurableRootContent) -> Dimension)?
+        get() = composePanel.preferredSizeComputation
+        set(value) { composePanel.preferredSizeComputation = value }
 
     override fun dispose() {
         super.dispose()

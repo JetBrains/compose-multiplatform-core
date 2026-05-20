@@ -36,6 +36,12 @@ internal val Rectangle.topLeft get() = Point(x, y)
 internal val Rectangle.bottomRight get() = Point(x + width, y + height)
 
 internal fun Dimension.toDpSize() = DpSize(width.dp, height.dp)
+internal operator fun Dimension.minus(insets: Insets): Dimension {
+    return Dimension(
+        width - (insets.left + insets.right),
+        height - (insets.top + insets.bottom)
+    )
+}
 internal fun Point.toDpOffset() = DpOffset(x.dp, y.dp)
 internal fun Rectangle.toDpRect() = DpRect(
     left = x.dp,
