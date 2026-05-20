@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntSize
 
 /**
  * The interface through which composable content can be queried for its size preferences, such as
@@ -46,6 +45,20 @@ interface MeasurableRootContent : IntrinsicMeasurable {
      * to [block].
      */
     fun <T> measuringIn(constraints: Constraints, block: (Measured) -> T): T
+}
+
+/**
+ * Returns the measured size of the content in infinite constraints.
+ *
+ * Note that certain layouts, such as `scrollable`, cannot be measured in infinite constraints.
+ */
+@ExperimentalComposeUiApi
+fun MeasurableRootContent.unconstrainedSize(): DpSize {
+    return measuringIn(Constraints()) {
+        with(density) {
+            DpSize(it.measuredWidth.toDp(), it.measuredHeight.toDp())
+        }
+    }
 }
 
 /**
