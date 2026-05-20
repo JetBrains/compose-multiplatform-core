@@ -52,6 +52,7 @@ interface PlatformValueStorage {
     /**
      * A typed key for a value stored in [PlatformValueStorage].
      */
+    @InternalComposeUiApi
     class Key<T : Any>(val name: String)
 
     @InternalComposeUiApi
@@ -61,6 +62,7 @@ interface PlatformValueStorage {
         // TODO: Keep this as an offscreen/test fallback only. Real platform hosts should back
         // PlatformValueStorage with their native value store and parent traversal mechanism.
         private val map = mutableMapOf<Key<*>, Any>()
+
         @Suppress("UNCHECKED_CAST")
         override operator fun <T : Any> get(key: Key<T>): T? = map[key] as T?
 
