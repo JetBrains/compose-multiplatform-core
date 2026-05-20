@@ -219,6 +219,8 @@ internal class ComposeWindow(
 
     private val clipTarget = clipTargetElement(canvas)
 
+    // TODO: It must be shared between Compose instances.
+    //  It's supposed to be stored in platform's root via [PlatformValueStorage].
     private val frameRecomposer = FrameRecomposer(Dispatchers.Main, invalidate = { skiaLayer.needRender() })
 
     private val platformContext: PlatformContext =

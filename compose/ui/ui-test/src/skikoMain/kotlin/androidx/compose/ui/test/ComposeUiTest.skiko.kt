@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeScene
+import androidx.compose.ui.scene.hasInvalidations
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
@@ -317,7 +318,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
      */
     private fun render(timeMillis: Long) {
         surface.canvas.clear(Color.TRANSPARENT)
-        frameRecomposer.recomposeFrame(timeMillis * NanoSecondsPerMilliSecond)
+        frameRecomposer.performFrame(timeMillis * NanoSecondsPerMilliSecond)
         scene.measureAndLayout()
         scene.draw(surface.canvas.asComposeCanvas())
     }
@@ -360,14 +361,15 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
 
         if (!mainClock.autoAdvance) {
-            return true
+            return !scene.hasPendingMeasureOrLayout &&
+                !scene.hasPendingDraw &&
+                areAllResourcesIdle()
         }
 
         return !Snapshot.current.hasPendingChanges()
             && !Snapshot.isApplyObserverNotificationPending
             && !frameRecomposer.hasPendingWork()
-            && !scene.hasPendingMeasureOrLayout
-            && !scene.hasPendingDraw
+            && !scene.hasInvalidations()
             && areAllResourcesIdle()
     }
 

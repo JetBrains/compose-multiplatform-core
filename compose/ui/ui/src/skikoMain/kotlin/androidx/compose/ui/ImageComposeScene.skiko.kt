@@ -38,6 +38,7 @@ import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeScenePointer
+import androidx.compose.ui.scene.hasInvalidations
 import androidx.compose.ui.scene.unconstrainedSize
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Constraints
@@ -244,12 +245,11 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
      * !Snapshot.current.hasPendingChanges()
      *     && !Snapshot.isApplyObserverNotificationPending
      *     && !frameRecomposer.hasPendingWork()
-     *     && !scene.hasPendingMeasureOrLayout
-     *     && !scene.hasPendingDraw
+     *     && !scene.hasInvalidations()
      * ```
      */
-    fun hasInvalidations() =
-        frameRecomposer.hasPendingWork() || scene.hasPendingMeasureOrLayout || scene.hasPendingDraw
+    fun hasInvalidations(): Boolean =
+        frameRecomposer.hasPendingWork() || scene.hasInvalidations()
 
     /**
      * Update the composition with the content described by the [content] composable. After this

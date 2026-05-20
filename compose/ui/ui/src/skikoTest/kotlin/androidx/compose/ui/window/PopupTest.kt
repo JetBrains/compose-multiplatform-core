@@ -518,8 +518,17 @@ class PopupTest {
         val buttons = PointerButtons(
             isPrimaryPressed = true
         )
-        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f), buttons = buttons, button = PointerButton.Primary)
-        scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f), button = PointerButton.Primary)
+        scene.sendPointerEvent(
+            PointerEventType.Press,
+            Offset(10f, 10f),
+            buttons = buttons,
+            button = PointerButton.Primary
+        )
+        scene.sendPointerEvent(
+            PointerEventType.Release,
+            Offset(10f, 10f),
+            button = PointerButton.Primary
+        )
         onNodeWithTag(popup.tag).assertIsDisplayed()
 
         background.events.assertReceived(PointerEventType.Press, Offset(10f, 10f))
@@ -562,11 +571,20 @@ class PopupTest {
         val buttons = PointerButtons(
             isPrimaryPressed = true
         )
-        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f), buttons = buttons, button = PointerButton.Primary)
+        scene.sendPointerEvent(
+            PointerEventType.Press,
+            Offset(10f, 10f),
+            buttons = buttons,
+            button = PointerButton.Primary
+        )
         onNodeWithTag(popup.tag).assertDoesNotExist() // Wait that it's really closed before next events
 
         scene.sendPointerEvent(PointerEventType.Move, Offset(11f, 11f), buttons = buttons)
-        scene.sendPointerEvent(PointerEventType.Release, Offset(11f, 11f), button = PointerButton.Primary)
+        scene.sendPointerEvent(
+            PointerEventType.Release,
+            Offset(11f, 11f),
+            button = PointerButton.Primary
+        )
         background.events.assertReceivedLast(PointerEventType.Enter, Offset(11f, 11f))
     }
 
@@ -771,19 +789,38 @@ class PopupTest {
         val size = IntSize(100, 100)
         val surface = Surface.makeRasterN32Premul(size.width, size.height)
         val frameRecomposer = FrameRecomposer(coroutineContext)
-        fun invalidate() {
-            frameRecomposer.recomposeFrame(1)
-            scene.measureAndLayout()
-            scene.draw(surface.canvas.asComposeCanvas())
+        var needsLayout = false
+        var needsDraw = false
+        fun renderUntilIdle() {
+            repeat(10) {
+                var didWork = false
+                if (frameRecomposer.hasPendingWork()) {
+                    frameRecomposer.performFrame(1)
+                    didWork = true
+                }
+                if (needsLayout || scene.hasPendingMeasureOrLayout) {
+                    needsLayout = false
+                    scene.measureAndLayout()
+                    didWork = true
+                }
+                if (needsDraw || scene.hasPendingDraw) {
+                    needsDraw = false
+                    scene.draw(surface.canvas.asComposeCanvas())
+                    didWork = true
+                }
+                if (!didWork) return
+            }
+            error("ComposeScene did not become idle")
         }
         scene = CanvasLayersComposeScene(
-            platformContext = object : PlatformContext by PlatformContext.Empty(frameRecomposer) {}.also {
+            platformContext = object :
+                PlatformContext by PlatformContext.Empty(frameRecomposer) {}.also {
                 val windowInfo = it.windowInfo as WindowInfoImpl
                 windowInfo.containerSize = IntSize(50, 50)
             },
             coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
-            invalidateLayout = ::invalidate,
-            invalidateDraw = ::invalidate,
+            invalidateLayout = { needsLayout = true },
+            invalidateDraw = { needsDraw = true },
         )
         try {
             scene.size = size
@@ -792,7 +829,7 @@ class PopupTest {
                     Box(Modifier.size(200.dp))
                 }
             }
-            invalidate()
+            renderUntilIdle()
         } finally {
             scene.close()
             frameRecomposer.close()

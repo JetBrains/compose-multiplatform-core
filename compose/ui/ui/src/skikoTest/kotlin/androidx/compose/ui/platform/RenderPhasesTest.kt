@@ -67,7 +67,7 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.launch
 
 /**
- * Tests the ordering of the phases of the [BaseComposeScene.render] loop.
+ * Tests the ordering of the split frame, measure/layout, and draw phases.
  */
 @OptIn(ExperimentalTestApi::class, InternalTestApi::class)
 class RenderPhasesTest {
@@ -358,7 +358,7 @@ class RenderPhasesTest {
                 touch(50f, 10f, pressed = true)
             )
         )
-        assertTrue(scene.hasPendingMeasureOrLayout || scene.hasPendingDraw)
+        assertTrue(hasPendingWork())
         assertNotEquals(0, scrollState.value)
     }
 
@@ -380,7 +380,7 @@ class RenderPhasesTest {
             scrollDelta = Offset(0f, 40f)
         )
 
-        assertTrue(scene.hasPendingMeasureOrLayout || scene.hasPendingDraw)
+        assertTrue(scene.hasPendingMeasureOrLayout)
         assertNotEquals(0, scrollState.value)
     }
 
@@ -402,7 +402,7 @@ class RenderPhasesTest {
             panGestureOffset = Offset(0f, 40f)
         )
 
-        assertTrue(scene.hasPendingMeasureOrLayout || scene.hasPendingDraw)
+        assertTrue(scene.hasPendingMeasureOrLayout)
         assertNotEquals(0, scrollState.value)
     }
 
@@ -428,7 +428,8 @@ class RenderPhasesTest {
             scaleGestureFactor = 2.0f
         )
 
-        assertTrue(scene.hasPendingMeasureOrLayout || scene.hasPendingDraw)
+        assertFalse(scene.hasPendingMeasureOrLayout)
+        assertFalse(scene.hasPendingDraw)
         assertNotEquals(1f, scale)
     }
 

@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.node
 
-import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.makeSynchronizedObject
 import androidx.compose.ui.internal.getCurrentThreadId
 import androidx.compose.ui.platform.synchronized
@@ -84,10 +83,9 @@ internal class SnapshotInvalidationTracker(
     }
 
     /**
-     * Sends any pending apply notifications and performs the changes they cause.
+     * Performs pending snapshot observer callbacks without sending new apply notifications.
      */
-    fun sendAndPerformSnapshotChanges() {
-        Snapshot.sendApplyNotifications()
+    fun performSnapshotChanges() {
         snapshotChanges.perform()
     }
 
@@ -122,9 +120,10 @@ private class CommandList(
      *
      * Can be called concurrently from multiple threads.
      */
-    val hasCommands: Boolean get() = synchronized(lock) {
-        list.isNotEmpty()
-    }
+    val hasCommands: Boolean
+        get() = synchronized(lock) {
+            list.isNotEmpty()
+        }
 
     /**
      * Add command to the list, and notify observer via [onNewCommand].

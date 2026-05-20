@@ -156,6 +156,8 @@ internal class ComposeSceneMediator(
         DesktopTextInputService2(platformComponent)
     }
 
+    // TODO: It must be shared between Compose instances.
+    //  It's supposed to be stored in platform's root via [PlatformValueStorage].
     private val frameRecomposer = FrameRecomposer(coroutineContext, ::onComposeInvalidation)
     val effectCoroutineContext: CoroutineContext by frameRecomposer.compositionContext::effectCoroutineContext
 

@@ -97,6 +97,9 @@ private class ComposeWindow(
         isWindowFocused = true
     }
     private val archComponentsOwner = DefaultArchitectureComponentsOwner()
+
+    // TODO: It must be shared between Compose instances.
+    //  It's supposed to be stored in platform's root via [PlatformValueStorage].
     private val frameRecomposer = FrameRecomposer(Dispatchers.Main) { skiaLayer.needRender() }
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty(frameRecomposer) {

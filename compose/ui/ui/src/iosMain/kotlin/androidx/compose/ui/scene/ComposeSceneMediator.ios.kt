@@ -197,8 +197,8 @@ internal class ComposeSceneMediator(
     composeSceneFactory: (
         invalidate: () -> Unit,
         platformContext: PlatformContext,
-        coroutineContext: CoroutineContext
-    ) -> ComposeScene
+        coroutineContext: CoroutineContext,
+    ) -> ComposeScene,
 ) {
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
 
@@ -219,13 +219,15 @@ internal class ComposeSceneMediator(
                 }
         }
 
+    // TODO: It must be shared between Compose instances.
+    //  It's supposed to be stored in platform's root via [PlatformValueStorage].
     private val frameRecomposer = FrameRecomposer(coroutineContext, redrawer::setNeedsRedraw)
 
     private val scene: ComposeScene by lazy {
         composeSceneFactory(
             redrawer::setNeedsRedraw,
             PlatformContextImpl(),
-            frameRecomposer.compositionContext.effectCoroutineContext
+            frameRecomposer.compositionContext.effectCoroutineContext,
         )
     }
 
@@ -400,9 +402,8 @@ internal class ComposeSceneMediator(
     }
 
     val hasInvalidations: Boolean
-        get() = scene.hasPendingMeasureOrLayout ||
-            scene.hasPendingDraw ||
-            frameRecomposer.hasPendingWork() ||
+        get() = frameRecomposer.hasPendingWork() ||
+            scene.hasInvalidations() ||
             keyboardManager.isAnimating ||
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
@@ -609,8 +610,14 @@ internal class ComposeSceneMediator(
     private var lastRenderTime = CACurrentMediaTime().toNanoSeconds()
     fun render(canvas: Canvas, nanoTime: Long) {
         lastRenderTime = nanoTime
+
+        // TODO: Call once per frame (across all instances) before platform views layout phase
         frameRecomposer.performFrame(nanoTime)
+
+        // TODO: Call during platform views layout phase. Should be triggered by platform view invalidation
+        //  (which is triggered by frameRecomposer in case of cases OR regular platform invalidation)
         scene.measureAndLayout()
+
         scene.draw(canvas)
     }
 

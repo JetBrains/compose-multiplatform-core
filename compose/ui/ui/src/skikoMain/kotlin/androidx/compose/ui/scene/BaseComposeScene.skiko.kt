@@ -23,6 +23,7 @@ import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
@@ -73,33 +74,47 @@ internal abstract class BaseComposeScene(
         private set
 
     private var isInvalidationDisabled = false
-    private inline fun <T> postponeInvalidation(traceTag: String, crossinline block: () -> T): T = trace(traceTag) {
-        check(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
-        if (isInvalidationDisabled) return block()
-        isInvalidationDisabled = true
-        return try {
-            // Try to get see the up-to-date state before running block
-            // Note that this doesn't guarantee it, if sendApplyNotifications is called concurrently
-            // in a different thread than this code.
-            snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
-            snapshotInvalidationTracker.performSnapshotChangesSynchronously(block)
-        } finally {
-            snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
-            isInvalidationDisabled = false
-        }.also {
-            updateInvalidations()
+    private inline fun <T> postponeInvalidation(traceTag: String, crossinline block: () -> T): T =
+        trace(traceTag) {
+            check(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
+            if (isInvalidationDisabled) return block()
+            isInvalidationDisabled = true
+            return try {
+                // Keep the same scene-boundary snapshot behavior the previous combined render path had
+                // via SnapshotInvalidationTracker.sendAndPerformSnapshotChanges(): first send global
+                // apply notifications, then run only this scene's queued owner-observer callbacks.
+                // This makes snapshot reads that affect layout/draw visible before the phase starts,
+                // but keeps the tracker scene-local;
+                Snapshot.sendApplyNotifications()
+
+                // Try to get see the up-to-date state before running block
+                // Note that this doesn't guarantee it, if sendApplyNotifications is called concurrently
+                // in a different thread than this code.
+                snapshotInvalidationTracker.performSnapshotChanges()
+                snapshotInvalidationTracker.performSnapshotChangesSynchronously(block)
+            } finally {
+                // This is the previous wrapper's trailing checkpoint written out explicitly.
+                // It lets state writes produced during the phase enqueue layout/draw invalidations
+                // before the native platform decides whether another layout or draw pass is needed.
+                Snapshot.sendApplyNotifications()
+                snapshotInvalidationTracker.performSnapshotChanges()
+                isInvalidationDisabled = false
+            }.also {
+                updateInvalidations()
+            }
         }
-    }
 
     protected fun updateInvalidations() {
         hasPendingMeasureOrLayout = snapshotInvalidationTracker.hasPendingMeasureOrLayout
         hasPendingDraw = snapshotInvalidationTracker.hasPendingDraw
-            || snapshotInvalidationTracker.hasPendingSnapshotCommands
         if (!isInvalidationDisabled && !isClosed && composition != null) {
             if (hasPendingMeasureOrLayout) {
                 invalidateLayout()
             }
-            if (hasPendingDraw) {
+            // Snapshot-observer commands queued on this scene need a future host turn to be
+            // performed (they're drained inside measureAndLayout/draw's postponeInvalidation), so
+            // request a draw invalidation without flipping the scene's own hasPendingDraw flag.
+            if (hasPendingDraw || hasPendingSnapshotCommands) {
                 invalidateDraw()
             }
         }
@@ -133,6 +148,9 @@ internal abstract class BaseComposeScene(
     override var hasPendingDraw: Boolean = true
         protected set
 
+    override val hasPendingSnapshotCommands: Boolean
+        get() = snapshotInvalidationTracker.hasPendingSnapshotCommands
+
     override fun setContent(content: @Composable () -> Unit) =
         postponeInvalidation("BaseComposeScene:setContent") {
             check(!isClosed) { "setContent called after ComposeScene is closed" }
@@ -162,6 +180,9 @@ internal abstract class BaseComposeScene(
         if (isClosed) return
 
         postponeInvalidation("BaseComposeScene:measureAndLayout") {
+            // Android runs owner measure/layout from AndroidComposeView.measureAndLayout() during
+            // the host layout traversal. Skiko exposes that phase imperatively so platforms can
+            // call it from their native layout pass instead of hiding it inside draw/render.
             runMeasureAndLayout()
 
             // Schedule synthetic events to be sent after measure/layout completes.
@@ -177,6 +198,9 @@ internal abstract class BaseComposeScene(
         if (isClosed) return
 
         postponeInvalidation("BaseComposeScene:draw") {
+            // AndroidComposeView.dispatchDraw() begins with measureAndLayout() so layout changes
+            // discovered after the host layout traversal are still settled before drawing. Keep
+            // that trailing layout pass here even though measureAndLayout() is also a public phase.
             runMeasureAndLayout()
             snapshotInvalidationTracker.onDraw()
             doDraw(canvas)

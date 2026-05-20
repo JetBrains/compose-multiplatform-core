@@ -22,7 +22,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
-import androidx.compose.ui.assertThat
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isFinite
@@ -52,6 +51,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.jetbrains.skia.Surface
@@ -548,39 +548,39 @@ class OwnerLayerTest {
 
                 draw()
                 Snapshot.sendApplyNotifications()
-                kotlin.test.assertEquals(0, invalidateCount)
-                kotlin.test.assertEquals(1, drawCount)  // no cache, draw
+                assertEquals(0, invalidateCount)
+                assertEquals(1, drawCount)  // no cache, draw
 
                 draw()
                 Snapshot.sendApplyNotifications()
-                kotlin.test.assertEquals(0, invalidateCount)
-                kotlin.test.assertEquals(1, drawCount) // no draw, as it is cached
+                assertEquals(0, invalidateCount)
+                assertEquals(1, drawCount) // no draw, as it is cached
 
                 state = 1f
                 Snapshot.sendApplyNotifications()
-                kotlin.test.assertEquals(1, invalidateCount)  // invalidate, as draw state changed
-                kotlin.test.assertEquals(1, drawCount)
+                assertEquals(1, invalidateCount)  // invalidate, as draw state changed
+                assertEquals(1, drawCount)
 
                 state = 2f
                 Snapshot.sendApplyNotifications()
-                kotlin.test.assertEquals(
+                assertEquals(
                     2,
                     invalidateCount
                 )  // invalidate, as draw state changed again
-                kotlin.test.assertEquals(1, drawCount)
+                assertEquals(1, drawCount)
 
                 draw()
                 Snapshot.sendApplyNotifications()
-                kotlin.test.assertEquals(2, invalidateCount)
-                kotlin.test.assertEquals(
+                assertEquals(2, invalidateCount)
+                assertEquals(
                     2,
                     drawCount
                 )  // draw, because we invalidated and cache cleared
 
                 draw()
                 Snapshot.sendApplyNotifications()
-                kotlin.test.assertEquals(2, invalidateCount)
-                kotlin.test.assertEquals(2, drawCount) // no draw, as it is cached
+                assertEquals(2, invalidateCount)
+                assertEquals(2, drawCount) // no draw, as it is cached
             } finally {
                 stateObserver.stop()
                 stateObserver.clear()
@@ -654,8 +654,8 @@ class OwnerLayerTest {
 
     private fun assertEquals(expected: Offset, actual: Offset, absoluteTolerance: Float) {
         val message = "Expected <$expected>, actual <$actual>."
-        kotlin.test.assertEquals(expected.x, actual.x, absoluteTolerance, message)
-        kotlin.test.assertEquals(expected.y, actual.y, absoluteTolerance, message)
+        assertEquals(expected.x, actual.x, absoluteTolerance, message)
+        assertEquals(expected.y, actual.y, absoluteTolerance, message)
     }
 
     private fun OwnedLayer.updateProperties(
