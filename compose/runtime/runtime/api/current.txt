@@ -119,12 +119,12 @@ package androidx.compose.runtime {
     method @KotlinOnly @androidx.compose.runtime.Composable public static inline <T> T remember(kotlin.jvm.functions.Function0<T> calculation);
     method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.compose.runtime.CompositionContext rememberCompositionContext();
     method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.compose.runtime.CompositionContext rememberCompositionContext(androidx.compose.runtime.Composer?, int);
-    property public static androidx.compose.runtime.Composer currentComposer;
-    property @Deprecated public static int currentCompositeKeyHash;
-    property public static long currentCompositeKeyHashCode;
-    property @SuppressCompatibility @androidx.compose.runtime.InternalComposeApi public static androidx.compose.runtime.CompositionContext currentCompositionContext;
-    property public static androidx.compose.runtime.CompositionLocalContext currentCompositionLocalContext;
-    property public static androidx.compose.runtime.RecomposeScope currentRecomposeScope;
+    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public static androidx.compose.runtime.Composer currentComposer;
+    property @Deprecated @androidx.compose.runtime.Composable @androidx.compose.runtime.ExplicitGroupsComposable public static int currentCompositeKeyHash;
+    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ExplicitGroupsComposable public static long currentCompositeKeyHashCode;
+    property @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.InternalComposeApi @androidx.compose.runtime.ReadOnlyComposable @org.jetbrains.annotations.TestOnly public static androidx.compose.runtime.CompositionContext currentCompositionContext;
+    property @androidx.compose.runtime.Composable public static androidx.compose.runtime.CompositionLocalContext currentCompositionLocalContext;
+    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public static androidx.compose.runtime.RecomposeScope currentRecomposeScope;
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.TYPEALIAS}) public @interface ComposeCompilerApi {
@@ -277,7 +277,7 @@ package androidx.compose.runtime {
 
   @androidx.compose.runtime.Stable public abstract sealed exhaustive class CompositionLocal<T> {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public final T getCurrent(androidx.compose.runtime.Composer?, int);
-    property public final inline T current;
+    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public final inline T current;
   }
 
   public interface CompositionLocalAccessorScope {
@@ -397,6 +397,14 @@ package androidx.compose.runtime {
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void LaunchedEffect(Object![], kotlin.jvm.functions.Function2<? super kotlinx.coroutines.CoroutineScope!,? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>, androidx.compose.runtime.Composer?, int);
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable public static void LaunchedEffect(kotlin.jvm.functions.Function2<? super kotlinx.coroutines.CoroutineScope!,? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>, androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @Deprecated @androidx.compose.runtime.Composable public static void LaunchedEffect(kotlin.jvm.functions.Function2<kotlinx.coroutines.CoroutineScope,kotlin.coroutines.Continuation<? super kotlin.Unit>,?> block);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable public static void SideEffect(Object? key1, Object? key2, Object? key3, kotlin.jvm.functions.Function0<kotlin.Unit> effect);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void SideEffect(Object?, Object?, Object?, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable public static void SideEffect(Object? key1, Object? key2, kotlin.jvm.functions.Function0<kotlin.Unit> effect);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void SideEffect(Object?, Object?, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable public static void SideEffect(Object? key1, kotlin.jvm.functions.Function0<kotlin.Unit> effect);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void SideEffect(Object?, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable public static void SideEffect(java.lang.Object?... keys, kotlin.jvm.functions.Function0<kotlin.Unit> effect);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void SideEffect(Object![], kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ExplicitGroupsComposable @androidx.compose.runtime.NonRestartableComposable public static void SideEffect(kotlin.jvm.functions.Function0<kotlin.Unit> effect);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void SideEffect(kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static kotlinx.coroutines.CoroutineScope rememberCoroutineScope(kotlin.jvm.functions.Function0<? extends kotlin.coroutines.CoroutineContext!>?, androidx.compose.runtime.Composer?, int, int);

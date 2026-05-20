@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.asDpRect
+import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.navigationevent.NavigationEventDispatcher
@@ -58,6 +58,7 @@ internal class UIKitComposeSceneLayer(
     private val onAccessibilityChanged: () -> Unit,
     configuration: ComposeContainerConfiguration,
     private var focusedViewsList: FocusedViewsList?,
+    consumePointerInputOutside: Boolean = focusedViewsList != null,
     parentCoroutineContext: CoroutineContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
     private val interfaceOrientationState: State<InterfaceOrientation>,
@@ -66,6 +67,14 @@ internal class UIKitComposeSceneLayer(
     private val layerCoroutineContext = parentCoroutineContext + layerJob
 
     override var focusable: Boolean = focusedViewsList != null
+        set(value) {
+            if (field != value) {
+                field = value
+                onAccessibilityChanged()
+            }
+        }
+
+    override var consumePointerInputOutside: Boolean = consumePointerInputOutside
         set(value) {
             if (field != value) {
                 field = value
@@ -102,7 +111,7 @@ internal class UIKitComposeSceneLayer(
         interfaceOrientationState = interfaceOrientationState
     ).also {
         interactionView.embedSubview(it.backgroundView)
-        it.isInterceptingOutsideEvents = focusable
+        it.isInterceptingOutsideEvents = consumePointerInputOutside
     }
 
     private fun createComposeScene(
@@ -155,7 +164,7 @@ internal class UIKitComposeSceneLayer(
     fun render(canvas: Canvas, nanoTime: Long) {
         if (scrimColor != null) {
             val density = layersViewController.metalView.view.density
-            val rect = layersViewController.metalView.view.bounds.asDpRect().toRect(density)
+            val rect = layersViewController.metalView.view.bounds.toDpRect().toRect(density)
 
             canvas.drawRect(rect, scrimPaint)
         }

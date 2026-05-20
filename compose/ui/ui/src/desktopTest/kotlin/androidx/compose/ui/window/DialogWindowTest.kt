@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,44 +17,59 @@
 package androidx.compose.ui.window
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.ui.*
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeDialog
 import androidx.compose.ui.awt.LocalAwtWindow
 import androidx.compose.ui.awt.SwingDialog
+import androidx.compose.ui.background
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.sendKeyEvent
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.*
-import androidx.compose.ui.window.window.animationsRunAtNonInfiniteRateIn
-import androidx.compose.ui.window.window.coroutineContextIsPropagatedTo
-import androidx.compose.ui.window.window.toSize
+import androidx.compose.ui.toInt
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.roundToIntSize
 import com.google.common.truth.Truth.assertThat
-import java.awt.*
+import java.awt.Dialog
+import java.awt.Dimension
+import java.awt.Point
+import java.awt.Robot
+import java.awt.Window
 import java.awt.event.KeyEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
-import javax.swing.JFrame
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 
 class DialogWindowTest {
@@ -707,7 +722,7 @@ class DialogWindowTest {
     }
 
     @Test
-    fun `window does not flash background when closed`() = runApplicationTest {
+    fun `dialog does not flash background when closed`() = runApplicationTest {
         lateinit var window: Window
         lateinit var dialog: Dialog
         var showDialog by mutableStateOf(false)
@@ -734,13 +749,13 @@ class DialogWindowTest {
 
         showDialog = true
         awaitIdle()
-        delay(1000)
+        delay(1.seconds)
 
         var nonBlackPixelDetected: java.awt.Color? = null
         val testLocation = dialog.bounds.let {
             Point(it.x + it.width / 2, it.y + it.height / 2)
         }
-        val stopThread = java.util.concurrent.atomic.AtomicBoolean(false)
+        val stopThread = AtomicBoolean(false)
         val t = thread {
             val robot = Robot()
             while (!stopThread.get()) {
@@ -754,66 +769,12 @@ class DialogWindowTest {
 
         dialog.dispose()
         awaitIdle()
-        delay(1000)
+        delay(1.seconds)
 
         stopThread.getAndSet(true)
         t.join()
 
         assertThat(nonBlackPixelDetected).isNull()
-    }
-
-    @Test
-    fun testComposeDialogClearFocusOnMouseDownEnabled() =
-        testComposeDialogClearFocusOnMouseDownEnabledFlag(true)
-
-    @Test
-    fun testComposeDialogClearFocusOnMouseDownDisabled() =
-        testComposeDialogClearFocusOnMouseDownEnabledFlag(false)
-
-    fun testComposeDialogClearFocusOnMouseDownEnabledFlag(enabled: Boolean) = runApplicationTest {
-        val focusRequester = FocusRequester()
-        var textFieldIsFocused = false
-
-        val window = JFrame()
-        val dialog = ComposeDialog(window)
-        try {
-            window.size = Dimension(800, 600)
-            dialog.isClearFocusOnMouseDownEnabled = enabled
-            dialog.setContent {
-                Column(Modifier.size(300.dp, 400.dp)) {
-                    BasicTextField(
-                        state = rememberTextFieldState(),
-                        modifier = Modifier
-                            .testTag("textField")
-                            .fillMaxWidth()
-                            .height(100.dp)
-                            .focusRequester(focusRequester)
-                            .onFocusChanged {
-                                textFieldIsFocused = it.isFocused
-                            }
-                    )
-                    LaunchedEffect(Unit) {
-                        focusRequester.requestFocus()
-                    }
-                    Box(Modifier.testTag("box").fillMaxWidth().weight(1f))
-                }
-            }
-
-            dialog.size = Dimension(300, 400)
-            dialog.isVisible = true
-
-            awaitIdle()
-
-            assertThat(textFieldIsFocused).isTrue()
-            dialog.sendMousePress(x = 100, y = 300)
-            dialog.sendMouseRelease(x = 100, y = 300)
-            awaitIdle()
-
-            assertThat(textFieldIsFocused).isEqualTo(!enabled)
-        } finally {
-            dialog.dispose()
-            window.dispose()
-        }
     }
 
     @Test

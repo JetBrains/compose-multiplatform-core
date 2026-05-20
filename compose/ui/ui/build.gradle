@@ -41,7 +41,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         withJava()
-        compileSdk = 35
+        compileSdk = 37
         androidResources.enable = true
         optimization {
             it.consumerKeepRules.publish = true
@@ -118,7 +118,6 @@ androidXMultiplatform {
             implementation("androidx.savedstate:savedstate-ktx:1.3.1")
             implementation("androidx.lifecycle:lifecycle-viewmodel:2.9.2")
             implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
-            implementation("androidx.transition:transition:1.6.0")
             implementation("androidx.emoji2:emoji2:1.2.0")
             implementation("androidx.window:window:1.5.0")
 
@@ -141,6 +140,7 @@ androidXMultiplatform {
             implementation("androidx.fragment:fragment:1.3.0")
             implementation("androidx.appcompat:appcompat:1.7.1")
             implementation("androidx.activity:activity:1.9.1")
+            implementation("androidx.transition:transition:1.7.0")
             implementation("androidx.core:core:1.16.0-beta01")
             implementation(libs.testUiautomator)
             implementation(libs.testRules)
@@ -195,7 +195,6 @@ androidXMultiplatform {
             implementation(project(":compose:test-utils"))
         }
 
-        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
         def lifecycleVersion = project.findProperty('artifactRedirection.version.androidx.lifecycle')
         // TODO: Align naming: nonAndroidMain
         skikoMain {
@@ -206,7 +205,7 @@ androidXMultiplatform {
                 api(libs.skiko)
                 implementation(libs.atomicFu)
 
-                implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
+                implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
                 implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
                 implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycleVersion")
             }
