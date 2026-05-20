@@ -148,7 +148,7 @@ internal class RootNodeOwner(
         set(value) {
             if (field != value) {
                 field = value
-                onRootConstrainsChanged(value?.toConstraints())
+                onRootSizeChanged(value)
             }
         }
     var density by mutableStateOf(density)
@@ -180,7 +180,7 @@ internal class RootNodeOwner(
         snapshotObserver.startObserving()
         owner.root.attach(owner)
         platformContext.rootForTestListener?.onRootForTestCreated(rootForTest)
-        onRootConstrainsChanged(size?.toConstraints())
+        onRootSizeChanged(size)
         updatePositionCacheAndDispatch()
         coroutineScope.launch {
             snapshotFlow { platformContext.windowInfo.containerSize }
@@ -256,11 +256,11 @@ internal class RootNodeOwner(
     ): T {
         return try {
             // TODO: is it possible to measure without reassigning root constraints?
-            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)
+            measureAndLayoutDelegate.updateRootConstraints(constraints)
             measureAndLayoutDelegate.measureOnly()
             block(owner.root)
         } finally {
-            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(size?.toConstraints())
+            measureAndLayoutDelegate.updateRootConstraints(size.toConstraints())
         }
     }
 
@@ -330,8 +330,8 @@ internal class RootNodeOwner(
         owner.root.modifier = _owner.rootModifier then modifier
     }
 
-    private fun onRootConstrainsChanged(constraints: Constraints?) {
-        measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)
+    private fun onRootSizeChanged(size: IntSize?) {
+        measureAndLayoutDelegate.updateRootConstraints(size.toConstraints())
         if (measureAndLayoutDelegate.hasPendingMeasureOrLayout) {
             snapshotInvalidationTracker.requestMeasureAndLayout()
         }
@@ -1029,37 +1029,11 @@ private const val ConstraintsMinNonFocusMask = 0x7FFF // 32767
  */
 internal const val LargeDimension = ConstraintsMinNonFocusMask - 1
 
-/**
- * After https://android-review.googlesource.com/c/platform/frameworks/support/+/2901556
- * Compose core doesn't allow measuring in infinity constraints,
- * but RootNodeOwner and ComposeScene allow passing Infinity constraints by contract
- * (Android on the other hand doesn't have public API for that and don't have such an issue).
- *
- * This method adds additional check on Infinity constraints,
- * and pass constraint large enough instead
- */
-private fun MeasureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(
-    constraints: Constraints?
-) {
-    updateRootConstraints(
-        constraints = Constraints(
-            minWidth = constraints?.minWidth ?: 0,
-            maxWidth = if (constraints != null && constraints.hasBoundedWidth) {
-                constraints.maxWidth
-            } else {
-                LargeDimension
-            },
-            minHeight = constraints?.minHeight ?: 0,
-            maxHeight = if (constraints != null && constraints.hasBoundedHeight) {
-                constraints.maxHeight
-            } else {
-                LargeDimension
-            }
-        )
-    )
-}
-
-private fun IntSize.toConstraints() = Constraints(maxWidth = width, maxHeight = height)
+private fun IntSize?.toConstraints() =
+    if (this == null)
+        Constraints()
+    else
+        Constraints(maxWidth = width, maxHeight = height)
 
 private object IdentityPositionCalculator: PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen
