@@ -95,7 +95,7 @@ internal interface OnCanvasTests {
       <positioning_container/>
     </container>
     */
-    private fun getContainer() = document.getElementById(containerId) ?: error("failed to get canvas with id ${containerId}")
+    fun getContainer() = document.getElementById(containerId) ?: error("failed to get canvas with id ${containerId}")
     private fun getPositioningContainer() = getContainer().children[0] ?: error("failed to get positioning container")
     fun getShadowRoot() = (getPositioningContainer().children[0]?.shadowRoot as? ExtendedShadowRoot) ?: error("failed to get shadowRoot")
     private fun getAppRoot() = getShadowRoot().children[1] as? HTMLElement ?: error("failed to get app root")

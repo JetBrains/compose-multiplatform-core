@@ -250,7 +250,6 @@ internal class ComposeWindow(
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
                     ComposeWebSemanticsListener(
-                        coroutineScope = MainScope(),
                         webSemanticsRoot = a11yContainerElement?.apply {
                             setAttribute("aria-label", "")
                             setAttribute("role", "presentation")
@@ -477,6 +476,15 @@ internal class ComposeWindow(
                             // Convert to proper type: IntSize was exposed to public API with meaning of DPs.
                             val boxSize = DpSize(size.width.dp, size.height.dp)
                             this@ComposeWindow.resize(boxSize)
+                        }
+                    }
+
+                    val webSemanticsListener = platformContext.semanticsOwnerListener as? ComposeWebSemanticsListener
+                    if (webSemanticsListener != null) {
+                        LaunchedEffect(Unit) {
+                            coroutineScope {
+                                webSemanticsListener.start(this)
+                            }
                         }
                     }
                 }

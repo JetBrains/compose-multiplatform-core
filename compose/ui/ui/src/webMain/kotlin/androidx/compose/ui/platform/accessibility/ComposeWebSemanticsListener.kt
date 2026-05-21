@@ -43,7 +43,6 @@ import kotlinx.coroutines.sync.withLock
 import org.w3c.dom.HTMLElement
 
 internal class ComposeWebSemanticsListener(
-    val coroutineScope: CoroutineScope,
     val webSemanticsRoot: HTMLElement,
 ) : PlatformContext.SemanticsOwnerListener {
 
@@ -57,7 +56,7 @@ internal class ComposeWebSemanticsListener(
         const val DEBOUNCE_MS = 100L
     }
 
-    init {
+    internal fun start(coroutineScope: CoroutineScope) {
         // Here we do the following:
         // - Every invalidation doesn't trigger an a11y tree sync immediately, but only after the changes have settled (debounce 100ms).
         // - We track the time spent in "debounce", so eventually it must sync the a11y tree despite no pause in invalidation events (the changes couldn't settle).
