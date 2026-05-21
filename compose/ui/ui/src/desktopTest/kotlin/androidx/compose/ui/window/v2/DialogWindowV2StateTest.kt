@@ -33,6 +33,7 @@ import androidx.compose.ui.awt.ComposeDialog
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.isLinux
 import androidx.compose.ui.isMacOs
+import androidx.compose.ui.layout.IntrinsicSizeKind
 import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -845,8 +846,8 @@ class DialogWindowV2StateTest {
     fun windowMinWidthWithMatchingMinHeight() = runDialogSizeTest(
         testName = "windowMinWidthWithMatchingMinHeight",
         sizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
-            intrinsicWidth = WindowIntrinsicSize.Min,
-            intrinsicHeight = WindowIntrinsicSize.Min,
+            intrinsicWidthKind = IntrinsicSizeKind.Min,
+            intrinsicHeightKind = IntrinsicSizeKind.Min,
         ),
         content = {
             BoxWithIntrinsicSize(
@@ -861,8 +862,8 @@ class DialogWindowV2StateTest {
     fun windowMaxHeightWithMatchingMaxWidth() = runDialogSizeTest(
         testName = "windowMaxHeightWithMatchingMaxWidth",
         sizeProvider = WindowSizeProvider.IntrinsicHeightWithMatchingIntrinsicWidth(
-            intrinsicWidth = WindowIntrinsicSize.Max,
-            intrinsicHeight = WindowIntrinsicSize.Max,
+            intrinsicWidth = IntrinsicSizeKind.Max,
+            intrinsicHeight = IntrinsicSizeKind.Max,
         ),
         content = {
             BoxWithIntrinsicSize(
@@ -877,8 +878,8 @@ class DialogWindowV2StateTest {
     fun `requested size is rounded up`() = runDialogSizeTest(
         testName = "requested size is rounded up",
         sizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
-            intrinsicWidth = WindowIntrinsicSize.Min,
-            intrinsicHeight = WindowIntrinsicSize.Min,
+            intrinsicWidthKind = IntrinsicSizeKind.Min,
+            intrinsicHeightKind = IntrinsicSizeKind.Min,
         ),
         content = {
             BoxWithIntrinsicSize(

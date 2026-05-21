@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.isLinux
 import androidx.compose.ui.isMacOs
+import androidx.compose.ui.layout.IntrinsicSizeKind
 import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -70,9 +71,9 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
 import org.junit.Assume.assumeTrue
 
-// Note that on Linux some tests are flaky. Swing event listener's on Linux has non-deterministic
-// nature. To avoid flakiness we use delays
-// (see description of `delay` parameter in TestUtils.runApplicationTest).
+// Note that on Linux some tests are flaky. Swing event listeners on Linux have a non-deterministic
+// nature. To avoid flakiness, we use delays (see description of the `delay` parameter in
+// TestUtils.runApplicationTest).
 // It is not a good solution, but it works.
 
 // TODO(demin): figure out how can we fix flaky tests on Linux
@@ -1083,8 +1084,8 @@ class WindowV2StateTest {
     fun windowMinWidthWithMatchingMinHeight() = runWindowSizeTest(
         testName = "windowMinWidthWithMatchingMinHeight",
         sizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
-            intrinsicWidth = WindowIntrinsicSize.Min,
-            intrinsicHeight = WindowIntrinsicSize.Min,
+            intrinsicWidthKind = IntrinsicSizeKind.Min,
+            intrinsicHeightKind = IntrinsicSizeKind.Min,
         ),
         content = {
             BoxWithIntrinsicSize(
@@ -1099,8 +1100,8 @@ class WindowV2StateTest {
     fun windowMaxHeightWithMatchingMaxWidth() = runWindowSizeTest(
         testName = "windowMaxHeightWithMatchingMaxWidth",
         sizeProvider = WindowSizeProvider.IntrinsicHeightWithMatchingIntrinsicWidth(
-            intrinsicWidth = WindowIntrinsicSize.Max,
-            intrinsicHeight = WindowIntrinsicSize.Max,
+            intrinsicWidth = IntrinsicSizeKind.Max,
+            intrinsicHeight = IntrinsicSizeKind.Max,
         ),
         content = {
             BoxWithIntrinsicSize(
@@ -1115,8 +1116,8 @@ class WindowV2StateTest {
     fun `requested size is rounded up`() = runWindowSizeTest(
         testName = "requested size is rounded up",
         sizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
-            intrinsicWidth = WindowIntrinsicSize.Min,
-            intrinsicHeight = WindowIntrinsicSize.Min,
+            intrinsicWidthKind = IntrinsicSizeKind.Min,
+            intrinsicHeightKind = IntrinsicSizeKind.Min,
         ),
         content = {
             BoxWithIntrinsicSize(

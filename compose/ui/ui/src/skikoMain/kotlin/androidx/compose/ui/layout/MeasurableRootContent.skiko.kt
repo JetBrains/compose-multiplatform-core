@@ -64,9 +64,9 @@ fun MeasurableRootContent.unconstrainedSize(): DpSize {
 /**
  * Computes the intrinsic size of the content, given a fixed size on one dimension.
  */
-private fun MeasurableRootContent.intrinsicDimension(
+internal fun MeasurableRootContent.intrinsicDimensionSize(
     isWidth: Boolean,
-    isMax: Boolean,
+    intrinsicSizeKind: IntrinsicSizeKind,
     otherDimensionSize: Dp,
 ): DpSize {
     val otherDimensionSizePx = with(density) { otherDimensionSize.roundToPx() }
@@ -74,19 +74,11 @@ private fun MeasurableRootContent.intrinsicDimension(
     val width: Int
     val height: Int
     if (isWidth) {
-        width = if (isMax) {
-            maxIntrinsicWidth(otherDimensionSizePx)
-        } else {
-            minIntrinsicWidth(otherDimensionSizePx)
-        }
         height = otherDimensionSizePx
+        width = intrinsicSizeKind.widthOf(this, height)
     } else {
         width = otherDimensionSizePx
-        height = if (isMax) {
-            maxIntrinsicHeight(otherDimensionSizePx)
-        } else {
-            minIntrinsicHeight(otherDimensionSizePx)
-        }
+        height = intrinsicSizeKind.heightOf(this, width)
     }
 
     return with(density) {
@@ -102,9 +94,9 @@ private fun MeasurableRootContent.intrinsicDimension(
  */
 @ExperimentalComposeUiApi
 fun MeasurableRootContent.minIntrinsicWidthSize(height: Dp) =
-    intrinsicDimension(
+    intrinsicDimensionSize(
         isWidth = true,
-        isMax = false,
+        intrinsicSizeKind = IntrinsicSizeKind.Min,
         otherDimensionSize = height,
     )
 
@@ -116,9 +108,9 @@ fun MeasurableRootContent.minIntrinsicWidthSize(height: Dp) =
  */
 @ExperimentalComposeUiApi
 fun MeasurableRootContent.maxIntrinsicWidthSize(height: Dp) =
-    intrinsicDimension(
+    intrinsicDimensionSize(
         isWidth = true,
-        isMax = true,
+        intrinsicSizeKind = IntrinsicSizeKind.Max,
         otherDimensionSize = height,
     )
 
@@ -130,9 +122,9 @@ fun MeasurableRootContent.maxIntrinsicWidthSize(height: Dp) =
  */
 @ExperimentalComposeUiApi
 fun MeasurableRootContent.minIntrinsicHeightSize(width: Dp) =
-    intrinsicDimension(
+    intrinsicDimensionSize(
         isWidth = false,
-        isMax = false,
+        intrinsicSizeKind = IntrinsicSizeKind.Min,
         otherDimensionSize = width,
     )
 
@@ -144,8 +136,56 @@ fun MeasurableRootContent.minIntrinsicHeightSize(width: Dp) =
  */
 @ExperimentalComposeUiApi
 fun MeasurableRootContent.maxIntrinsicHeightSize(width: Dp) =
-    intrinsicDimension(
+    intrinsicDimensionSize(
         isWidth = false,
-        isMax = true,
+        intrinsicSizeKind = IntrinsicSizeKind.Max,
         otherDimensionSize = width,
     )
+
+/**
+ * The two kinds of intrinsic sizes: [IntrinsicSizeKind.Min] and [IntrinsicSizeKind.Max].
+ *
+ * Note: we can't simply use `androidx.compose.foundation.layout.IntrinsicSize` here, because that's
+ * in `foundation`, and this is in `ui`.
+ */
+@ExperimentalComposeUiApi
+abstract class IntrinsicSizeKind internal constructor() {
+
+    /**
+     * Returns the intrinsic width (min or max) of the given [measurable] at the given [height].
+     */
+    abstract fun widthOf(measurable: IntrinsicMeasurable, height: Int): Int
+
+    /**
+     * Returns the intrinsic height (min or max) of the given [measurable] at the given [width].
+     */
+    abstract fun heightOf(measurable: IntrinsicMeasurable, width: Int): Int
+
+    /**
+     * Measures minimum intrinsic size.
+     */
+    @ExperimentalComposeUiApi
+    data object Min: IntrinsicSizeKind() {
+        override fun widthOf(measurable: IntrinsicMeasurable, height: Int): Int {
+            return measurable.minIntrinsicWidth(height)
+        }
+
+        override fun heightOf(measurable: IntrinsicMeasurable, width: Int): Int {
+            return measurable.minIntrinsicHeight(width)
+        }
+    }
+
+    /**
+     * Measures maximum intrinsic size.
+     */
+    @ExperimentalComposeUiApi
+    data object Max: IntrinsicSizeKind() {
+        override fun widthOf(measurable: IntrinsicMeasurable, height: Int): Int {
+            return measurable.maxIntrinsicWidth(height)
+        }
+
+        override fun heightOf(measurable: IntrinsicMeasurable, width: Int): Int {
+            return measurable.maxIntrinsicHeight(width)
+        }
+    }
+}
