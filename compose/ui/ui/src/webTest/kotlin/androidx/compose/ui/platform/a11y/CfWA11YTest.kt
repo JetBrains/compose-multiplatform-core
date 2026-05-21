@@ -61,7 +61,6 @@ import org.w3c.dom.get
  *   That's why it's better to use an Int state in such tests, so the change in HTML will be noticed 100%.
  * - Note: running the k/js tests in FF takes 15% longer than in Chrome. K/Wasm is fast in both cases.
  */
-//@Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-10001/Fix-CfWA11YTest.a11yButtonClick-is-too-flaky
 class CfWA11YTest : OnCanvasTests {
 
     @Test
