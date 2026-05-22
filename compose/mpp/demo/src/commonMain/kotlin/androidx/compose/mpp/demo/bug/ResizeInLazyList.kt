@@ -106,7 +106,7 @@ internal val ResizeInLazyList = Screen.Example("Resize In LazyList") {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             itemsIndexed(names) { index, name ->
-                println("$name placed as view")
+                //println("$name placed as view")
 
                 val backgroundColor = remember(name) {
                     Color(

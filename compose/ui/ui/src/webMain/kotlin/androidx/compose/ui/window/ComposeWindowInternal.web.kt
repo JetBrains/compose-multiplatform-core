@@ -127,9 +127,11 @@ import org.w3c.dom.pointerevents.PointerEvent
 private val actualDensity
     get() = window.devicePixelRatio
 
+internal data class MarkedData(val intSize: IntSize, val id: String)
+
 internal interface ComposeWindowState {
     fun init() {}
-    fun sizeFlow(): Flow<IntSize>
+    fun sizeFlow(): Flow<MarkedData>
 
     val globalEvents: EventTargetListener
 
@@ -144,24 +146,25 @@ private sealed interface KeyboardModeState {
 }
 
 internal class DefaultWindowState(private val viewportContainer: Element) : ComposeWindowState {
-    private val channel = Channel<IntSize>(CONFLATED)
+    private val channel = Channel<MarkedData>(CONFLATED)
 
     override val globalEvents = EventTargetListener(window)
 
     override fun init() {
 
         globalEvents.addDisposableEvent("resize") {
-            channel.trySend(getParentContainerBox())
+            channel.trySend(MarkedData(getParentContainerBox(), "A"))
         }
 
         initMediaEventListener {
-            channel.trySend(getParentContainerBox())
+            channel.trySend(MarkedData(getParentContainerBox(), "B"))
         }
 
-        channel.trySend(getParentContainerBox())
+        channel.trySend(MarkedData(getParentContainerBox(), "C"))
     }
 
     private fun getParentContainerBox(): IntSize {
+        console.log("getParentContainerBox ${viewportContainer.clientWidth} x ${viewportContainer.clientHeight}", viewportContainer)
         return IntSize(viewportContainer.clientWidth, viewportContainer.clientHeight)
     }
 
@@ -478,9 +481,11 @@ internal class ComposeWindow(
                     }
 
                     LaunchedEffect(Unit) {
-                        state.sizeFlow().collect { size ->
+                        state.sizeFlow().collect { markedData ->
+                            val size = markedData.intSize
                             // Convert to proper type: IntSize was exposed to public API with meaning of DPs.
                             val boxSize = DpSize(size.width.dp, size.height.dp)
+                            println("SIZE [${markedData.id}] ${boxSize.width} x ${boxSize.height} ")
                             this@ComposeWindow.resize(boxSize)
                         }
                     }
