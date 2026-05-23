@@ -167,6 +167,8 @@ internal class RootNodeOwner(
     private val ownedLayerManager = OwnedLayerManagerImpl()
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
+
+    private val onPointerUpdateCallback = inputHandler::onPointerUpdate
     private var isDisposed = false
 
     private var positionInWindow: Offset? = null
@@ -585,7 +587,7 @@ internal class RootNodeOwner(
                 measureAndLayoutDelegate.hasPendingOnPositionedCallbacks
             ) {
                 trace("RootNodeOwner:measureAndLayout") {
-                    val resend = if (sendPointerUpdate) inputHandler::onPointerUpdate else null
+                    val resend = if (sendPointerUpdate) onPointerUpdateCallback else null
                     val rootNodeResized = measureAndLayoutDelegate.measureAndLayout(resend)
                     if (rootNodeResized) {
                         snapshotInvalidationTracker.requestDraw()
