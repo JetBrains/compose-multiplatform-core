@@ -33,6 +33,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Indicates that trait interface style trait changed
 - (void)userInterfaceStyleDidChange CMP_ABSTRACT_FUNCTION;
 
+/// Bridges UIKit's `-viewSafeAreaInsetsDidChange` for Kotlin override.
+- (void)safeAreaInsetsDidUpdate CMP_CAN_OVERRIDE;
+
 @end
 
 NS_ASSUME_NONNULL_END

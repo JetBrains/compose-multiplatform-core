@@ -251,7 +251,7 @@ class WindowInsetsPaddingTest {
 
     @OptIn(ExperimentalForeignApi::class)
     @Test
-    fun testWindowInsetsPaddingAppliedToNonFullscreenComposeUIViewContent() = runUIKitInstrumentedTest {
+    fun testWindowInsetsPaddingNotAppliedToEmbeddedNonFullscreenComposeUIView() = runUIKitInstrumentedTest {
         var innerBoxRect = DpRectZero()
         var outerBoxRect = DpRectZero()
 
@@ -287,18 +287,10 @@ class WindowInsetsPaddingTest {
             }
         }
 
-        // WindowInsets.statusBars should only represent the insets at the top in portrait orientation
-        val topSafeAreaInsetsDp = viewController.view.safeAreaInsets.useContents { top }.dp
-
-        assertEquals(
-            DpRect(
-                left = outerBoxRect.left,
-                top = outerBoxRect.top + topSafeAreaInsetsDp,
-                right = outerBoxRect.right,
-                bottom = outerBoxRect.bottom
-            ),
-            innerBoxRect
-        )
+        // An embedded ComposeUIView positioned away from the screen edges has zero
+        // safe-area insets of its own; WindowInsets.statusBars inside it should be empty
+        // and the inner box should fill its parent slot exactly.
+        assertEquals(outerBoxRect, innerBoxRect)
     }
 }
 

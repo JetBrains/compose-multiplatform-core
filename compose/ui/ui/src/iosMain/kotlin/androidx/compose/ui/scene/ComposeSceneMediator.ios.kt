@@ -77,13 +77,7 @@ import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.toNanoSeconds
-import androidx.compose.ui.input.key.internal
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.isAltPressed
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.pointer.isMetaPressed
-import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.createPlatformClipboard
@@ -379,6 +373,7 @@ internal class ComposeSceneMediator(
      */
     private val _backgroundView = BackgroundInputView(
         onLayoutSubviews = ::updateLayout,
+        onSafeAreaInsetsDidChange = ::onSafeAreaInsetsDidChange,
         hitTestInteropView = ::hitTestInteropView,
         isPointInsideInteractionBounds = ::isPointInsideInteractionBounds,
         onTouchesEvent = ::onTouchesEvent,
@@ -402,11 +397,11 @@ internal class ComposeSceneMediator(
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
     )
 
+    // Insets are read from the host view only. Adding `window.rootViewController.view`
+    // (the union introduced in #2946 for CMP-9931) over-reports when CMP is positioned
+    // below window-level chrome that does not intersect `_overlayView`.
     private val windowInsetsManager = WindowInsetsManager(
-        windowInsetsViews = listOf(
-            { _overlayView },
-            { windowContext.window?.rootViewController?.view },
-        ),
+        windowInsetsViews = listOf({ _overlayView }),
         interfaceOrientation = interfaceOrientationState
     )
 
@@ -834,6 +829,11 @@ internal class ComposeSceneMediator(
         interactionBounds = with(screenDensity) {
             _overlayView.bounds.toDpRect().toRect().roundToIntRect()
         }
+    }
+
+    /** Re-reads safe-area insets in response to UIKit's `safeAreaInsetsDidChange`. */
+    internal fun onSafeAreaInsetsDidChange() {
+        windowInsetsManager.updateInsets()
     }
 
     private val currentViewSize: Size get() {

@@ -260,6 +260,10 @@ internal class ComposeContainer(
         navigationEventInput?.onDidMoveToWindow(null, view)
     }
 
+    fun onSafeAreaInsetsDidChange() {
+        mediator?.onSafeAreaInsetsDidChange()
+    }
+
     fun updateUserInterfaceStyle(style: UIUserInterfaceStyle) {
         systemThemeState.value = style.asComposeSystemTheme()
     }
