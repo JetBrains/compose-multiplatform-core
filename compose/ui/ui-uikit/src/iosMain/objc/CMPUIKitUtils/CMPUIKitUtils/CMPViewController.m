@@ -182,6 +182,15 @@
     CMP_ABSTRACT_FUNCTION_CALLED
 }
 
+- (void)viewSafeAreaInsetsDidChange {
+    [super viewSafeAreaInsetsDidChange];
+    [self safeAreaInsetsDidUpdate];
+}
+
+- (void)safeAreaInsetsDidUpdate {
+    // Default no-op; subclasses override.
+}
+
 
 - (void)dealloc {
     if (_lifecycleState == CMPComposeContainerLifecycleStateStarted) {
