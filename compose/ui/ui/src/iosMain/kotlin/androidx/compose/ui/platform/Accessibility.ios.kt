@@ -1547,11 +1547,12 @@ internal class AccessibilityMediator(
 
             fun makeSemanticsNode(children: List<AccessibilityElement>): AccessibilityElement {
                 val isLiveRegion = node.unmergedConfig.contains(SemanticsProperties.LiveRegion)
-                val (oldLabel, oldValue) = if (isLiveRegion) {
+                var oldLabel: String?  = null
+                var oldValue: String? = null
+                if (isLiveRegion) {
                     val element = accessibilityElementsMap[node.semanticsKey]
-                    element?.accessibilityLabel() to element?.accessibilityValue()
-                } else {
-                    Pair(null, null)
+                    oldLabel = element?.accessibilityLabel()
+                    oldValue = element?.accessibilityValue()
                 }
 
                 val element = createOrUpdateAccessibilityElement(
