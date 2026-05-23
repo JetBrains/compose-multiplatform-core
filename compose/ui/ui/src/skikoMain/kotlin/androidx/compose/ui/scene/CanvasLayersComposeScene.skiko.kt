@@ -150,7 +150,7 @@ private class CanvasLayersComposeSceneImpl(
 
     override val focusManager = ComposeSceneFocusManager(
         focusOwner = { focusedOwner.focusOwner },
-        measureAndLayout = ::doMeasureAndLayout
+        measureAndLayout = doMeasureAndLayoutCallback
     )
 
     override val rootDragAndDropNode = ComposeSceneDragAndDropNode { focusedOwner.dragAndDropOwner }

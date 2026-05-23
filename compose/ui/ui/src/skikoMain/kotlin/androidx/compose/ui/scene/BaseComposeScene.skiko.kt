@@ -58,10 +58,11 @@ internal abstract class BaseComposeScene(
     private val invalidate: () -> Unit,
 ) : ComposeScene {
     private val updateInvalidationsCallback = ::updateInvalidations
+    protected val doMeasureAndLayoutCallback = ::doMeasureAndLayout
     protected val snapshotInvalidationTracker = SnapshotInvalidationTracker(updateInvalidationsCallback)
     protected val inputHandler: ComposeSceneInputHandler =
         ComposeSceneInputHandler(
-            prepareForPointerInputEvent = ::doMeasureAndLayout,
+            prepareForPointerInputEvent = doMeasureAndLayoutCallback,
             processPointerInputEvent = ::onPointerInputEvent,
             cancelPointerInput = ::processCancelPointerInput,
             processKeyEvent = ::processKeyEvent,
