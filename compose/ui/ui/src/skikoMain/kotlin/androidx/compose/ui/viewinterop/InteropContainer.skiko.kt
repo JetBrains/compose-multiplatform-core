@@ -151,7 +151,7 @@ internal fun InteropContainer.TrackInteropPlacementContainer(content: @Composabl
  * @property onModifierNodeCreated An optional block of code that to receive the reference to
  * [TrackInteropPlacementModifierNode].
  */
-private data class RootTrackInteropPlacementModifierElement(
+internal data class RootTrackInteropPlacementModifierElement(
     val onModifierNodeCreated: (TrackInteropPlacementModifierNode) -> Unit
 ) : ModifierNodeElement<TrackInteropPlacementModifierNode>() {
     override fun create() = TrackInteropPlacementModifierNode(

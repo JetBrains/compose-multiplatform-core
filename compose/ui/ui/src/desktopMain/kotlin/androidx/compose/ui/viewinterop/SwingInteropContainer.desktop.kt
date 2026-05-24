@@ -16,8 +16,6 @@
 
 package androidx.compose.ui.viewinterop
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.util.fastForEach
@@ -247,9 +245,7 @@ internal class SwingInteropContainer(
      * inside [body].
      */
     fun postponingExecutingScheduledUpdates(body: () -> Unit) {
-        scheduledUpdatesSwapchain.preventingRedrawRequests {
-            body()
-        }
+        scheduledUpdatesSwapchain.preventingRedrawRequests(body)
 
         executeScheduledUpdates()
     }
@@ -268,14 +264,4 @@ internal class SwingInteropContainer(
     fun getClipRectForComponent(component: Component): ClipRectangle =
         requireNotNull(interopComponents[component]) as ClipRectangle
 
-    @Composable
-    operator fun invoke(content: @Composable () -> Unit) {
-        CompositionLocalProvider(
-            LocalInteropContainer provides this,
-        ) {
-            TrackInteropPlacementContainer(
-                content = content
-            )
-        }
-    }
 }

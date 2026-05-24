@@ -18,6 +18,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ComposeUiFlags
@@ -45,6 +46,7 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.layout.MeasurableRootContent
+import androidx.compose.ui.layout.OverlayLayout
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
 import androidx.compose.ui.platform.DefaultInputModeManager
@@ -69,11 +71,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastRoundToInt
+import androidx.compose.ui.viewinterop.LocalInteropContainer
+import androidx.compose.ui.viewinterop.RootTrackInteropPlacementModifierElement
 import androidx.compose.ui.viewinterop.SwingInteropContainer
 import androidx.compose.ui.window.WindowExceptionHandler
-import androidx.compose.ui.window.toDpOffset
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.sizeInPx
+import androidx.compose.ui.window.toDpOffset
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
@@ -192,54 +196,70 @@ internal class ComposeSceneMediator(
     private val shouldPlaceInteropAbove: Boolean
         get() = !useInteropBlending || metalOrderHack
 
+
+    private val rootInteropModifier = RootTrackInteropPlacementModifierElement {}
+    private var _interopContainer : SwingInteropContainer? = null
+
     /**
      * A container that controls interop views/components. It is used to add and remove
      * native views/components to [container].
      */
-    private val interopContainer = SwingInteropContainer(
-        root = container,
-        placeInteropAbove = shouldPlaceInteropAbove,
-        requestRedraw = ::onComposeInvalidation
-    )
-
-    private val interopContainerListener = object : ContainerListener {
-        private val clipMap = mutableMapOf<SwingInteropViewGroup, ClipRectangle>()
-
-        override fun componentAdded(e: ContainerEvent) {
-            val component = e.child
-            if (component !is SwingInteropViewGroup) return
-
-            if (useInteropBlending) {
-                // In case of interop blending, compose might draw content above this [component].
-                // But due to implementation of [JLayeredPane]'s lightweight/heavyweight mixing
-                // logic, it doesn't send mouse events to parents or another layers.
-                // In case if [component] is placed above [contentComponent] (see addToLayer),
-                // subscribe to mouse events from interop views to handle such input.
-                component.subscribeToMouseEvents(mouseListener)
-            } else {
-                // Without interop blending, just add clip region to make proper
-                // "interop always on top" behaviour.
-                addClipComponent(component)
+    private val interopContainer : SwingInteropContainer
+        get() = _interopContainer ?: SwingInteropContainer(
+            root = container,
+            placeInteropAbove = shouldPlaceInteropAbove,
+            requestRedraw = ::onComposeInvalidation
+        ).also {
+            _interopContainer = it
+            // Because interopContainer.root == container, add a listener only after adding
+            // [invisibleComponent] and [contentComponent] to react only on changes with [interopLayer].
+            it.root.addContainerListener(interopContainerListener)
+            onRenderApiChanged {
+                it.placeInteropAbove = shouldPlaceInteropAbove
             }
         }
 
-        override fun componentRemoved(e: ContainerEvent) {
-            val component = e.child
-            if (component !is SwingInteropViewGroup) return
 
-            removeClipComponent(component)
-            component.unsubscribeFromMouseEvents(mouseListener)
-        }
+    private val interopContainerListener : ContainerListener by lazy(LazyThreadSafetyMode.NONE) {
+        object : ContainerListener {
+            private val clipMap = mutableMapOf<SwingInteropViewGroup, ClipRectangle>()
 
-        private fun addClipComponent(component: SwingInteropViewGroup) {
-            val clipRectangle = interopContainer.getClipRectForComponent(component)
-            clipMap[component] = clipRectangle
-            skiaLayerComponent.clipComponents.add(clipRectangle)
-        }
+            override fun componentAdded(e: ContainerEvent) {
+                val component = e.child
+                if (component !is SwingInteropViewGroup) return
 
-        private fun removeClipComponent(component: SwingInteropViewGroup) {
-            clipMap.remove(component)?.let {
-                skiaLayerComponent.clipComponents.remove(it)
+                if (useInteropBlending) {
+                    // In case of interop blending, compose might draw content above this [component].
+                    // But due to implementation of [JLayeredPane]'s lightweight/heavyweight mixing
+                    // logic, it doesn't send mouse events to parents or another layers.
+                    // In case if [component] is placed above [contentComponent] (see addToLayer),
+                    // subscribe to mouse events from interop views to handle such input.
+                    component.subscribeToMouseEvents(mouseListener)
+                } else {
+                    // Without interop blending, just add clip region to make proper
+                    // "interop always on top" behaviour.
+                    addClipComponent(component)
+                }
+            }
+
+            override fun componentRemoved(e: ContainerEvent) {
+                val component = e.child
+                if (component !is SwingInteropViewGroup) return
+
+                removeClipComponent(component)
+                component.unsubscribeFromMouseEvents(mouseListener)
+            }
+
+            private fun addClipComponent(component: SwingInteropViewGroup) {
+                val clipRectangle = interopContainer.getClipRectForComponent(component)
+                clipMap[component] = clipRectangle
+                skiaLayerComponent.clipComponents.add(clipRectangle)
+            }
+
+            private fun removeClipComponent(component: SwingInteropViewGroup) {
+                clipMap.remove(component)?.let {
+                    skiaLayerComponent.clipComponents.remove(it)
+                }
             }
         }
     }
@@ -407,12 +427,6 @@ internal class ComposeSceneMediator(
         container.add(invisibleComponent)
         container.add(contentComponent)
 
-        // Because interopContainer.root == container, add a listener only after adding
-        // [invisibleComponent] and [contentComponent] to react only on changes with [interopLayer].
-        interopContainer.root.addContainerListener(interopContainerListener)
-        onRenderApiChanged {
-            interopContainer.placeInteropAbove = shouldPlaceInteropAbove
-        }
 
         // AwtDragAndDropManager support
         container.transferHandler = dragAndDropManager.transferHandler
@@ -599,9 +613,9 @@ internal class ComposeSceneMediator(
         scene.close()
         skiaLayerComponent.dispose()
 
-        interopContainer.root.removeContainerListener(interopContainerListener)
+        _interopContainer?.root?.removeContainerListener(interopContainerListener)
         // Since rendering will not happen after, we need to execute all scheduled updates
-        interopContainer.dispose()
+        _interopContainer?.dispose()
 
         _onComponentAttached = null
     }
@@ -651,8 +665,13 @@ internal class ComposeSceneMediator(
         runOnceComponentAttached {
             catchExceptions {
                 scene.setContent {
-                    interopContainer {
-                        content()
+                    CompositionLocalProvider(
+                        LocalInteropContainer providesComputed { interopContainer },
+                    ) {
+                        OverlayLayout(
+                            modifier = rootInteropModifier,
+                            content = content
+                        )
                     }
                 }
             }
@@ -703,7 +722,14 @@ internal class ComposeSceneMediator(
     }
 
     override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) = catchExceptions {
-        interopContainer.postponingExecutingScheduledUpdates {
+        val container = _interopContainer
+        if (container != null) {
+            container.postponingExecutingScheduledUpdates {
+                canvas.withSceneOffset {
+                    scene.render(asComposeCanvas(), nanoTime)
+                }
+            }
+        } else {
             canvas.withSceneOffset {
                 scene.render(asComposeCanvas(), nanoTime)
             }
