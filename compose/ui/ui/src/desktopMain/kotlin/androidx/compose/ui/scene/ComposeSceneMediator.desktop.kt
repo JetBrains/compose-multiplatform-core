@@ -74,6 +74,7 @@ import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.RootTrackInteropPlacementModifierElement
 import androidx.compose.ui.viewinterop.SwingInteropContainer
+import androidx.compose.ui.viewinterop.TrackInteropPlacementModifierNode
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.sizeInPx
@@ -197,7 +198,10 @@ internal class ComposeSceneMediator(
         get() = !useInteropBlending || metalOrderHack
 
 
-    private val rootInteropModifier = RootTrackInteropPlacementModifierElement {}
+    private var rootInteropModifierNode: TrackInteropPlacementModifierNode? = null
+    private val rootInteropModifier = RootTrackInteropPlacementModifierElement {
+        rootInteropModifierNode = it
+    }
     private var _interopContainer : SwingInteropContainer? = null
 
     /**
@@ -211,6 +215,7 @@ internal class ComposeSceneMediator(
             requestRedraw = ::onComposeInvalidation
         ).also {
             _interopContainer = it
+            it.rootModifier = rootInteropModifierNode
             // Because interopContainer.root == container, add a listener only after adding
             // [invisibleComponent] and [contentComponent] to react only on changes with [interopLayer].
             it.root.addContainerListener(interopContainerListener)
