@@ -272,7 +272,7 @@ class SnapshotObserverTests {
                 ): SnapshotInstanceObservers {
                     record(parent, "creating, readonly = $readonly")
                     return SnapshotInstanceObservers(
-                        readObserver = { record(it, "reading") },
+                        readObserver = { record(it, "reading"); true },
                         writeObserver = { record(it, "writing") },
                     )
                 }
@@ -359,7 +359,7 @@ class SnapshotObserverTests {
                 ): SnapshotInstanceObservers {
                     record(parent, "creating, readonly = $readonly")
                     return SnapshotInstanceObservers(
-                        readObserver = { record(it, "reading") },
+                        readObserver = { record(it, "reading"); true },
                         writeObserver = { record(it, "writing") },
                     )
                 }

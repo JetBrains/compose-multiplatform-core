@@ -223,7 +223,7 @@ class SnapshotStateExtensionsTests {
         val snapshotFlow =
             callbackFlow<T> {
                 val readSet = mutableSetOf<Any>()
-                val readObserver: (Any) -> Unit = { readSet.add(it) }
+                val readObserver: (Any) -> Boolean = { readSet.add(it); true }
 
                 fun emitLatestValue() {
                     val value =
