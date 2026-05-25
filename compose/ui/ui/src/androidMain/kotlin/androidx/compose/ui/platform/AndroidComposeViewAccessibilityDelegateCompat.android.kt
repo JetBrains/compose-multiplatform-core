@@ -1665,6 +1665,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         refreshFocusEvents = true,
                         clearOwnerFocus = true,
                         focusDirection = Exit,
+                        isAutomatic = false,
                     )
                     true
                 } else {
