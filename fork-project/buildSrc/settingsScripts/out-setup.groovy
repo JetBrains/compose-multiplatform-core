@@ -17,18 +17,8 @@
 import org.gradle.api.Project
 
 class BuildDirectoryHelper {
-    private static File getOutDirectory(File checkoutRoot) {
-        def outDir = System.env.OUT_DIR
-        if (outDir == null) {
-            outDir = new File("${checkoutRoot}/out")
-        } else {
-            outDir = new File(outDir)
-        }
-        return outDir
-    }
-
     static void chooseBuildDirectory(File checkoutRoot, String rootProjectName, Project project) {
-        File outDir = getOutDirectory(checkoutRoot)
+        File outDir = new File("${checkoutRoot}/out")
         project.ext.outDir = outDir
         // Expected out directory structure for :foo:bar is out/androidx/foo/bar
         project.layout.buildDirectory.set(
