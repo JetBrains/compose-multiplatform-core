@@ -255,6 +255,7 @@ private class FocusGroupPropertiesNode :
                         refreshFocusEvents = true,
                         clearOwnerFocus = false,
                         focusDirection = Exit,
+                        isAutomatic = false,
                     )
                 }
             }
