@@ -1895,7 +1895,9 @@ private fun mergedReadObserver(
     @Suppress("NAME_SHADOWING") val parentObserver = if (mergeReadObserver) parentObserver else null
     return if (readObserver != null && parentObserver != null && readObserver !== parentObserver) {
         { state: Any ->
-            readObserver(state) || parentObserver(state)
+            val recorded = readObserver(state)
+            val parentRecorded = parentObserver(state)
+            recorded || parentRecorded
         }
     } else readObserver ?: parentObserver
 }
