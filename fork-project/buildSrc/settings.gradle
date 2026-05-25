@@ -1,0 +1,60 @@
+/*
+ * Copyright 2018 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply from: "settingsScripts/out-setup.groovy"
+getGradle().beforeProject { project ->
+    def checkoutRoot = new File("${buildscript.sourceFile.parent}/..")
+    init.chooseBuildDirectory(checkoutRoot, rootProject.name, project)
+
+    /*
+    Could not set unknown property 'kotlin.project.persistent.dir' for project ':buildSrc' of type org.gradle.api.Project.
+
+    // https://youtrack.jetbrains.com/issue/KT-58223
+    def kotlinDir = new File(System.env.OUT_DIR ?: checkoutRoot, ".kotlinBuildSrc")
+    project.setProperty("kotlin.project.persistent.dir", kotlinDir.absolutePath)
+    */
+}
+
+include ":jetpad-integration"
+include ":plugins"
+include ":private"
+include ":public"
+include ":imports:binary-compatibility-validator"
+include ":imports:benchmark-gradle-plugin"
+include ":imports:benchmark-darwin-plugin"
+include ":imports:baseline-profile-gradle-plugin"
+include ":imports:inspection-gradle-plugin"
+include ":imports:room-gradle-plugin"
+include ":imports:glance-layout-generator"
+include ":imports:stableaidl-gradle-plugin"
+
+dependencyResolutionManagement {
+    versionCatalogs {
+        libs {
+            from(files("../gradle/libs.versions.toml"))
+            def agpOverride = System.getenv("GRADLE_PLUGIN_VERSION")
+            if (agpOverride != null) {
+                logger.warn("Using custom version ${agpOverride} of AGP due to GRADLE_PLUGIN_VERSION being set.")
+                version('androidGradlePlugin', agpOverride)
+            }
+            def lintOverride = System.getenv("LINT_VERSION")
+            if (lintOverride != null) {
+                logger.warn("Using custom version ${lintOverride} of Lint due to LINT_VERSION being set.")
+                version('androidLint', lintOverride)
+            }
+        }
+    }
+}
