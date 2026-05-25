@@ -87,13 +87,13 @@ private fun Window.setSizeImpl(size: DpSize) {
     val isHeightSpecified = size.isSpecified && size.height.isSpecified
 
     val width = if (isWidthSpecified) {
-        size.width.value.roundToInt().coerceAtLeast(0)
+        size.width.value.fastRoundToInt().fastCoerceAtLeast(0)
     } else {
         availableSize.width
     }
 
     val height = if (isHeightSpecified) {
-        size.height.value.roundToInt().coerceAtLeast(0)
+        size.height.value.fastRoundToInt().fastCoerceAtLeast(0)
     } else {
         availableSize.height
     }
@@ -128,8 +128,8 @@ internal fun Window.setPositionImpl(
     WindowPosition.PlatformDefault -> location = platformDefaultPosition()
     is WindowPosition.Aligned -> alignToScreen(position.alignment)
     is WindowPosition.Absolute -> setLocation(
-        position.x.value.roundToInt(),
-        position.y.value.roundToInt()
+        position.x.value.fastRoundToInt(),
+        position.y.value.fastRoundToInt()
     )
 }
 

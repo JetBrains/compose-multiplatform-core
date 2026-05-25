@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.window.toDpOffset
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.layoutDirectionFor
@@ -151,8 +152,8 @@ internal class AwtDragAndDropManager(
         drawDragDecoration: DrawScope.() -> Unit
     ): Image {
         val imageBitmap = ImageBitmap(
-            width = size.width.roundToInt(),
-            height = size.height.roundToInt()
+            width = size.width.fastRoundToInt(),
+            height = size.height.fastRoundToInt()
         )
         // This results in blurry text for some reason.
         val canvas = Canvas(imageBitmap)
@@ -352,14 +353,14 @@ private interface PlatformAdaptations {
      */
     private object MacOs : PlatformAdaptations {
         override fun dragImageOffset(decorationOffset: Offset, density: Float) = Point(
-            -(decorationOffset.x / density).roundToInt(),
-            -(decorationOffset.y / density).roundToInt()
+            -(decorationOffset.x / density).fastRoundToInt(),
+            -(decorationOffset.y / density).fastRoundToInt()
         )
 
         override fun dragImage(image: BufferedImage, density: Float): Image {
             return image.getScaledInstance(
-                (image.width / density).roundToInt(),
-                (image.height / density).roundToInt(),
+                (image.width / density).fastRoundToInt(),
+                (image.height / density).fastRoundToInt(),
                 Image.SCALE_SMOOTH
             )
         }
@@ -370,7 +371,7 @@ private interface PlatformAdaptations {
      */
     private object Windows : PlatformAdaptations {
         override fun dragImageOffset(decorationOffset: Offset, density: Float) =
-            Point(decorationOffset.x.roundToInt(), decorationOffset.y.roundToInt())
+            Point(decorationOffset.x.fastRoundToInt(), decorationOffset.y.fastRoundToInt())
 
         override fun dragImage(image: BufferedImage, density: Float) = image
     }
@@ -381,7 +382,7 @@ private interface PlatformAdaptations {
     private object Other : PlatformAdaptations {
 
         override fun dragImageOffset(decorationOffset: Offset, density: Float) =
-            Point(decorationOffset.x.roundToInt(), decorationOffset.y.roundToInt())
+            Point(decorationOffset.x.fastRoundToInt(), decorationOffset.y.fastRoundToInt())
 
         override fun dragImage(image: BufferedImage, density: Float) = image
     }
