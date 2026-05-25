@@ -16,12 +16,15 @@
 
 package androidx.compose.ui.input.pointer
 
+import androidx.collection.LongLongMap
+import androidx.collection.buildLongLongMap
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.scene.merging
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapNotNull
 
@@ -191,11 +194,24 @@ internal class SyntheticEventSender(
         pointersSourceEvent: PointerInputEvent
     ): PointerEventResult {
         val previousEvent = previousEvent ?: return UnconsumedEventResult
-        val idToPosition = pointersSourceEvent.pointers.associate { it.id to it.position }
+        val idToPosition = buildLongLongMap(pointersSourceEvent.pointers.size) {
+            pointersSourceEvent.pointers.fastForEach { ptr ->
+                put(ptr.id.value, ptr.position.packedValue)
+            }
+        }
         return sendInternal(
             previousEvent.copySynthetic(
                 type = PointerEventType.Move,
-                copyPointer = { it.copySynthetic(position = idToPosition[it.id] ?: it.position) },
+                copyPointer = {
+                    it.copySynthetic(
+                        position = Offset(
+                            idToPosition.getOrDefault(
+                                it.id.value,
+                                it.position.packedValue
+                            )
+                        )
+                    )
+                },
             )
         )
     }
@@ -352,10 +368,18 @@ internal class SyntheticEventSender(
             eventType == PointerEventType.Exit
 
     private fun PointerInputEvent.isSamePosition(previousEvent: PointerInputEvent?): Boolean {
-        val previousIdToPosition = previousEvent?.pointers?.associate { it.id to it.position }
+        val previousIdToPosition: LongLongMap? = previousEvent?.pointers?.let { ptrs ->
+            buildLongLongMap(ptrs.size) {
+                ptrs.fastForEach { ptr ->
+                    put(ptr.id.value, ptr.position.packedValue)
+                }
+            }
+        }
         return pointers.fastAll {
-            val previousPosition = previousIdToPosition?.get(it.id)
-            previousPosition == null || it.position == previousPosition
+            if (previousIdToPosition == null) return@fastAll true
+
+            val previousPosition = previousIdToPosition.getOrDefault(it.id.value, Long.MIN_VALUE)
+            previousPosition == Long.MIN_VALUE || it.position.packedValue == previousPosition
         }
     }
 
