@@ -740,7 +740,7 @@ class SnapshotTests {
     @Test // Regression test for b/193006595
     fun transparentSnapshotAdvancesCorrectly() {
         val state =
-            Snapshot.observe({}) {
+            Snapshot.observe({ true }) {
                 // In a transparent snapshot, advance the global snapshot
                 Snapshot.notifyObjectsInitialized()
 
@@ -1046,7 +1046,7 @@ class SnapshotTests {
         val outerSnapshot =
             TransparentObserverSnapshot(
                 parentSnapshot = currentSnapshot(),
-                specifiedReadObserver = { outerChanges++ },
+                specifiedReadObserver = { outerChanges++; true },
                 mergeParentObservers = false,
                 ownsParentSnapshot = false,
             )
@@ -1054,7 +1054,7 @@ class SnapshotTests {
         try {
             outerSnapshot.enter {
                 val innerSnapshot =
-                    outerSnapshot.takeNestedSnapshot(readObserver = { innerChanges++ })
+                    outerSnapshot.takeNestedSnapshot(readObserver = { innerChanges++; true })
 
                 try {
                     innerSnapshot.enter {
@@ -1081,7 +1081,7 @@ class SnapshotTests {
         val outerSnapshot =
             TransparentObserverMutableSnapshot(
                 parentSnapshot = currentSnapshot() as? MutableSnapshot,
-                specifiedReadObserver = { outerChanges++ },
+                specifiedReadObserver = { outerChanges++; true },
                 specifiedWriteObserver = null,
                 mergeParentObservers = false,
                 ownsParentSnapshot = false,
@@ -1090,7 +1090,7 @@ class SnapshotTests {
         try {
             outerSnapshot.enter {
                 val innerSnapshot =
-                    outerSnapshot.takeNestedSnapshot(readObserver = { innerChanges++ })
+                    outerSnapshot.takeNestedSnapshot(readObserver = { innerChanges++; true })
 
                 try {
                     innerSnapshot.enter {
@@ -1316,9 +1316,9 @@ class SnapshotTests {
     fun readObserverIsMergedOnNestedReadonlySnapshot() {
         val result = mutableListOf<Int>()
 
-        val readObserver1: (Any) -> Unit = { result += 1 }
-        val readObserver2: (Any) -> Unit = { result += 2 }
-        val readObserver3: (Any) -> Unit = { result += 3 }
+        val readObserver1: (Any) -> Boolean = { result += 1; true }
+        val readObserver2: (Any) -> Boolean = { result += 2; true }
+        val readObserver3: (Any) -> Boolean = { result += 3; true }
 
         val state = mutableStateOf("")
 
@@ -1561,7 +1561,7 @@ internal fun observeChanges(snapshot: Snapshot, block: () -> Unit): Set<Any> {
 
 internal fun readsOf(block: () -> Unit): Int {
     var reads = 0
-    val snapshot = takeSnapshot(readObserver = { reads++ })
+    val snapshot = takeSnapshot(readObserver = { reads++; true })
     try {
         snapshot.enter(block)
     } finally {
