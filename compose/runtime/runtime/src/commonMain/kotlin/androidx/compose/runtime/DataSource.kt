@@ -183,7 +183,11 @@ interface DataSource {
         ): T {
             val previousDependencyRecorder = threadDependencyRecorder.get()
             val mergedDependencyRecorder = previousDependencyRecorder?.let {
-                { identifier: Any -> recordDependency(identifier) || it(identifier) }
+                { identifier: Any ->
+                    val recorded = recordDependency(identifier)
+                    val previouslyRecorded = it(identifier)
+                    recorded || previouslyRecorded
+                }
             } ?: recordDependency
             threadDependencyRecorder.set(mergedDependencyRecorder)
             val previousChangeRecorder = threadChangeRecorder.get()
