@@ -1636,7 +1636,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         )
     }
 
-    override fun clearOwnerFocus() {
+    override fun clearOwnerFocus(isAutomatic: Boolean) {
         @OptIn(ExperimentalComposeUiApi::class)
         if (isFocused || (!ComposeUiFlags.isViewFocusFixEnabled && hasFocus())) {
             super.clearFocus()
@@ -4168,6 +4168,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                     refreshFocusEvents = true,
                     clearOwnerFocus = false,
                     focusDirection = focusDirection,
+                    isAutomatic = false,
                 )
 
             // Consume the key event if clearFocus was cancelled.
