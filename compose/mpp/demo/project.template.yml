@@ -21,7 +21,7 @@ targets:
           export OUT_DIR=`pwd`/../../../out
           echo "JAVA_HOME: $JAVA_HOME"
           echo "OUT_DIR: $OUT_DIR"
-          ../../../gradlew -i --no-daemon -p . packForXCode
+          ../../../fork-project/gradlew -i --no-daemon -p . packForXCode
         name: GradleCompile
         basedOnDependencyAnalysis: true
         outputFiles:

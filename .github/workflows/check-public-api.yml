@@ -10,6 +10,9 @@ jobs:
   check-public-api:
     runs-on: macos-15-xlarge
     name: Check Public API
+    defaults:
+      run:
+        working-directory: fork-project
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5

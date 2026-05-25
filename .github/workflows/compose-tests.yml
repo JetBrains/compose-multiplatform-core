@@ -19,6 +19,9 @@ jobs:
   compose-desktop-tests:
     runs-on: ubuntu-24.04
     name: Compose Desktop Tests
+    defaults:
+      run:
+        working-directory: fork-project
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -56,6 +59,9 @@ jobs:
     name: Compose iOS Tests
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
+    defaults:
+      run:
+        working-directory: fork-project
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -210,6 +216,9 @@ jobs:
       matrix:
         chrome: [ '134', 'stable' ]
         task: [ 'Js', 'Wasm' ]
+    defaults:
+      run:
+        working-directory: fork-project
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -303,6 +312,9 @@ jobs:
         # FIXME: Even after installation of '119.0', tests still use latest one. Fix and restore.
         firefox: [ 'latest' ]
         task: [ 'Wasm' ] # excluded Js for Firefox due to high flakiness
+    defaults:
+      run:
+        working-directory: fork-project
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5

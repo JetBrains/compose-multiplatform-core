@@ -10,6 +10,8 @@
 2. Download Android SDK via [Android Studio](https://developer.android.com/studio/intro/update#sdk-manager) and specify it in `ANDROID_SDK_ROOT` environment variable.
 4. Specify Gradle JVM to use JDK 17 in InteliJ IDEA Preferences (`Build, Execution, Deployment -> Build Tools -> Gradle`)
 
+All `./gradlew` commands below assume the current working directory is `fork-project/`.
+
 ### Run tests
 
 Run tests for Desktop:
