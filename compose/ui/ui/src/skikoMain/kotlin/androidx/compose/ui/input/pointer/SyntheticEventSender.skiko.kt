@@ -23,10 +23,10 @@ import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.scene.merging
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFilteredMap
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
-import androidx.compose.ui.util.fastMapNotNull
 
 /**
  * Compose or user code can't work well if we miss some events.
@@ -293,7 +293,7 @@ internal class SyntheticEventSender(
     }
 
     private fun PointerInputEvent.pressedIds(): List<PointerId> =
-        pointers.fastMapNotNull { if (it.down) it.id else null }
+        pointers.fastFilteredMap(PointerInputEventData::down, PointerInputEventData::id)
 
 
     private fun sendInternal(event: PointerInputEvent): PointerEventResult {
