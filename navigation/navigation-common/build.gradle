@@ -25,12 +25,9 @@ import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
-import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 
 plugins {
     id("AndroidXPlugin")
-    id("JetBrainsAndroidXPlugin")
     alias(libs.plugins.kotlinSerialization)
 }
 
@@ -74,7 +71,6 @@ androidXMultiplatform {
         }
         commonTest.dependencies {
             implementation(libs.kotlinTest)
-            implementation(libs.kotlinCoroutinesTest)
             implementation(project(":kruth:kruth"))
             implementation(project(":navigation:navigation-testing"))
         }

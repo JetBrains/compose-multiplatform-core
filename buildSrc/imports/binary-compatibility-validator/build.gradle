@@ -16,20 +16,6 @@
 
 apply from: "../../shared.gradle"
 
-// TODO(b/410631668): remove when "kotlin-compiler" is no longer added to "friendPaths"
-// Workaround for Windows to solve
-// "this and base files have different roots: C:\Users\User\.gradle\caches\modules-2\...\kotlin-compiler-2.2.10.jar and D:\compose-multiplatform-core\out\buildSrc\imports\binary-compatibility-validator\build"
-//
-// This happens because "friendPaths" is set and it doesn't support different roots (C: and D:)
-// kotlin-compiler was added to "friendsPath" in
-// https://android-review.googlesource.com/c/platform/frameworks/support/+/3636427
-//
-// This moves the build directory to the Gradle cache directory for this module,
-// which is an anti-pattern but solves the issue
-if (System.properties['os.name']?.toString()?.toLowerCase()?.contains('windows') == true) {
-    layout.buildDirectory = file("${gradle.gradleUserHomeDir}/compose-multipltform-core-build/buildSrc-imports-binary-compatibility-validator")
-}
-
 sourceSets {
     main.java.srcDirs += "${supportRootFolder}/binarycompatibilityvalidator/" +
             "binarycompatibilityvalidator/src/jvmMain/kotlin"

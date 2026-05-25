@@ -29,7 +29,6 @@ import org.jetbrains.kotlin.konan.target.Family
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -50,17 +49,15 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
-
         commonMain.dependencies {
-            api("androidx.navigationevent:navigationevent:$navigationEventVersion")
-            api("androidx.compose.runtime:runtime:1.11.0-rc01")
+            api(project(":navigationevent:navigationevent"))
+            api("androidx.compose.runtime:runtime:1.11.0")
             implementation(libs.kotlinCoroutinesCore)
         }
 
         commonTest.dependencies {
             implementation(libs.kotlinTest)
-            implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
+            implementation(project(":navigationevent:navigationevent-testing"))
             implementation(project(":kruth:kruth"))
         }
 
@@ -93,37 +90,6 @@ androidXMultiplatform {
 
         wasmJsMain.dependencies {
             implementation(libs.kotlinXw3c)
-		}
-		nonAndroidMain {
-            dependsOn(commonMain)
-        }
-
-        nonAndroidTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        desktopTest {
-            dependsOn(nonAndroidTest)
-        }
-
-        nativeMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        nativeTest {
-            dependsOn(nonAndroidTest)
-        }
-
-        webMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        webTest {
-            dependsOn(nonAndroidTest)
         }
     }
 }

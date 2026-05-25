@@ -23,13 +23,11 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -42,29 +40,22 @@ androidXMultiplatform {
             it.consumerKeepRules.files.add(new File("consumer-proguard-rules.pro"))
         }
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain.dependencies {
             api(project(":compose:animation:animation-core"))
-            api(project(":compose:foundation:foundation-layout"))
+            api("androidx.compose.foundation:foundation-layout:1.10.0")
             api(project(":compose:runtime:runtime"))
-            api(project(":compose:ui:ui-geometry"))
+            api("androidx.compose.ui:ui-geometry:1.10.0")
 
-            implementation(project(":compose:ui:ui"))
-            implementation(project(":compose:ui:ui-util"))
-            implementation(project(":compose:ui:ui-graphics"))
+            implementation("androidx.compose.ui:ui:1.10.0")
+            implementation("androidx.compose.ui:ui-util:1.10.0")
+            implementation("androidx.compose.ui:ui-graphics:1.10.0")
             implementation("androidx.collection:collection:1.5.0")
-        }
-
-        commonTest.dependencies {
-            implementation(libs.kotlinTest)
         }
 
         androidMain.dependencies {
@@ -90,38 +81,6 @@ androidXMultiplatform {
             implementation(libs.testRunner)
             implementation(libs.junit)
         }
-
-        nonAndroidMain {
-            dependsOn(commonMain)
-        }
-
-        nonAndroidTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        desktopTest {
-            dependsOn(nonAndroidTest)
-        }
-
-        nonJvmMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        nonJvmTest {
-            dependsOn(nonAndroidTest)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-
-        nativeTest {
-            dependsOn(nonJvmTest)
-        }
     }
 }
 
@@ -139,7 +98,6 @@ androidx {
 
 //TODO(b/407640608): Fix to work without this block for PaneMotionTest.test_allDefaultPaneMotionTransitions
 tasks.withType(KotlinCompile).configureEach { task ->
-    if (task.name != "compileAndroidMain") return
     task.compilerOptions {
         it.freeCompilerArgs.add("-Xlambdas=class")
     }

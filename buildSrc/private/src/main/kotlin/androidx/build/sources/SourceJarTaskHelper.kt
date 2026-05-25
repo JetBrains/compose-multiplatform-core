@@ -17,7 +17,6 @@
 package androidx.build.sources
 
 import androidx.build.LazyInputsCopyTask
-import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import androidx.build.capitalize
 import androidx.build.dackka.DokkaAnalysisPlatform
 import androidx.build.dackka.docsPlatform
@@ -45,7 +44,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.named
-import org.jetbrains.androidx.build.JetBrainsPublication
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation.Companion.MAIN_COMPILATION_NAME
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
@@ -56,7 +54,6 @@ fun Project.configureSourceJarForAndroid(
     libraryVariant: LibraryVariant,
     samplesProjects: MutableCollection<Project>,
 ) {
-    if (isJetBrainsFork(project)) return
     val allSources =
         project.files(libraryVariant.sources.java?.all) +
             project.files(libraryVariant.sources.kotlin?.all)
@@ -91,17 +88,14 @@ fun Project.configureSourceJarForAndroid(
     disableUnusedSourceJarTasks(disableNames)
 }
 
-fun Project.configureMultiplatformSourcesForAndroid(samplesProjects: MutableCollection<Project>) {
-    if (isJetBrainsFork(project)) return
+fun Project.configureMultiplatformSourcesForAndroid(samplesProjects: MutableCollection<Project>) =
     registerSamplesLibraries(
         samplesProjects,
         listOf(PublishingVariant.KmpSourcesElements, PublishingVariant.AgpKmpSourcesElements),
     )
-}
 
 /** Sets up a source jar task for a Java library project. */
 fun Project.configureSourceJarForJava(samplesProjects: MutableCollection<Project>) {
-    if (isJetBrainsFork(project)) return
     val sourceJar =
         tasks.register("sourceJar", Jar::class.java) { task ->
             task.archiveClassifier.set("sources")
@@ -136,7 +130,6 @@ fun Project.configureSourceJarForJava(samplesProjects: MutableCollection<Project
 }
 
 fun Project.configureSourceJarForMultiplatform() {
-    if (isJetBrainsFork(project) && JetBrainsPublication.shouldPublish(this)) return
     val kmpExtension =
         multiplatformExtension
             ?: throw GradleException(

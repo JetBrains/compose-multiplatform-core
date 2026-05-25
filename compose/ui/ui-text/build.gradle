@@ -24,13 +24,10 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -43,11 +40,8 @@ androidXMultiplatform {
             it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
         }
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -67,10 +61,6 @@ androidXMultiplatform {
             // TODO: Pin androidx.collection when SieveCache is available
             // implementation("androidx.collection:collection:1.4.2")
             implementation("androidx.collection:collection:1.5.0")
-        }
-
-        commonTest.dependencies {
-            implementation(libs.kotlinTest)
         }
 
         androidMain.dependencies {
@@ -109,99 +99,6 @@ androidXMultiplatform {
             implementation(libs.mockitoKotlin4)
             implementation(libs.byteBuddy)
         }
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
-            dependsOn(commonMain)
-            dependencies {
-                api(libs.skiko)
-                implementation(libs.atomicFu)
-            }
-        }
-
-        skikoTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":kruth:kruth"))
-            }
-        }
-
-        desktopMain {
-            dependsOn(skikoMain)
-        }
-
-        desktopTest {
-            dependsOn(skikoTest)
-            dependencies {
-                implementation(libs.truth)
-                implementation(libs.junit)
-                implementation(libs.skikoCurrentOs)
-                implementation(project(":compose:foundation:foundation"))
-                implementation(project(":compose:ui:ui-test-junit4"))
-                implementation(project(":internal-testutils-fonts"))
-                implementation(libs.mockitoCore)
-                implementation(libs.mockitoKotlin)
-                implementation(libs.mockitoCore4)
-                implementation(libs.mockitoKotlin4)
-                implementation(libs.kotlinReflect)
-            }
-        }
-
-        nonJvmMain {
-            dependsOn(skikoMain)
-            dependencies {
-                // To comply with Klib resolver until https://youtrack.jetbrains.com/issue/KT-61096 is fixed
-                implementation("org.jetbrains.compose.collection-internal:collection:1.10.0")
-            }
-        }
-
-        nonJvmTest {
-            dependsOn(skikoTest)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-
-        nativeTest {
-            dependsOn(nonJvmTest)
-        }
-
-        darwinMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinTest {
-            dependsOn(nativeTest)
-        }
-
-        macosMain {
-            dependsOn(darwinMain)
-        }
-
-        macosTest {
-            dependsOn(darwinTest)
-        }
-
-        iosMain {
-            dependsOn(darwinMain)
-        }
-
-        iosTest {
-            dependsOn(darwinTest)
-        }
-
-        wasmJsMain {
-            dependencies {
-                implementation(libs.skikoWasmJs)
-                implementation(libs.skikoJsWasmRuntime)
-            }
-        }
-
-        // TODO: Align it with AOSP or make explicit
-        configureEach {
-            languageSettings.optIn("androidx.compose.ui.text.ExperimentalTextApi")
-        }
     }
 }
 
@@ -217,12 +114,4 @@ androidx {
     description = "Compose Text primitives and utilities"
     legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:ui:ui-text:ui-text-samples"))
-}
-
-afterEvaluate {
-    // needed to support running tests that use AwtFontUtils
-    // (https://github.com/JetBrains/compose-multiplatform-core/pull/918)
-    tasks.withType(Test) { t ->
-        t.jvmArgs += ["--add-opens=java.desktop/sun.font=ALL-UNNAMED"]
-    }
 }

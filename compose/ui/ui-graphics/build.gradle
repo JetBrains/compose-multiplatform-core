@@ -24,13 +24,11 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -43,15 +41,10 @@ androidXMultiplatform {
             it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
         }
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
-
-    configureDarwinFlags()
 
     sourceSets {
         commonMain.dependencies {
@@ -60,7 +53,7 @@ androidXMultiplatform {
             api(project(":compose:ui:ui-unit"))
             implementation(project(":compose:runtime:runtime"))
             implementation(project(":compose:ui:ui-util"))
-            implementation("androidx.collection:collection:1.5.0")
+            implementation("androidx.collection:collection:1.4.2")
         }
 
         commonTest.dependencies {
@@ -94,76 +87,6 @@ androidXMultiplatform {
             implementation(libs.truth)
             implementation(project(":compose:test-utils"))
         }
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
-            dependsOn(commonMain)
-            dependencies {
-                api(libs.skiko)
-            }
-        }
-
-        skikoTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:ui:ui-test"))
-                implementation(project(":kruth:kruth"))
-            }
-        }
-
-        skikoExcludingWebMain {
-            dependsOn(skikoMain)
-        }
-
-        skikoExcludingWebTest {
-            dependsOn(skikoTest)
-        }
-
-        desktopMain {
-            dependsOn(skikoMain)
-            dependsOn(skikoExcludingWebMain)
-        }
-
-        desktopTest {
-            dependsOn(skikoTest)
-            dependsOn(skikoExcludingWebTest)
-            resources.srcDirs += "src/desktopTest/res"
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.truth)
-                implementation(libs.skikoCurrentOs)
-                implementation(project(":compose:ui:ui-test-junit4"))
-            }
-        }
-
-        nonJvmMain {
-            dependsOn(skikoMain)
-            dependencies {
-                // To comply with Klib resolver until https://youtrack.jetbrains.com/issue/KT-61096 is fixed
-                implementation("org.jetbrains.compose.collection-internal:collection:1.10.0")
-            }
-        }
-
-        nonJvmTest {
-            dependsOn(skikoTest)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-            dependsOn(skikoExcludingWebMain)
-        }
-
-        nativeTest {
-            dependsOn(nonJvmTest)
-            dependsOn(skikoExcludingWebTest)
-        }
-
-        wasmJsMain {
-            dependencies {
-                implementation(libs.skikoWasmJs)
-                implementation(libs.skikoJsWasmRuntime)
-            }
-        }
     }
 }
 
@@ -183,12 +106,7 @@ androidx {
 
 // TODO(b/407640608): Task :compose:ui:ui-inspection:connectedCheck fails without this block
 tasks.withType(KotlinCompile).configureEach { task ->
-    if (task.name != "compileAndroidMain") return
     task.compilerOptions {
         it.freeCompilerArgs.addAll("-Xlambdas=class")
     }
-}
-
-tasks.findByName("desktopTest").configure {
-    systemProperties["GOLDEN_PATH"] = project.rootDir.absolutePath + "/golden"
 }

@@ -27,7 +27,6 @@ import androidx.build.PlatformIdentifier
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -35,20 +34,16 @@ androidXMultiplatform {
         compileSdk { version = release(37) }
         namespace = "androidx.compose.ui.test.junit4"
     }
-    desktop()
+    jvmStubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain.dependencies {
             api(project(":compose:ui:ui-test"))
-            implementation("androidx.annotation:annotation:1.9.1")
+            implementation("androidx.annotation:annotation:1.8.1")
             implementation(libs.kotlinCoroutinesCore)
             implementation(libs.kotlinCoroutinesTest)
-        }
-
-        commonTest.dependencies {
-            implementation(libs.kotlinTest)
         }
 
         jvmAndAndroidMain.dependencies {
@@ -65,6 +60,10 @@ androidXMultiplatform {
             implementation("androidx.test:core:1.5.0")
             implementation("androidx.test:monitor:1.6.1")
             implementation("androidx.test.espresso:espresso-core:3.5.0")
+        }
+
+        jvmStubsMain.dependencies {
+            implementation(libs.truth)
         }
 
         androidDeviceTest.dependencies {
@@ -94,39 +93,6 @@ androidXMultiplatform {
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":internal-testutils-fonts"))
                 implementation(project(":compose:test-utils"))
-            }
-        }
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
-            dependsOn(commonMain)
-        }
-
-        // TODO: It seems it might be combined with desktopTest
-        skikoTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:material:material"))
-                implementation(project(":compose:foundation:foundation"))
-                implementation(libs.skiko)
-                implementation(libs.atomicFu)
-            }
-        }
-
-        desktopMain {
-            dependsOn(skikoMain)
-            dependencies {
-                implementation(libs.truth)
-                implementation(libs.skiko)
-            }
-        }
-
-        desktopTest {
-            dependsOn(skikoTest)
-            dependencies {
-                implementation(libs.truth)
-                implementation(libs.junit)
-                implementation(libs.skikoCurrentOs)
             }
         }
     }

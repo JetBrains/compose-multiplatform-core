@@ -79,7 +79,6 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         maybeRegisterFilterableTask()
         registerListAffectedProjectsTask()
 
-        /* In JetBrains Fork we don't force AGP version.
         // If we're running inside Studio, validate the Android Gradle Plugin version.
         val expectedAgpVersion = System.getenv("EXPECTED_AGP_VERSION")
         if (providers.gradleProperty("android.injected.invoked.from.ide").isPresent) {
@@ -96,7 +95,6 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
                 )
             }
         }
-        */
 
         val verifyPlayground = VerifyPlaygroundGradleConfigurationTask.createIfNecessary(project)
 

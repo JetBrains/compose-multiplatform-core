@@ -17,7 +17,6 @@
 package androidx.build.checkapi
 
 import androidx.build.AndroidXExtension
-import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import androidx.build.Release
 import androidx.build.RunApiTasks
 import androidx.build.binarycompatibilityvalidator.BinaryCompatibilityValidation
@@ -105,7 +104,6 @@ fun Project.configureProjectForApiTasks(
      */
     shouldConfigure: Provider<Boolean>? = null,
 ) {
-    if (isJetBrainsFork(project)) return
     // afterEvaluate required to read extension properties
     afterEvaluate {
         if (!extension.shouldConfigureApiTasks().get()) {

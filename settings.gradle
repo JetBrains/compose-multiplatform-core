@@ -168,7 +168,7 @@ switch (cacheSetting) {
         }
 }
 
-rootProject.name = "compose-multiplatform-core"
+rootProject.name = "androidx"
 
 dependencyResolutionManagement {
     versionCatalogs {
@@ -567,9 +567,6 @@ includeProject(":compose:animation:animation-graphics", [BuildType.COMPOSE])
 includeProject(":compose:animation:animation-graphics:animation-graphics-samples", "compose/animation/animation-graphics/samples", [BuildType.COMPOSE])
 includeProject(":compose:benchmark-utils", [BuildType.COMPOSE])
 includeProject(":compose:benchmark-utils:benchmark-utils-benchmark", "compose/benchmark-utils/benchmark", [BuildType.COMPOSE])
-includeProject(":compose:desktop:desktop", [BuildType.COMPOSE])
-includeProject(":compose:desktop:desktop:desktop-samples", "compose/desktop/desktop/samples", [BuildType.COMPOSE])
-includeProject(":compose:desktop:desktop:desktop-samples-material3", "compose/desktop/desktop/samples-material3", [BuildType.COMPOSE])
 includeProject(":compose:foundation", [BuildType.COMPOSE])
 includeProject(":compose:foundation:foundation", [BuildType.COMPOSE])
 includeProject(":compose:foundation:foundation-benchmark", "compose/foundation/foundation/benchmark", [BuildType.COMPOSE])
@@ -633,8 +630,6 @@ includeProject(":compose:material3:integration-tests:macrobenchmark", [BuildType
 includeProject(":compose:material3:integration-tests:macrobenchmark-target", [BuildType.COMPOSE])
 includeProject(":compose:material:material:material-samples", "compose/material/material/samples", [BuildType.COMPOSE])
 includeProject(":compose:material3:material3:material3-samples", "compose/material3/material3/samples", [BuildType.COMPOSE])
-includeProject(":compose:mpp:demo", [BuildType.COMPOSE])
-includeProject(":compose:mpp:demo-swiftui", [BuildType.COMPOSE])
 includeProject(":compose:remote:integration-tests:demos", [BuildType.MAIN])
 includeProject(":compose:remote:integration-tests:player-view-demos", [BuildType.MAIN])
 includeProject(":compose:remote:integration-tests:benchmark", [BuildType.MAIN])
@@ -682,7 +677,6 @@ includeProject(":compose:ui", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-benchmark", "compose/ui/ui/benchmark", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-android-stubs", [BuildType.COMPOSE])
-includeProject(":compose:ui:ui-backhandler", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-geometry", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-graphics", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-graphics-lint", [BuildType.COMPOSE])
@@ -710,7 +704,6 @@ includeProject(":compose:ui:ui-text:ui-text-samples", "compose/ui/ui-text/sample
 includeProject(":compose:ui:ui-tooling", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-tooling-data", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-tooling-preview", [BuildType.COMPOSE])
-includeProject(":compose:ui:ui-uikit", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-unit", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-unit:ui-unit-samples", "compose/ui/ui-unit/samples", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-util", [BuildType.COMPOSE])
@@ -1331,7 +1324,6 @@ includeProject(":internal-testutils-gradle-plugin", "testutils/testutils-gradle-
 includeProject(":internal-testutils-mockito", "testutils/testutils-mockito", [BuildType.MAIN, BuildType.MEDIA, BuildType.FLAN, BuildType.COMPOSE])
 includeProject(":internal-testutils-lifecycle", "testutils/testutils-lifecycle", [BuildType.MAIN, BuildType.COMPOSE, BuildType.FLAN, BuildType.KMP])
 includeProject(":internal-testutils-appfunctions", "testutils/testutils-appfunctions", [BuildType.MAIN])
-includeProject(":internal-testutils-xctest", "testutils/testutils-xctest", [BuildType.KMP, BuildType.COMPOSE])
 includeProject(":kruth:kruth", [BuildType.MAIN, BuildType.INFRAROGUE, BuildType.KMP, BuildType.COMPOSE])
 
 /////////////////////////////
@@ -1365,9 +1357,6 @@ includeProject(":placeholder-tests")
 
 // Add includedBuild for b/203825166
 includeBuild("placeholder")
-
-// JetBrains' Fork publishing scripts
-includeProject(":mpp")
 
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----

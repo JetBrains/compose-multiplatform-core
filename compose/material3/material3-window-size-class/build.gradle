@@ -23,12 +23,10 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -36,20 +34,17 @@ androidXMultiplatform {
         namespace = "androidx.compose.material3.windowsizeclass"
         compileSdk { version = release(37) }
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain.dependencies {
-            implementation("org.jetbrains.compose.ui:ui-util:1.10.0")
-            api("org.jetbrains.compose.runtime:runtime:1.10.0")
-            api("org.jetbrains.compose.ui:ui:1.10.0")
-            api("org.jetbrains.compose.ui:ui-unit:1.10.0")
+            implementation("androidx.compose.ui:ui-util:1.8.1")
+            api("androidx.compose.runtime:runtime:1.8.1")
+            api("androidx.compose.ui:ui:1.8.2")
+            api("androidx.compose.ui:ui-unit:1.8.1")
         }
 
         commonTest.dependencies {
@@ -75,39 +70,6 @@ androidXMultiplatform {
         androidHostTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(libs.truth)
-        }
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
-            dependsOn(commonMain)
-        }
-
-        skikoTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(skikoMain)
-        }
-
-        desktopTest {
-            dependsOn(skikoTest)
-        }
-
-        nonJvmMain {
-            dependsOn(skikoMain)
-        }
-
-        nonJvmTest {
-            dependsOn(skikoTest)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-
-        nativeTest {
-            dependsOn(nonJvmTest)
         }
     }
 }

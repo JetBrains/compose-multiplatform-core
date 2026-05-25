@@ -23,14 +23,10 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.androidx.build.UpdateTranslationsTask
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -43,33 +39,25 @@ androidXMultiplatform {
         }
         androidResources.enable = true
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
-
-    configureDarwinFlags()
 
     sourceSets {
         commonMain.dependencies {
             api("androidx.collection:collection:1.5.0")
             api(project(":compose:animation:animation"))
             api(project(":compose:runtime:runtime"))
-            api(project(":compose:ui:ui"))
-            implementation(project(":compose:ui:ui-text"))
-            implementation(project(":compose:ui:ui-util"))
+            api("androidx.compose.ui:ui:1.10.0")
+            implementation("androidx.compose.ui:ui-text:1.10.0")
+            implementation("androidx.compose.ui:ui-util:1.10.0")
             implementation(project(":compose:foundation:foundation-layout"))
         }
 
-        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
         commonTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesTest)
-            implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
-            implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
         }
 
         androidMain.dependencies {
@@ -116,99 +104,6 @@ androidXMultiplatform {
             implementation(libs.byteBuddy)
             implementation(project(":constraintlayout:constraintlayout-compose"))
         }
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
-            dependsOn(commonMain)
-            dependencies {
-                // TODO(https://youtrack.jetbrains.com/issue/CMP-219) Remove API
-                api(libs.skiko)
-                implementation(libs.atomicFu)
-            }
-        }
-
-        skikoTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:ui:ui-test"))
-            }
-        }
-
-        desktopMain {
-            dependsOn(skikoMain)
-            dependencies {
-                implementation(libs.jbrApi)
-            }
-        }
-
-        desktopTest {
-            dependsOn(skikoTest)
-            dependencies {
-                implementation(project(":compose:ui:ui-test-junit4"))
-                implementation(libs.truth)
-                implementation(libs.junit)
-                implementation(libs.skikoCurrentOs)
-                implementation(libs.kotlinCoroutinesSwing)
-                implementation(libs.mockitoCore4)
-                implementation(libs.mockitoKotlin4)
-                implementation(libs.mockitoCore)
-                implementation(libs.mockitoKotlin)
-            }
-        }
-
-        nonJvmMain {
-            dependsOn(skikoMain)
-        }
-
-        nonJvmTest {
-            dependsOn(skikoTest)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-
-        nativeTest {
-            dependsOn(nonJvmTest)
-        }
-
-        darwinMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinTest {
-            dependsOn(nativeTest)
-        }
-
-        macosMain {
-            dependsOn(darwinMain)
-        }
-
-        macosTest {
-            dependsOn(darwinTest)
-        }
-
-        iosMain {
-            dependsOn(darwinMain)
-            dependencies {
-                // TODO: We shouldn't use it directly here
-                implementation(project(":compose:ui:ui-uikit"))
-            }
-        }
-
-        iosTest {
-            dependsOn(darwinTest)
-        }
-
-        wasmJsMain {
-            dependencies {
-                implementation(libs.kotlinXw3c)
-            }
-        }
-
-        configureEach {
-            languageSettings.optIn("androidx.compose.foundation.ExperimentalFoundationApi")
-        }
     }
 }
 
@@ -226,38 +121,4 @@ androidx {
     samples(project(":compose:foundation:foundation:foundation-samples"))
     addGoldenImageAssets()
     deviceTests.minSdkForFtlOverride = 24 // b/437944630
-}
-
-// This task updates the translations of the localizable strings for the desktopMain target.
-// It obtains them from Android's base repository.
-tasks.register("updateTranslations", UpdateTranslationsTask.class) {
-    group = "localization"
-    gitRepo = "https://android.googlesource.com/platform/frameworks/base"
-    repoResDirectories = ["core/res/res"]
-    targetDirectory = project.file("src/skikoMain/kotlin/androidx/compose/foundation/text/l10n")
-    targetPackageName = "androidx.compose.foundation.text.l10n"
-    kotlinStringsPackageName = "androidx.compose.foundation.text"
-    kotlinStringsClassName = "ContextMenuStrings"
-    stringByResourceName = [
-            "copy": "Copy",
-            "paste": "Paste",
-            "cut": "Cut",
-            "selectAll": "SelectAll",
-            "autofill": "Autofill"
-    ]
-    // This is all the locales translated by Compose on Android in the ui module:
-    // https://github.com/androidx/androidx/tree/androidx-main/compose/ui/ui/src/androidMain/res
-    // with the exception of
-    // - b+sr+Latn which doesn't appear to be supported by Java
-    // - en_XC which has weird invisible LRM characters, and the visible text is the same as for
-    //   en anyway.
-    locales = [
-            "en", "af", "am", "ar", "as", "az", "be", "bg", "bn", "bs", "ca", "cs", "da", "de",
-            "el", "en_AU", "en_CA", "en_GB", "en_IN", "es", "es_US", "et", "eu", "fa",
-            "fi", "fr", "fr_CA", "gl", "gu", "hi", "hr", "hu", "hy", "in", "is", "it", "iw",
-            "ja", "ka", "kk", "km", "kn", "ko", "ky", "lo", "lt", "lv", "mk", "ml", "mn", "mr",
-            "ms", "my", "nb", "ne", "nl", "or", "pa", "pl", "pt", "pt_BR", "pt_PT", "ro", "ru",
-            "si", "sk", "sl", "sq", "sr", "sv", "sw", "ta", "te", "th", "tl", "tr", "uk", "ur",
-            "uz", "vi", "zh_CN", "zh_HK", "zh_TW", "zu"
-    ]
 }

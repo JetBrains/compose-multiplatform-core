@@ -16,7 +16,6 @@
 
 package androidx.build
 
-import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.HasAndroidTest
 import groovy.lang.Closure
@@ -34,7 +33,6 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.property
-import org.jetbrains.androidx.build.JetBrainsPublication
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 /** Extension for [AndroidXImplPlugin] that's responsible for holding configuration options. */
@@ -207,7 +205,6 @@ abstract class AndroidXExtension(
     }
 
     private fun chooseProjectVersion() {
-        if (isJetBrainsFork(project) && JetBrainsPublication.shouldPublish(project)) return
         val version: Version
         val group: String? = mavenGroup?.group
         val groupVersion: Version? = mavenGroup?.atomicGroupVersion

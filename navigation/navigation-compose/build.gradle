@@ -17,13 +17,10 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
     alias(libs.plugins.kotlinSerialization)
 }
 
@@ -33,11 +30,8 @@ androidXMultiplatform {
         namespace = "androidx.navigation.compose"
         androidResources.enable = true
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -45,51 +39,27 @@ androidXMultiplatform {
         commonMain.dependencies {
             api(project(":navigation:navigation-runtime"))
             api(project(":navigation:navigation-common"))
-            api("org.jetbrains.compose.animation:animation:1.10.0")
-            api("org.jetbrains.compose.runtime:runtime:1.10.0")
-            api("org.jetbrains.compose.runtime:runtime-saveable:1.10.0")
-            api("org.jetbrains.compose.ui:ui:1.10.0")
-            api("org.jetbrains.compose.animation:animation:1.10.0")
-            implementation("org.jetbrains.compose.animation:animation-core:1.10.0")
-            implementation("org.jetbrains.compose.foundation:foundation-layout:1.10.0")
-            implementation("androidx.collection:collection:1.5.0")
-            implementation("org.jetbrains.androidx.lifecycle:lifecycle-common:2.11.0-beta01")
-            implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.11.0-beta01")
-            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-savedstate:2.11.0-beta01")
-            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel:2.11.0-beta01")
-            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0-beta01")
-            implementation("androidx.savedstate:savedstate:1.4.0")
-            implementation("androidx.savedstate:savedstate-compose:1.4.0")
+            implementation("androidx.annotation:annotation:1.8.0")
+            api("androidx.compose.runtime:runtime:1.7.2")
+            api("androidx.compose.ui:ui:1.7.2")
+            api("androidx.compose.animation:animation:1.7.2")
+            api("androidx.compose.runtime:runtime-saveable:1.7.2")
+            implementation("androidx.compose.animation:animation-core:1.7.2")
+            implementation("androidx.compose.foundation:foundation-layout:1.7.2")
+            implementation("androidx.collection:collection:1.4.5")
+            implementation("androidx.lifecycle:lifecycle-common:2.9.1")
+            implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
+            implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.1")
+            implementation("androidx.lifecycle:lifecycle-viewmodel:2.9.1")
+            implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
+            implementation("androidx.savedstate:savedstate:1.3.0")
+            implementation("androidx.savedstate:savedstate-compose:1.3.0")
             implementation(libs.kotlinCoroutinesCore)
             implementation(libs.kotlinSerializationCore)
         }
         commonTest.dependencies {
             implementation(libs.kotlinTest)
-            implementation(project(":compose:ui:ui-test"))
         }
-        create("nonAndroidMain").dependsOn(commonMain)
-        create("nonAndroidTest").dependsOn(commonTest)
-
-        nonAndroidMain.dependencies {
-            // TODO: Remove the dependency - https://youtrack.jetbrains.com/issue/CMP-9922
-            implementation(project(":compose:ui:ui-backhandler"))
-        }
-
-        nonAndroidTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.kotlinCoroutinesTest)
-                implementation(project(":compose:material:material"))
-                implementation(project(":navigation:navigation-testing"))
-                implementation(project(":internal-testutils-navigation"))
-                implementation(project(":kruth:kruth"))
-            }
-        }
-
-        jvmMain.dependsOn(nonAndroidMain)
-        jvmTest.dependsOn(nonAndroidTest)
-        desktopMain.dependsOn(jvmMain)
-        desktopTest.dependsOn(jvmTest)
 
         androidMain.dependencies {
             api("androidx.activity:activity-compose:1.8.0")
@@ -129,47 +99,6 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-test-junit4"))
             implementation(project(":compose:ui:ui-tooling"))
             implementation(project(":internal-testutils-navigation"))
-        }
-
-        desktopMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        desktopTest {
-            dependsOn(nonAndroidTest)
-            dependencies {
-                implementation(libs.skikoCurrentOs)
-                implementation(libs.kotlinCoroutinesSwing)
-            }
-        }
-
-        nonJvmMain {
-            dependsOn(nonAndroidMain)
-            dependencies {
-                // To comply with Klib resolver until https://youtrack.jetbrains.com/issue/KT-61096 is fixed
-                implementation("org.jetbrains.androidx.savedstate:savedstate:1.4.0")
-                implementation("org.jetbrains.androidx.savedstate:savedstate-compose:1.4.0")
-            }
-        }
-
-        nonJvmTest {
-            dependsOn(nonAndroidTest)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-
-        nativeTest {
-            dependsOn(nonJvmTest)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
-        webTest {
-            dependsOn(nonJvmTest)
         }
     }
 }

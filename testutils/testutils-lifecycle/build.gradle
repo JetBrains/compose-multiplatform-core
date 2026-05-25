@@ -36,7 +36,6 @@ androidXMultiplatform {
     desktop()
     mac()
     linux()
-    mingwX64()
     ios()
     watchos()
     tvos()
@@ -60,11 +59,6 @@ androidXMultiplatform {
             implementation(libs.testExtJunit)
             implementation(libs.testCore)
         }
-
-        jvmMain.dependsOn(commonMain)
-        jvmTest.dependsOn(commonTest)
-        desktopMain.dependsOn(jvmMain)
-        desktopTest.dependsOn(jvmTest)
     }
 }
 

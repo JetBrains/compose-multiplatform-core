@@ -18,7 +18,6 @@ package androidx.build
 
 import androidx.benchmark.gradle.BenchmarkPlugin
 import androidx.build.AndroidXImplPlugin.Companion.TASK_TIMEOUT_MINUTES
-import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import androidx.build.Release.DEFAULT_PUBLISH_CONFIG
 import androidx.build.buildInfo.addCreateLibraryBuildInfoFileTasks
 import androidx.build.checkapi.AndroidMultiplatformApiTaskConfig
@@ -82,7 +81,6 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.JavaVersion.VERSION_11
-import org.gradle.api.JavaVersion.VERSION_1_8
 import org.gradle.api.JavaVersion.VERSION_17
 import org.gradle.api.JavaVersion.VERSION_1_8
 import org.gradle.api.Plugin
@@ -119,9 +117,6 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
-import org.jetbrains.androidx.build.jetBrainsGetDefaultTargetJavaVersion
-import org.jetbrains.androidx.build.jetBrainsGetDefaultAndroidBaseJavaVersion
-import org.jetbrains.androidx.build.jetBrainsGetDefaultTargetJavaVersion
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
@@ -285,7 +280,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         anchorTask: TaskProvider<Task>,
         androidXExtension: AndroidXExtension,
     ) {
-        if (isJetBrainsFork(project)) return
         anchorTask.configure { it.dependsOn(task) }
         val xmlReportDestDir = project.getHostTestResultDirectory()
         val testName = "${project.path}:${task.name}"
@@ -442,9 +436,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     project.plugins.hasPlugin(KotlinMultiplatformAndroidPlugin::class.java)
             }
         val defaultJavaTargetVersion =
-            androidXExtension.type.map {
-                jetBrainsGetDefaultTargetJavaVersion(it, project).toString()
-            }
+            androidXExtension.type.map { getDefaultTargetJavaVersion(it, project.name).toString() }
         val defaultJvmTarget = defaultJavaTargetVersion.map { JvmTarget.fromTarget(it) }
         if (plugin is KotlinMultiplatformPluginWrapper) {
             project.extensions.getByType<KotlinMultiplatformExtension>().apply {
@@ -463,9 +455,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                             }
                             .zip(androidXExtension.type) { (hasAndroid, androidVer), softwareType ->
                                 val targetVer =
-                                    jetBrainsGetDefaultTargetJavaVersion(
+                                    getDefaultTargetJavaVersion(
                                         softwareType = softwareType,
-                                        project = project,
+                                        projectName = project.name,
                                         targetName = target.name,
                                     )
                                 // Use the higher of the Android version and the target-specific
@@ -769,8 +761,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     BuildTypeAttr.ATTRIBUTE,
                     project.objects.named<BuildTypeAttr>("release"),
                 )
-                // disable, as it triggers android compilation during IDEA sync
-                if (!isJetBrainsFork(project)) it.outgoing.artifact(project.tasks.named("createFullJarAndroidMain"))
+                it.outgoing.artifact(project.tasks.named("createFullJarAndroidMain"))
             }
         }
     }
@@ -930,7 +921,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.afterEvaluate {
             javaExtension.apply {
                 val defaultTargetJavaVersion =
-                    jetBrainsGetDefaultTargetJavaVersion(androidXExtension.type.get(), project)
+                    getDefaultTargetJavaVersion(androidXExtension.type.get(), project.name)
                 sourceCompatibility = defaultTargetJavaVersion
                 targetCompatibility = defaultTargetJavaVersion
             }
@@ -979,7 +970,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     }
 
     private fun Project.configureProjectStructureValidation(androidXExtension: AndroidXExtension) {
-        if (isJetBrainsFork(project)) return
         // AndroidXExtension.mavenGroup is not readable until afterEvaluate.
         afterEvaluate {
             val mavenGroup = androidXExtension.mavenGroup
@@ -1013,8 +1003,8 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             throw IllegalArgumentException("Unexpected extension: $this")
         }
         compileOptions.apply {
-            sourceCompatibility = jetBrainsGetDefaultAndroidBaseJavaVersion(project)
-            targetCompatibility = jetBrainsGetDefaultAndroidBaseJavaVersion(project)
+            sourceCompatibility = VERSION_1_8
+            targetCompatibility = VERSION_1_8
         }
 
         val defaultMinSdk = project.defaultAndroidConfig.minSdk
@@ -1406,7 +1396,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     }
 }
 
-internal fun aospGetDefaultTargetJavaVersion(
+internal fun getDefaultTargetJavaVersion(
     softwareType: SoftwareType,
     projectName: String? = null,
     targetName: String? = null,
@@ -1550,7 +1540,6 @@ fun Project.validateMultiplatformPluginHasNotBeenApplied() {
 
 /** Verifies that ProjectParser computes the correct values for this project */
 fun Project.validateProjectParser(androidXExtension: AndroidXExtension) {
-    if (isJetBrainsFork(project)) return
     // If configuration fails, we don't want to validate the ProjectParser
     // (otherwise it could report a confusing, unnecessary error)
     project.gradle.taskGraph.whenReady {

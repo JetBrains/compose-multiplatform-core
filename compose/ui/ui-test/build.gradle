@@ -23,13 +23,10 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -38,11 +35,8 @@ androidXMultiplatform {
         namespace = "androidx.compose.ui.test"
         androidResources.enable = true
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -55,11 +49,7 @@ androidXMultiplatform {
             api(libs.kotlinCoroutinesCore)
             api(libs.kotlinCoroutinesTest)
             implementation(project(":compose:ui:ui-util"))
-            implementation("androidx.collection:collection:1.5.0")
-        }
-
-        commonTest.dependencies {
-            implementation(libs.kotlinTest)
+            implementation("androidx.collection:collection:1.4.2")
         }
 
         androidMain.dependencies {
@@ -115,93 +105,6 @@ androidXMultiplatform {
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:test-utils"))
             }
-        }
-
-        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(libs.atomicFu)
-
-                // Required to properly resolve supertypes of DefaultArchitectureComponentsOwner
-                // Keep in sync with :ui:ui module
-                implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.6")
-                implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel:2.9.6")
-                implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.6")
-
-                // Use direct dependency to AOSP's artifact instead of using project reference
-                // because this module supports all KMP platforms from the beginning
-                // Project dependency (commented out version) is required for `integration` branch setup
-                // implementation(project(":navigationevent:navigationevent"))
-                implementation("androidx.navigationevent:navigationevent:1.0.1")
-            }
-        }
-
-        skikoTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:material:material"))
-                implementation(project(":compose:foundation:foundation"))
-                implementation(project(":lifecycle:lifecycle-viewmodel-compose"))
-                implementation(project(":kruth:kruth"))
-            }
-        }
-
-        desktopMain {
-            dependsOn(skikoMain)
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.skiko)
-            }
-        }
-
-        desktopTest {
-            dependsOn(skikoTest)
-            dependencies {
-                implementation(libs.skikoCurrentOs)
-            }
-        }
-
-        nonJvmMain {
-            dependsOn(skikoMain)
-        }
-
-        nonJvmTest {
-            dependsOn(skikoTest)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-
-        nativeTest {
-            dependsOn(nonJvmTest)
-        }
-
-        darwinMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinTest {
-            dependsOn(nativeTest)
-        }
-
-        macosMain {
-            dependsOn(darwinMain)
-        }
-
-        macosTest {
-            dependsOn(darwinTest)
-        }
-
-        iosMain {
-            dependsOn(darwinMain)
-        }
-
-        iosTest {
-            dependsOn(darwinTest)
         }
     }
 }

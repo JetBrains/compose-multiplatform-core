@@ -22,13 +22,10 @@
  */
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
     alias(libs.plugins.kotlinSerialization)
 }
 
@@ -38,29 +35,23 @@ androidXMultiplatform {
         namespace = "androidx.navigation3.ui"
         androidResources.enable = true
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        def navigation3Version = project.findProperty('artifactRedirection.version.androidx.navigation3')
-        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
-
         commonMain.dependencies {
-            api("androidx.navigation3:navigation3-runtime:$navigation3Version")
-            api("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.0.1")
-            api("org.jetbrains.compose.animation:animation:1.10.0")
-            api("org.jetbrains.compose.runtime:runtime:1.10.0")
-            api("org.jetbrains.compose.runtime:runtime-saveable:1.10.0")
-            api("org.jetbrains.compose.ui:ui:1.10.0")
+            api(project(":navigation3:navigation3-runtime"))
+            api("androidx.navigationevent:navigationevent-compose:1.0.2")
+            api("androidx.compose.animation:animation:1.10.0")
+            api("androidx.compose.runtime:runtime:1.10.0")
+            api("androidx.compose.runtime:runtime-saveable:1.10.0")
+            api("androidx.compose.ui:ui:1.10.0")
             api("androidx.savedstate:savedstate:1.4.0")
             api("androidx.savedstate:savedstate-compose:1.4.0")
-            implementation("androidx.annotation:annotation:1.9.1")
-            implementation("androidx.collection:collection:1.5.0")
+            implementation("androidx.annotation:annotation:1.8.0")
+            implementation("androidx.collection:collection:1.4.5")
             implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
             implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
         }
@@ -69,7 +60,7 @@ androidXMultiplatform {
             implementation(libs.kotlinTest)
             implementation(project(":kruth:kruth"))
             implementation(project(":compose:runtime:runtime-test-utils"))
-            implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
+            implementation("androidx.navigationevent:navigationevent-testing:1.0.2")
         }
 
         androidMain.dependencies {
@@ -91,34 +82,8 @@ androidXMultiplatform {
         }
 
         create("nonAndroidMain").dependsOn(commonMain)
-
-        nonAndroidTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        desktopTest {
-            dependsOn(nonAndroidTest)
-        }
-
-        nativeMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        nativeTest {
-            dependsOn(nonAndroidTest)
-        }
-
-        webMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        webTest {
-            dependsOn(nonAndroidTest)
-        }
+        jvmStubsMain.dependsOn(nonAndroidMain)
+        linuxx64StubsMain.dependsOn(nonAndroidMain)
     }
 }
 

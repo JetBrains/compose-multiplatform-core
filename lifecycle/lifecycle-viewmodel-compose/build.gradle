@@ -23,12 +23,10 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
     alias(libs.plugins.kotlinSerialization)
 }
 
@@ -95,47 +93,6 @@ androidXMultiplatform {
             // See aosp/1804059
             implementation(project(":lifecycle:lifecycle-common-java8"))
             implementation("androidx.activity:activity-compose:1.10.1")
-        }
-
-        nonAndroidMain.dependsOn(commonMain)
-
-        nonAndroidTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.kotlinCoroutinesTest)
-            }
-        }
-
-        jvmMain.dependsOn(nonAndroidMain)
-        jvmTest.dependsOn(nonAndroidTest)
-        desktopMain.dependsOn(jvmMain)
-        desktopTest.dependsOn(jvmTest)
-
-        desktopMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        desktopTest {
-            dependsOn(nonAndroidTest)
-            dependencies {
-                implementation(libs.skikoCurrentOs)
-            }
-        }
-
-        nativeMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        nativeTest {
-            dependsOn(nonAndroidTest)
-        }
-
-        webMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        webTest {
-            dependsOn(nonAndroidTest)
         }
     }
 }

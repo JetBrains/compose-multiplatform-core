@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,7 +39,6 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.the
 import org.gradle.kotlin.dsl.withType
-import org.jetbrains.androidx.build.configureForkWebTarget
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -276,7 +275,8 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     ) {
         createCinterop(
             kotlinNativeCompilation =
-                nativeTarget.compilations.getByName(KotlinCompilation.MAIN_COMPILATION_NAME),
+                nativeTarget.compilations.getByName(KotlinCompilation.MAIN_COMPILATION_NAME)
+                    as KotlinNativeCompilation,
             nativeCompilation = nativeCompilation,
             cinteropName = cinteropName,
         )
@@ -565,8 +565,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
         return listOfNotNull(
             watchosArm32(block),
             watchosArm64(block),
-            // TODO(https://youtrack.jetbrains.com/issue/CMP-9513) publish it
-            // watchosDeviceArm64()
+            watchosDeviceArm64(block),
             watchosSimulatorArm64(block),
         )
     }
@@ -685,7 +684,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
 
     @JvmOverloads
     fun js(block: Action<KotlinJsTargetDsl>? = null): KotlinJsTargetDsl? =
-        configureForkWebTarget(
+        project.configureWebTarget(
             platform = PlatformIdentifier.JS,
             isEnabled = project.enableJs(),
             createTarget = { configure -> kotlinExtension.js(configure) },
@@ -695,7 +694,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     @OptIn(ExperimentalWasmDsl::class)
     @JvmOverloads
     fun wasmJs(block: Action<KotlinJsTargetDsl>? = null): KotlinWasmTargetDsl? =
-        configureForkWebTarget(
+        project.configureWebTarget(
             platform = PlatformIdentifier.WASM_JS,
             isEnabled = project.enableWasmJs(),
             createTarget = { configure -> kotlinExtension.wasmJs(configure) },
@@ -779,18 +778,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     companion object {
         const val EXTENSION_NAME = "androidXMultiplatform"
     }
-
-    // FORK-only public extensions
-
-    /**
-     * Configures native compilation tasks with flags to link required frameworks
-     */
-    fun configureDarwinFlags() = org.jetbrains.androidx.build.configureDarwinFlags(project)
-
-    /**
-     * Configure instrumented tests to run on an actual iOS simulator.
-     */
-    fun iosInstrumentedTest() = org.jetbrains.androidx.build.addIosInstrumentedTestSourceset(project)
 }
 
 // TODO(https://youtrack.jetbrains.com/issue/KT-76874/):
@@ -886,7 +873,7 @@ private fun Project.configureBinaryen() {
     }
 }
 
-internal fun Project.configurePinnedKotlinLibraries(platform: PlatformIdentifier) {
+private fun Project.configurePinnedKotlinLibraries(platform: PlatformIdentifier) {
     multiplatformExtension?.let {
         val kotlinLibSuffix =
             when (platform) {
