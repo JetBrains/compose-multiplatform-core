@@ -219,7 +219,9 @@ private fun mergeObservers(a: ((Any) -> Unit)?, b: ((Any) -> Unit)?): ((Any) -> 
 private fun mergeObservers(a: ((Any) -> Boolean)?, b: ((Any) -> Boolean)?): ((Any) -> Boolean)? {
     return if (a != null && b != null) {
         {
-            a(it) || b(it)
+            val aRecorded = a(it)
+            val bRecorded = b(it)
+            aRecorded || bRecorded
         }
     } else a ?: b
 }
