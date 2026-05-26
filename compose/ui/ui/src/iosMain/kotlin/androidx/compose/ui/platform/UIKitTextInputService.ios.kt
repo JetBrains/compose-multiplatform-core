@@ -42,11 +42,12 @@ import platform.UIKit.UIView
 
 @OptIn(ExperimentalComposeUiApi::class)
 internal class UIKitTextInputService(
-    private val updateView: () -> Unit,
+    private var updateView: () -> Unit,
     private val view: UIView,
     private val viewConfiguration: ViewConfiguration,
     private val focusedViewsList: FocusedViewsList?,
     private var onInputStarted: () -> Unit,
+    private var onInputStopped: () -> Unit,
     /**
      * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
      * Erasure happens due to K/N not supporting Obj-C lightweight generics.
@@ -123,6 +124,7 @@ internal class UIKitTextInputService(
     private fun stopInput() {
         currentInputConnection?.stop()
         currentInputConnection = null
+        onInputStopped()
     }
 
     fun showSoftwareKeyboard() {
@@ -203,8 +205,10 @@ internal class UIKitTextInputService(
 
     fun dispose() {
         stopInput()
-        onInputStarted = { }
-        onKeyboardPresses = { }
+        onInputStarted = {}
+        onInputStopped = {}
+        updateView = {}
+        onKeyboardPresses = {}
         focusManager = { null }
     }
 }

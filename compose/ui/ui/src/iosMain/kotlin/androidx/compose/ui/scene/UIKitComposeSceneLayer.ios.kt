@@ -128,7 +128,7 @@ internal class UIKitComposeSceneLayer(
 
     val hasInvalidations by mediator::hasInvalidations
 
-    var isAccessibilityEnabled by mediator::isAccessibilityEnabled
+    var isFocusEnabled by mediator::isFocusEnabled
 
     override var density: Density
         get() = mediator.composeSceneDensity
