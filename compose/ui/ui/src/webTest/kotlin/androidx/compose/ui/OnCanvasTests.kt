@@ -282,6 +282,8 @@ internal external class ExtendedShadowRoot : ShadowRoot {
     fun elementFromPoint(x: Double, y: Double): Element
 }
 
+// OnCanvasTests is an interface, so it can't have a backing field for composeWindow.
+// We store the reference as a JS property on the DOM container element instead.
 private fun storeComposeWindow(container: Element, ref: JsReference<ComposeWindow>?) {
     js("container._composeWindowRef = ref")
 }

@@ -54,6 +54,11 @@ internal class ComposeWebSemanticsListener(
         const val DEBOUNCE_MS = 100L
     }
 
+
+    /**
+     * @param coroutineScope The [CoroutineScope] used to run this listener,
+     * typically the composition scope so the listener follows the composition lifecycle.
+     */
     internal fun start(coroutineScope: CoroutineScope) {
         // Here we do the following:
         // - Every invalidation doesn't trigger an a11y tree sync immediately, but only after the changes have settled (debounce 100ms).

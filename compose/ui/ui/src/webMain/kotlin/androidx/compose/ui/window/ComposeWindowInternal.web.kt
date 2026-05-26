@@ -491,6 +491,9 @@ internal class ComposeWindow(
                     if (webSemanticsListener != null) {
                         LaunchedEffect(Unit) {
                             coroutineScope {
+                                // The initial composition would create a lot of noisy invalidations,
+                                // so it makes sense to start the listener here - after the initial composition.
+                                // The composition's coroutine scope ties the listener's lifetime to the composition.
                                 webSemanticsListener.start(this)
                             }
                         }
