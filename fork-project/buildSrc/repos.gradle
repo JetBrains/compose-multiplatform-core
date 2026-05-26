@@ -14,56 +14,17 @@
  * limitations under the License.
  */
 
-import groovy.transform.Field
-
-@Field
-File reposSupportRootFolder
-@Field
-String useSourcesInsteadOfAospArtifactsProperty =
-        "jetbrains.androidx.use.sources.instead.of.aosp.artifacts"
-
 def supportRootFolder = ext.supportRootFolder
 if (supportRootFolder == null) {
     throw new RuntimeException("Canonical root project directory is not set. You must specify " +
             "ext.supportRootFolder before including this script")
 }
-reposSupportRootFolder = supportRootFolder
 // Makes strong assumptions about the project structure.
 def checkoutRoot = supportRootFolder.parentFile.parentFile
 
 ext.repos = new Properties()
 ext.repos.checkoutRoot = checkoutRoot.absolutePath
 ext.repos.prebuiltsRoot = new File(checkoutRoot, "prebuilts").absolutePath
-
-def findGradlePropertyInFiles(String propertyName) {
-    def dir = buildscript.sourceFile.parentFile
-    while (dir != null) {
-        def propertiesFile = new File(dir, "gradle.properties")
-        if (propertiesFile.isFile()) {
-            def properties = new Properties()
-            propertiesFile.withInputStream { properties.load(it) }
-            def value = properties.getProperty(propertyName)
-            if (value != null) return value
-        }
-        dir = dir.parentFile
-    }
-    return null
-}
-
-def isUseSourcesInsteadOfAospArtifactsEnabled() {
-    def value = gradle.startParameter.projectProperties[useSourcesInsteadOfAospArtifactsProperty]
-            ?: System.getProperty(useSourcesInsteadOfAospArtifactsProperty)
-            ?: findGradlePropertyInFiles(useSourcesInsteadOfAospArtifactsProperty)
-    return value?.toBoolean() ?: false
-}
-
-def getSourcesInsteadOfAospArtifactsRepositoryDir() {
-    def outDir = System.getenv("OUT_DIR")
-    if (outDir != null) {
-        return new File(outDir, "repository")
-    }
-    return new File(reposSupportRootFolder, "out/repository")
-}
 
 /**
  * Adds maven repositories to the given repository handler.
@@ -74,15 +35,6 @@ def addMavenRepositories(RepositoryHandler handler) {
         for(extraRepo in metalavaRepoOverride.split(File.pathSeparator)) {
             handler.maven {
                 url = extraRepo
-            }
-        }
-    }
-    if (isUseSourcesInsteadOfAospArtifactsEnabled()) {
-        handler.maven {
-            name = "mavenRepo"
-            url = getSourcesInsteadOfAospArtifactsRepositoryDir()
-            content {
-                includeGroup("androidx.compose.runtime")
             }
         }
     }
