@@ -35,6 +35,8 @@ class JetBrainsAndroidXRootImplPlugin @Inject constructor(
 ) : Plugin<Project> {
     override fun apply(project: Project) {
         project.allprojects { subproject ->
+            subproject.configureAospSourceArtifactReplacement()
+
             // Apply capability rule to resolve conflicts between org.jetbrains.androidx.* and androidx.*
             subproject.configureJetBrainsCapabilityResolution()
 
