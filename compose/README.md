@@ -14,15 +14,16 @@ compiler plugin is available in [this README](https://android.googlesource.com/p
 ## Getting started
 To try out Jetpack Compose you need to set up the toolchain for AndroidX development. Follow the process [here](https://android.googlesource.com/platform/frameworks/support/+/androidx-main/README.md) to check out the code.
 
-To start the required version of Android Studio, you need to run the `ANDROIDX_PROJECTS=COMPOSE ./gradlew studio`
+To start the required version of Android Studio, run `ANDROIDX_PROJECTS=COMPOSE ./gradlew studio`
+from `frameworks/support/fork-project`:
 
-    cd path/to/checkout/frameworks/support/
+    cd path/to/checkout/frameworks/support/fork-project/
     ANDROIDX_PROJECTS=COMPOSE ./gradlew studio
 
 Also if you would like to build from the command line, all gradle commands need to be run from the
-`frameworks/support` folder.  E.g. to build the demo app, run:
+`frameworks/support/fork-project` folder. E.g. to build the demo app, run:
 
-    cd path/to/checkout/frameworks/support/
+    cd path/to/checkout/frameworks/support/fork-project/
     ./gradlew :compose:integration-tests:demos:installDebug
 
 ## Structure
