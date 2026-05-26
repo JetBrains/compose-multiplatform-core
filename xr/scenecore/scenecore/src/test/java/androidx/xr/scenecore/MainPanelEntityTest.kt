@@ -61,6 +61,7 @@ class MainPanelEntityTest {
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
 
         session = (result as SessionCreateSuccess).session
+        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
         sceneRuntime = session.sceneRuntime
     }
 
@@ -90,7 +91,7 @@ class MainPanelEntityTest {
     @Test
     fun addPerceivedResolutionChangedListener_withoutDeviceTracking_throwsIllegalStateException() {
         // Disable head tracking
-        session.configure(Config(deviceTracking = DeviceTrackingMode.DISABLED))
+        session.configure(Config.Builder().setDeviceTracking(DeviceTrackingMode.DISABLED).build())
 
         val listener = Consumer<IntSize2d> {}
         val exception =
@@ -227,7 +228,6 @@ class MainPanelEntityTest {
         fun createMainPanelEntity(): WeakReference<MainPanelEntity> {
             val entity =
                 MainPanelEntity.create(
-                    session.perceptionRuntime,
                     session.sceneRuntime,
                     session.scene.perceptionSpace,
                     session.scene.entityRegistry,

@@ -40,6 +40,9 @@ android {
 }
 
 dependencies {
+    lintChecks(project(":wear:compose:remote:remote-lint"))
+    lintPublish(project(":wear:compose:remote:remote-lint"))
+
     api("androidx.wear.compose:compose-material3:1.5.5")
     implementation(project(":compose:remote:remote-creation-compose"))
     implementation(project(":compose:remote:remote-creation"))
@@ -49,14 +52,20 @@ dependencies {
     implementation("androidx.compose.runtime:runtime:1.11.0")
     implementation("androidx.compose.foundation:foundation-layout:1.11.0")
 
+
     androidTestImplementation(project(":wear:compose:remote:remote-material3-samples"))
     androidTestImplementation(project(":compose:remote:remote-creation"))
     androidTestImplementation(project(":compose:remote:remote-player-core"))
+    androidTestImplementation(project(":compose:remote:remote-player-compose"))
     androidTestImplementation(project(":compose:remote:remote-player-compose-testutils"))
+    androidTestImplementation(project(":compose:remote:remote-testing"))
+    androidTestImplementation(project(":compose:test-utils"))
+    androidTestImplementation(project(":compose:ui:ui-test"))
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation(project(":test:screenshot:screenshot"))
+    androidTestImplementation(project(":test:uiautomator:uiautomator"))
     androidTestImplementation("androidx.activity:activity:1.7.2")
     androidTestImplementation("androidx.compose.material:material-icons-core:1.7.8")
-    androidTestImplementation(project(":compose:ui:ui-test"))
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
@@ -66,5 +75,4 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.testParameterInjector)
-    androidTestImplementation(project(":test:uiautomator:uiautomator"))
 }

@@ -29,7 +29,6 @@ import androidx.compose.foundation.text.modifiers.TextStyleProviderNode
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalAccessorScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -58,6 +57,7 @@ import androidx.compose.ui.node.ObserverModifierNode
 import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.findNearestAncestor
+import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.node.invalidateDrawForSubtree
 import androidx.compose.ui.node.invalidateLayer
 import androidx.compose.ui.node.invalidateMeasurement
@@ -69,15 +69,21 @@ import androidx.compose.ui.node.traverseAncestors
 import androidx.compose.ui.node.updateLayerBlock
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.isSpecified
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
-import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -323,7 +329,7 @@ internal class StyleOuterNode(
 
     private fun currentLayerStyle() = resolveAnimatedStyleFor(LayerFlag)
 
-    private fun currentLayoutStyle() = resolveAnimatedStyleFor(OuterLayoutFlag)
+    private fun currentLayoutStyle() = resolveAnimatedStyleFor(OuterLayoutFlag or LayerFlag)
 
     override fun MeasureScope.measure(
         measurable: Measurable,
@@ -355,39 +361,92 @@ internal class StyleOuterNode(
         var minHeight = (constraints.minHeight - vertical).fastCoerceAtLeast(0)
         var maxHeight = addMaxWithMinimum(constraints.maxHeight, vertical)
 
-        minWidth = resolved.hasOrElse(MinWidthId, minWidth) { this.minWidth.fastRoundToInt() }
-        maxWidth = resolved.hasOrElse(MaxWidthId, maxWidth) { this.maxWidth.fastRoundToInt() }
-        minHeight = resolved.hasOrElse(MinHeightId, minHeight) { this.minHeight.fastRoundToInt() }
-        maxHeight = resolved.hasOrElse(MaxHeightId, maxHeight) { this.maxHeight.fastRoundToInt() }
+        // Resolve width constraints from Style
+        var styleMinWidth = 0
+        var styleMaxWidth = Constraints.Infinity
 
+        if (resolved.hasId(MaxWidthId)) {
+            styleMaxWidth = resolved.maxWidth.fastRoundToInt().fastCoerceAtLeast(0)
+        }
+        if (resolved.hasId(MinWidthId)) {
+            styleMinWidth = resolved.minWidth.fastRoundToInt().fastCoerceIn(0, styleMaxWidth)
+        }
         if (resolved.hasId(WidthId)) {
-            val width = resolved.width.fastRoundToInt()
-            minWidth = width
-            maxWidth = width
-        } else if (resolved.hasId(WidthFractionId) && constraints.hasBoundedWidth) {
-            val width =
-                (maxWidth * resolved.widthFraction)
-                    .fastRoundToInt()
-                    .fastCoerceIn(minWidth, maxWidth)
-            minWidth = width
-            maxWidth = width
-        } else if (resolved.hasId(LeftId) && resolved.hasId(RightId)) {
-            minWidth = maxWidth
+            styleMinWidth =
+                resolved.width.fastRoundToInt().fastCoerceIn(styleMinWidth, styleMaxWidth)
+            styleMaxWidth = styleMinWidth
         }
 
+        // Apply style width constraints to adjusted incoming constraints
+        minWidth =
+            if (styleMinWidth == 0) {
+                minWidth
+            } else {
+                styleMinWidth.fastCoerceIn(minWidth, maxWidth)
+            }
+        maxWidth =
+            if (styleMaxWidth == Constraints.Infinity) {
+                maxWidth
+            } else {
+                styleMaxWidth.fastCoerceIn(minWidth, maxWidth)
+            }
+
+        // Handle fractional width, after adjusting for the incoming constraints
+        if (!resolved.hasId(WidthId)) {
+            if (resolved.hasId(WidthFractionId) && constraints.hasBoundedWidth) {
+                val width =
+                    (maxWidth * resolved.widthFraction)
+                        .fastRoundToInt()
+                        .fastCoerceIn(minWidth, maxWidth)
+                minWidth = width
+                maxWidth = width
+            } else if (resolved.hasId(LeftId) && resolved.hasId(RightId)) {
+                minWidth = maxWidth
+            }
+        }
+
+        // Resolve height constraints from Style
+        var styleMinHeight = 0
+        var styleMaxHeight = Constraints.Infinity
+
+        if (resolved.hasId(MaxHeightId)) {
+            styleMaxHeight = resolved.maxHeight.fastRoundToInt().fastCoerceAtLeast(0)
+        }
+        if (resolved.hasId(MinHeightId)) {
+            styleMinHeight = resolved.minHeight.fastRoundToInt().fastCoerceIn(0, styleMaxHeight)
+        }
         if (resolved.hasId(HeightId)) {
-            val height = resolved.height.fastRoundToInt()
-            minHeight = height
-            maxHeight = height
-        } else if (resolved.hasId(HeightFractionId) && constraints.hasBoundedHeight) {
-            val height =
-                (maxHeight * resolved.heightFraction)
-                    .fastRoundToInt()
-                    .fastCoerceIn(minHeight, maxHeight)
-            minHeight = height
-            maxHeight = height
-        } else if (resolved.hasId(TopId) && resolved.hasId(BottomId)) {
-            minHeight = maxHeight
+            styleMinHeight =
+                resolved.height.fastRoundToInt().fastCoerceIn(styleMinHeight, styleMaxHeight)
+            styleMaxHeight = styleMinHeight
+        }
+
+        // Apply style height constraints to adjusted incoming constraints
+        minHeight =
+            if (styleMinHeight == 0) {
+                minHeight
+            } else {
+                styleMinHeight.fastCoerceIn(minHeight, maxHeight)
+            }
+        maxHeight =
+            if (styleMaxHeight == Constraints.Infinity) {
+                maxHeight
+            } else {
+                styleMaxHeight.fastCoerceIn(minHeight, maxHeight)
+            }
+
+        // Handle fractional height, after adjusting for the incoming constraints
+        if (!resolved.hasId(HeightId)) {
+            if (resolved.hasId(HeightFractionId) && constraints.hasBoundedHeight) {
+                val height =
+                    (maxHeight * resolved.heightFraction)
+                        .fastRoundToInt()
+                        .fastCoerceIn(minHeight, maxHeight)
+                minHeight = height
+                maxHeight = height
+            } else if (resolved.hasId(TopId) && resolved.hasId(BottomId)) {
+                minHeight = maxHeight
+            }
         }
 
         val placeable = measurable.measure(Constraints(minWidth, maxWidth, minHeight, maxHeight))
@@ -472,7 +531,6 @@ internal class StyleOuterNode(
 
     override fun ContentDrawScope.draw() {
         val resolved = resolveAnimatedStyleFor(DrawFlag)
-
         val bgColor = resolved.hasOrElse(BackgroundColorId, Color.Unspecified) { backgroundColor }
         val bgBrush = resolved.hasOrNull(BackgroundBrushId) { backgroundBrush!! }
         val foregroundColor =
@@ -678,8 +736,11 @@ internal class StyleOuterNode(
         // inside  observeReads. We do this because observeReads is not inline, which means that
         // animChanges will get compiled into a captured Ref.
         var animChanges = 0
+        builder.prepareBuild()
         observeReads {
             builder.build(style, this, density)
+
+            // Passing 0 for the phase indicates that no animations should be read.
             builder.resolveInto(0, next)
             _resolved = next
             _bufferOrNull = prev
@@ -711,6 +772,7 @@ internal class StyleOuterNode(
             // TODO: invalidateDraw() doesn't seem to correct invalidate the drawing of THIS node,
             //  but it probably should. I think this is a bug. By calling invalidateLayer of the
             //  inner node, we sidestep the bug, but should probably investigate separately.
+            invalidateDraw()
             innerNode.invalidateLayer()
         }
         if (changes and LayerFlag != 0) {
@@ -955,8 +1017,93 @@ internal class StyleInnerNode : Modifier.Node(), LayoutModifierNode {
     }
 }
 
-private inline val Float.isSpecified: Boolean
-    get() = !isNaN()
+private inline fun StyleProperties.suppliedOrHas(
+    value: Color,
+    propertyId: Byte,
+    read: StyleProperties.() -> Color,
+): Color =
+    when {
+        value.isSpecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
+
+private inline fun StyleProperties.suppliedOrHas(
+    value: TextUnit,
+    propertyId: Byte,
+    read: StyleProperties.() -> TextUnit,
+): TextUnit =
+    when {
+        value.isSpecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
+
+private inline fun StyleProperties.suppliedOrHas(
+    value: TextAlign,
+    propertyId: Byte,
+    read: StyleProperties.() -> TextAlign,
+): TextAlign =
+    when {
+        value != TextAlign.Unspecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
+
+private inline fun StyleProperties.suppliedOrHas(
+    value: TextDirection,
+    propertyId: Byte,
+    read: StyleProperties.() -> TextDirection,
+): TextDirection =
+    when {
+        value.isSpecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
+
+private inline fun StyleProperties.suppliedOrHas(
+    value: LineBreak,
+    propertyId: Byte,
+    read: StyleProperties.() -> LineBreak,
+): LineBreak =
+    when {
+        value.isSpecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
+
+private inline fun StyleProperties.suppliedOrHas(
+    value: Hyphens,
+    propertyId: Byte,
+    read: StyleProperties.() -> Hyphens,
+): Hyphens =
+    when {
+        value.isSpecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
+
+private inline fun <T> StyleProperties.suppliedOrHas(
+    value: T?,
+    propertyId: Byte,
+    read: StyleProperties.() -> T?,
+): T? =
+    when {
+        value != null -> value
+        hasId(propertyId) -> read()
+        else -> null
+    }
+
+private inline fun <T> StyleProperties.suppliedOrHas(
+    value: T?,
+    propertyId: Int,
+    read: StyleProperties.() -> T?,
+): T? =
+    when {
+        value != null -> value
+        hasId(propertyId) -> read()
+        else -> null
+    }
 
 private inline fun <T> StyleProperties.hasOrElse(
     propertyId: Byte,
@@ -991,9 +1138,6 @@ private inline fun addMaxWithMinimum(max: Int, value: Int): Int {
     }
 }
 
-private operator fun CornerRadius.minus(value: Float): CornerRadius =
-    CornerRadius(max(0f, x - value), max(0f, y - value))
-
 private fun StylePhase.toFlags(): Int =
     when (this) {
         StylePhase.Layout -> TextLayoutFlag
@@ -1005,33 +1149,44 @@ private fun StyleProperties.shouldPlaceRelativeToRight() = !hasId(LeftId) && has
 
 private fun StyleProperties.shouldPlaceRelativeToBottom() = hasId(BottomId) && !hasId(TopId)
 
-private fun StyleProperties.toTextStyle(fallback: TextStyle): TextStyle {
+internal fun StyleProperties.toTextStyle(supplied: TextStyle): TextStyle {
     return TextStyle(
-            color = hasOrElse(ContentColorId, fallback.color) { contentColor },
-            fontSize = hasOrElse(FontSizeId, fallback.fontSize) { fontSize },
-            fontWeight = hasOrElse(FontWeightId, fallback.fontWeight) { fontWeight },
-            fontStyle = hasOrElse(FontStyleId, fallback.fontStyle) { fontStyle },
-            fontSynthesis = hasOrElse(FontSynthesisId, fallback.fontSynthesis) { fontSynthesis },
-            fontFamily = hasOrElse(FontFamilyId, fallback.fontFamily) { fontFamily },
-            fontFeatureSettings = fallback.fontFeatureSettings,
-            letterSpacing = hasOrElse(LetterSpacingId, fallback.letterSpacing) { letterSpacing },
-            baselineShift = hasOrElse(BaselineShiftId, fallback.baselineShift) { baselineShift },
-            textGeometricTransform = fallback.textGeometricTransform,
-            localeList = fallback.localeList,
-            background = fallback.background,
+            color = suppliedOrHas(supplied.color, ContentColorId) { contentColor },
+            fontSize = suppliedOrHas(supplied.fontSize, FontSizeId) { fontSize },
+            fontWeight = suppliedOrHas(supplied.fontWeight, FontWeightId) { fontWeight },
+            fontStyle = suppliedOrHas(supplied.fontStyle, FontStyleId) { fontStyle },
+            fontSynthesis =
+                suppliedOrHas(supplied.fontSynthesis, FontSynthesisId) { fontSynthesis },
+            fontFamily = suppliedOrHas(supplied.fontFamily, FontFamilyId) { fontFamily },
+            fontFeatureSettings = supplied.fontFeatureSettings,
+            letterSpacing =
+                suppliedOrHas(supplied.letterSpacing, LetterSpacingId) { letterSpacing },
+            baselineShift =
+                suppliedOrHas(supplied.baselineShift, BaselineShiftId) { baselineShift },
+            textGeometricTransform = supplied.textGeometricTransform,
+            localeList = supplied.localeList,
+            background = supplied.background,
             textDecoration =
-                hasOrElse(TextDecorationId, fallback.textDecoration) { textDecoration },
-            shadow = fallback.shadow,
-            drawStyle = fallback.drawStyle,
-            textAlign = hasOrElse(TextAlignId, fallback.textAlign) { textAlign },
-            textDirection = hasOrElse(TextDirectionId, fallback.textDirection) { textDirection },
-            lineHeight = hasOrElse(LineHeightId, fallback.lineHeight) { lineHeight },
-            textIndent = hasOrElse(TextIndentId, fallback.textIndent) { textIndent },
-            platformStyle = fallback.platformStyle,
-            lineHeightStyle = fallback.lineHeightStyle,
-            lineBreak = hasOrElse(LineBreakId, fallback.lineBreak) { lineBreak },
-            hyphens = hasOrElse(HyphensId, fallback.hyphens) { hyphens },
-            textMotion = hasOrElse(TextMotionId, fallback.textMotion) { textMotion },
+                suppliedOrHas(supplied.textDecoration, TextDecorationId) { textDecoration },
+            shadow = supplied.shadow,
+            drawStyle = supplied.drawStyle,
+            textAlign = suppliedOrHas(supplied.textAlign, TextAlignId) { textAlign },
+            textDirection =
+                suppliedOrHas(supplied.textDirection, TextDirectionId) { textDirection },
+            lineHeight = suppliedOrHas(supplied.lineHeight, LineHeightId) { lineHeight },
+            textIndent = suppliedOrHas(supplied.textIndent, TextIndentId) { textIndent },
+            platformStyle = supplied.platformStyle,
+            lineHeightStyle = supplied.lineHeightStyle,
+            lineBreak = suppliedOrHas(supplied.lineBreak, LineBreakId) { lineBreak },
+            hyphens = suppliedOrHas(supplied.hyphens, HyphensId) { hyphens },
+            textMotion = suppliedOrHas(supplied.textMotion, TextMotionId) { textMotion },
         )
-        .let { if (hasId(ContentBrushId)) it.copy(brush = contentBrush) else it }
+        .let {
+            when {
+                supplied.color.isSpecified -> it
+                supplied.brush != null -> it.copy(brush = supplied.brush)
+                hasId(ContentBrushId) -> it.copy(brush = contentBrush)
+                else -> it
+            }
+        }
 }

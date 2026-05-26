@@ -45,8 +45,10 @@ import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.media.AndroidImageWriter
 import androidx.camera.camera2.pipe.media.ImageWriterWrapper
 import androidx.camera.camera2.pipe.writeParameters
+import androidx.camera.common.unwrapAs
+import java.lang.Class
 import javax.inject.Inject
-import kotlin.reflect.KClass
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
 
 internal interface Camera2CaptureSequenceProcessorFactory {
@@ -391,7 +393,7 @@ internal class Camera2CaptureSequenceProcessor(
         //
         // [1] b/307588161 - [ANR] at
         // androidx.camera.camera2.pipe.compat.Camera2CaptureSequenceProcessor.close
-        threads.runBlockingCheckedOrNull(WAIT_FOR_REPEATING_TIMEOUT_MS) {
+        threads.runBlockingCheckedOrNull(WAIT_FOR_REPEATING_TIMEOUT) {
             captureSequence.awaitStarted()
         }
             ?: Log.error {
@@ -586,7 +588,7 @@ internal class Camera2CaptureSequenceProcessor(
         val requestBuilder =
             if (request.inputRequest != null) {
                 val totalCaptureResult =
-                    request.inputRequest.frameInfo.unwrapAs(TotalCaptureResult::class)
+                    request.inputRequest.frameInfo.unwrapAs<TotalCaptureResult>()
                 checkNotNull(totalCaptureResult) {
                     "Failed to unwrap FrameInfo ${request.inputRequest.frameInfo} as " +
                         "TotalCaptureResult"
@@ -611,7 +613,7 @@ internal class Camera2CaptureSequenceProcessor(
     }
 
     companion object {
-        private const val WAIT_FOR_REPEATING_TIMEOUT_MS = 2_000L // 2s
+        private val WAIT_FOR_REPEATING_TIMEOUT = 2.seconds
     }
 }
 
@@ -652,14 +654,14 @@ internal class Camera2RequestMetadata(
     override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T = get(key) ?: default
 
     @Suppress("UNCHECKED_CAST", "NewApi")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CaptureRequest::class -> captureRequest as T
-            CameraCaptureSession::class ->
-                cameraCaptureSessionWrapper.unwrapAs(CameraCaptureSession::class) as? T
-            CameraExtensionSession::class -> {
+            CaptureRequest::class.java -> captureRequest as T
+            CameraCaptureSession::class.java ->
+                cameraCaptureSessionWrapper.unwrapAs<CameraCaptureSession>() as? T
+            CameraExtensionSession::class.java -> {
                 check(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                cameraCaptureSessionWrapper.unwrapAs(CameraExtensionSession::class) as? T
+                cameraCaptureSessionWrapper.unwrapAs<CameraExtensionSession>() as? T
             }
             else -> null
         }

@@ -122,6 +122,16 @@ internal constructor(
         private set
 
     /**
+     * True if a text suggestion is currently selected via hover or highlight focus, indicating that
+     * the transliterated text will be replaced by the selection. This is primarily used for
+     * transliteration languages that can have one or multiple suggestion text replacements and is
+     * used to inform accessibility services of whether a replacement text suggestion is selected.
+     * It does not indicate whether if the selected replacement text has been committed.
+     */
+    internal var suggestionSelected: Boolean by mutableStateOf(false)
+        private set
+
+    /**
      * The current text content. This value will automatically update when the user enters text or
      * otherwise changes the text field contents. To change it programmatically, call [edit].
      *
@@ -162,6 +172,25 @@ internal constructor(
      */
     val composition: TextRange?
         get() = value.composition
+
+    /**
+     * Provides access to the styles applied to the text within this [TextFieldState].
+     *
+     * Use this property when you only need to read or observe the current text styles, such as
+     * updating a formatting toolbar based on the style of the currently selected text. If you need
+     * to modify the text or its styles, use the [edit] method instead, which provides both read and
+     * write access via [TextFieldBuffer].
+     *
+     * To observe changes to this property outside a restartable function, use `snapshotFlow {
+     * textStyles }`.
+     *
+     * @sample androidx.compose.foundation.samples.BasicTextFieldTrackedRangeToggleBoldSample
+     * @see edit
+     * @see snapshotFlow
+     * @see TextFieldTextStyles
+     */
+    val textStyles: TextFieldTextStyles
+        get() = value.textFieldTextStyles ?: EmptyTextFieldTextStyles
 
     /**
      * Runs [block] with a mutable version of the current state. The block can make changes to the
@@ -294,6 +323,7 @@ internal constructor(
             undoBehavior = undoBehavior,
         )
         userCommit = true
+        suggestionSelected = mainBuffer.suggestionSelected
     }
 
     /**
@@ -357,7 +387,7 @@ internal constructor(
                                     composition = mainBuffer.composition,
                                     annotationList = mainBuffer.composingAnnotations,
                                 ),
-                            textStyleBuffer = beforeEditValue.textStyleBuffer,
+                            textFieldTextStyles = beforeEditValue.textFieldTextStyles,
                         ),
                     restartImeIfContentChanges = restartImeIfContentChanges,
                 )
@@ -387,7 +417,7 @@ internal constructor(
                         composition = mainBuffer.composition,
                         annotationList = mainBuffer.composingAnnotations,
                     ),
-                textStyleBuffer = mainBuffer.textStyleBuffer?.toImmutable(),
+                textFieldTextStyles = mainBuffer.getTextFieldTextStyles(),
             )
 
         // if there's no filter; just record the undo, update the snapshot value, end.
@@ -425,7 +455,8 @@ internal constructor(
 
         val textChangedByFilter = !textFieldBuffer.asCharSequence().contentEquals(afterEditValue)
         val selectionChangedByFilter = textFieldBuffer.selection != afterEditValue.selection
-        val styleChangedByFilter = textFieldBuffer.textStyleBuffer != afterEditValue.textStyleBuffer
+        val styleChangedByFilter =
+            textFieldBuffer.textStyleBuffer != afterEditValue.textFieldTextStyles?.textStyleBuffer
         if (textChangedByFilter || selectionChangedByFilter || styleChangedByFilter) {
             syncMainBufferToTemporaryBuffer(
                 temporaryBuffer = textFieldBuffer,
@@ -598,7 +629,7 @@ internal constructor(
                         TextFieldCharSequence(
                             text = temporaryBuffer.toString(),
                             selection = temporaryBuffer.selection,
-                            textStyleBuffer = temporaryBuffer.textStyleBuffer?.toImmutable(),
+                            textFieldTextStyles = temporaryBuffer.getTextFieldTextStyles(),
                         )
                 )
         } else if (selectionChanged) {
@@ -798,4 +829,8 @@ private fun finalizeComposingAnnotations(
  */
 fun TextFieldState.toTextFieldBuffer(): TextFieldBuffer {
     return TextFieldBuffer(value).apply { canCallAddStyle = true }
+}
+
+internal fun TextFieldBuffer.getTextFieldTextStyles(): TextFieldTextStylesImpl? {
+    return textStyleBuffer?.toImmutable()?.let { TextFieldTextStylesImpl(it, length) }
 }

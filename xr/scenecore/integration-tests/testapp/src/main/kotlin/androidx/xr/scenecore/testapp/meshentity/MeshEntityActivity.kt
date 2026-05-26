@@ -37,12 +37,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
@@ -55,7 +56,6 @@ import androidx.xr.runtime.math.Vector4
 import androidx.xr.scenecore.AlphaMode
 import androidx.xr.scenecore.ByteBufferRegion
 import androidx.xr.scenecore.CustomMesh
-import androidx.xr.scenecore.ExperimentalCustomMeshApi
 import androidx.xr.scenecore.InputEvent
 import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.KhronosPbrMaterial
@@ -63,24 +63,23 @@ import androidx.xr.scenecore.KhronosUnlitMaterial
 import androidx.xr.scenecore.Material
 import androidx.xr.scenecore.MeshBuffer
 import androidx.xr.scenecore.MeshEntity
-import androidx.xr.scenecore.MeshSubset
 import androidx.xr.scenecore.MeshSubsetTopology
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.VertexAttribute
-import androidx.xr.scenecore.VertexAttributeDescriptor
 import androidx.xr.scenecore.VertexAttributeType
 import androidx.xr.scenecore.VertexLayout
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
 
 @SuppressLint("RestrictedApi", "RestrictedApiAndroidX")
-@OptIn(ExperimentalCustomMeshApi::class)
 class MeshEntityActivity : AppCompatActivity() {
     private var session: Session? = null
     private var material: KhronosPbrMaterial? = null
@@ -92,6 +91,7 @@ class MeshEntityActivity : AppCompatActivity() {
     private var triangleStripEntity: MeshEntity? = null
     private var twoMaterialsEntity: MeshEntity? = null
     private var wigglingStickEntity: MeshEntity? = null
+    private var customStridesEntity: MeshEntity? = null
 
     private data class EntityComponents(
         val movable: MovableComponent,
@@ -106,12 +106,12 @@ class MeshEntityActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val sessionResult = Session.create(this)
-        if (sessionResult !is SessionCreateSuccess) {
+        session = SessionManager(this).createSession()
+        if (session == null) {
             finish()
             return
         }
-        session = sessionResult.session
+
         session!!.scene.mainPanelEntity.size = FloatSize2d(0.4f, 0.3f)
         val movableComponent = MovableComponent.createSystemMovable(session!!)
         movableComponent.size = FloatSize3d(0.4f, 0.3f, 0.1f)
@@ -175,38 +175,33 @@ class MeshEntityActivity : AppCompatActivity() {
             ),
         )
 
-    private fun putCubeVertices(
-        vertexBuffer: ByteBuffer,
+    private inline fun generateCubeVertices(
         centerX: Float,
         centerY: Float,
         centerZ: Float,
         size: Float,
         colorSchemeIndex: Int = 0,
+        putVertex:
+            (
+                x: Float,
+                y: Float,
+                z: Float,
+                nx: Float,
+                ny: Float,
+                nz: Float,
+                r: Int,
+                g: Int,
+                b: Int,
+                a: Int,
+            ) -> Unit,
     ) {
         val h = size / 2.0f
-        fun putVertex(
-            x: Float,
-            y: Float,
-            z: Float,
-            nx: Float,
-            ny: Float,
-            nz: Float,
-            r: Int,
-            g: Int,
-            b: Int,
-            a: Int,
-        ) {
-            vertexBuffer.putFloat(x + centerX)
-            vertexBuffer.putFloat(y + centerY)
-            vertexBuffer.putFloat(z + centerZ)
-            vertexBuffer.putFloat(nx)
-            vertexBuffer.putFloat(ny)
-            vertexBuffer.putFloat(nz)
-            vertexBuffer.put(r.toByte())
-            vertexBuffer.put(g.toByte())
-            vertexBuffer.put(b.toByte())
-            vertexBuffer.put(a.toByte())
-        }
+        val minX = centerX - h
+        val maxX = centerX + h
+        val minY = centerY - h
+        val maxY = centerY + h
+        val minZ = centerZ - h
+        val maxZ = centerZ + h
 
         val colors = colorSchemes[colorSchemeIndex]
         val cFront = colors[0]
@@ -217,40 +212,115 @@ class MeshEntityActivity : AppCompatActivity() {
         val cLeft = colors[5]
 
         // Front face
-        putVertex(-h, -h, h, 0.0f, 0.0f, 1.0f, cFront[0], cFront[1], cFront[2], 255)
-        putVertex(h, -h, h, 0.0f, 0.0f, 1.0f, cFront[0], cFront[1], cFront[2], 255)
-        putVertex(h, h, h, 0.0f, 0.0f, 1.0f, cFront[0], cFront[1], cFront[2], 255)
-        putVertex(-h, h, h, 0.0f, 0.0f, 1.0f, cFront[0], cFront[1], cFront[2], 255)
+        putVertex(minX, minY, maxZ, 0.0f, 0.0f, 1.0f, cFront[0], cFront[1], cFront[2], 255)
+        putVertex(maxX, minY, maxZ, 0.0f, 0.0f, 1.0f, cFront[0], cFront[1], cFront[2], 255)
+        putVertex(maxX, maxY, maxZ, 0.0f, 0.0f, 1.0f, cFront[0], cFront[1], cFront[2], 255)
+        putVertex(minX, maxY, maxZ, 0.0f, 0.0f, 1.0f, cFront[0], cFront[1], cFront[2], 255)
 
         // Back face
-        putVertex(-h, -h, -h, 0.0f, 0.0f, -1.0f, cBack[0], cBack[1], cBack[2], 255)
-        putVertex(-h, h, -h, 0.0f, 0.0f, -1.0f, cBack[0], cBack[1], cBack[2], 255)
-        putVertex(h, h, -h, 0.0f, 0.0f, -1.0f, cBack[0], cBack[1], cBack[2], 255)
-        putVertex(h, -h, -h, 0.0f, 0.0f, -1.0f, cBack[0], cBack[1], cBack[2], 255)
+        putVertex(minX, minY, minZ, 0.0f, 0.0f, -1.0f, cBack[0], cBack[1], cBack[2], 255)
+        putVertex(minX, maxY, minZ, 0.0f, 0.0f, -1.0f, cBack[0], cBack[1], cBack[2], 255)
+        putVertex(maxX, maxY, minZ, 0.0f, 0.0f, -1.0f, cBack[0], cBack[1], cBack[2], 255)
+        putVertex(maxX, minY, minZ, 0.0f, 0.0f, -1.0f, cBack[0], cBack[1], cBack[2], 255)
 
         // Top face
-        putVertex(-h, h, -h, 0.0f, 1.0f, 0.0f, cTop[0], cTop[1], cTop[2], 255)
-        putVertex(-h, h, h, 0.0f, 1.0f, 0.0f, cTop[0], cTop[1], cTop[2], 255)
-        putVertex(h, h, h, 0.0f, 1.0f, 0.0f, cTop[0], cTop[1], cTop[2], 255)
-        putVertex(h, h, -h, 0.0f, 1.0f, 0.0f, cTop[0], cTop[1], cTop[2], 255)
+        putVertex(minX, maxY, minZ, 0.0f, 1.0f, 0.0f, cTop[0], cTop[1], cTop[2], 255)
+        putVertex(minX, maxY, maxZ, 0.0f, 1.0f, 0.0f, cTop[0], cTop[1], cTop[2], 255)
+        putVertex(maxX, maxY, maxZ, 0.0f, 1.0f, 0.0f, cTop[0], cTop[1], cTop[2], 255)
+        putVertex(maxX, maxY, minZ, 0.0f, 1.0f, 0.0f, cTop[0], cTop[1], cTop[2], 255)
 
         // Bottom face
-        putVertex(-h, -h, -h, 0.0f, -1.0f, 0.0f, cBottom[0], cBottom[1], cBottom[2], 255)
-        putVertex(h, -h, -h, 0.0f, -1.0f, 0.0f, cBottom[0], cBottom[1], cBottom[2], 255)
-        putVertex(h, -h, h, 0.0f, -1.0f, 0.0f, cBottom[0], cBottom[1], cBottom[2], 255)
-        putVertex(-h, -h, h, 0.0f, -1.0f, 0.0f, cBottom[0], cBottom[1], cBottom[2], 255)
+        putVertex(minX, minY, minZ, 0.0f, -1.0f, 0.0f, cBottom[0], cBottom[1], cBottom[2], 255)
+        putVertex(maxX, minY, minZ, 0.0f, -1.0f, 0.0f, cBottom[0], cBottom[1], cBottom[2], 255)
+        putVertex(maxX, minY, maxZ, 0.0f, -1.0f, 0.0f, cBottom[0], cBottom[1], cBottom[2], 255)
+        putVertex(minX, minY, maxZ, 0.0f, -1.0f, 0.0f, cBottom[0], cBottom[1], cBottom[2], 255)
 
         // Right face
-        putVertex(h, -h, -h, 1.0f, 0.0f, 0.0f, cRight[0], cRight[1], cRight[2], 255)
-        putVertex(h, h, -h, 1.0f, 0.0f, 0.0f, cRight[0], cRight[1], cRight[2], 255)
-        putVertex(h, h, h, 1.0f, 0.0f, 0.0f, cRight[0], cRight[1], cRight[2], 255)
-        putVertex(h, -h, h, 1.0f, 0.0f, 0.0f, cRight[0], cRight[1], cRight[2], 255)
+        putVertex(maxX, minY, minZ, 1.0f, 0.0f, 0.0f, cRight[0], cRight[1], cRight[2], 255)
+        putVertex(maxX, maxY, minZ, 1.0f, 0.0f, 0.0f, cRight[0], cRight[1], cRight[2], 255)
+        putVertex(maxX, maxY, maxZ, 1.0f, 0.0f, 0.0f, cRight[0], cRight[1], cRight[2], 255)
+        putVertex(maxX, minY, maxZ, 1.0f, 0.0f, 0.0f, cRight[0], cRight[1], cRight[2], 255)
 
         // Left face
-        putVertex(-h, -h, -h, -1.0f, 0.0f, 0.0f, cLeft[0], cLeft[1], cLeft[2], 255)
-        putVertex(-h, -h, h, -1.0f, 0.0f, 0.0f, cLeft[0], cLeft[1], cLeft[2], 255)
-        putVertex(-h, h, h, -1.0f, 0.0f, 0.0f, cLeft[0], cLeft[1], cLeft[2], 255)
-        putVertex(-h, h, -h, -1.0f, 0.0f, 0.0f, cLeft[0], cLeft[1], cLeft[2], 255)
+        putVertex(minX, minY, minZ, -1.0f, 0.0f, 0.0f, cLeft[0], cLeft[1], cLeft[2], 255)
+        putVertex(minX, minY, maxZ, -1.0f, 0.0f, 0.0f, cLeft[0], cLeft[1], cLeft[2], 255)
+        putVertex(minX, maxY, maxZ, -1.0f, 0.0f, 0.0f, cLeft[0], cLeft[1], cLeft[2], 255)
+        putVertex(minX, maxY, minZ, -1.0f, 0.0f, 0.0f, cLeft[0], cLeft[1], cLeft[2], 255)
+    }
+
+    private fun putCubeVertices(
+        vertexBuffer: ByteBuffer,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        size: Float,
+        colorSchemeIndex: Int = 0,
+    ) {
+        generateCubeVertices(centerX, centerY, centerZ, size, colorSchemeIndex) {
+            x,
+            y,
+            z,
+            nx,
+            ny,
+            nz,
+            r,
+            g,
+            b,
+            a ->
+            vertexBuffer.putFloat(x)
+            vertexBuffer.putFloat(y)
+            vertexBuffer.putFloat(z)
+            vertexBuffer.putFloat(nx)
+            vertexBuffer.putFloat(ny)
+            vertexBuffer.putFloat(nz)
+            vertexBuffer.put(r.toByte())
+            vertexBuffer.put(g.toByte())
+            vertexBuffer.put(b.toByte())
+            vertexBuffer.put(a.toByte())
+        }
+    }
+
+    private fun putCubeVerticesWithCustomOffsetsAndStrides(
+        buffer1: ByteBuffer,
+        buffer2: ByteBuffer,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        size: Float,
+        stride1: Int,
+        stride2: Int,
+        colorSchemeIndex: Int = 0,
+    ) {
+        var vIdx = 0
+        generateCubeVertices(centerX, centerY, centerZ, size, colorSchemeIndex) {
+            x,
+            y,
+            z,
+            nx,
+            ny,
+            nz,
+            r,
+            g,
+            b,
+            a ->
+            val base1 = buffer1.position() + vIdx * stride1
+            buffer1.put(base1 + 4, r.toByte())
+            buffer1.put(base1 + 5, g.toByte())
+            buffer1.put(base1 + 6, b.toByte())
+            buffer1.put(base1 + 7, a.toByte())
+            buffer1.putFloat(base1 + 12, x)
+            buffer1.putFloat(base1 + 16, y)
+            buffer1.putFloat(base1 + 20, z)
+
+            val base2 = buffer2.position() + vIdx * stride2
+            buffer2.putFloat(base2 + 4, nx)
+            buffer2.putFloat(base2 + 8, ny)
+            buffer2.putFloat(base2 + 12, nz)
+
+            vIdx++
+        }
+        buffer1.position(buffer1.position() + vIdx * stride1)
+        buffer2.position(buffer2.position() + vIdx * stride2)
     }
 
     private fun putCubeIndices(indexBuffer: ByteBuffer, vertexOffset: Int) {
@@ -368,8 +438,9 @@ class MeshEntityActivity : AppCompatActivity() {
         materials: List<Material>,
         pose: Pose,
         boneCount: Int = 0,
+        parent: androidx.xr.scenecore.Entity? = session.scene.activitySpace,
     ): MeshEntity {
-        val entity = MeshEntity.create(session, mesh, materials, boneCount, pose)
+        val entity = MeshEntity.create(session, mesh, materials, boneCount, pose, parent)
         initialPoses[entity] = pose
         return entity
     }
@@ -380,25 +451,11 @@ class MeshEntityActivity : AppCompatActivity() {
 
             // Define vertex layout
             val vertexLayout =
-                VertexLayout(
-                    listOf(
-                        VertexAttributeDescriptor(
-                            VertexAttribute.POSITION,
-                            VertexAttributeType.FLOAT3,
-                            0,
-                        ),
-                        VertexAttributeDescriptor(
-                            VertexAttribute.NORMAL,
-                            VertexAttributeType.FLOAT3,
-                            0,
-                        ),
-                        VertexAttributeDescriptor(
-                            VertexAttribute.COLOR,
-                            VertexAttributeType.UBYTE4_NORM,
-                            0,
-                        ),
-                    )
-                )
+                VertexLayout.Builder()
+                    .addAttribute(VertexAttribute.POSITION, VertexAttributeType.FLOAT3)
+                    .addAttribute(VertexAttribute.NORMAL, VertexAttributeType.FLOAT3)
+                    .addAttribute(VertexAttribute.COLOR, VertexAttributeType.UBYTE4_NORM)
+                    .build()
 
             val stride = 28
 
@@ -415,7 +472,67 @@ class MeshEntityActivity : AppCompatActivity() {
             createTest4_TriangleStrip(currentSession, vertexLayout, stride)
             createTest5_TwoMaterials(currentSession, vertexLayout, stride)
             createTest6_WigglingStick(currentSession)
+            createTest7_CustomStridesAndOffsets(currentSession)
         }
+    }
+
+    private fun createTest7_CustomStridesAndOffsets(currentSession: Session) {
+        val stride1 = 32
+        val stride2 = 24
+        val vertexLayout =
+            VertexLayout.Builder()
+                .addAttribute(VertexAttribute.POSITION, VertexAttributeType.FLOAT3, offset = 12)
+                .addAttribute(VertexAttribute.COLOR, VertexAttributeType.UBYTE4_NORM, offset = 4)
+                .setStride(stride1)
+                .startNextBuffer()
+                .addAttribute(VertexAttribute.NORMAL, VertexAttributeType.FLOAT3, offset = 4)
+                .setStride(stride2)
+                .build()
+
+        val vertexCount = 24
+        val vertexBuffer1 =
+            ByteBuffer.allocateDirect(vertexCount * stride1).order(ByteOrder.nativeOrder())
+        val vertexBuffer2 =
+            ByteBuffer.allocateDirect(vertexCount * stride2).order(ByteOrder.nativeOrder())
+
+        putCubeVerticesWithCustomOffsetsAndStrides(
+            vertexBuffer1,
+            vertexBuffer2,
+            0f,
+            0f,
+            0f,
+            0.3f,
+            stride1,
+            stride2,
+        )
+
+        val indexSize = 36 * 4
+        val indexBuffer = ByteBuffer.allocateDirect(indexSize).order(ByteOrder.nativeOrder())
+        putCubeIndices(indexBuffer, 0)
+
+        val cubeMesh =
+            CustomMesh.BuilderFromMeshData(currentSession, vertexLayout)
+                .addVertexData(vertexBuffer1)
+                .addVertexData(vertexBuffer2)
+                .setIndexData(indexBuffer)
+                .setTopology(MeshSubsetTopology.TRIANGLES)
+                .build()
+
+        customStridesEntity =
+            createMeshEntity(
+                currentSession,
+                cubeMesh,
+                listOf(material!!),
+                Pose(Vector3(-3f, 0f, -1.5f)),
+            )
+        createPanel(
+            currentSession,
+            "Custom Strides & Offsets: A cube with interleaved vertex data.\nBox: " +
+                "[${cubeMesh.bounds.min.x},${cubeMesh.bounds.min.y},${cubeMesh.bounds.min.z}] - " +
+                "[${cubeMesh.bounds.max.x},${cubeMesh.bounds.max.y},${cubeMesh.bounds.max.z}]",
+            Pose(Vector3(-3f, 0.7f, -1.5f)),
+            listOfNotNull(customStridesEntity),
+        )
     }
 
     private fun createTest1_Cube(currentSession: Session, vertexLayout: VertexLayout, stride: Int) {
@@ -430,9 +547,9 @@ class MeshEntityActivity : AppCompatActivity() {
         putCubeIndices(sharedBuffer, 0)
 
         val cubeMesh =
-            CustomMesh.FromMeshDataBuilder(currentSession, vertexLayout)
-                .addVertexData(ByteBufferRegion(sharedBuffer, 0, vertexSize))
-                .setIndexData(ByteBufferRegion(sharedBuffer, vertexSize, indexSize))
+            CustomMesh.BuilderFromMeshData(currentSession, vertexLayout)
+                .addVertexData(sharedBuffer, 0, vertexSize)
+                .setIndexData(sharedBuffer, vertexSize, indexSize)
                 .setTopology(MeshSubsetTopology.TRIANGLES)
                 .build()
         cubeEntity =
@@ -441,7 +558,11 @@ class MeshEntityActivity : AppCompatActivity() {
                 cubeMesh,
                 listOf(material!!),
                 Pose(Vector3(-2f, 0f, -1.5f)),
+                parent = null,
             )
+        cubeEntity?.parent = currentSession.scene.activitySpace
+        cubeEntity?.setEnabled(true)
+
         createPanel(
             currentSession,
             "A cube with six different colored faces.\nBox: " +
@@ -468,11 +589,11 @@ class MeshEntityActivity : AppCompatActivity() {
         putCubeIndices(indexBuffer, 24)
 
         val twoSubsetsMesh =
-            CustomMesh.FromMeshDataBuilder(currentSession, vertexLayout)
-                .addVertexData(ByteBufferRegion(vertexBuffer, 0, vertexCount * stride))
-                .setIndexData(ByteBufferRegion(indexBuffer, 0, 72 * 4))
-                .addSubset(MeshSubset(MeshSubsetTopology.TRIANGLES, 0, 36))
-                .addSubset(MeshSubset(MeshSubsetTopology.TRIANGLES, 36, 36))
+            CustomMesh.BuilderFromMeshData(currentSession, vertexLayout)
+                .addVertexData(vertexBuffer)
+                .setIndexData(indexBuffer)
+                .addSubset(MeshSubsetTopology.TRIANGLES, 0, 36)
+                .addSubset(MeshSubsetTopology.TRIANGLES, 36, 36)
                 .build()
         twoSubsetsEntity =
             createMeshEntity(
@@ -513,8 +634,8 @@ class MeshEntityActivity : AppCompatActivity() {
             )
 
         val bottomCubeMesh =
-            CustomMesh.FromMeshBufferBuilder(currentSession, meshBuffer)
-                .addSubset(MeshSubset(MeshSubsetTopology.TRIANGLES, 0, 36))
+            CustomMesh.BuilderFromMeshBuffer(currentSession, meshBuffer)
+                .addSubset(MeshSubsetTopology.TRIANGLES, 0, 36)
                 .setBounds(
                     BoundingBox.fromCenterAndHalfExtents(
                         Vector3(0f, -0.2f, 0f),
@@ -523,8 +644,8 @@ class MeshEntityActivity : AppCompatActivity() {
                 )
                 .build()
         val topCubeMesh =
-            CustomMesh.FromMeshBufferBuilder(currentSession, meshBuffer)
-                .addSubset(MeshSubset(MeshSubsetTopology.TRIANGLES, 36, 36))
+            CustomMesh.BuilderFromMeshBuffer(currentSession, meshBuffer)
+                .addSubset(MeshSubsetTopology.TRIANGLES, 36, 36)
                 .setBounds(
                     BoundingBox.fromCenterAndHalfExtents(
                         Vector3(0f, 0.2f, 0f),
@@ -570,9 +691,9 @@ class MeshEntityActivity : AppCompatActivity() {
         putCubeIndicesStrip(indexBuffer, 0)
 
         val cubeMesh =
-            CustomMesh.FromMeshDataBuilder(currentSession, vertexLayout)
-                .addVertexData(ByteBufferRegion(vertexBuffer, 0, vertexCount * stride))
-                .setIndexData(ByteBufferRegion(indexBuffer, 0, stripIndexCount * 4))
+            CustomMesh.BuilderFromMeshData(currentSession, vertexLayout)
+                .addVertexData(vertexBuffer)
+                .setIndexData(indexBuffer)
                 .setTopology(MeshSubsetTopology.TRIANGLE_STRIP)
                 .build()
         triangleStripEntity =
@@ -592,35 +713,13 @@ class MeshEntityActivity : AppCompatActivity() {
 
     private fun createTest6_WigglingStick(currentSession: Session) {
         val vertexLayoutSkinned =
-            VertexLayout(
-                listOf(
-                    VertexAttributeDescriptor(
-                        VertexAttribute.POSITION,
-                        VertexAttributeType.FLOAT3,
-                        0,
-                    ),
-                    VertexAttributeDescriptor(
-                        VertexAttribute.NORMAL,
-                        VertexAttributeType.FLOAT3,
-                        0,
-                    ),
-                    VertexAttributeDescriptor(
-                        VertexAttribute.COLOR,
-                        VertexAttributeType.UBYTE4_NORM,
-                        0,
-                    ),
-                    VertexAttributeDescriptor(
-                        VertexAttribute.BONE_INDICES,
-                        VertexAttributeType.UBYTE4,
-                        0,
-                    ),
-                    VertexAttributeDescriptor(
-                        VertexAttribute.BONE_WEIGHTS,
-                        VertexAttributeType.UBYTE4_NORM,
-                        0,
-                    ),
-                )
-            )
+            VertexLayout.Builder()
+                .addAttribute(VertexAttribute.POSITION, VertexAttributeType.FLOAT3)
+                .addAttribute(VertexAttribute.NORMAL, VertexAttributeType.FLOAT3)
+                .addAttribute(VertexAttribute.COLOR, VertexAttributeType.UBYTE4_NORM)
+                .addAttribute(VertexAttribute.BONE_INDICES, VertexAttributeType.UBYTE4)
+                .addAttribute(VertexAttribute.BONE_WEIGHTS, VertexAttributeType.UBYTE4_NORM)
+                .build()
 
         val stride = 36
         val segments = 12
@@ -751,8 +850,8 @@ class MeshEntityActivity : AppCompatActivity() {
             )
 
         val stickMesh =
-            CustomMesh.FromMeshBufferBuilder(currentSession, meshBuffer)
-                .addSubset(MeshSubset(MeshSubsetTopology.TRIANGLES, 0, indexCount * 3))
+            CustomMesh.BuilderFromMeshBuffer(currentSession, meshBuffer)
+                .addSubset(MeshSubsetTopology.TRIANGLES, 0, indexCount)
                 .setBounds(
                     BoundingBox.fromCenterAndHalfExtents(
                         Vector3(0f, height / 2f, 0f),
@@ -782,34 +881,46 @@ class MeshEntityActivity : AppCompatActivity() {
             val idScale = Vector3(1f, 1f, 1f)
             val idRot = Quaternion(0f, 0f, 0f, 1f)
 
-            while (true) {
-                kotlinx.coroutines.delay(16)
-                time += 0.05f
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    awaitFrame()
+                    time += 0.05f
 
-                val m0 = Matrix4.Identity
+                    val m0 = Matrix4.Identity
 
-                val angle1 = kotlin.math.sin(time) * 0.5f
-                val q1 =
-                    Quaternion(0f, 0f, kotlin.math.sin(angle1 / 2f), kotlin.math.cos(angle1 / 2f))
-                val pivot1 = Vector3(0f, 0.3f, 0f)
-                val invPivot1 = Vector3(0f, -0.3f, 0f)
-                val m1 =
-                    Matrix4.fromTrs(pivot1, idRot, idScale) *
-                        Matrix4.fromTrs(Vector3(0f, 0f, 0f), q1, idScale) *
-                        Matrix4.fromTrs(invPivot1, idRot, idScale)
+                    val angle1 = kotlin.math.sin(time) * 0.5f
+                    val q1 =
+                        Quaternion(
+                            0f,
+                            0f,
+                            kotlin.math.sin(angle1 / 2f),
+                            kotlin.math.cos(angle1 / 2f),
+                        )
+                    val pivot1 = Vector3(0f, 0.3f, 0f)
+                    val invPivot1 = Vector3(0f, -0.3f, 0f)
+                    val m1 =
+                        Matrix4.fromTrs(pivot1, idRot, idScale) *
+                            Matrix4.fromTrs(Vector3(0f, 0f, 0f), q1, idScale) *
+                            Matrix4.fromTrs(invPivot1, idRot, idScale)
 
-                val angle2 = kotlin.math.sin(time * 1.5f) * 0.8f
-                val q2 =
-                    Quaternion(0f, 0f, kotlin.math.sin(angle2 / 2f), kotlin.math.cos(angle2 / 2f))
-                val pivot2 = Vector3(0f, 0.6f, 0f)
-                val invPivot2 = Vector3(0f, -0.6f, 0f)
-                val m2 =
-                    m1 *
-                        Matrix4.fromTrs(pivot2, idRot, idScale) *
-                        Matrix4.fromTrs(Vector3(0f, 0f, 0f), q2, idScale) *
-                        Matrix4.fromTrs(invPivot2, idRot, idScale)
+                    val angle2 = kotlin.math.sin(time * 1.5f) * 0.8f
+                    val q2 =
+                        Quaternion(
+                            0f,
+                            0f,
+                            kotlin.math.sin(angle2 / 2f),
+                            kotlin.math.cos(angle2 / 2f),
+                        )
+                    val pivot2 = Vector3(0f, 0.6f, 0f)
+                    val invPivot2 = Vector3(0f, -0.6f, 0f)
+                    val m2 =
+                        m1 *
+                            Matrix4.fromTrs(pivot2, idRot, idScale) *
+                            Matrix4.fromTrs(Vector3(0f, 0f, 0f), q2, idScale) *
+                            Matrix4.fromTrs(invPivot2, idRot, idScale)
 
-                wigglingStickEntity?.setBoneTransforms(listOf(m0, m1, m2))
+                    wigglingStickEntity?.setBoneTransforms(listOf(m0, m1, m2))
+                }
             }
         }
     }
@@ -830,11 +941,11 @@ class MeshEntityActivity : AppCompatActivity() {
         putCubeIndices(indexBuffer, 24)
 
         val cubeMesh =
-            CustomMesh.FromMeshDataBuilder(currentSession, vertexLayout)
-                .addVertexData(ByteBufferRegion(vertexBuffer, 0, vertexCount * stride))
-                .setIndexData(ByteBufferRegion(indexBuffer, 0, 72 * 4))
-                .addSubset(MeshSubset(MeshSubsetTopology.TRIANGLES, 0, 36))
-                .addSubset(MeshSubset(MeshSubsetTopology.TRIANGLES, 36, 36))
+            CustomMesh.BuilderFromMeshData(currentSession, vertexLayout)
+                .addVertexData(vertexBuffer)
+                .setIndexData(indexBuffer)
+                .addSubset(MeshSubsetTopology.TRIANGLES, 0, 36)
+                .addSubset(MeshSubsetTopology.TRIANGLES, 36, 36)
                 .build()
         twoMaterialsEntity =
             createMeshEntity(

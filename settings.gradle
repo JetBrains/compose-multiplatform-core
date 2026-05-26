@@ -30,15 +30,15 @@ buildscript {
     dependencies {
         // upgrade protobuf to be compatible with AGP
         classpath("com.google.protobuf:protobuf-java:3.25.5")
-        classpath("com.gradle:develocity-gradle-plugin:4.3")
-        classpath("com.gradle:common-custom-user-data-gradle-plugin:2.4.0")
+        classpath("com.gradle:develocity-gradle-plugin:4.4.1")
+        classpath("com.gradle:common-custom-user-data-gradle-plugin:2.6.0")
         classpath("androidx.build.gradle.gcpbuildcache:gcpbuildcache:1.0.0")
         classpath("com.google.cloud:google-cloud-secretmanager:2.67.0")
         def agpOverride = System.getenv("GRADLE_PLUGIN_VERSION")
         if (agpOverride != null) {
             classpath("com.android.settings:com.android.settings.gradle.plugin:$agpOverride")
         } else {
-            classpath("com.android.settings:com.android.settings.gradle.plugin:9.3.0-alpha01")
+            classpath("com.android.settings:com.android.settings.gradle.plugin:9.3.0-alpha05")
         }
         // set guava version to be compatible with Depdendency analysis gradle plugin
         classpath("com.google.guava:guava:33.3.1-jre")
@@ -46,6 +46,7 @@ buildscript {
 }
 
 plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
     id("AndroidXHostTestFailureHandlerPlugin")
 }
 
@@ -103,6 +104,9 @@ apply(plugin: "com.android.settings")
 apply(from: "buildSrc/ndk.gradle")
 
 def buildNumberProvider = providers.environmentVariable("BUILD_NUMBER").orElse("unset")
+// Noisy requests from VSCode based IDEs that we do not want to see in build scans
+def isNoisyTaskRequest = startParameter.taskNames.contains("kotlinLSPProjectDeps") || startParameter.taskNames.contains("javalsCheckProject")
+
 develocity {
     server = "https://androidx.develocity.cloud"
 
@@ -121,7 +125,7 @@ develocity {
         value("androidx.useMaxDepVersions", providers.gradleProperty("androidx.useMaxDepVersions").isPresent().toString())
 
         // Do not publish scan for androidx-platform-dev
-        publishing.onlyIf { it.authenticated }
+        publishing.onlyIf { it.authenticated && !isNoisyTaskRequest }
     }
 
     // TODO(https://github.com/gradle/gradle/issues/34584): Avoid setting buildFinished via Gradle magic:
@@ -319,7 +323,7 @@ private Set<BuildType> createRequestedFilter() {
                         "CAMERA  - camera projects\n" +
                         "MAIN    - androidx projects that are not compose\n" +
                         "FLAN    - fragment, lifecycle, activity, and navigation projects\n" +
-                        "MEDIA   - media and mediarouter projects\n" +
+                        "MEDIA   - mediarouter projects\n" +
                         "WEAR    - Wear OS projects\n" +
                         "NATIVE  - native projects\n" +
                         "WINDOW  - window projects\n" +
@@ -400,7 +404,8 @@ def includeProject(String name, filePath, List<BuildType> filter = []) {
 //
 /////////////////////////////
 
-includeProject(":a2ui:a2ui", [BuildType.COMPOSE])
+includeProject(":a2ui:a2ui-core", [BuildType.COMPOSE])
+includeProject(":a2ui:integration-tests:testapp", [BuildType.COMPOSE])
 includeProject(":a2ui:a2ui-compose", [BuildType.COMPOSE])
 includeProject(":activity:activity", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE])
 includeProject(":activity:activity-compose", [BuildType.COMPOSE])
@@ -638,6 +643,7 @@ includeProject(":compose:remote:integration-tests:macrobenchmark-target", [Build
 includeProject(":compose:remote:remote-core", [BuildType.MAIN])
 includeProject(":compose:remote:remote-core-testutils", [BuildType.MAIN])
 includeProject(":compose:remote:remote-creation-compose", [BuildType.MAIN])
+includeProject(":compose:remote:remote-creation-compose-samples", "compose/remote/remote-creation-compose/samples", [BuildType.MAIN])
 includeProject(":compose:remote:remote-creation-core", [BuildType.MAIN])
 includeProject(":compose:remote:remote-creation", [BuildType.MAIN])
 includeProject(":compose:remote:remote-player-core", [BuildType.MAIN])
@@ -645,11 +651,16 @@ includeProject(":compose:remote:remote-player-view", [BuildType.MAIN])
 includeProject(":compose:remote:remote-player-compose", [BuildType.MAIN])
 includeProject(":compose:remote:remote-tooling-preview", [BuildType.MAIN])
 includeProject(":compose:remote:remote-player-compose-testutils", [BuildType.MAIN])
+includeProject(":compose:remote:remote-testing", [BuildType.MAIN])
+includeProject(":compose:remote:remote-lint", [BuildType.MAIN])
 includeProject(":compose:ui:ui-tooling-preview:ui-tooling-preview-samples", "compose/ui/ui-tooling-preview/samples", [BuildType.COMPOSE])
+includeProject(":core:locationbutton:locationbutton", [BuildType.MAIN])
+includeProject(":core:locationbutton:locationbutton-testing", [BuildType.MAIN])
 includeProject(":core:core-pip", [BuildType.MAIN])
 includeProject(":wear:compose:remote:integration-tests:demos", [BuildType.MAIN])
 includeProject(":wear:compose:remote:remote-material3", [BuildType.MAIN])
 includeProject(":wear:compose:remote:remote-material3-samples", "wear/compose/remote/remote-material3/samples", [BuildType.MAIN])
+includeProject(":wear:compose:remote:remote-lint", [BuildType.MAIN])
 includeProject(":compose:runtime:runtime", [BuildType.COMPOSE, BuildType.KMP])
 includeProject(":compose:runtime:runtime-annotation", [BuildType.COMPOSE, BuildType.KMP])
 includeProject(":compose:runtime:runtime-annotation:runtime-annotation-samples", "compose/runtime/runtime-annotation/samples", [BuildType.COMPOSE])
@@ -853,6 +864,7 @@ includeProject(":glance:glance-testing", [BuildType.GLANCE])
 includeProject(":glance:wear:wear", [BuildType.GLANCE])
 includeProject(":glance:wear:wear-core", [BuildType.GLANCE])
 includeProject(":glance:wear:wear-samples", [BuildType.GLANCE])
+includeProject(":glance:wear:wear-tooling-preview", [BuildType.GLANCE])
 includeProject(":graphics:filters:filters", [BuildType.MAIN])
 includeProject(":graphics:graphics-core:graphics-core-samples", "graphics/graphics-core/samples", [BuildType.MAIN])
 includeProject(":graphics:graphics-path", [BuildType.MAIN, BuildType.COMPOSE])
@@ -884,11 +896,11 @@ includeProject(":hilt:integration-tests:hilt-testapp-viewmodel", "hilt/integrati
 includeProject(":hilt:integration-tests:hilt-testapp-worker", "hilt/integration-tests/workerapp", [BuildType.MAIN])
 includeProject(":ink:ink-authoring", [BuildType.MAIN])
 includeProject(":ink:ink-authoring-compose", [BuildType.MAIN, BuildType.COMPOSE])
-includeProject(":ink:ink-brush", [BuildType.MAIN])
+includeProject(":ink:ink-brush", [BuildType.MAIN, BuildType.KMP])
 includeProject(":ink:ink-brush-compose", [BuildType.MAIN, BuildType.COMPOSE])
-includeProject(":ink:ink-geometry", [BuildType.MAIN])
+includeProject(":ink:ink-geometry", [BuildType.MAIN, BuildType.KMP])
 includeProject(":ink:ink-geometry-compose", [BuildType.MAIN, BuildType.COMPOSE])
-includeProject(":ink:ink-nativeloader", [BuildType.MAIN])
+includeProject(":ink:ink-nativeloader", [BuildType.MAIN, BuildType.KMP])
 includeProject(":ink:ink-storage", [BuildType.MAIN])
 includeProject(":ink:ink-strokes", [BuildType.MAIN])
 includeProject(":ink:ink-rendering", [BuildType.MAIN])
@@ -944,7 +956,6 @@ includeProject(":lint-checks")
 includeProject(":lint-checks:integration-tests")
 includeProject(":loader:loader", [BuildType.MAIN])
 includeProject(":loader:loader-ktx", [BuildType.MAIN])
-includeProject(":media:media", [BuildType.MAIN, BuildType.MEDIA])
 includeProject(":mediarouter:mediarouter", [BuildType.MAIN, BuildType.MEDIA])
 includeProject(":mediarouter:mediarouter-testing", [BuildType.MAIN, BuildType.MEDIA])
 includeProject(":metrics:metrics-performance", [BuildType.MAIN])
@@ -1199,7 +1210,7 @@ includeProject(":webgpu:webgpu", [BuildType.MAIN])
 includeProject(":webkit:integration-tests:instrumentation", [BuildType.MAIN])
 includeProject(":webkit:integration-tests:common", [BuildType.MAIN])
 includeProject(":webkit:integration-tests:testapp", [BuildType.MAIN])
-includeProject(":webkit:chips-enabled-integration-tests:instrumentation", [BuildType.MAIN])
+includeProject(":webkit:integration-tests:orchestratortests", [BuildType.MAIN])
 includeProject(":webkit:webkit", [BuildType.MAIN])
 includeProject(":window:window", [BuildType.MAIN, BuildType.COMPOSE, BuildType.FLAN, BuildType.WINDOW])
 includeProject(":window:window-samples", "window/window/samples", [BuildType.MAIN, BuildType.COMPOSE, BuildType.FLAN, BuildType.WINDOW])
@@ -1240,11 +1251,11 @@ includeProject(":xr:arcore:arcore-testing", [BuildType.XR])
 includeProject(":xr:arcore:integration-tests:whitebox-mobile", [BuildType.XR])
 includeProject(":xr:arcore:integration-tests:testapp", [BuildType.XR])
 includeProject(":xr:arcore:integration-tests:projected-testapp", [BuildType.XR])
-includeProject(":xr:arcore:arcore-projected", [BuildType.XR])
 includeProject(":xr:assets", [BuildType.XR])
 includeProject(":xr:compose:compose", [BuildType.XR])
 includeProject(":xr:compose:compose:compose-samples", "xr/compose/compose/samples", [BuildType.XR])
 includeProject(":xr:compose:compose-testing", [BuildType.XR])
+includeProject(":xr:compose:compose-testing:compose-testing-samples", "xr/compose/compose-testing/samples", [BuildType.XR])
 includeProject(":xr:compose:integration-tests:testapp", [BuildType.XR])
 includeProject(":xr:compose:material3:material3", [BuildType.XR])
 includeProject(":xr:compose:material3:integration-tests:testapp", [BuildType.XR])
@@ -1272,6 +1283,7 @@ includeProject(":xr:scenecore:scenecore-spatial-rendering", [BuildType.XR])
 includeProject(":xr:scenecore:scenecore-testing", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:testapp", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:videoplayerdrmtest", [BuildType.XR])
+includeProject(":xr:testutils", [BuildType.XR])
 
 /////////////////////////////
 //

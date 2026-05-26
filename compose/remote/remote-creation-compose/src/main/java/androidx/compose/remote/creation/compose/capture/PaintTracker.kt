@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi::class)
 
 package androidx.compose.remote.creation.compose.capture
 
 import android.annotation.SuppressLint
 import android.graphics.Typeface
 import android.os.Build
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.paint.PaintBundle
+import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
 import androidx.compose.remote.creation.compose.layout.toAndroidCap
 import androidx.compose.remote.creation.compose.layout.toAndroidJoin
 import androidx.compose.remote.creation.compose.layout.toAndroidStyle
@@ -38,7 +39,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontVariation
 
 /** Tracks the state of a [RemotePaint] to optimize serialization by only sending deltas. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class PaintTracker {
     var force: Boolean = false
     var isChanged: Boolean = false
@@ -170,11 +170,17 @@ internal class PaintTracker {
         }
 
         val targetFontVariationSettings = newPaint.fontVariationSettings
-        updateIfChanged(targetFontVariationSettings, fontVariationSettings) {
-            fontVariationSettings = targetFontVariationSettings
-            if (targetFontVariationSettings != null) {
-                val (fontAxisNames, fontAxisValues) =
-                    extractFontSettings(targetFontVariationSettings.settings)
+        val settingsToUse =
+            if (RemoteComposeCreationComposeFlags.allowSendingEmptyFontAxis) {
+                targetFontVariationSettings
+            } else {
+                targetFontVariationSettings
+                    ?: FontVariation.Settings(FontVariation.weight(DEFAULT_FONT_WEIGHT))
+            }
+        updateIfChanged(settingsToUse, fontVariationSettings) {
+            fontVariationSettings = settingsToUse
+            if (settingsToUse != null) {
+                val (fontAxisNames, fontAxisValues) = extractFontSettings(settingsToUse.settings)
                 if (fontAxisNames != null && fontAxisValues != null) {
                     val axisTags =
                         IntArray(fontAxisNames.size) { i ->
@@ -193,7 +199,7 @@ internal class PaintTracker {
             colorFilter = targetColorFilter
             when (targetColorFilter) {
                 null -> {
-                    if (wasSet) {
+                    if (wasSet || force) {
                         paintBundle.clearColorFilter()
                     }
                 }
@@ -294,5 +300,9 @@ internal class PaintTracker {
         val fontAxisValues = FloatArray(size) { settings[it].toVariationValue(null) }
 
         return Pair(fontAxisNames, fontAxisValues)
+    }
+
+    private companion object {
+        const val DEFAULT_FONT_WEIGHT = 400
     }
 }

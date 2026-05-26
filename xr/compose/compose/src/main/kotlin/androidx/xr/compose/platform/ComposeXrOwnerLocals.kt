@@ -100,7 +100,7 @@ private fun Activity.createXrOwnerLocals(): ComposeXrOwnerLocals? {
         lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 override fun onDestroy(owner: LifecycleOwner) {
-                    session.scene.clearSpatialModeChangedListener()
+                    session.scene.clearSpaceChangedListener()
                     contentView.setTag(R.id.compose_xr_owner_locals, null)
                     owner.lifecycle.removeObserver(this)
                 }
@@ -112,7 +112,17 @@ private fun Activity.createXrOwnerLocals(): ComposeXrOwnerLocals? {
         Entity.create(
             session = session,
             name = ComposeXrOwnerLocalsConstants.SUBSPACE_ROOT_CONTAINER_NAME,
+            parent = session.scene.activitySpace,
         )
+
+    // If the main panel is implicitly hosted (not explicitly placed in a Subspace via
+    // SpatialMainPanel), we parent it to the SubspaceRootNode so it still receives
+    // recommended pose and scale updates from the system.
+    contentView.post {
+        if (session.scene.mainPanelEntity.parent == null) {
+            session.scene.mainPanelEntity.parent = subspaceRootNode
+        }
+    }
 
     return ComposeXrOwnerLocals(
             session = session,
@@ -123,7 +133,7 @@ private fun Activity.createXrOwnerLocals(): ComposeXrOwnerLocals? {
             subspaceRootNode = subspaceRootNode,
             dialogManager = DefaultDialogManager(),
         )
-        .also { contentView.setTag(R.id.compose_xr_owner_locals, it) }
+        .also { locals -> contentView.setTag(R.id.compose_xr_owner_locals, locals) }
 }
 
 internal fun Activity.getOrCreateSession(): Session? {
@@ -166,6 +176,6 @@ private fun Activity.getSessionFactory(activity: Activity): () -> Session? {
     @Suppress("UNCHECKED_CAST")
     return contentView.getTag(R.id.compose_xr_session_factory) as? () -> Session?
         ?: {
-            (Session.create(activity) as? SessionCreateSuccess)?.session
+            (Session.create(context = activity) as? SessionCreateSuccess)?.session
         }
 }

@@ -30,8 +30,9 @@ import android.provider.Settings
 import android.view.View
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
-import androidx.xr.runtime.NodeHolder
-import androidx.xr.runtime.TypeHolder
+import androidx.lifecycle.LifecycleOwner
+import androidx.xr.arcore.Trackable
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.AnchorEntity
@@ -49,6 +50,7 @@ import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper
 import androidx.xr.scenecore.runtime.MeshEntity
 import androidx.xr.scenecore.runtime.MeshFeature
 import androidx.xr.scenecore.runtime.MovableComponent
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.PixelDimensions
@@ -75,11 +77,14 @@ import androidx.xr.scenecore.runtime.SpatialVisibility
 import androidx.xr.scenecore.runtime.SubspaceNodeEntity
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.SurfaceFeature
+import androidx.xr.scenecore.runtime.TrackableComponent
+import androidx.xr.scenecore.runtime.TypeHolder
 import androidx.xr.scenecore.runtime.impl.OpenXrScenePose
 import androidx.xr.scenecore.runtime.impl.PerceptionSpaceScenePoseImpl
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertPerceivedResolution
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertSpatialCapabilities
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertSpatialVisibility
+import androidx.xr.scenecore.spatial.core.RuntimeUtils.getDefaultPixelsPerMeter
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getMatrix
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getPositionFromTransform
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getRotationFromTransform
@@ -119,12 +124,15 @@ private constructor(
     private val perceivedResolutionChangedListeners =
         ConcurrentHashMap<Consumer<PixelDimensions>, Executor>()
     private val boundaryConsentListeners = ConcurrentHashMap<Consumer<Boolean>, Executor>()
+
     // TODO b/373481538: remove lazy initialization once XR Extensions bug is fixed. This will allow
     // us to remove the lazySpatialStateProvider instance and pass the spatialState directly.
     private val spatialState = AtomicReference<SpatialState?>(null)
+
     // Returns the currently-known spatial state, or fetches it from the extensions if it has never
     // been set. The spatial state is kept updated in the SpatialStateCallback.
     private val lazySpatialStateProvider: Supplier<SpatialState>
+
     /** Returns the PerceptionSpaceScenePose for the Session. */
     private val perceptionSpaceScenePose: PerceptionSpaceScenePoseImpl
     private val isBoundaryConsentGrantedCache: AtomicBoolean
@@ -147,9 +155,11 @@ private constructor(
     @VisibleForTesting
     override val soundPoolExtensionsWrapper: SoundPoolExtensionsWrapper =
         SoundPoolExtensionsWrapperImpl(xrExtensions.xrSpatialAudioExtensions.soundPoolExtensions)
+
     @VisibleForTesting
     override val audioTrackExtensionsWrapper: AudioTrackExtensionsWrapper =
         AudioTrackExtensionsWrapperImpl(xrExtensions.xrSpatialAudioExtensions.audioTrackExtensions)
+
     @VisibleForTesting
     override val mediaPlayerExtensionsWrapper: MediaPlayerExtensionsWrapper =
         MediaPlayerExtensionsWrapperImpl(
@@ -186,6 +196,9 @@ private constructor(
                 setupKeyEntitySubscription(value)
             }
         }
+
+    override var config: Config = Config.Builder().build()
+        private set
 
     init {
         this.activity = activity
@@ -227,6 +240,10 @@ private constructor(
         isBoundaryConsentGrantedCache = AtomicBoolean(calculateBoundaryConsentState())
         registerBoundaryConsentStateListener()
         spatialApiVersion = SpatialCoreApiVersionProvider().spatialApiVersion
+    }
+
+    override fun configure(config: Config) {
+        this.config = config
     }
 
     override fun destroy() {
@@ -506,17 +523,18 @@ private constructor(
             spatialEnvironmentImpl.firePassthroughOpacityChangedEvent()
         }
 
-        // Get the scene parent transform and update the activity space.
-        if (newSpatialState.sceneParentTransform != null) {
+        // If the activity is in FSM, get the scene parent transform and update the activity space.
+        val newSpatialCapabilities = convertSpatialCapabilities(newSpatialState.spatialCapabilities)
+        if (
+            (newSpatialCapabilities.hasCapability(SpatialCapabilities.SPATIAL_CAPABILITY_UI)) and
+                (newSpatialState.sceneParentTransform != null)
+        ) {
             activitySpace.handleOriginUpdate(getMatrix(newSpatialState.sceneParentTransform))
         }
 
         if (spatialCapabilitiesChanged) {
-            val spatialCapabilities =
-                convertSpatialCapabilities(newSpatialState.spatialCapabilities)
-
             spatialCapabilitiesChangedListeners.forEach { (listener, executor) ->
-                executor.execute { listener.accept(spatialCapabilities) }
+                executor.execute { listener.accept(newSpatialCapabilities) }
             }
         }
 
@@ -699,6 +717,14 @@ private constructor(
         )
     }
 
+    override fun createTrackableComponent(
+        lifecycleOwner: LifecycleOwner,
+        trackable: Trackable<Trackable.State>,
+        poseExtractor: ((Any?) -> Pose?),
+    ): TrackableComponent {
+        return TrackableComponentImpl(activitySpace, lifecycleOwner, trackable, poseExtractor)
+    }
+
     override fun createResizableComponent(
         minimumSize: Dimensions,
         maximumSize: Dimensions,
@@ -870,6 +896,8 @@ private constructor(
         }
         return SoundEffectPoolComponentImpl(soundEffectPool)
     }
+
+    override val virtualPixelDensity: Float by lazy { getDefaultPixelsPerMeter(xrExtensions) }
 
     public companion object {
         private const val GUARDIAN_CONSENT_GRANTED = "guardian_consent_granted"

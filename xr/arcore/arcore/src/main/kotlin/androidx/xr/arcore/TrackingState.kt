@@ -17,23 +17,45 @@
 package androidx.xr.arcore
 
 import androidx.xr.arcore.runtime.TrackingState as RTTrackingState
-import androidx.xr.runtime.TrackingState.Companion.PAUSED
-import androidx.xr.runtime.TrackingState.Companion.STOPPED
-import androidx.xr.runtime.TrackingState.Companion.TRACKING
-import androidx.xr.runtime.TrackingState.Companion.TRACKING_DEGRADED
 
 /** Describes the state of the tracking performed. */
-@Suppress("TypealiasDefinition")
-public typealias TrackingState = androidx.xr.runtime.TrackingState
+public class TrackingState private constructor(private val value: Int) {
+    public companion object {
+        /** The trackable is currently tracked and its pose is current. */
+        @JvmField public val TRACKING: TrackingState = TrackingState(0)
 
-internal fun TrackingState.toRuntimeTrackingState(): RTTrackingState =
-    when (this) {
-        TRACKING -> RTTrackingState.TRACKING
-        PAUSED -> RTTrackingState.PAUSED
-        STOPPED -> RTTrackingState.STOPPED
-        TRACKING_DEGRADED -> RTTrackingState.TRACKING_DEGRADED
-        else -> throw IllegalStateException()
+        /** Tracking has been paused for this instance but may be resumed in the future. */
+        @JvmField public val PAUSED: TrackingState = TrackingState(1)
+
+        /** Tracking has stopped for this instance and will never be resumed in the future. */
+        @JvmField public val STOPPED: TrackingState = TrackingState(2)
+
+        /** Tracking is valid but the quality is degraded. */
+        @JvmField public val TRACKING_DEGRADED: TrackingState = TrackingState(3)
     }
+
+    /** Returns a string representation of [TrackingState] useful for debugging. */
+    override fun toString(): String {
+        val repr =
+            when (this) {
+                TRACKING -> "TRACKING"
+                PAUSED -> "PAUSED"
+                STOPPED -> "STOPPED"
+                TRACKING_DEGRADED -> "TRACKING_DEGRADED"
+                else -> throw SOMEONE_FORGOT_TO_UPDATE_TRACKING_STATE
+            }
+        return "TrackingState($repr)"
+    }
+
+    internal fun toRuntimeTrackingState(): RTTrackingState =
+        when (this) {
+            TRACKING -> RTTrackingState.TRACKING
+            PAUSED -> RTTrackingState.PAUSED
+            STOPPED -> RTTrackingState.STOPPED
+            TRACKING_DEGRADED -> RTTrackingState.TRACKING_DEGRADED
+            else -> throw SOMEONE_FORGOT_TO_UPDATE_TRACKING_STATE
+        }
+}
 
 internal fun RTTrackingState.toTrackingState(): TrackingState =
     when (this) {
@@ -41,5 +63,10 @@ internal fun RTTrackingState.toTrackingState(): TrackingState =
         RTTrackingState.PAUSED -> TrackingState.PAUSED
         RTTrackingState.STOPPED -> TrackingState.STOPPED
         RTTrackingState.TRACKING_DEGRADED -> TrackingState.TRACKING_DEGRADED
-        else -> throw IllegalStateException()
+        else -> throw SOMEONE_FORGOT_TO_UPDATE_TRACKING_STATE
     }
+
+private val SOMEONE_FORGOT_TO_UPDATE_TRACKING_STATE =
+    IllegalStateException(
+        "Unexpected TrackingState value. This usually means a new TrackingState value was added but not reflected in the conversion implementations."
+    )

@@ -28,9 +28,9 @@ import java.util.zip.GZIPOutputStream
 
 /**
  * Write a gzip-compressed serialized `ink.proto.BrushFamily` proto message representing the
- * [BrushFamily] to the given [OutputStream]. If `hasFallbacks` is true, then the stored, proto
- * message including fallbacks for this [BrushFamily] will be used instead of recomputing the proto
- * from the [BrushFamily] object.
+ * [BrushFamily] to the given [OutputStream]. If [BrushFamily.hasFallbacks] is true, then the stored
+ * proto message including fallbacks for this [BrushFamily] will be used instead of recomputing the
+ * proto from the [BrushFamily] object.
  */
 public fun BrushFamily.encode(output: OutputStream) {
     GZIPOutputStream(output).use {
@@ -55,29 +55,31 @@ public fun BrushFamily.encode(output: OutputStream) {
 public fun BrushFamily.Companion.decode(
     input: InputStream,
     maxVersion: Version = Version.MAX_SUPPORTED,
-): BrushFamily {
-    val decompressed = DecompressedBytes(input)
-    val nativePointer =
+): BrushFamily =
+    BrushFamily.wrapNative {
+        val decompressed = DecompressedBytes(input)
         BrushSerializationNative.newBrushFamilyFromProto(
-            brushFamilyDirectByteBuffer = null,
-            brushFamilyByteArray = decompressed.bytes,
-            offset = 0,
-            length = decompressed.size,
-            maxVersion = maxVersion.value,
-        )
-    check(nativePointer != 0L) { "Should have thrown exception if decoding failed." }
-    return BrushFamily.wrapNative(nativePointer)
-}
+                brushFamilyDirectByteBuffer = null,
+                brushFamilyByteArray = decompressed.bytes,
+                offset = 0,
+                length = decompressed.size,
+                callback = null,
+                maxVersion = maxVersion.value,
+            )
+            .also { check(it != 0L) { "Should have thrown exception if decoding failed." } }
+    }
 
 /**
  * Write a gzip-compressed serialized `ink.proto.BrushFamily` proto message representing the [List]
  * of [BrushFamily]s to the given [OutputStream].
  *
- * All [BrushFamily] objects in this [List] are encoded into a single BrushFamily proto object. At
- * the top-level is the lowest-version compatible [BrushFamily], making the proto backwards
- * compatible with older versions of Ink which have no concept of nested brush families. Creates new
- * fallbacks from the [BrushFamily] objects passed in, overriding any existing fallbacks on any
- * individual [BrushFamily].
+ * All [BrushFamily] objects in this [List] are encoded into a single BrushFamily proto object. The
+ * order of the [BrushFamily]s in the [List] passed is irrelevant, as they will be sorted by version
+ * compatibility prior to encoding. The proto is encoded such that the top-level is the
+ * lowest-version compatible [BrushFamily], making the proto backwards compatible with older
+ * versions of Ink which have no concept of nested brush families. Creates new fallbacks from the
+ * [BrushFamily] objects passed in, overriding any existing fallbacks on any individual
+ * [BrushFamily].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
 public fun List<BrushFamily>.encodeMultiple(output: OutputStream) {
@@ -111,15 +113,13 @@ public fun BrushFamily.Companion.decodeMultiple(
     maxVersion: Version = Version.MAX_SUPPORTED,
 ): List<BrushFamily> {
     val decompressed = DecompressedBytes(input)
-    val nativePointers =
-        BrushSerializationNative.newMultipleBrushFamiliesFromProto(
-            brushFamilyDirectByteBuffer = null,
-            brushFamilyByteArray = decompressed.bytes,
-            offset = 0,
-            length = decompressed.size,
-            maxVersion = maxVersion.value,
-        )
-    return nativePointers.map { BrushFamily.wrapNative(it) }
+    return MultipleBrushFamilies.decode(
+        brushFamilyDirectByteBuffer = null,
+        brushFamilyByteArray = decompressed.bytes,
+        length = decompressed.size,
+        callback = null,
+        maxVersion = maxVersion.value,
+    )
 }
 
 // Using an explicit singleton object instead of @file:JvmName to put the static interface intended
@@ -131,9 +131,9 @@ public fun BrushFamily.Companion.decodeMultiple(
 public object BrushFamilySerialization {
     /**
      * Write a gzip-compressed serialized `ink.proto.BrushFamily` proto message representing the
-     * [BrushFamily] to the given [OutputStream]. If `hasFallbacks` is true, then the stored proto
-     * message including fallbacks for this [BrushFamily] will be used instead of recomputing the
-     * proto from the [BrushFamily] object.
+     * [BrushFamily] to the given [OutputStream]. If [BrushFamily.hasFallbacks] is true, then the
+     * stored proto message including fallbacks for this [BrushFamily] will be used instead of
+     * recomputing the proto from the [BrushFamily] object.
      */
     @JvmStatic
     @Throws(IOException::class)
@@ -167,10 +167,12 @@ public object BrushFamilySerialization {
      * [List] of [BrushFamily]s to the given [OutputStream].
      *
      * All [BrushFamily] objects in this [List] are encoded into a single BrushFamily proto object.
-     * At the top-level is the lowest-version compatible [BrushFamily], making the proto backwards
-     * compatible with older versions of Ink which have no concept of nested brush families. Creates
-     * new fallbacks from the [BrushFamily] objects passed in, overriding any existing fallbacks on
-     * any individual [BrushFamily].
+     * The order of the [BrushFamily]s in the [List] passed is irrelevant, as they will be sorted
+     * prior to encoding by version compatibility. The proto is encoded such that the top-level is
+     * the lowest-version compatible [BrushFamily], making the proto backwards compatible with older
+     * versions of Ink which have no concept of nested brush families. Creates new fallbacks from
+     * the [BrushFamily] objects passed in, overriding any existing fallbacks on any individual
+     * [BrushFamily].
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
     @JvmStatic

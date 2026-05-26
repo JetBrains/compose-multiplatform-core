@@ -82,7 +82,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.JavaVersion.VERSION_11
 import org.gradle.api.JavaVersion.VERSION_17
-import org.gradle.api.JavaVersion.VERSION_1_8
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -1003,8 +1002,8 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             throw IllegalArgumentException("Unexpected extension: $this")
         }
         compileOptions.apply {
-            sourceCompatibility = VERSION_1_8
-            targetCompatibility = VERSION_1_8
+            sourceCompatibility = VERSION_11
+            targetCompatibility = VERSION_11
         }
 
         val defaultMinSdk = project.defaultAndroidConfig.minSdk
@@ -1012,7 +1011,14 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         // Suppress output of android:compileSdkVersion and related attributes (b/277836549).
         androidResources.additionalParameters += "--no-compile-sdk-metadata"
 
-        compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
+        val minor = project.defaultAndroidConfig.minorApiLevel
+        if (minor != null) {
+            compileSdk {
+                version = release(project.defaultAndroidConfig.compileSdk) { minorApiLevel = minor }
+            }
+        } else {
+            compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
+        }
 
         buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
 
@@ -1082,7 +1088,14 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         androidXExtension: AndroidXExtension,
     ) {
         val defaultMinSdkVersion = project.defaultAndroidConfig.minSdk
-        compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
+        val minor = project.defaultAndroidConfig.minorApiLevel
+        if (minor != null) {
+            compileSdk {
+                version = release(project.defaultAndroidConfig.compileSdk) { minorApiLevel = minor }
+            }
+        } else {
+            compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
+        }
         buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
         minSdk { version = release(defaultMinSdkVersion) }
 
@@ -1407,7 +1420,7 @@ internal fun getDefaultTargetJavaVersion(
         projectName != null && projectName.contains("desktop") -> VERSION_11
         targetName != null && (targetName == "desktop" || targetName == "jvmStubs") -> VERSION_11
         softwareType.compilationTarget == CompilationTarget.HOST -> VERSION_17
-        else -> VERSION_1_8
+        else -> VERSION_11
     }
 }
 
@@ -1456,6 +1469,8 @@ internal fun Project.configureTaskTimeouts() {
     // A set of tasks that sometimes take >60 minutes. b/383874664
     val slowTasks =
         setOf(
+            ":docs-public:docs", // b/508392874
+            ":docs-tip-of-tree:docs", // b/508392874
             ":compose:ui:ui:compileReleaseAndroidTestKotlinAndroid",
             ":compose:foundation:foundation:compileReleaseAndroidTestKotlinAndroid",
             ":compose:foundation:foundation:integration-tests:lazy-tests:compileReleaseAndroidTestKotlin",

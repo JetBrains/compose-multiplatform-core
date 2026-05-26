@@ -16,6 +16,7 @@
 
 package androidx.wear.compose.material3.onehandedgesture
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.view.View
 import androidx.collection.MutableIntObjectMap
@@ -28,7 +29,6 @@ import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.AndroidUiDispatcher
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.toOffset
@@ -36,6 +36,7 @@ import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.core.content.ContextCompat
+import androidx.wear.utils.WearApiVersionHelper
 import com.google.wear.Sdk
 import com.google.wear.input.ForegroundGestureSubscriptionParams
 import com.google.wear.input.GestureEvent
@@ -55,8 +56,7 @@ import kotlinx.coroutines.launch
 internal val LocalGestureManager: ProvidableCompositionLocal<GestureManager> =
     compositionLocalWithComputedDefaultOf {
         if (cachedGestureManager == null) {
-            val haptic = LocalHapticFeedback.currentValue
-            cachedGestureManager = GestureManagerImpl(haptic)
+            cachedGestureManager = GestureManagerImpl()
         }
         cachedGestureManager!!
     }
@@ -66,12 +66,14 @@ internal interface GestureManager {
      * Registers a one-handed gesture.
      *
      * @param view The [View] containing the gesturable content.
+     * @param haptic: The haptic to trigger events
      * @param gesture The gesture to register
      * @param isActive Whether UI component that triggers the gesture, is active
      * @param size The size of the UI component that triggers the gesture.
      */
     fun registerGesture(
         view: View,
+        haptic: HapticFeedback,
         gesture: GestureConfig,
         isActive: () -> Boolean,
         size: () -> IntSize,
@@ -110,7 +112,6 @@ internal interface GestureManager {
 }
 
 internal class GestureManagerImpl(
-    val haptic: HapticFeedback,
     val scope: CoroutineScope = CoroutineScope(SupervisorJob() + AndroidUiDispatcher.Main),
     val gestureInputManager: SdkGestureInputManager = SdkGestureInputManagerImpl(),
 ) : GestureManager {
@@ -120,6 +121,7 @@ internal class GestureManagerImpl(
 
     override fun registerGesture(
         view: View,
+        haptic: HapticFeedback,
         gesture: GestureConfig,
         isActive: () -> Boolean,
         size: () -> IntSize,
@@ -185,6 +187,7 @@ internal class GestureRegistry(
         register(newGesture, isActive, size)
     }
 
+    @SuppressLint("ListIterator")
     fun invalidate() {
         showIndicatorJob?.cancel()
 
@@ -202,26 +205,33 @@ internal class GestureRegistry(
                 // A slight delay of 1s to avoid jumping indicators while the user is mid-flick.
                 delay(1000)
 
-                val sdkPrimaryAction = toSdkGestureAction(GestureAction.Primary)
+                // Make a copy of registeredGestures, because emitting Indicate() might modify the
+                // list
+                val snapshot = registeredGestures.toList()
                 // Since gestures are sorted by priority, the first visible gesture corresponds
                 // to the highest priority.
-                val priority =
-                    registeredGestures
-                        .fastFirstOrNull { (gesture, isActive) ->
-                            isActive() && gesture.action == GestureAction.Primary
-                        }
-                        ?.first
-                        ?.priority
+                supportedSdkGestureActions.forEach { sdkAction ->
+                    val gestureAction = fromSdkGestureAction(sdkAction)
+                    val priority =
+                        snapshot
+                            .fastFirstOrNull { (gesture, isActive) ->
+                                isActive() && gesture.action == gestureAction
+                            }
+                            ?.first
+                            ?.priority
 
-                registeredGestures.fastForEach { (gesture, isActive) ->
-                    if (
-                        gesture.priority == priority &&
-                            gesture.action == GestureAction.Primary &&
-                            isActive() &&
-                            gestureInputManager.shouldShowIndicator(gesture.key, sdkPrimaryAction)
-                    ) {
-                        gesture.onShowIndicator()
-                        gestureInputManager.notifyIndicatorShown(gesture.key, sdkPrimaryAction)
+                    snapshot.fastForEach { (gesture, isActive) ->
+                        if (
+                            gesture.priority == priority &&
+                                gesture.action == gestureAction &&
+                                isActive() &&
+                                gestureInputManager.shouldShowIndicator(gesture.key, sdkAction)
+                        ) {
+                            gesture.interactionSource?.emit(
+                                OneHandedGestureInteraction.Indicate(gesture.action, gesture.key)
+                            )
+                            gestureInputManager.notifyIndicatorShown(gesture.key, sdkAction)
+                        }
                     }
                 }
             }
@@ -286,14 +296,18 @@ internal class GestureRegistry(
         gestureActionIsAmbientEnabled.remove(gestureAction.value)
     }
 
+    @SuppressLint("ListIterator")
     private fun handleAction(sdkGestureAction: Int) {
         scope.launch {
             val gestureAction = fromSdkGestureAction(sdkGestureAction)
 
+            // Make a copy of registeredGestures, because invoking onGesture() might modify the list
+            val snapshot = registeredGestures.toList()
+
             // Since registeredGestures are sorted by priority, the first element that is
             // both visible and matches the requested action will have the highest priority
             val priority =
-                registeredGestures
+                snapshot
                     .fastFirstOrNull { (gesture, isActive) ->
                         isActive() && gesture.action == gestureAction
                     }
@@ -302,7 +316,7 @@ internal class GestureRegistry(
 
             // Trigger all the visible gestures for the highest priority
             var hapticDone = false
-            registeredGestures.fastForEach { (gesture, isActive, size) ->
+            snapshot.fastForEach { (gesture, isActive, size) ->
                 if (gesture.priority == priority && gesture.action == gestureAction && isActive()) {
                     if (!hapticDone) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -412,7 +426,7 @@ internal class SdkGestureInputManagerImpl : SdkGestureInputManager {
 
         val consumers = gestureConsumers.getOrPut(view) { mutableIntObjectMapOf() }
         consumers[sdkGestureAction] = Consumer<GestureEvent> { onGesture(sdkGestureAction) }
-        if (Sdk.isApiVersionAtLeast(Sdk.VERSION_CODES.WEAR_CINNAMON_BUN_0)) {
+        if (WearApiVersionHelper.isApiVersionAtLeast(WearApiVersionHelper.WEAR_CINNAMON_BUN_0)) {
             gestureInputManager?.addGestureEventListener(
                 ForegroundGestureSubscriptionParams.Builder(intArrayOf(sdkGestureAction), view)
                     .setAmbientSupported(enabledInAmbient)
@@ -475,7 +489,6 @@ internal data class GestureConfig(
     val priority: Int,
     val enabledInAmbient: Boolean,
     val interactionSource: MutableInteractionSource?,
-    val onShowIndicator: () -> Unit,
     val onGesture: suspend () -> Unit,
 )
 

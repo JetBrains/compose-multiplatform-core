@@ -22,11 +22,9 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.AnchorPersistenceMode
-import androidx.xr.runtime.CameraFacingDirection
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.ConfigMode
 import androidx.xr.runtime.DepthEstimationMode
-import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.ExperimentalInertialTrackingApi
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
@@ -40,7 +38,6 @@ import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
 import com.google.ar.core.AugmentedImageDatabase
 import com.google.ar.core.Config as ArConfig
-import com.google.ar.core.Config as ArCoreConfig
 import com.google.ar.core.Config.AugmentedFaceMode
 import com.google.ar.core.Config.DepthMode
 import com.google.ar.core.Config.GeospatialMode as ArGeospatialMode
@@ -63,6 +60,7 @@ import kotlinx.coroutines.delay
  * @property config the current [Config] of the session
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
+@OptIn(ExperimentalInertialTrackingApi::class)
 public class ArCoreRuntime
 internal constructor(
     private val context: Context,
@@ -80,8 +78,9 @@ internal constructor(
      */
     @UnsupportedArCoreCompatApi public fun session(): Session = _session
 
-    // TODO(b/392660855): Disable all features by default once this API is fully implemented.
-    public override var config: Config = Config()
+    // TODO(515763631) - The underlying ArCore 1.x Session configuration does not necessarily match
+    // this default configuration before the runtime is configured.
+    public override var config: Config = Config.Builder().build()
         private set
 
     override fun initialize() {
@@ -92,10 +91,12 @@ internal constructor(
     }
 
     override fun resume() {
+        perceptionManager.arDevice.resume()
         _session.resume()
     }
 
     override fun pause() {
+        perceptionManager.arDevice.pause()
         _session.pause()
     }
 
@@ -115,8 +116,11 @@ internal constructor(
     }
 
     @OptIn(androidx.xr.runtime.PreviewSpatialApi::class)
+    @SuppressWarnings("RestrictedApiAndroidX")
     override fun configure(config: Config) {
         val arConfig = _session.config
+
+        perceptionManager.arDevice.configureTracking(config.deviceTracking, context)
 
         if (config.cameraFacingDirection != this.config.cameraFacingDirection) {
             try {
@@ -189,12 +193,18 @@ internal constructor(
         arConfig.geospatialMode =
             when (config.geospatial) {
                 GeospatialMode.SPATIAL -> ArGeospatialMode.ENABLED
-                GeospatialMode.INERTIAL ->
-                    throw UnsupportedOperationException(
-                        "Failed to configure session, runtime does not support GeospatialMode.INERTIAL"
-                    )
                 else -> ArGeospatialMode.DISABLED
             }
+
+        // TODO: b/510879776 - Remove this code once GeospatialMode.INERTIAL is out in ARCore 1.55
+        if (config.geospatial == GeospatialMode.INERTIAL) {
+            if (!isPrototypeGeospatialModeSupported(ARCORE_GEOSPATIAL_MODE_INERTIAL)) {
+                throw UnsupportedOperationException(
+                    "Failed to configure session, runtime does not support GeospatialMode.INERTIAL"
+                )
+            }
+            setPrototypeGeospatialMode(arConfig, ARCORE_GEOSPATIAL_MODE_INERTIAL)
+        }
 
         try {
             _session.configure(arConfig)
@@ -207,15 +217,6 @@ internal constructor(
         }
 
         this.config = config
-    }
-
-    override fun isSupported(configMode: ConfigMode): Boolean {
-        if (configMode is DepthEstimationMode) {
-            return isDepthModeSupportedInArCore1x(configMode)
-        } else if (configMode is GeospatialMode) {
-            return isGeoSpatialModeSupportedInArCore1x(configMode)
-        }
-        return SUPPORTED_CONFIG_MODES.contains(configMode)
     }
 
     override fun destroy() {
@@ -257,41 +258,82 @@ internal constructor(
         config.textureUpdateMode = TextureUpdateMode.EXPOSE_HARDWARE_BUFFER
     }
 
-    private fun isDepthModeSupportedInArCore1x(depthEstimationMode: DepthEstimationMode): Boolean {
-        val arCoreDepthMode =
-            when (depthEstimationMode) {
-                DepthEstimationMode.SMOOTH_ONLY,
-                DepthEstimationMode.SMOOTH_AND_RAW -> ArCoreConfig.DepthMode.AUTOMATIC
-                DepthEstimationMode.RAW_ONLY -> ArCoreConfig.DepthMode.RAW_DEPTH_ONLY
-                else -> ArCoreConfig.DepthMode.DISABLED
-            }
-        return _session.isDepthModeSupported(arCoreDepthMode)
+    // TODO: b/510879776 - Remove this method once GeospatialMode.INERTIAL is out in ARCore 1.55
+    @Suppress("BanUncheckedReflection") // Using reflection to access unreleased ARCore 1.55 API
+    internal fun setPrototypeGeospatialMode(config: ArConfig, mode: Int) {
+        try {
+            val nativeSymbolTableHandleField =
+                config.javaClass.getDeclaredField("nativeSymbolTableHandle").apply {
+                    isAccessible = true
+                }
+            val nativeSymbolTableHandle = nativeSymbolTableHandleField.getLong(config)
+
+            val nativeHandleField =
+                config.javaClass.getDeclaredField("nativeHandle").apply { isAccessible = true }
+            val nativeHandle = nativeHandleField.getLong(config)
+
+            val nativeSessionField =
+                _session.javaClass.getDeclaredField("nativeWrapperHandle").apply {
+                    isAccessible = true
+                }
+            val nativeSession = nativeSessionField.getLong(_session)
+
+            val nativeSetGeospatialMode =
+                config.javaClass
+                    .getDeclaredMethod(
+                        "nativeSetGeospatialMode",
+                        Long::class.java,
+                        Long::class.java,
+                        Long::class.java,
+                        Int::class.java,
+                    )
+                    .apply { isAccessible = true }
+
+            nativeSetGeospatialMode.invoke(
+                config,
+                nativeSymbolTableHandle,
+                nativeSession,
+                nativeHandle,
+                mode,
+            )
+        } catch (e: Exception) {
+            throw UnsupportedOperationException(
+                "GeospatialMode.INERTIAL is not supported on this device or ARCore version.",
+                e,
+            )
+        }
     }
 
-    @OptIn(androidx.xr.runtime.PreviewSpatialApi::class)
-    private fun isGeoSpatialModeSupportedInArCore1x(geospatialMode: GeospatialMode): Boolean {
-        val arCoreGeospatialMode =
-            when (geospatialMode) {
-                GeospatialMode.SPATIAL -> ArCoreConfig.GeospatialMode.ENABLED
-                GeospatialMode.INERTIAL -> return false
-                else -> ArCoreConfig.GeospatialMode.DISABLED
-            }
-        return _session.isGeospatialModeSupported(arCoreGeospatialMode)
+    // TODO: b/510879776 - Remove this method once GeospatialMode.INERTIAL is out in ARCore 1.55
+    @Suppress("BanUncheckedReflection") // Using reflection to access unreleased ARCore 1.55 API
+    internal fun isPrototypeGeospatialModeSupported(mode: Int): Boolean {
+        return try {
+            val nativeHandleField =
+                _session.javaClass.getDeclaredField("nativeWrapperHandle").apply {
+                    isAccessible = true
+                }
+            val nativeHandle = nativeHandleField.getLong(_session)
+
+            val nativeCheckMethod =
+                _session.javaClass
+                    .getDeclaredMethod(
+                        "nativeIsGeospatialModeSupported",
+                        Long::class.java,
+                        Int::class.java,
+                    )
+                    .apply { isAccessible = true }
+
+            nativeCheckMethod.invoke(_session, nativeHandle, mode) as Boolean
+        } catch (e: Exception) {
+            false
+        }
     }
 
     internal companion object {
-        const private val ARCORE_PACKAGE_NAME = "com.google.ar.core"
-
-        internal val SUPPORTED_CONFIG_MODES: Set<ConfigMode> =
-            setOf(
-                CameraFacingDirection.WORLD,
-                CameraFacingDirection.USER,
-                DeviceTrackingMode.DISABLED,
-                DeviceTrackingMode.SPATIAL,
-                FaceTrackingMode.DISABLED,
-                FaceTrackingMode.MESHES,
-                PlaneTrackingMode.DISABLED,
-                PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-            )
+        // TODO: b/510879776 - Remove this constant once GeospatialMode.INERTIAL is out in ARCore
+        // 1.55
+        private const val ARCORE_GEOSPATIAL_MODE_INERTIAL =
+            3 /* com.google.ar.core.Config.GeospatialMode.INERTIAL */
+        private const val ARCORE_PACKAGE_NAME = "com.google.ar.core"
     }
 }

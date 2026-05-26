@@ -22,9 +22,7 @@ import androidx.annotation.FloatRange
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.RenderViewpoint
-import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
@@ -55,13 +53,17 @@ import java.nio.IntBuffer
 public class SurfaceEntity
 private constructor(
     private val perceptionSpace: PerceptionSpace,
-    rtEntity: RtSurfaceEntity,
+    rtSurfaceEntity: RtSurfaceEntity,
     entityRegistry: EntityRegistry,
     shape: Shape,
-) : BaseEntity<RtSurfaceEntity>(rtEntity, entityRegistry) {
+) : Entity(rtSurfaceEntity, entityRegistry) {
+
+    private val rtSurfaceEntity: RtSurfaceEntity
+        get() = rtEntity as RtSurfaceEntity
 
     /** Represents the shape of the Canvas that backs a SurfaceEntity. */
     public interface Shape {
+
         /**
          * A Quadrilateral-shaped canvas. Width and height are expressed in the X and Y axis in the
          * local spatial coordinate system of the entity. (0,0) is the center of the Quad mesh; the
@@ -69,35 +71,25 @@ private constructor(
          *
          * @property extents The size of the Quad in the local spatial coordinate system of the
          *   entity.
+         * @property cornerRadius The radius of the rounded corners of the Quad in the local spatial
+         *   coordinate system of the entity. The maximum allowed value is half of the smaller
+         *   dimension of [extents]. If set to 0.0f, the corners will be sharp.
          */
-        public class Quad : Shape {
-            public val extents: FloatSize2d
-            @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val cornerRadius: Float
-
-            /**
-             * A Quadrilateral-shaped canvas.
-             *
-             * @param extents The size of the Quad in the local spatial coordinate system of the
-             *   entity.
-             */
-            public constructor(extents: FloatSize2d) : this(extents, 0.0f)
-
-            /**
-             * A Quadrilateral-shaped canvas with rounded corners.
-             *
-             * @param extents The size of the Quad in the local spatial coordinate system of the
-             *   entity.
-             * @param cornerRadius The radius of the rounded corners of the Quad in the local
-             *   spatial coordinate system of the entity. If set to 0.0f, the corners will be sharp.
-             */
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-            public constructor(extents: FloatSize2d, cornerRadius: Float) {
+        public class Quad
+        @JvmOverloads
+        constructor(
+            public val extents: FloatSize2d,
+            @FloatRange(from = 0.0) public val cornerRadius: Float = 0.0f,
+        ) : Shape {
+            init {
                 require(extents.width >= 0.0f && extents.height >= 0.0f) {
                     "extents must be non-negative"
                 }
                 require(cornerRadius >= 0.0f) { "cornerRadius must be non-negative" }
-                this.extents = extents
-                this.cornerRadius = cornerRadius
+                val maxRadius = minOf(extents.width, extents.height) / 2.0f
+                require(cornerRadius <= maxRadius) {
+                    "cornerRadius ($cornerRadius) must not be greater than half of the smaller dimension (width or height): $maxRadius"
+                }
             }
         }
 
@@ -570,7 +562,6 @@ private constructor(
         /**
          * Factory method for SurfaceEntity.
          *
-         * @param perceptionRuntime An ARCore PerceptionRuntime
          * @param sceneRuntime SceneRuntime to use.
          * @param renderingRuntime RenderingRuntime to use.
          * @param entityRegistry A SceneCore [EntityRegistry]
@@ -590,10 +581,8 @@ private constructor(
          *   [Scene]'s [ActivitySpace].
          * @return a SurfaceEntity instance
          */
-        @Suppress("RestrictedApiAndroidX")
         internal fun create(
             session: Session,
-            perceptionRuntime: PerceptionRuntime,
             renderingRuntime: RenderingRuntime,
             stereoMode: StereoMode = StereoMode.MONO,
             mediaBlendingMode: MediaBlendingMode = MediaBlendingMode.TRANSPARENT,
@@ -630,20 +619,12 @@ private constructor(
                         rtShape,
                         getRtSurfaceProtection(surfaceProtection),
                         getRtSuperSampling(superSampling),
-                        if (parent != null && parent !is BaseEntity<*>) {
-                            XrLog.warn(
-                                "The provided parent is not a BaseEntity. The SurfaceEntity will " +
-                                    "be created without a parent."
-                            )
-                            null
-                        } else {
-                            parent?.rtEntity
-                        },
+                        parent?.rtEntity,
                     ),
                     session.scene.entityRegistry,
                     shape,
                 )
-            surfaceEntity.parent = parent as? BaseEntity<*>
+            surfaceEntity.parent = parent
             surfaceEntity.contentColorMetadata = contentColorMetadata
             return surfaceEntity
         }
@@ -659,8 +640,11 @@ private constructor(
          *   surface should support Widevine DRM.
          * @param superSampling The [SuperSampling] which describes whether super sampling is
          *   enabled for the surface.
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is `null`.
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          * @return a SurfaceEntity instance
          */
         @MainThread
@@ -677,7 +661,6 @@ private constructor(
         ): SurfaceEntity =
             SurfaceEntity.create(
                 session,
-                session.perceptionRuntime,
                 session.renderingRuntime,
                 stereoMode,
                 MediaBlendingMode.TRANSPARENT,
@@ -703,8 +686,11 @@ private constructor(
          *   enabled for the surface. The default value is [SuperSampling.PENTAGON].
          * @param surfaceProtection The [SurfaceProtection] which describes whether the hosted
          *   surface should support Widevine DRM. The default value is [SurfaceProtection.NONE].
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is `null`.
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          * @return a SurfaceEntity instance
          */
         @MainThread
@@ -722,7 +708,6 @@ private constructor(
         ): SurfaceEntity =
             SurfaceEntity.create(
                 session,
-                session.perceptionRuntime,
                 session.renderingRuntime,
                 stereoMode,
                 mediaBlendingMode,
@@ -743,10 +728,10 @@ private constructor(
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var stereoMode: StereoMode
-        get() = getStereoModeFromRt(rtEntity.stereoMode)
+        get() = getStereoModeFromRt(rtSurfaceEntity.stereoMode)
         @MainThread
         set(value) {
-            rtEntity.stereoMode = getRtStereoMode(value)
+            rtSurfaceEntity.stereoMode = getRtStereoMode(value)
         }
 
     /**
@@ -756,12 +741,12 @@ private constructor(
      */
     public var mediaBlendingMode: MediaBlendingMode
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        get() = getMediaBlendingModeFromRt(rtEntity.mediaBlendingMode)
+        get() = getMediaBlendingModeFromRt(rtSurfaceEntity.mediaBlendingMode)
         @MainThread
         @SuppressLint("HiddenTypeParameter")
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
-            rtEntity.mediaBlendingMode = getRtMediaBlendingMode(value)
+            rtSurfaceEntity.mediaBlendingMode = getRtMediaBlendingMode(value)
         }
 
     /**
@@ -770,7 +755,7 @@ private constructor(
      * This value is entirely determined by the value of [shape].
      */
     public val dimensions: FloatSize3d
-        get() = rtEntity.dimensions.toFloatSize3d()
+        get() = rtSurfaceEntity.dimensions.toFloatSize3d()
 
     /**
      * The shape of the canvas that backs the Entity. Updating this value will alter the
@@ -796,7 +781,7 @@ private constructor(
                         )
                     else -> throw IllegalArgumentException("Unsupported canvas shape: $value")
                 }
-            rtEntity.shape = rtShape
+            rtSurfaceEntity.shape = rtShape
             field = value
         }
 
@@ -817,7 +802,7 @@ private constructor(
         @SuppressLint("HiddenTypeParameter")
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
-            rtEntity.setPrimaryAlphaMaskTexture(value?.texture)
+            rtSurfaceEntity.setPrimaryAlphaMaskTexture(value?.texture)
             field = value
         }
 
@@ -838,7 +823,7 @@ private constructor(
         @SuppressLint("HiddenTypeParameter")
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
-            rtEntity.setAuxiliaryAlphaMaskTexture(value?.texture)
+            rtSurfaceEntity.setAuxiliaryAlphaMaskTexture(value?.texture)
             field = value
         }
 
@@ -867,7 +852,7 @@ private constructor(
                         )
                     else -> throw IllegalArgumentException("Unsupported edge feather: $value")
                 }
-            rtEntity.edgeFeather = rtEdgeFeather
+            rtSurfaceEntity.edgeFeather = rtEdgeFeather
             field = value
         }
 
@@ -889,15 +874,17 @@ private constructor(
     public var contentColorMetadata: ContentColorMetadata? = null
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         get() {
-            return if (!rtEntity.contentColorMetadataSet) {
+            return if (!rtSurfaceEntity.contentColorMetadataSet) {
                 null
             } else {
                 ContentColorMetadata(
-                    colorSpace = ContentColorMetadata.getColorSpaceFromRt(rtEntity.colorSpace),
+                    colorSpace =
+                        ContentColorMetadata.getColorSpaceFromRt(rtSurfaceEntity.colorSpace),
                     colorTransfer =
-                        ContentColorMetadata.getColorTransferFromRt(rtEntity.colorTransfer),
-                    colorRange = ContentColorMetadata.getColorRangeFromRt(rtEntity.colorRange),
-                    maxContentLightLevel = rtEntity.maxContentLightLevel,
+                        ContentColorMetadata.getColorTransferFromRt(rtSurfaceEntity.colorTransfer),
+                    colorRange =
+                        ContentColorMetadata.getColorRangeFromRt(rtSurfaceEntity.colorRange),
+                    maxContentLightLevel = rtSurfaceEntity.maxContentLightLevel,
                 )
             }
         }
@@ -906,9 +893,9 @@ private constructor(
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
             if (value == null) {
-                rtEntity.resetContentColorMetadata()
+                rtSurfaceEntity.resetContentColorMetadata()
             } else {
-                rtEntity.setContentColorMetadata(
+                rtSurfaceEntity.setContentColorMetadata(
                     ContentColorMetadata.getRtColorSpace(value.colorSpace),
                     ContentColorMetadata.getRtColorTransfer(value.colorTransfer),
                     ContentColorMetadata.getRtColorRange(value.colorRange),
@@ -926,7 +913,7 @@ private constructor(
      */
     @MainThread
     public fun getSurface(): Surface {
-        return rtEntity.surface
+        return rtSurfaceEntity.surface
     }
 
     /**
@@ -951,14 +938,14 @@ private constructor(
     @MainThread
     @ExperimentalSurfaceEntityPixelDimensionsApi
     public fun setSurfacePixelDimensions(dimensions: IntSize2d) {
-        rtEntity.setSurfacePixelDimensions(dimensions.width, dimensions.height)
+        rtSurfaceEntity.setSurfacePixelDimensions(dimensions.width, dimensions.height)
     }
 
     /**
      * Gets the perceived resolution of the entity in the provided [RenderViewpoint].
      *
-     * This API is only intended for use in Full Space Mode and will return
-     * [PerceivedResolutionResult.InvalidRenderViewpoint] in Home Space Mode.
+     * This API is only intended for use in Full Space and will return
+     * [PerceivedResolutionResult.InvalidRenderViewpoint] in Home Space.
      *
      * The entity's own rotation and the camera's viewing direction are disregarded; this value
      * represents the dimensions of the entity on the camera view if its largest surface was facing
@@ -978,7 +965,7 @@ private constructor(
      */
     public fun getPerceivedResolution(renderViewpoint: RenderViewpoint): PerceivedResolutionResult {
         val renderViewpointState = renderViewpoint.state.value
-        return rtEntity
+        return rtSurfaceEntity
             .getPerceivedResolution(
                 (perceptionSpace.getScenePoseFromPerceptionPose(renderViewpointState.pose)
                         as PerceptionScenePose)

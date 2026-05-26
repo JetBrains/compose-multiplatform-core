@@ -189,6 +189,10 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
         get() =
             throw NotImplementedError("Physical size estimation check is not supported by ARCore.")
 
+    override val isQrCodeSizeEstimationSupported: Boolean
+        get() =
+            throw NotImplementedError("Qr code size estimation check is not supported by ARCore.")
+
     override val trackables: Collection<Trackable> = xrResources.trackables.values
 
     override val leftEye: Eye? = null
@@ -235,6 +239,8 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
         synchronized(frameLock) {
             _latestFrame = session.update()
             if (lastFrameTimestampNs == _latestFrame.timestamp) {
+                arDevice.update(_latestFrame)
+                geospatial.update(session)
                 return
             }
             lastFrameTimestampNs = _latestFrame.timestamp
@@ -288,7 +294,6 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
         xrResources.clear()
     }
 
-    @ExperimentalCameraApi
     override fun setDisplayRotation(rotation: Int, width: Int, height: Int) {
         if (rotation != displayRotation || width != displayWidth || height != displayHeight) {
             displayRotation = rotation
@@ -315,9 +320,11 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
      * @see ArCoreDepth.dispose
      */
     public fun dispose() {
+        arDevice.dispose()
         xrResources.depth.dispose()
     }
 
+    @SuppressWarnings("RestrictedApiAndroidX")
     internal fun setCameraFacingDirection(facingDirection: CameraFacingDirection) {
         val arCoreFacingDirection =
             when (facingDirection) {

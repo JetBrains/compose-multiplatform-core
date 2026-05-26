@@ -1,14 +1,16 @@
 // Signature format: 4.0
 package androidx.xr.arcore {
 
-  public final class Anchor {
+  public final class Anchor implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Anchor.State> {
     method public static androidx.xr.arcore.AnchorResult create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.Pose pose);
     method public void detach();
+    method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public android.os.IBinder? getAnchorToken();
     method public static java.util.List<java.util.UUID> getPersistedAnchorUuids(androidx.xr.runtime.Session session);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Anchor.State> getState();
     method public static androidx.xr.arcore.AnchorResult load(androidx.xr.runtime.Session session, java.util.UUID uuid);
     method public suspend Object? persist(kotlin.coroutines.Continuation<? super java.util.UUID>);
     method public static void unpersist(androidx.xr.runtime.Session session, java.util.UUID uuid);
+    property @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public android.os.IBinder? anchorToken;
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Anchor.State> state;
     field public static final androidx.xr.arcore.Anchor.Companion Companion;
   }
@@ -20,11 +22,11 @@ package androidx.xr.arcore {
     method public void unpersist(androidx.xr.runtime.Session session, java.util.UUID uuid);
   }
 
-  public static final class Anchor.State {
+  public static final class Anchor.State implements androidx.xr.arcore.Trackable.State {
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.TrackingState getTrackingState();
     property public androidx.xr.runtime.math.Pose pose;
-    property public androidx.xr.runtime.TrackingState trackingState;
+    property public androidx.xr.arcore.TrackingState trackingState;
   }
 
   public final class AnchorCreateResourcesExhausted extends androidx.xr.arcore.AnchorResult {
@@ -68,17 +70,11 @@ package androidx.xr.arcore {
     ctor @BytecodeOnly public AnchorUnsupportedLocationException(String!, Throwable!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
   }
 
-  public final class AnchorUnsupportedObjectException extends java.lang.RuntimeException {
-    ctor public AnchorUnsupportedObjectException();
-    ctor public AnchorUnsupportedObjectException(optional String message, optional Throwable? cause);
-    ctor @BytecodeOnly public AnchorUnsupportedObjectException(String!, Throwable!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-  }
-
   public interface Anchorable<T> extends androidx.xr.arcore.Trackable<T> {
     method public androidx.xr.arcore.AnchorResult createAnchor(androidx.xr.runtime.math.Pose pose);
   }
 
-  public final class ArDevice {
+  public final class ArDevice implements androidx.xr.arcore.Trackable<androidx.xr.arcore.ArDevice.State> {
     method public static androidx.xr.arcore.ArDevice getInstance(androidx.xr.runtime.Session session);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.ArDevice.State> getState();
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.ArDevice.State> state;
@@ -89,13 +85,13 @@ package androidx.xr.arcore {
     method public androidx.xr.arcore.ArDevice getInstance(androidx.xr.runtime.Session session);
   }
 
-  public static final class ArDevice.State {
+  public static final class ArDevice.State implements androidx.xr.arcore.Trackable.State {
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getDevicePose();
     method @InaccessibleFromKotlin public androidx.xr.arcore.ArDevice getOwner();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.TrackingState getTrackingState();
     property public androidx.xr.runtime.math.Pose devicePose;
     property public androidx.xr.arcore.ArDevice owner;
-    property public androidx.xr.runtime.TrackingState trackingState;
+    property public androidx.xr.arcore.TrackingState trackingState;
   }
 
   public final class AugmentedImage implements androidx.xr.arcore.Trackable<androidx.xr.arcore.AugmentedImage.State> {
@@ -114,12 +110,12 @@ package androidx.xr.arcore {
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize2d getExtents();
     method @InaccessibleFromKotlin public int getIndex();
     method @InaccessibleFromKotlin public androidx.xr.arcore.AugmentedImage getOwner();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.TrackingState getTrackingState();
     property public androidx.xr.runtime.math.Pose centerPose;
     property public androidx.xr.runtime.math.FloatSize2d extents;
     property public int index;
     property public androidx.xr.arcore.AugmentedImage owner;
-    property public androidx.xr.runtime.TrackingState trackingState;
+    property public androidx.xr.arcore.TrackingState trackingState;
   }
 
   public final class AugmentedObject implements androidx.xr.arcore.Trackable<androidx.xr.arcore.AugmentedObject.State> {
@@ -138,12 +134,12 @@ package androidx.xr.arcore {
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getCenterPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize3d getExtents();
     method @InaccessibleFromKotlin public androidx.xr.arcore.AugmentedObject getOwner();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.TrackingState getTrackingState();
     property public androidx.xr.runtime.AugmentedObjectCategory category;
     property public androidx.xr.runtime.math.Pose centerPose;
     property public androidx.xr.runtime.math.FloatSize3d extents;
     property public androidx.xr.arcore.AugmentedObject owner;
-    property public androidx.xr.runtime.TrackingState trackingState;
+    property public androidx.xr.arcore.TrackingState trackingState;
   }
 
   public final class CreateGeospatialPoseFromPoseInternalError extends androidx.xr.arcore.CreateGeospatialPoseFromPoseResult {
@@ -221,9 +217,6 @@ package androidx.xr.arcore {
     property public int width;
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalFaceApi {
-  }
-
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalGesturesApi {
   }
 
@@ -243,12 +236,12 @@ package androidx.xr.arcore {
   public static final class Eye.State implements androidx.xr.arcore.Trackable.State {
     method @InaccessibleFromKotlin public androidx.xr.arcore.Eye getOwner();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.TrackingState getTrackingState();
     method @InaccessibleFromKotlin public boolean isOpen();
     property public boolean isOpen;
     property public androidx.xr.arcore.Eye owner;
     property public androidx.xr.runtime.math.Pose pose;
-    property public androidx.xr.runtime.TrackingState trackingState;
+    property public androidx.xr.arcore.TrackingState trackingState;
   }
 
   public final class Face implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Face.State> {
@@ -266,10 +259,10 @@ package androidx.xr.arcore {
     method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> getBlendShapes();
     method @FloatRange(from=0.0, to=1.0, fromInclusive=true, toInclusive=true) public float getConfidence(androidx.xr.arcore.FaceConfidenceRegion region);
     method @InaccessibleFromKotlin public androidx.xr.arcore.Face getOwner();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.TrackingState getTrackingState();
     property public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> blendShapes;
     property public androidx.xr.arcore.Face owner;
-    property public androidx.xr.runtime.TrackingState trackingState;
+    property public androidx.xr.arcore.TrackingState trackingState;
   }
 
   public final class FaceBlendShapeType {
@@ -428,19 +421,6 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.FaceConfidenceRegion RIGHT_UPPER;
   }
 
-  public final class FaceMeshRegion {
-    field public static final androidx.xr.arcore.FaceMeshRegion.Companion Companion;
-    field public static final androidx.xr.arcore.FaceMeshRegion FOREHEAD_LEFT;
-    field public static final androidx.xr.arcore.FaceMeshRegion FOREHEAD_RIGHT;
-    field public static final androidx.xr.arcore.FaceMeshRegion NOSE_TIP;
-  }
-
-  public static final class FaceMeshRegion.Companion {
-    property public androidx.xr.arcore.FaceMeshRegion FOREHEAD_LEFT;
-    property public androidx.xr.arcore.FaceMeshRegion FOREHEAD_RIGHT;
-    property public androidx.xr.arcore.FaceMeshRegion NOSE_TIP;
-  }
-
   public final class Geospatial {
     method public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.arcore.VpsAvailabilityResult>);
     method public androidx.xr.arcore.AnchorResult createAnchor(double latitude, double longitude, double altitude, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion);
@@ -457,23 +437,30 @@ package androidx.xr.arcore {
     method public androidx.xr.arcore.Geospatial getInstance(androidx.xr.runtime.Session session);
   }
 
-  @Deprecated public static final class Geospatial.State {
-    field @Deprecated public static final androidx.xr.arcore.Geospatial.State.Companion Companion;
-    field @Deprecated public static final androidx.xr.arcore.Geospatial.State ERROR_INTERNAL;
-    field @Deprecated public static final androidx.xr.arcore.Geospatial.State ERROR_NOT_AUTHORIZED;
-    field @Deprecated public static final androidx.xr.arcore.Geospatial.State ERROR_RESOURCE_EXHAUSTED;
-    field @Deprecated public static final androidx.xr.arcore.Geospatial.State NOT_RUNNING;
-    field @Deprecated public static final androidx.xr.arcore.Geospatial.State PAUSED;
-    field @Deprecated public static final androidx.xr.arcore.Geospatial.State RUNNING;
+  public static final class Geospatial.GeospatialTrackingState {
+    field public static final androidx.xr.arcore.Geospatial.GeospatialTrackingState.Companion Companion;
+    field public static final androidx.xr.arcore.Geospatial.GeospatialTrackingState ERROR_INTERNAL;
+    field public static final androidx.xr.arcore.Geospatial.GeospatialTrackingState ERROR_NOT_AUTHORIZED;
+    field public static final androidx.xr.arcore.Geospatial.GeospatialTrackingState ERROR_RESOURCE_EXHAUSTED;
+    field public static final androidx.xr.arcore.Geospatial.GeospatialTrackingState NOT_RUNNING;
+    field public static final androidx.xr.arcore.Geospatial.GeospatialTrackingState PAUSED;
+    field public static final androidx.xr.arcore.Geospatial.GeospatialTrackingState RUNNING;
   }
 
-  @Deprecated public static final class Geospatial.State.Companion {
-    property @Deprecated public androidx.xr.arcore.Geospatial.State ERROR_INTERNAL;
-    property @Deprecated public androidx.xr.arcore.Geospatial.State ERROR_NOT_AUTHORIZED;
-    property @Deprecated public androidx.xr.arcore.Geospatial.State ERROR_RESOURCE_EXHAUSTED;
-    property @Deprecated public androidx.xr.arcore.Geospatial.State NOT_RUNNING;
-    property @Deprecated public androidx.xr.arcore.Geospatial.State PAUSED;
-    property @Deprecated public androidx.xr.arcore.Geospatial.State RUNNING;
+  public static final class Geospatial.GeospatialTrackingState.Companion {
+    property public androidx.xr.arcore.Geospatial.GeospatialTrackingState ERROR_INTERNAL;
+    property public androidx.xr.arcore.Geospatial.GeospatialTrackingState ERROR_NOT_AUTHORIZED;
+    property public androidx.xr.arcore.Geospatial.GeospatialTrackingState ERROR_RESOURCE_EXHAUSTED;
+    property public androidx.xr.arcore.Geospatial.GeospatialTrackingState NOT_RUNNING;
+    property public androidx.xr.arcore.Geospatial.GeospatialTrackingState PAUSED;
+    property public androidx.xr.arcore.Geospatial.GeospatialTrackingState RUNNING;
+  }
+
+  public static final class Geospatial.State {
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Geospatial.GeospatialTrackingState getGeospatialTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Geospatial getOwner();
+    property public androidx.xr.arcore.Geospatial.GeospatialTrackingState geospatialTrackingState;
+    property public androidx.xr.arcore.Geospatial owner;
   }
 
   public final class GeospatialSurface {
@@ -502,21 +489,15 @@ package androidx.xr.arcore {
     method public androidx.xr.arcore.Hand right(androidx.xr.runtime.Session session);
   }
 
-  @Deprecated public enum Hand.HandSide {
-    enum_constant @Deprecated public static final androidx.xr.arcore.Hand.HandSide LEFT;
-    enum_constant @Deprecated public static final androidx.xr.arcore.Hand.HandSide RIGHT;
-    enum_constant @Deprecated public static final androidx.xr.arcore.Hand.HandSide UNKNOWN;
-  }
-
   public static final class Hand.State implements androidx.xr.arcore.Trackable.State {
     method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.HandJointType,androidx.xr.runtime.math.Pose> getHandJoints();
     method @InaccessibleFromKotlin public java.nio.FloatBuffer getHandJointsBuffer();
     method @InaccessibleFromKotlin public androidx.xr.arcore.Hand getOwner();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.TrackingState getTrackingState();
     property public java.util.Map<androidx.xr.arcore.HandJointType,androidx.xr.runtime.math.Pose> handJoints;
     property public java.nio.FloatBuffer handJointsBuffer;
     property public androidx.xr.arcore.Hand owner;
-    property public androidx.xr.runtime.TrackingState trackingState;
+    property public androidx.xr.arcore.TrackingState trackingState;
   }
 
   public enum HandJointType {
@@ -546,14 +527,6 @@ package androidx.xr.arcore {
     enum_constant public static final androidx.xr.arcore.HandJointType THUMB_PROXIMAL;
     enum_constant public static final androidx.xr.arcore.HandJointType THUMB_TIP;
     enum_constant public static final androidx.xr.arcore.HandJointType WRIST;
-    field public static final androidx.xr.arcore.HandJointType.Companion Companion;
-    field @Deprecated public static final androidx.xr.arcore.HandJointType HAND_JOINT_TYPE_INDEX_TIP;
-    field @Deprecated public static final androidx.xr.arcore.HandJointType HAND_JOINT_TYPE_THUMB_TIP;
-  }
-
-  public static final class HandJointType.Companion {
-    property @Deprecated public androidx.xr.arcore.HandJointType HAND_JOINT_TYPE_INDEX_TIP;
-    property @Deprecated public androidx.xr.arcore.HandJointType HAND_JOINT_TYPE_THUMB_TIP;
   }
 
   public enum HandSide {
@@ -563,7 +536,6 @@ package androidx.xr.arcore {
   }
 
   public final class HitResult {
-    method public androidx.xr.arcore.AnchorResult createAnchor();
     method @InaccessibleFromKotlin public float getDistance();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getHitPose();
     method @InaccessibleFromKotlin public androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State> getTrackable();
@@ -578,6 +550,7 @@ package androidx.xr.arcore {
 
   public final class PerceptionState {
     method @InaccessibleFromKotlin public androidx.xr.arcore.ArDevice.State getArDeviceState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Geospatial.State? getGeospatialState();
     method @InaccessibleFromKotlin public androidx.xr.arcore.Depth.State? getLeftDepthState();
     method @InaccessibleFromKotlin public androidx.xr.arcore.Eye.State? getLeftEyeState();
     method @InaccessibleFromKotlin public androidx.xr.arcore.Hand.State? getLeftHandState();
@@ -592,6 +565,7 @@ package androidx.xr.arcore {
     method @InaccessibleFromKotlin public java.util.Collection<androidx.xr.arcore.Trackable.State> getTrackableStates();
     method @InaccessibleFromKotlin public androidx.xr.arcore.Face.State? getUserFaceState();
     property public androidx.xr.arcore.ArDevice.State arDeviceState;
+    property public androidx.xr.arcore.Geospatial.State? geospatialState;
     property public androidx.xr.arcore.Depth.State? leftDepthState;
     property public androidx.xr.arcore.Eye.State? leftEyeState;
     property public androidx.xr.arcore.Hand.State? leftHandState;
@@ -607,18 +581,18 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.Face.State? userFaceState;
   }
 
-  public final class PerceptionStateExtenderKt {
-    method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.arcore.PerceptionState? getPerceptionState(androidx.xr.runtime.CoreState);
-    property @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public static androidx.xr.arcore.PerceptionState? androidx.xr.runtime.CoreState.perceptionState;
+  public final class PerceptionStateExt {
+    method @InaccessibleFromKotlin public static androidx.xr.arcore.PerceptionState? getPerceptionState(androidx.xr.runtime.CoreState);
+    property public static androidx.xr.arcore.PerceptionState? androidx.xr.runtime.CoreState.perceptionState;
   }
 
   public final class Plane implements androidx.xr.arcore.Anchorable<androidx.xr.arcore.Plane.State> {
     method public androidx.xr.arcore.AnchorResult createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Plane.State> getState();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.Plane.Type getType();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.PlaneType getType();
     method public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Plane>> subscribe(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Plane.State> state;
-    property public androidx.xr.arcore.Plane.Type type;
+    property public androidx.xr.arcore.PlaneType type;
     field public static final androidx.xr.arcore.Plane.Companion Companion;
   }
 
@@ -626,51 +600,75 @@ package androidx.xr.arcore {
     method public kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Plane>> subscribe(androidx.xr.runtime.Session session);
   }
 
-  @Deprecated public static final class Plane.Label {
-    field @Deprecated public static final androidx.xr.arcore.Plane.Label CEILING;
-    field @Deprecated public static final androidx.xr.arcore.Plane.Label.Companion Companion;
-    field @Deprecated public static final androidx.xr.arcore.Plane.Label FLOOR;
-    field @Deprecated public static final androidx.xr.arcore.Plane.Label TABLE;
-    field @Deprecated public static final androidx.xr.arcore.Plane.Label UNKNOWN;
-    field @Deprecated public static final androidx.xr.arcore.Plane.Label WALL;
-  }
-
-  @Deprecated public static final class Plane.Label.Companion {
-    property @Deprecated public androidx.xr.arcore.Plane.Label CEILING;
-    property @Deprecated public androidx.xr.arcore.Plane.Label FLOOR;
-    property @Deprecated public androidx.xr.arcore.Plane.Label TABLE;
-    property @Deprecated public androidx.xr.arcore.Plane.Label UNKNOWN;
-    property @Deprecated public androidx.xr.arcore.Plane.Label WALL;
-  }
-
   public static final class Plane.State implements androidx.xr.arcore.Trackable.State {
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getCenterPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize2d getExtents();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.Plane.Label getLabel();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.PlaneLabel getLabel();
     method @InaccessibleFromKotlin public androidx.xr.arcore.Plane getOwner();
     method @InaccessibleFromKotlin public androidx.xr.arcore.Plane? getSubsumedBy();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.TrackingState getTrackingState();
     method @InaccessibleFromKotlin public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
     property public androidx.xr.runtime.math.Pose centerPose;
     property public androidx.xr.runtime.math.FloatSize2d extents;
-    property public androidx.xr.arcore.Plane.Label label;
+    property public androidx.xr.arcore.PlaneLabel label;
     property public androidx.xr.arcore.Plane owner;
     property public androidx.xr.arcore.Plane? subsumedBy;
-    property public androidx.xr.runtime.TrackingState trackingState;
+    property public androidx.xr.arcore.TrackingState trackingState;
     property public java.util.List<androidx.xr.runtime.math.Vector2> vertices;
   }
 
-  @Deprecated public static final class Plane.Type {
-    field @Deprecated public static final androidx.xr.arcore.Plane.Type.Companion Companion;
-    field @Deprecated public static final androidx.xr.arcore.Plane.Type HORIZONTAL_DOWNWARD_FACING;
-    field @Deprecated public static final androidx.xr.arcore.Plane.Type HORIZONTAL_UPWARD_FACING;
-    field @Deprecated public static final androidx.xr.arcore.Plane.Type VERTICAL;
+  public final class PlaneLabel {
+    field public static final androidx.xr.arcore.PlaneLabel CEILING;
+    field public static final androidx.xr.arcore.PlaneLabel.Companion Companion;
+    field public static final androidx.xr.arcore.PlaneLabel FLOOR;
+    field public static final androidx.xr.arcore.PlaneLabel TABLE;
+    field public static final androidx.xr.arcore.PlaneLabel UNKNOWN;
+    field public static final androidx.xr.arcore.PlaneLabel WALL;
   }
 
-  @Deprecated public static final class Plane.Type.Companion {
-    property @Deprecated public androidx.xr.arcore.Plane.Type HORIZONTAL_DOWNWARD_FACING;
-    property @Deprecated public androidx.xr.arcore.Plane.Type HORIZONTAL_UPWARD_FACING;
-    property @Deprecated public androidx.xr.arcore.Plane.Type VERTICAL;
+  public static final class PlaneLabel.Companion {
+    property public androidx.xr.arcore.PlaneLabel CEILING;
+    property public androidx.xr.arcore.PlaneLabel FLOOR;
+    property public androidx.xr.arcore.PlaneLabel TABLE;
+    property public androidx.xr.arcore.PlaneLabel UNKNOWN;
+    property public androidx.xr.arcore.PlaneLabel WALL;
+  }
+
+  public final class PlaneType {
+    field public static final androidx.xr.arcore.PlaneType.Companion Companion;
+    field public static final androidx.xr.arcore.PlaneType HORIZONTAL_DOWNWARD_FACING;
+    field public static final androidx.xr.arcore.PlaneType HORIZONTAL_UPWARD_FACING;
+    field public static final androidx.xr.arcore.PlaneType VERTICAL;
+  }
+
+  public static final class PlaneType.Companion {
+    property public androidx.xr.arcore.PlaneType HORIZONTAL_DOWNWARD_FACING;
+    property public androidx.xr.arcore.PlaneType HORIZONTAL_UPWARD_FACING;
+    property public androidx.xr.arcore.PlaneType VERTICAL;
+  }
+
+  public final class QrCode implements androidx.xr.arcore.Trackable<androidx.xr.arcore.QrCode.State> {
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.QrCode.State> getState();
+    method public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.QrCode>> subscribe(androidx.xr.runtime.Session session);
+    property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.QrCode.State> state;
+    field public static final androidx.xr.arcore.QrCode.Companion Companion;
+  }
+
+  public static final class QrCode.Companion {
+    method public kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.QrCode>> subscribe(androidx.xr.runtime.Session session);
+  }
+
+  public static final class QrCode.State implements androidx.xr.arcore.Trackable.State {
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getCenterPose();
+    method @InaccessibleFromKotlin public String getData();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize2d getExtents();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.QrCode getOwner();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.TrackingState getTrackingState();
+    property public androidx.xr.runtime.math.Pose centerPose;
+    property public String data;
+    property public androidx.xr.runtime.math.FloatSize2d extents;
+    property public androidx.xr.arcore.QrCode owner;
+    property public androidx.xr.arcore.TrackingState trackingState;
   }
 
   public final class RenderViewpoint {
@@ -689,11 +687,11 @@ package androidx.xr.arcore {
   }
 
   public static final class RenderViewpoint.State {
-    method @InaccessibleFromKotlin public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.FieldOfView getFieldOfView();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getLocalPose();
     method @InaccessibleFromKotlin public androidx.xr.arcore.RenderViewpoint getOwner();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
-    property public androidx.xr.runtime.FieldOfView fieldOfView;
+    property public androidx.xr.runtime.math.FieldOfView fieldOfView;
     property public androidx.xr.runtime.math.Pose localPose;
     property public androidx.xr.arcore.RenderViewpoint owner;
     property public androidx.xr.runtime.math.Pose pose;
@@ -731,8 +729,23 @@ package androidx.xr.arcore {
   }
 
   public static interface Trackable.State {
-    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
-    property public abstract androidx.xr.runtime.TrackingState trackingState;
+    method @InaccessibleFromKotlin public androidx.xr.arcore.TrackingState getTrackingState();
+    property public abstract androidx.xr.arcore.TrackingState trackingState;
+  }
+
+  public final class TrackingState {
+    field public static final androidx.xr.arcore.TrackingState.Companion Companion;
+    field public static final androidx.xr.arcore.TrackingState PAUSED;
+    field public static final androidx.xr.arcore.TrackingState STOPPED;
+    field public static final androidx.xr.arcore.TrackingState TRACKING;
+    field public static final androidx.xr.arcore.TrackingState TRACKING_DEGRADED;
+  }
+
+  public static final class TrackingState.Companion {
+    property public androidx.xr.arcore.TrackingState PAUSED;
+    property public androidx.xr.arcore.TrackingState STOPPED;
+    property public androidx.xr.arcore.TrackingState TRACKING;
+    property public androidx.xr.arcore.TrackingState TRACKING_DEGRADED;
   }
 
   public final class VpsAvailabilityAvailable extends androidx.xr.arcore.VpsAvailabilityResult {
@@ -761,14 +774,6 @@ package androidx.xr.arcore {
   public final class VpsAvailabilityUnavailable extends androidx.xr.arcore.VpsAvailabilityResult {
     ctor public VpsAvailabilityUnavailable();
   }
-
-  public typealias GeospatialState = androidx.xr.arcore.Geospatial.State;
-
-  public typealias PlaneLabel = androidx.xr.arcore.Plane.Label;
-
-  public typealias PlaneType = androidx.xr.arcore.Plane.Type;
-
-  public typealias TrackingState = androidx.xr.runtime.TrackingState;
 
 }
 

@@ -32,11 +32,12 @@ plugins {
 
 dependencies {
     api(libs.jspecify)
-    api(project(":xr:runtime:runtime-testing"))
     api(project(":xr:arcore:arcore-testing"))
-    api(project(":xr:scenecore:scenecore-runtime"))
+    api(project(":xr:scenecore:scenecore"))
 
-    implementation("com.google.ar:impress:0.0.15")
+    implementation(project(":xr:runtime:runtime-testing"))
+    implementation(project(":xr:scenecore:scenecore-runtime"))
+    implementation("com.google.ar:impress:1.0.0-beta01")
     implementation(libs.testExtTruth)
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
@@ -45,6 +46,11 @@ dependencies {
     testImplementation(project(":kruth:kruth"))
     testImplementation(libs.testRunner)
     testImplementation(libs.testExtJunit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation(libs.kotlinCoroutinesTest)
+    testImplementation("androidx.appcompat:appcompat:1.2.0")
+
+    androidTestImplementation(libs.kotlinCoroutinesTest)
 
     testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
 }

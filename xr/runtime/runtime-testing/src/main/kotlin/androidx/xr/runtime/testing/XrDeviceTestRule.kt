@@ -16,13 +16,25 @@
 
 package androidx.xr.runtime.testing
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
+import android.content.pm.ServiceInfo
+import androidx.lifecycle.Lifecycle
+import androidx.test.core.app.ApplicationProvider
 import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.DisplayBlendMode
 import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.RenderingMode
+import androidx.xr.runtime.SpatialApiVersion
+import androidx.xr.runtime.SpatialApiVersionHelper
+import androidx.xr.runtime.SpatialApiVersions
 import androidx.xr.runtime.XrDevice
+import androidx.xr.runtime.testing.internal.FakeSpatialApiVersionProvider
 import androidx.xr.runtime.testing.internal.FakeXrDeviceCapabilityProvider
 import androidx.xr.runtime.testing.internal.FakeXrDeviceCapabilityProviderFactory
 import androidx.xr.runtime.toInternalDepthEstimationMode
@@ -31,10 +43,12 @@ import androidx.xr.runtime.toInternalGeospatialMode
 import androidx.xr.runtime.toInternalHandTrackingMode
 import androidx.xr.runtime.toInternalRenderingMode
 import org.junit.rules.ExternalResource
+import org.robolectric.Shadows.shadowOf
 
 /** JUnit Rule containing properties that affect the results of [XrDevice] capability APIs. */
 public class XrDeviceTestRule : ExternalResource() {
     internal var capabilityProvider: FakeXrDeviceCapabilityProvider? = null
+    internal var spatialApiVersionProvider: FakeSpatialApiVersionProvider? = null
 
     /**
      * The result of [XrDevice.getPreferredDisplayBlendMode].
@@ -140,6 +154,47 @@ public class XrDeviceTestRule : ExternalResource() {
             }
         }
 
+    /**
+     * The value to be returned by [SpatialApiVersionHelper.spatialApiVersion].
+     *
+     * Tests can set this property to control the value returned by
+     * [SpatialApiVersionHelper.spatialApiVersion] during the test execution. By default the value
+     * is set to the latest stable API level.
+     */
+    @SpatialApiVersion
+    public var spatialApiVersion: Int = SpatialApiVersions.UNKNOWN
+        set(@SpatialApiVersion value) {
+            spatialApiVersionProvider?.spatialApiVersion = value
+            field = value
+        }
+
+    /**
+     * This property can be used to control whether the Projected service is available or not. By
+     * default, the Projected service is available.
+     */
+    public var isProjectedServiceAvailable: Boolean = true
+        set(value) {
+            shadowOf(context.packageManager).setSystemFeature(XR_PROJECTED_SYSTEM_FEATURE, value)
+            if (value) {
+                enableProjectedService()
+            } else {
+                disableProjectedService()
+            }
+            field = value
+        }
+
+    /**
+     * Tests can set this property to control the lifecycle state of the [XrDevice]. By default, the
+     * value is set to [Lifecycle.State.INITIALIZED].
+     */
+    public var lifecycleState: Lifecycle.State = Lifecycle.State.INITIALIZED
+        set(value) {
+            capabilityProvider?.lifecycleState = value
+            field = value
+        }
+
+    private val context: Context = ApplicationProvider.getApplicationContext()
+
     internal fun DisplayBlendMode.toInternal() =
         when (this) {
             DisplayBlendMode.ALPHA_BLEND ->
@@ -148,11 +203,61 @@ public class XrDeviceTestRule : ExternalResource() {
             else -> androidx.xr.runtime.interfaces.DisplayBlendMode.NO_DISPLAY
         }
 
+    init {
+        // Force SpatialApiVersionHelper to load FakeSpatialApiVersionProvider
+        SpatialApiVersionHelper.spatialApiVersion
+    }
+
     override fun before() {
         FakeXrDeviceCapabilityProviderFactory.xrDeviceTestRule = this
+
+        FakeSpatialApiVersionProvider.xrDeviceTestRule = this
+        FakeSpatialApiVersionProvider.instance?.registerProvider()
+        spatialApiVersion =
+            spatialApiVersionProvider?.spatialApiVersion ?: SpatialApiVersions.UNKNOWN
+        isProjectedServiceAvailable = true
+        lifecycleState = Lifecycle.State.INITIALIZED
     }
 
     override fun after() {
         FakeXrDeviceCapabilityProviderFactory.xrDeviceTestRule = null
+        FakeSpatialApiVersionProvider.xrDeviceTestRule = null
+    }
+
+    private fun enableProjectedService() {
+        shadowOf(context.packageManager).apply {
+            addServiceIfNotPresent(PROJECTED_SERVICE_COMPONENT_NAME)
+            addIntentFilterForService(
+                PROJECTED_SERVICE_COMPONENT_NAME,
+                IntentFilter(PROJECTED_ACTION_BIND),
+            )
+            installPackage(PROJECTED_PACKAGE_INFO)
+        }
+    }
+
+    private fun disableProjectedService() {
+        shadowOf(context.packageManager).apply {
+            clearIntentFilterForService(PROJECTED_SERVICE_COMPONENT_NAME)
+        }
+    }
+
+    private companion object {
+        private const val XR_PROJECTED_SYSTEM_FEATURE = "com.google.android.feature.XR_PROJECTED"
+        private const val PROJECTED_ACTION_BIND = "androidx.xr.projected.ACTION_BIND"
+        private const val PROJECTED_SERVICE_PACKAGE_NAME = "com.system.service"
+        private const val PROJECTED_SERVICE_CLASS_NAME = "com.system.service.ProjectedService"
+        private val PROJECTED_SERVICE_COMPONENT_NAME: ComponentName =
+            ComponentName(PROJECTED_SERVICE_PACKAGE_NAME, PROJECTED_SERVICE_CLASS_NAME)
+        private val PROJECTED_SERVICE_INFO =
+            ServiceInfo().apply {
+                packageName = PROJECTED_SERVICE_PACKAGE_NAME
+                name = PROJECTED_SERVICE_CLASS_NAME
+            }
+        private val PROJECTED_PACKAGE_INFO =
+            PackageInfo().apply {
+                packageName = PROJECTED_SERVICE_PACKAGE_NAME
+                services = arrayOf(PROJECTED_SERVICE_INFO)
+                applicationInfo = ApplicationInfo().apply { flags = ApplicationInfo.FLAG_SYSTEM }
+            }
     }
 }

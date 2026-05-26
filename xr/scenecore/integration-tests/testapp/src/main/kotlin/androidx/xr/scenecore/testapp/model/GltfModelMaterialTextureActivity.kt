@@ -84,7 +84,9 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
-        session!!.configure(Config(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session!!.configure(
+            Config.Builder().setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL).build()
+        )
         session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         findViewById<Toolbar>(R.id.gltf_model_topAppBar).also {
@@ -160,6 +162,7 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
         // Dispose Texture explicitly
         findViewById<Button>(R.id.gltf_model_button1_3).setOnClickListener {
             patternTexture?.close()
+            patternTexture = null
         }
         // Create Khronos PBR Material
         findViewById<Button>(R.id.gltf_model_button2_1).setOnClickListener {
@@ -175,6 +178,7 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
         // Dispose Khronos PBR Material explicitly
         findViewById<Button>(R.id.gltf_model_button2_3).setOnClickListener {
             khronosPbrMaterial?.close()
+            khronosPbrMaterial = null
         }
         // Set Base Color Texture
         findViewById<Button>(R.id.gltf_model_button3_1).setOnClickListener {
@@ -229,7 +233,7 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
             matRow.visibility = View.GONE
             slidersRow.visibility = View.GONE
             selectedNode = null
-            nodeDropdown.setText("")
+            nodeDropdown.setText("Choose Model Node")
         }
         // Toggle Animation
         findViewById<Button>(R.id.gltf_model_button4_3).setOnClickListener {
@@ -307,13 +311,13 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
     private fun toggleMode(): String {
         when (spatialMode) {
             SpatialMode.FSM -> {
-                session!!.scene.requestHomeSpaceMode()
+                session!!.scene.requestHomeSpace()
                 spatialMode = SpatialMode.HSM
                 return getString(R.string.switch_to_fsm_button_text)
             }
 
             SpatialMode.HSM -> {
-                session!!.scene.requestFullSpaceMode()
+                session!!.scene.requestFullSpace()
                 spatialMode = SpatialMode.FSM
                 return getString(R.string.switch_to_hsm_button_text)
             }

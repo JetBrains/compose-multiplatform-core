@@ -18,9 +18,11 @@ package androidx.xr.compose.testapp.spatialcompose
 
 import android.content.Intent
 import android.media.MediaPlayer
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -74,7 +76,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialExternalSurface
@@ -96,6 +97,7 @@ import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.transformingMovable
+import androidx.xr.compose.subspace.layout.transformingResizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.common.isDrmSupported
 import androidx.xr.compose.testapp.common.isMvHevcSupported
@@ -121,7 +123,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
     private val TAG = "SpatialComposeVideoPlayer"
     private lateinit var mediaPlayer: MediaPlayer
 
-    private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
+    private val session by lazy { (Session.create(context = this) as SessionCreateSuccess).session }
 
     private var surfaceEntity: SurfaceEntity? = null
     private var movableComponent: MovableComponent? = null
@@ -168,7 +170,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
+        session.configure(Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build())
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
 
         val file = File(defaultVideoUri)
@@ -362,15 +364,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                             when (menu) {
                                 VideoMenuState.HOME -> {
                                     Column(modifier = Modifier.padding(24.dp)) {
-                                        Button(
-                                            onClick = {
-                                                val intent =
-                                                    Intent(Intent.ACTION_PICK).apply {
-                                                        type = "video/*"
-                                                    }
-                                                pickMedia.launch(intent)
-                                            }
-                                        ) {
+                                        Button(onClick = { launchPickMedia() }) {
                                             Text("Select media")
                                         }
 
@@ -686,6 +680,32 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
         }
     }
 
+    private fun launchPickMedia() {
+        // Scan the Downloads directory to ensure newly pushed files are indexed.
+        val downloadsDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        if (downloadsDir.exists()) {
+            val files = downloadsDir.listFiles()
+            if (files != null) {
+                MediaScannerConnection.scanFile(
+                    this@SpatialComposeVideoPlayer,
+                    files.map { it.absolutePath }.toTypedArray(),
+                    null,
+                    null,
+                )
+            }
+        }
+
+        val intent =
+            Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "video/*"
+                // Attempt to default to Downloads directory
+                putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(DOWNLOADS_URI))
+            }
+        pickMedia.launch(intent)
+    }
+
     fun getFeatheringEffect(value: Float, featheringType: FeatheringType): SpatialFeatheringEffect {
         return when (featheringType) {
             FeatheringType.PERCENT ->
@@ -865,8 +885,8 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                     .height(
                         if (stereoMode == StereoMode.TopBottom) videoHeight / 2 else videoHeight
                     )
-                    .transformingMovable(),
-            resizePolicy = ResizePolicy(),
+                    .transformingMovable()
+                    .transformingResizable(),
             interactionPolicy =
                 InteractionPolicy.clickable {
                     if (isPaused) exoPlayer?.play() else exoPlayer?.pause()
@@ -1075,5 +1095,10 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private companion object {
+        private const val DOWNLOADS_URI =
+            "content://com.android.externalstorage.documents/document/primary:Download"
     }
 }

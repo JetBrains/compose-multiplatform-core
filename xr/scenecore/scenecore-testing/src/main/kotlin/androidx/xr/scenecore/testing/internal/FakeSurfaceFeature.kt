@@ -19,10 +19,10 @@ package androidx.xr.scenecore.testing.internal
 import android.graphics.ImageFormat
 import android.media.ImageReader
 import android.view.Surface
-import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.SurfaceFeature
 import androidx.xr.scenecore.runtime.TextureResource
@@ -41,11 +41,18 @@ internal class FakeSurfaceFeature(nodeHolder: NodeHolder<*>) :
     override val dimensions: Dimensions
         get() = shape.dimensions
 
-    private var internalImageReader: ImageReader? =
-        ImageReader.newInstance(1, 1, ImageFormat.YUV_420_888, 1)
+    private var internalImageReader: ImageReader? = null
 
-    override var surface: Surface = internalImageReader!!.surface
-        private set
+    private var _surface: Surface? = null
+
+    override val surface: Surface
+        get() =
+            _surface
+                ?: run {
+                    val reader = ImageReader.newInstance(1, 1, ImageFormat.YUV_420_888, 1)
+                    internalImageReader = reader
+                    reader.surface.also { _surface = it }
+                }
 
     /** For test purposes only. Caches the input of [setSurfacePixelDimensions]. */
     var surfacePixelDimensions: IntSize2d = IntSize2d(0, 0)
@@ -91,7 +98,7 @@ internal class FakeSurfaceFeature(nodeHolder: NodeHolder<*>) :
     }
 
     override var contentColorMetadataSet: Boolean = false
-        private set
+        internal set
 
     override var colorSpace: Int = SurfaceEntity.ColorSpace.BT709
         private set
@@ -133,7 +140,7 @@ internal class FakeSurfaceFeature(nodeHolder: NodeHolder<*>) :
     override fun dispose() {
         super.dispose()
 
-        surface.release()
+        _surface?.release()
         internalImageReader?.close()
         internalImageReader = null
     }
@@ -149,6 +156,6 @@ internal class FakeSurfaceFeature(nodeHolder: NodeHolder<*>) :
     fun setSurface(surface: Surface) {
         internalImageReader?.close()
         internalImageReader = null
-        this.surface = surface
+        _surface = surface
     }
 }

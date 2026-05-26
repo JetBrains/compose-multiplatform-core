@@ -35,7 +35,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __guavaDaoReturnTypeConverter.convertAsync(__db, false) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity?>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1

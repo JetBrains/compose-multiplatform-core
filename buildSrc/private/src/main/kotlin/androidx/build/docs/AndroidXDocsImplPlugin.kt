@@ -636,6 +636,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 task.argsJsonFile.set(
                     project.getDistributionDirectory().file("dackkaArgs-${project.name}.json")
                 )
+                task.traceFile.set(
+                    project.getDistributionDirectory().file("dackka-${project.name}.trace")
+                )
                 task.apply {
                     // Remove once there is property version of Copy#destinationDir
                     // Use samplesDir.set(unzipSamplesTask.flatMap { it.destinationDirectory })
@@ -661,8 +664,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     )
                     androidJars.setFrom(
                         project.getAndroidJar(
-                            project.defaultAndroidConfig.latestStableCompileSdk,
-                            project.defaultAndroidConfig.latestCompileSdkExtension,
+                            sdkNum = project.defaultAndroidConfig.latestStableCompileSdk,
+                            extNum = project.defaultAndroidConfig.latestCompileSdkExtension,
+                            minorNum = project.defaultAndroidConfig.latestStableMinorApiLevel,
                         )
                     )
                     nonKmpDependenciesClasspath.from(nonKmpDependencyClasspath)
@@ -877,7 +881,6 @@ private val hiddenPackagesJava =
         "androidx\\.tv\\..*",
         "androidx\\.xr\\.glimmer.*",
         "androidx\\..*navigation3.*",
-        "androidx\\.media3\\.cast",
     )
 
 // List of annotations which should not be displayed in the docs

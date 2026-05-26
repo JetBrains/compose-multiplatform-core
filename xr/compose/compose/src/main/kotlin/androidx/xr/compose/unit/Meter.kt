@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.isSpecified
-import androidx.xr.runtime.TypeHolder
+import androidx.xr.scenecore.runtime.TypeHolder
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsHolderAccessor
 import com.android.extensions.xr.XrExtensions
 import kotlin.math.roundToInt
@@ -189,7 +189,7 @@ public value class Meter(public val value: Float) : Comparable<Meter> {
          * was measured on the current Android XR device and will need to be updated if the device's
          * config changes.
          */
-        private const val DP_PER_METER_FALLBACK: Float = 1151.856f
+        private const val DP_PER_METER_FALLBACK: Float = 2000f
 
         /**
          * DPs per meter. The system's API is in pixels, but we can get the value we want be
@@ -211,6 +211,8 @@ public value class Meter(public val value: Float) : Comparable<Meter> {
          *
          * @return an instance of [XrExtensions] if available, or `null` otherwise.
          */
+        // TODO (b/515242854) - Remove the suppress before Compose goes to Beta.
+        @Suppress("RestrictedApiAndroidX")
         private fun getXrExtensions(): XrExtensions? =
             XrExtensionsHolderAccessor.holderLegacy?.let {
                 TypeHolder.safeCast(it, XrExtensions::class.java)?.value
@@ -226,10 +228,8 @@ public value class Meter(public val value: Float) : Comparable<Meter> {
         public inline fun fromPixel(px: Float, density: Density): Meter {
             with(density) {
                 // We do the conversion inline instead of calling Dp.toMeter(), which will check its
-                // inputs.
-                // We know if the input is an integer pixel, we won't have any exceptional Dp
-                // values, e.g.,
-                // Dp.Infinity.
+                // inputs. We know if the input is an integer pixel, we won't have any exceptional
+                // Dp values, e.g., Dp.Infinity.
                 return Meter(px.toDp().value / DP_PER_METER)
             }
         }

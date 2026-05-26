@@ -22,7 +22,6 @@ import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.core.operations.utilities.IntegerExpressionEvaluator
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.compose.state.RemoteBoolean.OperationKey
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 
@@ -338,7 +337,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      */
     public infix fun xor(b: RemoteBoolean): RemoteBoolean = RemoteBoolean(intValue xor b.intValue)
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
         /**
          * Creates a [RemoteBoolean] from a literal constant.
@@ -366,7 +364,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
          * @param defaultValue The initial [Boolean] value for the named remote boolean.
          * @return A [RemoteBoolean] representing the named boolean.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
         public fun createNamedRemoteBoolean(
             name: String,
@@ -421,8 +418,8 @@ public class MutableRemoteBoolean internal constructor(remoteInt: MutableRemoteI
          * @param initialValue The initial value for this mutable boolean.
          * @return A [MutableRemoteBoolean] instance.
          */
-        public fun createMutable(initialValue: Boolean): MutableRemoteBoolean =
-            MutableRemoteBoolean(MutableRemoteInt.createMutable(if (initialValue) 1 else 0))
+        public operator fun invoke(initialValue: Boolean): MutableRemoteBoolean =
+            MutableRemoteBoolean(MutableRemoteInt(if (initialValue) 1 else 0))
     }
 }
 
@@ -441,17 +438,8 @@ public val Boolean.rb: RemoteBoolean
 @Composable
 @RemoteComposable
 public fun rememberMutableRemoteBoolean(initialValue: Boolean): MutableRemoteBoolean {
-    return remember {
-        MutableRemoteBoolean(MutableRemoteInt.createMutable(if (initialValue) 1 else 0))
-    }
+    return remember { MutableRemoteBoolean(MutableRemoteInt(if (initialValue) 1 else 0)) }
 }
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Deprecated("Use rememberMutableRemoteBoolean(value())")
-@Composable
-@RemoteComposable
-public fun rememberRemoteBooleanValue(value: () -> Boolean): RemoteBoolean =
-    rememberMutableRemoteBoolean(value())
 
 /**
  * Remembers a named remote boolean expression.

@@ -110,18 +110,6 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
         }
     }
 
-    /** @deprecated Use [HandSide][androidx.xr.arcore.HandSide] instead. */
-    @Deprecated(
-        "Use androidx.xr.arcore.HandSide instead.",
-        ReplaceWith("androidx.xr.arcore.HandSide"),
-    )
-    public enum class HandSide {
-        LEFT,
-        RIGHT,
-        /** The handedness is not available if it is not explicitly set. */
-        UNKNOWN,
-    }
-
     /**
      * The representation of the current state of a [Hand].
      *
@@ -131,7 +119,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) :
      * respectively. The order of the joints within the array follows the order in which the joints
      * are defined in [HandJointType].
      *
-     * @property trackingState the current [androidx.xr.runtime.TrackingState] of the hand
+     * @property trackingState the current [androidx.xr.arcore.TrackingState] of the hand
      * @property handJointsBuffer the [FloatBuffer] containing the current state of the hand
      * @property handJoints a map of [HandJointType] to [Pose] representing the current pose of each
      *   joint in the hand

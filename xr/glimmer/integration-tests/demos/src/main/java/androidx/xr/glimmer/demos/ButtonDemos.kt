@@ -21,7 +21,11 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.xr.glimmer.list.VerticalList
+import androidx.xr.glimmer.Icon
+import androidx.xr.glimmer.IconToggleButton
+import androidx.xr.glimmer.Text
+import androidx.xr.glimmer.ToggleButton
+import androidx.xr.glimmer.list.GlimmerLazyColumn
 import androidx.xr.glimmer.samples.ButtonSampleUsage
 import androidx.xr.glimmer.samples.IconButtonSample
 import androidx.xr.glimmer.samples.IconToggleButtonSample
@@ -40,7 +44,7 @@ internal val ButtonDemos =
 
 @Composable
 fun ToggleButtonsDemo() {
-    VerticalList(
+    GlimmerLazyColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center),
     ) {
@@ -48,15 +52,35 @@ fun ToggleButtonsDemo() {
         item { LargeToggleButtonSample() }
         item { ToggleButtonWithLeadingIconSample() }
         item { ToggleButtonWithTrailingIconSample() }
+        item { DisabledToggleButtonDemo(checked = false) }
+        item { DisabledToggleButtonDemo(checked = true) }
     }
 }
 
 @Composable
 fun IconToggleButtonsDemo() {
-    VerticalList(
+    GlimmerLazyColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center),
     ) {
         item { IconToggleButtonSample() }
+        item { DisabledIconToggleButtonDemo(checked = false) }
+        item { DisabledIconToggleButtonDemo(checked = true) }
+    }
+}
+
+@Composable
+private fun DisabledToggleButtonDemo(checked: Boolean) {
+    val text = if (checked) "Disabled checked" else "Disabled unchecked"
+    ToggleButton(checked = checked, enabled = false, onCheckedChange = {}) { Text(text) }
+}
+
+@Composable
+private fun DisabledIconToggleButtonDemo(checked: Boolean) {
+    IconToggleButton(checked = checked, enabled = false, onCheckedChange = {}) {
+        Icon(
+            imageVector = if (checked) Icons.FavoriteIcon else Icons.OutlinedFavoriteIcon,
+            contentDescription = "Localized description",
+        )
     }
 }

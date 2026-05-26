@@ -27,7 +27,6 @@ import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
-import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Matrix4.Companion.fromTrs
 import androidx.xr.runtime.math.Pose
@@ -47,6 +46,7 @@ import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.InputEvent
 import androidx.xr.scenecore.runtime.InputEventListener
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.PlaneSemantic
@@ -55,7 +55,6 @@ import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.runtime.SpatialModeChangeListener
 import androidx.xr.scenecore.runtime.SpatialVisibility
 import androidx.xr.scenecore.testing.FakeComponent
-import androidx.xr.scenecore.testing.FakeGltfFeature.Companion.createWithMockFeature
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import androidx.xr.scenecore.testing.FakeSurfaceFeature
 import androidx.xr.scenecore.testing.MemoryUtils
@@ -133,10 +132,10 @@ class SpatialSceneRuntimeTest {
     private fun createGltfEntity(): GltfEntityImpl {
         val nodeHolder: NodeHolder<*> =
             NodeHolder<Node>(xrExtensions.createNode(), Node::class.java)
-        val fakeGltfFeature = createWithMockFeature(mockGltfFeature, nodeHolder)
+        whenever(mockGltfFeature.getNodeHolder()).thenReturn(nodeHolder)
         return GltfEntityImpl(
             activity!!,
-            fakeGltfFeature,
+            mockGltfFeature,
             testRuntime.activitySpace,
             xrExtensions,
             sceneNodeRegistry,
@@ -605,17 +604,123 @@ class SpatialSceneRuntimeTest {
     }
 
     @Test
-    fun spatialStateChangeHandler_invokedWhenSpatialStateChangesToFSM() {
-        val spatialState = ShadowSpatialState.create()
+    fun onSpatialStateChanged_HSMToFSM_invokesHandleOriginUpdate() {
+        // Initial state is HSM (no capabilities)
+        val hsmState = ShadowSpatialState.create()
+        ShadowSpatialState.extract(hsmState)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.create(*byteArrayOf()))
+        testRuntime.onSpatialStateChanged(hsmState)
+
+        val fsmState = ShadowSpatialState.create()
         val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
         testRuntime.spatialModeChangeListener = mockSpatialModeChangeListener
-        ShadowSpatialState.extract(spatialState)
+        ShadowSpatialState.extract(fsmState)
             .setSpatialCapabilities(ShadowSpatialCapabilities.createAll())
-        ShadowSpatialState.extract(spatialState)
-            .setSceneParentTransform(Mat4f(Matrix4.Identity.data))
-        testRuntime.onSpatialStateChanged(spatialState)
+        // Use a non-identity transform to avoid early return in handleOriginUpdate
+        val nonIdentityTransform = Matrix4.fromTranslation(Vector3(1f, 2f, 3f))
+        ShadowSpatialState.extract(fsmState)
+            .setSceneParentTransform(Mat4f(nonIdentityTransform.data))
+
+        testRuntime.onSpatialStateChanged(fsmState)
 
         verify(mockSpatialModeChangeListener).onSpatialModeChanged(any(), any())
+    }
+
+    @Test
+    fun onSpatialStateChanged_FSMToFSM_invokesHandleOriginUpdateIfTransformChanges() {
+        // Initial state is FSM
+        val fsmState1 = ShadowSpatialState.create()
+        ShadowSpatialState.extract(fsmState1)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.createAll())
+        testRuntime.onSpatialStateChanged(fsmState1)
+
+        val fsmState2 = ShadowSpatialState.create()
+        val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
+        testRuntime.spatialModeChangeListener = mockSpatialModeChangeListener
+        ShadowSpatialState.extract(fsmState2)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.createAll())
+        // Different transform, same capabilities - should trigger because it's in FSM
+        val nonIdentityTransform = Matrix4.fromTranslation(Vector3(1f, 2f, 3f))
+        ShadowSpatialState.extract(fsmState2)
+            .setSceneParentTransform(Mat4f(nonIdentityTransform.data))
+
+        testRuntime.onSpatialStateChanged(fsmState2)
+
+        verify(mockSpatialModeChangeListener).onSpatialModeChanged(any(), any())
+    }
+
+    @Test
+    fun onSpatialStateChanged_HSMToHSM_doesNotInvokeHandleOriginUpdate() {
+        // Initial state is HSM
+        val hsmState1 = ShadowSpatialState.create()
+        ShadowSpatialState.extract(hsmState1)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.create(*byteArrayOf()))
+        testRuntime.onSpatialStateChanged(hsmState1)
+
+        val hsmState2 = ShadowSpatialState.create()
+        val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
+        testRuntime.spatialModeChangeListener = mockSpatialModeChangeListener
+        ShadowSpatialState.extract(hsmState2)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.create(*byteArrayOf()))
+        // Different transform, but in HSM - should not trigger
+        val nonIdentityTransform = Matrix4.fromTranslation(Vector3(1f, 2f, 3f))
+        ShadowSpatialState.extract(hsmState2)
+            .setSceneParentTransform(Mat4f(nonIdentityTransform.data))
+
+        testRuntime.onSpatialStateChanged(hsmState2)
+
+        verify(mockSpatialModeChangeListener, never()).onSpatialModeChanged(any(), any())
+    }
+
+    @Test
+    fun onSpatialStateChanged_HSMToHSMWithOtherCapChange_doesNotInvokeHandleOriginUpdate() {
+        // Initial state is HSM with no caps
+        val hsmState1 = ShadowSpatialState.create()
+        ShadowSpatialState.extract(hsmState1)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.create(*byteArrayOf()))
+        testRuntime.onSpatialStateChanged(hsmState1)
+
+        // New state is HSM with 3D content cap (but still no UI cap)
+        val hsmState2 = ShadowSpatialState.create()
+        ShadowSpatialState.extract(hsmState2)
+            .setSpatialCapabilities(
+                ShadowSpatialCapabilities.create(SpatialCapabilities.SPATIAL_3D_CONTENTS_CAPABLE)
+            )
+        val nonIdentityTransform = Matrix4.fromTranslation(Vector3(1f, 2f, 3f))
+        ShadowSpatialState.extract(hsmState2)
+            .setSceneParentTransform(Mat4f(nonIdentityTransform.data))
+
+        val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
+        testRuntime.spatialModeChangeListener = mockSpatialModeChangeListener
+
+        testRuntime.onSpatialStateChanged(hsmState2)
+
+        // spatialCapabilitiesChanged is true, but hasCapability(UI) is false.
+        verify(mockSpatialModeChangeListener, never()).onSpatialModeChanged(any(), any())
+    }
+
+    @Test
+    fun onSpatialStateChanged_FSMToHSM_doesNotInvokeHandleOriginUpdate() {
+        // Initial state is FSM
+        val fsmState = ShadowSpatialState.create()
+        ShadowSpatialState.extract(fsmState)
+            .setSpatialCapabilities(
+                ShadowSpatialCapabilities.create(SpatialCapabilities.SPATIAL_UI_CAPABLE)
+            )
+        testRuntime.onSpatialStateChanged(fsmState)
+
+        val hsmState = ShadowSpatialState.create()
+        val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
+        testRuntime.spatialModeChangeListener = mockSpatialModeChangeListener
+        ShadowSpatialState.extract(hsmState)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.create(*byteArrayOf()))
+        val nonIdentityTransform = Matrix4.fromTranslation(Vector3(1f, 2f, 3f))
+        ShadowSpatialState.extract(hsmState)
+            .setSceneParentTransform(Mat4f(nonIdentityTransform.data))
+
+        testRuntime.onSpatialStateChanged(hsmState)
+
+        verify(mockSpatialModeChangeListener, never()).onSpatialModeChanged(any(), any())
     }
 
     private fun sendVisibilityState(
@@ -2495,6 +2600,24 @@ class SpatialSceneRuntimeTest {
         assertThat(entityRef.get()).isNotNull()
 
         MemoryUtils.assertGarbageCollected(entityRef)
+    }
+
+    @Test
+    fun defaultPixelsPerMeter_getDefaultValue() {
+        val ppmFromSource = xrExtensions.config.underlyingObject.defaultPixelsPerMeter()
+        val ppm = testRuntime.virtualPixelDensity
+
+        assertThat(ppm).isGreaterThan(0f)
+        assertThat(ppm).isEqualTo(ppmFromSource)
+    }
+
+    @Test
+    fun defaultPixelsPerMeter_getDefaultValueFromLegacy() {
+        val ppmFromLegacySource = xrExtensions.config.defaultPixelsPerMeter(1f)
+        val ppm = testRuntime.virtualPixelDensity
+
+        assertThat(ppm).isGreaterThan(0f)
+        assertThat(ppm).isEqualTo(ppmFromLegacySource)
     }
 
     companion object {

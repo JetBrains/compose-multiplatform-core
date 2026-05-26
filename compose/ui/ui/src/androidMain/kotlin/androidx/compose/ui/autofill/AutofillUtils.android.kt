@@ -16,6 +16,10 @@
 
 package androidx.compose.ui.autofill
 
+import android.credentials.GetCredentialException
+import android.credentials.GetCredentialRequest
+import android.credentials.GetCredentialResponse
+import android.os.OutcomeReceiver
 import android.view.View
 import android.view.ViewStructure
 import android.view.autofill.AutofillId
@@ -191,10 +195,32 @@ internal object AutofillApi26Helper {
     }
 }
 
+/**
+ * This class is here to ensure that the classes that use this API will get verified and can be AOT
+ * compiled. It is expected that this class will soft-fail verification, but the classes which use
+ * this method will pass.
+ */
+@RequiresApi(35)
+internal object AutofillApi35Helper {
+    @RequiresApi(35)
+    fun setPendingCredentialRequest(
+        structure: ViewStructure,
+        request: GetCredentialRequest,
+        callback: OutcomeReceiver<GetCredentialResponse, GetCredentialException>,
+    ) {
+        structure.setPendingCredentialRequest(request, callback)
+    }
+
+    @RequiresApi(35)
+    fun clearCredentialManagerRequest(structure: ViewStructure) {
+        structure.clearCredentialManagerRequest()
+    }
+}
+
 /** Trim the text to a safe length to prevent sending too much data, which will cause crash . */
-private fun trimToSafeLength(text: String): String {
+internal fun trimToSafeLength(text: CharSequence): CharSequence {
     val size = MAX_AUTOFILL_TEXT_LENGTH
-    if (text.length < size) {
+    if (text.length <= size) {
         return text
     }
     // Don't break a surrogate pair when trimming the text.

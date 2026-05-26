@@ -14,29 +14,31 @@
  * limitations under the License.
  */
 
+@file:Suppress("RestrictedApiAndroidX")
+
 package androidx.wear.compose.remote.material3.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.remote.creation.compose.action.ValueChange
-import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clickable
-import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.animateRemoteFloat
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rememberMutableRemoteFloat
 import androidx.compose.remote.creation.compose.state.rf
-import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.PreviewWrapper
 import androidx.wear.compose.remote.material3.RemoteCircularProgressIndicator
+import androidx.wear.compose.remote.material3.previews.utils.RemoteComponentPreviewWrapper
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 
 @Sampled
 @RemoteComposable
 @Composable
+@WearPreviewDevices
+@PreviewWrapper(RemoteComponentPreviewWrapper::class)
 public fun RemoteCircularProgressIndicatorSample(modifier: RemoteModifier = RemoteModifier) {
     RemoteCircularProgressIndicator(modifier = modifier, progress = 0.75f.rf)
 }
@@ -44,6 +46,8 @@ public fun RemoteCircularProgressIndicatorSample(modifier: RemoteModifier = Remo
 @Sampled
 @RemoteComposable
 @Composable
+@WearPreviewDevices
+@PreviewWrapper(RemoteComponentPreviewWrapper::class)
 public fun RemoteIndeterminateCircularProgressIndicatorSample(
     modifier: RemoteModifier = RemoteModifier
 ) {
@@ -53,40 +57,15 @@ public fun RemoteIndeterminateCircularProgressIndicatorSample(
 @Sampled
 @RemoteComposable
 @Composable
+@WearPreviewDevices
+@PreviewWrapper(RemoteComponentPreviewWrapper::class)
 public fun RemoteCircularProgressIndicatorAnimatedSample(
     modifier: RemoteModifier = RemoteModifier.size(150.rdp)
 ) {
     val progress = rememberMutableRemoteFloat { 0.25f.rf }
-    val animatedProgress = animateRemoteFloat(0.25f) { progress }
+    val animatedProgress = animateRemoteFloat(progress, 0.25f)
 
     val toggleAction = ValueChange(progress, ((progress + 0.25f) % 1f).createReference())
 
     RemoteCircularProgressIndicator(progress = animatedProgress, modifier.clickable(toggleAction))
-}
-
-@WearPreviewDevices
-@Composable
-fun RemoteCircularProgressIndicatorAnimatedSamplePreview() = RemotePreview {
-    Container { RemoteCircularProgressIndicatorAnimatedSample() }
-}
-
-@WearPreviewDevices
-@Composable
-fun RemoteCircularProgressIndicatorSamplePreview() = RemotePreview {
-    Container { RemoteCircularProgressIndicatorSample() }
-}
-
-@WearPreviewDevices
-@Composable
-fun RemoteIndeterminateCircularProgressIndicatorSamplePreview() = RemotePreview {
-    Container { RemoteIndeterminateCircularProgressIndicatorSample() }
-}
-
-@Composable
-@RemoteComposable
-private fun Container(
-    modifier: RemoteModifier = RemoteModifier.fillMaxSize(),
-    content: @Composable @RemoteComposable () -> Unit,
-) {
-    RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
 }

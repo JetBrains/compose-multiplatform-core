@@ -743,7 +743,7 @@ class CameraInfoAdapterTest {
                     FakeCameraProperties(
                         FakeCameraMetadata(
                             characteristics = mapOf(),
-                            extensions =
+                            extensionMetadata =
                                 extensions.associateWith {
                                     FakeCameraExtensionMetadata(
                                         camera = CameraId("0"),
@@ -767,7 +767,7 @@ class CameraInfoAdapterTest {
                     FakeCameraProperties(
                         FakeCameraMetadata(
                             characteristics = mapOf(),
-                            extensions =
+                            extensionMetadata =
                                 extensions.associateWith {
                                     FakeCameraExtensionMetadata(
                                         camera = CameraId("0"),
@@ -797,7 +797,7 @@ class CameraInfoAdapterTest {
         val fakeCameraConfig = FakeCameraConfig()
         val adapterCameraInfo = AdapterCameraInfo(cameraInfoAdapter, fakeCameraConfig)
 
-        val cameraMetadata = adapterCameraInfo.unwrapAs(CameraMetadata::class)
+        val cameraMetadata = adapterCameraInfo.unwrapAs(CameraMetadata::class.java)
         assertThat(cameraMetadata).isNotNull()
     }
 

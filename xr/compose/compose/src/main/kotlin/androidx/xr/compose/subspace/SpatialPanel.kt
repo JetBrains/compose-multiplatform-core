@@ -126,10 +126,11 @@ public abstract class DragPolicy internal constructor()
  * This class defines properties that control how anchoring behaves, such as whether it's enabled
  * and what types of planes it can anchor to.
  *
- * This functionality requires the
- * [android.permission.SCENE_UNDERSTANDING_COARSE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE]
- * permission. If this permission is not granted, anchoring will be disabled and the element will
- * behave as if this policy was not applied.
+ * This functionality requires [androidx.xr.runtime.Session.configure] to be called with
+ * [androidx.xr.runtime.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL]. This configuration requires that
+ * the `SCENE_UNDERSTANDING_COARSE` Android permission is granted. If not granted, the `anchorable`
+ * functionality will be disabled, and the element will behave as if the anchorable modifier was not
+ * applied.
  *
  * @property isEnabled Whether anchoring is enabled for this object. If `false`, the object will not
  *   be able to anchor to surfaces. Defaults to `true`.
@@ -258,6 +259,8 @@ public class MovePolicy(
  *   the size change, and the API should proceed with changing the size of the object itself. If the
  *   callback is `null` (the default), the API will change the size of the object.
  */
+@Deprecated("Use SubspaceModifier.transformingResizable() or SubspaceModifier.resizable() instead.")
+@Suppress("DEPRECATION")
 public class ResizePolicy(
     public val isEnabled: Boolean = true,
     public val minimumSize: DpVolumeSize = DpVolumeSize.Zero,
@@ -326,7 +329,9 @@ public class ResizePolicy(
  * @param T The type of the Android View to be created.
  * @param factory A lambda that creates an instance of the Android View [T].
  * @param modifier SubspaceModifiers to apply to the SpatialPanel. The depth field in size-based
- *   modifiers affects this panel's layout size, but will not affect how the panel is rendered.
+ *   modifiers affects this panel's layout size, but will not affect how the panel is rendered. The
+ *   rendered shape will be a flat rectangle that is positioned on the front face of the rectangular
+ *   prism created by the layout size.
  * @param update A lambda that allows updating the created Android View [T].
  * @param shape The shape of this Spatial Panel.
  * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
@@ -342,6 +347,7 @@ public class ResizePolicy(
  */
 @Composable
 @SubspaceComposable
+@Suppress("DEPRECATION", "ReferencesDeprecated")
 public fun <T : View> SpatialAndroidViewPanel(
     factory: (Context) -> T,
     modifier: SubspaceModifier = SubspaceModifier,
@@ -441,8 +447,10 @@ private fun <T : View> AndroidViewPanel(
  * Creates a [SpatialPanel] representing a 2D plane in 3D space in which an application can fill
  * content.
  *
- * @param modifier SubspaceModifiers to apply to the SpatialPanel. Panels are not affected by the
- *   depth field in size-based modifiers.
+ * @param modifier SubspaceModifiers to apply to the SpatialPanel. The depth field in size-based
+ *   modifiers affects this panel's layout size, but will not affect how the panel is rendered. The
+ *   rendered shape will be a flat rectangle that is positioned on the front face of the rectangular
+ *   prism created by the layout size.
  * @param shape The shape of this Spatial Panel.
  * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
  *   [SpatialPanel]. This can be either a [MovePolicy] for free movement or an [AnchorPolicy] for
@@ -458,6 +466,7 @@ private fun <T : View> AndroidViewPanel(
  */
 @Composable
 @SubspaceComposable
+@Suppress("DEPRECATION", "ReferencesDeprecated")
 public fun SpatialPanel(
     modifier: SubspaceModifier = SubspaceModifier,
     shape: SpatialShape = SpatialPanelDefaults.shape,
@@ -566,7 +575,9 @@ public fun SpatialPanel(
  *
  * @param modifier The [SubspaceModifier] to be applied to this panel, controlling its layout, size,
  *   and position within the parent. The depth field in size-based modifiers affects this panel's
- *   layout size, but will not affect how the panel is rendered.
+ *   layout size, but will not affect how the panel is rendered. The rendered shape will be a flat
+ *   rectangle that is positioned on the front face of the rectangular prism created by the layout
+ *   size.
  * @param shape The shape of this Spatial Panel.
  * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
  *   [SpatialPanel]. This can be either a [MovePolicy] for free movement or an [AnchorPolicy] for
@@ -582,6 +593,7 @@ public fun SpatialPanel(
  */
 @Composable
 @SubspaceComposable
+@Suppress("DEPRECATION", "ReferencesDeprecated")
 public fun SpatialMainPanel(
     modifier: SubspaceModifier = SubspaceModifier,
     shape: SpatialShape = SpatialPanelDefaults.shape,
@@ -701,7 +713,9 @@ internal class MainPanelOwnerQueue(private val queue: ArrayDeque<() -> Unit> = A
  *
  * @param intent The intent of an Activity to launch within this panel.
  * @param modifier SubspaceModifiers to apply to the SpatialPanel. The depth field in size-based
- *   modifiers affects this panel's layout size, but will not affect how the panel is rendered.
+ *   modifiers affects this panel's layout size, but will not affect how the panel is rendered. The
+ *   rendered shape will be a flat rectangle that is positioned on the front face of the rectangular
+ *   prism created by the layout size.
  * @param shape The shape of this Spatial Panel.
  * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
  *   [SpatialPanel]. This can be either a [MovePolicy] for free movement or an [AnchorPolicy] for
@@ -716,6 +730,7 @@ internal class MainPanelOwnerQueue(private val queue: ArrayDeque<() -> Unit> = A
  */
 @Composable
 @SubspaceComposable
+@Suppress("DEPRECATION", "ReferencesDeprecated")
 public fun SpatialActivityPanel(
     intent: Intent,
     modifier: SubspaceModifier = SubspaceModifier,
@@ -737,16 +752,17 @@ public fun SpatialActivityPanel(
 
     val pixelDimensions = IntSize2d(0, 0)
 
+    val activityPanelEntity = remember {
+        ActivityPanelEntity.create(
+            session,
+            pixelDimensions,
+            "ActivityPanel-${intent.action}",
+            parent = null,
+        )
+    }
+
     val corePanelEntity: CoreActivityPanelEntity = remember {
-        CoreActivityPanelEntity(
-                ActivityPanelEntity.create(
-                    session,
-                    pixelDimensions,
-                    "ActivityPanel-${intent.action}",
-                    parent = null,
-                )
-            )
-            .apply { enabled = false }
+        CoreActivityPanelEntity(activityPanelEntity).apply { enabled = false }
     }
 
     SideEffect { corePanelEntity.setShape(shape, density) }
@@ -783,13 +799,12 @@ public fun SpatialActivityPanel(
                                         corePanelEntity.size.run { IntSize2d(width, height) },
                                     name = entityName,
                                     pose = Pose.Identity,
-                                    parent = null,
+                                    parent = activityPanelEntity,
                                 )
                             )
                             .apply {
-                                parent = corePanelEntity
                                 poseInMeters =
-                                    Pose(translation = Vector3(0f, 0f, 3.millimeters.toM()))
+                                    Pose(translation = Vector3(0f, 0f, 10.millimeters.toM()))
                             }
                     ) {
                         it.dispose()
@@ -883,6 +898,7 @@ internal fun buildSpatialPanelModifier(
         }
 
     if (resizePolicy != null) {
+        @Suppress("DEPRECATION")
         finalModifier =
             finalModifier.resizable(
                 enabled = resizePolicy.isEnabled,

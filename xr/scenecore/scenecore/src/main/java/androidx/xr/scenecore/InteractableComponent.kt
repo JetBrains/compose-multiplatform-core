@@ -17,9 +17,11 @@
 package androidx.xr.scenecore
 
 import android.app.Activity
+import androidx.annotation.RestrictTo
 import androidx.core.content.ContextCompat
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.InputEventListener as RtInputEventListener
+import androidx.xr.scenecore.runtime.InteractableComponent as RtInteractableComponent
 import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.Executor
 import java.util.function.Consumer
@@ -39,7 +41,8 @@ private constructor(
         inputEventListener.accept(rtEvent.toInputEvent(entityRegistry))
     }
 
-    private val rtInteractableComponent by lazy {
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val rtInteractableComponent: RtInteractableComponent by lazy {
         sceneRuntime.createInteractableComponent(executor, rtInputEventListener)
     }
     private var entity: Entity? = null
@@ -55,7 +58,7 @@ private constructor(
             return false
         }
         this.entity = entity
-        return (entity as BaseEntity<*>).rtEntity.addComponent(rtInteractableComponent)
+        return entity.rtEntity.addComponent(rtInteractableComponent)
     }
 
     /**
@@ -64,7 +67,7 @@ private constructor(
      * @param entity The [Entity] to detach this component from.
      */
     override fun onDetach(entity: Entity) {
-        (entity as BaseEntity<*>).rtEntity.removeComponent(rtInteractableComponent)
+        entity.rtEntity.removeComponent(rtInteractableComponent)
         this.entity = null
     }
 

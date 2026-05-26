@@ -16,6 +16,8 @@
 
 package androidx.xr.arcore.testing.internal
 
+import android.os.Binder
+import android.os.IBinder
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.AnchorInvalidUuidException
 import androidx.xr.arcore.runtime.ConversationState
@@ -25,19 +27,22 @@ import androidx.xr.arcore.runtime.Trackable
 import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.ExperimentalInertialTrackingApi
 import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.PreviewSpatialApi
+import androidx.xr.runtime.QrCodeTrackingMode
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import java.util.UUID
 
 internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
-
+    private val nativeAnchorPointer: Long = 1234567890L
+    private val nativeAnchorToken: IBinder = Binder()
     private val fakeArDevice = FakeRuntimeArDevice()
     private val fakeLeftEye = FakeRuntimeEye()
     private val fakeRightEye = FakeRuntimeEye()
@@ -101,11 +106,18 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
     internal val anchors: MutableList<FakeRuntimeAnchor> = mutableListOf()
     internal var isCameraTracking: Boolean = true
     internal var isSizeEstimationSupported: Boolean = true
+    internal var isQrSizeEstimationSupported: Boolean = true
 
     override fun createAnchor(pose: Pose): Anchor {
         // TODO: b/349862231 - Modify it once detach is implemented.
         val anchor =
-            FakeRuntimeAnchor(pose, anchorHolder = this, isTrackingAvailable = isCameraTracking)
+            FakeRuntimeAnchor(
+                pose,
+                anchorHolder = this,
+                isTrackingAvailable = isCameraTracking,
+                nativePointer = nativeAnchorPointer,
+                nativeAnchorToken,
+            )
         anchors.add(anchor)
         return anchor
     }
@@ -142,10 +154,12 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
         }
         val anchor =
             FakeRuntimeAnchor(
-                pose = persistedAnchorUUIDs[uuid]!!,
+                persistedAnchorUUIDs[uuid]!!,
+                anchorHolder = this,
                 isTrackingAvailable = isCameraTracking,
+                nativePointer = nativeAnchorPointer,
+                nativeAnchorToken,
             )
-        anchor.anchorHolder = this
         return anchor
     }
 
@@ -160,6 +174,8 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
 
     override val isPhysicalSizeEstimationSupported: Boolean = isSizeEstimationSupported
 
+    override val isQrCodeSizeEstimationSupported: Boolean = isQrSizeEstimationSupported
+
     override fun onAnchorPersisted(anchor: Anchor) {
         require(anchor.uuid != null)
         persistedAnchorUUIDs[anchor.uuid!!] = anchor.pose
@@ -172,7 +188,9 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
         anchor.uuid?.let { persistedAnchorUUIDs.remove(it) }
     }
 
-    @OptIn(PreviewSpatialApi::class)
+    /** Sets TrackingStates to STOPPED for any corresponding config mode that has been disabled. */
+    @OptIn(PreviewSpatialApi::class, ExperimentalInertialTrackingApi::class)
+    @SuppressWarnings("RestrictedApiAndroidX")
     internal fun updateTrackingStates(config: Config) {
         fakeArDevice.trackingState =
             when (config.deviceTracking) {
@@ -192,6 +210,11 @@ internal class FakePerceptionManager() : PerceptionManager, AnchorHolder {
         }
         if (config.augmentedImageDatabase == null) {
             trackables.filterIsInstance<FakeRuntimeAugmentedImage>().forEach {
+                it.trackingState = TrackingState.STOPPED
+            }
+        }
+        if (config.qrCodeTracking == QrCodeTrackingMode.DISABLED) {
+            trackables.filterIsInstance<FakeRuntimeQrCode>().forEach {
                 it.trackingState = TrackingState.STOPPED
             }
         }

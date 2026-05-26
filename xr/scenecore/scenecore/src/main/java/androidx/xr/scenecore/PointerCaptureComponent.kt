@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.InputEventListener as RtInputEventListener
 import androidx.xr.scenecore.runtime.PointerCaptureComponent as RtPointerCaptureComponent
@@ -82,7 +83,8 @@ private constructor(
                 }
             }
         }
-    private val rtComponent by lazy {
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val rtComponent: RtPointerCaptureComponent by lazy {
         sceneRuntime.createPointerCaptureComponent(executor, rtStateListener, rtInputEventListener)
     }
 
@@ -92,14 +94,14 @@ private constructor(
         }
         attachedEntity = entity
 
-        return (entity as BaseEntity<*>).rtEntity.addComponent(rtComponent)
+        return entity.rtEntity.addComponent(rtComponent)
     }
 
     override fun onDetach(entity: Entity) {
         if (entity != attachedEntity) {
             return
         }
-        (entity as BaseEntity<*>).rtEntity.removeComponent(rtComponent)
+        entity.rtEntity.removeComponent(rtComponent)
         attachedEntity = null
     }
 

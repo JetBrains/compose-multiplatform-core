@@ -64,7 +64,9 @@ public class BitmapData extends Operation
     /** The data is encoded as PNG_8888 (default) */
     public static final short TYPE_PNG_8888 = 0;
 
-    /** The data is encoded as PNG */
+    /** The data is encoded as Generic PNG
+     *  Not to be used with ENCODING_INLINE, which requires a specific type
+    */
     public static final short TYPE_PNG = 1;
 
     /** The data is encoded as RAW 8 bit */
@@ -279,6 +281,11 @@ public class BitmapData extends Operation
         if (!Limits.ENABLE_IMAGE_URLS) {
             if (ENCODING_URL == encoding) {
                 throw new RuntimeException("URL image not supported [" + imageId + "]");
+            }
+        }
+        if (!Limits.ENABLE_IMAGE_FILES) {
+            if (ENCODING_FILE == encoding) {
+                throw new RuntimeException("File image not supported [" + imageId + "]");
             }
         }
         if (width < 1

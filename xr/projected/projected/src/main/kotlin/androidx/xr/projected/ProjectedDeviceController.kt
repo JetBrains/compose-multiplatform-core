@@ -17,20 +17,37 @@
 package androidx.xr.projected
 
 import android.content.Context
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.xr.projected.ProjectedDeviceController.Companion.create
 import androidx.xr.projected.binding.ProjectedServiceConnection
 import androidx.xr.projected.binding.ProjectedServiceConnection.ProjectedIntentAction.Companion.ACTION_BIND
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
+import androidx.xr.projected.platform.BatteryState as AidlBatteryState
+import androidx.xr.projected.platform.IBatteryStateListener
+import androidx.xr.projected.platform.IProjectedService
+import java.util.Collections
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 /**
  * Controller for the Projected device.
  *
- * Use [create] to create an instance of this class.
+ * Use [create] to create an instance of this class. Call [close] when finished with this instance
+ * to release resources.
  */
 @ExperimentalProjectedApi
-public class ProjectedDeviceController private constructor(capabilitiesParam: Set<Capability>) {
+public class ProjectedDeviceController
+private constructor(
+    private val context: Context,
+    private val connection: ProjectedServiceConnection,
+    private val projectedService: IProjectedService,
+    capabilitiesParam: Set<Capability>,
+) : AutoCloseable {
 
     /**
      * Represents an intrinsic piece of functionality of a Projected device, i.e., what it is
@@ -65,10 +82,88 @@ public class ProjectedDeviceController private constructor(capabilitiesParam: Se
      */
     public val capabilities: Set<Capability> = capabilitiesParam
 
+    /** Returns the list of [AudioDeviceInfo] objects associated with the projected device. */
+    public val audioDevices: List<AudioDeviceInfo>
+        get() = getAudioDevicesInternal()
+
+    private val batteryStateListeners =
+        Collections.synchronizedMap(mutableMapOf<(BatteryState) -> Unit, IBatteryStateListener>())
+
+    /**
+     * Adds a listener for battery state changes.
+     *
+     * The [listener] lambda will be executed in a new coroutine launched within the provided
+     * [context]. The listener will be automatically unregistered when the [context]'s [Job] is
+     * canceled.
+     */
+    public fun addBatteryStateChangedListener(
+        context: CoroutineContext,
+        listener: (BatteryState) -> Unit,
+    ) {
+        val aidlListener =
+            object : IBatteryStateListener.Stub() {
+                override fun onBatteryStateChanged(batteryState: AidlBatteryState) {
+                    // Launch in the provided CoroutineContext
+                    CoroutineScope(context).launch {
+                        listener(BatteryState(batteryState.isCharging, batteryState.batteryLevel))
+                    }
+                }
+
+                override fun getInterfaceVersion() = VERSION
+            }
+
+        projectedService.registerBatteryStateListener(aidlListener)
+        // Add to map only after successful registration
+        batteryStateListeners[listener] = aidlListener
+        // Unregister when the scope is canceled
+        context[Job]?.invokeOnCompletion { removeBatteryStateChangedListener(listener) }
+    }
+
+    /**
+     * Removes a previously added listener. Note: Listeners are also automatically removed when
+     * their associated CoroutineScope is canceled.
+     */
+    public fun removeBatteryStateChangedListener(listener: (BatteryState) -> Unit) {
+        batteryStateListeners.remove(listener)?.let { aidlListener ->
+            try {
+                projectedService.unregisterBatteryStateListener(aidlListener)
+            } catch (_: Exception) {
+                // Ignore errors during unregistration
+            }
+        }
+    }
+
+    /**
+     * Releases resources, unregistering any active listeners. This instance should not be used
+     * after calling close.
+     */
+    override fun close() {
+        batteryStateListeners.keys.toList().forEach { removeBatteryStateChangedListener(it) }
+
+        connection.disconnect()
+    }
+
+    private fun getAudioDevicesInternal(): List<AudioDeviceInfo> {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        val allAudioDevices: Array<AudioDeviceInfo> =
+            audioManager.getDevices(
+                AudioManager.GET_DEVICES_OUTPUTS or AudioManager.GET_DEVICES_INPUTS
+            )
+
+        val projectedAudioDeviceIds = projectedService.audioDeviceIds
+
+        return allAudioDevices
+            .filter { deviceInfo -> deviceInfo.id in projectedAudioDeviceIds }
+            .toList()
+    }
+
     public companion object {
         /**
          * Connects to the service providing features for Projected devices and returns the
-         * [ProjectedDisplayController] when the connection is established.
+         * [ProjectedDeviceController] when the connection is established. The caller is responsible
+         * for calling [close] on the returned instance when it's no longer needed to release all
+         * internal resources.
          *
          * @param context The context to use for binding to the service.
          * @throws IllegalStateException if the projected service is not found or binding is not
@@ -80,11 +175,20 @@ public class ProjectedDeviceController private constructor(capabilitiesParam: Se
             val serviceConnection = ProjectedServiceConnection(context, ACTION_BIND)
             val projectedService = serviceConnection.connect()
             val capabilities =
-                if (projectedService.isDisplayCapable()) setOf(Capability.CAPABILITY_VISUAL_UI)
-                else setOf()
-            serviceConnection.disconnect()
+                try {
+                    if (projectedService.isDisplayCapable()) setOf(Capability.CAPABILITY_VISUAL_UI)
+                    else setOf()
+                } catch (e: Exception) {
+                    serviceConnection.disconnect()
+                    throw e
+                }
 
-            return ProjectedDeviceController(capabilities)
+            return ProjectedDeviceController(
+                context,
+                serviceConnection,
+                projectedService,
+                capabilities,
+            )
         }
     }
 }

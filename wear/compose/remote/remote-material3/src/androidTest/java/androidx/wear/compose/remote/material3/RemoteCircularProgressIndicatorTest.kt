@@ -18,20 +18,14 @@ package androidx.wear.compose.remote.material3
 
 import android.content.Context
 import androidx.collection.buildObjectIntMap
-import androidx.compose.remote.core.RemoteClock
 import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
-import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteBox
-import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
-import androidx.compose.runtime.Composable
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
+import androidx.compose.remote.player.view.RemoteComposePlayer
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -40,6 +34,8 @@ import androidx.wear.compose.remote.material3.previews.RemoteCircularProgressInd
 import androidx.wear.compose.remote.material3.previews.RemoteCircularProgressIndicatorCustomColor
 import androidx.wear.compose.remote.material3.previews.RemoteCircularProgressIndicatorDisabled
 import androidx.wear.compose.remote.material3.previews.RemoteCircularProgressNoGapCustomAngle
+import androidx.wear.compose.remote.material3.util.ComponentContainer
+import androidx.wear.compose.remote.material3.util.SCREENSHOT_GOLDEN_DIRECTORY
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,56 +48,57 @@ class RemoteCircularProgressIndicatorTest {
 
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(
+        RemoteScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-            clock = TestClock(),
+            context = ApplicationProvider.getApplicationContext(),
         )
+
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val creationDisplayInfo = createCreationDisplayInfo(context, Size(500f, 500f))
 
     @Test
     fun indicator_enabled() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            Center { RemoteCircularProgressEnabled() }
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer { RemoteCircularProgressEnabled() }
         }
     }
 
     @Test
     fun indicator_enabled_rtl() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo = creationDisplayInfo,
-            layoutDirection = LayoutDirection.Rtl,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+            creationComposableWrapper = ComposableWrappers.rtl,
         ) {
-            Center { RemoteCircularProgressEnabled() }
+            ComponentContainer { RemoteCircularProgressEnabled() }
         }
     }
 
     @Test
     fun indicator_indeterminate() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            Center { RemoteCircularProgressIndeterminate() }
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer { RemoteCircularProgressIndeterminate() }
         }
     }
 
     @Test
     fun indicator_disabled() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            Center { RemoteCircularProgressIndicatorDisabled() }
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer { RemoteCircularProgressIndicatorDisabled() }
         }
     }
 
     @Test
     fun indicator_customColors() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            Center { RemoteCircularProgressIndicatorCustomColor() }
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer { RemoteCircularProgressIndicatorCustomColor() }
         }
     }
 
     @Test
     fun indicator_customEndAngle_and_noGap() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            Center { RemoteCircularProgressNoGapCustomAngle() }
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer { RemoteCircularProgressNoGapCustomAngle() }
         }
     }
 
@@ -114,62 +111,16 @@ class RemoteCircularProgressIndicatorTest {
             put("WearM3.onSurface", Color(0xFFE2E3DC).toArgb())
         }
         remoteComposeTestRule.runScreenshotTest(
+            remoteCreationDisplayInfo = creationDisplayInfo,
             profile = RcPlatformProfiles.WEAR_WIDGETS,
-            creationDisplayInfo = creationDisplayInfo,
-            backgroundColor = Color.Black,
-            colorOverrides = colorOverrides,
+            update = { player: RemoteComposePlayer ->
+                colorOverrides.forEach { name, colorInt ->
+                    player.setUserLocalColor(name, colorInt)
+                }
+            },
+            playComposableWrapper = ComposableWrappers.blackBackground,
         ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteCircularProgressEnabled() }
+            ComponentContainer { RemoteCircularProgressEnabled() }
         }
-    }
-
-    @Composable
-    @RemoteComposable
-    private fun Center(
-        modifier: RemoteModifier = RemoteModifier.fillMaxSize(),
-        content: @Composable @RemoteComposable () -> Unit,
-    ) {
-        RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
-    }
-}
-
-@Suppress("RestrictedApiAndroidX")
-private class TestClock(val baseTimeMillis: Long = 10 * 3600000L + 10 * 60000L) : RemoteClock {
-    var offsetMillis: Long = 500
-
-    override fun millis() = baseTimeMillis + offsetMillis
-
-    override fun nanoTime() = (baseTimeMillis + offsetMillis) * 1_000_000L
-
-    override fun getZoneId() = "UTC"
-
-    override fun snapshot(millis: Long?): RemoteClock.TimeSnapshot {
-        val m = millis ?: (baseTimeMillis + offsetMillis)
-        return ManualTimeSnapshot(m)
-    }
-
-    @Suppress("RestrictedApiAndroidX")
-    private class ManualTimeSnapshot(val m: Long) : RemoteClock.TimeSnapshot {
-        override fun getMillis() = m
-
-        override fun getYear() = 2026
-
-        override fun getMonth() = 2
-
-        override fun getDayOfMonth() = 13
-
-        override fun getDayOfYear() = 44
-
-        override fun getHour() = (m / 3600000).toInt() % 24
-
-        override fun getMinute() = (m / 60000).toInt() % 60
-
-        override fun getSecond() = (m / 1000).toInt() % 60
-
-        override fun getMillisOfSecond() = (m % 1000).toInt()
-
-        override fun getDayOfWeek() = 5
-
-        override fun getOffsetSeconds() = 0
     }
 }

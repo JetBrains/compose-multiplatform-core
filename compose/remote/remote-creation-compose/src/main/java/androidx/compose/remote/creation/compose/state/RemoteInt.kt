@@ -120,7 +120,6 @@ internal constructor(
      * @param creationState The current [RemoteComposeCreationState].
      * @return The [LongArray] representing this remote integer\'s expression.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     internal fun arrayForCreationState(stateScope: RemoteStateScope): LongArray {
         return stateScope.creationState.getOrPutLongArray(cacheKey) {
             arrayProvider(stateScope.creationState)
@@ -146,8 +145,28 @@ internal constructor(
             constantValueOrNull = null,
             cacheKey = RemoteOperationCacheKey.create(OperationKey.ToFloat, this),
         ) { creationState ->
-            floatArrayOf(getFloatIdForCreationState(creationState))
+            val key = cacheKey // Needed because smart cast with cacheKey is impossible.
+            if (key is RemoteOperationCacheKey && key.op == RemoteFloat.OperationKey.ToInt) {
+                // Force conversion from float to int with a no-op expression so that truncation
+                // occurs as expected for a float->int->float round trip. Note calling binaryOp like
+                // this skips the peephole optimizer.
+                val temp =
+                    binaryOp(this, 0, OperationKey.Add, OP_ADD, { a, _ -> a }) { _, _ -> null }
+                floatArrayOf(temp.getFloatIdForCreationState(creationState))
+            } else {
+                floatArrayOf(getFloatIdForCreationState(creationState))
+            }
         }
+    }
+
+    /**
+     * Converts this [RemoteInt] to a [RemoteLong].
+     *
+     * @return A [RemoteLong] representing this integer as a long.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toRemoteLong(): RemoteLong {
+        return RemoteLong.fromLowHigh(this, selectIfLt(this, 0.ri, (-1).ri, 0.ri))
     }
 
     /**
@@ -444,7 +463,6 @@ internal constructor(
     public val absoluteValue: RemoteInt
         get() = unaryOp(OperationKey.Abs, OP_ABS) { v -> abs(v) }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
         internal val DefaultIntegerFormat =
             android.icu.text.DecimalFormat().apply { maximumFractionDigits = 0 }
@@ -463,7 +481,6 @@ internal constructor(
          * @param v The remote ID.
          * @return A [RemoteInt] referencing the ID.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         internal fun createForId(v: Long): RemoteInt {
             return RemoteIntExpression(
                 constantValueOrNull = null,
@@ -511,21 +528,9 @@ internal constructor(
          * Creates a [RemoteInt] instance from a [Long] value, which could be a literal or an ID.
          * The `hasConstantValue` is determined by calling [isConstant].
          *
-         * @param v The constant [Long] value.
+         * @param value The constant [Long] value.
          * @return A [RemoteIntExpression] representing the constant integer.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        @Deprecated("Use createForId")
-        public operator fun invoke(v: Long): RemoteInt {
-            if (isConstant(v)) {
-                return RemoteIntExpression(
-                    constantValueOrNull = v.toInt(),
-                    cacheKey = RemoteConstantCacheKey(v),
-                    arrayProvider = { _ -> longArrayOf(v) },
-                )
-            }
-            return createForId(v)
-        }
 
         /**
          * Creates a named [RemoteInt] with an initial value. Named remote ints can be set via
@@ -536,7 +541,6 @@ internal constructor(
          * @param domain The domain of the named integer (defaults to [RemoteState.Domain.User]).
          * @return A [RemoteInt] representing the named int.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
         public fun createNamedRemoteInt(
             name: String,
@@ -688,7 +692,6 @@ internal constructor(
  * [extras]. Inlining is preferred as long as the resulting array length is less than
  * [MAX_SAFE_LONG_ARRAY].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal fun combineToLongArray(
     creationState: RemoteComposeCreationState,
     remoteInts: Array<RemoteInt>,
@@ -852,7 +855,6 @@ internal fun binaryOp(
  * @param directEval When the sources are const float, this lambda will be called to evaluate the
  *   result directly.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal fun comparisonOp(
     a: RemoteInt,
     b: RemoteInt,
@@ -958,9 +960,7 @@ public fun clamp(min: RemoteInt, max: RemoteInt, value: RemoteInt): RemoteInt {
 public class MutableRemoteInt
 internal constructor(
     constantValueOrNull: Int? = null,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     internal override val cacheKey: RemoteStateCacheKey,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     internal val idProvider: (creationState: RemoteComposeCreationState) -> Long,
 ) :
     RemoteInt(
@@ -995,7 +995,7 @@ internal constructor(
          * @param initialValue The initial value for the state.
          * @return A new [MutableRemoteInt] instance.
          */
-        public fun createMutable(initialValue: Int): MutableRemoteInt {
+        public operator fun invoke(initialValue: Int): MutableRemoteInt {
             return MutableRemoteInt(
                 constantValueOrNull = null,
                 cacheKey = RemoteStateInstanceKey(),
@@ -1219,7 +1219,7 @@ internal constructor(
 @Composable
 @RemoteComposable
 public fun rememberMutableRemoteInt(initialValue: Int): MutableRemoteInt {
-    return remember { MutableRemoteInt.createMutable(initialValue) }
+    return remember { MutableRemoteInt(initialValue) }
 }
 
 /**
@@ -1228,12 +1228,6 @@ public fun rememberMutableRemoteInt(initialValue: Int): MutableRemoteInt {
  * @param value A lambda that provides the initial [Int] value for this remote integer.
  * @return A [MutableRemoteInt] instance that will be remembered across recompositions.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Composable
-@RemoteComposable
-@Deprecated("Use rememberMutableRemoteInt", ReplaceWith("rememberMutableRemoteInt(value())"))
-public fun rememberRemoteIntValue(value: () -> Int): MutableRemoteInt =
-    rememberMutableRemoteInt(value())
 
 /**
  * A Composable function to remember and provide a **named** mutable remote integer value.
@@ -1244,50 +1238,13 @@ public fun rememberRemoteIntValue(value: () -> Int): MutableRemoteInt =
  * @param value A lambda that provides the initial [Int] value for this remote integer.
  * @return A [RemoteInt] instance that will be remembered across recompositions.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Composable
-@RemoteComposable
-@Deprecated(
-    "Use rememberNamedRemoteInt",
-    ReplaceWith("rememberNamedRemoteInt(name, domain) { value().ri }"),
-)
-public fun rememberRemoteIntValue(
-    name: String,
-    domain: RemoteState.Domain = RemoteState.Domain.User,
-    value: () -> Int,
-): RemoteInt {
-    return rememberNamedState(name, domain) {
-        MutableRemoteInt(
-            constantValueOrNull = null,
-            cacheKey = RemoteNamedCacheKey(domain, name),
-            idProvider = { creationState ->
-                val initial = value()
-                creationState.document.addNamedInt(domain.prefixed(name), initial)
-            },
-        )
-    }
-}
 
 /**
  * A Composable function to remember and provide a [RemoteInt] expression.
  *
- * @param content A lambda that provides the [RemoteInt] expression.
+ * @param value A lambda that provides the [RemoteInt] expression.
  * @return A [RemoteIntExpression] representing the remembered remote integer.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Composable
-@RemoteComposable
-@Deprecated("Use rememberMutableRemoteInt", ReplaceWith("rememberMutableRemoteInt(value())"))
-public fun rememberRemoteInt(content: () -> RemoteInt): RemoteInt {
-    return remember {
-        val remoteInt = content()
-        RemoteIntExpression(
-            remoteInt.constantValueOrNull,
-            cacheKey = RemoteStateInstanceKey(),
-            remoteInt.arrayProvider,
-        )
-    }
-}
 
 /**
  * Remembers a named remote integer expression.

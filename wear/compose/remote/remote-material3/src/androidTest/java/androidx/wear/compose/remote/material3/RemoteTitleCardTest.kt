@@ -18,18 +18,12 @@ package androidx.wear.compose.remote.material3
 
 import androidx.collection.buildObjectIntMap
 import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
-import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteBox
-import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
-import androidx.compose.runtime.Composable
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -37,6 +31,8 @@ import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.remote.material3.previews.RemoteTitleCardDefault
 import androidx.wear.compose.remote.material3.previews.RemoteTitleCardWithTitleSubtitle
 import androidx.wear.compose.remote.material3.previews.RemoteTitleCardWithTitleTime
+import androidx.wear.compose.remote.material3.util.ComponentContainer
+import androidx.wear.compose.remote.material3.util.SCREENSHOT_GOLDEN_DIRECTORY
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,7 +43,10 @@ import org.junit.runner.RunWith
 class RemoteTitleCardTest {
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
 
     private val creationDisplayInfo =
         createCreationDisplayInfo(ApplicationProvider.getApplicationContext(), Size(500f, 500f))
@@ -56,7 +55,7 @@ class RemoteTitleCardTest {
     fun title_card_default() {
         remoteComposeTestRule.runScreenshotTest(
             profile = RcPlatformProfiles.WEAR_WIDGETS,
-            creationDisplayInfo = creationDisplayInfo,
+            remoteCreationDisplayInfo = creationDisplayInfo,
         ) {
             RemoteTitleCardDefault()
         }
@@ -65,9 +64,9 @@ class RemoteTitleCardTest {
     @Test
     fun title_card_rtl() {
         remoteComposeTestRule.runScreenshotTest(
+            remoteCreationDisplayInfo = creationDisplayInfo,
             profile = RcPlatformProfiles.WEAR_WIDGETS,
-            creationDisplayInfo = creationDisplayInfo,
-            layoutDirection = LayoutDirection.Rtl,
+            creationComposableWrapper = ComposableWrappers.rtl,
         ) {
             RemoteTitleCardWithTitleSubtitle()
         }
@@ -77,7 +76,7 @@ class RemoteTitleCardTest {
     fun title_card_with_title_subtitle() {
         remoteComposeTestRule.runScreenshotTest(
             profile = RcPlatformProfiles.WEAR_WIDGETS,
-            creationDisplayInfo = creationDisplayInfo,
+            remoteCreationDisplayInfo = creationDisplayInfo,
         ) {
             RemoteTitleCardWithTitleSubtitle()
         }
@@ -87,7 +86,7 @@ class RemoteTitleCardTest {
     fun title_card_with_title_time() {
         remoteComposeTestRule.runScreenshotTest(
             profile = RcPlatformProfiles.WEAR_WIDGETS,
-            creationDisplayInfo = creationDisplayInfo,
+            remoteCreationDisplayInfo = creationDisplayInfo,
         ) {
             RemoteTitleCardWithTitleTime()
         }
@@ -103,20 +102,14 @@ class RemoteTitleCardTest {
         }
         remoteComposeTestRule.runScreenshotTest(
             profile = RcPlatformProfiles.WEAR_WIDGETS,
-            creationDisplayInfo = creationDisplayInfo,
-            backgroundColor = Color.Black,
-            colorOverrides = colorOverrides,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+            update = { player ->
+                colorOverrides.forEach { name, colorInt ->
+                    player.setUserLocalColor(name, colorInt)
+                }
+            },
         ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteTitleCardDefault() }
+            ComponentContainer { RemoteTitleCardDefault() }
         }
-    }
-
-    @Composable
-    @RemoteComposable
-    private fun Center(
-        modifier: RemoteModifier,
-        content: @Composable @RemoteComposable () -> Unit,
-    ) {
-        RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
     }
 }

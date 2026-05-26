@@ -82,7 +82,7 @@ class SplitEngine : ComponentActivity() {
 
     private val session by lazy {
         // SplitEngine is enabled by default.
-        (Session.create(this) as SessionCreateSuccess).session
+        (Session.create(context = this) as SessionCreateSuccess).session
     }
 
     private var spatialEnvironmentPreference: SpatialEnvironmentPreference? = null
@@ -185,13 +185,13 @@ class SplitEngine : ComponentActivity() {
                     val modifier = Modifier.weight(1F)
                     ApiButton("Toggle Passthrough", modifier) { togglePassthrough(session) }
                     ApiButton("Switch to FSM", modifier) {
-                        session.scene.requestFullSpaceMode()
+                        session.scene.requestFullSpace()
                         if (movableComponentMP.value == null) {
                             movableComponentMP.value = MovableComponent.createSystemMovable(session)
                             session.scene.mainPanelEntity.addComponent(movableComponentMP.value!!)
                         }
                     }
-                    ApiButton("Switch to HSM", modifier) { session.scene.requestHomeSpaceMode() }
+                    ApiButton("Switch to HSM", modifier) { session.scene.requestHomeSpace() }
                 }
             }
         }
@@ -321,6 +321,7 @@ class SplitEngine : ComponentActivity() {
                                         session,
                                         glimmerModel.value!!,
                                         Pose.Identity,
+                                        session.scene.activitySpace,
                                     )
                             }
                             glimmerEntity.value!!
@@ -376,6 +377,7 @@ class SplitEngine : ComponentActivity() {
                                             Vector3(2.0f, 0.0f, 0.0f),
                                             Quaternion(0.0f, 0.0f, 0.0f, 1.0f),
                                         ),
+                                        session.scene.activitySpace,
                                     )
                             }
                         }

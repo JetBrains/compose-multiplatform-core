@@ -35,14 +35,14 @@ import androidx.camera.camera2.pipe.compat.Api28Compat
 import androidx.camera.camera2.pipe.compat.Api29Compat
 import androidx.camera.camera2.pipe.compat.Api33Compat
 import androidx.camera.camera2.pipe.core.Log
+import java.lang.Class
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.Executor
-import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
 
 /** Implements an [ImageReaderWrapper] using an [ImageReader]. */
 public class AndroidImageReader
-private constructor(
+internal constructor(
     private val imageReader: ImageReader,
     override val capacity: Int,
     override val usageFlags: Long?,
@@ -105,9 +105,9 @@ private constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            ImageReader::class -> imageReader as T?
+            ImageReader::class.java -> imageReader as T?
             else -> null
         }
 
@@ -316,10 +316,10 @@ public class AndroidMultiResolutionImageReader(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            AndroidMultiResolutionImageReader::class -> this as T?
-            MultiResolutionImageReader::class -> multiResolutionImageReader as T?
+            AndroidMultiResolutionImageReader::class.java -> this as T?
+            MultiResolutionImageReader::class.java -> multiResolutionImageReader as T?
             else -> null
         }
 

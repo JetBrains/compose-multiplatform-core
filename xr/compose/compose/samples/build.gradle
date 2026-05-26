@@ -43,7 +43,7 @@ androidx {
     name = "Compose XR Samples"
     type = SoftwareType.SAMPLES
     inceptionYear = "2025"
-    description = "Contains the sample code for the Androidx JXR Compose Components"
+    description = "Contains the sample code for the AndroidX Compose for XR Components"
 }
 
 android {

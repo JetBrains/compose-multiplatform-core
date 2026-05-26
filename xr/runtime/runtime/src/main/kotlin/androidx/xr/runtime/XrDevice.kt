@@ -18,6 +18,7 @@ package androidx.xr.runtime
 
 import android.content.Context
 import androidx.annotation.GuardedBy
+import androidx.annotation.RestrictTo
 import androidx.lifecycle.Lifecycle
 import androidx.xr.runtime.XrDevice.Companion.getCurrentDevice
 import androidx.xr.runtime.interfaces.DisplayBlendMode as InternalDisplayBlendMode
@@ -43,38 +44,12 @@ private constructor(
      *
      * @throws IllegalStateException if there is no lifecycle associated with this XrDevice.
      */
-    @ExperimentalXrDeviceLifecycleApi
     public fun getLifecycle(): Lifecycle =
         // TODO(b/461561664) : Use XrDeviceCapabilityProvider.getLifecycle() once session
         // constructor is removed.
         xrDeviceCapabilityProvider?.lifecycle
             ?: session?.lifecycleOwner?.lifecycle
             ?: throw IllegalStateException("No lifecycle associated with this XrDevice.")
-
-    /** A device capability that determines how virtual content is added to the real world. */
-    @Deprecated(
-        "Use androidx.xr.runtime.DisplayBlendMode instead.",
-        replaceWith = ReplaceWith("androidx.xr.runtime.DisplayBlendMode"),
-    )
-    public class DisplayBlendMode private constructor(private val value: Int) {
-
-        @Suppress("DEPRECATION")
-        public companion object {
-            /** Blending is not supported. */
-            @JvmField public val NO_DISPLAY: DisplayBlendMode = DisplayBlendMode(0)
-            /**
-             * Virtual content is added to the real world by adding the pixel values for each of
-             * Red, Green, and Blue components. Alpha is ignored. Black pixels will appear
-             * transparent.
-             */
-            @JvmField public val ADDITIVE: DisplayBlendMode = DisplayBlendMode(1)
-            /**
-             * Virtual content is added to the real world by alpha blending the pixel values based
-             * on the Alpha component.
-             */
-            @JvmField public val ALPHA_BLEND: DisplayBlendMode = DisplayBlendMode(2)
-        }
-    }
 
     public companion object {
 
@@ -87,17 +62,6 @@ private constructor(
 
         @GuardedBy("deviceCache") private val deviceCache = WeakHashMap<Context, XrDevice>()
 
-        // TODO(b/461561664): Remove this API once session is no longer needed for XrDevice.
-        /**
-         * Get the current [XrDevice] for the provided [Session].
-         *
-         * @param session the [Session] connected to the device.
-         */
-        @JvmStatic
-        @Deprecated("Use getCurrentDevice(Context) instead.")
-        public fun getCurrentDevice(session: Session): XrDevice =
-            XrDevice(session, xrDeviceCapabilityProvider = null)
-
         /**
          * Get the current [XrDevice] for the provided [Context].
          *
@@ -107,7 +71,6 @@ private constructor(
          */
         @JvmStatic
         @JvmOverloads
-        @ExperimentalXrDeviceLifecycleApi
         public fun getCurrentDevice(
             context: Context,
             coroutineContext: CoroutineContext = EmptyCoroutineContext,
@@ -137,6 +100,47 @@ private constructor(
                 )
             synchronized(deviceCache) { deviceCache[context] = device }
             return device
+        }
+
+        /**
+         * Get the current [XrDevice] for the provided [Context] and inject extra OpenXR extensions.
+         * This method must be called before a [Session] or any other [XrDevice] is created in the
+         * current process. This API is only valid if the [XrDevice] is backed by an OpenXR runtime.
+         *
+         * @param context the [Context] associated with the device
+         * @param extensions the list of extra OpenXR extension names to inject
+         * @param coroutineContext the [CoroutineContext] to use for the XrDevice operations
+         * @throws IllegalArgumentException if the provided [Context] is not supported
+         * @throws IllegalStateException if the OpenXR instance has already been created or the
+         *   XrDevice is not backed by an OpenXR instance
+         * @throws UnsupportedOperationException if any of the requested extensions are not
+         *   supported by the device
+         */
+        @JvmStatic
+        @UnstableNativeResourceApi
+        @JvmOverloads
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun getCurrentDevice(
+            context: Context,
+            extensions: List<String>,
+            coroutineContext: CoroutineContext = EmptyCoroutineContext,
+        ): XrDevice {
+            XrInstanceManager.addExtraExtensions(context, extensions)
+            return getCurrentDevice(context, coroutineContext)
+        }
+
+        /**
+         * Returns true if the Android XR Projected service is available on this device. This means
+         * the device supports the necessary system features and has the required system service
+         * components for Projected experiences. Returns false otherwise.
+         */
+        @JvmStatic
+        public fun isProjectedServiceAvailable(context: Context): Boolean {
+            if (!PackageManagerUtils.hasXrProjectedSystemFeature(context)) {
+                return false
+            }
+
+            return PackageManagerUtils.hasXrProjectedSystemService(context)
         }
     }
 

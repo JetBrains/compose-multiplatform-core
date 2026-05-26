@@ -101,7 +101,7 @@ internal class FakeEntityMoveListener : EntityMoveListener {
                     finalInputRay == event.currentInputRay &&
                     finalPose == event.currentPose &&
                     finalScale == event.currentScale &&
-                    updatedParent == event.initialParent
+                    updatedParent == event.updatedParent
         }
         return false
     }
@@ -179,7 +179,9 @@ class MovableComponentTest {
         val result = Session.create(activity, testDispatcher)
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
         session = (result as SessionCreateSuccess).session
-        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session.configure(
+            Config.Builder().setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL).build()
+        )
         mFakeRuntime =
             session.runtimes
                 .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
@@ -202,7 +204,9 @@ class MovableComponentTest {
         session = (result as SessionCreateSuccess).session
         sceneRuntime = session.sceneRuntime
         fakeActivitySpace = sceneRuntime.activitySpace
-        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session.configure(
+            Config.Builder().setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL).build()
+        )
         mFakeRuntime =
             session.runtimes
                 .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
@@ -347,7 +351,7 @@ class MovableComponentTest {
         createCustomSession()
         val entity = Entity.create(session, "test")
         assertThat(entity).isNotNull()
-        val rtEntity = (entity as BaseEntity<*>).rtEntity
+        val rtEntity = entity.rtEntity
 
         val movableComponent = MovableComponent.createSystemMovable(session)
         assertThat(entity.addComponent(movableComponent)).isTrue()
@@ -813,7 +817,7 @@ class MovableComponentTest {
             val view = TextView(activity)
 
             val entityPose = Pose(Vector3(0f, -1f, 0f), Quaternion.Identity)
-            val entity = Entity.create(session, "test", entityPose) as BaseEntity<*>
+            val entity = Entity.create(session, "test", entityPose)
             (entity.rtScenePose as FakeScenePose).activitySpacePose = entityPose
             val panelEntity =
                 PanelEntity.create(

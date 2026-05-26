@@ -26,7 +26,34 @@ import androidx.xr.scenecore.runtime.SpatializerConstants
 /** Test-only implementation of [androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper] */
 internal class FakeSoundPoolExtensionsWrapper : SoundPoolExtensionsWrapper {
 
-    private var playAsPointSourceResult: Int = 0
+    internal var playAsPointSourceResult: Int = 0
+
+    var lastPlayedSoundPool: SoundPool? = null
+        private set
+
+    var lastPlayedSoundId: Int? = null
+        private set
+
+    var lastPlayedParams: PointSourceParams? = null
+        private set
+
+    var lastPlayedEntity: Entity? = null
+        private set
+
+    var lastPlayedVolume: Float? = null
+        private set
+
+    var lastPlayedPriority: Int? = null
+        private set
+
+    var lastPlayedLoop: Int? = null
+        private set
+
+    var lastPlayedRate: Float? = null
+        private set
+
+    var lastPlayedSoundFieldAttributes: SoundFieldAttributes? = null
+        private set
 
     /**
      * For test purposes only. Sets the value that will be returned by the [play] method for point
@@ -64,10 +91,20 @@ internal class FakeSoundPoolExtensionsWrapper : SoundPoolExtensionsWrapper {
         loop: Int,
         rate: Float,
     ): Int {
+        lastPlayedSoundFieldAttributes = null
+        lastPlayedSoundPool = soundPool
+        lastPlayedSoundId = soundId
+        lastPlayedParams = params
+        lastPlayedEntity = entity
+        lastPlayedVolume = volume
+        lastPlayedPriority = priority
+        lastPlayedLoop = loop
+        lastPlayedRate = rate
+
         return playAsPointSourceResult
     }
 
-    private var playAsSoundFieldResult: Int = 0
+    internal var playAsSoundFieldResult: Int = 0
 
     /**
      * For test purposes only. Sets the value that will be returned by the [play] method for sound
@@ -104,6 +141,16 @@ internal class FakeSoundPoolExtensionsWrapper : SoundPoolExtensionsWrapper {
         loop: Int,
         rate: Float,
     ): Int {
+        lastPlayedParams = null
+        lastPlayedEntity = null
+        lastPlayedSoundPool = soundPool
+        lastPlayedSoundId = soundId
+        lastPlayedSoundFieldAttributes = attributes
+        lastPlayedVolume = volume
+        lastPlayedPriority = priority
+        lastPlayedLoop = loop
+        lastPlayedRate = rate
+
         return playAsSoundFieldResult
     }
 

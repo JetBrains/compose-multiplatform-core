@@ -46,15 +46,16 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.WindowInsets as WindowInsetsOverride
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isDialog
-import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -67,6 +68,8 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
+import androidx.core.graphics.Insets
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -79,6 +82,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import org.junit.After
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -107,7 +111,8 @@ class ModalBottomSheetTest {
             val density = LocalDensity.current
             sheetState =
                 SheetState(
-                    skipPartiallyExpanded = false,
+                    enabledValues =
+                        setOf(SheetValue.Expanded, SheetValue.PartiallyExpanded, SheetValue.Hidden),
                     positionalThreshold = {
                         with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                     },
@@ -150,7 +155,7 @@ class ModalBottomSheetTest {
         lateinit var sheetState: SheetState
 
         rule.setContent {
-            sheetState = rememberModalBottomSheetState()
+            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
             if (showBottomSheet) {
                 ModalBottomSheet(
                     sheetState = sheetState,
@@ -189,10 +194,11 @@ class ModalBottomSheetTest {
 
         rule.setContent {
             val density = LocalDensity.current
-            val screenHeight = LocalContext.current.resources.configuration.screenHeightDp.dp
+            val screenHeight = LocalWindowInfo.current.containerDpSize.height
             sheetState =
                 SheetState(
-                    skipPartiallyExpanded = false,
+                    enabledValues =
+                        setOf(SheetValue.Expanded, SheetValue.PartiallyExpanded, SheetValue.Hidden),
                     positionalThreshold = {
                         with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                     },
@@ -236,7 +242,8 @@ class ModalBottomSheetTest {
         var showBottomSheet by mutableStateOf(true)
         val sheetState =
             SheetState(
-                skipPartiallyExpanded = false,
+                enabledValues =
+                    setOf(SheetValue.Expanded, SheetValue.PartiallyExpanded, SheetValue.Hidden),
                 positionalThreshold = {
                     with(rule.density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                 },
@@ -265,13 +272,19 @@ class ModalBottomSheetTest {
         rule.onNodeWithTag(sheetTag).assertDoesNotExist()
     }
 
+    @After
+    fun resetFlag() {
+        ComposeMaterial3Flags.isBottomSheetPartiallyExpandedDeterministicEnabled = true
+    }
+
     @Test
     fun modalBottomSheet_defaultStateForSmallContentIsFullExpanded() {
+        ComposeMaterial3Flags.isBottomSheetPartiallyExpandedDeterministicEnabled = false
         lateinit var sheetState: SheetState
         var height by mutableStateOf(0.dp)
 
         rule.setContent {
-            sheetState = rememberModalBottomSheetState()
+            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
 
             ModalBottomSheet(
                 onDismissRequest = {},
@@ -290,11 +303,12 @@ class ModalBottomSheetTest {
 
     @Test
     fun modalBottomSheet_defaultStateForLargeContentIsHalfExpanded() {
+        ComposeMaterial3Flags.isBottomSheetPartiallyExpandedDeterministicEnabled = false
         lateinit var sheetState: SheetState
         var screenHeightPx by mutableStateOf(0f)
 
         rule.setContent {
-            sheetState = rememberModalBottomSheetState()
+            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
             ModalBottomSheet(onDismissRequest = {}, sheetState = sheetState) {
                 Box(
                     Modifier
@@ -320,7 +334,7 @@ class ModalBottomSheetTest {
             val density = LocalDensity.current
             sheetState =
                 SheetState(
-                    skipPartiallyExpanded = true,
+                    enabledValues = setOf(SheetValue.Expanded, SheetValue.Hidden),
                     positionalThreshold = {
                         with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                     },
@@ -361,8 +375,7 @@ class ModalBottomSheetTest {
         lateinit var sheetState: SheetState
 
         rule.setContent {
-            sheetState = rememberModalBottomSheetState()
-            val scope = rememberCoroutineScope()
+            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
 
             // Explicitly set shouldDismissOnBackPress = false
             ModalBottomSheet(
@@ -398,7 +411,8 @@ class ModalBottomSheetTest {
             val density = LocalDensity.current
             sheetState =
                 SheetState(
-                    skipPartiallyExpanded = false,
+                    enabledValues =
+                        setOf(SheetValue.Expanded, SheetValue.PartiallyExpanded, SheetValue.Hidden),
                     positionalThreshold = {
                         with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                     },
@@ -431,6 +445,7 @@ class ModalBottomSheetTest {
         rule.onNodeWithTag(sheetTag).assertDoesNotExist()
     }
 
+    @Suppress("Deprecation")
     @Test
     fun modalBottomSheet_shortSheet_sizeChanges_snapsToNewTarget() {
         lateinit var state: SheetState
@@ -441,8 +456,7 @@ class ModalBottomSheetTest {
         }
 
         rule.setContent {
-            val context = LocalContext.current
-            screenHeight = context.resources.configuration.screenHeightDp.dp
+            screenHeight = LocalWindowInfo.current.containerDpSize.height
             state = rememberModalBottomSheetState()
             ModalBottomSheet(
                 onDismissRequest = {},
@@ -486,6 +500,7 @@ class ModalBottomSheetTest {
         }
     }
 
+    @Suppress("Deprecation")
     @Test
     fun modalBottomSheet_emptySheet_expandDoesNotAnimate() {
         lateinit var state: SheetState
@@ -529,7 +544,7 @@ class ModalBottomSheetTest {
             val density = LocalDensity.current
             sheetState =
                 SheetState(
-                    skipPartiallyExpanded = true,
+                    enabledValues = setOf(SheetValue.Expanded, SheetValue.Hidden),
                     positionalThreshold = {
                         with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                     },
@@ -599,7 +614,7 @@ class ModalBottomSheetTest {
         var showBottomSheet by mutableStateOf(true)
 
         rule.setContent {
-            sheetState = rememberModalBottomSheetState()
+            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
             if (showBottomSheet) {
                 ModalBottomSheet(
                     onDismissRequest = { showBottomSheet = false },
@@ -636,7 +651,7 @@ class ModalBottomSheetTest {
 
             rule.setContent {
                 scope = rememberCoroutineScope()
-                sheetState = rememberModalBottomSheetState()
+                sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
                 ModalBottomSheet(
                     sheetState = sheetState,
                     onDismissRequest = {},
@@ -670,9 +685,48 @@ class ModalBottomSheetTest {
             assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
         }
 
+    @Test
+    fun modalBottomSheet_respectsContentWindowInsets_whenImeIsPresent() {
+        val imeHeightDp = 200.dp
+        var showBottomSheet by mutableStateOf(true)
+
+        rule.setContent {
+            val density = LocalDensity.current
+            val imeInsets = Insets.of(0, 0, 0, with(density) { imeHeightDp.roundToPx() })
+            val windowInsets =
+                WindowInsetsCompat.Builder()
+                    .setInsets(WindowInsetsCompat.Type.ime(), imeInsets)
+                    .build()
+
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.WindowInsetsOverride(windowInsets)
+            ) {
+                if (showBottomSheet) {
+                    ModalBottomSheet(
+                        sheetState =
+                            rememberBottomSheetState(
+                                initialValue = SheetValue.Hidden,
+                                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+                            ),
+                        onDismissRequest = { showBottomSheet = false },
+                        contentWindowInsets = { WindowInsets(0) },
+                    ) {
+                        Box(Modifier.testTag(sheetTag).height(200.dp).fillMaxSize())
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+
+        val sheetBounds = rule.onNodeWithTag(sheetTag).getUnclippedBoundsInRoot()
+        val rootHeight = rule.onNode(isDialog()).getUnclippedBoundsInRoot().height
+
+        // If the sheet is NOT pushed up by the hardcoded imePadding, its bottom should be at the
+        // root height.
+        assertThat(sheetBounds.bottom.value).isWithin(1f).of(rootHeight.value)
+    }
+
     private val Bundle.traversalBefore: Int
         get() = getInt("android.view.accessibility.extra.EXTRA_DATA_TEST_TRAVERSALBEFORE_VAL")
-
-    private fun ComposeTestRule.rootHeightPx(): Float =
-        with(density) { onAllNodes(isDialog()).onFirst().getUnclippedBoundsInRoot().height.toPx() }
 }

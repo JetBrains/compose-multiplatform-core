@@ -65,7 +65,7 @@ class ModeChange : ComponentActivity() {
 
         setContent {
             val renderingSession = remember {
-                (Session.create(activity = this@ModeChange) as SessionCreateSuccess).session
+                (Session.create(context = this@ModeChange) as SessionCreateSuccess).session
             }
             IntegrationTestsAppTheme {
                 if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
@@ -97,7 +97,7 @@ class ModeChange : ComponentActivity() {
                     onClickRecreate = { this@ModeChange.recreate() },
                 ) { padding ->
                     PanelContent(padding, "FullSpace Mode", "Transition to HomeSpace Mode") {
-                        renderingSession.scene.requestHomeSpaceMode()
+                        renderingSession.scene.requestHomeSpace()
                     }
                 }
 
@@ -122,7 +122,7 @@ class ModeChange : ComponentActivity() {
             onClickRecreate = { this@ModeChange.recreate() },
         ) { padding ->
             PanelContent(padding, "HomeSpace Mode", "Transition to FullSpace Mode") {
-                renderingSession!!.scene.requestFullSpaceMode()
+                renderingSession!!.scene.requestFullSpace()
             }
         }
     }

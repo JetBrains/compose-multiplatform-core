@@ -20,6 +20,7 @@ import android.Manifest
 import android.graphics.Bitmap
 import android.os.Looper
 import androidx.activity.ComponentActivity
+import androidx.kruth.assertThrows
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -82,7 +83,7 @@ class SessionTest {
     fun create_returnsSuccessResultWithNonNullSession() {
         activityController.create()
 
-        val result = Session.create(activity)
+        val result = Session.create(context = activity)
 
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
 
@@ -127,7 +128,12 @@ class SessionTest {
         activityController.create()
 
         val context = activity.applicationContext
-        val result = Session.create(context, activity, testDispatcher)
+        val result =
+            Session.create(
+                context = context,
+                coroutineContext = testDispatcher,
+                lifecycleOwner = activity,
+            )
 
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
         assertThat((result as SessionCreateSuccess).session).isNotNull()
@@ -141,7 +147,7 @@ class SessionTest {
                 override val lifecycle = LifecycleRegistry(this)
             }
 
-        val result = Session.create(activity, lifecycleOwner = customLifecycleOwner)
+        val result = Session.create(context = activity, lifecycleOwner = customLifecycleOwner)
 
         val session = (result as SessionCreateSuccess).session
         assertThat(session.lifecycleOwner).isEqualTo(customLifecycleOwner)
@@ -151,24 +157,13 @@ class SessionTest {
     fun create_withActivityAndCoroutineContext_returnsSuccessResultWithNonNullSession() {
         activityController.create()
 
-        val result = Session.create(activity, coroutineContext = testDispatcher)
+        val result = Session.create(context = activity, coroutineContext = testDispatcher)
 
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
         val session = (result as SessionCreateSuccess).session
         assertThat(session).isNotNull()
         assertThat(session.coroutineScope.coroutineContext[ContinuationInterceptor])
             .isEqualTo(testDispatcher)
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun create_withUnscaledGravityAlignedActivitySpace_returnsSuccessResultWithNonNullSession() {
-        activityController.create()
-
-        val result = Session.create(activity, unscaledGravityAlignedActivitySpace = false)
-
-        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
-        assertThat((result as SessionCreateSuccess).session).isNotNull()
     }
 
     @Test
@@ -179,7 +174,7 @@ class SessionTest {
 
         activityController.create()
 
-        assertFailsWith<SecurityException> { Session.create(activity) }
+        assertFailsWith<SecurityException> { Session.create(context = activity) }
     }
 
     @Test
@@ -188,7 +183,7 @@ class SessionTest {
             ApkNotInstalledException(ARCORE_PACKAGE_NAME)
         activityController.create()
 
-        val result = Session.create(activity)
+        val result = Session.create(context = activity)
 
         assertThat(result).isInstanceOf(SessionCreateApkRequired::class.java)
         assertThat((result as SessionCreateApkRequired).requiredApk).isEqualTo(ARCORE_PACKAGE_NAME)
@@ -199,7 +194,7 @@ class SessionTest {
         StubPerceptionRuntimeFactory.lifecycleCreateException = UnsupportedDeviceException()
         activityController.create()
 
-        val result = Session.create(activity)
+        val result = Session.create(context = activity)
 
         assertThat(result).isInstanceOf(SessionCreateUnsupportedDevice::class.java)
     }
@@ -210,7 +205,7 @@ class SessionTest {
             ApkCheckAvailabilityInProgressException(ARCORE_PACKAGE_NAME)
         activityController.create()
 
-        val result = Session.create(activity)
+        val result = Session.create(context = activity)
 
         assertThat(result).isInstanceOf(SessionCreateApkRequired::class.java)
         assertThat((result as SessionCreateApkRequired).requiredApk).isEqualTo(ARCORE_PACKAGE_NAME)
@@ -222,7 +217,7 @@ class SessionTest {
             ApkCheckAvailabilityErrorException(ARCORE_PACKAGE_NAME)
         activityController.create()
 
-        val result = Session.create(activity)
+        val result = Session.create(context = activity)
 
         assertThat(result).isInstanceOf(SessionCreateApkRequired::class.java)
         assertThat((result as SessionCreateApkRequired).requiredApk).isEqualTo(ARCORE_PACKAGE_NAME)
@@ -232,10 +227,19 @@ class SessionTest {
     fun create_onDestroyedActivity_throwsIllegalStateException() {
         activityController.create().destroy()
 
-        val exception = assertFailsWith<IllegalStateException> { Session.create(activity) }
+        val exception =
+            assertFailsWith<IllegalStateException> { Session.create(context = activity) }
         assertThat(exception)
             .hasMessageThat()
             .isEqualTo("Cannot create a new session on a destroyed lifecycleOwner.")
+    }
+
+    @Test
+    fun create_runtimesStartWithDefaultConfig() {
+        activityController.create().start()
+        underTest = createSession()
+
+        underTest.runtimes.forEach { assertThat(it.config).isEqualTo(Session.DEFAULT_CONFIG) }
     }
 
     @Test
@@ -244,7 +248,7 @@ class SessionTest {
         underTest = createSession()
         activityController.destroy()
 
-        assertFailsWith<IllegalStateException> { underTest.configure(Config()) }
+        assertFailsWith<IllegalStateException> { underTest.configure(Config.Builder().build()) }
     }
 
     @Test
@@ -252,33 +256,21 @@ class SessionTest {
         activityController.create().start().resume()
         underTest = createSession()
 
-        val stubRuntime = getStubRuntime()
-        check(
-            stubRuntime.config ==
-                Config(
-                    planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                    // Needs to contain at least one AugmentedObjectCategory to enable
-                    augmentedObjectCategories = setOf(AugmentedObjectCategory.MOUSE),
-                    handTracking = HandTrackingMode.BOTH,
-                    deviceTracking = DeviceTrackingMode.SPATIAL,
-                    depthEstimation = DepthEstimationMode.SMOOTH_AND_RAW,
-                    anchorPersistence = AnchorPersistenceMode.LOCAL,
-                )
-        )
         val newConfig =
-            Config(
-                planeTracking = PlaneTrackingMode.DISABLED,
-                augmentedObjectCategories = setOf(),
-                handTracking = HandTrackingMode.DISABLED,
-                deviceTracking = DeviceTrackingMode.DISABLED,
-                depthEstimation = DepthEstimationMode.DISABLED,
-                anchorPersistence = AnchorPersistenceMode.DISABLED,
-            )
+            Config.Builder()
+                .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                .setAugmentedObjectCategories(setOf(AugmentedObjectCategory.MOUSE))
+                .setHandTracking(HandTrackingMode.BOTH)
+                .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                .setDepthEstimation(DepthEstimationMode.SMOOTH_AND_RAW)
+                .setAnchorPersistence(AnchorPersistenceMode.LOCAL)
+                .setQrCodeTracking(QrCodeTrackingMode.DYNAMIC)
+                .build()
 
         val result = underTest.configure(newConfig)
 
         assertThat(result).isInstanceOf(SessionConfigureSuccess::class.java)
-        assertThat(stubRuntime.config).isEqualTo(newConfig)
+        assertThat(underTest.config).isEqualTo(newConfig)
     }
 
     @Test
@@ -287,19 +279,18 @@ class SessionTest {
         underTest = createSession()
         val stubRuntime = getStubRuntime()
 
-        val currentConfig = stubRuntime.config
-        check(currentConfig.depthEstimation == DepthEstimationMode.SMOOTH_AND_RAW)
+        val currentConfig = underTest.config
         stubRuntime.hasMissingPermission = true
 
         assertFailsWith<SecurityException> {
             underTest.configure(
-                underTest.config.copy(
-                    depthEstimation = DepthEstimationMode.DISABLED,
-                    faceTracking = FaceTrackingMode.DISABLED,
-                )
+                Config.Builder(currentConfig)
+                    .setDepthEstimation(DepthEstimationMode.SMOOTH_AND_RAW)
+                    .setFaceTracking(FaceTrackingMode.MESHES)
+                    .build()
             )
         }
-        assertThat(stubRuntime.config).isEqualTo(currentConfig)
+        assertThat(underTest.config).isEqualTo(currentConfig)
     }
 
     @Test
@@ -314,11 +305,12 @@ class SessionTest {
 
         assertFailsWith<UnsupportedOperationException> {
             underTest.configure(
-                currentConfig.copy(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                Config.Builder(currentConfig)
+                    .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                    .build()
             )
         }
         assertThat(underTest.config).isEqualTo(currentConfig)
-        stubRuntime.shouldSupportPlaneTracking = true
     }
 
     @Test
@@ -332,19 +324,80 @@ class SessionTest {
 
         assertFailsWith<UnsupportedOperationException> {
             underTest.configure(
-                currentConfig.copy(
-                    augmentedImageDatabase =
+                Config.Builder(currentConfig)
+                    .setAugmentedImageDatabase(
                         AugmentedImageDatabase().apply {
                             addAugmentedImageDatabaseEntry(
                                 mode = AugmentedImageDatabaseEntryMode.DYNAMIC,
                                 bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888),
                             )
                         }
-                )
+                    )
+                    .build()
             )
         }
         assertThat(underTest.config).isEqualTo(currentConfig)
-        stubRuntime.shouldSupportImageTracking = true
+    }
+
+    @Test
+    fun configure_unsupportedQrCodeMode_returnsConfigurationNotSupportedResult() {
+        activityController.create().start().resume()
+        underTest = createSession()
+        val stubRuntime = getStubRuntime()
+
+        val currentConfig = underTest.config
+        stubRuntime.shouldSupportQrCodeTracking = false
+
+        assertFailsWith<UnsupportedOperationException> {
+            underTest.configure(
+                Config.Builder().setQrCodeTracking(QrCodeTrackingMode.DYNAMIC).build()
+            )
+        }
+        assertThat(underTest.config).isEqualTo(currentConfig)
+    }
+
+    @Test
+    fun configure_runtimeConfigureFailure_rollsBackConfiguration() {
+        val runtime1 =
+            object : JxrRuntime {
+                override var config = Session.DEFAULT_CONFIG
+
+                override fun configure(config: Config) {
+                    this.config = config
+                }
+            }
+        val runtime2 =
+            object : JxrRuntime {
+                override var config = Session.DEFAULT_CONFIG
+
+                override fun configure(config: Config) {
+                    if (config.planeTracking == PlaneTrackingMode.HORIZONTAL_AND_VERTICAL) {
+                        throw RuntimeException()
+                    }
+                }
+            }
+        val underTest =
+            Session(
+                activity,
+                runtimes = listOf(runtime1, runtime2),
+                coroutineScope = kotlinx.coroutines.test.TestScope(testDispatcher),
+                lifecycleOwner = activity,
+            )
+        activity.lifecycle.addObserver(underTest.lifecycleObserver)
+        activityController.create().start().resume()
+
+        val initialConfig = Config.Builder().setPlaneTracking(PlaneTrackingMode.DISABLED).build()
+        underTest.configure(initialConfig)
+
+        assertThrows<RuntimeException> {
+            underTest.configure(
+                Config.Builder(underTest.config)
+                    .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                    .build()
+            )
+        }
+        assertThat(runtime1.config).isEqualTo(initialConfig)
+        assertThat(runtime2.config).isEqualTo(initialConfig)
     }
 
     @Test
@@ -445,7 +498,9 @@ class SessionTest {
 
         val underTest = createSession()
         val secondSession =
-            (Session.create(secondActivity!!, testDispatcher) as SessionCreateSuccess).session
+            (Session.create(context = secondActivity!!, coroutineContext = testDispatcher)
+                    as SessionCreateSuccess)
+                .session
         activityController.create().start().resume()
         activityController2.create().start().resume()
 
@@ -467,7 +522,9 @@ class SessionTest {
         val secondActivity = activityController2.get()
         underTest = createSession()
         val secondSession =
-            (Session.create(secondActivity!!, testDispatcher) as SessionCreateSuccess).session
+            (Session.create(context = secondActivity!!, coroutineContext = testDispatcher)
+                    as SessionCreateSuccess)
+                .session
         activityController2.create().start().resume()
         activityController2.destroy()
         activityController.create().start().resume()
@@ -502,7 +559,8 @@ class SessionTest {
                     get() = LifecycleRegistry(this)
             }
         underTest =
-            (Session.create(activity, lifecycleOwner = lifecycleOwner) as SessionCreateSuccess)
+            (Session.create(context = activity, lifecycleOwner = lifecycleOwner)
+                    as SessionCreateSuccess)
                 .session
 
         activityController.destroy()
@@ -538,12 +596,16 @@ class SessionTest {
         val callOrder = mutableListOf<String>()
         val runtime1 =
             object : JxrRuntime {
+                override val config = Session.DEFAULT_CONFIG
+
                 override fun destroy() {
                     callOrder.add("runtime1")
                 }
             }
         val runtime2 =
             object : JxrRuntime {
+                override val config = Session.DEFAULT_CONFIG
+
                 override fun destroy() {
                     callOrder.add("runtime2")
                 }
@@ -585,7 +647,7 @@ class SessionTest {
     }
 
     private fun createSession(coroutineDispatcher: CoroutineDispatcher = testDispatcher): Session {
-        val result = Session.create(activity, coroutineDispatcher)
+        val result = Session.create(context = activity, coroutineContext = coroutineDispatcher)
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
         return (result as SessionCreateSuccess).session
     }

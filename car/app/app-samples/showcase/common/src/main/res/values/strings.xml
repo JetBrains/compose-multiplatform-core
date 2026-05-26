@@ -295,6 +295,7 @@
 
     <!-- SectionedItemTemplateDemo -->
     <string name="sectioned_item_template_demo_title">Sectioned Item Template Demo</string>
+    <string name="condensed_item_demo_title">Condensed Item Demo</string>
 
   <!-- SectionedItemAlphaJumpDemo -->
   <string name="sectioned_item_alpha_jump_demo_title">Sectioned Item AlphaJump enabled Demo</string>
@@ -317,6 +318,12 @@
 
     <!-- ProgressBarDemo -->
     <string name="progress_bar_demo_title">Progress Bar Demo</string>
+
+    <!-- SectionHeaderDemo -->
+    <string name="section_header_demo_title">Section Header Demo</string>
+
+    <!-- SpotlightSectionDemo -->
+    <string name="spotlight_section_demo_title">Spotlight Section Demo</string>
 
   <!-- PaneTemplateDemoScreen -->
   <string name="pane_template_demo_title">Pane Template Demo</string>

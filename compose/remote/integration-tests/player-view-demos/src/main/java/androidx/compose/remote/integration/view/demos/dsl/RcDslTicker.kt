@@ -48,7 +48,7 @@ import androidx.compose.remote.creation.dsl.widthIn
 import androidx.compose.remote.creation.modifiers.RoundedRectShape
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.core.RemoteDocument
-import androidx.compose.remote.tooling.preview.RemoteDocPreview
+import androidx.compose.remote.tooling.preview.RemoteDocumentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import java.util.Random
@@ -65,7 +65,7 @@ private lateinit var fontSizes: RcTickerFontSizes
 @Preview
 @Suppress("RestrictedApiAndroidX")
 fun RcDslTickerPreview() {
-    RemoteDocPreview(RemoteDocument(dslTicker()))
+    RemoteDocumentPreview(RemoteDocument(dslTicker()))
 }
 
 /** Reimplementation of RcTicker using the new type-safe DSL. */
@@ -216,7 +216,7 @@ private fun RcScope.StockGraph() {
         val minValue = (arrayMin(stockValues) - 100f).flush()
         val xEnd = (w - margin).flush()
 
-        loop(margin, 1f, xEnd) { x ->
+        loop(margin, 1f.rf, xEnd) { x ->
             val pos = ((x - margin) / (w - margin * 2f)).flush()
             val v = ((arraySpline(stockValues, pos) - minValue) / (maxValue - minValue)).flush()
             val y = (lineBottom - v * (lineBottom - margin)).flush()
@@ -244,7 +244,7 @@ private fun RcScope.StockGraph() {
         save {
             val cut = 5f
             clipRect(margin + cut, margin + cut, xEnd - cut, lineBottom - cut)
-            drawPath(path)
+            drawPath(path.getPath())
 
             paint
                 .setShader(0)
@@ -252,7 +252,7 @@ private fun RcScope.StockGraph() {
                 .setStyle(RcPaintStyle.Stroke)
                 .setStrokeWidth(6f)
                 .commit()
-            drawPath(path)
+            drawPath(path.getPath())
         }
     }
 }

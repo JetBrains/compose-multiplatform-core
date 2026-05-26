@@ -206,6 +206,8 @@ object KotlinTypeNames {
     val U_SHORT = XClassName.get("kotlin", "UShort")
     val U_INT = XClassName.get("kotlin", "UInt")
     val U_LONG = XClassName.get("kotlin", "ULong")
+    val PAIR = XClassName.get("kotlin", "Pair")
+    val TRIPLE = XClassName.get("kotlin", "Triple")
 }
 
 object KotlinUnsignedMemberNames {
@@ -346,12 +348,18 @@ fun Function1TypeSpec(
 fun InvokeWithLambdaParameter(
     scope: CodeGenScope,
     functionName: XMemberName,
+    functionTypeArg: XTypeName? = null,
     argFormat: List<String>,
     args: List<Any>,
     continuationParamName: String? = null,
     lambdaSpec: LambdaSpec,
 ): XCodeBlock {
-    val functionCall = XCodeBlock.of("%M", functionName)
+    val functionCall =
+        if (functionTypeArg != null) {
+            XCodeBlock.of("%M<%T>", functionName, functionTypeArg)
+        } else {
+            XCodeBlock.of("%M", functionName)
+        }
     return InvokeWithLambdaParameter(
         scope,
         functionCall,

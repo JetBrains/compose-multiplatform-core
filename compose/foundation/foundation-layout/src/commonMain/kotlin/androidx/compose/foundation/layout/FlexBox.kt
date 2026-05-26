@@ -329,11 +329,7 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                 containerMainAxisSize = if (isHorizontal) layoutWidth else layoutHeight,
                 line = line,
                 mainAxisGap = mainAxisGap,
-                isMainAxisReverse =
-                    isMainAxisReversedForLayout(
-                        flexBoxConfig = flexBoxConfig,
-                        layoutDirection = layoutDirection,
-                    ),
+                isMainAxisReverse = isMainAxisReversedForLayout(flexBoxConfig = flexBoxConfig),
             )
 
             items.fastForEachUntil(line.startIndex, line.endIndex) { item ->
@@ -829,6 +825,8 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                 FlexJustifyContent.Center -> (remainingSpace) / 2
                 FlexJustifyContent.SpaceAround -> (spaceBetweenItems) / 2
                 FlexJustifyContent.SpaceEvenly -> spaceBetweenItems
+                FlexJustifyContent.SpaceBetween ->
+                    if (itemCount == 1 && isMainAxisReverse) remainingSpace else 0
                 else -> if (isMainAxisReverse) remainingSpace else 0
             }
 
@@ -898,19 +896,9 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         }
     }
 
-    private fun isMainAxisReversedForLayout(
-        flexBoxConfig: ResolvedFlexBoxConfig,
-        layoutDirection: LayoutDirection,
-    ): Boolean {
-        val isMainAxisReverse =
-            flexBoxConfig.direction == FlexDirection.RowReverse ||
-                flexBoxConfig.direction == FlexDirection.ColumnReverse
-
-        return when {
-            !flexBoxConfig.isHorizontal -> isMainAxisReverse
-            layoutDirection == LayoutDirection.Rtl -> !isMainAxisReverse // RTL flips row behavior
-            else -> isMainAxisReverse
-        }
+    private fun isMainAxisReversedForLayout(flexBoxConfig: ResolvedFlexBoxConfig): Boolean {
+        return flexBoxConfig.direction == FlexDirection.RowReverse ||
+            flexBoxConfig.direction == FlexDirection.ColumnReverse
     }
 
     // calculate cross axis size for line
@@ -1033,22 +1021,32 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         measurables: List<IntrinsicMeasurable>,
         height: Int,
     ): Int {
-        val resolvedFlexBoxConfig =
+        if (measurables.isEmpty()) return 0
+        val config =
             resolveFlexBoxConfig(flexBoxConfigState.value, this, Constraints(maxHeight = height))
-
-        return if (resolvedFlexBoxConfig.isHorizontal) {
-            intrinsicMainAxisSize(resolvedFlexBoxConfig, measurables, height) { h ->
-                minIntrinsicWidth(h)
+        return if (config.isHorizontal) {
+            // Main axis. Min = narrowest without clipping.
+            // Wrap: widest child (each child could be its own line).
+            // NoWrap: sum of all children (they must all fit on one line).
+            val gap = config.mainAxisGap()
+            if (config.isWrapEnabled) {
+                var maxSize = 0
+                measurables.fastForEach { maxSize = max(maxSize, it.minIntrinsicWidth(height)) }
+                maxSize
+            } else {
+                measurables.fastSumBy { it.minIntrinsicWidth(height) } +
+                    (measurables.size - 1).coerceAtLeast(0) * gap
             }
         } else {
+            // Cross axis. Simulate line breaks along the vertical main axis,
+            // then take the widest line.
             intrinsicCrossAxisSize(
-                resolvedFlexBoxConfig,
-                measurables,
-                height,
-                mainAxisSize = { h -> minIntrinsicHeight(h) },
-            ) { w ->
-                minIntrinsicWidth(w)
-            }
+                config = config,
+                measurables = measurables,
+                mainAxisAvailable = height,
+                mainAxisSize = { it.minIntrinsicHeight(Constraints.Infinity) },
+                crossAxisSize = { measurable, mainSize -> measurable.minIntrinsicWidth(mainSize) },
+            )
         }
     }
 
@@ -1056,21 +1054,29 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         measurables: List<IntrinsicMeasurable>,
         width: Int,
     ): Int {
-        val resolvedFlexBoxConfig =
+        if (measurables.isEmpty()) return 0
+        val config =
             resolveFlexBoxConfig(flexBoxConfigState.value, this, Constraints(maxWidth = width))
-
-        return if (resolvedFlexBoxConfig.isHorizontal) {
+        return if (config.isHorizontal) {
+            // Cross axis. Simulate line breaks along the horizontal main axis,
+            // then sum the tallest-child-per-line heights + cross gaps.
             intrinsicCrossAxisSize(
-                resolvedFlexBoxConfig,
-                measurables,
-                width,
-                mainAxisSize = { w -> minIntrinsicWidth(w) },
-            ) { h ->
-                minIntrinsicHeight(h)
-            }
+                config = config,
+                measurables = measurables,
+                mainAxisAvailable = width,
+                mainAxisSize = { it.minIntrinsicWidth(Constraints.Infinity) },
+                crossAxisSize = { measurable, mainSize -> measurable.minIntrinsicHeight(mainSize) },
+            )
         } else {
-            intrinsicMainAxisSize(resolvedFlexBoxConfig, measurables, width) { w ->
-                minIntrinsicHeight(w)
+            // Main axis.
+            val gap = config.mainAxisGap()
+            if (config.isWrapEnabled) {
+                var maxSize = 0
+                measurables.fastForEach { maxSize = max(maxSize, it.minIntrinsicHeight(width)) }
+                maxSize
+            } else {
+                measurables.fastSumBy { it.minIntrinsicHeight(width) } +
+                    (measurables.size - 1).coerceAtLeast(0) * gap
             }
         }
     }
@@ -1079,22 +1085,23 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         measurables: List<IntrinsicMeasurable>,
         height: Int,
     ): Int {
-        val resolvedFlexBoxConfig =
+        if (measurables.isEmpty()) return 0
+        val config =
             resolveFlexBoxConfig(flexBoxConfigState.value, this, Constraints(maxHeight = height))
-
-        return if (resolvedFlexBoxConfig.isHorizontal) {
-            intrinsicMainAxisSize(resolvedFlexBoxConfig, measurables, height) { h ->
-                maxIntrinsicWidth(h)
-            }
+        return if (config.isHorizontal) {
+            // Main axis. Max = preferred unwrapped size, regardless of wrap setting.
+            val gap = config.mainAxisGap()
+            measurables.fastSumBy { it.maxIntrinsicWidth(height) } +
+                (measurables.size - 1).coerceAtLeast(0) * gap
         } else {
+            // Cross axis.
             intrinsicCrossAxisSize(
-                resolvedFlexBoxConfig,
-                measurables,
-                height,
-                mainAxisSize = { h -> maxIntrinsicHeight(h) },
-            ) { w ->
-                maxIntrinsicWidth(w)
-            }
+                config = config,
+                measurables = measurables,
+                mainAxisAvailable = height,
+                mainAxisSize = { it.maxIntrinsicHeight(Constraints.Infinity) },
+                crossAxisSize = { measurable, mainSize -> measurable.maxIntrinsicWidth(mainSize) },
+            )
         }
     }
 
@@ -1102,23 +1109,80 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         measurables: List<IntrinsicMeasurable>,
         width: Int,
     ): Int {
-        val resolvedFlexBoxConfig =
+        if (measurables.isEmpty()) return 0
+        val config =
             resolveFlexBoxConfig(flexBoxConfigState.value, this, Constraints(maxWidth = width))
-
-        return if (resolvedFlexBoxConfig.isHorizontal) {
+        return if (config.isHorizontal) {
+            // Cross axis.
             intrinsicCrossAxisSize(
-                resolvedFlexBoxConfig,
-                measurables,
-                width,
-                mainAxisSize = { w -> maxIntrinsicWidth(w) },
-            ) { h ->
-                maxIntrinsicHeight(h)
-            }
+                config = config,
+                measurables = measurables,
+                mainAxisAvailable = width,
+                mainAxisSize = { it.maxIntrinsicWidth(Constraints.Infinity) },
+                crossAxisSize = { measurable, mainSize -> measurable.maxIntrinsicHeight(mainSize) },
+            )
         } else {
-            intrinsicMainAxisSize(resolvedFlexBoxConfig, measurables, width) { w ->
-                maxIntrinsicHeight(w)
+            // Main axis. Max = preferred unwrapped size.
+            val gap = config.mainAxisGap()
+            measurables.fastSumBy { it.maxIntrinsicHeight(width) } +
+                (measurables.size - 1).coerceAtLeast(0) * gap
+        }
+    }
+
+    /**
+     * Simulates line-breaking along the main axis and sums up per-line cross-axis sizes to compute
+     * the total cross-axis intrinsic size.
+     *
+     * This is an approximation: child cross sizes are queried at their unconstrained main-axis size
+     * rather than their post-flex-resolution size, since the full flex algorithm cannot run during
+     * intrinsic measurement.
+     */
+    private inline fun intrinsicCrossAxisSize(
+        config: ResolvedFlexBoxConfig,
+        measurables: List<IntrinsicMeasurable>,
+        mainAxisAvailable: Int,
+        mainAxisSize: (IntrinsicMeasurable) -> Int,
+        crossAxisSize: (IntrinsicMeasurable, Int) -> Int,
+    ): Int {
+        val mainAxisGap = config.mainAxisGap()
+        val crossAxisGap = config.crossAxisGap()
+
+        var currentLineMainAxisSize = 0
+        var currentLineCrossAxisSize = 0
+        var totalCrossAxisSize = 0
+        var isFirstItemInLine = true
+
+        measurables.fastForEach { measurable ->
+            val itemMainAxisSize = mainAxisSize(measurable)
+            val itemCrossAxisSize = crossAxisSize(measurable, itemMainAxisSize)
+
+            // Would adding this item (plus the gap before it) overflow the line?
+            val projectedLineSize =
+                if (isFirstItemInLine) {
+                    itemMainAxisSize
+                } else {
+                    currentLineMainAxisSize + mainAxisGap + itemMainAxisSize
+                }
+
+            if (
+                config.isWrapEnabled && !isFirstItemInLine && projectedLineSize > mainAxisAvailable
+            ) {
+                // Finalize current line and start a new one.
+                totalCrossAxisSize += currentLineCrossAxisSize + crossAxisGap
+                currentLineMainAxisSize = itemMainAxisSize
+                currentLineCrossAxisSize = itemCrossAxisSize
+                // remains false for the next iteration, which will be the second item of this new
+                // line
+            } else {
+                currentLineMainAxisSize = projectedLineSize
+                currentLineCrossAxisSize = max(currentLineCrossAxisSize, itemCrossAxisSize)
+                isFirstItemInLine = false
             }
         }
+
+        // Add the last line (no trailing crossAxisGap).
+        totalCrossAxisSize += currentLineCrossAxisSize
+        return totalCrossAxisSize
     }
 
     /** Resolves and snapshots the container configuration. */
@@ -1131,63 +1195,6 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         with(flexBoxConfig) { resolvedFlexBoxConfig.configure() }
         return resolvedFlexBoxConfig
     }
-}
-
-private inline fun intrinsicMainAxisSize(
-    flexBoxConfig: ResolvedFlexBoxConfig,
-    measurables: List<IntrinsicMeasurable>,
-    crossAxisAvailable: Int,
-    mainAxisSize: IntrinsicMeasurable.(Int) -> Int,
-): Int {
-    if (measurables.isEmpty()) return 0
-
-    val mainAxisGap = flexBoxConfig.mainAxisGap()
-
-    return if (!flexBoxConfig.isWrapEnabled) {
-        measurables.fastSumBy { it.mainAxisSize(crossAxisAvailable) } +
-            (measurables.size - 1).coerceAtLeast(0) * mainAxisGap
-    } else {
-        var maxSize = 0
-        measurables.fastForEach { maxSize = max(maxSize, it.mainAxisSize(crossAxisAvailable)) }
-        maxSize
-    }
-}
-
-private inline fun intrinsicCrossAxisSize(
-    flexBoxConfig: ResolvedFlexBoxConfig,
-    measurables: List<IntrinsicMeasurable>,
-    mainAxisAvailable: Int,
-    mainAxisSize: IntrinsicMeasurable.(Int) -> Int,
-    crossAxisSize: IntrinsicMeasurable.(Int) -> Int,
-): Int {
-    if (measurables.isEmpty()) return 0
-
-    val mainAxisGap = flexBoxConfig.mainAxisGap()
-    val crossAxisGap = flexBoxConfig.crossAxisGap()
-
-    var currentLineMainAxisSize = 0
-    var currentLineCrossAxisSize = 0
-    var totalCrossAxisSize = 0
-
-    measurables.fastForEach { measurable ->
-        val itemMainAxisSize = measurable.mainAxisSize(Constraints.Infinity)
-        val itemCrossAxisSize = measurable.crossAxisSize(itemMainAxisSize)
-
-        if (
-            flexBoxConfig.isWrapEnabled &&
-                currentLineMainAxisSize != 0 &&
-                currentLineMainAxisSize + itemMainAxisSize > mainAxisAvailable
-        ) {
-            totalCrossAxisSize += currentLineCrossAxisSize + crossAxisGap
-            currentLineMainAxisSize = itemMainAxisSize + mainAxisGap
-            currentLineCrossAxisSize = itemCrossAxisSize
-        } else {
-            currentLineMainAxisSize += itemMainAxisSize + mainAxisGap
-            currentLineCrossAxisSize = max(currentLineCrossAxisSize, itemCrossAxisSize)
-        }
-    }
-    totalCrossAxisSize += currentLineCrossAxisSize
-    return totalCrossAxisSize
 }
 
 /**
@@ -1725,12 +1732,31 @@ fun interface FlexBoxConfig {
      */
     fun FlexBoxConfigScope.configure()
 
+    /**
+     * Merges this config with another. Configs further "to the right" will override properties to
+     * the left of them, on a per-property basis.
+     *
+     * @sample androidx.compose.foundation.layout.samples.FlexBoxConfigCombineSample
+     * @param other the config to merge into the receiver.
+     */
+    infix fun then(other: FlexBoxConfig): FlexBoxConfig =
+        when {
+            (other === Companion) -> this
+            other is CombinedFlexBoxConfig -> CombinedFlexBoxConfig(this, *other.configs)
+            else -> CombinedFlexBoxConfig(this, other)
+        }
+
     companion object : FlexBoxConfig {
+
         /**
          * A default configuration that lays out items in a horizontal row without wrapping, with
+         *
          * items aligned to the start on both axes and no gaps.
          */
         override fun FlexBoxConfigScope.configure() {}
+
+        /** Identity elision: merging the identity with any config yields that config. */
+        override fun then(other: FlexBoxConfig): FlexBoxConfig = other
     }
 }
 
@@ -1900,11 +1926,11 @@ sealed interface FlexBoxConfigScope : Density {
      * This is a convenience function for uniform spacing across both axes.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxGapSample
-     * @param value The gap size to apply to both row and column gaps.
+     * @param all The gap size to apply to both row and column gaps.
      * @see rowGap
      * @see columnGap
      */
-    fun gap(value: Dp)
+    fun gap(all: Dp)
 
     /**
      * Sets [rowGap] and [columnGap] to different values.
@@ -1973,9 +1999,9 @@ internal class ResolvedFlexBoxConfig : FlexBoxConfigScope {
         this.alignItems = value
     }
 
-    override fun gap(value: Dp) {
-        rowGap = value
-        columnGap = value
+    override fun gap(all: Dp) {
+        rowGap = all
+        columnGap = all
     }
 
     override fun alignItems(alignmentLine: AlignmentLine) {
@@ -2105,6 +2131,27 @@ fun interface FlexConfig {
      * system during the measurement phase, not during composition.
      */
     fun FlexConfigScope.configure()
+
+    /**
+     * Merges this config with another. Configs further "to the right" will override properties to
+     * the left of them, on a per-property basis.
+     *
+     * @sample androidx.compose.foundation.layout.samples.FlexConfigCombineSample
+     * @param other the config to merge into the receiver.
+     */
+    infix fun then(other: FlexConfig): FlexConfig =
+        when {
+            (other === Companion) -> this
+            other is CombinedFlexConfig -> CombinedFlexConfig(this, *other.configs)
+            else -> CombinedFlexConfig(this, other)
+        }
+
+    companion object : FlexConfig {
+        override fun FlexConfigScope.configure() {}
+
+        /** Merging the identity with any config yields that config. */
+        override fun then(other: FlexConfig): FlexConfig = other
+    }
 }
 
 /**
@@ -2455,6 +2502,179 @@ private class FlexLine {
     var crossAxisSize: Int = 0
     var crossStart: Int = 0
     var maxAboveBaseline: Int = 0
+}
+
+/**
+ * Combine two [FlexBoxConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ */
+@ExperimentalFlexBoxApi
+fun FlexBoxConfig(first: FlexBoxConfig, second: FlexBoxConfig): FlexBoxConfig = first then second
+
+/**
+ * Combine three [FlexBoxConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ */
+@ExperimentalFlexBoxApi
+fun FlexBoxConfig(
+    first: FlexBoxConfig,
+    second: FlexBoxConfig,
+    third: FlexBoxConfig,
+): FlexBoxConfig =
+    when {
+        first === FlexBoxConfig -> FlexBoxConfig(second, third)
+        second === FlexBoxConfig -> FlexBoxConfig(first, third)
+        third === FlexBoxConfig -> FlexBoxConfig(first, second)
+        first is CombinedFlexBoxConfig &&
+            second is CombinedFlexBoxConfig &&
+            third is CombinedFlexBoxConfig ->
+            FlexBoxConfig(*first.configs, *second.configs, *third.configs)
+        first is CombinedFlexBoxConfig && second is CombinedFlexBoxConfig ->
+            FlexBoxConfig(*first.configs, *second.configs, third)
+        first is CombinedFlexBoxConfig && third is CombinedFlexBoxConfig ->
+            FlexBoxConfig(*first.configs, second, *third.configs)
+        second is CombinedFlexBoxConfig && third is CombinedFlexBoxConfig ->
+            FlexBoxConfig(first, *second.configs, *third.configs)
+        first is CombinedFlexBoxConfig -> FlexBoxConfig(*first.configs, second, third)
+        second is CombinedFlexBoxConfig -> FlexBoxConfig(first, *second.configs, third)
+        third is CombinedFlexBoxConfig -> FlexBoxConfig(first, second, *third.configs)
+        else -> CombinedFlexBoxConfig(first, second, third)
+    }
+
+/**
+ * Combine multiple [FlexBoxConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ *
+ * @sample androidx.compose.foundation.layout.samples.FlexBoxConfigCombineSample
+ */
+@ExperimentalFlexBoxApi
+fun FlexBoxConfig(vararg configs: FlexBoxConfig): FlexBoxConfig =
+    if (configs.isEmpty()) {
+        FlexBoxConfig
+    } else if (configs.any { it === FlexBoxConfig }) {
+        val count = configs.count { it !== FlexBoxConfig }
+        when (count) {
+            0 -> FlexBoxConfig
+            1 -> configs.first { it !== FlexBoxConfig }
+            else -> {
+                val filtered = arrayOfNulls<FlexBoxConfig>(count)
+                var cursor = 0
+                configs.forEach { config ->
+                    if (config !== FlexBoxConfig) {
+                        filtered[cursor++] = config
+                    }
+                }
+                @Suppress("UNCHECKED_CAST")
+                CombinedFlexBoxConfig(*(filtered as Array<FlexBoxConfig>))
+            }
+        }
+    } else {
+        CombinedFlexBoxConfig(*configs)
+    }
+
+/**
+ * Internal representation for a composition of two or more [FlexBoxConfig] objects.
+ *
+ * This class holds a **flat** array of configs. The [FlexBoxConfig] factory functions ensure that
+ * [CombinedFlexBoxConfig] instances are never nested — if a factory receives a
+ * [CombinedFlexBoxConfig] as input, its [configs] array is spread into the new result. This
+ * guarantees that [configure] is always a single-pass flat iteration regardless of how many
+ * composition steps produced this instance.
+ *
+ * @property configs the flattened array of configs to apply in order. Later entries override
+ *   earlier entries on a per-property basis.
+ */
+@ExperimentalFlexBoxApi
+internal class CombinedFlexBoxConfig(vararg val configs: FlexBoxConfig) : FlexBoxConfig {
+    override fun FlexBoxConfigScope.configure() {
+        configs.forEach { config -> with(config) { configure() } }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CombinedFlexBoxConfig) return false
+        return configs.contentEquals(other.configs)
+    }
+
+    override fun hashCode(): Int = configs.contentHashCode()
+}
+
+/**
+ * Combine two [FlexConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ */
+@ExperimentalFlexBoxApi
+fun FlexConfig(first: FlexConfig, second: FlexConfig): FlexConfig = first then second
+
+/**
+ * Combine three [FlexConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ */
+@ExperimentalFlexBoxApi
+fun FlexConfig(first: FlexConfig, second: FlexConfig, third: FlexConfig): FlexConfig =
+    when {
+        first === FlexConfig -> FlexConfig(second, third)
+        second === FlexConfig -> FlexConfig(first, third)
+        third === FlexConfig -> FlexConfig(first, second)
+        first is CombinedFlexConfig &&
+            second is CombinedFlexConfig &&
+            third is CombinedFlexConfig ->
+            FlexConfig(*first.configs, *second.configs, *third.configs)
+        first is CombinedFlexConfig && second is CombinedFlexConfig ->
+            FlexConfig(*first.configs, *second.configs, third)
+        first is CombinedFlexConfig && third is CombinedFlexConfig ->
+            FlexConfig(*first.configs, second, *third.configs)
+        second is CombinedFlexConfig && third is CombinedFlexConfig ->
+            FlexConfig(first, *second.configs, *third.configs)
+        first is CombinedFlexConfig -> FlexConfig(*first.configs, second, third)
+        second is CombinedFlexConfig -> FlexConfig(first, *second.configs, third)
+        third is CombinedFlexConfig -> FlexConfig(first, second, *third.configs)
+        else -> CombinedFlexConfig(first, second, third)
+    }
+
+/**
+ * Combine multiple [FlexConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ *
+ * @sample androidx.compose.foundation.layout.samples.FlexConfigCombineSample
+ */
+@ExperimentalFlexBoxApi
+fun FlexConfig(vararg configs: FlexConfig): FlexConfig =
+    if (configs.isEmpty()) {
+        FlexConfig
+    } else if (configs.any { it === FlexConfig }) {
+        val count = configs.count { it !== FlexConfig }
+        when (count) {
+            0 -> FlexConfig
+            1 -> configs.first { it !== FlexConfig }
+            else -> {
+                val filtered = arrayOfNulls<FlexConfig>(count)
+                var cursor = 0
+                configs.forEach { config ->
+                    if (config !== FlexConfig) {
+                        filtered[cursor++] = config
+                    }
+                }
+                @Suppress("UNCHECKED_CAST") CombinedFlexConfig(*(filtered as Array<FlexConfig>))
+            }
+        }
+    } else {
+        CombinedFlexConfig(*configs)
+    }
+
+@OptIn(ExperimentalFlexBoxApi::class)
+internal class CombinedFlexConfig(vararg val configs: FlexConfig) : FlexConfig {
+    override fun FlexConfigScope.configure() {
+        configs.forEach { config -> with(config) { configure() } }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CombinedFlexConfig) return false
+        return configs.contentEquals(other.configs)
+    }
+
+    override fun hashCode(): Int = configs.contentHashCode()
 }
 
 /**

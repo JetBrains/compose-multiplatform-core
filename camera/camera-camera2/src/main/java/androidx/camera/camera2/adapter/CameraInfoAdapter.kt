@@ -42,6 +42,7 @@ import androidx.camera.camera2.impl.CameraPipeCameraProperties
 import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.impl.DeviceInfoLogger
 import androidx.camera.camera2.impl.FocusMeteringControl
+import androidx.camera.camera2.impl.NightModeIndicatorMonitor
 import androidx.camera.camera2.internal.IntrinsicZoomCalculator
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -57,6 +58,7 @@ import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPrivateRepr
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsTorchStrength
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.UnsafeWrapper
+import androidx.camera.common.unwrapAs
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
@@ -79,9 +81,9 @@ import androidx.camera.core.internal.StreamSpecsCalculator
 import androidx.core.util.Consumer
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import java.lang.Class
 import java.util.concurrent.Executor
 import javax.inject.Inject
-import kotlin.reflect.KClass
 
 /** Adapt the [CameraInfoInternal] interface to [CameraPipe]. */
 @CameraScope
@@ -92,6 +94,7 @@ constructor(
     private val cameraConfig: CameraConfig,
     private val cameraStateAdapter: CameraStateAdapter,
     private val cameraControlStateAdapter: CameraControlStateAdapter,
+    private val nightModeIndicatorMonitor: NightModeIndicatorMonitor,
     private val cameraCallbackMap: CameraCallbackMap,
     private val focusMeteringControl: FocusMeteringControl,
     private val cameraQuirks: CameraQuirks,
@@ -147,7 +150,7 @@ constructor(
     }
 
     override fun getCameraCharacteristics(): CameraCharacteristics =
-        cameraProperties.metadata.unwrapAs(CameraCharacteristics::class)!!
+        cameraProperties.metadata.unwrapAs<CameraCharacteristics>()!!
 
     override fun getPhysicalCameraCharacteristics(physicalCameraId: String): Any? {
         val cameraId = CameraId.fromCamera2Id(physicalCameraId)
@@ -156,7 +159,7 @@ constructor(
         }
         return cameraProperties.metadata
             .awaitPhysicalMetadata(cameraId)
-            .unwrapAs(CameraCharacteristics::class)
+            .unwrapAs<CameraCharacteristics>()
     }
 
     @androidx.annotation.OptIn(ExperimentalLensFacing::class)
@@ -214,6 +217,11 @@ constructor(
     override fun getLowLightBoostState(): LiveData<Int> =
         cameraControlStateAdapter.lowLightBoostState
 
+    override fun isNightModeIndicatorSupported(): Boolean = nightModeIndicatorMonitor.isSupported
+
+    override fun getNightModeIndicator(): LiveData<Int> =
+        nightModeIndicatorMonitor.nightModeIndicatorLiveData
+
     @SuppressLint("UnsafeOptInUsageError")
     override fun getExposureState(): ExposureState = cameraControlStateAdapter.exposureState
 
@@ -270,11 +278,11 @@ constructor(
 
     @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalCamera2Interop::class)
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            Camera2CameraInfo::class -> camera2CameraInfo as T
-            CameraProperties::class -> cameraProperties as T
-            CameraMetadata::class -> cameraProperties.metadata as T
+            Camera2CameraInfo::class.java -> camera2CameraInfo as T
+            CameraProperties::class.java -> cameraProperties as T
+            CameraMetadata::class.java -> cameraProperties.metadata as T
             else -> cameraProperties.metadata.unwrapAs(type)
         }
 
@@ -409,7 +417,9 @@ constructor(
     }
 
     public companion object {
-        public fun <T : Any> CameraInfo.unwrapAs(type: KClass<T>): T? =
+        public inline fun <reified T : Any> CameraInfo.unwrapAs(): T? = unwrapAs(T::class.java)
+
+        public fun <T : Any> CameraInfo.unwrapAs(type: Class<T>): T? =
             when (this) {
                 is UnsafeWrapper -> this.unwrapAs(type)
                 is CameraInfoInternal -> {
@@ -423,6 +433,6 @@ constructor(
             }
 
         public val CameraInfo.cameraId: CameraId?
-            get() = this.unwrapAs(CameraMetadata::class)?.camera
+            get() = this.unwrapAs<CameraMetadata>()?.camera
     }
 }

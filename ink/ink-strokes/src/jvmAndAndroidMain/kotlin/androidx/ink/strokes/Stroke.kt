@@ -18,7 +18,7 @@ package androidx.ink.strokes
 
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.Brush
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.geometry.AffineTransform
 import androidx.ink.geometry.PartitionedMesh
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
@@ -34,7 +34,6 @@ import androidx.ink.nativeloader.UsedByNative
  * [androidx.ink.authoring.InProgressStrokesView] or [InProgressStroke], which will ultimately
  * return a [Stroke] when input is completed.
  */
-@OptIn(ExperimentalInkCustomBrushApi::class)
 @Suppress("NotCloseable") // Finalize is only used to free the native peer.
 public class Stroke
 private constructor(
@@ -160,6 +159,47 @@ private constructor(
         return "Stroke(brush=$brush, inputs=$inputs, shape=$shape)"
     }
 
+    /**
+     * Erases the [eraserShape] from this stroke and returns the remaining fragments.
+     *
+     * Each resulting stroke retains the original [inputs] and [brush], but has a newly computed
+     * [shape] representing the portion remaining after erasure.
+     *
+     * @param eraserShape A [PartitionedMesh] representing the geometric region to be erased.
+     * @param eraserTransform The [AffineTransform] from eraser coordinates to world coordinates.
+     * @param strokeTransform The [AffineTransform] from stroke coordinates to world coordinates.
+     * @return The set of [Stroke] fragments remaining after the erasure.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    public fun partialErase(
+        eraserShape: PartitionedMesh,
+        eraserTransform: AffineTransform,
+        strokeTransform: AffineTransform,
+    ): Set<Stroke> {
+        val ptrs =
+            StrokeNative.partialErase(
+                nativePointer,
+                eraserShape.nativePointer,
+                eraserTransform.m00,
+                eraserTransform.m10,
+                eraserTransform.m20,
+                eraserTransform.m01,
+                eraserTransform.m11,
+                eraserTransform.m21,
+                strokeTransform.m00,
+                strokeTransform.m10,
+                strokeTransform.m20,
+                strokeTransform.m01,
+                strokeTransform.m11,
+                strokeTransform.m21,
+            )
+        val resultSet = mutableSetOf<Stroke>()
+        for (ptr in ptrs) {
+            resultSet.add(wrapNative(ptr, brush))
+        }
+        return resultSet
+    }
+
     public companion object {
         /** Construct a [Stroke] from an unowned heap-allocated native pointer to a C++ `Stroke`. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -174,9 +214,9 @@ private constructor(
             return Stroke(
                 unownedNativePointer,
                 brush,
-                ImmutableStrokeInputBatch.wrapNative(
+                ImmutableStrokeInputBatch.wrapNative {
                     StrokeNative.newShallowCopyOfInputs(unownedNativePointer)
-                ),
+                },
                 shape,
             )
         }
@@ -219,4 +259,22 @@ private object StrokeNative {
 
     /** Deletes the `ink::Stroke` given by the [nativePointer]. */
     @UsedByNative external fun free(nativePointer: Long)
+
+    @UsedByNative
+    external fun partialErase(
+        targetStrokePointer: Long,
+        eraserShapePointer: Long,
+        eraserA: Float,
+        eraserB: Float,
+        eraserC: Float,
+        eraserD: Float,
+        eraserE: Float,
+        eraserF: Float,
+        strokeA: Float,
+        strokeB: Float,
+        strokeC: Float,
+        strokeD: Float,
+        strokeE: Float,
+        strokeF: Float,
+    ): LongArray
 }

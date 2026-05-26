@@ -33,7 +33,6 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
-@OptIn(ExperimentalCustomMeshApi::class)
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class MeshBufferTest {
@@ -46,23 +45,18 @@ class MeshBufferTest {
     @Before
     fun setUp() = runBlocking {
         val testDispatcher = StandardTestDispatcher()
-        val result = Session.create(activity, testDispatcher)
+        val result = Session.create(context = activity, coroutineContext = testDispatcher)
 
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
 
         session = (result as SessionCreateSuccess).session
 
         vertexLayout =
-            VertexLayout(
-                listOf(
-                    VertexAttributeDescriptor(
-                        VertexAttribute.POSITION,
-                        VertexAttributeType.FLOAT3,
-                        0,
-                    ),
-                    VertexAttributeDescriptor(VertexAttribute.NORMAL, VertexAttributeType.FLOAT3, 1),
-                )
-            )
+            VertexLayout.Builder()
+                .addAttribute(VertexAttribute.POSITION, VertexAttributeType.FLOAT3)
+                .startNextBuffer()
+                .addAttribute(VertexAttribute.NORMAL, VertexAttributeType.FLOAT3)
+                .build()
     }
 
     @Test
@@ -70,7 +64,6 @@ class MeshBufferTest {
         val vertexBuffer = ByteBuffer.allocateDirect(12).order(ByteOrder.nativeOrder())
         val indexBuffer = ByteBuffer.allocateDirect(12).order(ByteOrder.nativeOrder())
 
-        // vertexData size is 1, but layout uses bufferIndex 1 (max index is 1, so size should be 2)
         val exception =
             assertThrows(IllegalArgumentException::class.java) {
                 MeshBuffer.create(
@@ -82,7 +75,7 @@ class MeshBufferTest {
             }
         assertThat(exception)
             .hasMessageThat()
-            .contains("vertexData must contain a buffer for each buffer index")
+            .contains("vertexData size must match the number of buffers in VertexLayout")
     }
 
     @Test

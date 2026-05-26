@@ -56,6 +56,7 @@ package androidx.camera.core {
     method public default int getLensFacing();
     method public default androidx.lifecycle.LiveData<java.lang.Integer!> getLowLightBoostState();
     method @IntRange(from=0) public default int getMaxTorchStrengthLevel();
+    method public default androidx.lifecycle.LiveData<java.lang.Integer!> getNightModeIndicator();
     method public default java.util.Set<androidx.camera.core.CameraInfo!> getPhysicalCameraInfos();
     method public int getSensorRotationDegrees();
     method public int getSensorRotationDegrees(int);
@@ -68,6 +69,7 @@ package androidx.camera.core {
     method public default boolean isFocusMeteringSupported(androidx.camera.core.FocusMeteringAction);
     method public default boolean isLogicalMultiCameraSupported();
     method public default boolean isLowLightBoostSupported();
+    method public default boolean isNightModeIndicatorSupported();
     method public default boolean isSessionConfigSupported(androidx.camera.core.SessionConfig);
     method public default boolean isTorchStrengthSupported();
     method @SuppressCompatibility @androidx.camera.core.ExperimentalZeroShutterLag public default boolean isZslSupported();
@@ -329,6 +331,7 @@ package androidx.camera.core {
     method public void clearAnalyzer();
     method @SuppressCompatibility @androidx.camera.core.ExperimentalUseCaseApi public java.util.concurrent.Executor? getBackgroundExecutor();
     method public int getBackpressureStrategy();
+    method public static androidx.camera.core.ImageAnalysisCapabilities getImageAnalysisCapabilities(androidx.camera.core.CameraInfo);
     method public int getImageQueueDepth();
     method public int getOutputImageFormat();
     method public androidx.camera.core.ResolutionInfo? getResolutionInfo();
@@ -341,6 +344,7 @@ package androidx.camera.core {
     field public static final int COORDINATE_SYSTEM_SENSOR = 2; // 0x2
     field public static final int COORDINATE_SYSTEM_VIEW_REFERENCED = 1; // 0x1
     field public static final int OUTPUT_IMAGE_FORMAT_NV21 = 3; // 0x3
+    field public static final int OUTPUT_IMAGE_FORMAT_PRIVATE = 4; // 0x4
     field public static final int OUTPUT_IMAGE_FORMAT_RGBA_8888 = 2; // 0x2
     field public static final int OUTPUT_IMAGE_FORMAT_YUV_420_888 = 1; // 0x1
     field public static final int STRATEGY_BLOCK_PRODUCER = 1; // 0x1
@@ -367,6 +371,10 @@ package androidx.camera.core {
     method public androidx.camera.core.ImageAnalysis.Builder setTargetName(String);
     method @Deprecated public androidx.camera.core.ImageAnalysis.Builder setTargetResolution(android.util.Size);
     method public androidx.camera.core.ImageAnalysis.Builder setTargetRotation(int);
+  }
+
+  public interface ImageAnalysisCapabilities {
+    method public boolean isOutputFormatSupported(int);
   }
 
   public final class ImageCapture extends androidx.camera.core.UseCase {
@@ -529,6 +537,7 @@ package androidx.camera.core {
     method public void close();
     method public android.graphics.Rect getCropRect();
     method public int getFormat();
+    method @RequiresApi(android.os.Build.VERSION_CODES.P) public default android.hardware.HardwareBuffer? getHardwareBuffer();
     method public int getHeight();
     method @SuppressCompatibility @androidx.camera.core.ExperimentalGetImage public android.media.Image? getImage();
     method public androidx.camera.core.ImageInfo getImageInfo();
@@ -570,6 +579,12 @@ package androidx.camera.core {
     field public static final int MIRROR_MODE_OFF = 0; // 0x0
     field public static final int MIRROR_MODE_ON = 1; // 0x1
     field public static final int MIRROR_MODE_ON_FRONT_ONLY = 2; // 0x2
+  }
+
+  public final class NightModeIndicator {
+    field public static final int NOT_RECOMMENDED = 1; // 0x1
+    field public static final int RECOMMENDED = 2; // 0x2
+    field public static final int UNKNOWN = 0; // 0x0
   }
 
   public final class Preview extends androidx.camera.core.UseCase {

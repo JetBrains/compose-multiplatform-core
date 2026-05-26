@@ -69,7 +69,9 @@ class InteractionTest {
         activityController.create().start().resume()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
-        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session.configure(
+            Config.Builder().setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL).build()
+        )
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -80,7 +82,7 @@ class InteractionTest {
             val devicePose = Pose()
             val expectedHitPose = Pose(Vector3.Forward, Quaternion.Identity)
             val testPlane = TestPlane(PlaneType.VERTICAL, PlaneLabel.WALL)
-            arCoreTestRule.device.pose = devicePose
+            arCoreTestRule.deviceTester.pose = devicePose
             arCoreTestRule.addTrackables(testPlane)
             testPlane.centerPose = expectedHitPose
             advanceUntilIdle()
@@ -109,7 +111,7 @@ class InteractionTest {
 
     @Test
     fun hitTest_planeTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(planeTracking = PlaneTrackingMode.DISABLED))
+        session.configure(Config.Builder().setPlaneTracking(PlaneTrackingMode.DISABLED).build())
         runTest(testDispatcher) {
             assertFailsWith<IllegalStateException> { hitTest(session, Ray()) }
         }

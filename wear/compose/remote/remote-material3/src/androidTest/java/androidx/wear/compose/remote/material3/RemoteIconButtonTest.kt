@@ -18,13 +18,9 @@ package androidx.wear.compose.remote.material3
 
 import android.content.Context
 import androidx.collection.buildObjectIntMap
-import androidx.compose.remote.creation.compose.action.HostAction
+import androidx.compose.remote.creation.compose.action.hostAction
 import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
-import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteBox
-import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
@@ -32,18 +28,21 @@ import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.remote.material3.previews.RemoteIconButtonEnabled
 import androidx.wear.compose.remote.material3.previews.RemoteIconButtonOutlined
 import androidx.wear.compose.remote.material3.previews.RemoteIconButtonTonal
+import androidx.wear.compose.remote.material3.util.ComponentContainer
+import androidx.wear.compose.remote.material3.util.SCREENSHOT_GOLDEN_DIRECTORY
+import androidx.wear.compose.remote.material3.util.TestImageVectors
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,7 +54,10 @@ import org.junit.runners.JUnit4
 class RemoteIconButtonTest {
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val creationDisplayInfo = createCreationDisplayInfo(context, Size(500f, 500f))
@@ -63,31 +65,27 @@ class RemoteIconButtonTest {
     @Test
     fun remote_icon_button_enabled() {
         remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            remoteCreationDisplayInfo = creationDisplayInfo,
         ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteIconButtonEnabled() }
+            ComponentContainer { RemoteIconButtonEnabled() }
         }
     }
 
     @Test
     fun remote_icon_button_rtl() {
         remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-            layoutDirection = LayoutDirection.Rtl,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+            creationComposableWrapper = ComposableWrappers.rtl,
         ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteIconButtonEnabled() }
+            ComponentContainer { RemoteIconButtonEnabled() }
         }
     }
 
     @Test
     fun remote_icon_button_disabled() {
-        remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-        ) {
-            Center(RemoteModifier.fillMaxSize()) {
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer {
                 RemoteIconButton(testAction, enabled = RemoteBoolean(false)) {
                     RemoteIcon(
                         imageVector = TestImageVectors.VolumeUp,
@@ -101,21 +99,15 @@ class RemoteIconButtonTest {
 
     @Test
     fun remote_icon_button_tonal_enabled() {
-        remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-        ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteIconButtonTonal() }
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer { RemoteIconButtonTonal() }
         }
     }
 
     @Test
     fun remote_icon_button_tonal_disabled() {
-        remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-        ) {
-            Center(RemoteModifier.fillMaxSize()) {
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer {
                 RemoteIconButton(
                     testAction,
                     enabled = RemoteBoolean(false),
@@ -133,21 +125,15 @@ class RemoteIconButtonTest {
 
     @Test
     fun remote_icon_button_outline_enabled() {
-        remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-        ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteIconButtonOutlined() }
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer { RemoteIconButtonOutlined() }
         }
     }
 
     @Test
     fun remote_icon_button_outline_disabled() {
-        remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-        ) {
-            Center(RemoteModifier.fillMaxSize()) {
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer {
                 RemoteIconButton(
                     testAction,
                     border = 1.rdp,
@@ -202,19 +188,16 @@ class RemoteIconButtonTest {
         }
         remoteComposeTestRule.runScreenshotTest(
             profile = RcPlatformProfiles.WEAR_WIDGETS,
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-            colorOverrides = colorOverrides,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+            update = { player ->
+                colorOverrides.forEach { name, colorInt ->
+                    player.setUserLocalColor(name, colorInt)
+                }
+            },
         ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteIconButtonEnabled() }
+            ComponentContainer { RemoteIconButtonEnabled() }
         }
     }
 }
 
-@Composable
-@RemoteComposable
-private fun Center(modifier: RemoteModifier, content: @Composable @RemoteComposable () -> Unit) {
-    RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
-}
-
-private val testAction = HostAction("testAction".rs, 1.rf)
+private val testAction = hostAction("testAction".rs, 1.rf)

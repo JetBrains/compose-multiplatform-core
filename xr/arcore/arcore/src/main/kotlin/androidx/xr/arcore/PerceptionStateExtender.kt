@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:JvmName("PerceptionStateExt")
+
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
@@ -111,6 +113,7 @@ public class PerceptionStateExtender : StateExtender {
                 xrResourcesManager.userFace?.state?.value,
                 xrResourcesManager.leftEye?.state?.value,
                 xrResourcesManager.rightEye?.state?.value,
+                xrResourcesManager._geospatial?.state?.value,
             )
         timeMarkQueue.add(coreState.timeMark)
 
@@ -121,7 +124,13 @@ public class PerceptionStateExtender : StateExtender {
     }
 }
 
-/** The state of the perception system. */
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/**
+ * The state of the perception system at a specific point in time, corresponding to a [CoreState].
+ *
+ * This extension property provides a consistent snapshot of all available perception data (e.g.,
+ * hands, eyes, trackables, depth, etc.) for the [CoreState.timeMark] of the receiver. All
+ * perception state objects within a single [PerceptionState] instance are synchronized to that
+ * particular moment in time.`
+ */
 public val CoreState.perceptionState: PerceptionState?
     get() = PerceptionStateExtender.perceptionStateMap[this.timeMark]

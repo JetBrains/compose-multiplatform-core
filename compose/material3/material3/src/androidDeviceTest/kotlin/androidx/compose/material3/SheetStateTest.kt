@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.MonotonicFrameClock
@@ -61,6 +60,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -72,17 +72,26 @@ class SheetStateTest {
 
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
+    @After
+    fun resetFlag() {
+        ComposeMaterial3Flags.isBottomSheetPartiallyExpandedDeterministicEnabled = true
+    }
+
     private fun createSheetState(
         skipPartiallyExpanded: Boolean,
         skipHiddenState: Boolean,
         initialValue: SheetValue,
     ): SheetState {
         return SheetState(
-            skipPartiallyExpanded = skipPartiallyExpanded,
+            enabledValues =
+                buildSet {
+                    add(SheetValue.Expanded)
+                    if (!skipPartiallyExpanded) add(SheetValue.PartiallyExpanded)
+                    if (!skipHiddenState) add(SheetValue.Hidden)
+                },
             positionalThreshold = { 56f },
             velocityThreshold = { 125f },
             initialValue = initialValue,
-            skipHiddenState = skipHiddenState,
         )
     }
 
@@ -166,11 +175,10 @@ class SheetStateTest {
             )
 
         // Setup initial anchors that include PartiallyExpanded
-        val initialAnchors =
-            DraggableAnchors<SheetValue> {
-                SheetValue.PartiallyExpanded at 500f
-                SheetValue.Expanded at 0f
-            }
+        val initialAnchors = DraggableAnchors {
+            SheetValue.PartiallyExpanded at 500f
+            SheetValue.Expanded at 0f
+        }
         state.anchoredDraggableState.updateAnchors(initialAnchors, SheetValue.PartiallyExpanded)
         assertThat(state.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
         assertThat(state.targetValue).isEqualTo(SheetValue.PartiallyExpanded)
@@ -259,12 +267,11 @@ class SheetStateTest {
                 )
             val screenHeight = 1000f
 
-            val anchors =
-                DraggableAnchors<SheetValue> {
-                    SheetValue.Hidden at screenHeight
-                    SheetValue.PartiallyExpanded at screenHeight // Same offset as Hidden
-                    SheetValue.Expanded at 0f
-                }
+            val anchors = DraggableAnchors {
+                SheetValue.Hidden at screenHeight
+                SheetValue.PartiallyExpanded at screenHeight // Same offset as Hidden
+                SheetValue.Expanded at 0f
+            }
             state.anchoredDraggableState.updateAnchors(anchors, SheetValue.Expanded)
             assertThat(state.currentValue).isEqualTo(SheetValue.Expanded)
             state.partialExpand()
@@ -286,12 +293,11 @@ class SheetStateTest {
                     skipHiddenState = false,
                     initialValue = SheetValue.Hidden,
                 )
-            val anchors =
-                DraggableAnchors<SheetValue> {
-                    SheetValue.Hidden at 1000f
-                    SheetValue.PartiallyExpanded at 500f
-                    SheetValue.Expanded at 0f
-                }
+            val anchors = DraggableAnchors {
+                SheetValue.Hidden at 1000f
+                SheetValue.PartiallyExpanded at 500f
+                SheetValue.Expanded at 0f
+            }
             state.anchoredDraggableState.updateAnchors(anchors, SheetValue.Hidden)
 
             // Test Show (defaults to PartiallyExpanded if available)
@@ -318,8 +324,9 @@ class SheetStateTest {
         rule.setContent {
             scope = rememberCoroutineScope()
             state =
-                rememberModalBottomSheetState(
-                    confirmValueChange = { newState -> newState != SheetValue.Hidden }
+                rememberBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    confirmValueChange = { newState -> newState != SheetValue.Hidden },
                 )
 
             ModalBottomSheet(
@@ -355,12 +362,13 @@ class SheetStateTest {
 
     @Test
     fun state_anchorsChange_retainsCurrentValue() {
+        ComposeMaterial3Flags.isBottomSheetPartiallyExpandedDeterministicEnabled = false
         lateinit var state: SheetState
         var amountOfItems by mutableStateOf(0)
         lateinit var scope: CoroutineScope
         val sheetTag = "sheetTag"
         rule.setContent {
-            state = rememberModalBottomSheetState()
+            state = rememberBottomSheetState(initialValue = SheetValue.Hidden)
             ModalBottomSheet(
                 onDismissRequest = {},
                 sheetState = state,
@@ -421,6 +429,7 @@ class SheetStateTest {
 
     @Test
     fun state_missingAnchors_findsClosest() {
+        ComposeMaterial3Flags.isBottomSheetPartiallyExpandedDeterministicEnabled = false
         val topTag = "BottomSheetLayout"
         var showShortContent by mutableStateOf(false)
         lateinit var state: SheetState
@@ -431,7 +440,8 @@ class SheetStateTest {
             val density = LocalDensity.current
             state =
                 SheetState(
-                    skipPartiallyExpanded = false,
+                    enabledValues =
+                        setOf(SheetValue.Expanded, SheetValue.PartiallyExpanded, SheetValue.Hidden),
                     positionalThreshold = {
                         with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                     },
@@ -464,6 +474,7 @@ class SheetStateTest {
 
     @Test
     fun state_shortSheet_anchorChangeHandler_previousTargetNotInAnchors_reconciles() {
+        ComposeMaterial3Flags.isBottomSheetPartiallyExpandedDeterministicEnabled = false
         var hasSheetContent by mutableStateOf(false) // Start out with empty sheet content
         lateinit var scope: CoroutineScope
         lateinit var state: SheetState
@@ -473,7 +484,8 @@ class SheetStateTest {
             val density = LocalDensity.current
             state =
                 SheetState(
-                    skipPartiallyExpanded = false,
+                    enabledValues =
+                        setOf(SheetValue.Expanded, SheetValue.PartiallyExpanded, SheetValue.Hidden),
                     positionalThreshold = {
                         with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                     },
@@ -524,6 +536,7 @@ class SheetStateTest {
 
     @Test
     fun state_tallSheet_anchorChangeHandler_previousTargetNotInAnchors_reconciles() {
+        ComposeMaterial3Flags.isBottomSheetPartiallyExpandedDeterministicEnabled = false
         var hasSheetContent by mutableStateOf(false) // Start out with empty sheet content
         lateinit var scope: CoroutineScope
         lateinit var state: SheetState
@@ -533,7 +546,8 @@ class SheetStateTest {
             val density = LocalDensity.current
             state =
                 SheetState(
-                    skipPartiallyExpanded = false,
+                    enabledValues =
+                        setOf(SheetValue.Expanded, SheetValue.PartiallyExpanded, SheetValue.Hidden),
                     positionalThreshold = {
                         with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                     },
@@ -581,7 +595,7 @@ class SheetStateTest {
         lateinit var scrollState: ScrollState
         val sheetTag = "sheetTag"
         rule.setContent {
-            state = rememberModalBottomSheetState()
+            state = rememberBottomSheetState(initialValue = SheetValue.Hidden)
             ModalBottomSheet(onDismissRequest = {}, sheetState = state) {
                 scrollState = rememberScrollState()
                 Column(Modifier.verticalScroll(scrollState).testTag(sheetTag)) {

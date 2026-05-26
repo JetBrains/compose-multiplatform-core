@@ -61,7 +61,7 @@ public interface Profile {
      * {@link WebViewFeature#MULTI_PROFILE}.
      *
      * @return the name of this Profile which was used to create the Profile from
-     *         ProfileStore create methods.
+     * ProfileStore create methods.
      * @throws UnsupportedOperationException if the {@link WebViewFeature#MULTI_PROFILE}
      *                                       feature is not supported.
      */
@@ -80,8 +80,8 @@ public interface Profile {
      * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#MULTI_PROFILE}.
      *
-     * @throws IllegalStateException if the profile has been deleted by
-     *                               {@link ProfileStore#deleteProfile(String)}}.
+     * @throws IllegalStateException         if the profile has been deleted by
+     *                                       {@link ProfileStore#deleteProfile(String)}}.
      * @throws UnsupportedOperationException if the {@link WebViewFeature#MULTI_PROFILE}
      *                                       feature is not supported.
      */
@@ -100,8 +100,8 @@ public interface Profile {
      * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#MULTI_PROFILE}.
      *
-     * @throws IllegalStateException if the profile has been deleted by
-     *                               {@link ProfileStore#deleteProfile(String)}}.
+     * @throws IllegalStateException         if the profile has been deleted by
+     *                                       {@link ProfileStore#deleteProfile(String)}}.
      * @throws UnsupportedOperationException if the {@link WebViewFeature#MULTI_PROFILE}
      *                                       feature is not supported.
      */
@@ -120,8 +120,8 @@ public interface Profile {
      * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#PREFETCH_CACHE_V1}.
      *
-     * @throws IllegalStateException if the profile has been deleted by
-     *                               {@link ProfileStore#deleteProfile(String)}}.
+     * @throws IllegalStateException         if the profile has been deleted by
+     *                                       {@link ProfileStore#deleteProfile(String)}}.
      * @throws UnsupportedOperationException if the {@link WebViewFeature#PREFETCH_CACHE_V1}
      *                                       feature is not supported.
      */
@@ -136,7 +136,7 @@ public interface Profile {
         // Profile (eg, for testing) don't have their build broken by the addition of this
         // method. However, throw a runtime exception if this method is actually called, as
         // that's better than silently no-oping.
-        throw new UnsupportedOperationException("Profile#preconnect is not implemented.");
+        throw new UnsupportedOperationException("Profile#getPrefetchCache is not implemented.");
     }
 
     /**
@@ -148,8 +148,8 @@ public interface Profile {
      * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#MULTI_PROFILE}.
      *
-     * @throws IllegalStateException if the profile has been deleted by
-     *                               {@link ProfileStore#deleteProfile(String)}}.
+     * @throws IllegalStateException         if the profile has been deleted by
+     *                                       {@link ProfileStore#deleteProfile(String)}}.
      * @throws UnsupportedOperationException if the {@link WebViewFeature#MULTI_PROFILE}
      *                                       feature is not supported.
      */
@@ -168,8 +168,8 @@ public interface Profile {
      * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#MULTI_PROFILE}.
      *
-     * @throws IllegalStateException if the profile has been deleted by
-     *                               {@link ProfileStore#deleteProfile(String)}}.
+     * @throws IllegalStateException         if the profile has been deleted by
+     *                                       {@link ProfileStore#deleteProfile(String)}}.
      * @throws UnsupportedOperationException if the {@link WebViewFeature#MULTI_PROFILE}
      *                                       feature is not supported.
      */
@@ -226,14 +226,17 @@ public interface Profile {
      * @param callbackExecutor   the executor to resolve the callback with. If {@code null},
      *                           the callback will be executed on the main thread.
      * @param outcomeReceiver    callbacks for reporting result back to application.
-     * @throws IllegalArgumentException if the url or callback is null.
+     * @throws IllegalArgumentException      if the url or callback is null.
      * @throws UnsupportedOperationException if the {@link WebViewFeature#PROFILE_URL_PREFETCH}
      *                                       feature is not supported.
+     * @deprecated Use
+     * {@link PrefetchCache#prefetchUrlAsync(String, CancellationSignal, Executor, WebViewOutcomeReceiver)} instead.
      */
     @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @AnyThread
     @ExperimentalUrlPrefetch
+    @Deprecated
     void prefetchUrlAsync(
             @NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
@@ -279,14 +282,17 @@ public interface Profile {
      *                                     main thread.
      * @param speculativeLoadingParameters parameters to customize the prefetch request.
      * @param outcomeReceiver              callbacks for reporting result back to application.
-     * @throws IllegalArgumentException if the url or callback is null.
+     * @throws IllegalArgumentException      if the url or callback is null.
      * @throws UnsupportedOperationException if the {@link WebViewFeature#PROFILE_URL_PREFETCH}
      *                                       feature is not supported.
+     * @deprecated Use
+     * {@link PrefetchCache#prefetchUrlAsync(String, CancellationSignal, Executor, PrefetchParameters, WebViewOutcomeReceiver)} instead.
      */
     @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @AnyThread
     @ExperimentalUrlPrefetch
+    @Deprecated
     void prefetchUrlAsync(
             @NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
@@ -309,12 +315,11 @@ public interface Profile {
      * {@link WebViewFeature#SPECULATIVE_LOADING_CONFIG}.
      *
      * @param speculativeLoadingConfig the config to set for this profile session.
-     * @deprecated use {@link Profile#setMaxPrerenders(Integer)},
-     * {@link PrefetchCache#setMaxPrefetches(Integer)} and
-     * {@link PrefetchCache#setPrefetchTtlSeconds(Integer)} instead.
+     * @deprecated use {@link Profile#setMaxPrerenders(int)},
+     * {@link PrefetchCache#setMaxPrefetches(int)} and
+     * {@link PrefetchCache#setPrefetchTtlSeconds(int)} instead.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#SPECULATIVE_LOADING_CONFIG}
-     *                                       feature is not supported.
+     * {@link WebViewFeature#SPECULATIVE_LOADING_CONFIG} feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SPECULATIVE_LOADING_CONFIG,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -325,7 +330,7 @@ public interface Profile {
             speculativeLoadingConfig);
 
     /**
-     * Sets the max pererenders for the current profile session.
+     * Sets the max prerenders for the current profile session.
      * These configurations will be applied to any prerender requests made after they are set;
      * they will not be applied to in-flight requests.
      * <p>
@@ -335,8 +340,7 @@ public interface Profile {
      * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#SET_MAX_PRERENDERS_V1}.
      *
-     * @param maxPrerenders the prerender value to update. Setting this value {@code null} will
-     *                      use the default value of maximum prerenders.
+     * @param maxPrerenders the prerender value to update.
      * @throws UnsupportedOperationException if the {@link WebViewFeature#SET_MAX_PRERENDERS_V1}
      *                                       feature is not supported.
      */
@@ -344,13 +348,62 @@ public interface Profile {
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
     @ExperimentalUrlPrefetch
-    default void setMaxPrerenders(
-            @SuppressWarnings("AutoBoxing") @Nullable @IntRange(from = 1) Integer maxPrerenders) {
+    default void setMaxPrerenders(@IntRange(from = 1) int maxPrerenders) {
         // We provide a default implementation of this method so that embedders extending the
         // Profile (eg, for testing) don't have their build broken by the addition of this
         // method. However, throw a runtime exception if this method is actually called, as
         // that's better than silently no-oping.
         throw new UnsupportedOperationException("Profile#setMaxPrerenders is not implemented.");
+    }
+
+    /**
+     * Returns maximum prerenders for the current profile session.
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#SET_MAX_PRERENDERS_V1}.
+     *
+     * @throws UnsupportedOperationException if the {@link WebViewFeature#SET_MAX_PRERENDERS_V1}
+     *                                       feature is not supported.
+     */
+    @RequiresFeature(name = WebViewFeature.SET_MAX_PRERENDERS_V1,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalUrlPrefetch
+    default int getMaxPrerenders() {
+        // We provide a default implementation of this method so that embedders extending the
+        // Profile (eg, for testing) don't have their build broken by the addition of this
+        // method. However, throw a runtime exception if this method is actually called, as
+        // that's better than silently no-oping.
+        throw new UnsupportedOperationException("Profile#getMaxPrerenders is not implemented.");
+    }
+
+
+
+    /**
+     * Resets the max prerenders for the current profile session to system default.
+     * This configuration will be applied to any prerender requests made after they are set;
+     * they will not be applied to in-flight requests.
+     * <p>
+     * This configuration will be applied to WebViews that are associated with this Profile.
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#SET_MAX_PRERENDERS_V1}.
+     *
+     * @throws UnsupportedOperationException if the {@link WebViewFeature#SET_MAX_PRERENDERS_V1}
+     *                                       feature is not supported.
+     */
+    @RequiresFeature(name = WebViewFeature.SET_MAX_PRERENDERS_V1,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalUrlPrefetch
+    default void clearMaxPrerenders() {
+        // We provide a default implementation of this method so that embedders extending the
+        // Profile (eg, for testing) don't have their build broken by the addition of this
+        // method. However, throw a runtime exception if this method is actually called, as
+        // that's better than silently no-oping.
+        throw new UnsupportedOperationException("Profile#clearMaxPrerenders is not implemented.");
     }
 
     /**
@@ -440,9 +493,9 @@ public interface Profile {
      *                   <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
      * @return {@code true} if there is a value mapped for the provided {@code
      * headerName}, {code false} otherwise.
-     * @see #addCustomHeader(CustomHeader)
      * @throws UnsupportedOperationException if the {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
      *                                       feature is not supported.
+     * @see #addCustomHeader(CustomHeader)
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -458,6 +511,7 @@ public interface Profile {
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}.
+     *
      * @throws UnsupportedOperationException if the {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
      *                                       feature is not supported.
      */
@@ -532,10 +586,10 @@ public interface Profile {
      * {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}.
      *
      * @param headerName Header to remove.
-     * @see #addCustomHeader(CustomHeader)
      * @throws UnsupportedOperationException if the
      *                                       {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
      *                                       feature is not supported.
+     * @see #addCustomHeader(CustomHeader)
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -558,10 +612,10 @@ public interface Profile {
      *
      * @param headerName  Header name to remove.
      * @param headerValue Header value to remove.
-     * @see #addCustomHeader(CustomHeader)
      * @throws UnsupportedOperationException if the
      *                                       {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
      *                                       feature is not supported.
+     * @see #addCustomHeader(CustomHeader)
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -577,10 +631,10 @@ public interface Profile {
      * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}.
      *
-     * @see #addCustomHeader(CustomHeader)
      * @throws UnsupportedOperationException if the
      *                                       {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
      *                                       feature is not supported.
+     * @see #addCustomHeader(CustomHeader)
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

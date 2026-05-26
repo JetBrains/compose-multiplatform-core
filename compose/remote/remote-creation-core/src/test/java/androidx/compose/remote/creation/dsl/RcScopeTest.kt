@@ -102,15 +102,14 @@ class RcScopeTest {
                 path.moveTo(20f, 20f)
                 path.close()
 
-                drawPath(path)
+                drawPath(path.getPath())
 
                 // Test the new lambda overload
-                val path2 =
-                    remotePath(0f, 0f) {
-                        lineTo(100f, 100f)
-                        quadTo(150f, 50f, 200f, 100f)
-                    }
-                drawPath(path2)
+                val path2 = remotePath(0f, 0f)
+                path2.lineTo(100f, 100f)
+                path2.quadTo(150f, 50f, 200f, 100f)
+
+                drawPath(path2.getPath())
             }
         }
     }
@@ -217,7 +216,7 @@ class RcScopeTest {
         val writer = RemoteComposeWriter(testProfile)
         val scope = RcScopeImpl(writer)
 
-        scope.apply { Canvas { loop(0.rf, 10f, 100.rf) { i -> drawCircle(i, 50.rf, 5.rf) } } }
+        scope.apply { Canvas { loop(0.rf, 10.rf, 100.rf) { i -> drawCircle(i, 50.rf, 5.rf) } } }
     }
 
     @Test
@@ -235,6 +234,26 @@ class RcScopeTest {
             ) {
                 Text("With Modifier")
             }
+        }
+    }
+
+    @Test
+    fun testDataAndStateManagement() {
+        val writer = RemoteComposeWriter(testProfile)
+        val scope = RcScopeImpl(writer)
+
+        scope.apply {
+            val intArray = remoteIntArray(intArrayOf(1, 2, 3))
+            val dynamicArray = remoteDynamicFloatArray(10f)
+            val floatList = remoteFloatList(floatArrayOf(1.0f, 2.0f))
+            val floatMap = remoteFloatMap(arrayOf("key1", "key2"), floatArrayOf(1.0f, 2.0f))
+
+            assertEquals(true, java.lang.Float.isNaN(intArray.toFloat()))
+            assertEquals(true, java.lang.Float.isNaN(dynamicArray.toFloat()))
+            assertEquals(true, java.lang.Float.isNaN(floatList.toFloat()))
+            assertEquals(true, java.lang.Float.isNaN(floatMap.toFloat()))
+
+            setArrayValue(dynamicArray, 0.rf, 5.rf)
         }
     }
 }

@@ -21,19 +21,25 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.Build
+import android.provider.Settings
 import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
+import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
 import androidx.glance.wear.cache.WearWidgetCache
 import androidx.glance.wear.cache.WearWidgetCache.WidgetCacheMissException
 import androidx.glance.wear.core.ActiveWearWidgetHandle
+import androidx.glance.wear.core.RendererVersion
 import androidx.glance.wear.core.WearWidgetEvent
 import androidx.glance.wear.core.WearWidgetParams
+import androidx.glance.wear.core.WearWidgetRawContent
 import androidx.glance.wear.core.WearWidgetUpdateRequest
 import androidx.glance.wear.core.WidgetInstanceId
 import androidx.glance.wear.parcel.WidgetUpdateClient
 import androidx.glance.wear.parcel.WidgetUpdateClientImpl
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -66,6 +72,28 @@ internal constructor(
         context: Context,
         params: WearWidgetParams,
     ): WearWidgetData
+
+    /**
+     * Internal method to provide widget data as raw content, based on [provideWidgetData] and
+     * [WearWidgetData.captureRawContent].
+     *
+     * @param context the context from which this method is called.
+     * @param params the parameters that describe the widget for which the data is being provided.
+     * @return the widget data as raw content.
+     */
+    @SuppressLint("RestrictedApiAndroidX")
+    @OptIn(androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi::class)
+    internal suspend fun provideWidgetDataAsRawContentInternal(
+        context: Context,
+        params: WearWidgetParams,
+    ): WearWidgetRawContent {
+        // We need this flag to be false (meaning empty axis won't be send and default normal weight
+        // would be used, for the 1.6 renderer and the player that has a bug in it.
+        RemoteComposeCreationComposeFlags.allowSendingEmptyFontAxis =
+            RendererVersion.fromPlHostPackage(context) > RendererVersion(1, 6, 0)
+        val widgetContent = provideWidgetData(context, params)
+        return widgetContent.captureRawContent(context, params)
+    }
 
     /**
      * Called when a widget provider linked to this widget class is added to the host.
@@ -125,8 +153,64 @@ internal constructor(
      *   by the calling application.
      */
     public suspend fun triggerUpdate(context: Context, instanceId: WidgetInstanceId) {
-        if (context.isDebuggable()) {
+        triggerUpdateInternal(context, instanceId, cachedHandle = null)
+    }
+
+    /**
+     * Triggers a content update for all active widget instances associated with this class,
+     * resulting in calls to [provideWidgetData], after which the results are pushed to the Host.
+     *
+     * Each individual update coroutine will be canceled if it doesn't complete within 10 seconds of
+     * being called.
+     *
+     * @param context the context from which this method is called.
+     */
+    @SuppressLint("ListIterator") // Not running inside Compose code.
+    public suspend fun triggerUpdateAll(context: Context) {
+        // In debugging mode (such as Emulator), we would always trigger a pull update instead of
+        // trying to use push mechanism.
+        if (context.isDebuggingEnabled()) {
+            GlanceWearWidgetManager(context).getProviderForWidget(this::class)?.let {
+                triggerPullUpdate(context, it, instanceId = null)
+                return@triggerUpdateAll
+            }
+        }
+
+        val activeWidgets = fetchActiveWidgets(context)
+        if (activeWidgets.isEmpty()) {
+            Log.i(TAG, "No active instances found to update.")
+            return
+        }
+        coroutineScope {
+            for (handle in activeWidgets) {
+                launch {
+                    try {
+                        triggerUpdateInternal(context, handle.instanceId, cachedHandle = handle)
+                    } catch (ex: IllegalArgumentException) {
+                        Log.i(
+                            TAG,
+                            "WidgetInstanceId is no longer valid. It may have been removed after the update was triggered: ${handle.instanceId}",
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun triggerUpdateInternal(
+        context: Context,
+        instanceId: WidgetInstanceId,
+        cachedHandle: ActiveWearWidgetHandle? = null,
+    ) {
+        if (context.isDebuggableBuild()) {
             updateClient.sendUpdateBroadcast(context, instanceId = instanceId)
+        }
+
+        if (context.isDebuggingEnabled()) {
+            GlanceWearWidgetManager(context).getProviderForWidget(this::class)?.let {
+                triggerPullUpdate(context, it, instanceId)
+                return@triggerUpdateInternal
+            }
         }
 
         if (isAtLeastC()) {
@@ -139,7 +223,8 @@ internal constructor(
         }
 
         val widgetHandle =
-            findActiveWidgetById(context, instanceId)
+            cachedHandle
+                ?: findActiveWidgetById(context, instanceId)
                 ?: throw IllegalArgumentException("Invalid WidgetInstanceId=$instanceId")
         triggerPullUpdate(context, widgetHandle.provider, instanceId)
     }
@@ -179,8 +264,7 @@ internal constructor(
 
         val rawContent =
             withContext(Dispatchers.Main.immediate) {
-                val widgetContent = provideWidgetData(context, params)
-                widgetContent.captureRawContent(context, params)
+                provideWidgetDataAsRawContentInternal(context, params)
             }
 
         updateClient.pushUpdate(context, WearWidgetUpdateRequest(instanceId), rawContent)
@@ -191,14 +275,37 @@ internal constructor(
     internal open suspend fun findActiveWidgetById(
         context: Context,
         instanceId: WidgetInstanceId,
-    ): ActiveWearWidgetHandle? =
-        GlanceWearWidgetManager(context).fetchActiveWidgets().find { it.instanceId == instanceId }
+    ): ActiveWearWidgetHandle? = fetchActiveWidgets(context).find { it.instanceId == instanceId }
+
+    @VisibleForTesting
+    internal open suspend fun fetchActiveWidgets(context: Context): List<ActiveWearWidgetHandle> =
+        GlanceWearWidgetManager(context).fetchActiveWidgets(this::class)
 
     internal companion object {
         private const val TAG = "GlanceWearWidget"
 
-        private fun Context.isDebuggable(): Boolean =
+        private fun Context.isDebuggableBuild(): Boolean =
             (this.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+
+        /**
+         * Returns whether debugging is enabled for the device.
+         *
+         * Debugging is enabled if the device is an emulator or if the developer settings are
+         * enabled.
+         */
+        internal fun Context.isDebuggingEnabled(): Boolean =
+            isEmulator() ||
+                Settings.Global.getInt(
+                    contentResolver,
+                    Settings.Global.DEVELOPMENT_SETTINGS_ENABLED,
+                    0,
+                ) == 1
+
+        private fun Context.isEmulator(): Boolean =
+            Build.HARDWARE.contains("goldfish") ||
+                Build.HARDWARE.contains("ranchu") ||
+                Build.HARDWARE.contains("cutf_cvm") ||
+                Build.HARDWARE.contains("starfish")
 
         /**
          * Robolectric does not support SDK 37 version, so we need to force the SDK version to 37 to

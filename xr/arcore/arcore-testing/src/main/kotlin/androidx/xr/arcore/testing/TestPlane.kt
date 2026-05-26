@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// TODO b/482675376 remove Suppress when no longer needed
-@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
-
 package androidx.xr.arcore.testing
 
 import androidx.xr.arcore.PlaneLabel
@@ -41,13 +38,13 @@ import androidx.xr.runtime.math.Vector2
  */
 public class TestPlane(planeType: PlaneType, planeLabel: PlaneLabel) : TestTrackable() {
 
-    internal val fakeRuntimeTrackable =
+    override val fakeRuntimeTrackable =
         FakeRuntimePlane(planeType.toRuntimeType(), planeLabel.toRuntimeType())
 
     override var isVisible: Boolean = true
         set(value) {
             field = value
-            if (isConfigured()) {
+            if (canBeTracked) {
                 fakeRuntimeTrackable.trackingState =
                     if (value) {
                         TrackingState.TRACKING
@@ -58,25 +55,19 @@ public class TestPlane(planeType: PlaneType, planeLabel: PlaneLabel) : TestTrack
             FakePerceptionRuntime.allowOneMoreCallToUpdate()
         }
 
-    // TODO b/482675376 remove Suppress when no longer needed
-    @get:SuppressWarnings("ReferencesDeprecated")
-    @set:SuppressWarnings("ReferencesDeprecated")
     public var type: PlaneType = planeType
         set(value) {
             field = value
-            if (isConfigured()) {
+            if (canBeTracked) {
                 fakeRuntimeTrackable.type = value.toRuntimeType()
             }
             FakePerceptionRuntime.allowOneMoreCallToUpdate()
         }
 
-    // TODO b/482675376 remove Suppress when no longer needed
-    @get:SuppressWarnings("ReferencesDeprecated")
-    @set:SuppressWarnings("ReferencesDeprecated")
     public var label: PlaneLabel = planeLabel
         set(value) {
             field = value
-            if (isConfigured()) {
+            if (canBeTracked) {
                 fakeRuntimeTrackable.label = value.toRuntimeType()
             }
             FakePerceptionRuntime.allowOneMoreCallToUpdate()
@@ -85,7 +76,7 @@ public class TestPlane(planeType: PlaneType, planeLabel: PlaneLabel) : TestTrack
     public var centerPose: Pose = Pose()
         set(value) {
             field = value
-            if (isConfigured()) {
+            if (canBeTracked) {
                 fakeRuntimeTrackable.centerPose = value
             }
             FakePerceptionRuntime.allowOneMoreCallToUpdate()
@@ -94,7 +85,7 @@ public class TestPlane(planeType: PlaneType, planeLabel: PlaneLabel) : TestTrack
     public var extents: FloatSize2d = FloatSize2d()
         set(value) {
             field = value
-            if (isConfigured()) {
+            if (canBeTracked) {
                 fakeRuntimeTrackable.extents = value
             }
             FakePerceptionRuntime.allowOneMoreCallToUpdate()
@@ -103,7 +94,7 @@ public class TestPlane(planeType: PlaneType, planeLabel: PlaneLabel) : TestTrack
     public var vertices: List<Vector2> = emptyList()
         set(value) {
             field = value
-            if (isConfigured()) {
+            if (canBeTracked) {
                 fakeRuntimeTrackable.vertices = value
             }
             FakePerceptionRuntime.allowOneMoreCallToUpdate()
@@ -112,20 +103,18 @@ public class TestPlane(planeType: PlaneType, planeLabel: PlaneLabel) : TestTrack
     public var subsumedBy: TestPlane? = null
         set(value) {
             field = value
-            if (isConfigured()) {
+            if (canBeTracked) {
                 fakeRuntimeTrackable.subsumedBy = value?.fakeRuntimeTrackable
             }
             FakePerceptionRuntime.allowOneMoreCallToUpdate()
         }
 
-    internal fun isConfigured(): Boolean =
+    override fun isTrackableConfigured(): Boolean =
         if (isAddedToTestRule)
             arCoreTestRule.runtime.config.planeTracking != PlaneTrackingMode.DISABLED
         else false
 }
 
-// TODO b/482675376 remove Suppress when no longer needed
-@Suppress("DEPRECATION")
 internal fun PlaneType.toRuntimeType() =
     when (this) {
         PlaneType.HORIZONTAL_UPWARD_FACING -> RuntimePlane.Type.HORIZONTAL_UPWARD_FACING
@@ -133,8 +122,6 @@ internal fun PlaneType.toRuntimeType() =
         else -> RuntimePlane.Type.VERTICAL
     }
 
-// TODO b/482675376 remove Suppress when no longer needed
-@Suppress("DEPRECATION")
 internal fun PlaneLabel.toRuntimeType() =
     when (this) {
         PlaneLabel.WALL -> RuntimePlane.Label.WALL

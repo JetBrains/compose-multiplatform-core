@@ -494,6 +494,12 @@ public class CallStats extends BaseStats {
                 return INTERNAL_CALL_TYPE_SCHEDULED_FLUSH;
             case INTERNAL_CALL_TYPE_STRING_MANUALLY_SCHEDULE_FLUSH:
                 return CALL_TYPE_MANUALLY_SCHEDULE_FLUSH;
+            case INTERNAL_CALL_TYPE_STRING_MAINTAIN_ANN_INDEX_JOB:
+                return INTERNAL_CALL_TYPE_MAINTAIN_ANN_INDEX_JOB;
+            case CALL_TYPE_STRING_INITIALIZE_TRIVIAL:
+                return CALL_TYPE_INITIALIZE_TRIVIAL;
+            case CALL_TYPE_STRING_INITIALIZE_PENDING:
+                return CALL_TYPE_INITIALIZE_PENDING;
             default:
                 return CALL_TYPE_UNKNOWN;
         }
@@ -540,6 +546,9 @@ public class CallStats extends BaseStats {
                 INTERNAL_CALL_TYPE_ISOLATED_STORAGE_DATA_MIGRATION,
                 INTERNAL_CALL_TYPE_PRUNE_PACKAGE_DATA,
                 INTERNAL_CALL_TYPE_CLOSE,
-                INTERNAL_CALL_TYPE_PERSIST_TO_DISK_JOB));
+                INTERNAL_CALL_TYPE_PERSIST_TO_DISK_JOB,
+                INTERNAL_CALL_TYPE_MAINTAIN_ANN_INDEX_JOB,
+                CALL_TYPE_INITIALIZE_TRIVIAL,
+                CALL_TYPE_INITIALIZE_PENDING));
     }
 }

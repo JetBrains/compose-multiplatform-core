@@ -101,6 +101,17 @@ data class ApiLocation(
             )
         }
 
+        internal fun toTraceFilePath(apiFile: File): String {
+            val absoluteTracePath = "${apiFile.absolutePath}$SUFFIX_TRACE"
+            File(absoluteTracePath).delete()
+            return absoluteTracePath
+        }
+
+        /** Whether this [directory] exists and contains signature files. */
+        internal fun containsApiFiles(directory: File): Boolean {
+            return directory.exists() && directory.listFiles().any { it.name.endsWith("txt") }
+        }
+
         /** File name extension used by API files. */
         private const val EXTENSION = ".txt"
 
@@ -121,6 +132,8 @@ data class ApiLocation(
 
         /** Prefix used for a directory of multiplatform API files. */
         private const val PREFIX_MULTIPLATFORM = "multiplatform-"
+
+        private const val SUFFIX_TRACE = ".trace"
     }
 }
 

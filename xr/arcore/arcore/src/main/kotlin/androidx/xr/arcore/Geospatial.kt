@@ -16,8 +16,6 @@
 
 package androidx.xr.arcore
 
-import androidx.xr.arcore.Geospatial.State.Companion.PAUSED
-import androidx.xr.arcore.Geospatial.State.Companion.RUNNING
 import androidx.xr.arcore.runtime.AnchorNotAuthorizedException as RtAnchorNotAuthorizedException
 import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
@@ -40,11 +38,12 @@ import kotlinx.coroutines.flow.asStateFlow
  * [androidx.xr.runtime.GeospatialMode.SPATIAL].
  *
  * Not all devices support [androidx.xr.runtime.GeospatialMode.SPATIAL], use
- * [androidx.xr.runtime.Config.ConfigMode.isSupported] to check if the current device supports
+ * [androidx.xr.runtime.XrDevice.isGeospatialModeSupported] to check if the current device supports
  * enabling this mode.
  *
- * The Geospatial object should only be used when its [State] is [State.RUNNING], and otherwise
- * should not be used. Use [Geospatial.state] to obtain the current [State].
+ * The Geospatial object should only be used when its [State.geospatialTrackingState] is
+ * [GeospatialTrackingState.RUNNING], and otherwise should not be used. Use [Geospatial.state] to
+ * obtain the current [State].
  *
  * @property state the current [State] of [Geospatial]
  */
@@ -68,85 +67,9 @@ internal constructor(
         }
     }
 
-    /**
-     * Describes the state of Geospatial. The State must be [RUNNING] to use Geospatial
-     * functionality. If Geospatial has entered an error state other than [PAUSED], Geospatial must
-     * be disabled and re-enabled to use Geospatial again.
-     */
-    @Deprecated("Use GeospatialState instead.", replaceWith = ReplaceWith("GeospatialState"))
-    @Suppress("DEPRECATION")
-    public class State private constructor(private val value: Int) {
-        public companion object {
-            /**
-             * Geospatial is running and has not encountered an error. Functions to create anchors
-             * or convert poses may still fail if Geospatial is not tracking.
-             */
-            @JvmField public val RUNNING: State = State(1)
+    private val _state = MutableStateFlow(State(GeospatialTrackingState.NOT_RUNNING, owner = this))
 
-            /**
-             * Geospatial is not running. The Geospatial config must be enabled to use the
-             * Geospatial APIs. After enablement, Geospatial will not immediately enter the RUNNING
-             * state.
-             */
-            @JvmField public val NOT_RUNNING: State = State(0)
-
-            /**
-             * Earth localization has encountered an internal error. The app should not attempt to
-             * recover from this error. Please see the Android logs for additional information.
-             */
-            @JvmField public val ERROR_INTERNAL: State = State(-1)
-
-            /**
-             * The authorization provided by the application is not valid.
-             * - The associated Google Cloud project may not have enabled the ARCore API.
-             * - When using API key authentication, this will happen if the API key in the manifest
-             *   is invalid or unauthorized. It may also fail if the API key is restricted to a set
-             *   of apps not including the current one.
-             * - When using keyless authentication, this may happen when no OAuth client has been
-             *   created, or when the signing key and package name combination does not match the
-             *   values used in the Google Cloud project. It may also fail if Google Play Services
-             *   isn't installed, is too old, or is malfunctioning for some reason (e.g. killed due
-             *   to memory pressure).
-             */
-            @JvmField public val ERROR_NOT_AUTHORIZED: State = State(-2)
-
-            /**
-             * The application has hit the rate limit for created Geospatial Sessions. The developer
-             * should
-             * [request additional quota](https://cloud.google.com/docs/quota#requesting_higher_quota)
-             * for the ARCore API for their project from the Google Cloud Console.
-             *
-             * Sessions are limited per-minute and enabling may succeed if retried. The application
-             * can disable and re-enable Geospatial to try again.
-             */
-            @JvmField public val ERROR_RESOURCE_EXHAUSTED: State = State(-3)
-
-            /**
-             * The Geospatial connection has been paused. The connection may resume, and does not
-             * require action from the app. Tracked entities will enter the STOPPED state and must
-             * be destroyed.
-             */
-            @JvmField public val PAUSED: State = State(2)
-        }
-
-        override fun toString(): String {
-            return when (this) {
-                RUNNING -> "RUNNING"
-                NOT_RUNNING -> "NOT_RUNNING"
-                ERROR_INTERNAL -> "ERROR_INTERNAL"
-                ERROR_NOT_AUTHORIZED -> "ERROR_NOT_AUTHORIZED"
-                ERROR_RESOURCE_EXHAUSTED -> "ERROR_RESOURCE_EXHAUSTED"
-                PAUSED -> "PAUSED"
-                else -> "Unknown"
-            }
-        }
-    }
-
-    @Suppress("DEPRECATION") private val _state = MutableStateFlow(GeospatialState.NOT_RUNNING)
-
-    @Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
-    @get:SuppressWarnings("ReferencesDeprecated")
-    public val state: StateFlow<GeospatialState> = _state.asStateFlow()
+    public val state: StateFlow<State> = _state.asStateFlow()
 
     /**
      * Gets the availability of the Visual Positioning System (VPS) at a specified horizontal
@@ -162,7 +85,7 @@ internal constructor(
      *
      * Your app must be properly set up to communicate with the Google Cloud ARCore API in order to
      * obtain a result from this call, otherwise the result will be
-     * [androidx.xr.runtime.VpsAvailabilityNotAuthorized].
+     * [androidx.xr.arcore.runtime.VpsAvailabilityNotAuthorized].
      *
      * @param latitude the latitude in degrees
      * @param longitude the longitude in degrees
@@ -243,7 +166,7 @@ internal constructor(
      * away from the center of the earth, and Z+ points to the south.
      *
      * The tracking state of an [Anchor] will permanently become
-     * [androidx.xr.runtime.TrackingState.STOPPED] if the [androidx.xr.runtime.GeospatialMode] is
+     * [androidx.xr.arcore.TrackingState.STOPPED] if the [androidx.xr.runtime.GeospatialMode] is
      * disabled, or if another full-space app uses Geospatial.
      *
      * Creating anchors near the north pole or south pole is not supported. If the latitude is
@@ -296,15 +219,15 @@ internal constructor(
      * surface anchors at time. Attempting to resolve more than 100 surface anchors will return an
      * [AnchorCreateResourcesExhausted] result.
      *
-     * Creating a Terrain anchor requires an active Earth which is [EarthState.Running]. If it is
-     * not, then this function returns an [AnchorCreateTrackingUnavailable] result. This call also
-     * requires a working internet connection to communicate with the ARCore API on Google Cloud.
-     * ARCore will continue to retry if it is unable to establish a connection to the ARCore
-     * service.
+     * Creating a Terrain anchor requires an active Earth which is
+     * [GeospatialTrackingState.RUNNING]. If it is not, then this function returns an
+     * [AnchorCreateTrackingUnavailable] result. This call also requires a working internet
+     * connection to communicate with the ARCore API on Google Cloud. ARCore will continue to retry
+     * if it is unable to establish a connection to the ARCore service.
      *
-     * A Terrain anchor's tracking state will be [androidx.xr.runtime.TrackingState.PAUSED] if the
+     * A Terrain anchor's tracking state will be [androidx.xr.arcore.TrackingState.PAUSED] if the
      * Earth is not actively tracking. Its tracking state will permanently become
-     * [androidx.xr.runtime.TrackingState.STOPPED] if [androidx.xr.runtime.GeospatialMode] is
+     * [androidx.xr.arcore.TrackingState.STOPPED] if [androidx.xr.runtime.GeospatialMode] is
      * disabled, or if another full-space app uses Geospatial.
      *
      * Latitude and longitude are defined by the
@@ -356,7 +279,9 @@ internal constructor(
     }
 
     override suspend fun update() {
-        _state.emit(runtimeStateToState(runtimeGeospatial.state))
+        _state.emit(
+            State(runtimeStateToGeospatialTrackingState(runtimeGeospatial.state), owner = this)
+        )
     }
 
     public override fun equals(other: Any?): Boolean {
@@ -366,21 +291,23 @@ internal constructor(
     }
 
     private fun checkGeospatialModeEnabled() {
-        check(xrResourcesManager.perceptionRuntime.config.geospatial == GeospatialMode.SPATIAL) {
-            "To use this function, Config.GeospatialMode must be set to SPATIAL."
+        check(xrResourcesManager.perceptionRuntime.config.geospatial != GeospatialMode.DISABLED) {
+            "To use this function, Config.GeospatialMode must be set to SPATIAL or INERTIAL."
         }
     }
 
-    @Suppress("TYPEALIAS_EXPANSION_DEPRECATION", "DEPRECATION")
-    private fun runtimeStateToState(runtimeState: RuntimeGeospatial.State): GeospatialState {
+    private fun runtimeStateToGeospatialTrackingState(
+        runtimeState: RuntimeGeospatial.State
+    ): GeospatialTrackingState {
         return when (runtimeState) {
-            RuntimeGeospatial.State.RUNNING -> GeospatialState.RUNNING
-            RuntimeGeospatial.State.NOT_RUNNING -> GeospatialState.NOT_RUNNING
-            RuntimeGeospatial.State.ERROR_INTERNAL -> GeospatialState.ERROR_INTERNAL
-            RuntimeGeospatial.State.ERROR_NOT_AUTHORIZED -> GeospatialState.ERROR_NOT_AUTHORIZED
+            RuntimeGeospatial.State.RUNNING -> GeospatialTrackingState.RUNNING
+            RuntimeGeospatial.State.NOT_RUNNING -> GeospatialTrackingState.NOT_RUNNING
+            RuntimeGeospatial.State.ERROR_INTERNAL -> GeospatialTrackingState.ERROR_INTERNAL
+            RuntimeGeospatial.State.ERROR_NOT_AUTHORIZED ->
+                GeospatialTrackingState.ERROR_NOT_AUTHORIZED
             RuntimeGeospatial.State.ERROR_RESOURCE_EXHAUSTED ->
-                GeospatialState.ERROR_RESOURCE_EXHAUSTED
-            RuntimeGeospatial.State.PAUSED -> GeospatialState.PAUSED
+                GeospatialTrackingState.ERROR_RESOURCE_EXHAUSTED
+            RuntimeGeospatial.State.PAUSED -> GeospatialTrackingState.PAUSED
             else -> throw IllegalStateException("Unknown State: $runtimeState")
         }
     }
@@ -394,4 +321,88 @@ internal constructor(
     }
 
     public override fun hashCode(): Int = runtimeGeospatial.hashCode()
+
+    /** Describes the state of Geospatial. */
+    public class GeospatialTrackingState private constructor(internal val value: Int) {
+        public companion object {
+            /**
+             * Geospatial is running and has not encountered an error. Functions to create anchors
+             * or convert poses may still fail if Geospatial is not tracking.
+             */
+            @JvmField public val RUNNING: GeospatialTrackingState = GeospatialTrackingState(1)
+
+            /**
+             * Geospatial is not running. The Geospatial config must be enabled to use the
+             * Geospatial APIs. After enablement, Geospatial will not immediately enter the RUNNING
+             * state.
+             */
+            @JvmField public val NOT_RUNNING: GeospatialTrackingState = GeospatialTrackingState(0)
+
+            /**
+             * Earth localization has encountered an internal error. The app should not attempt to
+             * recover from this error. Please see the Android logs for additional information.
+             */
+            @JvmField
+            public val ERROR_INTERNAL: GeospatialTrackingState = GeospatialTrackingState(-1)
+
+            /**
+             * The authorization provided by the application is not valid.
+             * - The associated Google Cloud project may not have enabled the ARCore API.
+             * - When using API key authentication, this will happen if the API key in the manifest
+             *   is invalid or unauthorized. It may also fail if the API key is restricted to a set
+             *   of apps not including the current one.
+             * - When using keyless authentication, this may happen when no OAuth client has been
+             *   created, or when the signing key and package name combination does not match the
+             *   values used in the Google Cloud project. It may also fail if Google Play Services
+             *   isn't installed, is too old, or is malfunctioning for some reason (e.g. killed due
+             *   to memory pressure).
+             */
+            @JvmField
+            public val ERROR_NOT_AUTHORIZED: GeospatialTrackingState = GeospatialTrackingState(-2)
+
+            /**
+             * The application has hit the rate limit for created Geospatial Sessions. The developer
+             * should
+             * [request additional quota](https://cloud.google.com/docs/quota#requesting_higher_quota)
+             * for the ARCore API for their project from the Google Cloud Console.
+             *
+             * Sessions are limited per-minute and enabling may succeed if retried. The application
+             * can disable and re-enable Geospatial to try again.
+             */
+            @JvmField
+            public val ERROR_RESOURCE_EXHAUSTED: GeospatialTrackingState =
+                GeospatialTrackingState(-3)
+
+            /**
+             * The Geospatial connection has been paused. The connection may resume, and does not
+             * require action from the app. Tracked entities will enter the STOPPED state and must
+             * be destroyed.
+             */
+            @JvmField public val PAUSED: GeospatialTrackingState = GeospatialTrackingState(2)
+        }
+    }
+
+    /**
+     * Represents the state of Geospatial at a specific point in time.
+     *
+     * @property geospatialTrackingState the current [GeospatialTrackingState] of [Geospatial]
+     * @property owner self-reference to the object that owns this state.
+     */
+    public class State
+    internal constructor(
+        public val geospatialTrackingState: GeospatialTrackingState,
+        public val owner: Geospatial,
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is State) return false
+            return geospatialTrackingState == other.geospatialTrackingState && owner == other.owner
+        }
+
+        override fun hashCode(): Int {
+            var result = geospatialTrackingState.hashCode()
+            result = 31 * result + owner.hashCode()
+            return result
+        }
+    }
 }

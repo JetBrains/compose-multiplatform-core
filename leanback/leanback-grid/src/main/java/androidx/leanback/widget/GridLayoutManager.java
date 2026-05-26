@@ -745,7 +745,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     /**
      * Optional SpanSizeLookup retrieved from Adapter.
      */
-    private SpanSizeLookup mSpanSizeLookup;
+    private LeanbackSpanSizeLookup mSpanSizeLookup;
 
     public GridLayoutManager() {
         this(null);
@@ -1654,7 +1654,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
 
         final int spanSize = lp.mSpanSize;
         final int secondarySpec;
-        if (spanSize == SpanSizeLookup.FILL_ALL_SPANS_AND_PADDINGS) {
+        if (spanSize == LeanbackSpanSizeLookup.FILL_ALL_SPANS_AND_PADDINGS) {
             secondarySpec = MeasureSpec.makeMeasureSpec(mMaxSizeSecondary, MeasureSpec.EXACTLY);
         } else if (mRowSizeSecondaryRequested == ViewGroup.LayoutParams.WRAP_CONTENT) {
             secondarySpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
@@ -1848,7 +1848,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
         int sizeSecondary = mOrientation == HORIZONTAL ? getDecoratedMeasuredHeightWithMargin(v)
                 : getDecoratedMeasuredWidthWithMargin(v);
         if (((LayoutParams) v.getLayoutParams()).mSpanSize
-                == SpanSizeLookup.FILL_ALL_SPANS_AND_PADDINGS) {
+                == LeanbackSpanSizeLookup.FILL_ALL_SPANS_AND_PADDINGS) {
             startSecondary = 0;
             sizeSecondary = mMaxSizeSecondary;
         } else if (((LayoutParams) v.getLayoutParams()).mSpanSize == 1) {
@@ -2057,10 +2057,12 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
      * Fast layout when there is no structure change, adapter change, etc.
      * It will layout all views was layout requested or updated, until hit a view
      * with different size,  then it break and detachAndScrap all views after that.
+     * @return True if need align afterward, which happens if fastRelayout removed all children.
      */
-    private void fastRelayout() {
+    private boolean fastRelayout() {
+        boolean needAlign = false;
         boolean invalidateAfter = false;
-        final int childCount = getChildCount();
+        final int childCount = getChildCount(); // Always > 0 when layoutInit() returns true
         int position = mGrid.getFirstVisibleIndex();
         int index = 0;
         mFlag &= ~PF_FAST_RELAYOUT_UPDATED_SELECTED_POSITION;
@@ -2122,6 +2124,11 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
                 detachAndScrapView(v, mRecycler);
             }
             mGrid.invalidateItemsAfter(position);
+            if (getChildCount() == 0) {
+                // If invalidate after removed all views, the newly added views are not aligned
+                // so we need align.
+                needAlign = true;
+            }
             if ((mFlag & PF_PRUNE_CHILD) != 0) {
                 // in regular prune child mode, we just append items up to edge limit
                 appendVisibleItems();
@@ -2142,6 +2149,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
         }
         updateScrollLimits();
         updateSecondaryScrollLimits();
+        return needAlign;
     }
 
     @Override
@@ -2331,8 +2339,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
         if (state.willRunPredictiveAnimations()) {
             updatePositionToRowMapInPostLayout();
         }
-        // check if we need align to mFocusPosition, this is usually true unless in smoothScrolling
-        final boolean scrollToFocus = !isSmoothScrolling();
+
         if (mFocusPosition != NO_POSITION && mFocusPositionOffset != Integer.MIN_VALUE) {
             mFocusPosition = mFocusPosition + mFocusPositionOffset;
             mSubFocusPosition = 0;
@@ -2354,12 +2361,26 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
             deltaSecondary = state.getRemainingScrollHorizontal();
             deltaPrimary = state.getRemainingScrollVertical();
         }
-        if (layoutInit()) {
+        boolean doFastRelayout = layoutInit();
+        boolean fastRelayoutNeedAlign = false;
+        if (doFastRelayout) {
             mFlag |= PF_FAST_RELAYOUT;
             // If grid view is empty, we will start from mFocusPosition
             mGrid.setStart(mFocusPosition);
-            fastRelayout();
-        } else {
+            fastRelayoutNeedAlign = fastRelayout();
+        }
+        // Check if we need align to mFocusPosition.
+        // This is usually true unless in three special cases:
+        // 1. smoothScrolling
+        // 2. dragging and settling we are dealing it in a different way that we update
+        //    mFocusPosition during scrolling
+        // 3. In touch mode performed fastRelayout() that didn't require align.
+        boolean scrollToFocus = !isSmoothScrolling()
+                && (mFlag & PF_IN_DRAGGING_AND_SETTLING) == 0
+                && !(mBaseGridView.isInTouchMode()
+                        && mFocusScrollStrategy != BaseGridView.FOCUS_SCROLL_ALIGNED_AND_SNAP
+                        && (doFastRelayout && !fastRelayoutNeedAlign));
+        if (!doFastRelayout) {
             mFlag &= ~PF_FAST_RELAYOUT;
             // layoutInit() has detached all views, so start from scratch
             mFlag = (mFlag & ~PF_IN_LAYOUT_SEARCH_FOCUS)
@@ -2379,6 +2400,10 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
                 }
             }
         }
+        // deltaPrimary and deltaSecondary holds the remaining scroll distance in ViewFlinger.
+        // In scrolling to a determined position, in case view size changed during layout pass,
+        // focusToViewInLayout() with deltaPrimary compensates the distance so that when scroll
+        // stops, it landed exactly aligned location for mFocusPosition.
         // multiple rounds: scrollToView of first round may drag first/last child into
         // "visible window" and we update scrollMin/scrollMax then run second scrollToView
         // we must do this for fastRelayout() for the append item case
@@ -2515,6 +2540,24 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
         return result;
     }
 
+    private int findBestAlignedChild() {
+        int childCount = getChildCount();
+        int minimalScrollValue = Integer.MAX_VALUE;
+        int minimalScrollViewIndex = -1;
+        for (int i = 0; i < childCount; i++) {
+            getScrollPosition(mBaseGridView.getChildAt(i), null, sTwoInts);
+            int scrollValue = sTwoInts[0];
+            if (scrollValue < 0) {
+                scrollValue = -scrollValue;
+            }
+            if (scrollValue < minimalScrollValue) {
+                minimalScrollValue = scrollValue;
+                minimalScrollViewIndex = i;
+            }
+        }
+        return minimalScrollViewIndex;
+    }
+
     // scroll in main direction may add/prune views
     private int scrollDirectionPrimary(int da) {
         // We apply the cap of maxScroll/minScroll to the delta, except for two cases:
@@ -2565,19 +2608,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
         if (isInDraggingOrMotionScroll && mFocusPosition >= 0) {
             // In dragging or using mouse wheel scroll, we keep adjusting mFocusedPosition to the
             // view that is closest to the aligned center.
-            int minimalScrollValue = Integer.MAX_VALUE;
-            int minimalScrollViewIndex = -1;
-            for (int i = 0; i < childCount; i++) {
-                getScrollPosition(mBaseGridView.getChildAt(i), null, sTwoInts);
-                int scrollValue = sTwoInts[0];
-                if (scrollValue < 0) {
-                    scrollValue = -scrollValue;
-                }
-                if (scrollValue < minimalScrollValue) {
-                    minimalScrollValue = scrollValue;
-                    minimalScrollViewIndex = i;
-                }
-            }
+            final int minimalScrollViewIndex = findBestAlignedChild();
             if (minimalScrollViewIndex != -1) {
                 View view = mBaseGridView.getChildAt(minimalScrollViewIndex);
                 mFocusPosition = getAdapterPositionByView(view);
@@ -2783,6 +2814,34 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     public void smoothScrollToPosition(@NonNull RecyclerView recyclerView, @NonNull State state,
             int position) {
         setSelection(position, 0, true, 0);
+    }
+
+    void setSelectedPositionWithoutScroll(@NonNull View view) {
+        int position = getPosition(view);
+        if (position < 0 || mFocusPosition == position) {
+            return;
+        }
+        if (!isSmoothScrolling() && !mBaseGridView.isLayoutRequested()) {
+            mFocusPosition = position;
+            mSubFocusPosition = 0;
+            mFocusPositionOffset = Integer.MIN_VALUE;
+            if (hasFocus() && !view.hasFocus()) {
+                mFlag |= PF_IN_SELECTION;
+                view.requestFocus();
+                mFlag &= ~PF_IN_SELECTION;
+            }
+            dispatchChildSelected();
+            return;
+        }
+        // fallback to regular scroll to position.
+        setSelection(position, 0);
+    }
+
+    void setSelectedPositionToAlignedChild() {
+        int index = findBestAlignedChild();
+        if (index >= 0) {
+            setSelectedPositionWithoutScroll(mBaseGridView.getChildAt(index));
+        }
     }
 
     void setSelection(int position,
@@ -3678,8 +3737,8 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
             mFacetProviderAdapter = null;
         }
         if (newAdapter instanceof FacetProvider) {
-            mSpanSizeLookup = (SpanSizeLookup) ((FacetProvider) newAdapter).getFacet(
-                            SpanSizeLookup.class);
+            mSpanSizeLookup = (LeanbackSpanSizeLookup) ((FacetProvider) newAdapter).getFacet(
+                            LeanbackSpanSizeLookup.class);
         } else {
             mSpanSizeLookup = null;
         }

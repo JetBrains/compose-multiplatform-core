@@ -21,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.testing.ArCoreTestRule
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.ExperimentalInertialTrackingApi
 import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
@@ -65,18 +66,21 @@ class ArDeviceTest {
 
         activityController.create().start().resume()
 
-        session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
+        session =
+            (Session.create(context = activity, coroutineContext = testDispatcher)
+                    as SessionCreateSuccess)
+                .session
 
-        arCoreTestRule.device.pose = Pose()
+        arCoreTestRule.deviceTester.pose = Pose()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun pose_SpatialLastKnown_tracksTranslationAndRotation() {
-        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
+        session.configure(Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build())
         runTest(testDispatcher) {
             val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
-            arCoreTestRule.device.pose = expectedPose
+            arCoreTestRule.deviceTester.pose = expectedPose
             advanceUntilIdle()
 
             val underTest = ArDevice.getInstance(session)
@@ -88,13 +92,17 @@ class ArDeviceTest {
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class, PreviewSpatialApi::class)
+    @OptIn(
+        ExperimentalCoroutinesApi::class,
+        PreviewSpatialApi::class,
+        ExperimentalInertialTrackingApi::class,
+    )
     @Test
     fun pose_InertialLastKnown_onlyTracksRotation() {
-        session.configure(Config(deviceTracking = DeviceTrackingMode.INERTIAL))
+        session.configure(Config.Builder().setDeviceTracking(DeviceTrackingMode.INERTIAL).build())
         runTest(testDispatcher) {
             val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
-            arCoreTestRule.device.pose = expectedPose
+            arCoreTestRule.deviceTester.pose = expectedPose
             advanceUntilIdle()
 
             val underTest = ArDevice.getInstance(session)
@@ -109,7 +117,7 @@ class ArDeviceTest {
 
     @Test
     fun getInstance_deviceTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(deviceTracking = DeviceTrackingMode.DISABLED))
+        session.configure(Config.Builder().setDeviceTracking(DeviceTrackingMode.DISABLED).build())
         runTest(testDispatcher) {
             assertFailsWith<IllegalStateException> { ArDevice.getInstance(session) }
         }

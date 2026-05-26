@@ -16,44 +16,27 @@
 
 package androidx.xr.runtime.testing.internal
 
-import androidx.annotation.RestrictTo
-import androidx.annotation.VisibleForTesting
 import androidx.xr.runtime.SpatialApiVersionProvider
 import androidx.xr.runtime.SpatialApiVersions
+import androidx.xr.runtime.testing.XrDeviceTestRule
 
-/**
- * A fake implementation of [androidx.xr.runtime.SpatialApiVersionProvider] for testing.
- *
- * This class is loaded by its class name and provides values that can be configured for testing via
- * the companion object.
- */
-@SuppressWarnings("HiddenSuperclass")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-@VisibleForTesting
-public class FakeSpatialApiVersionProvider : SpatialApiVersionProvider {
-    public companion object {
-        /**
-         * The value to be returned by [spatialApiVersion].
-         *
-         * If null, accessing [spatialApiVersion] will throw an [IllegalStateException].
-         */
-        public var testSpatialApiVersion: Int? = null
-        /**
-         * The value to be returned by [previewSpatialApiVersion].
-         *
-         * If null, accessing [previewSpatialApiVersion] will throw an [IllegalStateException].
-         */
-        public var testPreviewSpatialApiVersion: Int? = null
+/** Internal fake implementation of [SpatialApiVersionProvider]. */
+internal class FakeSpatialApiVersionProvider : SpatialApiVersionProvider {
+
+    init {
+        instance = this
     }
 
-    override val spatialApiVersion: Int
-        get() = testSpatialApiVersion ?: SpatialApiVersions.LATEST_STABLE_API_LEVEL
+    companion object {
+        internal var instance: FakeSpatialApiVersionProvider? = null
+        internal var xrDeviceTestRule: XrDeviceTestRule? = null
+    }
 
-    override val previewSpatialApiVersion: Int
-        get() =
-            testPreviewSpatialApiVersion
-                ?: throw IllegalStateException(
-                    "previewSpatialApiVersion is not set for testing. Provide a value via " +
-                        "FakeSpatialApiVersionProvider.testPreviewSpatialApiVersion"
-                )
+    internal fun registerProvider() {
+        xrDeviceTestRule?.spatialApiVersionProvider = this
+    }
+
+    override var spatialApiVersion: Int = SpatialApiVersions.LATEST_STABLE_API_LEVEL
+
+    override var previewSpatialApiVersion: Int = 0
 }

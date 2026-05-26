@@ -27,7 +27,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import androidx.xr.runtime.Config.ConfigMode
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
@@ -61,13 +60,17 @@ import kotlinx.coroutines.sync.withLock
  *
  * This class owns a significant amount of native heap memory. The [Session]'s lifecycle will be
  * scoped to the [Activity] that owns it.
+ *
+ * @property context the [Context] the `Session` belongs to
+ * @property coroutineScope the [CoroutineScope] for coroutines within the `Session`
+ * @property lifecycleOwner the owner of the Android [Lifecycle] the `Session` belongs to
  */
 @Suppress("NotCloseable")
 public class Session
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @JvmOverloads
 public constructor(
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val context: Context,
+    public val context: Context,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val stateExtenders: List<StateExtender> =
         loadProviders(StateExtender::class.java, STATE_EXTENDER_PROVIDERS),
@@ -76,12 +79,16 @@ public constructor(
         loadProviders(SessionConnector::class.java, SESSION_CONNECTOR_PROVIDERS),
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val runtimes: List<JxrRuntime> = emptyList(),
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val coroutineScope: CoroutineScope = CoroutineScope(context = EmptyCoroutineContext),
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val lifecycleOwner: LifecycleOwner,
+    public val lifecycleOwner: LifecycleOwner,
 ) {
 
-    @Deprecated("Use the constructor with an explicit LifecycleOwner instead.")
+    @Deprecated(
+        "Use Session.create(context, coroutineContext, lifecycleOwner) instead and retrieve the session value from a SessionCreateSuccess result.",
+        ReplaceWith(
+            "(Session.create(context = activity, coroutineContext = coroutineScope.coroutineContext, lifecycleOwner = activity) as SessionCreateSuccess).session"
+        ),
+    )
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     @JvmOverloads
     public constructor(
@@ -118,135 +125,75 @@ public constructor(
     public companion object {
         private val contextSessionMap = ConcurrentHashMap<Context, Session>()
 
-        /** Restricted version of factory for 1Ps. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @Deprecated(
-            message =
-                "unscaledGravityAlignedActivitySpace flag deprecated, scheduled for removal in future release."
-        )
-        public fun create(
-            activity: Activity,
-            coroutineContext: CoroutineContext = EmptyCoroutineContext,
-            unscaledGravityAlignedActivitySpace: Boolean,
-        ): SessionCreateResult =
-            create(
-                context = activity,
-                lifecycleOwner = activity as LifecycleOwner,
-                coroutineContext = coroutineContext,
-                unscaledGravityAlignedActivitySpace = unscaledGravityAlignedActivitySpace,
-            )
+        internal val DEFAULT_CONFIG = Config.Builder().build()
 
         /**
          * Creates a new [Session].
          *
-         * It is strongly recommended to call this method from a background thread (e.g.,
-         * [Dispatchers.IO][kotlinx.coroutines.Dispatchers.IO]).
+         * The thread on which this method should be called depends on the features being used:
+         * - If you are using SceneCore rendering APIs, this method must be called on the **Main
+         *   Thread**.
+         * - If you are using ARCore APIs on a Projected device, this method must be called on a
+         *   **Worker Thread** (e.g., [Dispatchers.IO][kotlinx.coroutines.Dispatchers.IO]).
          * > **Thread Safety Warning:** This method performs significant disk I/O, including loading
          * > native libraries. If StrictMode is enabled, calling this on the **Main Thread** (UI
          * > Thread) will trigger a [android.os.StrictMode] `DiskReadViolation`.
          *
-         * **Example with Coroutines:**
+         * **Example for calling on a WorkerThread for Projected devices:**
          *
          * ```kotlin
          * lifecycleScope.launch {
-         *   val result = withContext(Dispatchers.IO) {
-         *     Session.create(activity)
-         *   }
-         * }
-         * ```
-         *
-         * @param activity the [Activity] that provides the context for the session's resources.
-         * @param coroutineContext the [CoroutineContext] that will be used to handle the session's
-         *   coroutines. Defaults to [EmptyCoroutineContext].
-         * @param lifecycleOwner the [LifecycleOwner] whose lifecycle controls the runtime state of
-         *   the session. Defaults to [activity] as the owner. Explicitly set this parameter if you
-         *   desire to have finer control over the session's lifecycle. The [lifecycleOwner]'s
-         *   lifecycle must still be bounded within the lifespan of the provided [activity], else
-         *   the session will experience undefined behavior.
-         * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
-         *   newly created session, or another [SessionCreateResult] if a certain criteria was not
-         *   met.
-         * @throws [SecurityException] if the [Session] is backed by Google Play Services for AR and
-         *   [android.Manifest.permission.CAMERA] has not been granted to the calling application.
-         * @sample androidx.xr.arcore.samples.callSessionCreate
-         */
-        @JvmOverloads
-        @JvmStatic
-        public fun create(
-            activity: Activity,
-            coroutineContext: CoroutineContext = EmptyCoroutineContext,
-            lifecycleOwner: LifecycleOwner = activity as LifecycleOwner,
-        ): SessionCreateResult =
-            create(
-                context = activity,
-                lifecycleOwner = lifecycleOwner,
-                coroutineContext = coroutineContext,
-                unscaledGravityAlignedActivitySpace = true,
-            )
-
-        /**
-         * Creates a new [Session] with a provided [LifecycleOwner] and [context].
-         *
-         * Only use this version of the constructor if you desire to have finer control over the
-         * session's lifecycle. The [lifecycleOwner]'s lifecycle must still be bounded within the
-         * lifespan of the provided [context], else the session will experience undefined behavior.
-         *
-         * **Note:** Providing a non-[Activity] context is not supported by SceneCore runtimes, and
-         * they will not be loaded. Please use an [Activity] as the [context] if you wish to use
-         * SceneCore APIs.
-         *
-         * **Note:** You must provide a Projected [Context] if you want to create a Session on a
-         * Projected device. This can be an [Activity] that is being displayed on a Projected device
-         * or a context obtained from
-         * [androidx.xr.projected.ProjectedContext.createProjectedDeviceContext].
-         *
-         * It is strongly recommended to call this method from a background thread (e.g.,
-         * [Dispatchers.IO][kotlinx.coroutines.Dispatchers.IO]).
-         * > **Thread Safety Warning:** This method performs significant disk I/O, including loading
-         * > native libraries. If StrictMode is enabled, calling this on the **Main Thread** (UI
-         * > Thread) will trigger a [android.os.StrictMode] `DiskReadViolation`.
-         *
-         * **Example with Coroutines:**
-         *
-         * ```kotlin
-         * lifecycleScope.launch {
-         *   val result = withContext(Dispatchers.IO) {
-         *     Session.create(activity)
-         *   }
+         *     val result = withContext(Dispatchers.IO) {
+         *         Session.create(context)
+         *     }
          * }
          * ```
          *
          * @param context the [context] provided for the session's resources.
-         * @param lifecycleOwner the [lifecycleOwner] whose lifecycle controls the runtime state of
-         *   the session.
          * @param coroutineContext the [CoroutineContext] that will be used to handle the session's
          *   coroutines.
+         * @param lifecycleOwner the [lifecycleOwner] whose lifecycle controls the runtime state of
+         *   the session. Defaults to using the [context] as the owner if not provided.
          * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
          *   newly created session, or another [SessionCreateResult] if a certain criteria was not
          *   met.
          * @throws [SecurityException] if the [Session] is backed by Google Play Services for AR and
          *   [android.Manifest.permission.CAMERA] has not been granted to the calling application.
-         * @sample androidx.xr.arcore.samples.callSessionCreate
          */
         @JvmOverloads
         @JvmStatic
         public fun create(
             context: Context,
-            lifecycleOwner: LifecycleOwner,
             coroutineContext: CoroutineContext = EmptyCoroutineContext,
+            lifecycleOwner: LifecycleOwner = context as LifecycleOwner,
+        ): SessionCreateResult = createInternal(context, coroutineContext, lifecycleOwner, true)
+
+        @Deprecated(
+            message = "Use Session.create(context, coroutineContext, lifecycleOwner) instead.",
+            ReplaceWith(
+                "Session.create(context = activity, coroutineContext = coroutineContext, lifecycleOwner = activity)"
+            ),
+        )
+        @JvmOverloads
+        @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public fun create(
+            activity: Activity,
+            coroutineContext: CoroutineContext = EmptyCoroutineContext,
+            unscaledGravityAlignedActivitySpace: Boolean = true,
         ): SessionCreateResult =
-            create(
-                context = context,
-                lifecycleOwner = lifecycleOwner,
-                coroutineContext = coroutineContext,
-                unscaledGravityAlignedActivitySpace = true,
+            createInternal(
+                activity,
+                coroutineContext,
+                activity as LifecycleOwner,
+                unscaledGravityAlignedActivitySpace,
             )
 
-        private fun create(
+        private fun createInternal(
             context: Context,
-            lifecycleOwner: LifecycleOwner,
             coroutineContext: CoroutineContext,
-            unscaledGravityAlignedActivitySpace: Boolean = true,
+            lifecycleOwner: LifecycleOwner,
+            unscaledGravityAlignedActivitySpace: Boolean,
         ): SessionCreateResult {
             check(lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED) {
                 "Cannot create a new session on a destroyed lifecycleOwner."
@@ -359,7 +306,6 @@ public constructor(
         private val RUNTIME_FACTORY_PROVIDERS =
             listOf(
                 "androidx.xr.arcore.openxr.OpenXrRuntimeFactory",
-                "androidx.xr.arcore.projected.ProjectedRuntimeFactory",
                 "androidx.xr.arcore.playservices.ArCoreRuntimeFactory",
                 "androidx.xr.arcore.testing.FakePerceptionRuntimeFactory",
                 "androidx.xr.runtime.StubPerceptionRuntimeFactory",
@@ -403,7 +349,7 @@ public constructor(
 
     /** The current state of the runtime configuration. */
     @GuardedBy("lock")
-    public var config: Config = Config()
+    public var config: Config = DEFAULT_CONFIG
         private set
 
     @get:VisibleForTesting
@@ -416,10 +362,7 @@ public constructor(
         }
     }
 
-    @Deprecated(
-        "Session.activity is an unsafe reference and may not resolve in the future. Please keep a reference to the activity outside of the Session."
-    )
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     public val activity: Activity
         get() {
             check(lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED)
@@ -433,12 +376,14 @@ public constructor(
     /**
      * Sets or changes the [Config] to use for the Session.
      *
-     * The passed [config] will overwrite all [ConfigMode] values. Not all runtimes will support
-     * every [ConfigMode], and the desired modes should first be queried for availability using
-     * [ConfigMode.isSupported] before configuring.
+     * The passed [config] will overwrite all mode values. Not all runtimes will support every mode,
+     * and the desired modes should first be queried for availability using
+     * [androidx.xr.runtime.XrDevice] before configuring. Example:
+     * [androidx.xr.runtime.XrDevice.isGeospatialModeSupported].
      *
-     * It is recommended to use and modify the [Config.copy] of the current [Session.config] to
-     * maintain the current configuration state aside from the desired changes.
+     * It is recommended to use and modify an instance of [Config.Builder] to maintain the current
+     * desired configuration state. A instance of [Config] to pass to this function can be created
+     * using [Config.Builder.build].
      *
      * Note that enabling most configurations will increase hardware resource consumption and should
      * only be enabled if needed.
@@ -459,16 +404,28 @@ public constructor(
         }
         return runBlocking {
             lock.withLock {
+                val runtimesConfigured: MutableList<JxrRuntime> = mutableListOf()
                 try {
                     for (runtime in runtimes) {
                         runtime.configure(config)
+                        runtimesConfigured.add(runtime)
                     }
-                } catch (e: FaceTrackingNotCalibratedException) {
-                    return@withLock SessionConfigureCalibrationRequired(
-                        RequiredCalibrationType.REQUIRED_CALIBRATION_TYPE_FACE_TRACKING
-                    )
-                } catch (e: LibraryNotLinkedException) {
-                    return@withLock SessionConfigureLibraryNotLinked(e.libraryName)
+                } catch (e: Exception) {
+                    // roll back configuration for all runtimes
+                    for (runtime in runtimesConfigured) {
+                        runtime.configure(this@Session.config)
+                    }
+                    when (e) {
+                        is FaceTrackingNotCalibratedException ->
+                            return@withLock SessionConfigureCalibrationRequired(
+                                RequiredCalibrationType.REQUIRED_CALIBRATION_TYPE_FACE_TRACKING
+                            )
+
+                        is LibraryNotLinkedException ->
+                            return@withLock SessionConfigureLibraryNotLinked(e.libraryName)
+
+                        else -> throw e
+                    }
                 }
                 this@Session.config = config
                 SessionConfigureSuccess()
@@ -501,9 +458,6 @@ public constructor(
     /**
      * Destroys the session, releasing any resources acquired by the session. Objects tracked by the
      * system will not receive updates.
-     *
-     * Calling this method on a destroyed session is a no-op. Additionally, calling this method on
-     * an active session will first call [pause].
      */
     private fun destroy() {
         contextSessionMap.remove(context)
