@@ -25,7 +25,6 @@ import androidx.compose.ui.window.ComposeViewport
 import androidx.compose.ui.window.ComposeViewportConfiguration
 import androidx.compose.ui.window.ComposeWindow
 import androidx.compose.ui.window.LocalComposeWindow
-import kotlin.coroutines.suspendCoroutine
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsReference
 import kotlin.js.get
@@ -79,8 +78,19 @@ private external interface CanReplaceChildren {
 @OptIn(ExperimentalWasmJsInterop::class)
 internal interface OnCanvasTests {
 
+    @BeforeTest
+    fun beforeTest() {
+        // We call ensureCleanState in both beforeTest and afterTest to ensure the clean initial state,
+        // since afterTest might fail due to timeout, etc.
+        ensureCleanState()
+    }
+
     @AfterTest
     fun afterTest() {
+        ensureCleanState()
+    }
+
+    private fun ensureCleanState() {
         composeWindow?.dispose()
         composeWindow = null
         resetCanvas()
@@ -163,7 +173,7 @@ internal interface OnCanvasTests {
             }
         }
 
-        suspendCoroutine { continuation ->
+        suspendCancellableCoroutine { continuation ->
             val initialContent = a11yContainer.innerHTML
             skipFramesUntil(
                 condition = { a11yContainer.innerHTML != initialContent },
@@ -231,7 +241,7 @@ internal class WebApplicationScope(
      * due to DomInputStrategy implementation relying on animation frame events.
      */
     internal suspend fun awaitAnimationFrame() {
-        suspendCoroutine { continuation ->
+        suspendCancellableCoroutine { continuation ->
             window.requestAnimationFrame { continuation.resumeWith(Result.success(Unit)) }
         }
     }
@@ -273,8 +283,8 @@ internal external class ExtendedShadowRoot : ShadowRoot {
 }
 
 private fun storeComposeWindow(container: Element, ref: JsReference<ComposeWindow>?) {
-    js("container.composeWindow = ref")
+    js("container._composeWindowRef = ref")
 }
 
 private fun getStoredComposeWindow(container: Element): JsReference<ComposeWindow>? =
-    js("container.composeWindow")
+    js("container._composeWindowRef")

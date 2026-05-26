@@ -31,7 +31,6 @@ import androidx.compose.ui.util.fastJoinToString
 import kotlin.js.js
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.browser.document
-import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.BufferOverflow
@@ -39,9 +38,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.suspendCancellableCoroutine
 import org.w3c.dom.HTMLElement
 
 internal class ComposeWebSemanticsListener(
