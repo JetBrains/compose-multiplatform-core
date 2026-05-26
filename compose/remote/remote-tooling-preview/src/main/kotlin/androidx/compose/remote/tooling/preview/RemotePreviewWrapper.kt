@@ -16,7 +16,6 @@
 
 package androidx.compose.remote.tooling.preview
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewWrapperProvider
@@ -36,10 +35,9 @@ import androidx.compose.ui.tooling.preview.PreviewWrapperProvider
  * }
  * ```
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemotePreviewWrapper : PreviewWrapperProvider {
     @Composable
     override fun Wrap(content: @Composable (() -> Unit)) {
-        RemotePreview(profile = RcPlatformProfiles.ANDROIDX, content = content)
+        RemoteContentPreview(profile = RcPlatformProfiles.ANDROIDX, content = content)
     }
 }

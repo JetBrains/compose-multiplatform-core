@@ -43,6 +43,9 @@ internal class StubPerceptionRuntime(internal var hasCreatePermission: Boolean =
         DESTROYED,
     }
 
+    override var config: Config = Config.Builder().build()
+        private set
+
     internal var state: State = State.NOT_INITIALIZED
         private set
 
@@ -60,6 +63,9 @@ internal class StubPerceptionRuntime(internal var hasCreatePermission: Boolean =
     @get:JvmName("shouldSupportImageTracking")
     internal var shouldSupportImageTracking: Boolean = true
 
+    @get:JvmName("shouldSupportQrCodeTracking")
+    internal var shouldSupportQrCodeTracking: Boolean = true
+
     override fun initialize() {
         check(state == State.NOT_INITIALIZED)
         if (!hasCreatePermission) throw SecurityException()
@@ -70,18 +76,6 @@ internal class StubPerceptionRuntime(internal var hasCreatePermission: Boolean =
         }
         state = State.INITIALIZED
     }
-
-    internal var config: Config =
-        Config(
-            PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-            HandTrackingMode.BOTH,
-            DeviceTrackingMode.SPATIAL,
-            DepthEstimationMode.SMOOTH_AND_RAW,
-            AnchorPersistenceMode.LOCAL,
-            // Needs to contain at least one AugmentedObjectCategory to enable
-            augmentedObjectCategories = setOf(AugmentedObjectCategory.MOUSE),
-        )
-        private set
 
     override fun configure(config: Config) {
         check(
@@ -105,12 +99,13 @@ internal class StubPerceptionRuntime(internal var hasCreatePermission: Boolean =
             throw UnsupportedOperationException()
         }
 
-        if (hasMissingPermission) throw SecurityException()
-        this.config = config
-    }
+        if (!shouldSupportQrCodeTracking && config.qrCodeTracking != QrCodeTrackingMode.DISABLED) {
+            throw UnsupportedOperationException()
+        }
 
-    override fun getPreferredDisplayBlendMode(): DisplayBlendMode {
-        return xrDevicePreferredDisplayBlendMode
+        if (hasMissingPermission) throw SecurityException()
+
+        this.config = config
     }
 
     override fun resume() {

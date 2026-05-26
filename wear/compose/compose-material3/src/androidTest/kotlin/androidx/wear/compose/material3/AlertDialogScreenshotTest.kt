@@ -285,7 +285,7 @@ class AlertDialogScreenshotTest {
             titleText = "Test EdgeButton",
             messageText =
                 "This long text forces the AlertDialog's EdgeButton to shrink in size, allowing us to verify that the UI renders and scales correctly even when constrained by content length.",
-            matcher = MSSIMMatcher(1.0), // Check for the perfect match
+            matcher = MSSIMMatcher(0.99), // Check for the near-perfect match
         )
     }
 

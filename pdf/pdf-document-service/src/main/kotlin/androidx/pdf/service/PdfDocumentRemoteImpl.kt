@@ -33,7 +33,6 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresExtension
-import androidx.annotation.RestrictTo
 import androidx.pdf.DraftEditOperation
 import androidx.pdf.DraftEditResult
 import androidx.pdf.PdfDocumentRemote
@@ -46,12 +45,14 @@ import androidx.pdf.annotation.PageAnnotationsProviderImpl
 import androidx.pdf.annotation.models.PaginatedAnnotations
 import androidx.pdf.annotation.models.PdfObject
 import androidx.pdf.annotation.processor.PageAnnotationsPaginator
+import androidx.pdf.annotation.processor.PageObjectsPaginator
 import androidx.pdf.annotation.processor.PdfRendererAnnotationsProcessor
 import androidx.pdf.models.Dimensions
+import androidx.pdf.models.PageObjectsProviderImpl
+import androidx.pdf.models.PaginatedObjects
 import androidx.pdf.utils.isAnnotationsFeatureAvailable
 import androidx.pdf.utils.toPdfObject
 
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class PdfDocumentRemoteImpl(
     private val adapterFactory: PdfDocumentRendererFactory = PdfDocumentRendererFactoryImpl()
 ) : PdfDocumentRemote.Stub() {
@@ -59,6 +60,7 @@ internal class PdfDocumentRemoteImpl(
     private lateinit var rendererAdapter: PdfDocumentRenderer
     private lateinit var rendererAnnotationsProcessor: PdfRendererAnnotationsProcessor
     private var pageAnnotationsPaginator: PageAnnotationsPaginator? = null
+    private var pageObjectsPaginator: PageObjectsPaginator? = null
 
     override fun openPdfDocument(pfd: ParcelFileDescriptor, password: String?): Int {
         try {
@@ -246,6 +248,20 @@ internal class PdfDocumentRemoteImpl(
         return rendererAnnotationsProcessor.process(operations)
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override fun getPageObjects(pageNum: Int, types: Long): PaginatedObjects? {
+        return getOrCreatePageObjectsPaginator(pageNum, types).getPageObjects()
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override fun getBatchedPageObjects(
+        pageNum: Int,
+        batchIndex: Int,
+        types: Long,
+    ): PaginatedObjects? {
+        return getOrCreatePageObjectsPaginator(pageNum, types).getPageObjects(batchIndex)
+    }
+
     override fun getLinearizationStatus(): Int {
         return rendererAdapter.linearizationStatus
     }
@@ -263,4 +279,15 @@ internal class PdfDocumentRemoteImpl(
     }
 
     override fun getInterfaceVersion(): Int = VERSION
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    private fun getOrCreatePageObjectsPaginator(pageNum: Int, types: Long): PageObjectsPaginator {
+        return pageObjectsPaginator?.takeIf { it.pageNum == pageNum && it.types == types }
+            ?: PageObjectsPaginator(
+                    pageNum,
+                    objectsProvider = PageObjectsProviderImpl(documentRenderer = rendererAdapter),
+                    types = types,
+                )
+                .also { pageObjectsPaginator = it }
+    }
 }

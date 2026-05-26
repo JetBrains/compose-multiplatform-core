@@ -47,6 +47,8 @@ constructor(
     public val displayFeatures: List<DisplayFeature>,
 
     /** The current user engagement modes, indicating how the user is interacting with the app. */
+    @Suppress("DEPRECATION")
+    @Deprecated(message = "Use WindowEngagementInfo#engagementModes instead")
     public val engagementModes: Set<EngagementMode> =
         setOf(EngagementMode.VISUALS_ON, EngagementMode.AUDIO_ON), // Default
 ) {
@@ -56,6 +58,10 @@ constructor(
      *
      * @see WindowLayoutInfo.engagementModes
      */
+    @Deprecated(
+        message = "Use WindowEngagementInfo.EngagementMode instead",
+        replaceWith = ReplaceWith("androidx.window.layout.WindowEngagementInfo.EngagementMode"),
+    )
     public class EngagementMode private constructor(private val id: Int) {
         override fun toString(): String =
             when (id) {
@@ -64,6 +70,7 @@ constructor(
                 else -> "UNKNOWN($id)"
             }
 
+        @Suppress("DEPRECATION")
         override fun equals(other: Any?): Boolean = (other is EngagementMode) && this.id == other.id
 
         override fun hashCode(): Int = id.hashCode()
@@ -73,14 +80,18 @@ constructor(
              * Indicates the engagement mode includes a visual presentation. When this mode is
              * active, the user can visually see the app UI on a visible window.
              */
-            @JvmField public val VISUALS_ON: EngagementMode = EngagementMode(1)
+            @JvmField
+            @Suppress("DEPRECATION")
+            public val VISUALS_ON: EngagementMode = EngagementMode(1)
 
             /**
              * Indicates the engagement mode includes an audio presentation. This can be active with
              * or without [VISUALS_ON]. When active without visuals, it signifies an audio-only
              * experience.
              */
-            @JvmField public val AUDIO_ON: EngagementMode = EngagementMode(2)
+            @JvmField
+            @Suppress("DEPRECATION")
+            public val AUDIO_ON: EngagementMode = EngagementMode(2)
         }
     }
 
@@ -90,6 +101,8 @@ constructor(
      * @param mode The [EngagementMode] to check for.
      * @return true if the mode is present in the [engagementModes] set, false otherwise.
      */
+    @Suppress("DEPRECATION")
+    @Deprecated(message = "Use WindowEngagementInfo#hasEngagementMode instead")
     public fun hasEngagementMode(mode: EngagementMode): Boolean {
         return engagementModes.contains(mode)
     }
@@ -100,21 +113,26 @@ constructor(
      * @param modes The [EngagementMode]-s to check for.
      * @return true if all specified modes are in the [engagementModes] set, false otherwise.
      */
+    @Suppress("DEPRECATION")
+    @Deprecated(message = "Use WindowEngagementInfo#hasEngagementModes instead")
     public fun hasEngagementModes(vararg modes: EngagementMode): Boolean {
         return engagementModes.containsAll(modes.asList())
     }
 
+    @Suppress("DEPRECATION")
     public override fun toString(): String {
         return "WindowLayoutInfo{ DisplayFeatures[${displayFeatures.joinToString()}], " +
             "engagementModes=$engagementModes }"
     }
 
+    @Suppress("DEPRECATION")
     public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is WindowLayoutInfo) return false
         return displayFeatures == other.displayFeatures && engagementModes == other.engagementModes
     }
 
+    @Suppress("DEPRECATION")
     public override fun hashCode(): Int {
         var result = displayFeatures.hashCode()
         result = 31 * result + engagementModes.hashCode()

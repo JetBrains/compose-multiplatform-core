@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
-
 package androidx.xr.arcore.testapp.helloar.rendering
 
 import android.app.Activity
@@ -40,16 +38,16 @@ import androidx.xr.scenecore.InputEvent
 import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.scene
 import java.nio.file.Paths
-import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 internal class AnchorRenderer(
     val activity: Activity,
     val planeRenderer: PlaneRenderer,
     val session: Session,
-    val coroutineScope: CoroutineScope,
 ) : DefaultLifecycleObserver {
     private val arDevice = ArDevice.getInstance(session)
 
@@ -57,20 +55,18 @@ internal class AnchorRenderer(
 
     private val renderedAnchors: MutableList<AnchorModel> = mutableListOf<AnchorModel>()
 
-    private lateinit var updateJob: CompletableJob
+    private lateinit var renderScope: CoroutineScope
 
     override fun onResume(owner: LifecycleOwner) {
-        updateJob =
-            SupervisorJob(
-                coroutineScope.launch() {
-                    gltfAnchorModel = GltfModel.create(session, Paths.get("models/xyzArrows.glb"))
-                    planeRenderer.renderedPlanes.collect { attachInteractableComponents(it) }
-                }
-            )
+        renderScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        renderScope.launch {
+            gltfAnchorModel = GltfModel.create(session, Paths.get("models/xyzArrows.glb"))
+            planeRenderer.renderedPlanes.collect { attachInteractableComponents(it) }
+        }
     }
 
     override fun onPause(owner: LifecycleOwner) {
-        updateJob.cancel()
+        renderScope.cancel()
         clearRenderedAnchors()
     }
 
@@ -81,13 +77,12 @@ internal class AnchorRenderer(
         renderedAnchors.clear()
     }
 
-    @Suppress("DEPRECATION")
     private fun attachInteractableComponents(planeModels: Collection<PlaneModel>) {
         for (planeModel in planeModels) {
             if (planeModel.modelEntity.getComponents().isEmpty()) {
                 planeModel.modelEntity.addComponent(
                     InteractableComponent.create(session, activity.mainExecutor) { event ->
-                        if (event.action.equals(InputEvent.Action.DOWN)) {
+                        if (event.action == InputEvent.Action.DOWN) {
                             val headScenePose =
                                 session.scene.perceptionSpace.getScenePoseFromPerceptionPose(
                                     arDevice.state.value.devicePose
@@ -164,7 +159,7 @@ internal class AnchorRenderer(
             )
         entity.setScale(.1f)
         val renderJob =
-            coroutineScope.launch(updateJob) {
+            renderScope.launch {
                 anchor.state.collect { state ->
                     if (state.trackingState == TrackingState.TRACKING) {
                         entity.setPose(

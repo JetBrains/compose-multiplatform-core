@@ -56,7 +56,7 @@ class SpatialAudioComponentsActivity : AppCompatActivity() {
         MAIN_PANEL,
     }
 
-    private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
+    private val session by lazy { (Session.create(context = this) as SessionCreateSuccess).session }
 
     private lateinit var exoPlayerPoint: ExoPlayer
     private lateinit var exoPlayerFirstOrder: ExoPlayer
@@ -184,10 +184,18 @@ class SpatialAudioComponentsActivity : AppCompatActivity() {
         // --- PositionalAudioComponent Card ---
         val positionalAudioPlayTigerButton =
             findViewById<Button>(R.id.button_positional_audio_play_tiger)
+
+        var isPlaying = false
         positionalAudioPlayTigerButton.setOnClickListener {
-            exoPlayerPoint.setMediaItem(MediaItem.fromUri(tigerPath))
-            exoPlayerPoint.prepare()
-            exoPlayerPoint.play()
+            if (!isPlaying) {
+                isPlaying = true
+                exoPlayerPoint.setMediaItem(MediaItem.fromUri(tigerPath))
+                exoPlayerPoint.prepare()
+                exoPlayerPoint.play()
+            } else {
+                isPlaying = false
+                exoPlayerPoint.stop()
+            }
         }
 
         var nextAttachment = AttachmentState.SOUND_PANEL

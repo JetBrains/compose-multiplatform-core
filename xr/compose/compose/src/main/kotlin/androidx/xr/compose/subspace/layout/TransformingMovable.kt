@@ -56,7 +56,10 @@ import kotlinx.coroutines.asExecutor
  * offset upon release. 3) It should not be used with the following composables
  * [androidx.xr.compose.subspace.SpatialExternalSurfaceHemisphere] and
  * [androidx.xr.compose.subspace.SpatialExternalSurfaceSphere] due to their similarity with the
- * system environment and not having any layout size.
+ * system environment and not having any layout size. 4) If this element has animations that affect
+ * its layout properties (e.g., offset), these animations should be stopped when a move gesture
+ * starts (detected via the [onMove] callback with [SpatialMoveEventType.Start]) to prevent
+ * rendering jitter, and can be resumed when the gesture ends ([SpatialMoveEventType.End]).
  *
  * @param enabled true if this composable should be movable. Setting this to false will remove the
  *   interactable affordance associated with the content. Disabling the modifier after movement
@@ -335,14 +338,10 @@ private class TransformingMovableNode(
         val corePose = nextPose.convertMetersToPixels(density)
         // Find the delta from the start of the move event.
         val coreDeltaPose =
-            if (coreEntity !is CoreModelEntity) {
-                Pose(
-                    corePose.translation - initialCorePose.translation,
-                    initialCorePose.rotation.inverse * corePose.rotation,
-                )
-            } else {
-                Pose.Identity
-            }
+            Pose(
+                corePose.translation - initialCorePose.translation,
+                initialCorePose.rotation.inverse * corePose.rotation,
+            )
         userPose =
             Pose(
                 userPose.translation + coreDeltaPose.translation,

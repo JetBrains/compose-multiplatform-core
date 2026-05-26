@@ -92,7 +92,9 @@ class EnvironmentActivity : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
-        session!!.configure(Config(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session!!.configure(
+            Config.Builder().setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL).build()
+        )
         session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // toolbar
@@ -365,14 +367,14 @@ class EnvironmentActivity : AppCompatActivity() {
     private fun toggleMode(): String {
         when (spatialMode) {
             SpatialMode.FSM -> {
-                session!!.scene.requestHomeSpaceMode()
+                session!!.scene.requestHomeSpace()
                 spatialMode = SpatialMode.HSM
                 addEvent(EventType.MODE_CHANGED_TO_HSM, "")
                 return getString(R.string.switch_to_fsm_button_text)
             }
 
             SpatialMode.HSM -> {
-                session!!.scene.requestFullSpaceMode()
+                session!!.scene.requestFullSpace()
                 spatialMode = SpatialMode.FSM
                 addEvent(EventType.MODE_CHANGED_TO_FSM, "")
                 return getString(R.string.switch_to_hsm_button_text)

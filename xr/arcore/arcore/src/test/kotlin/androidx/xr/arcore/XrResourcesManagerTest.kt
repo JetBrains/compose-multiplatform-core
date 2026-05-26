@@ -28,6 +28,7 @@ import androidx.xr.arcore.runtime.Geospatial as RuntimeGeospatial
 import androidx.xr.arcore.runtime.Hand as RuntimeHand
 import androidx.xr.arcore.runtime.HandJointType
 import androidx.xr.arcore.runtime.Plane as RuntimePlane
+import androidx.xr.arcore.runtime.QrCode as RuntimeQrCode
 import androidx.xr.arcore.runtime.RenderViewpoint as RuntimeRenderViewpoint
 import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.arcore.runtime.VpsAvailabilityUnavailable
@@ -35,6 +36,7 @@ import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.manifest.HAND_TRACKING
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.GeospatialPose
@@ -78,7 +80,10 @@ class XrResourcesManagerTest {
 
         activityController.create().start().resume()
 
-        session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
+        session =
+            (Session.create(context = activity, coroutineContext = testDispatcher)
+                    as SessionCreateSuccess)
+                .session
         underTest =
             session.stateExtenders
                 .filterIsInstance<PerceptionStateExtender>()
@@ -249,6 +254,18 @@ class XrResourcesManagerTest {
     }
 
     @Test
+    fun syncTrackables_handlesQrCodes() {
+        val runtimeQrCode1 = StubRuntimeQrCode()
+        val runtimeQrCode2 = StubRuntimeQrCode()
+        val runtimeQrCode3 = StubRuntimeQrCode()
+        underTest.syncTrackables(listOf(runtimeQrCode1, runtimeQrCode2))
+
+        assertThat(underTest.trackablesMap[runtimeQrCode1]).isNotNull()
+        assertThat(underTest.trackablesMap[runtimeQrCode2]).isNotNull()
+        assertThat(underTest.trackablesMap[runtimeQrCode3]).isNull()
+    }
+
+    @Test
     fun clear_clearsAllTrackables() {
         val runtimePlane = StubRuntimePlane()
         underTest.syncTrackables(listOf(runtimePlane))
@@ -273,18 +290,21 @@ class XrResourcesManagerTest {
         }
 
     @Test
-    @Suppress("DEPRECATION")
     fun update_geospatialUpdated() =
         runTest(testDispatcher) {
             val runtimeGeospatial = StubRuntimeGeospatial()
             underTest.initiateGeospatial(runtimeGeospatial)
             underTest.update()
-            check(underTest.geospatial.state.value == GeospatialState.NOT_RUNNING)
+            check(
+                underTest.geospatial.state.value.geospatialTrackingState ==
+                    Geospatial.GeospatialTrackingState.NOT_RUNNING
+            )
 
             runtimeGeospatial.state = RuntimeGeospatial.State.RUNNING
             underTest.update()
 
-            assertThat(underTest.geospatial.state.value).isEqualTo(GeospatialState.RUNNING)
+            assertThat(underTest.geospatial.state.value.geospatialTrackingState)
+                .isEqualTo(Geospatial.GeospatialTrackingState.RUNNING)
         }
 
     @Test
@@ -323,7 +343,7 @@ class XrResourcesManagerTest {
     @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     private class StubRuntimeRenderViewpoint : RuntimeRenderViewpoint {
         override val pose = Pose()
-        override val fieldOfView = androidx.xr.runtime.FieldOfView(0f, 0f, 0f, 0f)
+        override val fieldOfView = FieldOfView(0f, 0f, 0f, 0f)
     }
 
     private class StubRuntimeHand : RuntimeHand {
@@ -359,6 +379,13 @@ class XrResourcesManagerTest {
 
     private class StubRuntimeAugmentedImage : RuntimeAugmentedImage {
         override val index = 0
+        override val centerPose = Pose()
+        override val extents = FloatSize2d()
+        override val trackingState = TrackingState.TRACKING
+    }
+
+    private class StubRuntimeQrCode : RuntimeQrCode {
+        override val data = ""
         override val centerPose = Pose()
         override val extents = FloatSize2d()
         override val trackingState = TrackingState.TRACKING

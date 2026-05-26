@@ -43,7 +43,7 @@ import androidx.xr.runtime.SessionCreateUnsupportedDevice
  */
 class SessionLifecycleHelper(
     val activity: ComponentActivity,
-    val config: Config = Config(),
+    val config: Config = Config.Builder().build(),
     val onSessionAvailable: (Session) -> Unit = {},
     val onSessionCreateActionRequired: (SessionCreateResult) -> Unit = {},
 ) {
@@ -89,7 +89,7 @@ class SessionLifecycleHelper(
 
     internal fun tryCreateSession() {
         try {
-            when (val result = Session.create(activity)) {
+            when (val result = Session.create(context = activity)) {
                 is SessionCreateSuccess -> {
                     session = result.session
                     try {

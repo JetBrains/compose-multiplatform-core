@@ -95,21 +95,23 @@ class PerceptionStateExtenderTest {
                 FACE_TRACKING,
                 EYE_TRACKING_COARSE,
                 EYE_TRACKING_FINE,
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
             )
 
         activityController.create().start().resume()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
         session.configure(
-            Config(
-                augmentedObjectCategories = setOf(AugmentedObjectCategory.LAPTOP),
-                planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                deviceTracking = DeviceTrackingMode.SPATIAL,
-                handTracking = HandTrackingMode.BOTH,
-                faceTracking = FaceTrackingMode.BLEND_SHAPES,
-                depthEstimation = DepthEstimationMode.SMOOTH_AND_RAW,
-                eyeTracking = EyeTrackingMode.FINE_TRACKING,
-            )
+            Config.Builder()
+                .setAugmentedObjectCategories(setOf(AugmentedObjectCategory.LAPTOP))
+                .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                .setHandTracking(HandTrackingMode.BOTH)
+                .setFaceTracking(FaceTrackingMode.BLEND_SHAPES)
+                .setDepthEstimation(DepthEstimationMode.SMOOTH_AND_RAW)
+                .setEyeTracking(EyeTrackingMode.FINE_TRACKING)
+                .setGeospatial(androidx.xr.runtime.GeospatialMode.SPATIAL)
+                .build()
         )
 
         perceptionStateMap.clear()
@@ -199,7 +201,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_twice_leftHandStatesUpdated() =
         runTest(testDispatcher) {
-            arCoreTestRule.leftHand.isVisible = false
+            arCoreTestRule.leftHandTester.isVisible = false
             advanceUntilIdle()
 
             var timeMark = timeSource.markNow()
@@ -209,7 +211,7 @@ class PerceptionStateExtenderTest {
             assertThat(leftHandState.trackingState).isEqualTo(TrackingState.PAUSED)
             assertThat(leftHandState.handJoints[HandJointType.THUMB_TIP]).isNull()
 
-            arCoreTestRule.leftHand.isVisible = true
+            arCoreTestRule.leftHandTester.isVisible = true
             advanceUntilIdle()
 
             timeMark = timeSource.markNow()
@@ -223,7 +225,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_twice_rightHandStatesUpdated() =
         runTest(testDispatcher) {
-            arCoreTestRule.rightHand.isVisible = false
+            arCoreTestRule.rightHandTester.isVisible = false
             advanceUntilIdle()
 
             var timeMark = timeSource.markNow()
@@ -233,7 +235,7 @@ class PerceptionStateExtenderTest {
             assertThat(rightHandState.trackingState).isEqualTo(TrackingState.PAUSED)
             assertThat(rightHandState.handJoints[HandJointType.THUMB_TIP]).isNull()
 
-            arCoreTestRule.rightHand.isVisible = true
+            arCoreTestRule.rightHandTester.isVisible = true
             advanceUntilIdle()
 
             timeMark = timeSource.markNow()
@@ -247,7 +249,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_twice_leftEyeStatesUpdated() =
         runTest(testDispatcher) {
-            arCoreTestRule.leftEye.isOpen = false
+            arCoreTestRule.leftEyeTester.isOpen = false
             advanceUntilIdle()
 
             var timeMark = timeSource.markNow()
@@ -256,7 +258,7 @@ class PerceptionStateExtenderTest {
             var leftEyeState = perceptionStateMap[timeMark]!!.leftEyeState
             assertThat(leftEyeState!!.isOpen).isFalse()
 
-            arCoreTestRule.leftEye.isOpen = true
+            arCoreTestRule.leftEyeTester.isOpen = true
             advanceUntilIdle()
 
             timeMark = timeSource.markNow()
@@ -269,7 +271,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_twice_rightEyeStatesUpdated() =
         runTest(testDispatcher) {
-            arCoreTestRule.rightEye.isOpen = false
+            arCoreTestRule.rightEyeTester.isOpen = false
             advanceUntilIdle()
 
             var timeMark = timeSource.markNow()
@@ -278,7 +280,7 @@ class PerceptionStateExtenderTest {
             var rightEyeState = perceptionStateMap[timeMark]!!.rightEyeState
             assertThat(rightEyeState!!.isOpen).isFalse()
 
-            arCoreTestRule.rightEye.isOpen = true
+            arCoreTestRule.rightEyeTester.isOpen = true
             advanceUntilIdle()
 
             timeMark = timeSource.markNow()
@@ -299,7 +301,7 @@ class PerceptionStateExtenderTest {
             assertThat(perceptionState.arDeviceState.devicePose).isEqualTo(Pose.Identity)
 
             val expectedDevicePose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
-            arCoreTestRule.device.pose = expectedDevicePose
+            arCoreTestRule.deviceTester.pose = expectedDevicePose
             advanceUntilIdle()
 
             timeMark = timeSource.markNow()
@@ -307,6 +309,28 @@ class PerceptionStateExtenderTest {
 
             perceptionState = perceptionStateMap[timeMark]!!
             assertThat(perceptionState.arDeviceState.devicePose).isEqualTo(expectedDevicePose)
+        }
+
+    @Test
+    fun extend_twice_geospatialServiceStateUpdated() =
+        runTest(testDispatcher) {
+            var timeMark = timeSource.markNow()
+
+            underTest.extend(CoreState(timeMark))
+
+            var perceptionState = perceptionStateMap[timeMark]!!
+            assertThat(perceptionState.geospatialState?.geospatialTrackingState)
+                .isEqualTo(Geospatial.GeospatialTrackingState.NOT_RUNNING)
+
+            arCoreTestRule.geospatialTester.state = Geospatial.GeospatialTrackingState.RUNNING
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            perceptionState = perceptionStateMap[timeMark]!!
+            assertThat(perceptionState.geospatialState?.geospatialTrackingState)
+                .isEqualTo(Geospatial.GeospatialTrackingState.RUNNING)
         }
 
     @Test
@@ -325,7 +349,7 @@ class PerceptionStateExtenderTest {
 
             val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
             val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
-            arCoreTestRule.leftRenderViewpoint.apply {
+            arCoreTestRule.leftRenderViewpointTester.apply {
                 pose = expectedPose
                 fieldOfView = expectedFov
             }
@@ -362,7 +386,7 @@ class PerceptionStateExtenderTest {
 
             val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
             val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
-            arCoreTestRule.rightRenderViewpoint.apply {
+            arCoreTestRule.rightRenderViewpointTester.apply {
                 pose = expectedPose
                 fieldOfView = expectedFov
             }
@@ -398,7 +422,7 @@ class PerceptionStateExtenderTest {
 
             val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
             val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
-            arCoreTestRule.monoRenderViewpoint.apply {
+            arCoreTestRule.monoRenderViewpointTester.apply {
                 pose = expectedPose
                 fieldOfView = expectedFov
             }
@@ -421,7 +445,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_twice_faceStatesUpdated() =
         runTest(testDispatcher) {
-            arCoreTestRule.face.isValid = false
+            arCoreTestRule.faceTester.isValid = false
             advanceUntilIdle()
 
             var timeMark = timeSource.markNow()
@@ -436,7 +460,7 @@ class PerceptionStateExtenderTest {
 
             val expectedBlendShapeValues = floatArrayOf(0.1f, 0.2f, 0.3f)
             val expectedConfidenceValues = floatArrayOf(0.4f, 0.5f, 0.6f)
-            arCoreTestRule.face.apply {
+            arCoreTestRule.faceTester.apply {
                 isValid = true
                 blendShapeValues = expectedBlendShapeValues.toList()
                 confidenceValues = expectedConfidenceValues.toList()
@@ -489,7 +513,7 @@ class PerceptionStateExtenderTest {
             val expectedRawConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 99 })
             val expectedSmoothDepth = FloatBuffer.wrap(FloatArray(4) { 8.888f })
             val expectedSmoothConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 100 })
-            arCoreTestRule.leftDepth.apply {
+            arCoreTestRule.leftDepthTester.apply {
                 width = expectedWidth
                 height = expectedHeight
                 rawDepthMap = expectedRawDepth
@@ -534,7 +558,7 @@ class PerceptionStateExtenderTest {
             val expectedRawConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 99 })
             val expectedSmoothDepth = FloatBuffer.wrap(FloatArray(4) { 8.888f })
             val expectedSmoothConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 100 })
-            arCoreTestRule.rightDepth.apply {
+            arCoreTestRule.rightDepthTester.apply {
                 width = expectedWidth
                 height = expectedHeight
                 rawDepthMap = expectedRawDepth
@@ -579,7 +603,7 @@ class PerceptionStateExtenderTest {
             val expectedRawConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 99 })
             val expectedSmoothDepth = FloatBuffer.wrap(FloatArray(4) { 8.888f })
             val expectedSmoothConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 100 })
-            arCoreTestRule.monoDepth.apply {
+            arCoreTestRule.monoDepthTester.apply {
                 width = expectedWidth
                 height = expectedHeight
                 rawDepthMap = expectedRawDepth

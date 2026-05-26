@@ -141,6 +141,7 @@ public class WebViewFeature {
             SET_MAX_PRERENDERS_V1,
             JS_INJECTION_IN_FRAME_AND_WORLD,
             NAVIGATION_LISTENER,
+            WEBVIEW_NAVIGATE_EXPERIMENTAL_V1,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -719,7 +720,7 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link androidx.webkit.WebViewCompat#prerenderUrlAsync(WebView, String, CancellationSignal, Executor, PrerenderOperationCallback)}}
+     * {@link androidx.webkit.WebViewCompat#prerenderUrlAsync(WebView, String, CancellationSignal, Executor, PrerenderOperationCallback)}
      */
     public static final String PRERENDER_WITH_URL = "PRERENDER_URL_V2";
 
@@ -734,7 +735,7 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link PrefetchCache#setMaxPrefetches(Integer)},{@link PrefetchCache#setPrefetchTtlSeconds(Integer)}
+     * {@link PrefetchCache#setMaxPrefetches(int)}, {@link PrefetchCache#setPrefetchTtlSeconds(int)}
      */
     @Profile.ExperimentalUrlPrefetch
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -743,7 +744,7 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link Profile#setMaxPrerenders(Integer)}
+     * {@link Profile#setMaxPrerenders(int)}
      */
     @Profile.ExperimentalUrlPrefetch
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -953,6 +954,14 @@ public class WebViewFeature {
      * {@link JavaScriptReplyProxy#executeJavaScript(String, WebViewOutcomeReceiver)}.
      */
     public static final String JS_INJECTION_IN_FRAME_AND_WORLD = "JS_INJECTION_IN_FRAME_AND_WORLD";
+
+    /**
+     * This feature covers
+     * {@link WebViewCompat#navigate(WebView, String, NavigationParameters)}.
+     */
+    @WebViewCompat.ExperimentalNavigate
+    public static final String WEBVIEW_NAVIGATE_EXPERIMENTAL_V1 =
+            "WEBVIEW_NAVIGATE_EXPERIMENTAL_V1";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

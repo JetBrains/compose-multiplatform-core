@@ -24,7 +24,7 @@ internal class MyDao_Impl(
   public override suspend fun getFooList(): Foo<List<MyEntity>> {
     val _sql: String = "SELECT * FROM MyEntity"
     return FooReturnTypeConverter.convert() {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<List<MyEntity>>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")

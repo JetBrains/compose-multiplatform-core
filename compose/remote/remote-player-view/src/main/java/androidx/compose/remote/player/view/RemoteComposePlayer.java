@@ -905,7 +905,6 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
         return doc.getDocument().getDocInfo().getSizeOfImages() > size_small_enough_to_inline;
     }
 
-    @RestrictTo(LIBRARY_GROUP)
     private boolean isCompatible(@NonNull RemoteDocument doc) {
         if (doc.canBeDisplayed(MAX_SUPPORTED_MAJOR_VERSION, MAX_SUPPORTED_MINOR_VERSION, 0L)) {
             return true;
@@ -924,7 +923,8 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     @RestrictTo(LIBRARY_GROUP)
     public @Nullable PreparedDocument prepareDocument(@NonNull RemoteDocument doc) {
         if (isCompatible(doc)) {
-            return new RemotePreparedDocument(doc);
+            AndroidRemoteContext context = (AndroidRemoteContext) mInner.getRemoteContext();
+            return new RemotePreparedDocument(doc, context.getBitmapLoader());
         }
         return null;
     }

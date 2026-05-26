@@ -55,7 +55,10 @@ import kotlinx.coroutines.asExecutor
  * may conflict with each other, 2) It cannot be used with the following composables
  * [androidx.xr.compose.subspace.SpatialExternalSurfaceHemisphere] and
  * [androidx.xr.compose.subspace.SpatialExternalSurfaceSphere] due to their similarity with the
- * system environment and not having any layout size.
+ * system environment and not having any layout size, 3) If this element has animations that affect
+ * its layout properties (e.g., offset), these animations should be stopped when a move gesture
+ * starts (detected via the [onMove] callback with [SpatialMoveEventType.Start]) to prevent
+ * rendering jitter, and can be resumed when the gesture ends ([SpatialMoveEventType.End]).
  *
  * @param enabled true if this composable should be movable. Setting this to false will remove the
  *   interactable affordance associated with the content. Disabling the modifier after movement
@@ -633,8 +636,7 @@ internal class MovableNode(
  * @property scale The initial scale of the composable as a result of its motion. This value will
  *   change with the composable's depth when scaleWithDistance is true on the modifier.
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
- *
- *   composable, factoring in shrinking or stretching due to [scale].
+ *   composable, factoring in shrinking or stretching due to [SpatialMoveEvent.scale].
  */
 @Deprecated(message = "Use SpatialMoveEvent instead")
 public typealias SpatialMoveStartEvent = SpatialMoveEvent
@@ -650,7 +652,7 @@ public typealias SpatialMoveStartEvent = SpatialMoveEvent
  * @property scale The final scale of the composable as a result of its motion. This value will
  *   change with the composable's depth when scaleWithDistance is true on the modifier.
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
- *   composable, factoring in shrinking or stretching due to [scale].
+ *   composable, factoring in shrinking or stretching due to [SpatialMoveEvent.scale].
  */
 @Deprecated(message = "Use SpatialMoveEvent instead")
 public typealias SpatialMoveEndEvent = SpatialMoveEvent

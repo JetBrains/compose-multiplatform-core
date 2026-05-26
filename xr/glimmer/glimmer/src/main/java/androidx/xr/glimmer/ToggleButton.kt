@@ -52,7 +52,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 
-// TODO: b/423573184 - Align on disabled behavior / state.
 /**
  * A Jetpack Compose Glimmer toggle button that changes its appearance depending on the [checked]
  * value, used for exposing actions to a user. By default, the button transitions its shape and
@@ -87,12 +86,12 @@ import androidx.compose.ui.util.lerp
  *   provided [buttonSize] will affect other properties such as padding values and the size of
  *   icons.
  * @param leadingIcon an optional leading icon to be placed before the [content]. This is typically
- *   an [Icon].
+ *   an [Icon] tinted with the content color resolved from [colors] by default.
  * @param trailingIcon an optional trailing icon to be placed after the [content]. This is typically
- *   an [Icon].
+ *   an [Icon] tinted with the content color resolved from [colors] by default.
  * @param shape the [Shape] of this toggle button. It is recommended to change the shape depending
  *   on the [checked] state. [ToggleButtonDefaults] provides both animated and non-animated
- *   versions, see [ToggleButtonDefaults.animateShape] and [ToggleButtonDefaults.shape] for more
+ *   versions, see [ToggleButtonDefaults.animatedShape] and [ToggleButtonDefaults.shape] for more
  *   details.
  * @param colors the [ToggleButtonColors] that will be used to resolve the container and content
  *   colors based on the toggle button state.
@@ -114,7 +113,7 @@ public fun ToggleButton(
     buttonSize: ButtonSize = ButtonSize.Medium,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = ToggleButtonDefaults.animateShape(checked),
+    shape: Shape = ToggleButtonDefaults.animatedShape(checked),
     colors: ToggleButtonColors = ToggleButtonDefaults.colors(),
     border: BorderStroke? = SurfaceDefaults.border(),
     contentPadding: PaddingValues = ToggleButtonDefaults.contentPadding(buttonSize),
@@ -138,7 +137,7 @@ public fun ToggleButton(
         Row(
             modifier
                 .surface(
-                    focusable = false,
+                    enabled = enabled,
                     shape = shape,
                     color = colors.resolveBackgroundColor(checked),
                     contentColor = colors.resolveContentColor(checked),
@@ -189,7 +188,7 @@ public object ToggleButtonDefaults {
      * Chooses a [Shape] based on the [checked] state and can be used to override the default
      * Glimmer button shapes. Note that it simply switches shapes without animation.
      *
-     * If you require an animated version, please refer to [ToggleButtonDefaults.animateShape],
+     * If you require an animated version, please refer to [ToggleButtonDefaults.animatedShape],
      * which uses default Glimmer animations and shapes, or consider creating a custom animated
      * shape.
      *
@@ -212,7 +211,7 @@ public object ToggleButtonDefaults {
      * @param checked whether the button is in the checked state
      */
     @Composable
-    public fun animateShape(checked: Boolean): Shape {
+    public fun animatedShape(checked: Boolean): Shape {
         val progress =
             animateFloatAsState(
                 targetValue = if (checked) 1f else 0f,

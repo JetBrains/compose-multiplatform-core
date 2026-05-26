@@ -288,8 +288,8 @@ package androidx.xr.compose.spatial {
   public final class SubspaceKt {
     method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) @androidx.xr.compose.spatial.ExperimentalFollowingSubspaceApi public static void FollowingSubspace(androidx.xr.compose.subspace.FollowTarget target, androidx.xr.compose.subspace.FollowBehavior behavior, optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.TrackedDimensions dimensions, optional boolean allowUnboundedSubspace, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) @androidx.xr.compose.spatial.ExperimentalFollowingSubspaceApi public static void FollowingSubspace(androidx.xr.compose.subspace.FollowTarget, androidx.xr.compose.subspace.FollowBehavior, androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.TrackedDimensions?, boolean, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
-    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void PlanarEmbeddedSubspace(kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void PlanarEmbeddedSubspace(kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void PlanarEmbeddedSubspace(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void PlanarEmbeddedSubspace(androidx.xr.compose.subspace.layout.SubspaceModifier?, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional boolean allowUnboundedSubspace, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(androidx.xr.compose.subspace.layout.SubspaceModifier?, boolean, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
@@ -314,9 +314,6 @@ package androidx.xr.compose.subspace {
   }
 
   @SuppressCompatibility @androidx.xr.compose.spatial.ExperimentalFollowingSubspaceApi public abstract sealed nonexhaustive class FollowBehavior {
-    method @InaccessibleFromKotlin protected final androidx.xr.runtime.math.Pose getTargetCurrentPose();
-    method @InaccessibleFromKotlin protected final void setTargetCurrentPose(androidx.xr.runtime.math.Pose);
-    property protected final androidx.xr.runtime.math.Pose targetCurrentPose;
     field public static final androidx.xr.compose.subspace.FollowBehavior.Companion Companion;
     field public static final int DEFAULT_SOFT_DURATION_MS = 1500; // 0x5dc
     field public static final int MIN_SOFT_DURATION_MS = 100; // 0x64
@@ -342,12 +339,6 @@ package androidx.xr.compose.subspace {
     method public androidx.xr.compose.subspace.FollowTarget ArDevice(androidx.xr.runtime.Session session);
   }
 
-  public final class GltfLoadException extends java.lang.RuntimeException {
-    ctor public GltfLoadException();
-    ctor public GltfLoadException(optional String? message, optional Throwable? cause);
-    ctor @BytecodeOnly public GltfLoadException(String!, Throwable!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-  }
-
   @Deprecated public final class MovePolicy extends androidx.xr.compose.subspace.DragPolicy {
     ctor @Deprecated public MovePolicy();
     ctor @BytecodeOnly @Deprecated public MovePolicy(boolean, boolean, boolean, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
@@ -366,26 +357,26 @@ package androidx.xr.compose.subspace {
     property @Deprecated public boolean shouldScaleWithDistance;
   }
 
-  public final class ResizePolicy {
-    ctor public ResizePolicy();
-    ctor @BytecodeOnly public ResizePolicy(boolean, androidx.xr.compose.unit.DpVolumeSize!, androidx.xr.compose.unit.DpVolumeSize!, boolean, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    ctor public ResizePolicy(optional boolean isEnabled, optional androidx.xr.compose.unit.DpVolumeSize minimumSize, optional androidx.xr.compose.unit.DpVolumeSize maximumSize, optional boolean shouldMaintainAspectRatio, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeStart, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeUpdate, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeEnd, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? onSizeChange);
-    method @InaccessibleFromKotlin public androidx.xr.compose.unit.DpVolumeSize getMaximumSize();
-    method @InaccessibleFromKotlin public androidx.xr.compose.unit.DpVolumeSize getMinimumSize();
-    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? getOnResizeEnd();
-    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? getOnResizeStart();
-    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? getOnResizeUpdate();
-    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? getOnSizeChange();
-    method @InaccessibleFromKotlin public boolean isEnabled();
-    method @InaccessibleFromKotlin public boolean shouldMaintainAspectRatio();
-    property public boolean isEnabled;
-    property public androidx.xr.compose.unit.DpVolumeSize maximumSize;
-    property public androidx.xr.compose.unit.DpVolumeSize minimumSize;
-    property public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeEnd;
-    property public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeStart;
-    property public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeUpdate;
-    property public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? onSizeChange;
-    property public boolean shouldMaintainAspectRatio;
+  @Deprecated public final class ResizePolicy {
+    ctor @Deprecated public ResizePolicy();
+    ctor @BytecodeOnly @Deprecated public ResizePolicy(boolean, androidx.xr.compose.unit.DpVolumeSize!, androidx.xr.compose.unit.DpVolumeSize!, boolean, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @Deprecated public ResizePolicy(optional boolean isEnabled, optional androidx.xr.compose.unit.DpVolumeSize minimumSize, optional androidx.xr.compose.unit.DpVolumeSize maximumSize, optional boolean shouldMaintainAspectRatio, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeStart, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeUpdate, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeEnd, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? onSizeChange);
+    method @InaccessibleFromKotlin @Deprecated public androidx.xr.compose.unit.DpVolumeSize getMaximumSize();
+    method @InaccessibleFromKotlin @Deprecated public androidx.xr.compose.unit.DpVolumeSize getMinimumSize();
+    method @InaccessibleFromKotlin @Deprecated public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? getOnResizeEnd();
+    method @InaccessibleFromKotlin @Deprecated public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? getOnResizeStart();
+    method @InaccessibleFromKotlin @Deprecated public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? getOnResizeUpdate();
+    method @InaccessibleFromKotlin @Deprecated public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? getOnSizeChange();
+    method @InaccessibleFromKotlin @Deprecated public boolean isEnabled();
+    method @InaccessibleFromKotlin @Deprecated public boolean shouldMaintainAspectRatio();
+    property @Deprecated public boolean isEnabled;
+    property @Deprecated public androidx.xr.compose.unit.DpVolumeSize maximumSize;
+    property @Deprecated public androidx.xr.compose.unit.DpVolumeSize minimumSize;
+    property @Deprecated public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeEnd;
+    property @Deprecated public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeStart;
+    property @Deprecated public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeUpdate;
+    property @Deprecated public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? onSizeChange;
+    property @Deprecated public boolean shouldMaintainAspectRatio;
   }
 
   public final class SceneCoreEntityKt {
@@ -464,18 +455,19 @@ package androidx.xr.compose.subspace {
     method @BytecodeOnly public int getAnimationState-ynpOhdo();
     method @BytecodeOnly public long getDuration-UwyO8pc();
     method @InaccessibleFromKotlin public String? getName();
-    method @InaccessibleFromKotlin public float getSpeed();
+    method @InaccessibleFromKotlin public float getPlaybackSpeed();
     method public void loop();
     method public void pause();
+    method public void resume();
     method @KotlinOnly public void seekTo(kotlin.time.Duration time);
     method @BytecodeOnly public void seekTo-LRDsOJo(long);
-    method @InaccessibleFromKotlin public void setSpeed(float);
+    method @InaccessibleFromKotlin public void setPlaybackSpeed(float);
     method public void start();
     method public void stop();
     property public androidx.xr.compose.subspace.SpatialGltfModelAnimation.AnimationState animationState;
     property public kotlin.time.Duration duration;
     property public String? name;
-    property public float speed;
+    property public float playbackSpeed;
   }
 
   @kotlin.jvm.JvmInline public static final value class SpatialGltfModelAnimation.AnimationState {
@@ -527,17 +519,17 @@ package androidx.xr.compose.subspace {
   }
 
   public static final class SpatialGltfModelStatus.Failed extends androidx.xr.compose.subspace.SpatialGltfModelStatus {
-    ctor public SpatialGltfModelStatus.Failed(androidx.xr.compose.subspace.GltfLoadException exception);
-    method @InaccessibleFromKotlin public androidx.xr.compose.subspace.GltfLoadException getException();
-    property public androidx.xr.compose.subspace.GltfLoadException exception;
+    ctor public SpatialGltfModelStatus.Failed(Throwable exception);
+    method @InaccessibleFromKotlin public Throwable getException();
+    property public Throwable exception;
   }
 
   public static final class SpatialGltfModelStatus.Loaded extends androidx.xr.compose.subspace.SpatialGltfModelStatus {
-    ctor public SpatialGltfModelStatus.Loaded();
+    field public static final androidx.xr.compose.subspace.SpatialGltfModelStatus.Loaded INSTANCE;
   }
 
   public static final class SpatialGltfModelStatus.Loading extends androidx.xr.compose.subspace.SpatialGltfModelStatus {
-    ctor public SpatialGltfModelStatus.Loading();
+    field public static final androidx.xr.compose.subspace.SpatialGltfModelStatus.Loading INSTANCE;
   }
 
   public final class SpatialPanelDefaults {
@@ -753,6 +745,9 @@ package androidx.xr.compose.subspace.layout {
     property public abstract androidx.xr.compose.subspace.layout.SubspaceModifier.Node node;
   }
 
+  @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalRotateToLookAtUserApi {
+  }
+
   public final class GravityAlignedKt {
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier gravityAligned(androidx.xr.compose.subspace.layout.SubspaceModifier);
   }
@@ -857,8 +852,10 @@ package androidx.xr.compose.subspace.layout {
   }
 
   public final class ResizableKt {
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier resizable(androidx.xr.compose.subspace.layout.SubspaceModifier, optional boolean enabled, optional androidx.xr.compose.unit.DpVolumeSize minimumSize, optional androidx.xr.compose.unit.DpVolumeSize maximumSize, optional boolean maintainAspectRatio, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit> onResizeStart, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit> onResizeUpdate, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean> onResizeEnd);
-    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier! resizable$default(androidx.xr.compose.subspace.layout.SubspaceModifier!, boolean, androidx.xr.compose.unit.DpVolumeSize!, androidx.xr.compose.unit.DpVolumeSize!, boolean, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, int, Object!);
+    method public static androidx.xr.compose.subspace.layout.SubspaceModifier resizable(androidx.xr.compose.subspace.layout.SubspaceModifier, optional androidx.xr.compose.unit.DpVolumeSize minimumSize, optional androidx.xr.compose.unit.DpVolumeSize maximumSize, optional boolean maintainAspectRatio, kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialResizeEvent,kotlin.Unit> onResize);
+    method @Deprecated public static androidx.xr.compose.subspace.layout.SubspaceModifier resizable(androidx.xr.compose.subspace.layout.SubspaceModifier, optional boolean enabled, optional androidx.xr.compose.unit.DpVolumeSize minimumSize, optional androidx.xr.compose.unit.DpVolumeSize maximumSize, optional boolean maintainAspectRatio, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit> onResizeStart, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit> onResizeUpdate, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean> onResizeEnd);
+    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier! resizable$default(androidx.xr.compose.subspace.layout.SubspaceModifier!, androidx.xr.compose.unit.DpVolumeSize!, androidx.xr.compose.unit.DpVolumeSize!, boolean, kotlin.jvm.functions.Function1!, int, Object!);
+    method @BytecodeOnly @Deprecated public static androidx.xr.compose.subspace.layout.SubspaceModifier! resizable$default(androidx.xr.compose.subspace.layout.SubspaceModifier!, boolean, androidx.xr.compose.unit.DpVolumeSize!, androidx.xr.compose.unit.DpVolumeSize!, boolean, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
   public final class RotateKt {
@@ -869,9 +866,9 @@ package androidx.xr.compose.subspace.layout {
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier! rotate$default(androidx.xr.compose.subspace.layout.SubspaceModifier!, float, float, float, int, Object!);
   }
 
-  public final class RotateToLookAtUserKt {
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier rotateToLookAtUser(androidx.xr.compose.subspace.layout.SubspaceModifier, optional androidx.xr.runtime.math.Vector3 upDirection);
-    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier! rotateToLookAtUser$default(androidx.xr.compose.subspace.layout.SubspaceModifier!, androidx.xr.runtime.math.Vector3!, int, Object!);
+  @SuppressCompatibility public final class RotateToLookAtUserKt {
+    method @SuppressCompatibility @androidx.xr.compose.subspace.layout.ExperimentalRotateToLookAtUserApi public static androidx.xr.compose.subspace.layout.SubspaceModifier rotateToLookAtUser(androidx.xr.compose.subspace.layout.SubspaceModifier, optional androidx.xr.runtime.math.Vector3 upDirection);
+    method @BytecodeOnly @SuppressCompatibility @androidx.xr.compose.subspace.layout.ExperimentalRotateToLookAtUserApi public static androidx.xr.compose.subspace.layout.SubspaceModifier! rotateToLookAtUser$default(androidx.xr.compose.subspace.layout.SubspaceModifier!, androidx.xr.runtime.math.Vector3!, int, Object!);
   }
 
   public final class SizeKt {
@@ -1219,6 +1216,30 @@ package androidx.xr.compose.subspace.layout {
     property public androidx.xr.compose.subspace.layout.SpatialMoveEventType Start;
   }
 
+  public final class SpatialResizeEvent {
+    ctor @KotlinOnly public SpatialResizeEvent(androidx.xr.compose.subspace.layout.SpatialResizeEventType type, androidx.xr.compose.unit.IntVolumeSize size);
+    ctor @BytecodeOnly public SpatialResizeEvent(int, androidx.xr.compose.unit.IntVolumeSize!, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public androidx.xr.compose.unit.IntVolumeSize getSize();
+    method @BytecodeOnly public int getType-fwDKJAM();
+    property public androidx.xr.compose.unit.IntVolumeSize size;
+    property public androidx.xr.compose.subspace.layout.SpatialResizeEventType type;
+  }
+
+  @kotlin.jvm.JvmInline public final value class SpatialResizeEventType {
+    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SpatialResizeEventType! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.xr.compose.subspace.layout.SpatialResizeEventType.Companion Companion;
+  }
+
+  public static final class SpatialResizeEventType.Companion {
+    method @BytecodeOnly public int getEnd-fwDKJAM();
+    method @BytecodeOnly public int getResizing-fwDKJAM();
+    method @BytecodeOnly public int getStart-fwDKJAM();
+    property public androidx.xr.compose.subspace.layout.SpatialResizeEventType End;
+    property public androidx.xr.compose.subspace.layout.SpatialResizeEventType Resizing;
+    property public androidx.xr.compose.subspace.layout.SpatialResizeEventType Start;
+  }
+
   public final class SpatialRoundedCornerShape implements androidx.xr.compose.subspace.layout.SpatialShape {
     ctor public SpatialRoundedCornerShape(androidx.compose.foundation.shape.CornerSize size);
   }
@@ -1338,6 +1359,11 @@ package androidx.xr.compose.subspace.layout {
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier! transformingMovable$default(androidx.xr.compose.subspace.layout.SubspaceModifier!, boolean, boolean, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
+  public final class TransformingResizableKt {
+    method public static androidx.xr.compose.subspace.layout.SubspaceModifier transformingResizable(androidx.xr.compose.subspace.layout.SubspaceModifier, optional boolean enabled, optional androidx.xr.compose.unit.DpVolumeSize minimumSize, optional androidx.xr.compose.unit.DpVolumeSize maximumSize, optional boolean maintainAspectRatio, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.layout.SpatialResizeEvent,kotlin.Unit> onResize);
+    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier! transformingResizable$default(androidx.xr.compose.subspace.layout.SubspaceModifier!, boolean, androidx.xr.compose.unit.DpVolumeSize!, androidx.xr.compose.unit.DpVolumeSize!, boolean, kotlin.jvm.functions.Function1!, int, Object!);
+  }
+
   @Deprecated public typealias SpatialMoveEndEvent = androidx.xr.compose.subspace.layout.SpatialMoveEvent;
 
   @Deprecated public typealias SpatialMoveStartEvent = androidx.xr.compose.subspace.layout.SpatialMoveEvent;
@@ -1377,6 +1403,31 @@ package androidx.xr.compose.subspace.node {
     method public abstract boolean equals(Object? other);
     method public abstract int hashCode();
     method public abstract void update(N node);
+  }
+
+  public sealed nonexhaustive interface SubspaceSemanticsInfo {
+    method @InaccessibleFromKotlin public java.util.List<androidx.xr.compose.subspace.node.SubspaceSemanticsInfo> getChildrenInfo();
+    method @InaccessibleFromKotlin public default java.util.List<androidx.xr.scenecore.Component>? getComponents();
+    method @InaccessibleFromKotlin public androidx.xr.compose.subspace.node.SubspaceSemanticsInfo? getParentInfo();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPoseInRoot();
+    method @InaccessibleFromKotlin public default float getScale();
+    method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsConfiguration getSemanticsConfiguration();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.Entity? getSemanticsEntity();
+    method @InaccessibleFromKotlin public int getSemanticsId();
+    method @InaccessibleFromKotlin public androidx.xr.compose.unit.IntVolumeSize getSize();
+    method @InaccessibleFromKotlin public default boolean isRoot();
+    property public abstract java.util.List<androidx.xr.compose.subspace.node.SubspaceSemanticsInfo> childrenInfo;
+    property public default java.util.List<androidx.xr.scenecore.Component>? components;
+    property public default boolean isRoot;
+    property public abstract androidx.xr.compose.subspace.node.SubspaceSemanticsInfo? parentInfo;
+    property public abstract androidx.xr.runtime.math.Pose pose;
+    property public abstract androidx.xr.runtime.math.Pose poseInRoot;
+    property public default float scale;
+    property public abstract androidx.compose.ui.semantics.SemanticsConfiguration semanticsConfiguration;
+    property public abstract androidx.xr.scenecore.Entity? semanticsEntity;
+    property public abstract int semanticsId;
+    property public abstract androidx.xr.compose.unit.IntVolumeSize size;
   }
 
   public interface SubspaceSemanticsModifierNode {

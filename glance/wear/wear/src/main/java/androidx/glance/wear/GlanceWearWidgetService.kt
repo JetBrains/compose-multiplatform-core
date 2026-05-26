@@ -16,9 +16,12 @@
 
 package androidx.glance.wear
 
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
+import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
+import androidx.glance.wear.core.RendererVersion
 import androidx.glance.wear.core.WearWidgetProviderInfo
 import androidx.glance.wear.parcel.IWearWidgetProvider
 import androidx.glance.wear.parcel.LegacyTileProviderImpl
@@ -41,8 +44,14 @@ import kotlinx.coroutines.launch
  */
 public abstract class GlanceWearWidgetService : LifecycleService() {
 
+    @SuppressLint("RestrictedApiAndroidX")
+    @OptIn(androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi::class)
     override fun onCreate() {
         super.onCreate()
+        // We need this flag to be false (meaning empty axis won't be send and default normal weight
+        // would be used, for the 1.6 renderer and the player that has a bug in it.
+        RemoteComposeCreationComposeFlags.allowSendingEmptyFontAxis =
+            RendererVersion.fromPlHostPackage(this) > RendererVersion(1, 6, 0)
         // TODO: b/483999057 - Add CallSuper annotation to lifecycle methods.
         if (!isRobolectricBuild()) {
             updateServiceMapping()

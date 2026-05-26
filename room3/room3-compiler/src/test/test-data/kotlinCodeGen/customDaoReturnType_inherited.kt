@@ -24,7 +24,7 @@ internal class MyDao_Impl(
   public override suspend fun getFoo(): Foo<MyEntity> {
     val _sql: String = "SELECT * FROM MyEntity"
     return __fooReturnTypeConverter.convert() {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
@@ -47,7 +47,7 @@ internal class MyDao_Impl(
   public override suspend fun getBar(): Bar<MyEntity> {
     val _sql: String = "SELECT * FROM MyEntity"
     return __fooReturnTypeConverter.convert() {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")

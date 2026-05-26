@@ -186,7 +186,9 @@ public class Configuration internal constructor(builder: Builder) {
      */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val tracer: Tracer
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) private val enableRepresentativeJobs: Boolean
+    private val enableRepresentativeJobs: Boolean
+
+    private val enableGreedyScheduler: Boolean
 
     /**
      * Specifies whether WorkManager will prioritize unique constraints when scheduling with
@@ -196,6 +198,16 @@ public class Configuration internal constructor(builder: Builder) {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun isRepresentativeJobsEnabled(): Boolean {
         return enableRepresentativeJobs
+    }
+
+    /**
+     * Specifies whether the in-process opportunistic greedy scheduler is enabled
+     *
+     * This is enabled by default and should only be disabled for experimental purposes.
+     */
+    @ExperimentalConfigurationApi
+    public fun isGreedySchedulerEnabled(): Boolean {
+        return enableGreedyScheduler
     }
 
     init {
@@ -246,6 +258,7 @@ public class Configuration internal constructor(builder: Builder) {
         scheduleEventListener = builder.scheduleEventListener
         tracer = builder.tracer ?: createDefaultTracer()
         enableRepresentativeJobs = builder.enableRepresentativeJobs
+        enableGreedyScheduler = builder.enableGreedyScheduler
     }
 
     /** A Builder for [Configuration]s. */
@@ -273,6 +286,7 @@ public class Configuration internal constructor(builder: Builder) {
         internal var scheduleEventListener: ScheduleEventListener? = null
         internal var tracer: Tracer? = null
         internal var enableRepresentativeJobs: Boolean = false
+        internal var enableGreedyScheduler: Boolean = true
 
         /** Creates a new [Configuration.Builder]. */
         public constructor()
@@ -309,6 +323,8 @@ public class Configuration internal constructor(builder: Builder) {
             executionEventListener = configuration.executionEventListener
             scheduleEventListener = configuration.scheduleEventListener
             tracer = configuration.tracer
+            enableRepresentativeJobs = configuration.isRepresentativeJobsEnabled()
+            enableGreedyScheduler = configuration.isGreedySchedulerEnabled()
         }
 
         /**
@@ -666,6 +682,20 @@ public class Configuration internal constructor(builder: Builder) {
         }
 
         /**
+         * Specifies whether the in-process opportunistic greedy scheduler should be enabled.
+         *
+         * This is enabled by default and should only be disabled for experimental purposes.
+         *
+         * @param enabled whether to enable the greedy scheduler
+         * @return This [Builder] instance
+         */
+        @ExperimentalConfigurationApi
+        public fun setGreedySchedulerEnabled(enabled: Boolean): Builder {
+            this.enableGreedyScheduler = enabled
+            return this
+        }
+
+        /**
          * Builds a [Configuration] object.
          *
          * @return A [Configuration] object with this [Builder]'s parameters.
@@ -680,7 +710,9 @@ public class Configuration internal constructor(builder: Builder) {
      * initialization of WorkManager. To do this:
      * - Disable `androidx.work.WorkManagerInitializer` in your manifest
      * - Implement the [Configuration.Provider] interface on your [android.app.Application] class
-     * - Use [WorkManager.getInstance] when accessing WorkManager (NOT [WorkManager.getInstance])
+     * - Use [`WorkManager.getInstance(Context)`](https://developer.android.com/reference/androidx/work/WorkManager#getInstance(android.content.Context))
+     *   when accessing WorkManager (NOT
+     *   [`WorkManager.getInstance`](https://developer.android.com/reference/androidx/work/WorkManager#getInstance()))
      *
      * Note that on-demand initialization may delay some useful features of WorkManager such as
      * automatic rescheduling of work following a crash and recovery from the application being

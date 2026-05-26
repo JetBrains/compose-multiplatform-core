@@ -1705,12 +1705,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     ?: false
             }
             android.R.id.accessibilityActionShowOnScreen -> {
-                if (AndroidComposeUiFlags.isAccessibilityShowOnScreenNestedScrollingEnabled) {
-                    return node.scrollOntoScreen()
-                } else {
-                    @Suppress("DEPRECATION")
-                    return node.legacyScrollOntoScreen()
-                }
+                return node.scrollOntoScreen()
             }
             // TODO: handling for other system actions
             else -> {
@@ -1724,71 +1719,6 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 return false
             }
         }
-    }
-
-    /** @deprecated This method is deprecated. Use [scrollOntoScreen] instead. */
-    @Deprecated("This method is deprecated. Use scrollOntoScreen instead.")
-    private fun SemanticsNode.legacyScrollOntoScreen(): Boolean {
-        // TODO(b/474650559): Delete this method once nested scrolling flag is removed
-        var scrollableAncestor: SemanticsNode? = parent
-        var scrollAction = scrollableAncestor?.unmergedConfig?.getOrNull(SemanticsActions.ScrollBy)
-        while (scrollableAncestor != null) {
-            if (scrollAction != null) {
-                break
-            }
-            scrollableAncestor = scrollableAncestor.parent
-            scrollAction = scrollableAncestor?.unmergedConfig?.getOrNull(SemanticsActions.ScrollBy)
-        }
-        if (scrollableAncestor == null) {
-            // there's no scrollable ancestor in the Compose hierarchy, let
-            // AndroidComposeView handle it
-            val rect =
-                boundsInRoot.run {
-                    android.graphics.Rect(
-                        floor(left).toInt(),
-                        floor(top).toInt(),
-                        ceil(right).roundToInt(),
-                        ceil(bottom).roundToInt(),
-                    )
-                }
-            return view.requestRectangleOnScreen(rect)
-        }
-
-        // TalkBack expects the minimum amount of movement to fully reveal the node.
-        // First, get the viewport and the target bounds in root coordinates
-        val viewportInParent = scrollableAncestor.layoutInfo.coordinates.boundsInParent()
-        val parentInRoot =
-            scrollableAncestor.layoutInfo.coordinates.parentLayoutCoordinates?.positionInRoot()
-                ?: Offset.Zero
-        val viewport = viewportInParent.translate(parentInRoot)
-        val target = Rect(positionInRoot, size.toSize())
-
-        val xScrollState =
-            scrollableAncestor.unmergedConfig.getOrNull(
-                SemanticsProperties.HorizontalScrollAxisRange
-            )
-        val yScrollState =
-            scrollableAncestor.unmergedConfig.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
-
-        // Given the desired scroll value to align either side of the target with the
-        // viewport, what delta should we go with?
-        // If we need to scroll in opposite directions for both sides, don't scroll at all.
-        // Otherwise, take the delta that scrolls the least amount.
-        fun scrollDelta(a: Float, b: Float): Float =
-            if (sign(a) == sign(b)) if (abs(a) < abs(b)) a else b else 0f
-
-        // Get the desired delta X
-        var dx = scrollDelta(target.left - viewport.left, target.right - viewport.right)
-        // And adjust for reversing properties
-        if (xScrollState?.reverseScrolling == true) dx = -dx
-        if (isRtl) dx = -dx
-
-        // Get the desired delta Y
-        var dy = scrollDelta(target.top - viewport.top, target.bottom - viewport.bottom)
-        // And adjust for reversing properties
-        if (yScrollState?.reverseScrolling == true) dy = -dy
-
-        return scrollAction?.action?.invoke(dx, dy) == true
     }
 
     /**
@@ -1942,19 +1872,9 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 Log.e(LogTag, "Invalid arguments for accessibility character locations")
                 return
             }
-            val textLayoutResult = getTextLayoutResult(node.unmergedConfig) ?: return
-            val boundingRects = mutableListOf<RectF?>()
-            for (i in 0 until positionInfoLength) {
-                // This is a workaround until we fix the merging issue in b/157474582.
-                if (positionInfoStartIndex + i >= textLayoutResult.layoutInput.text.length) {
-                    boundingRects.add(null)
-                    continue
-                }
-                val bounds = textLayoutResult.getBoundingBox(positionInfoStartIndex + i)
-                val boundsOnScreen = toScreenCoords(node, bounds)
-                boundingRects.add(boundsOnScreen)
-            }
-            info.extras.putParcelableArray(extraDataKey, boundingRects.toTypedArray())
+            val boundingRects =
+                getBoundingBoxes(node, positionInfoStartIndex, positionInfoLength) ?: return
+            info.extras.putParcelableArray(extraDataKey, boundingRects)
         } else if (
             node.unmergedConfig.contains(SemanticsProperties.TestTag) &&
                 arguments != null &&
@@ -2107,34 +2027,59 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         )
     }
 
-    private fun toScreenCoords(textNode: SemanticsNode?, bounds: Rect): RectF? {
-        if (textNode == null) return null
-        val boundsInRoot = bounds.translate(textNode.positionInRoot)
-        val textNodeBoundsInRoot = textNode.boundsInRoot
+    /**
+     * Returns character bounding boxes in screen coordinates for the given index range, or null if
+     * the text layout or coordinates are unavailable.
+     */
+    private fun getBoundingBoxes(
+        node: SemanticsNode,
+        startIndex: Int,
+        length: Int,
+    ): Array<RectF?>? {
+        val textLayoutResult = getTextLayoutResult(node.unmergedConfig) ?: return null
 
-        // Only visible or partially visible locations are used.
-        val visibleBounds =
-            if (boundsInRoot.overlaps(textNodeBoundsInRoot)) {
-                boundsInRoot.intersect(textNodeBoundsInRoot)
-            } else {
-                null
+        // getBoundingBox() returns coordinates relative to the text layout, so we need the inner
+        // coordinator's position in order to match. node.positionInRoot can't be used here because
+        // it may resolve to some other bounds-important modifier that is positioned before
+        // something like padding in the modifier chain, causing mis-alignment.
+        val textLayoutPositionInRoot =
+            node.layoutNode.innerCoordinator.takeIf { it.isAttached }?.positionInRoot()
+                ?: return null
+
+        val textNodeBoundsInRoot = node.boundsInRoot
+        val boundingRects = arrayOfNulls<RectF>(length)
+        for (i in 0 until length) {
+            if (startIndex + i >= textLayoutResult.layoutInput.text.length) {
+                continue
             }
+            val boundsInRoot =
+                textLayoutResult.getBoundingBox(startIndex + i).translate(textLayoutPositionInRoot)
 
-        return if (visibleBounds != null) {
-            val topLeftInScreen = view.localToScreen(Offset(visibleBounds.left, visibleBounds.top))
-            val bottomRightInScreen =
-                view.localToScreen(Offset(visibleBounds.right, visibleBounds.bottom))
-            // Due to rotation, the top left corner of the local bounds may not be the top left
-            // corner of the screen bounds.
-            RectF(
-                min(topLeftInScreen.x, bottomRightInScreen.x),
-                min(topLeftInScreen.y, bottomRightInScreen.y),
-                max(topLeftInScreen.x, bottomRightInScreen.x),
-                max(topLeftInScreen.y, bottomRightInScreen.y),
-            )
-        } else {
-            null
+            // Only visible or partially visible locations are used.
+            val visibleBounds =
+                if (boundsInRoot.overlaps(textNodeBoundsInRoot)) {
+                    boundsInRoot.intersect(textNodeBoundsInRoot)
+                } else {
+                    null
+                }
+
+            if (visibleBounds != null) {
+                val topLeftInScreen =
+                    view.localToScreen(Offset(visibleBounds.left, visibleBounds.top))
+                val bottomRightInScreen =
+                    view.localToScreen(Offset(visibleBounds.right, visibleBounds.bottom))
+                // Due to rotation, the top left corner of the local bounds may not be
+                // the top left corner of the screen bounds.
+                boundingRects[i] =
+                    RectF(
+                        min(topLeftInScreen.x, bottomRightInScreen.x),
+                        min(topLeftInScreen.y, bottomRightInScreen.y),
+                        max(topLeftInScreen.x, bottomRightInScreen.x),
+                        max(topLeftInScreen.y, bottomRightInScreen.y),
+                    )
+            }
         }
+        return boundingRects
     }
 
     private fun Shape.createOutline(size: Size, layoutDirection: LayoutDirection) =
@@ -2796,6 +2741,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                         }
                                 }
                             event.className = TextFieldClassName
+
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+                                Api37Impl.setInputTextSuggestionTextChangeTypes(newNode, event)
+                            }
                             sendEvent(event)
 
                             // (b/247891690) second event with the correct cursor position (see
@@ -3404,6 +3353,42 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     )
                 }
             }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    private object Api37Impl {
+        @JvmStatic
+        fun setInputTextSuggestionTextChangeTypes(node: SemanticsNode, event: AccessibilityEvent) {
+            val inputTextSuggestionState =
+                node.unmergedConfig.getOrNull(SemanticsProperties.InputTextSuggestionState)
+            val textCompositionRange =
+                node.unmergedConfig.getOrNull(SemanticsProperties.TextCompositionRange)
+            var textChangeTypes = AccessibilityEvent.TEXT_CHANGE_TYPE_UNDEFINED
+
+            if (textCompositionRange != null) {
+                textChangeTypes =
+                    textChangeTypes or AccessibilityEvent.TEXT_CHANGE_TYPE_IN_COMPOSITION
+            }
+
+            if (
+                inputTextSuggestionState != null &&
+                    inputTextSuggestionState.isTransliterationSuggestionSelected
+            ) {
+                textChangeTypes =
+                    textChangeTypes or
+                        AccessibilityEvent.TEXT_CHANGE_TYPE_CONVERSION_SUGGESTION_SELECTED_BY_IME
+            }
+
+            if (
+                inputTextSuggestionState != null &&
+                    inputTextSuggestionState.isCommittedByInputMethodEditor
+            ) {
+                textChangeTypes =
+                    textChangeTypes or AccessibilityEvent.TEXT_CHANGE_TYPE_COMMITTED_BY_IME
+            }
+
+            event.textChangeTypes = event.textChangeTypes or textChangeTypes
         }
     }
 }

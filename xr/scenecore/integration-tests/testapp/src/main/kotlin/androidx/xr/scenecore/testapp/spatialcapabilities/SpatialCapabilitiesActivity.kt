@@ -43,7 +43,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 @SuppressLint("SetTextI18n", "RestrictedApi")
 class SpatialCapabilitiesActivity : AppCompatActivity() {
     private val renderingSession: Session by lazy {
-        (Session.create(this) as SessionCreateSuccess).session
+        (Session.create(context = this) as SessionCreateSuccess).session
     }
     private var spatialMode = SpatialMode.FSM
     private var spatialEventLogList = mutableListOf<SpatialEventLog>()
@@ -142,7 +142,7 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
     private fun toggleMode(session: Session): String {
         when (spatialMode) {
             SpatialMode.FSM -> {
-                session.scene.requestHomeSpaceMode()
+                session.scene.requestHomeSpace()
                 spatialMode = SpatialMode.HSM
                 addNewSpatialLogEvent(
                     SpatialEventLog(currentTimestamp(), EventType.MODE_CHANGED_TO_HSM.text, "")
@@ -151,7 +151,7 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
             }
 
             SpatialMode.HSM -> {
-                session.scene.requestFullSpaceMode()
+                session.scene.requestFullSpace()
                 spatialMode = SpatialMode.FSM
                 addNewSpatialLogEvent(
                     SpatialEventLog(currentTimestamp(), EventType.MODE_CHANGED_TO_FSM.text, "")

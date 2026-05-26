@@ -27,7 +27,9 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -251,13 +253,12 @@ internal class BasicTextFieldStyledTextTest {
         rule.onNodeWithTag(tag).performTextInput(" World!")
 
         assertThat(state.text.toString()).isEqualTo("Hello World!")
-        assertThat(state.value.textStyleBuffer?.getStyles<SpanStyle>(0, 12)?.size).isEqualTo(1)
-        assertThat(state.value.textStyleBuffer?.getStyles<SpanStyle>(0, 12)?.get(0)?.item)
-            .isEqualTo(boldStyle)
-        assertThat(state.value.textStyleBuffer?.getStyles<SpanStyle>(0, 12)?.get(0)?.start)
-            .isEqualTo(0)
-        assertThat(state.value.textStyleBuffer?.getStyles<SpanStyle>(0, 12)?.get(0)?.end)
-            .isEqualTo(12)
+        val styles = state.textStyles.getSpanStyles(TextRange(0, 12))
+        assertThat(styles.size).isEqualTo(1)
+        assertThat(styles[0].item).isEqualTo(boldStyle)
+        assertThat(styles[0].start).isEqualTo(0)
+        assertThat(styles[0].end).isEqualTo(12)
+        assertThat(state.textStyles.getParagraphStyles(TextRange(0, 12))).isEmpty()
     }
 
     @Test
@@ -281,6 +282,144 @@ internal class BasicTextFieldStyledTextTest {
         assertThat(textLayoutResult.layoutInput.text.toString()).isEqualTo("Hello World!")
 
         assertThat(state.text.toString()).isEqualTo("Hello")
-        assertThat(state.value.textStyleBuffer?.getStyles<SpanStyle>(0, 5)).isNull()
+        assertThat(state.textStyles.getSpanStyles(TextRange(0, 5))).isEmpty()
+    }
+
+    @Test
+    fun styledText_modifyingTrackedRange_updatesTextLayout() {
+        val boldStyle = SpanStyle(fontWeight = FontWeight.Bold)
+        val italicStyle = SpanStyle(fontStyle = FontStyle.Italic)
+        val state = TextFieldState("Hello World!")
+
+        rule.setContent {
+            BasicTextField(state = state, modifier = Modifier.testTag(tag), textStyle = style)
+        }
+
+        state.edit { addStyle(boldStyle, TextRange(0, 5), ExpandPolicy.AtEnd) }
+
+        var textLayoutResult = rule.onNodeWithTag(tag).fetchTextLayoutResult()
+        assertThat(textLayoutResult.layoutInput.text.spanStyles[0].item).isEqualTo(boldStyle)
+        assertThat(textLayoutResult.layoutInput.text.spanStyles[0].end).isEqualTo(5)
+
+        state.edit {
+            val trackedRange = getSpanStyles(TextRange(0, length))[0]
+            trackedRange.spanStyle = italicStyle
+            trackedRange.textRange = TextRange(6, 11)
+        }
+
+        textLayoutResult = rule.onNodeWithTag(tag).fetchTextLayoutResult()
+        assertThat(textLayoutResult.layoutInput.text.spanStyles[0].item).isEqualTo(italicStyle)
+        assertThat(textLayoutResult.layoutInput.text.spanStyles[0].start).isEqualTo(6)
+        assertThat(textLayoutResult.layoutInput.text.spanStyles[0].end).isEqualTo(11)
+    }
+
+    @Test
+    fun styledText_removeTrackedRange_updatesTextLayout() {
+        val boldStyle = SpanStyle(fontWeight = FontWeight.Bold)
+        val state = TextFieldState("Hello World!")
+
+        state.edit { addStyle(boldStyle, TextRange(0, 5), ExpandPolicy.AtEnd) }
+
+        rule.setContent {
+            BasicTextField(state = state, modifier = Modifier.testTag(tag), textStyle = style)
+        }
+
+        var textLayoutResult = rule.onNodeWithTag(tag).fetchTextLayoutResult()
+        assertThat(textLayoutResult.layoutInput.text.spanStyles.size).isEqualTo(1)
+
+        state.edit {
+            val trackedRange = getSpanStyles(TextRange(0, length))[0]
+            removeStyle(trackedRange)
+        }
+
+        textLayoutResult = rule.onNodeWithTag(tag).fetchTextLayoutResult()
+        assertThat(textLayoutResult.layoutInput.text.spanStyles.size).isEqualTo(0)
+    }
+
+    @Test
+    fun styledText_trackedRange_becomesInvalidOutsideEditBlock() {
+        val boldStyle = SpanStyle(fontWeight = FontWeight.Bold)
+        val state = TextFieldState("Hello World!")
+
+        var leakedTrackedRange: TrackedRange<SpanStyle>? = null
+
+        state.edit {
+            leakedTrackedRange = addStyle(boldStyle, TextRange(0, 5), ExpandPolicy.AtEnd)
+            assertThat(leakedTrackedRange.isValid).isTrue()
+        }
+
+        state.edit {
+            // TrackedRange leaked from previous block is not valid in this block
+            assertThat(leakedTrackedRange!!.isValid).isFalse()
+
+            // And any attempt to modify it is a no-op, and accessing properties returns empty
+            // defaults
+            leakedTrackedRange.textRange = TextRange(0, 10)
+            assertThat(leakedTrackedRange.textRange).isEqualTo(TextRange.Zero)
+            assertThat(leakedTrackedRange.spanStyle).isEqualTo(SpanStyle())
+            assertThat(leakedTrackedRange.expandPolicy).isEqualTo(ExpandPolicy.InsideOnly)
+        }
+    }
+
+    @Test
+    fun styledText_trackedRangeProperties_reflectState() {
+        val boldStyle = SpanStyle(fontWeight = FontWeight.Bold)
+        val state = TextFieldState("Hello")
+
+        state.edit {
+            val trackedRange = addStyle(boldStyle, TextRange(0, 5), ExpandPolicy.AtEnd)
+
+            // Initial state
+            assertThat(trackedRange.textRange).isEqualTo(TextRange(0, 5))
+            assertThat(trackedRange.expandPolicy).isEqualTo(ExpandPolicy.AtEnd)
+            assertThat(trackedRange.isValid).isTrue()
+
+            // Modification expands range
+            insert(2, "xx")
+            assertThat(trackedRange.textRange).isEqualTo(TextRange(0, 7))
+
+            // Delete text completely removes range
+            delete(0, 7)
+            assertThat(trackedRange.isValid).isFalse()
+        }
+    }
+
+    @Test
+    fun styledText_trackedRangeProperties_updateExpandPolicy() {
+        val boldStyle = SpanStyle(fontWeight = FontWeight.Bold)
+        val state = TextFieldState("Hello")
+
+        state.edit {
+            val range = addStyle(boldStyle, TextRange(0, 5), ExpandPolicy.AtEnd)
+            assertThat(range.expandPolicy).isEqualTo(ExpandPolicy.AtEnd)
+
+            // Insert at end expands the range
+            insert(5, " World")
+            assertThat(range.textRange).isEqualTo(TextRange(0, 11))
+
+            // Update expand policy to InsideOnly
+            range.expandPolicy = ExpandPolicy.InsideOnly
+            assertThat(range.expandPolicy).isEqualTo(ExpandPolicy.InsideOnly)
+
+            // Insert at end no longer expands the range
+            insert(11, "!")
+            assertThat(range.textRange).isEqualTo(TextRange(0, 11))
+
+            // Insert at start no longer expands the range
+            insert(0, "Say ")
+            assertThat(range.textRange).isEqualTo(TextRange(4, 15))
+
+            // Update expand policy to AtBoth
+            range.expandPolicy = ExpandPolicy.AtBoth
+            assertThat(range.expandPolicy).isEqualTo(ExpandPolicy.AtBoth)
+
+            // Insert at start now expands the range
+            insert(4, "Well, ")
+            assertThat(range.textRange).isEqualTo(TextRange(4, 21))
+
+            // Insert at end now expands the range
+            insert(21, " Again")
+            assertThat(range.textRange).isEqualTo(TextRange(4, 27))
+        }
     }
 }

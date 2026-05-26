@@ -36,7 +36,6 @@ import java.nio.ByteBuffer
  *
  * @property vertexLayout The [VertexLayout] describing the structure of the vertex data.
  */
-@ExperimentalCustomMeshApi
 public class MeshBuffer
 private constructor(
     private val resource: RtMeshBufferResource,
@@ -92,10 +91,11 @@ private constructor(
          * @param session The session to use for creating the MeshBuffer.
          * @param vertexLayout The layout of the vertices in the vertex buffer(s).
          * @param vertexData The vertex data regions, one for each buffer index used in the layout.
-         *   The data is copied and the original data in the ByteBuffer can be released or modified
+         *   The data is copied and the original data in the [ByteBuffer] can be released or
+         *   modified without affecting the [MeshBuffer].
+         * @param indexData The index data region. The indices must be 32-bit unsigned values. The
+         *   data is copied and the original data in the [ByteBuffer] can be released or modified
          *   without affecting the [MeshBuffer].
-         * @param indexData The index data region. The data is copied and the original data in the
-         *   ByteBuffer can be released or modified without affecting the [MeshBuffer].
          * @return A new [MeshBuffer].
          * @throws IllegalArgumentException if `vertexData` does not contain a buffer for each
          *   buffer index used in the layout, or if any of the `ByteBufferRegion`s are empty.
@@ -110,23 +110,28 @@ private constructor(
         ): MeshBuffer {
             val runtime = session.renderingRuntime
 
-            val attributeIds = IntArray(vertexLayout.attributes.size)
-            val attributeTypes = IntArray(vertexLayout.attributes.size)
-            val bufferIndices = ByteArray(vertexLayout.attributes.size)
+            val numAttributes = vertexLayout.buffers.sumOf { it.attributes.size }
+            val attributeIds = IntArray(numAttributes)
+            val attributeTypes = IntArray(numAttributes)
+            val bufferIndices = ByteArray(numAttributes)
+            val byteOffsets = IntArray(numAttributes)
+            val byteStrides = IntArray(vertexLayout.buffers.size)
 
-            var maxBufferIndex = -1
-            for (i in vertexLayout.attributes.indices) {
-                val attr = vertexLayout.attributes[i]
-                attributeIds[i] = getRtVertexAttribute(attr.attribute)
-                attributeTypes[i] = getRtVertexAttributeType(attr.type)
-                bufferIndices[i] = attr.bufferIndex.toByte()
-                if (attr.bufferIndex > maxBufferIndex) {
-                    maxBufferIndex = attr.bufferIndex
+            var attrIndex = 0
+            for (bufIndex in vertexLayout.buffers.indices) {
+                val bufferLayout = vertexLayout.buffers[bufIndex]
+                byteStrides[bufIndex] = if (bufferLayout.stride < 0) 0 else bufferLayout.stride
+                for (attr in bufferLayout.attributes) {
+                    attributeIds[attrIndex] = getRtVertexAttribute(attr.attribute)
+                    attributeTypes[attrIndex] = getRtVertexAttributeType(attr.type)
+                    bufferIndices[attrIndex] = bufIndex.toByte()
+                    byteOffsets[attrIndex] = attr.offset
+                    attrIndex++
                 }
             }
 
-            require(vertexData.size > maxBufferIndex) {
-                "vertexData must contain a buffer for each buffer index used in the layout."
+            require(vertexData.size == vertexLayout.buffers.size) {
+                "vertexData size must match the number of buffers in VertexLayout."
             }
 
             for (i in vertexData.indices) {
@@ -143,6 +148,8 @@ private constructor(
                     attributeIds,
                     attributeTypes,
                     bufferIndices,
+                    byteOffsets,
+                    byteStrides,
                     0,
                     0,
                     vertexBuffers,

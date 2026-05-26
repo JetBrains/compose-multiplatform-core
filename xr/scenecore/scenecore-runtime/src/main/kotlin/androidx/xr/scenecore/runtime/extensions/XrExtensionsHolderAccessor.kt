@@ -17,12 +17,12 @@
 package androidx.xr.scenecore.runtime.extensions
 
 import androidx.annotation.RestrictTo
-import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX
+import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 import androidx.xr.runtime.SpatialApiVersionHelper.spatialApiVersion
-import androidx.xr.runtime.XrExtensionsHolder
-import androidx.xr.runtime.loadProviders
+import androidx.xr.scenecore.runtime.XrExtensionsHolder
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsHolderAccessor.PROVIDERS
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsHolderAccessor.holder
+import androidx.xr.scenecore.runtime.loadProviders
 
 /**
  * Provides a centralized access point to the active OEM implementation of [XrExtensionsHolder].
@@ -30,8 +30,7 @@ import androidx.xr.scenecore.runtime.extensions.XrExtensionsHolderAccessor.holde
  * This helper object searches for a valid [XrExtensionsHolderProvider] on the classpath and exposes
  * its holders.
  */
-// TODO (b/502178246): Change to LIBRARY_GROUP once the Compose stop accessing this API.
-@RestrictTo(LIBRARY_GROUP_PREFIX)
+@RestrictTo(LIBRARY_GROUP)
 public object XrExtensionsHolderAccessor {
     /** A list of well-known [XrExtensionsHolderProvider] implementations. */
     private val PROVIDERS =
@@ -59,6 +58,7 @@ public object XrExtensionsHolderAccessor {
      * XR functionality.
      */
     @JvmStatic
+    @get:RestrictTo(LIBRARY_GROUP)
     public val holder: XrExtensionsHolder<*>?
         get() = providers.firstOrNull()?.holder
 
@@ -73,6 +73,7 @@ public object XrExtensionsHolderAccessor {
      * future. For platforms supporting [spatialApiVersion] 2 or higher, prefer using [holder].
      */
     @JvmStatic
+    @get:RestrictTo(LIBRARY_GROUP)
     public val holderLegacy: XrExtensionsHolder<*>?
         get() = providers.firstOrNull()?.holderLegacy
 }

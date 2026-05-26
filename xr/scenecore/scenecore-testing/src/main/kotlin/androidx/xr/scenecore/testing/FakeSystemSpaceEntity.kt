@@ -22,6 +22,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.SystemSpaceEntity
+import androidx.xr.scenecore.testing.internal.FakeSystemSpaceEntity as InternalFakeSystemSpaceEntity
 import java.util.concurrent.Executor
 
 /**
@@ -30,14 +31,16 @@ import java.util.concurrent.Executor
  */
 @Deprecated("Use SceneCoreTestRule instead.")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public open class FakeSystemSpaceEntity() : FakeEntity(), SystemSpaceEntity {
+public open class FakeSystemSpaceEntity
+internal constructor(fakeInternal: InternalFakeSystemSpaceEntity) :
+    FakeEntity(fakeInternal = fakeInternal), SystemSpaceEntity {
+
+    public constructor() : this(InternalFakeSystemSpaceEntity())
 
     private var openXrReferenceSpaceTransform: Matrix4? = null
 
-    public var onOriginChangedListener: Runnable? = null
-        private set
-
-    private var onOriginChangedExecutor: Executor? = null
+    public val onOriginChangedListener: Runnable?
+        get() = (fakeInternal as InternalFakeSystemSpaceEntity).onOriginChangedListener
 
     /**
      * Registers a listener to be called when the underlying space's origin has moved or changed.
@@ -48,8 +51,10 @@ public open class FakeSystemSpaceEntity() : FakeEntity(), SystemSpaceEntity {
      */
     @Suppress("ExecutorRegistration")
     override fun setOnOriginChangedListener(listener: Runnable?, executor: Executor?) {
-        onOriginChangedListener = listener
-        onOriginChangedExecutor = executor
+        (fakeInternal as InternalFakeSystemSpaceEntity).setOnOriginChangedListener(
+            listener,
+            executor,
+        )
     }
 
     /**
@@ -60,9 +65,7 @@ public open class FakeSystemSpaceEntity() : FakeEntity(), SystemSpaceEntity {
      * and verify that your code responds correctly to space updates.
      */
     public fun onOriginChanged() {
-        onOriginChangedListener?.let { listener ->
-            onOriginChangedExecutor?.execute(listener) ?: listener.run()
-        }
+        (fakeInternal as InternalFakeSystemSpaceEntity).onOriginChanged()
     }
 
     public fun setOpenXrReferenceSpaceTransform(fromTrs: Matrix4) {

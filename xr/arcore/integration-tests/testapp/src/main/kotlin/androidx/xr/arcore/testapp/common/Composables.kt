@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
-
 package androidx.xr.arcore.testapp.common
 
 import android.app.Activity
@@ -45,11 +43,12 @@ import androidx.xr.arcore.AugmentedImage
 import androidx.xr.arcore.AugmentedObject
 import androidx.xr.arcore.Plane
 import androidx.xr.arcore.PlaneLabel
+import androidx.xr.arcore.QrCode
 import androidx.xr.arcore.Trackable
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.arcore.testapp.ui.theme.PurpleGrey80
 import androidx.xr.runtime.AugmentedObjectCategory
-import androidx.xr.runtime.TrackingState
 
 @Composable
 fun BackToMainActivityButton() {
@@ -99,6 +98,9 @@ fun TrackableCard(trackable: Trackable<Trackable.State>) {
                 is AugmentedImage -> {
                     AugmentedImageStateInfo(state.value as AugmentedImage.State)
                 }
+                is QrCode -> {
+                    QrCodeStateInfo(state.value as QrCode.State)
+                }
             }
         }
     }
@@ -133,7 +135,6 @@ private fun AugmentedObjectCategory.getDescription(): String =
         else -> "Unknown"
     }
 
-@Suppress("DEPRECATION")
 private fun convertPlaneLabelToColor(label: PlaneLabel): Color =
     when (label) {
         PlaneLabel.WALL -> Color.Green
@@ -155,6 +156,13 @@ private fun convertAugmentedObjectCategoryToColor(category: AugmentedObjectCateg
 fun AugmentedImageStateInfo(state: AugmentedImage.State) {
     Text(text = "Augmented Image Center Pose: ${state.centerPose}")
     Text(text = "Augmented Image Extents: ${state.extents}")
+}
+
+@Composable
+fun QrCodeStateInfo(state: QrCode.State) {
+    Text(text = "QR code Center Pose: ${state.centerPose}")
+    Text(text = "QR code Extents: ${state.extents}")
+    Text(text = "QR code Data: ${state.data}")
 }
 
 @Composable

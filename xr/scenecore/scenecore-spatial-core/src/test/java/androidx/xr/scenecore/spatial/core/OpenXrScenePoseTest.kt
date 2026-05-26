@@ -17,7 +17,6 @@
 package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
-import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -26,10 +25,10 @@ import androidx.xr.runtime.testing.math.assertPose
 import androidx.xr.runtime.testing.math.assertVector3
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.HitTestResult
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.impl.BaseScenePose
 import androidx.xr.scenecore.runtime.impl.OpenXrScenePose
-import androidx.xr.scenecore.testing.FakeGltfFeature.Companion.createWithMockFeature
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
@@ -41,6 +40,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -76,12 +76,12 @@ class OpenXrScenePoseTest {
     private fun createGltfEntity(): GltfEntityImpl {
         val activityController = Robolectric.buildActivity(Activity::class.java)
         val activity = activityController.create().start().get()
-        val nodeHolder = NodeHolder<Node>(xrExtensions!!.createNode(), Node::class.java)
-        val fakeGltfFeature = createWithMockFeature(mockGltfFeature, nodeHolder)
+        val nodeHolder = NodeHolder<Node>(xrExtensions.createNode(), Node::class.java)
+        whenever(mockGltfFeature.getNodeHolder()).thenReturn(nodeHolder)
 
         return GltfEntityImpl(
             activity,
-            fakeGltfFeature,
+            mockGltfFeature,
             activitySpace,
             xrExtensions,
             sceneNodeRegistry,

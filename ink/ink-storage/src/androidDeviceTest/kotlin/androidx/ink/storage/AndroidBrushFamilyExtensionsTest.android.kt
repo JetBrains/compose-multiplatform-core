@@ -23,8 +23,8 @@ import androidx.ink.brush.BrushBehavior
 import androidx.ink.brush.BrushCoat
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.BrushPaint
+import androidx.ink.brush.BrushPaint.TilingTexture
 import androidx.ink.brush.BrushTip
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.brush.Version
 import androidx.ink.brush.behavior.IntegralNode
@@ -47,7 +47,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalInkCustomBrushApi::class)
 class AndroidBrushFamilyExtensionsTest {
 
     private val textureId1: String = "texture_id_1"
@@ -85,27 +84,27 @@ class AndroidBrushFamilyExtensionsTest {
                             BrushPaint(
                                 textureLayers =
                                     listOf(
-                                        BrushPaint.TextureLayer(
+                                        TilingTexture(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
                                             sizeY = 4f,
                                         ),
-                                        BrushPaint.TextureLayer(
+                                        TilingTexture(
                                             clientTextureId = unknownId,
                                             sizeX = 2f,
                                             sizeY = 5f,
                                         ),
-                                        BrushPaint.TextureLayer(
+                                        TilingTexture(
                                             clientTextureId = textureId2,
                                             sizeX = 2f,
                                             sizeY = 2f,
                                         ),
-                                        BrushPaint.TextureLayer(
+                                        TilingTexture(
                                             clientTextureId = textureId2,
                                             sizeX = 2f,
                                             sizeY = 2f,
                                         ),
-                                        BrushPaint.TextureLayer(
+                                        TilingTexture(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
                                             sizeY = 4f,
@@ -146,17 +145,17 @@ class AndroidBrushFamilyExtensionsTest {
                             BrushPaint(
                                 textureLayers =
                                     listOf(
-                                        BrushPaint.TextureLayer(
+                                        BrushPaint.TilingTexture(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
                                             sizeY = 4f,
                                         ),
-                                        BrushPaint.TextureLayer(
+                                        BrushPaint.TilingTexture(
                                             clientTextureId = textureId2,
                                             sizeX = 2f,
                                             sizeY = 2f,
                                         ),
-                                        BrushPaint.TextureLayer(
+                                        BrushPaint.TilingTexture(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
                                             sizeY = 4f,

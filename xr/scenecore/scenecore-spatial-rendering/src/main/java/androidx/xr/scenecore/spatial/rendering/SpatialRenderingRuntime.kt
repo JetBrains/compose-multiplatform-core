@@ -19,23 +19,13 @@ package androidx.xr.scenecore.spatial.rendering
 import android.app.Activity
 import android.os.Looper
 import androidx.annotation.VisibleForTesting
-import androidx.xr.runtime.TypeHolder
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
-import androidx.xr.scenecore.impl.impress.CustomMesh
-import androidx.xr.scenecore.impl.impress.ExrImage
-import androidx.xr.scenecore.impl.impress.GltfModel
-import androidx.xr.scenecore.impl.impress.ImpressApi
-import androidx.xr.scenecore.impl.impress.ImpressApiImpl
-import androidx.xr.scenecore.impl.impress.ImpressNode
-import androidx.xr.scenecore.impl.impress.KhronosPbrMaterial
-import androidx.xr.scenecore.impl.impress.Material
-import androidx.xr.scenecore.impl.impress.MeshBuffer
-import androidx.xr.scenecore.impl.impress.Texture
 import androidx.xr.scenecore.runtime.CustomMeshResource
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.ExrImageResource
@@ -53,7 +43,18 @@ import androidx.xr.scenecore.runtime.SpatialEnvironmentFeature
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.TextureResource
 import androidx.xr.scenecore.runtime.TextureSampler
+import androidx.xr.scenecore.runtime.TypeHolder
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsHolderAccessor
+import androidx.xr.scenecore.spatial.rendering.impress.CustomMesh
+import androidx.xr.scenecore.spatial.rendering.impress.ExrImage
+import androidx.xr.scenecore.spatial.rendering.impress.GltfModel
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressApi
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressApiImpl
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressNode
+import androidx.xr.scenecore.spatial.rendering.impress.KhronosPbrMaterial
+import androidx.xr.scenecore.spatial.rendering.impress.Material
+import androidx.xr.scenecore.spatial.rendering.impress.MeshBuffer
+import androidx.xr.scenecore.spatial.rendering.impress.Texture
 import com.android.extensions.xr.XrExtensions
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
 import com.google.ar.imp.view.splitengine.ImpSplitEngine
@@ -73,6 +74,9 @@ private constructor(
     private val renderer: ImpSplitEngineRenderer,
 ) : RenderingRuntime {
 
+    override var config: Config = Config.Builder().build()
+        private set
+
     private lateinit var renderingEntityFactory: RenderingEntityFactory
     private var spatialEnvironmentFeature: SpatialEnvironmentFeatureImpl?
     private var isDestroyed = false
@@ -91,6 +95,10 @@ private constructor(
         (sceneRuntime.spatialEnvironment as SpatialEnvironmentExt).onRenderingFeatureReady(
             spatialEnvironmentFeature as SpatialEnvironmentFeature
         )
+    }
+
+    override fun configure(config: Config) {
+        this.config = config
     }
 
     @SuppressWarnings("RestrictTo")
@@ -703,6 +711,8 @@ private constructor(
         attributeIds: IntArray,
         attributeTypes: IntArray,
         bufferIndices: ByteArray,
+        byteOffsets: IntArray,
+        byteStrides: IntArray,
         maxVertices: Int,
         maxIndices: Int,
         vertexData: Array<java.nio.ByteBuffer>?,
@@ -716,6 +726,8 @@ private constructor(
             attributeIds,
             attributeTypes,
             bufferIndices,
+            byteOffsets,
+            byteStrides,
             maxVertices,
             maxIndices,
             vertexData,
@@ -788,7 +800,7 @@ private constructor(
                 (customMesh as CustomMesh).nativeHandle,
                 materialHandles,
                 boneCount,
-                /* enableCollider= */ true,
+                /* enableCollider= */ false,
             )
         val impressNode = ImpressNode(impressNodeId)
         val meshBoundingBox = getCustomMeshBoundingBox(customMesh)

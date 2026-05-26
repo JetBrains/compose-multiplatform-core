@@ -19,23 +19,14 @@ package androidx.xr.compose.unit
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.compose.testing.XrExtensionsProvider
 import androidx.xr.runtime.math.FloatSize3d
-import com.android.extensions.xr.ShadowConfig
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class DpVolumeSizeTest {
-    @Before
-    fun setUp() {
-        ShadowConfig.extract(XrExtensionsProvider.getXrExtensions().config!!)
-            .setDefaultDpPerMeter(1f)
-    }
-
     @Test
     fun dpVolumeSize_isCreated() {
         val dpVolumeSize = DpVolumeSize(0.dp, 0.dp, 0.dp)
@@ -54,18 +45,18 @@ class DpVolumeSizeTest {
 
     @Test
     fun toDimensionsInMeter_returnsCorrectDimensions() {
-        val dpVolumeSize = DpVolumeSize(1.dp, 1.dp, 1.dp)
+        val dpVolumeSize = DpVolumeSize(1000.dp, 1000.dp, 1000.dp)
 
         val dimensions = dpVolumeSize.toDimensionsInMeters()
 
-        assertThat(dimensions).isEqualTo(FloatSize3d(1f, 1f, 1f))
+        assertThat(dimensions).isEqualTo(FloatSize3d(0.5f, 0.5f, 0.5f))
     }
 
     @Test
     fun dpVolumeSize_fromMeters_returnsCorrectDpVolumeSize() {
-        val dpVolumeSize = FloatSize3d(1f, 1f, 1f).toDpVolumeSize()
+        val dpVolumeSize = FloatSize3d(0.5f, 0.5f, 0.5f).toDpVolumeSize()
 
-        assertThat(dpVolumeSize).isEqualTo(DpVolumeSize(1.dp, 1.dp, 1.dp))
+        assertThat(dpVolumeSize).isEqualTo(DpVolumeSize(1000.dp, 1000.dp, 1000.dp))
     }
 
     @Test

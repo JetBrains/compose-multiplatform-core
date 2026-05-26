@@ -322,6 +322,7 @@ public class CustomHeadersTest {
     @Test
     public void headerPresentOnPrefetchRequests() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.PROFILE_URL_PREFETCH);
+        WebkitUtils.checkFeature(WebViewFeature.PREFETCH_CACHE_V1);
         try (MockWebServer server = new MockWebServer()) {
             MockWebServerHttpsUtil.enableHttps(server);
             server.start();
@@ -331,7 +332,8 @@ public class CustomHeadersTest {
             Set<String> originRules = getOriginRules(url);
             addCustomHeaderOnUiThread(new CustomHeader("X-ExtraHeader", "Value", originRules));
 
-            mDefaultProfile.prefetchUrlAsync(url.toString(), new CancellationSignal(),
+            mDefaultProfile.getPrefetchCache().prefetchUrlAsync(url.toString(),
+                    new CancellationSignal(),
                     Runnable::run, ignored -> {
                     });
 

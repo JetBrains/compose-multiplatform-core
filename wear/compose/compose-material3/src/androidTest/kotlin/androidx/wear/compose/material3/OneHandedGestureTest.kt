@@ -17,26 +17,39 @@
 package androidx.wear.compose.material3
 
 import android.content.Context
+import android.os.Build
 import android.view.View
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -45,20 +58,34 @@ import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
+import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.material3.onehandedgesture.GestureAction
+import androidx.wear.compose.material3.onehandedgesture.GestureIndicatorSize
 import androidx.wear.compose.material3.onehandedgesture.GestureManagerImpl
 import androidx.wear.compose.material3.onehandedgesture.GesturePriority
+import androidx.wear.compose.material3.onehandedgesture.INDICATOR_ANIMATION_START_DELAY_MILLIS
 import androidx.wear.compose.material3.onehandedgesture.LocalGestureManager
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureDefaults
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureHorizontalPageIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureInteraction
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureScrollIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureVerticalPageIndicator
 import androidx.wear.compose.material3.onehandedgesture.SdkGestureInputManager
 import androidx.wear.compose.material3.onehandedgesture.oneHandedGesture
+import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,22 +99,26 @@ class OneHandedGestureTest {
     @Test
     fun simple_primary_gesture() {
         var gestured = false
-        var indicatorShown = false
+        var indicatorAction: GestureAction? = null
         val sdkGestureInputManager = SdkGestureInputManagerMock()
+        val hapticResults = mutableMapOf<HapticFeedbackType, Int>()
 
         rule.setContentWithTheme {
-            MockSdkGestureInputManager(sdkGestureInputManager) {
+            val interactionSource = remember { MutableInteractionSource() }
+            MockSdkGestureInputManager(sdkGestureInputManager, hapticResults) {
                 Text(
                     "Clickable",
                     modifier =
                         Modifier.oneHandedGesture(
                             action = GestureAction.Primary,
-                            onShowIndicator = { indicatorShown = true },
+                            interactionSource = interactionSource,
                         ) {
                             gestured = true
                         },
                 )
             }
+
+            interactionSource.ListenForGestureInteraction { action -> indicatorAction = action }
         }
 
         // It takes at least a second for indicator to be shown. Fast-forward 3s to allow some delay
@@ -96,7 +127,10 @@ class OneHandedGestureTest {
         sdkGestureInputManager.performGesture(sdkActionPrimary)
         rule.runOnIdle {
             assertEquals(true, gestured)
-            assertEquals(true, indicatorShown)
+            assertEquals(GestureAction.Primary, indicatorAction)
+
+            assertThat(hapticResults).hasSize(1)
+            assertEquals(hapticResults[HapticFeedbackType.LongPress], 1)
         }
     }
 
@@ -104,22 +138,39 @@ class OneHandedGestureTest {
     @Test
     fun simple_dismiss_gesture() {
         var gestured = false
+        var indicatorAction: GestureAction? = null
         val sdkGestureInputManager = SdkGestureInputManagerMock()
+        val hapticResults = mutableMapOf<HapticFeedbackType, Int>()
 
         rule.setContentWithTheme {
-            MockSdkGestureInputManager(sdkGestureInputManager) {
+            val interactionSource = remember { MutableInteractionSource() }
+            MockSdkGestureInputManager(sdkGestureInputManager, hapticResults) {
                 Text(
                     "Clickable",
                     modifier =
-                        Modifier.oneHandedGesture(action = GestureAction.Dismiss) {
+                        Modifier.oneHandedGesture(
+                            action = GestureAction.Dismiss,
+                            interactionSource = interactionSource,
+                        ) {
                             gestured = true
                         },
                 )
             }
+            interactionSource.ListenForGestureInteraction { action -> indicatorAction = action }
         }
 
+        // It takes at least a second for indicator to be shown. Fast-forward 3s to allow some delay
+        rule.mainClock.advanceTimeBy(3000)
+
         sdkGestureInputManager.performGesture(sdkActionDismiss)
-        rule.runOnIdle { assertEquals(true, gestured) }
+
+        rule.runOnIdle {
+            assertEquals(true, gestured)
+            assertEquals(GestureAction.Dismiss, indicatorAction)
+
+            assertThat(hapticResults).hasSize(1)
+            assertEquals(hapticResults[HapticFeedbackType.LongPress], 1)
+        }
     }
 
     /** Verifies that Clickable priority is higher than Scrollable */
@@ -127,18 +178,20 @@ class OneHandedGestureTest {
     fun clickable_over_scrollable() {
         var tlcGestured = false
         var textGestured = false
-        var tlcIndicatorShown = false
-        var textIndicatorShown = false
+        var tlcIndicatorAction: GestureAction? = null
+        var textIndicatorAction: GestureAction? = null
         val sdkGestureInputManager = SdkGestureInputManagerMock()
 
         rule.setContentWithTheme {
+            val tlcInteractionSource = remember { MutableInteractionSource() }
+            val textInteractionSource = remember { MutableInteractionSource() }
             MockSdkGestureInputManager(sdkGestureInputManager) {
                 TransformingLazyColumn(
                     modifier =
                         Modifier.oneHandedGesture(
                             action = GestureAction.Primary,
                             priority = GesturePriority.Scrollable,
-                            onShowIndicator = { tlcIndicatorShown = true },
+                            interactionSource = tlcInteractionSource,
                         ) {
                             tlcGestured = true
                         }
@@ -150,13 +203,21 @@ class OneHandedGestureTest {
                                 Modifier.oneHandedGesture(
                                     action = GestureAction.Primary,
                                     priority = GesturePriority.Clickable,
-                                    onShowIndicator = { textIndicatorShown = true },
+                                    interactionSource = textInteractionSource,
                                 ) {
                                     textGestured = true
                                 },
                         )
                     }
                 }
+            }
+
+            tlcInteractionSource.ListenForGestureInteraction { action ->
+                tlcIndicatorAction = action
+            }
+
+            textInteractionSource.ListenForGestureInteraction { action ->
+                textIndicatorAction = action
             }
         }
 
@@ -165,9 +226,9 @@ class OneHandedGestureTest {
 
         sdkGestureInputManager.performGesture(sdkActionPrimary)
         rule.runOnIdle {
-            assertEquals(false, tlcIndicatorShown)
+            assertEquals(null, tlcIndicatorAction)
             assertEquals(false, tlcGestured)
-            assertEquals(true, textIndicatorShown)
+            assertEquals(GestureAction.Primary, textIndicatorAction)
             assertEquals(true, textGestured)
         }
     }
@@ -177,7 +238,7 @@ class OneHandedGestureTest {
     fun two_gestures_same_priority() {
         var tlcGestured = false
         val textGestured = mutableListOf(false, false)
-        val textIndicatorShown = mutableListOf(false, false)
+        val textIndicatorActions = mutableListOf<GestureAction?>(null, null)
         val sdkGestureInputManager = SdkGestureInputManagerMock()
 
         rule.setContentWithTheme {
@@ -191,18 +252,22 @@ class OneHandedGestureTest {
                             tlcGestured = true
                         }
                 ) {
-                    items(2) {
+                    items(2) { index ->
+                        val interactionSource = remember { MutableInteractionSource() }
                         Text(
-                            "Clickable$it",
+                            "Clickable$index",
                             modifier =
                                 Modifier.oneHandedGesture(
                                     action = GestureAction.Primary,
                                     priority = GesturePriority.Clickable,
-                                    onShowIndicator = { textIndicatorShown[it] = true },
+                                    interactionSource = interactionSource,
                                 ) {
-                                    textGestured[it] = true
+                                    textGestured[index] = true
                                 },
                         )
+                        interactionSource.ListenForGestureInteraction { action ->
+                            textIndicatorActions[index] = action
+                        }
                     }
                 }
             }
@@ -216,7 +281,7 @@ class OneHandedGestureTest {
             assertEquals(false, tlcGestured)
             // Since all Texts have the same priority, verify that all of them have been gestured
             assertEquals(true, textGestured.all { it })
-            assertEquals(true, textIndicatorShown.all { it })
+            assertEquals(true, textIndicatorActions.all { it == GestureAction.Primary })
         }
     }
 
@@ -416,9 +481,20 @@ class OneHandedGestureTest {
     }
 
     @Test
-    fun alert_dialog_content_groups_edge_button() {
+    fun alert_dialog_content_groups_edge_button_enabled() {
+        alert_dialog_content_groups_edge_button(true)
+    }
+
+    @Test
+    fun alert_dialog_content_groups_edge_button_disabled() {
+        alert_dialog_content_groups_edge_button(false)
+    }
+
+    @OptIn(ExperimentalWearComposeMaterial3Api::class)
+    private fun alert_dialog_content_groups_edge_button(enabled: Boolean) {
         val sdkGestureInputManager = SdkGestureInputManagerMock(false)
         var edgeButtonClicked = false
+        WearComposeMaterial3Flags.isOneHandedGesturesInAlertDialogEnabled = enabled
 
         rule.setContentWithTheme {
             MockSdkGestureInputManager(sdkGestureInputManager) {
@@ -489,20 +565,246 @@ class OneHandedGestureTest {
                 break
             }
         }
-        assert(edgeButtonClicked)
+        assertEquals(enabled, edgeButtonClicked)
+    }
+
+    @Test
+    fun test_slc_scroll_down_anchor_start() {
+        test_slc_scroll_down(ScalingLazyListAnchorType.ItemStart)
+    }
+
+    @Test
+    fun test_slc_scroll_down_anchor_center() {
+        test_slc_scroll_down(ScalingLazyListAnchorType.ItemCenter)
+    }
+
+    @Test
+    fun test_slc_scroll_next_item_anchor_start() {
+        test_slc_scroll_next_item(ScalingLazyListAnchorType.ItemStart)
+    }
+
+    @Test
+    fun test_slc_scroll_next_item_anchor_center() {
+        test_slc_scroll_next_item(ScalingLazyListAnchorType.ItemCenter)
+    }
+
+    @Test
+    fun gesture_indicator_colors() {
+        val tintColor = Color.Yellow
+        val interactionSource = MutableInteractionSource()
+        rule.verifyColors(
+            interactionSource = interactionSource,
+            gestureAction = GestureAction.Primary,
+            expectedContentColor = tintColor,
+        ) {
+            OneHandedGestureIndicator(
+                interactionSource = interactionSource,
+                gestureIndicatorTint = tintColor,
+                modifier = Modifier.testTag(TEST_TAG),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "",
+                    modifier = Modifier.size(GestureIndicatorSize.Medium.size),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun gesture_scroll_indicator_colors() {
+        val tintColor = Color.Yellow
+        val containerColor = Color.Blue
+        val interactionSource = MutableInteractionSource()
+        rule.verifyColors(
+            interactionSource = interactionSource,
+            gestureAction = GestureAction.Primary,
+            expectedContentColor = tintColor,
+            expectedContainerColor = containerColor,
+        ) {
+            Box(modifier = Modifier.testTag(TEST_TAG)) {
+                OneHandedGestureScrollIndicator(
+                    interactionSource = interactionSource,
+                    gestureIndicatorTint = tintColor,
+                    gestureIndicatorBackgroundColor = containerColor,
+                    state = rememberTransformingLazyColumnState(),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun gesture_horizontal_page_indicator_colors() {
+        val tintColor = Color.Yellow
+        val containerColor = Color.Blue
+        val interactionSource = MutableInteractionSource()
+        rule.verifyColors(
+            interactionSource = interactionSource,
+            gestureAction = GestureAction.Primary,
+            expectedContentColor = tintColor,
+            expectedContainerColor = containerColor,
+        ) {
+            Box(modifier = Modifier.testTag(TEST_TAG)) {
+                OneHandedGestureHorizontalPageIndicator(
+                    interactionSource = interactionSource,
+                    gestureIndicatorTint = tintColor,
+                    gestureIndicatorBackgroundColor = containerColor,
+                    pagerState = rememberPagerState { 0 },
+                )
+            }
+        }
+    }
+
+    @Test
+    fun gesture_vertical_page_indicator_colors() {
+        val tintColor = Color.Yellow
+        val containerColor = Color.Blue
+        val interactionSource = MutableInteractionSource()
+        rule.verifyColors(
+            interactionSource = interactionSource,
+            gestureAction = GestureAction.Primary,
+            expectedContentColor = tintColor,
+            expectedContainerColor = containerColor,
+        ) {
+            Box(modifier = Modifier.testTag(TEST_TAG)) {
+                OneHandedGestureVerticalPageIndicator(
+                    interactionSource = interactionSource,
+                    gestureIndicatorTint = tintColor,
+                    gestureIndicatorBackgroundColor = containerColor,
+                    pagerState = rememberPagerState { 0 },
+                )
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    internal fun ComposeContentTestRule.verifyColors(
+        interactionSource: MutableInteractionSource,
+        gestureAction: GestureAction,
+        expectedContentColor: Color,
+        expectedContainerColor: Color? = null,
+        content: @Composable BoxScope.() -> Unit,
+    ) {
+        val testBackgroundColor = Color.White
+        rule.mainClock.autoAdvance = false
+        setContentWithTheme {
+            Box(Modifier.fillMaxSize().background(testBackgroundColor), content = content)
+        }
+        interactionSource.tryEmit(OneHandedGestureInteraction.Indicate(gestureAction, "test"))
+        rule.waitForIdle()
+        // Advance alpha animation of gesture indicator. After this, gesture should be fully visible
+        rule.mainClock.advanceTimeBy(INDICATOR_ANIMATION_START_DELAY_MILLIS)
+
+        val image = onNodeWithTag(TEST_TAG).captureToImage()
+        expectedContainerColor?.let { image.assertContainsColor(it) }
+
+        image.assertContainsColor(expectedContentColor)
+    }
+
+    private fun test_slc_scroll_down(anchorType: ScalingLazyListAnchorType) {
+        val sdkGestureInputManager = SdkGestureInputManagerMock(false)
+        var state: ScalingLazyListState? = null
+
+        rule.setContentWithTheme {
+            ScreenConfiguration(SCREEN_SIZE_SMALL) {
+                MockSdkGestureInputManager(sdkGestureInputManager) {
+                    state = rememberScalingLazyListState()
+                    ScalingLazyColumn(
+                        state = state,
+                        modifier =
+                            Modifier.background(Color.Black)
+                                .fillMaxSize()
+                                .oneHandedGesture(
+                                    action = GestureAction.Primary,
+                                    onGesture = { OneHandedGestureDefaults.scrollDown(state) },
+                                ),
+                        anchorType = anchorType,
+                    ) {
+                        items(10) { Text("Item $it") }
+                    }
+                }
+            }
+        }
+
+        // scrollDown() scrolls 50% of the screen, making centerItemIndex to move 1 -> 5 -> 9 -> 1
+        val expectedIndex = listOf(1, 5, 9)
+        repeat(10) { iteration ->
+            rule.runOnIdle {
+                assertEquals(expectedIndex[iteration % expectedIndex.size], state!!.centerItemIndex)
+                sdkGestureInputManager.performGesture(sdkActionPrimary)
+            }
+        }
+    }
+
+    private fun test_slc_scroll_next_item(anchorType: ScalingLazyListAnchorType) {
+        val sdkGestureInputManager = SdkGestureInputManagerMock(false)
+        var state: ScalingLazyListState? = null
+        val numberOfItems = 10
+
+        rule.setContentWithTheme {
+            ScreenConfiguration(SCREEN_SIZE_SMALL) {
+                MockSdkGestureInputManager(sdkGestureInputManager) {
+                    state = rememberScalingLazyListState()
+                    ScalingLazyColumn(
+                        state = state,
+                        modifier =
+                            Modifier.background(Color.Black)
+                                .fillMaxSize()
+                                .oneHandedGesture(
+                                    action = GestureAction.Primary,
+                                    onGesture = { OneHandedGestureDefaults.scrollToNextItem(state) },
+                                ),
+                        anchorType = anchorType,
+                    ) {
+                        items(numberOfItems) { Text("Item $it") }
+                    }
+                }
+            }
+        }
+
+        var expectedIndex = 1
+        repeat(numberOfItems * 2) {
+            rule.runOnIdle {
+                assertEquals(expectedIndex, state!!.centerItemIndex)
+                sdkGestureInputManager.performGesture(sdkActionPrimary)
+                if (expectedIndex == numberOfItems - 1) {
+                    expectedIndex = 1
+                } else {
+                    expectedIndex++
+                }
+            }
+        }
     }
 
     @Composable
     private fun MockSdkGestureInputManager(
         sdkGestureInputManager: SdkGestureInputManager,
+        results: MutableMap<HapticFeedbackType, Int> = mutableMapOf(),
         content: @Composable () -> Unit,
     ) {
         val scope: CoroutineScope = rememberCoroutineScope()
-        val haptic = LocalHapticFeedback.current
-        val gestureManager =
-            remember(haptic, scope) { GestureManagerImpl(haptic, scope, sdkGestureInputManager) }
+        val haptic = hapticFeedback(collectResultsFromHapticFeedback(results))
+        val gestureManager = remember(scope) { GestureManagerImpl(scope, sdkGestureInputManager) }
 
-        CompositionLocalProvider(LocalGestureManager provides gestureManager) { content() }
+        CompositionLocalProvider(
+            LocalGestureManager provides gestureManager,
+            LocalHapticFeedback provides haptic,
+        ) {
+            content()
+        }
+    }
+
+    @Composable
+    private fun InteractionSource.ListenForGestureInteraction(
+        onGestureInteraction: (GestureAction) -> Unit
+    ) {
+        LaunchedEffect(this) {
+            interactions.collect { interaction ->
+                if (interaction is OneHandedGestureInteraction.Indicate) {
+                    onGestureInteraction(interaction.action)
+                }
+            }
+        }
     }
 
     private class SdkGestureInputManagerMock(private val showIndicator: Boolean = true) :
@@ -530,7 +832,7 @@ class OneHandedGestureTest {
         override fun notifyIndicatorShown(key: String, sdkGestureAction: Int) {}
 
         fun performGesture(sdkGestureAction: Int) {
-            gestureConsumers[sdkGestureAction]!!.invoke(sdkGestureAction)
+            gestureConsumers[sdkGestureAction]?.invoke(sdkGestureAction)
         }
 
         private val gestureConsumers = mutableMapOf<Int, (Int) -> Unit>()

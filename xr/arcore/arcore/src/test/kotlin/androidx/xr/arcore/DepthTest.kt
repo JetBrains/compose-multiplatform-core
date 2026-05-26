@@ -20,7 +20,7 @@ import android.Manifest.permission.CAMERA
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.testing.ArCoreTestRule
-import androidx.xr.arcore.testing.TestDepth
+import androidx.xr.arcore.testing.DepthTester
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.Session
@@ -45,6 +45,15 @@ import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
 class DepthTest {
+    companion object {
+        val RAW_ONLY_CONFIG =
+            Config.Builder().setDepthEstimation(DepthEstimationMode.RAW_ONLY).build()
+        val SMOOTH_ONLY_CONFIG =
+            Config.Builder().setDepthEstimation(DepthEstimationMode.SMOOTH_ONLY).build()
+        val SMOOTH_AND_RAW_CONFIG =
+            Config.Builder().setDepthEstimation(DepthEstimationMode.SMOOTH_AND_RAW).build()
+    }
+
     @Rule @JvmField val arCoreTestRule = ArCoreTestRule()
 
     private lateinit var activityController: ActivityController<ComponentActivity>
@@ -75,14 +84,17 @@ class DepthTest {
 
         activityController.create().start().resume()
 
-        session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
+        session =
+            (Session.create(context = activity, coroutineContext = testDispatcher)
+                    as SessionCreateSuccess)
+                .session
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun left_depthEstimationDisabled_throwsIllegalStateException() =
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.leftDepth)
+            applyExpectedValues(arCoreTestRule.leftDepthTester)
             advanceUntilIdle()
 
             assertFailsWith<IllegalStateException> { Depth.left(session) }
@@ -92,7 +104,7 @@ class DepthTest {
     @Test
     fun right_depthEstimationDisabled_throwsIllegalStateException() =
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.rightDepth)
+            applyExpectedValues(arCoreTestRule.rightDepthTester)
             advanceUntilIdle()
 
             assertFailsWith<IllegalStateException> { Depth.right(session) }
@@ -102,7 +114,7 @@ class DepthTest {
     @Test
     fun mono_depthEstimationDisabled_throwsIllegalStateException() =
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.monoDepth)
+            applyExpectedValues(arCoreTestRule.monoDepthTester)
             advanceUntilIdle()
 
             assertFailsWith<IllegalStateException> { Depth.mono(session) }
@@ -111,10 +123,10 @@ class DepthTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun left_rawOnly_updatesRawDepthMap() {
-        session.configure(Config(depthEstimation = DepthEstimationMode.RAW_ONLY))
+        session.configure(RAW_ONLY_CONFIG)
 
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.leftDepth)
+            applyExpectedValues(arCoreTestRule.leftDepthTester)
             advanceUntilIdle()
 
             val underTest = Depth.left(session)
@@ -132,10 +144,10 @@ class DepthTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun left_smoothOnly_updatesSmoothDepthMap() {
-        session.configure(Config(depthEstimation = DepthEstimationMode.SMOOTH_ONLY))
+        session.configure(SMOOTH_ONLY_CONFIG)
 
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.leftDepth)
+            applyExpectedValues(arCoreTestRule.leftDepthTester)
             advanceUntilIdle()
 
             val underTest = Depth.left(session)
@@ -153,10 +165,10 @@ class DepthTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun left_smoothAndRaw_updatesSmoothAndRawDepthMaps() {
-        session.configure(Config(depthEstimation = DepthEstimationMode.SMOOTH_AND_RAW))
+        session.configure(SMOOTH_AND_RAW_CONFIG)
 
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.leftDepth)
+            applyExpectedValues(arCoreTestRule.leftDepthTester)
             advanceUntilIdle()
 
             val underTest = Depth.left(session)
@@ -175,10 +187,10 @@ class DepthTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun right_rawOnly_updatesRawDepthMap() {
-        session.configure(Config(depthEstimation = DepthEstimationMode.RAW_ONLY))
+        session.configure(RAW_ONLY_CONFIG)
 
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.rightDepth)
+            applyExpectedValues(arCoreTestRule.rightDepthTester)
             advanceUntilIdle()
 
             val underTest = Depth.right(session)
@@ -196,10 +208,10 @@ class DepthTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun right_smoothOnly_updatesSmoothDepthMap() {
-        session.configure(Config(depthEstimation = DepthEstimationMode.SMOOTH_ONLY))
+        session.configure(SMOOTH_ONLY_CONFIG)
 
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.rightDepth)
+            applyExpectedValues(arCoreTestRule.rightDepthTester)
             advanceUntilIdle()
 
             val underTest = Depth.right(session)
@@ -217,10 +229,10 @@ class DepthTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun right_smoothAndRaw_updatesSmoothAndRawDepthMaps() {
-        session.configure(Config(depthEstimation = DepthEstimationMode.SMOOTH_AND_RAW))
+        session.configure(SMOOTH_AND_RAW_CONFIG)
 
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.rightDepth)
+            applyExpectedValues(arCoreTestRule.rightDepthTester)
             advanceUntilIdle()
 
             val underTest = Depth.right(session)
@@ -239,10 +251,10 @@ class DepthTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun mono_rawOnly_updatesRawDepthMap() {
-        session.configure(Config(depthEstimation = DepthEstimationMode.RAW_ONLY))
+        session.configure(RAW_ONLY_CONFIG)
 
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.monoDepth)
+            applyExpectedValues(arCoreTestRule.monoDepthTester)
             advanceUntilIdle()
 
             val underTest = Depth.mono(session)
@@ -260,10 +272,10 @@ class DepthTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun mono_smoothOnly_updatesSmoothDepthMap() {
-        session.configure(Config(depthEstimation = DepthEstimationMode.SMOOTH_ONLY))
+        session.configure(SMOOTH_ONLY_CONFIG)
 
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.monoDepth)
+            applyExpectedValues(arCoreTestRule.monoDepthTester)
             advanceUntilIdle()
 
             val underTest = Depth.mono(session)
@@ -281,10 +293,10 @@ class DepthTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun mono_smoothAndRaw_updatesSmoothAndRawDepthMaps() {
-        session.configure(Config(depthEstimation = DepthEstimationMode.SMOOTH_AND_RAW))
+        session.configure(SMOOTH_AND_RAW_CONFIG)
 
         runTest(testDispatcher) {
-            applyExpectedValues(arCoreTestRule.monoDepth)
+            applyExpectedValues(arCoreTestRule.monoDepthTester)
             advanceUntilIdle()
 
             val underTest = Depth.mono(session)
@@ -300,8 +312,8 @@ class DepthTest {
         }
     }
 
-    private fun applyExpectedValues(testDepth: TestDepth) =
-        testDepth.apply {
+    private fun applyExpectedValues(depthTester: DepthTester) =
+        depthTester.apply {
             width = expectedWidth
             height = expectedHeight
             rawDepthMap = expectedRawDepthBuffer

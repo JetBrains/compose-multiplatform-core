@@ -519,7 +519,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
         activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
         val initialRotation = Quaternion.fromEulerAngles(45f, 0f, 0f)
         val newTransform = Matrix4.fromTrs(Vector3.One, initialRotation, Vector3(2f, 2f, 2f))
-        activitySpace.handleOriginUpdate(newTransform)
+        activitySpace.setOpenXrReferenceSpaceTransform(newTransform)
         val pose = activitySpace.poseInOpenXrReferenceSpace
         assertThat(pose).isNotNull()
         assertPose(pose!!, Pose(Vector3.One, initialRotation))
@@ -554,5 +554,44 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
         // ActivitySpace always returns Vector3.One
         assertVector3(systemSpaceEntity.worldSpaceScale, Vector3.One)
         assertVector3(systemSpaceEntity.getScale(Space.ACTIVITY), Vector3.One)
+    }
+
+    @Test
+    fun handleOriginUpdate_sameTransform_doesNotNotifyAgain() {
+        val handler = TestSpatialModeChangeListener()
+        testRuntime = createTestSceneRuntime()
+        activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
+        activitySpace.setSpatialModeChangeListener(handler)
+
+        val newTransform = Matrix4.fromTrs(Vector3.One, Quaternion.Identity, Vector3.One)
+
+        activitySpace.handleOriginUpdate(newTransform)
+        assertThat(handler.updateCount).isEqualTo(1)
+
+        activitySpace.handleOriginUpdate(newTransform)
+        assertThat(handler.updateCount).isEqualTo(1)
+    }
+
+    @Test
+    fun handleOriginUpdate_handlesIndependentlyOfOpenXrReferenceSpaceTransform() {
+        val handler = TestSpatialModeChangeListener()
+        testRuntime = createTestSceneRuntime()
+        activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
+        activitySpace.setSpatialModeChangeListener(handler)
+
+        val newTransform = Matrix4.fromTrs(Vector3.One, Quaternion.Identity, Vector3.One)
+        val anotherTransform =
+            Matrix4.fromTrs(Vector3.One, Quaternion.Identity, Vector3(2f, 2f, 2f))
+
+        activitySpace.handleOriginUpdate(newTransform)
+        assertThat(handler.updateCount).isEqualTo(1)
+
+        // Asynchronously the underlying OpenXR reference space transform might be updated
+        // by the node transform listener. This should NOT affect handleOriginUpdate's debouncing.
+        activitySpace.setOpenXrReferenceSpaceTransform(anotherTransform)
+
+        // Applying the same transform via handleOriginUpdate should be debounced.
+        activitySpace.handleOriginUpdate(newTransform)
+        assertThat(handler.updateCount).isEqualTo(1)
     }
 }

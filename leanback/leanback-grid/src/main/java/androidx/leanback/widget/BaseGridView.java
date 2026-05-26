@@ -15,6 +15,7 @@
  */
 package androidx.leanback.widget;
 
+import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 
 import android.annotation.SuppressLint;
@@ -28,6 +29,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Interpolator;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.RestrictTo;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
@@ -35,14 +37,37 @@ import androidx.recyclerview.widget.SimpleItemAnimator;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 /**
  * An abstract base class for vertically and horizontally scrolling lists. The items come
  * from the {@link RecyclerView.Adapter} associated with this view.
  * Do not directly use this class, use {@link VerticalGridView} and {@link HorizontalGridView}.
  * The class is not intended to be subclassed other than {@link VerticalGridView} and
  * {@link HorizontalGridView}.
+ *
+ * The core feature of leanback's BaseGridView is that {@link #getSelectedPosition()} is kept at
+ * predefined location.  A set of {@link #getWindowAlignment()} and {@link ItemAlignment} rules
+ * customize how the item is aligned, for example align "bottom edge" of an item at 1/3 height of
+ * the {@link VerticalGridView}.
+ *
+ * In touch mode, the items are not kept aligned unless {@link #FOCUS_SCROLL_ALIGNED_AND_SNAP} is
+ * specified.
  */
 public abstract class BaseGridView extends RecyclerView {
+
+    /**
+     * Possible focus scroll strategy values.
+     */
+    @IntDef({
+            FOCUS_SCROLL_ALIGNED,
+            FOCUS_SCROLL_ALIGNED_AND_SNAP,
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    @RestrictTo(LIBRARY)
+    public @interface FocusScrollStrategy {
+    }
 
     /**
      * Always keep focused item at an aligned position in non-touch mode.  Developer can use
@@ -319,7 +344,7 @@ public abstract class BaseGridView extends RecyclerView {
      * </ul>
      *
      */
-    public void setFocusScrollStrategy(int scrollStrategy) {
+    public void setFocusScrollStrategy(@FocusScrollStrategy int scrollStrategy) {
         if (scrollStrategy != FOCUS_SCROLL_ALIGNED
                 && scrollStrategy != FOCUS_SCROLL_ALIGNED_AND_SNAP) {
             throw new IllegalArgumentException("Invalid scrollStrategy");
@@ -336,6 +361,7 @@ public abstract class BaseGridView extends RecyclerView {
      * </ul>
      *
      */
+    @FocusScrollStrategy
     public int getFocusScrollStrategy() {
         return mLayoutManager.getFocusScrollStrategy();
     }
@@ -759,6 +785,33 @@ public abstract class BaseGridView extends RecyclerView {
     }
 
     /**
+     * Update {@link #getSelectedPosition()} to an unaligned child. This is intended to be called
+     * when a child enter hovered state that it update BaseGridView's selected position without
+     * causing the grid view to scroll. If the BaseGridView hasFocus(), it also updates the focused
+     * view. Caller should use {@link #setSelectedPositionToAlignedChild()} for hover exit.  If
+     * there is adapter change or scrolling happening, the hovered position might be lost.
+     * @param child The hovered child of BaseGridView to select.
+     */
+    public void setSelectedPositionToUnalignedChild(@NonNull View child) {
+        mLayoutManager.setSelectedPositionWithoutScroll(child);
+    }
+
+    /**
+     * Clear the hovered position set by {@link #setSelectedPositionToUnalignedChild(View)}. This is
+     * intended to be called on child view's hover exit event to reset the position to an aligned
+     * child's position.
+     */
+    public void setSelectedPositionToAlignedChild() {
+        if (hasFocus()) {
+            // When GridView has focus, setHoveredPosition() would update the focused view too, we
+            // don't want to reset the selected position but rather keep the current focused view
+            // as selected position.
+            return;
+        }
+        mLayoutManager.setSelectedPositionToAlignedChild();
+    }
+
+    /**
      * Changes the selected item and/or subposition immediately without animation.
      *
      */
@@ -864,7 +917,16 @@ public abstract class BaseGridView extends RecyclerView {
     }
 
     /**
-     * Returns the adapter position of selected item.
+     * Returns the adapter position of selected item. The selected position is changed during user
+     * navigation, or app calling {@link #setSelectedPosition}, {@link #setSelectedPositionSmooth}.
+     *
+     * A typical selected item is kept at aligned position decided by {@link #getWindowAlignment}
+     * and {@link ItemAlignment}. So when the selected position changes, BaseGridView would scroll
+     * it to aligned position on the screen.  In touch mode, selected item is not kept at aligned
+     * position unless {@link #getFocusScrollStrategy()} is {@link #FOCUS_SCROLL_ALIGNED_AND_SNAP}.
+     *
+     * {@link #setSelectedPositionToUnalignedChild(View)} can also affect the selected position
+     * without triggering alignment scrolling.
      *
      * @return The adapter position of selected item.
      */

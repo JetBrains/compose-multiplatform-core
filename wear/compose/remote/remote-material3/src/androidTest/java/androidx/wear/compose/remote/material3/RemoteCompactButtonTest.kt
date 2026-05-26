@@ -19,23 +19,18 @@ package androidx.wear.compose.remote.material3
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.collection.buildObjectIntMap
-import androidx.compose.remote.creation.compose.action.HostAction
+import androidx.compose.remote.creation.compose.action.hostAction
 import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
-import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteBox
-import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
-import androidx.compose.runtime.Composable
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -43,6 +38,8 @@ import androidx.wear.compose.remote.material3.previews.RemoteCompactButtonWithIc
 import androidx.wear.compose.remote.material3.previews.RemoteCompactButtonWithIconAndLabel
 import androidx.wear.compose.remote.material3.previews.RemoteCompactButtonWithLabel
 import androidx.wear.compose.remote.material3.previews.RemoteCompactButtonWithShape
+import androidx.wear.compose.remote.material3.util.ComponentContainer
+import androidx.wear.compose.remote.material3.util.SCREENSHOT_GOLDEN_DIRECTORY
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,7 +52,10 @@ import org.junit.runners.JUnit4
 class RemoteCompactButtonTest {
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val creationDisplayInfo = createCreationDisplayInfo(context, Size(500f, 500f))
@@ -64,10 +64,9 @@ class RemoteCompactButtonTest {
     fun compact_button_disabled() {
         remoteComposeTestRule.runScreenshotTest(
             profile = RcPlatformProfiles.WEAR_WIDGETS,
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
+            remoteCreationDisplayInfo = creationDisplayInfo,
         ) {
-            Center(RemoteModifier.fillMaxSize()) {
+            ComponentContainer {
                 RemoteCompactButton(
                     onClick = testAction,
                     modifier = RemoteModifier,
@@ -81,51 +80,38 @@ class RemoteCompactButtonTest {
     @Test
     fun compact_button_icon_and_label_rtl() {
         remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-            layoutDirection = LayoutDirection.Rtl,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+            creationComposableWrapper = ComposableWrappers.rtl,
         ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteCompactButtonWithIconAndLabel() }
+            ComponentContainer { RemoteCompactButtonWithIconAndLabel() }
         }
     }
 
     @Test
     fun compact_button_icon_only() {
-        remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-        ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteCompactButtonWithIcon() }
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer { RemoteCompactButtonWithIcon() }
         }
     }
 
     @Test
     fun compact_button_label_only() {
-        remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-        ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteCompactButtonWithLabel() }
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer { RemoteCompactButtonWithLabel() }
         }
     }
 
     @Test
     fun compact_button_icon_and_label() {
-        remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-        ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteCompactButtonWithIconAndLabel() }
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer { RemoteCompactButtonWithIconAndLabel() }
         }
     }
 
     @Test
     fun compact_button_with_shape() {
-        remoteComposeTestRule.runScreenshotTest(
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-        ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteCompactButtonWithShape() }
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            ComponentContainer { RemoteCompactButtonWithShape() }
         }
     }
 
@@ -139,22 +125,16 @@ class RemoteCompactButtonTest {
         }
         remoteComposeTestRule.runScreenshotTest(
             profile = RcPlatformProfiles.WEAR_WIDGETS,
-            backgroundColor = Color.Black,
-            creationDisplayInfo = creationDisplayInfo,
-            colorOverrides = colorOverrides,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+            update = { player ->
+                colorOverrides.forEach { name, colorInt ->
+                    player.setUserLocalColor(name, colorInt)
+                }
+            },
         ) {
-            Center(RemoteModifier.fillMaxSize()) { RemoteCompactButtonWithIconAndLabel() }
+            ComponentContainer { RemoteCompactButtonWithIconAndLabel() }
         }
-    }
-
-    @Composable
-    @RemoteComposable
-    private fun Center(
-        modifier: RemoteModifier,
-        content: @Composable @RemoteComposable () -> Unit,
-    ) {
-        RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
     }
 }
 
-private val testAction = HostAction("".rs, 1.rf)
+private val testAction = hostAction("".rs, 1.rf)

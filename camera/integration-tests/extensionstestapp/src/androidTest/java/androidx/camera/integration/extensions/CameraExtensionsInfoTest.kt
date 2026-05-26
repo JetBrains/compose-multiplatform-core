@@ -30,6 +30,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.impl.utils.ContextUtil
 import androidx.camera.extensions.CameraExtensionsInfo
+import androidx.camera.extensions.ExtensionSessionConfig
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.extensions.internal.Camera2ExtensionsUtil
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil
@@ -88,7 +89,6 @@ class CameraExtensionsInfoTest(private val cameraId: String, private val extensi
     private lateinit var extensionsManager: ExtensionsManager
     private lateinit var cameraExtensionsInfo: CameraExtensionsInfo
     private lateinit var baseCameraSelector: CameraSelector
-    private lateinit var extensionCameraSelector: CameraSelector
     private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
     private lateinit var camera: Camera
     private lateinit var preview: Preview
@@ -104,9 +104,6 @@ class CameraExtensionsInfoTest(private val cameraId: String, private val extensi
 
         baseCameraSelector = CameraSelectorUtil.createCameraSelectorById(cameraId)
         assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
-
-        extensionCameraSelector =
-            extensionsManager.getExtensionEnabledCameraSelector(baseCameraSelector, extensionMode)
     }
 
     @After
@@ -199,67 +196,21 @@ class CameraExtensionsInfoTest(private val cameraId: String, private val extensi
         return false
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun isNightModeIndicatorAvailable_returnCorrectValue(): Unit = runBlocking {
-        val available = isCamera2NightModeIndicatorSupported()
-        bindAndRetrieveExtensionsInfo()
-        assertThat(cameraExtensionsInfo.isNightModeIndicatorAvailable).isEqualTo(available)
-
-        if (available) {
-            // Getting the night mode indicator value should not cause exception
-            cameraExtensionsInfo.nightModeIndicator!!.value
-
-            val completableDeferred = CompletableDeferred<Int>()
-            val observer =
-                Observer<Int> { nightModeIndicator ->
-                    completableDeferred.complete(nightModeIndicator)
-                }
-
-            withContext(Dispatchers.Main) {
-                cameraExtensionsInfo.nightModeIndicator!!.observeForever(observer)
-            }
-
-            try {
-                assertThat(completableDeferred.awaitUntil(3000)).isTrue()
-                assertThat(listOf(0, 1)).contains(completableDeferred.getCompleted())
-            } finally {
-                withContext(Dispatchers.Main) {
-                    cameraExtensionsInfo.nightModeIndicator!!.removeObserver(observer)
-                }
-            }
-        } else {
-            assertThat(cameraExtensionsInfo.nightModeIndicator).isNull()
-        }
-    }
-
-    private fun isCamera2NightModeIndicatorSupported(): Boolean {
-        if (Build.VERSION.SDK_INT >= 36) {
-            (context.getSystemService(Context.CAMERA_SERVICE) as CameraManager).let {
-                val characteristics = it.getCameraExtensionCharacteristics(cameraId)
-                val camera2ExtensionMode =
-                    Camera2ExtensionsUtil.convertCameraXModeToCamera2Mode(extensionMode)
-
-                return characteristics
-                    .getAvailableCaptureResultKeys(camera2ExtensionMode)
-                    .contains(CaptureResult.EXTENSION_NIGHT_MODE_INDICATOR)
-            }
-        }
-        return false
-    }
-
     private fun bindAndRetrieveExtensionsInfo() {
         instrumentation.runOnMainSync {
             fakeLifecycleOwner = FakeLifecycleOwner().apply { startAndResume() }
             preview = Preview.Builder().build()
             preview.surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
             imageCapture = ImageCapture.Builder().build()
+
+            val extensionSessionConfig =
+                ExtensionSessionConfig(extensionMode, extensionsManager, preview, imageCapture)
+
             camera =
                 cameraProvider.bindToLifecycle(
                     fakeLifecycleOwner,
-                    extensionCameraSelector,
-                    preview,
-                    imageCapture,
+                    baseCameraSelector,
+                    extensionSessionConfig,
                 )
         }
 

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
@@ -27,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
@@ -38,6 +40,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.core.viewtree.getParentOrViewTreeDisjointParent
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.xr.compose.R
 import androidx.xr.compose.platform.LocalComposeXrOwners
@@ -68,8 +71,10 @@ import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 
 internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
@@ -79,6 +84,8 @@ internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
 
 private object SubspaceConstants {
     const val FOLLOWING_SUBSPACE_ROOT_CONTAINER_NAME = "FollowingSubspaceRootContainer"
+    const val PLANAR_EMBEDDED_SUBSPACE_ROOT_CONTAINER_NAME = "PlanarEmbeddedSubspaceRootContainer"
+    const val PLANAR_EMBEDDED_SUBSPACE_ROOT_NAME = "PlanarEmbeddedSubspaceRoot"
 }
 
 /**
@@ -170,7 +177,13 @@ private fun Subspace(
     val context = LocalContext.current
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val compositionContext = rememberCompositionContext()
-    val subspaceRoot = remember { Entity.create(session, "SubspaceRoot") }
+    val subspaceRoot = remember {
+        Entity.create(
+            session = session,
+            name = "SubspaceRoot",
+            parent = session.scene.activitySpace,
+        )
+    }
     val scene by remember {
         if (SceneManager.getSceneCount(context) == 0) {
             session.scene.mainPanelEntity.setEnabled(false)
@@ -207,7 +220,7 @@ private fun Subspace(
             if (allowUnboundedSubspace) {
                 modifier
             } else {
-                modifier.then(SubspaceModifier.recommendedSizeIfUnbounded())
+                SubspaceModifier.recommendedSizeIfUnbounded().then(modifier)
             }
         SpatialBox(modifier = finalModifier, content = content)
     }
@@ -234,6 +247,7 @@ private fun Subspace(
  *   phones and tablets).
  *
  * @sample androidx.xr.compose.samples.PlanarEmbeddedSubspaceSample
+ * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
  * @param content The `@SubspaceComposable` 3D content to render within this subspace.
  * @see Subspace For creating a top-level, application-anchored spatial scene.
  */
@@ -241,7 +255,8 @@ private fun Subspace(
 @UiComposable
 @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
 public fun PlanarEmbeddedSubspace(
-    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit
+    modifier: SubspaceModifier = SubspaceModifier,
+    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
     // If not in XR, do nothing
     if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
@@ -255,32 +270,44 @@ public fun PlanarEmbeddedSubspace(
     // The subspace root node will be owned and manipulated by the containing composition, we need a
     // container that we can manipulate at the Subspace level in order to position the entire
     // subspace properly.
-    val subspaceRootContainer by remember {
+    val planarEmbeddedSubspaceRootContainer by remember {
         disposableValueOf(
-            CoreGroupEntity(Entity.create(session, "SubspaceRootContainer")).apply {
-                enabled = false
-                parent = coreEntity
-            }
+            CoreGroupEntity(
+                    Entity.create(
+                        session = session,
+                        name = SubspaceConstants.PLANAR_EMBEDDED_SUBSPACE_ROOT_CONTAINER_NAME,
+                        parent = session.scene.activitySpace,
+                    )
+                )
+                .apply {
+                    enabled = false
+                    parent = coreEntity
+                }
         ) {
             it.dispose()
         }
     }
     val scene by remember {
-        val subspaceRoot =
-            CoreGroupEntity(Entity.create(session, "SubspaceRoot")).apply {
-                parent = subspaceRootContainer
-            }
+        val planarEmbeddedSubspaceRoot =
+            CoreGroupEntity(
+                    Entity.create(
+                        session = session,
+                        name = SubspaceConstants.PLANAR_EMBEDDED_SUBSPACE_ROOT_CONTAINER_NAME,
+                        parent = session.scene.activitySpace,
+                    )
+                )
+                .apply { parent = planarEmbeddedSubspaceRootContainer }
         disposableValueOf(
             SpatialComposeScene(
                 lifecycleOwner = lifecycleOwner,
                 context = context,
                 jxrSession = session,
                 parentCompositionContext = compositionContext,
-                rootEntity = subspaceRoot,
+                rootEntity = planarEmbeddedSubspaceRoot,
             )
         ) {
             it.dispose()
-            subspaceRoot.dispose()
+            planarEmbeddedSubspaceRoot.dispose()
         }
     }
     var subspaceContentPixelSize by remember { mutableStateOf(IntSize.Zero) }
@@ -302,7 +329,9 @@ public fun PlanarEmbeddedSubspace(
     ) { measurables, constraints ->
         // We set the scene content here so the 3D content has access to the 2D constraints.
         scene.setContent {
-            SubspaceLayout(content = { SpatialBox(content = content) }) { subspaceMeasurables, _ ->
+            SubspaceLayout(content = { SpatialBox(modifier = modifier, content = content) }) {
+                subspaceMeasurables,
+                _ ->
                 val volumeConstraints = view.findVolumeConstraints()
                 val placeables =
                     subspaceMeasurables.map {
@@ -346,8 +375,8 @@ public fun PlanarEmbeddedSubspace(
                 val contentOffset = coordinates?.positionInRoot() ?: return@layout
                 val nextPose =
                     calculatePose(contentOffset, parentSize, measuredPlaceholderSize, density)
-                subspaceRootContainer.poseInMeters = nextPose
-                subspaceRootContainer.enabled = true
+                planarEmbeddedSubspaceRootContainer.poseInMeters = nextPose
+                planarEmbeddedSubspaceRootContainer.enabled = true
             }
         }
     }
@@ -380,10 +409,11 @@ public annotation class ExperimentalFollowingSubspaceApi
  * positioned relative the view of the AR device. This is sometimes referred to as head-locked
  * content. For this API, it is required for device tracking to not be disabled in the session
  * configuration. If it is disabled, this API will not return anything. The session configuration
- * should resemble `session.configure( config = session.config.copy(deviceTracking =
- * DeviceTrackingMode.SPATIAL) )` The [FollowTarget.ArDevice] is not compatible with
- * [FollowBehavior.Tight]. Combining these together will cause this composable to not be displayed.
- * For a near tight experience, use [FollowBehavior.Soft] with a low duration value such as
+ * should resemble `session.configure( config =
+ * Config.Builder(session.config).setDeviceTracking(DeviceTrackingMode.SPATIAL).build() )` The
+ * [FollowTarget.ArDevice] is not compatible with [FollowBehavior.Tight]. Combining these together
+ * will cause this composable to not be displayed. For a near tight experience, use
+ * [FollowBehavior.Soft] with a low duration value such as
  * `FollowBehavior.Soft([FollowBehavior.Companion.MIN_SOFT_DURATION_MS])`
  *
  * When the target parameter is specified to be [FollowTarget.Anchor], the content will be
@@ -466,7 +496,11 @@ public fun FollowingSubspace(
     }
 
     val subspaceRootNode = remember {
-        Entity.create(session, SubspaceConstants.FOLLOWING_SUBSPACE_ROOT_CONTAINER_NAME)
+        Entity.create(
+            session = session,
+            name = SubspaceConstants.FOLLOWING_SUBSPACE_ROOT_CONTAINER_NAME,
+            parent = session.scene.activitySpace,
+        )
     }
 
     // Implicitly subscribes this Composable to scale changes.
@@ -482,7 +516,15 @@ public fun FollowingSubspace(
         }
     }
 
-    LaunchedEffect(behavior, target, dimensions) {
+    val recenterSignal =
+        rememberRecenterSignal(
+            session = session,
+            target = target,
+            subspaceTrailingEntity = subspaceTrailingEntity,
+            subspaceRootNode = subspaceRootNode,
+        )
+
+    LaunchedEffect(behavior, target, dimensions, recenterSignal) {
         behavior.configure(
             session = session,
             trailingEntity = subspaceTrailingEntity,
@@ -513,6 +555,42 @@ public fun FollowingSubspace(
 
 private fun getInitialSubspaceOffset(target: FollowTarget): Pose {
     return if (target is ArDeviceTarget) target.offset else Pose.Identity
+}
+
+@Composable
+private fun rememberRecenterSignal(
+    session: Session,
+    target: FollowTarget,
+    subspaceTrailingEntity: CoreGroupEntity,
+    subspaceRootNode: Entity,
+): Boolean {
+    var recenterSignal by remember { mutableStateOf(false) }
+    val currentTargetState = rememberUpdatedState(target)
+    DisposableEffect(session) {
+        val listener = Runnable {
+            recenterSignal = !recenterSignal
+            val targetValue = currentTargetState.value
+            if (targetValue is AnchorTarget) {
+                // Anchors live outside the ActivitySpace, so if the ActivitySpace moves, the
+                // relative position to the anchor must be manually updated.
+                subspaceTrailingEntity.poseInMeters =
+                    targetValue.anchorEntity.getPose(Space.ACTIVITY)
+            } else {
+                // If the activity space moves, this should be the new origin.
+                subspaceRootNode.setPose(Pose.Identity)
+                subspaceTrailingEntity.poseInMeters = Pose.Identity
+            }
+        }
+        session.scene.activitySpace.addOriginChangedListener(listener)
+
+        onDispose {
+            if (session.lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+                session.scene.activitySpace.removeOriginChangedListener(listener)
+            }
+        }
+    }
+
+    return recenterSignal
 }
 
 /** Validates the configuration for [FollowingSubspace]. */

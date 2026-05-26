@@ -72,7 +72,6 @@ import androidx.xr.arcore.apps.whitebox.mobile.samplerender.renderers.Background
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.renderers.PlaneRenderer
 import androidx.xr.arcore.hitTest
 import androidx.xr.arcore.perceptionState
-import androidx.xr.arcore.playservices.ExperimentalCameraApi
 import androidx.xr.arcore.playservices.cameraState
 import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Config
@@ -135,7 +134,9 @@ class AnchorsPlanesHitTestActivity :
         sessionHelper =
             SessionLifecycleHelper(
                 this,
-                Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL),
+                Config.Builder()
+                    .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                    .build(),
                 onSessionAvailable = { session ->
                     this.session = session
                     surfaceView = GLSurfaceView(this)
@@ -229,7 +230,7 @@ class AnchorsPlanesHitTestActivity :
         virtualSceneFramebuffer.resize(width, height)
     }
 
-    @OptIn(ExperimentalCameraApi::class)
+    @SuppressWarnings("RestrictedApiAndroidX")
     override fun onDrawFrame(render: SampleRender) {
         try {
             backgroundRenderer.setUseDepthVisualization(render, false)
@@ -314,8 +315,9 @@ class AnchorsPlanesHitTestActivity :
                 getHits(tap.x, tap.y)
             }
 
-            for (hit in foundHits.value) {
-                addAnchor(hit.hitPose)
+            val firstHit = foundHits.value.firstOrNull()
+            if (firstHit != null) {
+                addAnchor(firstHit.hitPose)
             }
             foundHits.value = emptyList() // So we don't keep duplicating anchors
 
@@ -330,7 +332,6 @@ class AnchorsPlanesHitTestActivity :
     }
 
     @Composable
-    @OptIn(ExperimentalCameraApi::class)
     private fun MainPanel() {
         val state by session.state.collectAsStateWithLifecycle()
         val perceptionState = state.perceptionState
@@ -409,7 +410,7 @@ class AnchorsPlanesHitTestActivity :
         anchors.clear()
     }
 
-    @OptIn(ExperimentalCameraApi::class)
+    @SuppressWarnings("RestrictedApiAndroidX")
     private fun getHits(x: Float, y: Float) {
         if (lifecycle.currentStateFlow.value != Lifecycle.State.RESUMED) {
             return

@@ -108,9 +108,13 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
 
         setContent {
             session =
-                remember(this) { (Session.create(activity = this) as SessionCreateSuccess).session }
+                remember(this) { (Session.create(context = this) as SessionCreateSuccess).session }
             LaunchedEffect(session) {
-                session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+                session.configure(
+                    Config.Builder()
+                        .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                        .build()
+                )
             }
             MainApp()
         }

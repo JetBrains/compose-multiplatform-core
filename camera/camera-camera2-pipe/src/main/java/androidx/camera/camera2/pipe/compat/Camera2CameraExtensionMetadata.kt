@@ -31,7 +31,7 @@ import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.core.lazyOrEmptySet
 import androidx.camera.camera2.pipe.core.lazyOrFalse
 import androidx.camera.camera2.pipe.core.lazyOrNull
-import kotlin.reflect.KClass
+import java.lang.Class
 
 /**
  * This implementation provides access to [CameraExtensionMetadata] and lazy caching of properties
@@ -60,13 +60,27 @@ internal class Camera2CameraExtensionMetadata(
         mutableMapOf<Pair<Size, Int>, Lazy<Range<Long>?>>()
 
     override fun <T> get(key: CameraCharacteristics.Key<T>): T? {
-        return null // TODO: Add support for this when VIC can be targeted in AndroidX
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            return Api35Compat.getExtensionCharacteristic(
+                extensionCharacteristics,
+                cameraExtension,
+                key,
+            )
+        }
+        return null
     }
 
     @Suppress("UNCHECKED_CAST") override fun <T> get(key: Metadata.Key<T>): T? = metadata[key] as T?
 
     override fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T {
-        return default // TODO: Add support for this when VIC can be targeted in AndroidX
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            return Api35Compat.getExtensionCharacteristic(
+                extensionCharacteristics,
+                cameraExtension,
+                key,
+            ) ?: default
+        }
+        return default
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -74,9 +88,9 @@ internal class Camera2CameraExtensionMetadata(
         metadata[key] as T? ?: default
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CameraExtensionCharacteristics::class -> extensionCharacteristics as T
+            CameraExtensionCharacteristics::class.java -> extensionCharacteristics as T
             else -> null
         }
 
@@ -87,7 +101,7 @@ internal class Camera2CameraExtensionMetadata(
         get() = _isCaptureProgressSupported.value
 
     override val keys: Set<CameraCharacteristics.Key<*>>
-        get() = emptySet() // TODO: Add support for this when VIC can be targeted in AndroidX
+        get() = _keys.value
 
     override val requestKeys: Set<CaptureRequest.Key<*>>
         get() = _requestKeys.value
@@ -172,6 +186,15 @@ internal class Camera2CameraExtensionMetadata(
             }
         return lazyRange.value
     }
+
+    private val _keys: Lazy<Set<CameraCharacteristics.Key<*>>> =
+        lazyOrEmptySet({ "$camera#extensionKeys" }) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                Api35Compat.getExtensionKeys(extensionCharacteristics, cameraExtension)
+            } else {
+                emptySet()
+            }
+        }
 
     private val _requestKeys: Lazy<Set<CaptureRequest.Key<*>>> =
         lazyOrEmptySet({ "$camera#availableCaptureRequestKeys" }) {

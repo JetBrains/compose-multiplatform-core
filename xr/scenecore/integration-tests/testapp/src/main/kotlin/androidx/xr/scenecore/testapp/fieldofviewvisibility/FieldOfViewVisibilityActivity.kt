@@ -79,9 +79,9 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
-        session!!.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
+        session!!.configure(Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build())
         // Disable default scale overrides on key entity from Spatial Mode events
-        session?.scene?.setSpatialModeChangedListener { event ->
+        session?.scene?.setSpaceChangedListener { event ->
             session?.scene?.keyEntity?.setPose(event.recommendedPose, Space.ACTIVITY)
         }
         session?.scene?.keyEntity = session?.scene?.mainPanelEntity
@@ -115,8 +115,11 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
 
         session!!.scene.addSpatialVisibilityChangedListener { visibility: SpatialVisibility ->
             mSpatialVisibility = visibility
-            Log.i(TAG, "Spatial visibility changed listener called $visibility")
-            mHeadLockedPanelView.setLine("State", visibility.toString())
+            Log.i(
+                TAG,
+                "Spatial visibility changed listener called ${spatialVisibilityToString(visibility)}",
+            )
+            mHeadLockedPanelView.setLine("State", spatialVisibilityToString(visibility))
             updateTextViews()
         }
         session!!
@@ -127,7 +130,7 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
 
     private fun updateTextViews() {
         findViewById<TextView>(R.id.fov_textview1).also {
-            it.text = "SpatialVisibility: $mSpatialVisibility"
+            it.text = "SpatialVisibility: ${spatialVisibilityToString(mSpatialVisibility)}"
         }
 
         findViewById<TextView>(R.id.fov_textview2).also {
@@ -153,12 +156,12 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
 
         // Request FSM
         findViewById<Button>(R.id.button_request_fsm).also {
-            it.setOnClickListener { session!!.scene.requestFullSpaceMode() }
+            it.setOnClickListener { session!!.scene.requestFullSpace() }
         }
 
         // Request HSM
         findViewById<Button>(R.id.button_request_hsm).also {
-            it.setOnClickListener { session!!.scene.requestHomeSpaceMode() }
+            it.setOnClickListener { session!!.scene.requestHomeSpace() }
         }
 
         // Make the main panel movable.
@@ -172,5 +175,15 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
         mPanelEntityManager = PanelEntityManager(session!!, this)
         mPerceivedResolutionManager =
             PerceivedResolutionManager(session!!, this, mSurfaceEntityManager, mPanelEntityManager)
+    }
+
+    fun spatialVisibilityToString(visibility: SpatialVisibility): String {
+        return when (visibility) {
+            SpatialVisibility.UNKNOWN -> "UNKNOWN"
+            SpatialVisibility.OUTSIDE_FIELD_OF_VIEW -> "OUTSIDE_FIELD_OF_VIEW"
+            SpatialVisibility.PARTIALLY_WITHIN_FIELD_OF_VIEW -> "PARTIALLY_WITHIN_FIELD_OF_VIEW"
+            SpatialVisibility.WITHIN_FIELD_OF_VIEW -> "WITHIN_FIELD_OF_VIEW"
+            else -> visibility.toString()
+        }
     }
 }

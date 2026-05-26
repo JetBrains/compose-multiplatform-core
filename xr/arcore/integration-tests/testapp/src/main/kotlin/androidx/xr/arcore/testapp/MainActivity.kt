@@ -69,6 +69,8 @@ import androidx.xr.arcore.testapp.handtracking.HandTrackingActivity
 import androidx.xr.arcore.testapp.helloar.HelloArAugmentedImageActivity
 import androidx.xr.arcore.testapp.helloar.HelloArObjectActivity
 import androidx.xr.arcore.testapp.helloar.HelloArPlaneActivity
+import androidx.xr.arcore.testapp.helloar.HelloArQrCodeActivity
+import androidx.xr.arcore.testapp.nativedata.NativeDataActivity
 import androidx.xr.arcore.testapp.persistentanchors.PersistentAnchorsActivity
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.arcore.testapp.ui.theme.JXRARCoreTestsTheme
@@ -199,6 +201,10 @@ class MainActivity : ComponentActivity() {
                 TestCaseColumnRowItem(R.string.augmented_image_tracking) {
                     startTest<HelloArAugmentedImageActivity>(it)
                 }
+                TestCaseColumnRowItem(R.string.qr_code_tracking) {
+                    startTest<HelloArQrCodeActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.native_data) { startTest<NativeDataActivity>(it) }
             }
         }
     }

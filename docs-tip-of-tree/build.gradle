@@ -7,7 +7,7 @@ plugins {
 // The dependency list should only be changed when a new project is registered or a project's source is removed. Samples should never be added.
 
 dependencies {
-    docs(project(":a2ui:a2ui"))
+    docs(project(":a2ui:a2ui-core"))
     docs(project(":a2ui:a2ui-compose"))
     docs(project(":activity:activity"))
     docs(project(":activity:activity-compose"))
@@ -93,6 +93,9 @@ dependencies {
     docs(project(":compose:remote:remote-player-core"))
     docs(project(":compose:remote:remote-player-view"))
     docs(project(":compose:remote:remote-tooling-preview"))
+    docs(project(":compose:remote:remote-testing"))
+    docs(project(":core:locationbutton:locationbutton"))
+    docs(project(":core:locationbutton:locationbutton-testing"))
     docs(project(":core:core-pip"))
     kmpDocs(project(":datastore:datastore-tink"))
     docs(project(":wear:compose:remote:remote-material3"))
@@ -199,6 +202,7 @@ dependencies {
     docs(project(":glance:glance-testing"))
     docs(project(":glance:wear:wear"))
     docs(project(":glance:wear:wear-core"))
+    docs(project(":glance:wear:wear-tooling-preview"))
     docs(project(":graphics:filters:filters"))
     docs(project(":graphics:graphics-core"))
     docs(project(":graphics:graphics-path"))
@@ -256,7 +260,6 @@ dependencies {
     docs(project(":loader:loader"))
     docs(project(":loader:loader-ktx"))
     // localbroadcastmanager is deprecated
-    docs(project(":media:media"))
     // androidx.media3 is not hosted in androidx
     docs(project(":mediarouter:mediarouter"))
     docs(project(":mediarouter:mediarouter-testing"))
@@ -429,7 +432,6 @@ dependencies {
     docs(project(":xr:arcore:arcore-openxr"))
     docs(project(":xr:arcore:arcore-play-services"))
     docs(project(":xr:arcore:arcore-runtime"))
-    docs(project(":xr:arcore:arcore-projected"))
     docs(project(":xr:arcore:arcore-testing"))
     docs(project(":xr:compose:compose"))
     docs(project(":xr:compose:compose-testing"))

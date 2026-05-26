@@ -31,6 +31,7 @@ import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
 import androidx.pdf.PdfDocument.Companion.LINEARIZATION_STATUS_UNKNOWN
 import androidx.pdf.annotation.KeyedPdfAnnotation
+import androidx.pdf.annotation.models.KeyedPdfObject
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfObject
 import androidx.pdf.content.PageMatchBounds
@@ -68,6 +69,7 @@ internal open class FakeEditablePdfDocument(
     private val pageFormWidgetInfos: Map<Int, List<FormWidgetInfo>> = mapOf(),
     initialEdits: List<PdfAnnotation> = emptyList(),
     override val linearizationStatus: Int = LINEARIZATION_STATUS_UNKNOWN,
+    private val unsupportedFeatures: Set<PdfFeature> = emptySet(),
 ) : EditablePdfDocument {
     override val pageCount: Int = pages.size
 
@@ -131,6 +133,10 @@ internal open class FakeEditablePdfDocument(
         return edits[pageNum] ?: emptyList()
     }
 
+    override suspend fun getPageObjects(pageNum: Int, types: Long): List<KeyedPdfObject> {
+        return emptyList()
+    }
+
     override suspend fun applyEdits(editsDraft: EditsDraft): List<String> {
         val results = mutableListOf<String>()
 
@@ -182,18 +188,15 @@ internal open class FakeEditablePdfDocument(
         pageNumber: Int,
         start: PointF,
         stop: PointF,
-    ): PageSelection {
-        val selectedTextContents =
-            if (textContents.isEmpty()) {
-                listOf(PdfPageTextContent(listOf(RectF(0f, 0f, 10f, 10f)), "test"))
-            } else {
-                listOf(textContents[pageNumber])
-            }
+    ): PageSelection? {
+        if (textContents.isEmpty() || pageNumber >= textContents.size) {
+            return null
+        }
         return PageSelection(
             pageNumber,
             SelectionBoundary(0),
             SelectionBoundary(0),
-            selectedTextContents,
+            listOf(textContents[pageNumber]),
         )
     }
 
@@ -202,14 +205,11 @@ internal open class FakeEditablePdfDocument(
         pageNumber: Int,
         start: SelectionBoundary,
         stop: SelectionBoundary,
-    ): PageSelection {
-        val selectedTextContents =
-            if (textContents.isEmpty()) {
-                listOf(PdfPageTextContent(listOf(RectF(0f, 0f, 10f, 10f)), "test"))
-            } else {
-                listOf(textContents[pageNumber])
-            }
-        return PageSelection(pageNumber, start, stop, selectedTextContents)
+    ): PageSelection? {
+        if (textContents.isEmpty() || pageNumber >= textContents.size) {
+            return null
+        }
+        return PageSelection(pageNumber, start, stop, listOf(textContents[pageNumber]))
     }
 
     override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
@@ -322,7 +322,7 @@ internal open class FakeEditablePdfDocument(
     ) {}
 
     override fun isFeatureSupported(feature: PdfFeature): Boolean {
-        return true
+        return !unsupportedFeatures.contains(feature)
     }
 
     override fun createWriteHandle(): PdfWriteHandle {

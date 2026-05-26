@@ -17,6 +17,8 @@
 package androidx.xr.glimmer
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +31,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
@@ -80,9 +83,9 @@ import kotlin.math.max
  *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
  *   aspect ratio.
  * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
- *   [Icon].
+ *   [Icon] tinted with [contentColor] by default.
  * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
- *   [Icon].
+ *   [Icon] tinted with [contentColor] by default.
  * @param shape the [Shape] used to clip this card, and also used to draw the background and border
  * @param color background color of this card
  * @param contentColor content color used by components inside [content], [title], [subtitle],
@@ -114,21 +117,24 @@ public fun Card(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
+    val internalInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
     CardImpl(
-        modifier = modifier,
-        onClick = null,
-        focusable = true,
+        modifier =
+            modifier
+                .surface(
+                    shape = shape,
+                    color = color,
+                    contentColor = contentColor,
+                    border = border,
+                    interactionSource = internalInteractionSource,
+                )
+                .focusable(interactionSource = internalInteractionSource),
         title = title,
         subtitle = subtitle,
         header = header,
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
-        shape = shape,
-        color = color,
-        contentColor = contentColor,
-        border = border,
         contentPadding = contentPadding,
-        interactionSource = interactionSource,
         content = content,
     )
 }
@@ -173,9 +179,9 @@ public fun Card(
  *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
  *   aspect ratio.
  * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
- *   [Icon].
+ *   [Icon] tinted with [contentColor] by default.
  * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
- *   [Icon].
+ *   [Icon] tinted with [contentColor] by default.
  * @param shape the [Shape] used to clip this card, and also used to draw the background and border
  * @param color background color of this card
  * @param contentColor content color used by components inside [content], [title], [subtitle],
@@ -208,21 +214,24 @@ public fun Card(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
+    val internalInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
     CardImpl(
-        modifier = modifier,
-        onClick = onClick,
-        focusable = true,
+        modifier =
+            modifier
+                .surface(
+                    shape = shape,
+                    color = color,
+                    contentColor = contentColor,
+                    border = border,
+                    interactionSource = internalInteractionSource,
+                )
+                .clickable(interactionSource = internalInteractionSource, onClick = onClick),
         title = title,
         subtitle = subtitle,
         header = header,
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
-        shape = shape,
-        color = color,
-        contentColor = contentColor,
-        border = border,
         contentPadding = contentPadding,
-        interactionSource = interactionSource,
         content = content,
     )
 }
@@ -256,9 +265,9 @@ public fun Card(
  *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
  *   aspect ratio.
  * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
- *   [Icon].
+ *   [Icon] tinted with [contentColor] by default.
  * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
- *   [Icon].
+ *   [Icon] tinted with [contentColor] by default.
  * @param shape the [Shape] used to clip this card, and also used to draw the background and border
  * @param color background color of this card
  * @param contentColor content color used by components inside [content], [title], [subtitle],
@@ -289,20 +298,19 @@ public fun Card(
     // b/436852852 - in a list the button won't be focused until it crosses the focus line.
     ActionCardLayout(modifier, action) {
         CardImpl(
-            modifier = Modifier,
-            onClick = null,
-            focusable = false,
+            modifier =
+                Modifier.surface(
+                    shape = shape,
+                    color = color,
+                    contentColor = contentColor,
+                    border = border,
+                ),
             title = title,
             subtitle = subtitle,
             header = header,
             leadingIcon = leadingIcon,
             trailingIcon = trailingIcon,
-            shape = shape,
-            color = color,
-            contentColor = contentColor,
-            border = border,
             contentPadding = contentPadding,
-            interactionSource = null,
             content = content,
         )
     }
@@ -311,19 +319,12 @@ public fun Card(
 @Composable
 private fun CardImpl(
     modifier: Modifier,
-    onClick: (() -> Unit)?,
-    focusable: Boolean,
     title: @Composable (() -> Unit)?,
     subtitle: @Composable (() -> Unit)?,
     header: @Composable (() -> Unit)?,
     leadingIcon: @Composable (() -> Unit)?,
     trailingIcon: @Composable (() -> Unit)?,
-    shape: Shape,
-    color: Color,
-    contentColor: Color,
-    border: BorderStroke?,
     contentPadding: PaddingValues,
-    interactionSource: MutableInteractionSource?,
     content: @Composable () -> Unit,
 ) {
     val iconSize = GlimmerTheme.iconSizes.large
@@ -331,32 +332,9 @@ private fun CardImpl(
     val componentSpacingValues = GlimmerTheme.componentSpacingValues
     val innerPadding = componentSpacingValues.small
     val iconSpacing = componentSpacingValues.medium
-    val surfaceModifier =
-        if (onClick != null) {
-            Modifier.surface(
-                onClick = onClick,
-                shape = shape,
-                color = color,
-                contentColor = contentColor,
-                border = border,
-                interactionSource = interactionSource,
-            )
-        } else {
-            Modifier.surface(
-                focusable = focusable,
-                shape = shape,
-                color = color,
-                contentColor = contentColor,
-                border = border,
-                interactionSource = interactionSource,
-            )
-        }
+
     Column(
-        modifier =
-            modifier
-                .then(surfaceModifier)
-                .defaultMinSize(minHeight = MinimumHeight)
-                .padding(contentPadding),
+        modifier = modifier.defaultMinSize(minHeight = MinimumHeight).padding(contentPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

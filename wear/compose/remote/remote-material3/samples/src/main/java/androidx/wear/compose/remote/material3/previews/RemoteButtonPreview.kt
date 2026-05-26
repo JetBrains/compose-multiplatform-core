@@ -18,7 +18,7 @@
 
 package androidx.wear.compose.remote.material3.previews
 
-import androidx.compose.remote.creation.compose.action.HostAction
+import androidx.compose.remote.creation.compose.action.hostAction
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -34,7 +34,7 @@ import androidx.compose.remote.creation.compose.state.rememberNamedRemoteBitmap
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.Profile
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -44,6 +44,7 @@ import androidx.wear.compose.remote.material3.RemoteButtonDefaults
 import androidx.wear.compose.remote.material3.RemoteIcon
 import androidx.wear.compose.remote.material3.RemoteText
 import androidx.wear.compose.remote.material3.buttonSizeModifier
+import androidx.wear.compose.remote.material3.previews.utils.ProfilePreviewParameterProvider
 import androidx.wear.compose.remote.material3.previews.utils.TestImageVectors
 import androidx.wear.compose.remote.material3.previews.utils.createImage
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
@@ -63,7 +64,7 @@ fun RemoteButtonEnabled() {
 @Composable
 private fun RemoteButtonEnabledPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteButtonEnabled() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonEnabled() } }
 
 @Composable
 @RemoteComposable
@@ -82,7 +83,7 @@ fun RemoteButtonWithBorder() {
 @Composable
 private fun RemoteButtonWithBorderPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteButtonWithBorder() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithBorder() } }
 
 @Composable
 @RemoteComposable
@@ -116,7 +117,7 @@ fun RemoteButtonWithIcon() {
 @Composable
 private fun RemoteButtonWithIconPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteButtonWithIcon() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithIcon() } }
 
 @Composable
 @RemoteComposable
@@ -140,7 +141,10 @@ fun RemoteButtonWithIconAndSecondaryLabel() {
 @Composable
 private fun RemoteButtonWithIconAndSecondaryLabelPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteButtonWithIconAndSecondaryLabel() } }
+) =
+    RemoteContentPreview(profile = profile) {
+        Container { RemoteButtonWithIconAndSecondaryLabel() }
+    }
 
 @Composable
 @RemoteComposable
@@ -164,7 +168,7 @@ fun RemoteButtonWithBackground() {
 @Composable
 private fun RemoteButtonWithBackgroundPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteButtonWithBackground() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithBackground() } }
 
 @Composable
 @RemoteComposable
@@ -181,7 +185,7 @@ fun RemoteButtonWithShape() {
 @Composable
 private fun RemoteButtonWithShapePreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteButtonWithShape() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteButtonWithShape() } }
 
 @Composable
 @RemoteComposable
@@ -192,4 +196,4 @@ private fun Container(
     RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
 }
 
-private val testAction = HostAction("testAction".rs, 1.rf)
+private val testAction = hostAction("testAction".rs, 1.rf)

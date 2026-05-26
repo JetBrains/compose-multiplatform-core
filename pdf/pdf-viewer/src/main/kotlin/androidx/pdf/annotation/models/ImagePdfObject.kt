@@ -21,6 +21,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.annotation.RestrictTo
 import androidx.core.os.ParcelCompat
+import androidx.pdf.Dimension
 import androidx.pdf.PdfRect
 import androidx.pdf.selection.model.ImageSelection
 
@@ -32,6 +33,13 @@ import androidx.pdf.selection.model.ImageSelection
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ImagePdfObject(public val bitmap: Bitmap, public val bounds: RectF) : PdfObject {
+
+    init {
+        require(bitmap.width > 0 && bitmap.height > 0) {
+            "Invalid bitmap dimensions: ${bitmap.width} width ${bitmap.height} height"
+        }
+        require(bounds.width() > 0 && bounds.height() > 0) { "Invalid image bounds: $bounds" }
+    }
 
     /** Flattens this object in to a Parcel. */
     public override fun writeToParcel(dest: Parcel, flags: Int) {
@@ -75,3 +83,7 @@ internal fun ImagePdfObject.toImageSelection(pageNum: Int) =
         bitmap,
         PdfRect(pageNum, this.bounds.left, this.bounds.top, this.bounds.right, this.bounds.bottom),
     )
+
+/** The intrinsic dimensions of this object's bitmap in pixels. */
+internal val ImagePdfObject.bitmapSize: Dimension
+    get() = Dimension(bitmap.width, bitmap.height)

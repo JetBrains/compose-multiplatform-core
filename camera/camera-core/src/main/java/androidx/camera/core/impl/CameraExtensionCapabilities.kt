@@ -19,6 +19,7 @@ package androidx.camera.core.impl
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.os.Build
+import android.util.Pair
 import android.util.Range
 import android.util.Size
 import androidx.annotation.RequiresApi
@@ -49,15 +50,6 @@ public interface CameraExtensionCapabilities {
     public fun isCurrentExtensionModeSupported(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             return getAvailableCaptureResultKeys().contains(CaptureResult.EXTENSION_CURRENT_TYPE)
-        }
-        return false
-    }
-
-    /** Returns whether night mode indicator is supported or not. */
-    public fun isNightModeIndicatorSupported(): Boolean {
-        if (Build.VERSION.SDK_INT >= 36) {
-            return getAvailableCaptureResultKeys()
-                .contains(CaptureResult.EXTENSION_NIGHT_MODE_INDICATOR)
         }
         return false
     }

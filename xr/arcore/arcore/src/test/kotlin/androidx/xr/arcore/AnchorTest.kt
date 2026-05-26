@@ -73,12 +73,15 @@ class AnchorTest {
 
         activityController.create().start().resume()
 
-        session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
+        session =
+            (Session.create(context = activity, coroutineContext = testDispatcher)
+                    as SessionCreateSuccess)
+                .session
         session.configure(
-            Config(
-                anchorPersistence = AnchorPersistenceMode.LOCAL,
-                planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-            )
+            Config.Builder()
+                .setAnchorPersistence(AnchorPersistenceMode.LOCAL)
+                .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                .build()
         )
         xrResourcesManager =
             session.stateExtenders
@@ -89,7 +92,7 @@ class AnchorTest {
 
     @After
     fun cleanUp() {
-        arCoreTestRule.device.isCameraTracking = true
+        arCoreTestRule.deviceTester.isCameraTracking = true
     }
 
     @Test
@@ -104,7 +107,7 @@ class AnchorTest {
     @Test
     fun create_notTracking_returnsAnchorNotTracking() =
         runTest(testDispatcher) {
-            arCoreTestRule.device.isCameraTracking = false
+            arCoreTestRule.deviceTester.isCameraTracking = false
             advanceUntilIdle()
 
             assertThat(Anchor.create(session, Pose()))
@@ -173,7 +176,9 @@ class AnchorTest {
         check(anchorResult is AnchorCreateSuccess)
 
         val underTest = anchorResult.anchor
-        session.configure(Config(anchorPersistence = AnchorPersistenceMode.DISABLED))
+        session.configure(
+            Config.Builder().setAnchorPersistence(AnchorPersistenceMode.DISABLED).build()
+        )
 
         runTest(testDispatcher) { assertFailsWith<IllegalStateException> { underTest.persist() } }
     }
@@ -198,7 +203,9 @@ class AnchorTest {
 
     @Test
     fun getPersistedAnchorUuids_anchorPersistenceDisabled_throwsIllegalStateException() {
-        session.configure(Config(anchorPersistence = AnchorPersistenceMode.DISABLED))
+        session.configure(
+            Config.Builder().setAnchorPersistence(AnchorPersistenceMode.DISABLED).build()
+        )
 
         assertFailsWith<IllegalStateException> { Anchor.getPersistedAnchorUuids(session) }
     }
@@ -239,7 +246,9 @@ class AnchorTest {
 
     @Test
     fun load_anchorPersistenceDisabled_throwsIllegalStateException() {
-        session.configure(Config(anchorPersistence = AnchorPersistenceMode.DISABLED))
+        session.configure(
+            Config.Builder().setAnchorPersistence(AnchorPersistenceMode.DISABLED).build()
+        )
 
         assertFailsWith<IllegalStateException> { Anchor.load(session, UUID.randomUUID()) }
     }
@@ -257,7 +266,9 @@ class AnchorTest {
 
     @Test
     fun unpersist_anchorPersistenceDisabled_throwsIllegalStateException() {
-        session.configure(Config(anchorPersistence = AnchorPersistenceMode.DISABLED))
+        session.configure(
+            Config.Builder().setAnchorPersistence(AnchorPersistenceMode.DISABLED).build()
+        )
 
         assertFailsWith<IllegalStateException> { Anchor.unpersist(session, UUID.randomUUID()) }
     }

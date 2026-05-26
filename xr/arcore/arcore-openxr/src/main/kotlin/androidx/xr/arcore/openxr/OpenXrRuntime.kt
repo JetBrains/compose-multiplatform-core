@@ -20,22 +20,18 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
 import androidx.xr.arcore.runtime.PerceptionRuntime
-import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.ConfigMode
 import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.DisplayBlendMode
-import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.QrCodeTrackingMode
 import androidx.xr.runtime.XrDevice
-import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.getNativeInstanceData
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import androidx.xr.runtime.manifest.HAND_TRACKING
@@ -56,28 +52,6 @@ internal class OpenXrRuntime(
     companion object {
         private const val KEY_API_KEY = "com.google.android.ar.API_KEY"
         private val contextList = mutableListOf<Context>()
-
-        @VisibleForTesting
-        val SUPPORTED_CONFIG_MODES: Set<ConfigMode> =
-            setOf(
-                PlaneTrackingMode.DISABLED,
-                PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                HandTrackingMode.DISABLED,
-                HandTrackingMode.BOTH,
-                DeviceTrackingMode.DISABLED,
-                DeviceTrackingMode.SPATIAL,
-                DepthEstimationMode.DISABLED,
-                DepthEstimationMode.RAW_ONLY,
-                DepthEstimationMode.SMOOTH_ONLY,
-                AnchorPersistenceMode.DISABLED,
-                AnchorPersistenceMode.LOCAL,
-                FaceTrackingMode.DISABLED,
-                FaceTrackingMode.BLEND_SHAPES,
-                GeospatialMode.DISABLED,
-                EyeTrackingMode.DISABLED,
-                EyeTrackingMode.COARSE_TRACKING,
-                EyeTrackingMode.FINE_TRACKING,
-            )
     }
 
     /**
@@ -108,28 +82,13 @@ internal class OpenXrRuntime(
         }
 
     /** The current state of the runtime configuration for the session. */
-    // TODO(b/392660855): Disable all features by default once this API is fully implemented.
-    override var config: Config =
-        Config(
-            PlaneTrackingMode.DISABLED,
-            HandTrackingMode.DISABLED,
-            DeviceTrackingMode.DISABLED,
-            DepthEstimationMode.DISABLED,
-            AnchorPersistenceMode.LOCAL,
-            augmentedObjectCategories = setOf(),
-            augmentedImageDatabase = null,
-        )
-        private set(value) {
-            field = value
-        }
+    override var config: Config = Config.Builder().build()
+        private set
 
     var instanceProcAddr: Long = 0L
         private set
 
-    @OptIn(
-        androidx.xr.runtime.UnstableNativeResourceApi::class,
-        androidx.xr.runtime.ExperimentalXrDeviceLifecycleApi::class,
-    )
+    @OptIn(androidx.xr.runtime.UnstableNativeResourceApi::class)
     override fun initialize() {
         nativePointer = nativeGetPointer()
         val nativeInstanceData = XrDevice.getCurrentDevice(context).getNativeInstanceData(context)
@@ -175,6 +134,10 @@ internal class OpenXrRuntime(
 
         if (config.augmentedImageDatabase?.entries?.isNotEmpty() == true) {
             perceptionManager.updateAugmentedImages(xrTime)
+        }
+
+        if (config.qrCodeTracking != QrCodeTrackingMode.DISABLED) {
+            perceptionManager.updateQrCode(xrTime)
         }
 
         perceptionManager.update(xrTime)
@@ -232,6 +195,24 @@ internal class OpenXrRuntime(
             }
         }
 
+        if (config.qrCodeTracking != QrCodeTrackingMode.DISABLED) {
+            if (
+                config.qrCodeSizeMeters < 0f ||
+                    (config.qrCodeSizeMeters == 0f &&
+                        !perceptionManager.isQrCodeSizeEstimationSupported)
+            ) {
+                throw IllegalArgumentException(
+                    "Failed to configure session: " +
+                        if (config.qrCodeSizeMeters < 0f) {
+                            "qrCodeSizeMeters must be a non-negative value."
+                        } else {
+                            "the device does not support QR code size estimation and " +
+                                "qrCodeSizeMeters is 0, which requires size estimation."
+                        }
+                )
+            }
+        }
+
         val objectLabels: MutableList<Long> = mutableListOf()
         var objectMode: Int = 0
 
@@ -260,6 +241,8 @@ internal class OpenXrRuntime(
                         config.augmentedImageDatabase?.let {
                             OpenXrAugmentedImageDatabase.fromAugmentedImageDatabase(it)
                         },
+                    qrCodeTracking = config.qrCodeTracking.mode,
+                    qrCodeSizeMeters = config.qrCodeSizeMeters,
                 )
             ) {
                 -2L ->
@@ -342,22 +325,6 @@ internal class OpenXrRuntime(
         this.config = config
     }
 
-    @OptIn(androidx.xr.runtime.PreviewSpatialApi::class)
-    override fun isSupported(configMode: ConfigMode): Boolean {
-        if (configMode == GeospatialMode.SPATIAL) {
-            return nativeIsGeospatialSupported()
-        }
-        if (configMode == GeospatialMode.INERTIAL) {
-            return false
-        }
-        return SUPPORTED_CONFIG_MODES.contains(configMode)
-    }
-
-    override fun getPreferredDisplayBlendMode(): DisplayBlendMode {
-        val blendMode = nativeGetPreferredBlendMode()
-        return blendMode ?: DisplayBlendMode.NO_DISPLAY
-    }
-
     override fun destroy() {
         // TODO: b/422830134 - Remove this check once there are multiple OpenXrManagers.
         contextList.remove(context)
@@ -398,19 +365,11 @@ internal class OpenXrRuntime(
         }
 
         if (apiKey == null) {
-            // TODO: b/498318910 - Replace logging with bespoke API to communicate this
-            XrLog.verbose("No API Key provided, using keyless authentication.")
             nativeSetKeylessAuth()
         } else {
-            // TODO: b/498318910 - Replace logging with bespoke API to communicate this
-            XrLog.verbose("Using provided API Key.")
             nativeSetApiKeyAuth(apiKey)
         }
     }
-
-    private external fun nativeGetPreferredBlendMode(): DisplayBlendMode?
-
-    private external fun nativeIsGeospatialSupported(): Boolean
 
     private external fun nativeGetPointer(): Long
 
@@ -437,6 +396,8 @@ internal class OpenXrRuntime(
         objectLabels: LongArray,
         geospatial: Int,
         augmentedImageDatabase: OpenXrAugmentedImageDatabase? = null,
+        qrCodeTracking: Int,
+        qrCodeSizeMeters: Float = 0f,
     ): Long
 
     private external fun nativeGetFaceTrackerCalibration(): Boolean

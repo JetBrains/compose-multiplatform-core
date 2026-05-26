@@ -17,7 +17,6 @@
 package androidx.xr.arcore.testapp.common
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
-import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -31,6 +30,7 @@ import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.QrCodeTrackingMode
 import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureCalibrationRequired
@@ -57,11 +57,10 @@ import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE
  */
 class SessionLifecycleHelper(
     val activity: ComponentActivity,
-    val config: Config = Config(),
+    val config: Config = Config.Builder().build(),
     val onSessionAvailable: (Session) -> Unit = {},
     val onSessionCreateActionRequired: (SessionCreateResult) -> Unit = {},
     val onSessionCalibrationRequired: (RequiredCalibrationType) -> Unit = {},
-    val context: Context? = activity,
 ) {
 
     /** Accessed through the [onSessionAvailable] callback. */
@@ -124,6 +123,9 @@ class SessionLifecycleHelper(
         if (config.augmentedImageDatabase?.entries?.isNotEmpty() == true) {
             permissions.add(SCENE_UNDERSTANDING_COARSE)
         }
+        if (config.qrCodeTracking != QrCodeTrackingMode.DISABLED) {
+            permissions.add(SCENE_UNDERSTANDING_COARSE)
+        }
         return permissions
     }
 
@@ -132,7 +134,7 @@ class SessionLifecycleHelper(
     @Suppress("deprecation")
     internal fun tryCreateSession() {
         try {
-            when (val result = Session.create(context!!, activity)) {
+            when (val result = Session.create(context = activity)) {
                 is SessionCreateSuccess -> {
                     session = result.session
                     try {

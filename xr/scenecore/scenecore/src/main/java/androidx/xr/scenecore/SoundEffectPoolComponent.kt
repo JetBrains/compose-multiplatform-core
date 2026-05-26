@@ -18,8 +18,10 @@ package androidx.xr.scenecore
 
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SoundEffectPoolComponent as RtSoundEffectPoolComponent
 
 /**
  * Provides positional sound pool audio playback for an [Entity].
@@ -35,19 +37,25 @@ public class SoundEffectPoolComponent
 private constructor(
     sceneRuntime: SceneRuntime,
     soundEffectPool: SoundEffectPool,
-    private val params: PointSourceParams,
+    /**
+     * Updates the [PointSourceParams] used by the spatial audio source.
+     *
+     * These pointSourceParams will apply to future playback requests.
+     */
+    public var pointSourceParams: PointSourceParams,
 ) : Component(), SoundEffectPlayer {
 
     private var attachedEntity: Entity? = null
 
-    internal val rtComponent =
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val rtComponent: RtSoundEffectPoolComponent =
         sceneRuntime.createSoundEffectPoolComponent(soundEffectPool.rtSoundEffectPool)
 
     override fun onAttach(entity: Entity): Boolean {
         if (attachedEntity != null) {
             return false
         }
-        if ((entity as BaseEntity<*>).rtEntity.addComponent(rtComponent)) {
+        if (entity.rtEntity.addComponent(rtComponent)) {
             attachedEntity = entity
             return true
         }
@@ -58,7 +66,7 @@ private constructor(
         if (entity != attachedEntity) {
             return
         }
-        (entity as BaseEntity<*>).rtEntity.removeComponent(rtComponent)
+        entity.rtEntity.removeComponent(rtComponent)
         attachedEntity = null
     }
 
@@ -68,11 +76,11 @@ private constructor(
         @IntRange(from = 0) priority: Int,
         isLooping: Boolean,
     ): Stream {
-        val rtEntity = (attachedEntity as? BaseEntity<*>)?.rtEntity
+        val rtEntity = attachedEntity?.rtEntity
         return rtComponent
             .play(
                 soundEffect.toRtSoundEffect(),
-                params.rtPointSourceParams,
+                pointSourceParams.rtPointSourceParams,
                 rtEntity,
                 volume,
                 priority,

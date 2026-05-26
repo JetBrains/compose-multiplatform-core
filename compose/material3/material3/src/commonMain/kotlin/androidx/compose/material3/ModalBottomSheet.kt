@@ -22,9 +22,9 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material3.SheetValue.Expanded
 import androidx.compose.material3.SheetValue.Hidden
+import androidx.compose.material3.SheetValue.PartiallyExpanded
 import androidx.compose.material3.internal.Strings
 import androidx.compose.material3.internal.getString
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
@@ -83,7 +83,10 @@ import kotlinx.coroutines.launch
  * @param contentWindowInsets callback which provides window insets to be passed to the bottom sheet
  *   content via [androidx.compose.foundation.layout.windowInsetsPadding]. [ModalBottomSheet] will
  *   pre-emptively consume top insets based on it's current offset. This keeps content outside of
- *   the expected window insets at any position.
+ *   the expected window insets at any position. By default, IME padding is handled through this
+ *   parameter as part of the window insets. If the IME padding is required from a different scope
+ *   (e.g. a different window opens a keyboard then launches [ModalBottomSheet]), then
+ *   `Modifier.imePadding` should be applied to the [modifier] parameter.
  * @param properties [ModalBottomSheetProperties] for further customization of this modal bottom
  *   sheet's window behavior.
  * @param content The content to be displayed inside the bottom sheet.
@@ -93,7 +96,7 @@ import kotlinx.coroutines.launch
 fun ModalBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
-    sheetState: SheetState = rememberModalBottomSheetState(),
+    sheetState: SheetState = rememberBottomSheetState(initialValue = Hidden),
     sheetMaxWidth: Dp = BottomSheetDefaults.SheetMaxWidth,
     sheetGesturesEnabled: Boolean = true,
     shape: Shape = BottomSheetDefaults.ExpandedShape,
@@ -135,7 +138,7 @@ fun ModalBottomSheet(
         contentColor = contentColor,
         onDismissRequest = settleToDismiss,
     ) {
-        Box(modifier = Modifier.fillMaxSize().imePadding().semantics { isTraversalGroup = true }) {
+        Box(modifier = Modifier.fillMaxSize().semantics { isTraversalGroup = true }) {
             val sheetWindowInsets = remember(sheetState) { SheetWindowInsets(sheetState) }
             val isScrimVisible: Boolean by remember {
                 derivedStateOf { sheetState.targetValue != Hidden }
@@ -204,11 +207,25 @@ expect object ModalBottomSheetDefaults {
 /**
  * Create and [remember] a [SheetState] for [ModalBottomSheet].
  *
- * @param skipPartiallyExpanded Whether the partially expanded state, if the sheet is tall enough,
+ * @param skipPartiallyExpanded Whether the partially expanded state, if the sheet is large enough,
  *   should be skipped. If true, the sheet will always expand to the [Expanded] state and move to
  *   the [Hidden] state when hiding the sheet, either programmatically or by user interaction.
  * @param confirmValueChange Optional callback invoked to confirm or veto a pending state change.
+ * @note This deprecated method preserves the legacy behavior where the partially expanded state is
+ *   automatically excluded if the sheet height is less than half the screen height. To move away
+ *   from this behavior, use [rememberBottomSheetState].
  */
+@Deprecated(
+    message = "Use rememberBottomSheetState with Hidden initial value",
+    replaceWith =
+        ReplaceWith(
+            "rememberBottomSheetState(initialValue = SheetValue.Hidden, " +
+                "enabledValues = if (skipPartiallyExpanded) setOf(SheetValue.Hidden, SheetValue.Expanded) " +
+                "else setOf(SheetValue.Hidden, SheetValue.PartiallyExpanded, SheetValue.Expanded), " +
+                "confirmValueChange = confirmValueChange)",
+            "androidx.compose.material3.SheetValue",
+        ),
+)
 @Composable
 @ExperimentalMaterial3Api
 fun rememberModalBottomSheetState(
@@ -216,9 +233,12 @@ fun rememberModalBottomSheetState(
     confirmValueChange: (SheetValue) -> Boolean = { true },
 ) =
     rememberSheetState(
-        skipPartiallyExpanded = skipPartiallyExpanded,
-        confirmValueChange = confirmValueChange,
         initialValue = Hidden,
+        enabledValues =
+            if (skipPartiallyExpanded) setOf(Hidden, Expanded)
+            else setOf(Hidden, PartiallyExpanded, Expanded),
+        confirmValueChange = confirmValueChange,
+        isBottomSheetPartiallyExpandedDeterministicEnabled = false,
     )
 
 @Stable
