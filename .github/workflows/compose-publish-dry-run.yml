@@ -10,6 +10,9 @@ jobs:
   compose-native-publish:
     runs-on: macos-15-xlarge
     name: Dry Run Compose Publish Darwin + Native Linux
+    defaults:
+      run:
+        working-directory: fork-project
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -28,6 +31,9 @@ jobs:
   compose-web-publish:
     runs-on: ubuntu-24.04
     name: Dry Run Compose Publish Web
+    defaults:
+      run:
+        working-directory: fork-project
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -43,6 +49,9 @@ jobs:
   compose-jvm-publish:
     runs-on: ubuntu-24.04
     name: Dry Run Compose Publish JVM
+    defaults:
+      run:
+        working-directory: fork-project
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5

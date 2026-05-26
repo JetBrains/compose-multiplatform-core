@@ -21,6 +21,7 @@
  * modifying its settings.
  */
 
+import androidx.build.SdkHelperKt
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import androidx.build.ProjectLayoutType
@@ -453,7 +454,8 @@ tasks.register("updateTranslationsIos", UpdateTranslationsTask.class) {
 }
 
 tasks.findByName("desktopTest").configure {
-    systemProperties["GOLDEN_PATH"] = project.rootDir.absolutePath + "/golden"
+    systemProperties["GOLDEN_PATH"] =
+            new File(SdkHelperKt.getSupportRootFolder(project), "golden").absolutePath
 }
 
 tasks.register("desktopHeadlessTest", Test) {

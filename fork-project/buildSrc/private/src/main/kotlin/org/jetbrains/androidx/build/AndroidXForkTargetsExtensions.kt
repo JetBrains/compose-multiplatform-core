@@ -19,6 +19,7 @@ package org.jetbrains.androidx.build
 import androidx.build.AndroidXMultiplatformExtension
 import androidx.build.PlatformIdentifier
 import androidx.build.configurePinnedKotlinLibraries
+import androidx.build.getSupportRootFolder
 import androidx.build.multiplatformExtension
 import org.gradle.api.Action
 import org.gradle.api.Project
@@ -75,7 +76,7 @@ fun <T> AndroidXMultiplatformExtension.configureForkWebTarget(
                         useFirefox()
                         useSafari()
                         useConfigDirectory(
-                            project.rootProject.projectDir.resolve(
+                            project.getSupportRootFolder().resolve(
                                 if (platform == PlatformIdentifier.JS) {
                                     "mpp/karma.config.d/js"
                                 } else {

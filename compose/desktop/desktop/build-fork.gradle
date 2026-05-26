@@ -15,6 +15,7 @@
  */
 
 import androidx.build.AndroidXConfig
+import androidx.build.SdkHelperKt
 import androidx.build.SoftwareType
 
 plugins {
@@ -54,17 +55,9 @@ androidXMultiplatform {
     }
 }
 
-File getGoldenPath(Project project) {
-    if (System.getenv("COMPOSE_DESKTOP_GITHUB_BUILD") != null) {
-        def externalPath = AndroidXConfig.getExternalProjectPath(project)
-        return new File(externalPath, "golden")
-    } else {
-        return new File("${rootDir.absolutePath}/../../golden").getCanonicalFile()
-    }
-}
-
 tasks.findByName("jvmTest").configure {
-    systemProperties["GOLDEN_PATH"] = getGoldenPath(project).toString()
+    systemProperties["GOLDEN_PATH"] =
+            new File(SdkHelperKt.getSupportRootFolder(project), "golden").absolutePath
 }
 
 androidx {
