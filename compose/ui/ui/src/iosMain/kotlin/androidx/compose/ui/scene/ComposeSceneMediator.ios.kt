@@ -298,7 +298,7 @@ internal class ComposeSceneMediator(
         onKeyboardPresses = ::onKeyboardPresses,
         ignoreTouchChanges = navigationEventInput::isBackGestureActive,
         onRemoveSubview = {
-            CoroutineScope(coroutineContext).launch {
+            coroutineScope.launch {
                 finishUnattachedKeysPresses()
             }
         }
