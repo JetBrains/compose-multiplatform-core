@@ -808,11 +808,6 @@ public abstract class androidx/compose/ui/text/TtsAnnotation : androidx/compose/
 	public static final field $stable I
 }
 
-public abstract interface class androidx/compose/ui/text/UnresolvedSymbolsRegistry$Listener {
-	public fun onNewFontInstalled ()V
-	public fun onUnresolvedCodepoints (Ljava/util/Set;)V
-}
-
 public final class androidx/compose/ui/text/VerbatimTtsAnnotation : androidx/compose/ui/text/TtsAnnotation {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;)V

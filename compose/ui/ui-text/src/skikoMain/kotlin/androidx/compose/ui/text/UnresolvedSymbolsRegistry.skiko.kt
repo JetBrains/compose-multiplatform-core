@@ -22,6 +22,8 @@ import androidx.compose.ui.text.platform.synchronized
 
 @InternalComposeApi
 class UnresolvedSymbolsRegistry {
+
+    @InternalComposeApi
     interface Listener {
         fun onUnresolvedCodepoints(codepoints: Set<Int>) {}
         fun onNewFontInstalled() {}

@@ -57,8 +57,8 @@ internal class SkiaParagraphIntrinsics(
     val textDirection = resolveTextDirection(text, style.textDirection, style.localeList)
 
     //we need to track it reactively to invalidate the UI
-    private var _hasStaleResolvedFonts by mutableStateOf(false)
-    override val hasStaleResolvedFonts: Boolean get() = _hasStaleResolvedFonts
+    override var hasStaleResolvedFonts: Boolean by mutableStateOf(false)
+        private set
 
     private var layouter: ParagraphLayouter? = newLayouter()
 
@@ -76,7 +76,7 @@ internal class SkiaParagraphIntrinsics(
         placeholders = placeholders,
         density = density,
         fontFamilyResolver = fontFamilyResolver,
-        onFontStale = { _hasStaleResolvedFonts = true }
+        onFontStale = { hasStaleResolvedFonts = true }
     )
 
     override var minIntrinsicWidth = 0f

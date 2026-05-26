@@ -2057,7 +2057,3 @@ final val androidx.compose.ui.text.input/androidx_compose_ui_text_input_Platform
 
 // Targets: [ios]
 final fun androidx.compose.ui.text.input/androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.text.input/androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter|androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter(){}[0]
-
-// Targets: [js, wasmJs]
-final val androidx.compose.ui.text.platform/WebUnresolvedSymbolsRegistry // androidx.compose.ui.text.platform/WebUnresolvedSymbolsRegistry|{}WebUnresolvedSymbolsRegistry[0]
-    final fun <get-WebUnresolvedSymbolsRegistry>(): androidx.compose.ui.text/UnresolvedSymbolsRegistry // androidx.compose.ui.text.platform/WebUnresolvedSymbolsRegistry.<get-WebUnresolvedSymbolsRegistry>|<get-WebUnresolvedSymbolsRegistry>(){}[0]

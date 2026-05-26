@@ -19,7 +19,16 @@ package androidx.compose.ui.text.platform
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.text.UnresolvedSymbolsRegistry
 
-@OptIn(InternalComposeApi::class)
+/**
+ * A global singleton instance of [UnresolvedSymbolsRegistry] used in the web platform
+ * for managing unresolved text symbols.
+ * 
+ * This registry keeps track of unresolved codepoints across the application and notifies
+ * registered listeners about the addition of new unresolved symbols or the installation of new fonts.
+ * 
+ * Marked as an internal API and intended for internal Compose library usage only.
+ */
+@InternalComposeApi
 val WebUnresolvedSymbolsRegistry = UnresolvedSymbolsRegistry()
 
 @OptIn(InternalComposeApi::class)

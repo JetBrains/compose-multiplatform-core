@@ -43,7 +43,7 @@ private const val RANGE_VALUE_RADIX = 26
 
 private const val FONTS_GSTATIC_URL_PREFIX = "https://fonts.gstatic.com/s/"
 
-// User-Agent to spoof so that Google Fonts CSS serves WOFF2 font URLs.
+// Required browser User-Agent so that Google Fonts CSS serves WOFF2 font URLs.
 private const val WOFF2_USER_AGENT =
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"
 
