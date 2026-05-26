@@ -24,6 +24,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
@@ -169,6 +171,10 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
     }
 
     override fun sizeFlow() = channel.receiveAsFlow()
+}
+
+internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> = staticCompositionLocalOf {
+    error("ComposeWindow is not available in this composition")
 }
 
 @OptIn(InternalComposeApi::class)
@@ -466,6 +472,7 @@ internal class ComposeWindow(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
                 LocalInteropContainer provides interopContainer,
                 LocalActiveClipEventsTarget provides clipEventsTargetProvider,
+                LocalComposeWindow provides this,
                 content = {
                     interopContainer.TrackInteropPlacementContainer {
                         content()

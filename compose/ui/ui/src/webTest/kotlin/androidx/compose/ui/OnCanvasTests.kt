@@ -23,7 +23,15 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.window.ComposeViewport
 import androidx.compose.ui.window.ComposeViewportConfiguration
+import androidx.compose.ui.window.ComposeWindow
+import androidx.compose.ui.window.LocalComposeWindow
 import kotlin.coroutines.suspendCoroutine
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsReference
+import kotlin.js.get
+import kotlin.js.js
+import kotlin.js.toJsReference
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -67,19 +75,26 @@ private external interface CanReplaceChildren {
     fun replaceChildren()
 }
 
+@OptIn(ExperimentalWasmJsInterop::class)
 internal interface OnCanvasTests {
 
-    @BeforeTest
-    fun beforeTest() {
-        /** TODO: [kotlin.test.AfterTest] is fixed only in kotlin 2.0
-        see https://youtrack.jetbrains.com/issue/KT-61888
-         */
+    @AfterTest
+    fun afterTest() {
+        composeWindow?.dispose()
+        composeWindow = null
         resetCanvas()
     }
 
     private fun resetCanvas() {
         (getContainer() as CanReplaceChildren).replaceChildren()
     }
+
+    var composeWindow: ComposeWindow?
+        get() = getStoredComposeWindow(getContainer())?.get()
+        set(value) {
+            val jsReference = value?.toJsReference()
+            storeComposeWindow(getContainer(), jsReference)
+        }
 
     /*
     <container>
@@ -106,7 +121,10 @@ internal interface OnCanvasTests {
         configure: ComposeViewportConfiguration.() -> Unit = {},
         content: @Composable () -> Unit
     ) {
-        ComposeViewport(viewportContainerId = containerId, configure = configure, content = content)
+        ComposeViewport(viewportContainerId = containerId, configure = configure, content = {
+            composeWindow = LocalComposeWindow.current
+            content()
+        })
 
         withContext(Dispatchers.Default) {
             val timeoutDuration = 1.seconds
@@ -252,3 +270,10 @@ internal external class ExtendedShadowRoot : ShadowRoot {
 
     fun elementFromPoint(x: Double, y: Double): Element
 }
+
+private fun storeComposeWindow(container: Element, ref: JsReference<ComposeWindow>?) {
+    js("container.composeWindow = ref")
+}
+
+private fun getStoredComposeWindow(container: Element): JsReference<ComposeWindow>? =
+    js("container.composeWindow")
