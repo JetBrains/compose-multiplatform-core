@@ -120,7 +120,12 @@ internal open class ComposeTextInputConnection(
         selectAll: (() -> Unit)?,
         customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
     ) {
-        textInputView.updateAvailableSystemActions(copy, cut, paste, selectAll)
+        textInputView.updateAvailableSystemActions(
+            copyBlock = copy,
+            cut = cut,
+            paste = paste,
+            selectAll = selectAll
+        )
     }
 
     val toolbarStatus: TextToolbarStatus

@@ -328,10 +328,10 @@ id _editInteraction;
         return self.copyBlock != nil || self.systemCopyBlock != nil;
     }
     if (@selector(paste:) == action) {
-        return self.pasteBlock != nil || self.systemCutBlock != nil;
+        return self.pasteBlock != nil || self.systemPasteBlock != nil;
     }
     if (@selector(cut:) == action) {
-        return self.cutBlock != nil || self.systemPasteBlock != nil;
+        return self.cutBlock != nil || self.systemCutBlock != nil;
     }
     if (@selector(selectAll:) == action) {
         return self.selectAllBlock != nil || self.systemSelectAllBlock != nil;
