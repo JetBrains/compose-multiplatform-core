@@ -89,7 +89,7 @@ internal interface OnCanvasTests {
         (getContainer() as CanReplaceChildren).replaceChildren()
     }
 
-    var composeWindow: ComposeWindow?
+    private var composeWindow: ComposeWindow?
         get() = getStoredComposeWindow(getContainer())?.get()
         set(value) {
             val jsReference = value?.toJsReference()
