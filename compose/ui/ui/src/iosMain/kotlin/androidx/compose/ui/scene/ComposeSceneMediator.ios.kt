@@ -105,6 +105,7 @@ import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -296,6 +297,11 @@ internal class ComposeSceneMediator(
         onHoverEvent = ::onHoverEvent,
         onKeyboardPresses = ::onKeyboardPresses,
         ignoreTouchChanges = navigationEventInput::isBackGestureActive,
+        onRemoveSubview = {
+            CoroutineScope(coroutineContext).launch {
+                finishUnattachedKeysPresses()
+            }
+        }
     )
 
     val overlayView: UIView get() = _overlayView
@@ -394,8 +400,6 @@ internal class ComposeSceneMediator(
             viewConfiguration = viewConfiguration,
             focusedViewsList = focusedViewsList,
             onInputStarted = { animateKeyboardOffsetChanges = true },
-            onInputStopped = ::finishUnattachedKeysPresses,
-            onKeyboardPresses = ::onKeyboardPresses,
             focusManager = { scene.focusManager },
             coroutineContext = coroutineContext,
         ).also {
