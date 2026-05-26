@@ -66,37 +66,6 @@ internal val ResizeInLazyList = Screen.Example("Resize In LazyList") {
         )
     }
 
-//    MaterialTheme {
-//
-//        LazyColumn {
-//            itemsIndexed(names) { index, name ->
-//                println("$name placed as view")
-//
-//                val backgroundColor = remember(name) {
-//                    Color(
-//                        red = Random.nextFloat(),
-//                        green = Random.nextFloat(),
-//                        blue = Random.nextFloat(),
-//                        alpha = 1f,
-//                    )
-//                }
-//                val textColor = remember(backgroundColor) {
-//                    if (backgroundColor.luminance() < 0.5f) Color.White else Color.Black
-//                }
-//
-//                Text(
-//                    text = "${index + 1}. $name",
-//                    color = textColor,
-//                    modifier = Modifier
-//                        .background(backgroundColor)
-//                        .padding(16.dp)
-//                        .width(200.dp)
-//
-//                )
-//            }
-//        }
-//    }
-
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
