@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputMode
-import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -106,7 +105,6 @@ import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -298,11 +296,6 @@ internal class ComposeSceneMediator(
         onHoverEvent = ::onHoverEvent,
         onKeyboardPresses = ::onKeyboardPresses,
         ignoreTouchChanges = navigationEventInput::isBackGestureActive,
-        onViewHierarchyWillChange = {
-            coroutineScope.launch {
-                finishUnattachedKeysPresses()
-            }
-        },
     )
 
     val overlayView: UIView get() = _overlayView
@@ -401,6 +394,7 @@ internal class ComposeSceneMediator(
             viewConfiguration = viewConfiguration,
             focusedViewsList = focusedViewsList,
             onInputStarted = { animateKeyboardOffsetChanges = true },
+            onInputStopped = ::finishUnattachedKeysPresses,
             focusManager = { scene.focusManager },
             coroutineContext = coroutineContext,
         ).also {

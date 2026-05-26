@@ -46,6 +46,7 @@ internal class UIKitTextInputService(
     private val viewConfiguration: ViewConfiguration,
     private val focusedViewsList: FocusedViewsList?,
     private var onInputStarted: () -> Unit,
+    private var onInputStopped: () -> Unit,
     private var focusManager: () -> ComposeSceneFocusManager?,
     coroutineContext: CoroutineContext
 ) {
@@ -117,6 +118,7 @@ internal class UIKitTextInputService(
     private fun stopInput() {
         currentInputConnection?.stop()
         currentInputConnection = null
+        onInputStopped()
     }
 
     fun showSoftwareKeyboard() {
@@ -217,6 +219,7 @@ internal class UIKitTextInputService(
     fun dispose() {
         stopInput()
         onInputStarted = { }
+        onInputStopped = {}
         updateView = {}
         focusManager = { null }
     }
