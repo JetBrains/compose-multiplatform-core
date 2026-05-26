@@ -128,14 +128,13 @@ internal interface OnCanvasTests {
         }
     }
 
-    suspend fun awaitA11YChanges(timeout: Duration = 2.seconds) {
+    suspend fun awaitA11YChanges(timeout: Duration = 5.seconds) {
         val a11yContainer = getA11YContainer() ?: return
-        var prevTime = currentTimeMillis()
+        val startTime = currentTimeMillis()
 
         fun skipFramesUntil(condition: () -> Boolean, onTrue: () -> Unit) {
             val currentTime = currentTimeMillis()
-            assertTrue(currentTime - prevTime < timeout.inWholeMilliseconds, "awaitA11YChanges timed out after $timeout")
-            prevTime = currentTime
+            assertTrue(currentTime - startTime < timeout.inWholeMilliseconds, "awaitA11YChanges timed out after $timeout")
             window.requestAnimationFrame {
                 if (!condition()) {
                     skipFramesUntil(condition, onTrue)
