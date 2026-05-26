@@ -155,7 +155,11 @@ internal class UIKitTextInputService(
                     )
                 }
                 (currentInputConnection as? ComposeTextInputConnection)?.showToolbarMenu(
-                    rect, onCopyRequested, onPasteRequested, onCutRequested, onSelectAllRequested
+                    rect = rect,
+                    onCopyRequested = onCopyRequested,
+                    onPasteRequested = onPasteRequested,
+                    onCutRequested = onCutRequested,
+                    onSelectAllRequested = onSelectAllRequested
                 )
             }
 
