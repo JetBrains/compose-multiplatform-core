@@ -77,15 +77,6 @@ internal class ComposeWebSemanticsListener(
                                              | No forced sync here, because the debouncing has just started
          */
         coroutineScope.launch {
-            suspendCancellableCoroutine { continuation ->
-                // tmp. just looking at CI behaviour
-                window.requestAnimationFrame {
-                    window.requestAnimationFrame {
-                        continuation.resumeWith(Result.success(Unit))
-                    }
-                }
-            }
-
             var timeSpentDebouncing = 0L
             var lastDebouncedTime = 0L
             var lastSyncTime = currentTimeMillis()

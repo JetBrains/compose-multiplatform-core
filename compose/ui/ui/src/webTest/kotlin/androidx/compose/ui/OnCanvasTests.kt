@@ -48,6 +48,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -131,7 +132,7 @@ internal interface OnCanvasTests {
             try {
                 // Using withTimeout here for diagnostic. Some flaky tests fail due to timeout. But there is nothing else except this suspend call.
                 withTimeout(timeoutDuration) {
-                    suspendCoroutine<Unit> { continuation ->
+                    suspendCancellableCoroutine<Unit> { continuation ->
                         // This helps reduce the flakiness.
                         // A potential cause of flakiness: the default Coroutine Dispatcher regularly postpones
                         // the resumption of the tasks in its queue to the next frame.
