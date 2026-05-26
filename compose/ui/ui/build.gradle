@@ -24,6 +24,7 @@
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import androidx.build.ProjectLayoutType
+import org.jetbrains.androidx.build.GenerateNotoFontFallbackDataTask
 import org.jetbrains.androidx.build.UpdateTranslationsTask
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
@@ -195,7 +196,6 @@ androidXMultiplatform {
             implementation(project(":compose:test-utils"))
         }
 
-        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
         def lifecycleVersion = project.findProperty('artifactRedirection.version.androidx.lifecycle')
         // TODO: Align naming: nonAndroidMain
         skikoMain {
@@ -206,7 +206,7 @@ androidXMultiplatform {
                 api(libs.skiko)
                 implementation(libs.atomicFu)
 
-                implementation("androidx.navigationevent:navigationevent-compose:$navigationEventVersion")
+                implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
                 implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
                 implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycleVersion")
             }
@@ -474,4 +474,13 @@ tasks.desktopTest {
         excludeCategories("androidx.compose.ui.HeadlessTest")
     }
     jvmArgs("--add-opens=java.desktop/javax.swing=ALL-UNNAMED")
+}
+
+// Regenerates NotoFontFallbackData.web.kt from the latest Google Fonts data.
+tasks.register("generateNotoFontFallbackData", GenerateNotoFontFallbackDataTask.class) {
+    group = "generation"
+    description = "Generates NotoFontFallbackData.web.kt from Google Fonts metadata."
+    outputFile = project.file(
+        "src/webMain/kotlin/androidx/compose/ui/platform/NotoFontFallbackData.web.kt"
+    )
 }

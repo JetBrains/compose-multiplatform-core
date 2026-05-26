@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-package androidx.navigationevent.compose
+package androidx.compose.ui.text
 
-import androidx.compose.runtime.Composable
+import kotlin.experimental.ExperimentalNativeApi
 
-@Composable internal actual fun isInspectionMode(): Boolean = false
+@OptIn(ExperimentalNativeApi::class)
+internal actual class WeakReference<T : Any> actual constructor(reference: T) {
+    private val kotlinNativeReference = kotlin.native.ref.WeakReference(reference)
+    actual fun get(): T? = kotlinNativeReference.get()
+    actual fun clear() { kotlinNativeReference.clear() }
+}

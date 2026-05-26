@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.navigationevent.compose
+package androidx.compose.ui.text.platform
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.ui.text.UnresolvedSymbolsRegistry
 
-@Composable internal actual fun isInspectionMode(): Boolean = LocalInspectionMode.current
+@OptIn(InternalComposeApi::class)
+internal actual fun getUnresolvedSymbolsRegistry(): UnresolvedSymbolsRegistry? = null

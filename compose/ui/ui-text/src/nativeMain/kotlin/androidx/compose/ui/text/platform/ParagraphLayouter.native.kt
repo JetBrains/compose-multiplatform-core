@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.platform
+package androidx.compose.ui.text.platform
 
-import androidx.compose.ui.hapticfeedback.HapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.ui.text.UnresolvedSymbolsRegistry
 
-// TODO(demin): implement HapticFeedback
-internal object DefaultHapticFeedback : HapticFeedback {
-    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
-    }
-}
+@OptIn(InternalComposeApi::class)
+internal actual fun getUnresolvedSymbolsRegistry(): UnresolvedSymbolsRegistry? = null

@@ -14,11 +14,19 @@
  * limitations under the License.
  */
 
-package androidx.navigationevent.compose
+package androidx.navigationevent
 
-import androidx.compose.runtime.HostDefaultKey
-import androidx.navigationevent.NavigationEventDispatcherOwner
+/**
+ * A listener that provides a final fallback action for unhandled `forwardCompleted` callbacks.
+ *
+ * This is typically used to provide a default system behavior when no other part of the application
+ * consumes the forward navigation event.
+ */
+public fun interface OnForwardCompletedFallback {
 
-public actual val NavigationEventDispatcherOwnerHostDefaultKey:
-    HostDefaultKey<NavigationEventDispatcherOwner?> =
-    object : HostDefaultKey<NavigationEventDispatcherOwner?> {}
+    /**
+     * Called when a `forwardCompleted` callback is dispatched but not handled by any
+     * [NavigationEventHandler].
+     */
+    public fun onForwardCompletedFallback()
+}
