@@ -41,7 +41,7 @@ import platform.UIKit.UIView
 
 @OptIn(ExperimentalComposeUiApi::class)
 internal class UIKitTextInputService(
-    private val updateView: () -> Unit,
+    private var updateView: () -> Unit,
     private val view: UIView,
     private val viewConfiguration: ViewConfiguration,
     private val focusedViewsList: FocusedViewsList?,
@@ -217,7 +217,7 @@ internal class UIKitTextInputService(
     fun dispose() {
         stopInput()
         onInputStarted = { }
-        onKeyboardPresses = { }
+        updateView = {}
         focusManager = { null }
     }
 }
