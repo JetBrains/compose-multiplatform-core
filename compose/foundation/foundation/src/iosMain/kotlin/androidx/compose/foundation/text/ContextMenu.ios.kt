@@ -524,6 +524,9 @@ private fun startNotifyingAboutContextMenuItems(
     manager: TextFieldSelectionManager,
     nativeTextInputContext: UIKitNativeTextInputContext,
 ) {
+    LaunchedEffect(manager) {
+        manager.updateClipboardEntry()
+    }
     val scope = rememberCoroutineScope()
     startObservingSelectionChanges(
         nativeTextInputContext,
@@ -565,6 +568,9 @@ private fun startNotifyingAboutContextMenuItems(
     state: TextFieldSelectionState,
     nativeTextInputContext: UIKitNativeTextInputContext,
 ) {
+    LaunchedEffect(state) {
+        state.updateClipboardEntry()
+    }
     // this should be the same scope as at the root of BasicTextField
     val coroutineScope = rememberCoroutineScope()
     startObservingSelectionChanges(

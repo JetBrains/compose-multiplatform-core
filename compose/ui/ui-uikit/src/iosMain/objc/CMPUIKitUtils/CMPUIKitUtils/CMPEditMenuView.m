@@ -362,16 +362,16 @@ id _editInteraction;
 - (void)paste:(id)sender {
     if (self.pasteBlock != nil) {
         self.pasteBlock();
-    } else if (self.systemCutBlock != nil) {
-        self.systemCutBlock();
+    } else if (self.systemPasteBlock != nil) {
+        self.systemPasteBlock();
     }
 }
 
 - (void)cut:(id)sender {
     if (self.cutBlock != nil) {
         self.cutBlock();
-    } else if (self.systemPasteBlock != nil) {
-        self.systemPasteBlock();
+    } else if (self.systemCutBlock != nil) {
+        self.systemCutBlock();
     }
 }
 

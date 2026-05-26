@@ -128,6 +128,52 @@ static UIPress *CMPMakePress(UIPressType pressType,
     return press;
 }
 
+#pragma mark - Keyboard shortcut action dispatch
+
+static SEL CMPStandardActionForShortcut(NSString *unmodifiedCharacter,
+                                         UIKeyModifierFlags modifierFlags) {
+    if (modifierFlags == UIKeyModifierCommand) {
+        if ([unmodifiedCharacter isEqualToString:@"c"]) { return @selector(copy:); }
+        if ([unmodifiedCharacter isEqualToString:@"v"]) { return @selector(paste:); }
+        if ([unmodifiedCharacter isEqualToString:@"x"]) { return @selector(cut:); }
+        if ([unmodifiedCharacter isEqualToString:@"a"]) { return @selector(selectAll:); }
+        if ([unmodifiedCharacter isEqualToString:@"z"]) { return @selector(undo:); }
+    }
+    if (modifierFlags == (UIKeyModifierCommand | UIKeyModifierShift)) {
+        if ([unmodifiedCharacter isEqualToString:@"z"]) { return @selector(redo:); }
+    }
+    return NULL;
+}
+
+// Mirrors UIKit's internal shortcut-to-action routing that fires automatically on real hardware
+// but is skipped when using synthetic UIPressesEvents.
+static void CMPFireKeyCommandAction(UIResponder *firstResponder,
+                                     NSString *unmodifiedCharacter,
+                                     UIKeyModifierFlags modifierFlags) {
+    // Walk responder chain for explicit UIKeyCommands registered via -keyCommands.
+    UIResponder *responder = firstResponder;
+    while (responder != nil) {
+        for (UIKeyCommand *cmd in [responder keyCommands]) {
+            if ([cmd.input caseInsensitiveCompare:unmodifiedCharacter] == NSOrderedSame &&
+                cmd.modifierFlags == modifierFlags && cmd.action != nil) {
+                [[UIApplication sharedApplication] sendAction:cmd.action
+                                                           to:responder
+                                                         from:nil
+                                                     forEvent:nil];
+                return;
+            }
+        }
+        responder = responder.nextResponder;
+    }
+
+    // Fall back to standard system shortcuts (copy:, paste:, cut:, etc.) that UIKit
+    // handles automatically on real hardware regardless of registered UIKeyCommands.
+    SEL action = CMPStandardActionForShortcut(unmodifiedCharacter, modifierFlags);
+    if (action != NULL) {
+        [[UIApplication sharedApplication] sendAction:action to:nil from:nil forEvent:nil];
+    }
+}
+
 #pragma mark - Dispatch
 
 static void CMPDispatchPresses(UIEvent *event,
@@ -294,19 +340,21 @@ static UIPress *CMPMakeKeyboardPress(NSString *characters,
 
     CMPDispatchPresses(event, press, UIPressPhaseBegan);
 
-    // UIKit's hardware-key→text pipeline (`insertText:` on a focused
-    // `UIKeyInput`) doesn't fire reliably for synthetic events. Drive that
-    // final hop ourselves so a focused TextField actually receives the typed
-    // character; the press dispatch above still runs the standard responder
-    // hooks for tests that observe pressesBegan/Ended.
-    // Skip when a command/control/alt modifier is set — those are keyboard
-    // shortcuts (e.g. ⌘V), not text insertion.
+    // UIKit's hardware-key pipelines don't fire reliably for synthetic events:
+    //  • text insertion: `insertText:` on a focused `UIKeyInput`
+    //  • shortcut actions: UIKeyCommand / built-in actions (copy:, paste:, …)
+    // Drive these final hops ourselves so tests observe the same behaviour as
+    // a real hardware keyboard; the press dispatch above still runs the standard
+    // responder hooks (pressesBegan/Ended) for tests that need them.
     UIKeyModifierFlags shortcutModifiers =
         UIKeyModifierCommand | UIKeyModifierControl | UIKeyModifierAlternate;
     BOOL isShortcut = (extraModifierFlags & shortcutModifiers) != 0;
     if (!isShortcut && target != nil &&
         [target respondsToSelector:@selector(insertText:)]) {
         [(id<CMPUIKeyInput>)target insertText:character];
+    } else if (isShortcut) {
+        CMPFireKeyCommandAction(target, unmodifiedCharacters ?: character,
+                                 (UIKeyModifierFlags)modifierFlags);
     }
 
     return event;

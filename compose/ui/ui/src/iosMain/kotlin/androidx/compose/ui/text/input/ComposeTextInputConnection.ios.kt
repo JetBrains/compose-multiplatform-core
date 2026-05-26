@@ -17,7 +17,6 @@
 package androidx.compose.ui.text.input
 
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.ViewConfiguration
@@ -121,7 +120,7 @@ internal open class ComposeTextInputConnection(
         selectAll: (() -> Unit)?,
         customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
     ) {
-        textInputView.updateAvailableSystemActions(copy, paste, cut, selectAll)
+        textInputView.updateAvailableSystemActions(copy, cut, paste, selectAll)
     }
 
     val toolbarStatus: TextToolbarStatus

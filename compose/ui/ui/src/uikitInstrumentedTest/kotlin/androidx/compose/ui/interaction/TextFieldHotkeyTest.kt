@@ -84,14 +84,13 @@ class TextFieldHotkeyTest {
 
     @Test
     fun pasteClipboardAtCursor() = runTestsWithTextField(
-        initialText = "Hello",
-        initialSelection = TextRange(5),
+        initialText = "Hello ",
+        initialSelection = TextRange(6),
         actions = {
-            UIPasteboard.generalPasteboard().string = " World"
             keystroke('v', modifierFlags = UIKeyModifierCommand)
         },
         validate = { value ->
-            assertEquals("Hello World", value.text)
+            assertEquals("Hello Kotlin", value.text)
         }
     )
 
@@ -100,7 +99,6 @@ class TextFieldHotkeyTest {
         initialText = "Hello World",
         initialSelection = TextRange(6, 11),
         actions = {
-            UIPasteboard.generalPasteboard().string = "Kotlin"
             keystroke('v', modifierFlags = UIKeyModifierCommand)
         },
         validate = { value ->
@@ -120,7 +118,6 @@ class TextFieldHotkeyTest {
 
             // Replace the selected word with clipboard content via the keyboard shortcut,
             // without touching any menu button.
-            UIPasteboard.generalPasteboard().string = "Kotlin"
             keystroke('v', modifierFlags = UIKeyModifierCommand)
         },
         validate = { value ->
@@ -139,6 +136,7 @@ class TextFieldHotkeyTest {
         runUIKitInstrumentedTest {
             val requester = FocusRequester()
             val valueState = mutableStateOf(TextFieldValue(initialText, initialSelection))
+            UIPasteboard.generalPasteboard().string = "Kotlin"
 
             setContent {
                 LaunchedEffect(Unit) { requester.requestFocus() }
@@ -161,6 +159,7 @@ class TextFieldHotkeyTest {
         runUIKitInstrumentedTest {
             val requester = FocusRequester()
             val state = TextFieldState(initialText, initialSelection)
+            UIPasteboard.generalPasteboard().string = "Kotlin"
 
             setContent {
                 LaunchedEffect(Unit) { requester.requestFocus() }

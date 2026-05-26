@@ -54,6 +54,16 @@ internal class UIKitTextInputService(
 
     private var currentInputConnection: TextInputConnection? by mutableStateOf(null)
 
+    private data class EditMenuState(
+        val copy: (() -> Unit)?,
+        val paste: (() -> Unit)?,
+        val cut: (() -> Unit)?,
+        val selectAll: (() -> Unit)?,
+        val customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+    )
+
+    private var lastEditMenuState: EditMenuState? = null
+
     val hasInvalidations: Boolean
         get() = currentInputConnection?.hasInvalidations ?: false
 
@@ -108,6 +118,11 @@ internal class UIKitTextInputService(
             )
         }
         currentInputConnection?.start(request)
+        lastEditMenuState?.let { state ->
+            currentInputConnection?.updateNativeTextInputEditMenuState(
+                state.copy, state.paste, state.cut, state.selectAll, state.customActions
+            )
+        }
 
         onInputStarted()
     }
@@ -180,6 +195,7 @@ internal class UIKitTextInputService(
             selectAll: (() -> Unit)?,
             customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
         ) {
+            lastEditMenuState = EditMenuState(copy, paste, cut, selectAll, customActions)
             currentInputConnection?.updateNativeTextInputEditMenuState(
                 copy, paste, cut, selectAll, customActions
             )
