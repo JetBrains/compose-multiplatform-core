@@ -18,6 +18,8 @@ import org.gradle.api.Project
 
 class BuildDirectoryHelper {
     private static File getOutDirectory(File checkoutRoot) {
+        //noinspection GroovyConstantIfStatement
+        if (true) return new File("${checkoutRoot}/out")
         def outDir = System.env.OUT_DIR
         if (outDir == null) {
             outDir = new File("${checkoutRoot}/out")

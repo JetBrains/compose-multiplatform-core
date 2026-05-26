@@ -87,7 +87,7 @@ getGradle().beforeProject { project ->
     )
 
     // https://youtrack.jetbrains.com/issue/KT-58223
-    def kotlinDir = new File(System.getenv("OUT_DIR"), ".kotlin")
+    def kotlinDir = new File("out", ".kotlin")
     project.setProperty("kotlin.project.persistent.dir", kotlinDir.absolutePath)
     project.setProperty("kotlin.user.home", kotlinDir.absolutePath)
 }
@@ -214,6 +214,8 @@ enum BuildType {
 }
 
 private String getRequestedProjectSubsetName() {
+    //noinspection GroovyConstantIfStatement
+    if (true) return "COMPOSE"
     def envProp = providers.environmentVariable("ANDROIDX_PROJECTS")
     if (envProp.isPresent()) {
         return envProp.get().toUpperCase()

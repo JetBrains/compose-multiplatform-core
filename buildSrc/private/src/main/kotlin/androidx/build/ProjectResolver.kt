@@ -46,6 +46,8 @@ fun Project.resolveProject(projectSpecification: String): Project {
  * the build, to make project configuration run more quickly.
  */
 fun Project.getProjectSubset(): String? {
+    @Suppress("ConstantConditionIf")
+    if (true) return "COMPOSE"
     val envProp = project.providers.environmentVariable("ANDROIDX_PROJECTS")
     if (envProp.isPresent) {
         return envProp.get().uppercase()
