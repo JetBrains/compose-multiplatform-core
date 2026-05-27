@@ -31,7 +31,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.input.InputMode
-import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -52,12 +51,12 @@ import androidx.compose.ui.input.pointer.composeButtons
 import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
-import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.platform.WebHapticFeedback
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WebWakeLockManager
@@ -84,11 +83,6 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsArray
-import kotlin.js.js
-import kotlin.js.toInt
-import kotlin.js.toList
 import kotlin.math.absoluteValue
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -219,7 +213,6 @@ internal class ComposeWindow(
         object : PlatformContext by PlatformContext.Empty() {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
-            override val inputModeManager: InputModeManager = DefaultInputModeManager()
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
                 WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
@@ -246,7 +239,13 @@ internal class ComposeWindow(
                 return super.convertWindowToLocalPosition(positionInWindow)
             }
 
-            override val textToolbar: TextToolbar = WebTextToolbar()
+            override val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
+                WebTextToolbar()
+            }
+
+            override val hapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
+                WebHapticFeedback.webHapticFeedbackOrDefault()
+            }
 
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
@@ -265,25 +264,27 @@ internal class ComposeWindow(
                     null
                 }
 
-            override val textInputService: WebTextInputService = object : WebTextInputService() {
+            override val textInputService: WebTextInputService by lazy(LazyThreadSafetyMode.NONE) {
+                object : WebTextInputService() {
 
-                override val currentTouchOffset: Offset?
-                    get() = activeTouchOffset
+                    override val currentTouchOffset: Offset?
+                        get() = activeTouchOffset
 
-                override val backingDomInputContainer: HTMLElement
-                    get() = layerRoot
+                    override val backingDomInputContainer: HTMLElement
+                        get() = layerRoot
 
-                override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
-                    val dpRect = rect.toDpRect(density)
-                    val left = dpRect.left.value
-                    val top = dpRect.top.value
+                    override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
+                        val dpRect = rect.toDpRect(density)
+                        val left = dpRect.left.value
+                        val top = dpRect.top.value
 
-                    return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
-                }
+                        return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
+                    }
 
-                override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
-                    //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
-                    return scene.sendKeyEvent(keyEvent)
+                    override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
+                        //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
+                        return scene.sendKeyEvent(keyEvent)
+                    }
                 }
             }
 
@@ -872,3 +873,4 @@ private fun Element.isFocused(): Boolean {
 private external interface ShadowRootExt {
     val activeElement: Element?
 }
+

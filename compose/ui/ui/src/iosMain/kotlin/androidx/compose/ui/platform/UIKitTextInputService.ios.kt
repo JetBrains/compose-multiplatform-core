@@ -19,31 +19,30 @@ package androidx.compose.ui.platform
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.scene.ComposeSceneFocusManager
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.ComposeTextInputConnection
-import androidx.compose.ui.text.input.EditCommand
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.NativeTextInputConnection
-import androidx.compose.ui.text.input.PlatformTextInputService
 import androidx.compose.ui.text.input.SelectionContainerConnection
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TextInputConnection
+import androidx.compose.ui.text.input.stateSnapshot
 import androidx.compose.ui.text.input.usingNativeTextInput
 import androidx.compose.ui.window.FocusedViewsList
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.UIKit.UIPress
 import platform.UIKit.UIView
 
-@Suppress("DEPRECATION") // TODO https://youtrack.jetbrains.com/issue/CMP-9858
+@OptIn(ExperimentalComposeUiApi::class)
 internal class UIKitTextInputService(
-    private val updateView: (usingNativeTextInput: Boolean) -> Unit,
+    private val updateView: () -> Unit,
     private val view: UIView,
     private val viewConfiguration: ViewConfiguration,
     private val focusedViewsList: FocusedViewsList?,
@@ -55,7 +54,7 @@ internal class UIKitTextInputService(
     private var onKeyboardPresses: (Set<*>) -> Unit,
     private var focusManager: () -> ComposeSceneFocusManager?,
     coroutineContext: CoroutineContext
-) : PlatformTextInputService {
+) {
 
     private val coroutineScope = CoroutineScope(coroutineContext)
 
@@ -64,18 +63,41 @@ internal class UIKitTextInputService(
     val hasInvalidations: Boolean
         get() = currentInputConnection?.hasInvalidations ?: false
 
-    override fun startInput(
-        value: TextFieldValue,
-        imeOptions: ImeOptions,
-        onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
-    ) {
-        val usingNativeTextInput = imeOptions.platformImeOptions?.usingNativeTextInput ?: false
+    suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
+        coroutineScope {
+            launch {
+                snapshotFlow { request.stateSnapshot() }.collect {
+                    currentInputConnection?.onTextFieldValueUpdated(it)
+                }
+            }
+            launch {
+                snapshotFlow {
+                    Triple(
+                        request.textFieldRectInRoot(),
+                        request.textClippingRectInRoot(),
+                        request.unclippedTextOffsetInRoot(),
+                    )
+                }.collect {
+                    currentInputConnection?.onViewGeometryUpdated()
+                }
+            }
+            suspendCancellableCoroutine<Nothing> { continuation ->
+                startInput(request)
+
+                continuation.invokeOnCancellation {
+                    stopInput()
+                }
+            }
+        }
+    }
+
+    private fun startInput(request: PlatformTextInputMethodRequest) {
+        val usingNativeTextInput = request.imeOptions.platformImeOptions?.usingNativeTextInput ?: false
 
         currentInputConnection?.stop()
         currentInputConnection = if (usingNativeTextInput) {
             NativeTextInputConnection(
-                updateView = { updateView(true) },
+                updateView = updateView,
                 view = view,
                 coroutineScope = coroutineScope,
                 focusedViewsList = focusedViewsList,
@@ -84,7 +106,7 @@ internal class UIKitTextInputService(
             )
         } else {
             ComposeTextInputConnection(
-                updateView = { updateView(false) },
+                updateView = updateView,
                 view = view,
                 coroutineScope = coroutineScope,
                 viewConfiguration = viewConfiguration,
@@ -93,86 +115,65 @@ internal class UIKitTextInputService(
                 focusManager = focusManager
             )
         }
-        currentInputConnection?.start(value, imeOptions, onEditCommand, onImeActionPerformed)
+        currentInputConnection?.start(request)
 
         onInputStarted()
     }
 
-    override fun stopInput() {
+    private fun stopInput() {
         currentInputConnection?.stop()
         currentInputConnection = null
     }
 
-    override fun showSoftwareKeyboard() {
+    fun showSoftwareKeyboard() {
         currentInputConnection?.showKeyboard()
     }
 
-    override fun hideSoftwareKeyboard() {
+    fun hideSoftwareKeyboard() {
         currentInputConnection?.dismissKeyboard()
-    }
-
-    override fun updateState(oldValue: TextFieldValue?, newValue: TextFieldValue) {
-        currentInputConnection?.updateState(newValue)
-    }
-
-    fun updateTextLayoutResult(textLayoutResult: TextLayoutResult) {
-        currentInputConnection?.updateTextLayoutResult(textLayoutResult)
-    }
-
-    fun updateTextFieldGeometry(
-        textFieldFrame: Rect,
-        unclippedTextPosition: Offset
-    ) {
-        currentInputConnection?.updateViewGeometry(
-            textFieldFrame,
-            unclippedTextPosition
-        )
     }
 
     fun onPreviewKeyEvent(event: KeyEvent): Boolean =
         currentInputConnection?.onPreviewKeyEvent(event) ?: false
 
-    fun flushEditCommandsIfNeeded(force: Boolean = false) {
-        currentInputConnection?.flushEditCommandsIfNeeded(force)
-    }
+    val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
+        object : TextToolbar {
+            override val status: TextToolbarStatus
+                get() = (currentInputConnection as? TextToolbar)?.status ?: TextToolbarStatus.Hidden
 
-    val textToolbar: TextToolbar = object : TextToolbar {
-
-        override val status: TextToolbarStatus
-            get() = (currentInputConnection as? TextToolbar)?.status ?: TextToolbarStatus.Hidden
-
-        override fun showMenu(
-            rect: Rect,
-            onCopyRequested: (() -> Unit)?,
-            onPasteRequested: (() -> Unit)?,
-            onCutRequested: (() -> Unit)?,
-            onSelectAllRequested: (() -> Unit)?
-        ) {
-            if (currentInputConnection == null) {
-                // Entry point for showing the context menu in SelectionContainer scenarios, where
-                // there is no active text input session. iOS requires a UIView that can become first
-                // responder in order to host the context menu, so we create a dedicated connection
-                // backed by a hidden view for this purpose.
-                // Note: start() is intentionally not called here — it establishes a text editing
-                // session (requiring TextFieldValue, ImeOptions, etc.) which is not applicable for
-                // SelectionContainer.
-                currentInputConnection = SelectionContainerConnection(
-                    view, coroutineScope, viewConfiguration, focusManager
+            override fun showMenu(
+                rect: Rect,
+                onCopyRequested: (() -> Unit)?,
+                onPasteRequested: (() -> Unit)?,
+                onCutRequested: (() -> Unit)?,
+                onSelectAllRequested: (() -> Unit)?
+            ) {
+                if (currentInputConnection == null) {
+                    // Entry point for showing the context menu in SelectionContainer scenarios, where
+                    // there is no active text input session. iOS requires a UIView that can become first
+                    // responder in order to host the context menu, so we create a dedicated connection
+                    // backed by a hidden view for this purpose.
+                    // Note: start() is intentionally not called here — it establishes a text editing
+                    // session (requiring a PlatformTextInputMethodRequest) which is not applicable for
+                    // SelectionContainer.
+                    currentInputConnection = SelectionContainerConnection(
+                        view, coroutineScope, viewConfiguration, focusManager
+                    )
+                }
+                (currentInputConnection as? TextToolbar)?.showMenu(
+                    rect, onCopyRequested, onPasteRequested, onCutRequested, onSelectAllRequested
                 )
             }
-            (currentInputConnection as? TextToolbar)?.showMenu(
-                rect, onCopyRequested, onPasteRequested, onCutRequested, onSelectAllRequested
-            )
-        }
 
-        override fun hide() {
-            (currentInputConnection as? TextToolbar)?.hide()
+            override fun hide() {
+                (currentInputConnection as? TextToolbar)?.hide()
 
-            if (currentInputConnection is SelectionContainerConnection) {
-                // stop() removes the view from the hierarchy and resigns first responder,
-                // without requiring a prior start() call.
-                currentInputConnection?.stop()
-                currentInputConnection = null
+                if (currentInputConnection is SelectionContainerConnection) {
+                    // stop() removes the view from the hierarchy and resigns first responder,
+                    // without requiring a prior start() call.
+                    currentInputConnection?.stop()
+                    currentInputConnection = null
+                }
             }
         }
     }
@@ -207,4 +208,3 @@ internal class UIKitTextInputService(
         focusManager = { null }
     }
 }
-

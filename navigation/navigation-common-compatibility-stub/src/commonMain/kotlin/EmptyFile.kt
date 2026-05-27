@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package androidx.navigationevent.compose
-
-import androidx.compose.runtime.HostDefaultKey
-import androidx.navigationevent.NavigationEventDispatcherOwner
-
-public actual val NavigationEventDispatcherOwnerHostDefaultKey:
-    HostDefaultKey<NavigationEventDispatcherOwner?> =
-    object : HostDefaultKey<NavigationEventDispatcherOwner?> {}
+// We prefer to have no source code here, but a module can't be empty.
+// We use this module to publish a dumb klib to be provided to the compilation of user projects.
+// It's needed because Kotlin tries to resolve the dependencies listed in klib manifest.
+// There is an intention to drop this behavior: https://youtrack.jetbrains.com/issue/KT-61096
+// The actual klib is published at androidx maven coordinates in Google maven.
+// This module depends on the actual klib, so the module API will be available transitively.
