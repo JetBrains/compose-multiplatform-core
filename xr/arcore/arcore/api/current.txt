@@ -68,12 +68,6 @@ package androidx.xr.arcore {
     ctor @BytecodeOnly public AnchorUnsupportedLocationException(String!, Throwable!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
   }
 
-  public final class AnchorUnsupportedObjectException extends java.lang.RuntimeException {
-    ctor public AnchorUnsupportedObjectException();
-    ctor public AnchorUnsupportedObjectException(optional String message, optional Throwable? cause);
-    ctor @BytecodeOnly public AnchorUnsupportedObjectException(String!, Throwable!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-  }
-
   public interface Anchorable<T> extends androidx.xr.arcore.Trackable<T> {
     method public androidx.xr.arcore.AnchorResult createAnchor(androidx.xr.runtime.math.Pose pose);
   }
@@ -555,7 +549,6 @@ package androidx.xr.arcore {
   }
 
   public final class HitResult {
-    method public androidx.xr.arcore.AnchorResult createAnchor();
     method @InaccessibleFromKotlin public float getDistance();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getHitPose();
     method @InaccessibleFromKotlin public androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State> getTrackable();
@@ -597,6 +590,11 @@ package androidx.xr.arcore {
     property public kotlin.time.ComparableTimeMark timeMark;
     property public java.util.Collection<androidx.xr.arcore.Trackable.State> trackableStates;
     property public androidx.xr.arcore.Face.State? userFaceState;
+  }
+
+  public final class PerceptionStateExt {
+    method @InaccessibleFromKotlin public static androidx.xr.arcore.PerceptionState? getPerceptionState(androidx.xr.runtime.CoreState);
+    property public static androidx.xr.arcore.PerceptionState? androidx.xr.runtime.CoreState.perceptionState;
   }
 
   public final class Plane implements androidx.xr.arcore.Anchorable<androidx.xr.arcore.Plane.State> {

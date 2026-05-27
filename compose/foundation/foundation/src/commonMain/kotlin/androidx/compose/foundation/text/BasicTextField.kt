@@ -394,6 +394,7 @@ internal fun BasicTextField(
         !isPassword &&
             keyboardOptions.keyboardType != KeyboardType.Password &&
             keyboardOptions.keyboardType != KeyboardType.NumberPassword
+    val dragInputType = textFieldSelectionState.directDragGestureInitiator
     val decorationModifiers =
         modifier
             .stylusHandwriting(enabled, handwritingEnabled) {
@@ -439,8 +440,7 @@ internal fun BasicTextField(
                 orientation = orientation,
                 // Disable scrolling when textField is disabled or another dragging gesture is
                 // taking place
-                enabled =
-                    enabled && textFieldSelectionState.directDragGestureInitiator == InputType.None,
+                enabled = enabled && dragInputType == InputType.None,
                 reverseDirection =
                     ScrollableDefaults.reverseDirection(
                         layoutDirection = layoutDirection,
@@ -514,6 +514,7 @@ internal fun BasicTextField(
                                 TextFieldCoreModifier(
                                     isFocused = isWindowAndTextFieldFocused,
                                     isDragHovered = isDragHovered,
+                                    isTouchDragInProgress = dragInputType == InputType.Touch,
                                     textLayoutState = textLayoutState,
                                     textFieldState = transformedState,
                                     textFieldSelectionState = textFieldSelectionState,

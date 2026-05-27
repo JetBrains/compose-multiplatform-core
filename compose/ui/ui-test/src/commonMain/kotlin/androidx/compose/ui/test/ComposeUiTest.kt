@@ -40,7 +40,26 @@ import kotlinx.coroutines.test.TestResult
  * framework is aware of the content. Whether you need to launch the host from within the test
  * lambda as well depends on the platform.
  *
+ * This function follows the semantics of [kotlinx.coroutines.test.runTest]. On JVM and Native it
+ * behaves similarly to `runBlocking`. On web targets it returns a [TestResult] backed by a
+ * `Promise`.
+ *
+ * For multiplatform tests, make the test return [TestResult] and immediately return the result of
+ * [runComposeUiTest]. Keep assertions inside the [block], and do not execute code after this call.
+ *
+ * Example:
+ * ```kotlin
+ * @Test
+ * fun myTest(): TestResult = runComposeUiTest {
+ *     setContent { /* content under test */ }
+ * }
+ * ```
+ *
  * Keeping a reference to the [ComposeUiTest] outside of this function is an error.
+ *
+ * See also:
+ * * [kotlinx.coroutines.test.runTest](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/run-test.html)
+ * * [TestResult](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/-test-result/)
  *
  * @sample androidx.compose.ui.test.samples.RunComposeUiTestSample
  * @param effectContext The [CoroutineContext] used to run the composition. The context for
@@ -94,12 +113,8 @@ expect fun runComposeUiTest(
  * An instance of [ComposeUiTest] can be obtained through [runComposeUiTest] or any of its platform
  * specific variants, the argument to which will have it as the receiver scope.
  */
-// Use an `expect sealed interface` with an actual copy for each platform to allow implementations
-// per platform. Each platform is considered a separate compilation unit, which means that when
-// just using `sealed interface` in commonMain, it would not be allowed to implement the interface
-// in platform specific code.
 @ExperimentalTestApi
-expect sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
+interface ComposeUiTest : SemanticsNodeInteractionsProvider {
     /**
      * Current device screen's density. Note that it is technically possible for a Compose hierarchy
      * to define a different density for a certain subtree. Try to use
@@ -317,6 +332,57 @@ fun ComposeUiTest.waitUntilExactlyOneExists(
 @ExperimentalTestApi
 fun ComposeUiTest.waitUntilDoesNotExist(matcher: SemanticsMatcher, timeoutMillis: Long = 1_000L) =
     waitUntilNodeCount(matcher, 0, timeoutMillis)
+
+/**
+ * Capability query to determine if the current [ComposeUiTest] implementation supports registering
+ * an [IdlingResource].
+ *
+ * While [IdlingResource] is supported on Android and Desktop, currently it is not available on all
+ * targets (such as Web).
+ *
+ * @return true if the implementation supports [IdlingResource] registration, false otherwise.
+ * @see IdlingResourceOwner
+ */
+@ExperimentalTestApi
+fun ComposeUiTest.isIdlingResourceSupported(): Boolean {
+    return this is IdlingResourceOwner
+}
+
+/**
+ * Attempts to register an [IdlingResource] in this test.
+ *
+ * This implementation checks [isIdlingResourceSupported] before attempting to register the
+ * resource.
+ *
+ * @return true if the idling resource was successfully registered, or false if the implementation
+ *   does not support idling resources.
+ */
+@ExperimentalTestApi
+fun ComposeUiTest.registerIdlingResource(idlingResource: IdlingResource): Boolean {
+    if (!isIdlingResourceSupported()) {
+        return false
+    }
+    (this as IdlingResourceOwner).registerIdlingResource(idlingResource)
+    return true
+}
+
+/**
+ * Attempts to unregister an [IdlingResource] in this test.
+ *
+ * This implementation checks [isIdlingResourceSupported] before attempting to unregister the
+ * resource.
+ *
+ * @return true if the idling resource was successfully unregistered, or false if the implementation
+ *   does not support idling resources.
+ */
+@ExperimentalTestApi
+fun ComposeUiTest.unregisterIdlingResource(idlingResource: IdlingResource): Boolean {
+    if (!isIdlingResourceSupported()) {
+        return false
+    }
+    (this as IdlingResourceOwner).unregisterIdlingResource(idlingResource)
+    return true
+}
 
 internal const val NanoSecondsPerMilliSecond = 1_000_000L
 

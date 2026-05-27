@@ -166,12 +166,6 @@ package androidx.compose.ui.text {
     property public androidx.compose.ui.unit.TextUnit DefaultSize;
   }
 
-  @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public final class ComposeUiTextFlags {
-    property public boolean isCorrectShadowLerpWithNullsEnabled;
-    field public static final androidx.compose.ui.text.ComposeUiTextFlags INSTANCE;
-    field public static boolean isCorrectShadowLerpWithNullsEnabled;
-  }
-
   @kotlin.jvm.JvmInline public final value class EmojiSupportMatch {
     method @BytecodeOnly public static androidx.compose.ui.text.EmojiSupportMatch! box-impl(int);
     method @BytecodeOnly public int unbox-impl();
@@ -313,7 +307,8 @@ package androidx.compose.ui.text {
 
   public final class MultiParagraphIntrinsics implements androidx.compose.ui.text.ParagraphIntrinsics {
     ctor @Deprecated public MultiParagraphIntrinsics(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.Font.ResourceLoader resourceLoader);
-    ctor public MultiParagraphIntrinsics(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver);
+    ctor @Deprecated public MultiParagraphIntrinsics(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver);
+    ctor public MultiParagraphIntrinsics(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, boolean softWrap);
     method @InaccessibleFromKotlin public androidx.compose.ui.text.AnnotatedString getAnnotatedString();
     method @InaccessibleFromKotlin public float getMaxIntrinsicWidth();
     method @InaccessibleFromKotlin public float getMinIntrinsicWidth();
@@ -392,10 +387,11 @@ package androidx.compose.ui.text {
   }
 
   public final class ParagraphIntrinsicsKt {
-    method public static androidx.compose.ui.text.ParagraphIntrinsics ParagraphIntrinsics(String text, androidx.compose.ui.text.TextStyle style, java.util.List<? extends androidx.compose.ui.text.AnnotatedString.Range<? extends androidx.compose.ui.text.AnnotatedString.Annotation>> annotations, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders);
+    method @Deprecated public static androidx.compose.ui.text.ParagraphIntrinsics ParagraphIntrinsics(String text, androidx.compose.ui.text.TextStyle style, java.util.List<? extends androidx.compose.ui.text.AnnotatedString.Range<? extends androidx.compose.ui.text.AnnotatedString.Annotation>> annotations, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders);
+    method public static androidx.compose.ui.text.ParagraphIntrinsics ParagraphIntrinsics(String text, androidx.compose.ui.text.TextStyle style, java.util.List<? extends androidx.compose.ui.text.AnnotatedString.Range<? extends androidx.compose.ui.text.AnnotatedString.Annotation>> annotations, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, boolean softWrap);
     method @Deprecated public static androidx.compose.ui.text.ParagraphIntrinsics ParagraphIntrinsics(String text, androidx.compose.ui.text.TextStyle style, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.Font.ResourceLoader resourceLoader);
     method @Deprecated public static androidx.compose.ui.text.ParagraphIntrinsics ParagraphIntrinsics(String text, androidx.compose.ui.text.TextStyle style, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver);
-    method @BytecodeOnly public static androidx.compose.ui.text.ParagraphIntrinsics! ParagraphIntrinsics$default(String!, androidx.compose.ui.text.TextStyle!, java.util.List!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, int, Object!);
+    method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.ParagraphIntrinsics! ParagraphIntrinsics$default(String!, androidx.compose.ui.text.TextStyle!, java.util.List!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, java.util.List!, int, Object!);
     method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.ParagraphIntrinsics! ParagraphIntrinsics$default(String!, androidx.compose.ui.text.TextStyle!, java.util.List!, java.util.List!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.Font.ResourceLoader!, int, Object!);
     method @BytecodeOnly @Deprecated public static androidx.compose.ui.text.ParagraphIntrinsics! ParagraphIntrinsics$default(String!, androidx.compose.ui.text.TextStyle!, java.util.List!, java.util.List!, androidx.compose.ui.unit.Density!, androidx.compose.ui.text.font.FontFamily.Resolver!, int, Object!);
   }
@@ -1118,9 +1114,9 @@ package androidx.compose.ui.text.font {
 
   public final class FontKt {
     method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.text.font.Font Font(int resId, optional androidx.compose.ui.text.font.FontWeight weight, optional androidx.compose.ui.text.font.FontStyle style, optional androidx.compose.ui.text.font.FontLoadingStrategy loadingStrategy);
-    method @KotlinOnly @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public static androidx.compose.ui.text.font.Font Font(int resId, optional androidx.compose.ui.text.font.FontWeight weight, optional androidx.compose.ui.text.font.FontStyle style, optional androidx.compose.ui.text.font.FontLoadingStrategy loadingStrategy, optional androidx.compose.ui.text.font.FontVariation.Settings variationSettings);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public static androidx.compose.ui.text.font.Font Font-F3nL8kk(int, androidx.compose.ui.text.font.FontWeight, int, int, androidx.compose.ui.text.font.FontVariation.Settings);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public static androidx.compose.ui.text.font.Font! Font-F3nL8kk$default(int, androidx.compose.ui.text.font.FontWeight!, int, int, androidx.compose.ui.text.font.FontVariation.Settings!, int, Object!);
+    method @KotlinOnly public static androidx.compose.ui.text.font.Font Font(int resId, optional androidx.compose.ui.text.font.FontWeight weight, optional androidx.compose.ui.text.font.FontStyle style, optional androidx.compose.ui.text.font.FontLoadingStrategy loadingStrategy, optional androidx.compose.ui.text.font.FontVariation.Settings variationSettings);
+    method @BytecodeOnly public static androidx.compose.ui.text.font.Font Font-F3nL8kk(int, androidx.compose.ui.text.font.FontWeight, int, int, androidx.compose.ui.text.font.FontVariation.Settings);
+    method @BytecodeOnly public static androidx.compose.ui.text.font.Font! Font-F3nL8kk$default(int, androidx.compose.ui.text.font.FontWeight!, int, int, androidx.compose.ui.text.font.FontVariation.Settings!, int, Object!);
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Stable public static androidx.compose.ui.text.font.Font! Font-RetOiIg(int, androidx.compose.ui.text.font.FontWeight!, int);
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Stable public static androidx.compose.ui.text.font.Font! Font-RetOiIg$default(int, androidx.compose.ui.text.font.FontWeight!, int, int, Object!);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.text.font.Font Font-YpTlLL0(int, androidx.compose.ui.text.font.FontWeight, int, int);
@@ -1315,16 +1311,16 @@ package androidx.compose.ui.text.font {
   public final class ResourceFont implements androidx.compose.ui.text.font.Font {
     ctor @BytecodeOnly public ResourceFont(int, androidx.compose.ui.text.font.FontWeight!, int, androidx.compose.ui.text.font.FontVariation.Settings!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @KotlinOnly public androidx.compose.ui.text.font.ResourceFont copy(optional int resId, optional androidx.compose.ui.text.font.FontWeight weight, optional androidx.compose.ui.text.font.FontStyle style);
-    method @KotlinOnly @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public androidx.compose.ui.text.font.ResourceFont copy(optional int resId, optional androidx.compose.ui.text.font.FontWeight weight, optional androidx.compose.ui.text.font.FontStyle style, optional androidx.compose.ui.text.font.FontLoadingStrategy loadingStrategy, optional androidx.compose.ui.text.font.FontVariation.Settings variationSettings);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public androidx.compose.ui.text.font.ResourceFont copy-F3nL8kk(int, androidx.compose.ui.text.font.FontWeight, int, int, androidx.compose.ui.text.font.FontVariation.Settings);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public static androidx.compose.ui.text.font.ResourceFont! copy-F3nL8kk$default(androidx.compose.ui.text.font.ResourceFont!, int, androidx.compose.ui.text.font.FontWeight!, int, int, androidx.compose.ui.text.font.FontVariation.Settings!, int, Object!);
+    method @KotlinOnly public androidx.compose.ui.text.font.ResourceFont copy(optional int resId, optional androidx.compose.ui.text.font.FontWeight weight, optional androidx.compose.ui.text.font.FontStyle style, optional androidx.compose.ui.text.font.FontLoadingStrategy loadingStrategy, optional androidx.compose.ui.text.font.FontVariation.Settings variationSettings);
+    method @BytecodeOnly public androidx.compose.ui.text.font.ResourceFont copy-F3nL8kk(int, androidx.compose.ui.text.font.FontWeight, int, int, androidx.compose.ui.text.font.FontVariation.Settings);
+    method @BytecodeOnly public static androidx.compose.ui.text.font.ResourceFont! copy-F3nL8kk$default(androidx.compose.ui.text.font.ResourceFont!, int, androidx.compose.ui.text.font.FontWeight!, int, int, androidx.compose.ui.text.font.FontVariation.Settings!, int, Object!);
     method @BytecodeOnly public androidx.compose.ui.text.font.ResourceFont copy-RetOiIg(int, androidx.compose.ui.text.font.FontWeight, int);
     method @BytecodeOnly public static androidx.compose.ui.text.font.ResourceFont! copy-RetOiIg$default(androidx.compose.ui.text.font.ResourceFont!, int, androidx.compose.ui.text.font.FontWeight!, int, int, Object!);
     method @InaccessibleFromKotlin public int getResId();
     method @BytecodeOnly public int getStyle-_-LCdwA();
     method @InaccessibleFromKotlin public androidx.compose.ui.text.font.FontVariation.Settings getVariationSettings();
     method @InaccessibleFromKotlin public androidx.compose.ui.text.font.FontWeight getWeight();
-    property @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public androidx.compose.ui.text.font.FontLoadingStrategy loadingStrategy;
+    property public androidx.compose.ui.text.font.FontLoadingStrategy loadingStrategy;
     property public int resId;
     property public androidx.compose.ui.text.font.FontStyle style;
     property public androidx.compose.ui.text.font.FontVariation.Settings variationSettings;

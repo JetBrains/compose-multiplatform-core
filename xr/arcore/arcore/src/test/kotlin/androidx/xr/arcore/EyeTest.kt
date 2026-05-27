@@ -65,7 +65,10 @@ class EyeTest {
 
         activityController.create().start().resume()
 
-        session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
+        session =
+            (Session.create(context = activity, coroutineContext = testDispatcher)
+                    as SessionCreateSuccess)
+                .session
         session.configure(Config(eyeTracking = EyeTrackingMode.FINE_TRACKING))
     }
 
@@ -85,7 +88,7 @@ class EyeTest {
 
             assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.TRACKING)
 
-            arCoreTestRule.leftEye.isOpen = false
+            arCoreTestRule.leftEyeTester.isOpen = false
             advanceUntilIdle()
 
             assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.PAUSED)
@@ -96,7 +99,7 @@ class EyeTest {
     fun left_isOpen_poseMatchesRuntime() =
         runTest(testDispatcher) {
             val expectedPose = Pose(Vector3.Left, Quaternion.Identity)
-            arCoreTestRule.leftEye.pose = expectedPose
+            arCoreTestRule.leftEyeTester.pose = expectedPose
             advanceUntilIdle()
             val underTest = Eye.left(session)
             advanceUntilIdle()
@@ -110,8 +113,8 @@ class EyeTest {
     fun left_isClosed_poseDoesNotUpdate() =
         runTest(testDispatcher) {
             val expectedPose = Pose(Vector3.Left, Quaternion.Identity)
-            arCoreTestRule.leftEye.isOpen = false
-            arCoreTestRule.leftEye.pose = expectedPose
+            arCoreTestRule.leftEyeTester.isOpen = false
+            arCoreTestRule.leftEyeTester.pose = expectedPose
             advanceUntilIdle()
             val underTest = Eye.left(session)
             advanceUntilIdle()
@@ -136,7 +139,7 @@ class EyeTest {
 
             assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.TRACKING)
 
-            arCoreTestRule.rightEye.isOpen = false
+            arCoreTestRule.rightEyeTester.isOpen = false
             advanceUntilIdle()
 
             assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.PAUSED)
@@ -147,7 +150,7 @@ class EyeTest {
     fun right_isOpen_poseMatchesRuntime() =
         runTest(testDispatcher) {
             val expectedPose = Pose(Vector3.Right, Quaternion.Identity)
-            arCoreTestRule.rightEye.pose = expectedPose
+            arCoreTestRule.rightEyeTester.pose = expectedPose
             advanceUntilIdle()
             val underTest = Eye.right(session)
             advanceUntilIdle()
@@ -161,8 +164,8 @@ class EyeTest {
     fun right_isClosed_poseDoesNotUpdate() =
         runTest(testDispatcher) {
             val expectedPose = Pose(Vector3.Right, Quaternion.Identity)
-            arCoreTestRule.rightEye.isOpen = false
-            arCoreTestRule.rightEye.pose = expectedPose
+            arCoreTestRule.rightEyeTester.isOpen = false
+            arCoreTestRule.rightEyeTester.pose = expectedPose
             advanceUntilIdle()
             val underTest = Eye.right(session)
             advanceUntilIdle()

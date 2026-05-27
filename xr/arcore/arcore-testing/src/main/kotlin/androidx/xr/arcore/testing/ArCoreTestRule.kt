@@ -17,6 +17,7 @@
 package androidx.xr.arcore.testing
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.runtime.Trackable
 import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.arcore.testing.internal.FakePerceptionRuntime
 import androidx.xr.arcore.testing.internal.FakePerceptionRuntimeFactory
@@ -24,8 +25,10 @@ import androidx.xr.arcore.testing.internal.FakeRuntimeAnchor
 import androidx.xr.arcore.testing.internal.FakeRuntimeConversationState
 import androidx.xr.arcore.testing.internal.FakeRuntimeDepth
 import androidx.xr.arcore.testing.internal.FakeRuntimeEye
+import androidx.xr.arcore.testing.internal.FakeRuntimeFace
 import androidx.xr.arcore.testing.internal.FakeRuntimeHand
 import androidx.xr.arcore.testing.internal.FakeRuntimeRenderViewpoint
+import androidx.xr.arcore.testing.internal.PendingTrackablesProvider
 import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.ExperimentalSceneSignalApi
@@ -38,7 +41,7 @@ import org.junit.rules.ExternalResource
  * A JUnit Rule for creating a test environment for ARCore for Jetpack XR applications. This rule
  * allows you to write unit tests where you alter the state of the perception system.
  */
-public class ArCoreTestRule : ExternalResource() {
+public class ArCoreTestRule : ExternalResource(), PendingTrackablesProvider {
 
     private val _persistedAnchorPoses: MutableMap<UUID, Pose> = mutableMapOf()
     private val _planes: MutableList<TestPlane> = mutableListOf()
@@ -48,6 +51,8 @@ public class ArCoreTestRule : ExternalResource() {
 
     internal lateinit var runtime: FakePerceptionRuntime
         private set
+
+    internal val pendingTrackables: MutableSet<TestTrackable> = mutableSetOf()
 
     /**
      * The maximum number of [androidx.xr.arcore.Anchor] objects that can be loaded at once in the
@@ -103,101 +108,105 @@ public class ArCoreTestRule : ExternalResource() {
      * [androidx.xr.runtime.DeviceTrackingMode.LAST_KNOWN] must be configured for it to be ingested
      * by the runtime.
      */
-    public val device: TestArDevice = TestArDevice(this)
+    public val deviceTester: ArDeviceTester = ArDeviceTester(this)
 
     /**
-     * The object representing the user's face in the environment. [Config.faceTracking] must be set
-     * to [androidx.xr.runtime.FaceTrackingMode.MESHES] or
+     * The object representing the user's face. [Config.faceTracking] must be set to
      * [androidx.xr.runtime.FaceTrackingMode.BLEND_SHAPES] for it to be integrated by the runtime.
-     * [TestTrackable.isVisible] must be set to true for the face's pose to update in the API.
+     * [FaceTester.isValid] must be set to true for the face's blend shape and confidence values to
+     * update in the API.
      */
-    public val face: TestFace = TestFace(this)
+    public val faceTester: FaceTester by lazy {
+        FaceTester(this, runtime.perceptionManager.userFace as FakeRuntimeFace)
+    }
 
     /**
      * The object representing the user's left hand in the environment.
      * [androidx.xr.runtime.HandTrackingMode.BOTH] must be configured for it to be ingested by the
-     * runtime. [TestHand.isVisible] must be set to true for the hand's pose to update in the API.
+     * runtime. [HandTester.isVisible] must be set to true for the hand's pose to update in the API.
      */
-    public val leftHand: TestHand by lazy {
-        TestHand(this, runtime.perceptionManager.leftHand as FakeRuntimeHand)
+    public val leftHandTester: HandTester by lazy {
+        HandTester(this, runtime.perceptionManager.leftHand as FakeRuntimeHand)
     }
 
     /**
      * The object representing the user's right hand in the environment.
      * [androidx.xr.runtime.HandTrackingMode.BOTH] must be configured for it to be ingested by the
-     * runtime. [TestHand.isVisible] must be set to true for the hand's pose to update in the API.
+     * runtime. [HandTester.isVisible] must be set to true for the hand's pose to update in the API.
      */
-    public val rightHand: TestHand by lazy {
-        TestHand(this, runtime.perceptionManager.rightHand as FakeRuntimeHand)
+    public val rightHandTester: HandTester by lazy {
+        HandTester(this, runtime.perceptionManager.rightHand as FakeRuntimeHand)
     }
 
     /**
      * The object representing the user's left eye in the environment.
      * [androidx.xr.runtime.EyeTrackingMode.COARSE_TRACKING] or
      * [androidx.xr.runtime.EyeTrackingMode.FINE_TRACKING] must be configured for it to be ingested
-     * by the runtime. [TestEye.isOpen] must be set to true for the eye's pose to update in the API.
+     * by the runtime. [EyeTester.isOpen] must be set to true for the eye's pose to update in the
+     * API.
      */
-    public val leftEye: TestEye by lazy {
-        TestEye(this, runtime.perceptionManager.leftEye as FakeRuntimeEye)
+    public val leftEyeTester: EyeTester by lazy {
+        EyeTester(this, runtime.perceptionManager.leftEye as FakeRuntimeEye)
     }
 
     /**
      * The object representing the user's right eye in the environment.
      * [androidx.xr.runtime.EyeTrackingMode.COARSE_TRACKING] or
      * [androidx.xr.runtime.EyeTrackingMode.FINE_TRACKING] must be configured for it to be ingested
-     * by the runtime. [TestEye.isOpen] must be set to true for the eye's pose to update in the API.
+     * by the runtime. [EyeTester.isOpen] must be set to true for the eye's pose to update in the
+     * API.
      */
-    public val rightEye: TestEye by lazy {
-        TestEye(this, runtime.perceptionManager.rightEye as FakeRuntimeEye)
+    public val rightEyeTester: EyeTester by lazy {
+        EyeTester(this, runtime.perceptionManager.rightEye as FakeRuntimeEye)
     }
 
     /** A test representation of the device's [androidx.xr.arcore.Geospatial] status. */
-    public val geospatial: TestGeospatial = TestGeospatial(this)
+    public val geospatialTester: GeospatialTester = GeospatialTester(this)
 
     /** A test representation of the device's left [androidx.xr.arcore.RenderViewpoint]. */
-    public val leftRenderViewpoint: TestRenderViewpoint by lazy {
-        TestRenderViewpoint(
+    public val leftRenderViewpointTester: RenderViewpointTester by lazy {
+        RenderViewpointTester(
             this,
             runtime.perceptionManager.leftRenderViewpoint as FakeRuntimeRenderViewpoint,
         )
     }
 
     /** A test representation of the device's right [androidx.xr.arcore.RenderViewpoint]. */
-    public val rightRenderViewpoint: TestRenderViewpoint by lazy {
-        TestRenderViewpoint(
+    public val rightRenderViewpointTester: RenderViewpointTester by lazy {
+        RenderViewpointTester(
             this,
             runtime.perceptionManager.rightRenderViewpoint as FakeRuntimeRenderViewpoint,
         )
     }
 
     /** A test representation of the device's mono [androidx.xr.arcore.RenderViewpoint]. */
-    public val monoRenderViewpoint: TestRenderViewpoint by lazy {
-        TestRenderViewpoint(
+    public val monoRenderViewpointTester: RenderViewpointTester by lazy {
+        RenderViewpointTester(
             this,
             runtime.perceptionManager.monoRenderViewpoint as FakeRuntimeRenderViewpoint,
         )
     }
 
     /** A test representation of the device's left [androidx.xr.arcore.Depth] data. */
-    public val leftDepth: TestDepth by lazy {
-        TestDepth(this, runtime.perceptionManager.leftDepth as FakeRuntimeDepth)
+    public val leftDepthTester: DepthTester by lazy {
+        DepthTester(this, runtime.perceptionManager.leftDepth as FakeRuntimeDepth)
     }
 
     /** A test representation of the device's right [androidx.xr.arcore.Depth] data. */
-    public val rightDepth: TestDepth by lazy {
-        TestDepth(this, runtime.perceptionManager.rightDepth as FakeRuntimeDepth)
+    public val rightDepthTester: DepthTester by lazy {
+        DepthTester(this, runtime.perceptionManager.rightDepth as FakeRuntimeDepth)
     }
 
     /** A test representation of the device's mono [androidx.xr.arcore.Depth] data. */
-    public val monoDepth: TestDepth by lazy {
-        TestDepth(this, runtime.perceptionManager.monoDepth as FakeRuntimeDepth)
+    public val monoDepthTester: DepthTester by lazy {
+        DepthTester(this, runtime.perceptionManager.monoDepth as FakeRuntimeDepth)
     }
 
     /** A test representation of the device's Conversation Scene Signal. */
     @ExperimentalSceneSignalApi
     @PreviewSpatialApi
-    public val conversationSceneSignal: TestConversationSceneSignal by lazy {
-        TestConversationSceneSignal(
+    public val conversationSceneSignal: ConversationSceneSignalTester by lazy {
+        ConversationSceneSignalTester(
             this,
             runtime.perceptionManager.conversationSceneSignal as FakeRuntimeConversationState,
         )
@@ -214,36 +223,23 @@ public class ArCoreTestRule : ExternalResource() {
      */
     public fun addTrackables(vararg trackables: TestTrackable) {
         trackables.forEach {
+            if (it.isAddedToTestRule) return@forEach
             it.arCoreTestRule = this
             when (it) {
                 is TestPlane -> {
                     _planes.add(it)
-                    if (it.isConfigured()) {
-                        runtime.perceptionManager.trackables.add(it.fakeRuntimeTrackable)
-                    }
                 }
                 is TestAugmentedObject -> {
                     _objects.add(it)
-                    if (it.isConfigured()) {
-                        runtime.perceptionManager.trackables.add(it.fakeRuntimeTrackable)
-                    }
                 }
                 is TestFace -> {
                     _faceMeshes.add(it)
-                    if (it.isConfiguredForMeshing()) {
-                        runtime.perceptionManager.trackables.add(it.fakeRuntimeTrackable)
-                    }
                 }
                 is TestAugmentedImage -> {
                     _images.add(it)
-                    if (it.isConfigured()) {
-                        runtime.perceptionManager.trackables.add(it.fakeRuntimeTrackable)
-                    }
                 }
             }
-            // TODO: b/497925970 ensure trackables added before they get configured are
-            // retroactively added to the PerceptionManager
-            updateFakeRuntimeTrackable(it)
+            pendingTrackables.add(it)
         }
         FakePerceptionRuntime.allowOneMoreCallToUpdate()
     }
@@ -272,83 +268,9 @@ public class ArCoreTestRule : ExternalResource() {
         FakePerceptionRuntime.allowOneMoreCallToUpdate()
     }
 
-    @Suppress("DEPRECATION")
-    private fun updateFakeRuntimeTrackable(testTrackable: TestTrackable) {
-        when (testTrackable) {
-            is TestPlane -> {
-                if (!testTrackable.isConfigured()) {
-                    return
-                }
-                testTrackable.fakeRuntimeTrackable.apply {
-                    centerPose = testTrackable.centerPose
-                    type = testTrackable.type.toRuntimeType()
-                    label = testTrackable.label.toRuntimeType()
-                    extents = testTrackable.extents
-                    vertices = testTrackable.vertices
-                    subsumedBy = testTrackable.subsumedBy?.fakeRuntimeTrackable
-                    trackingState =
-                        if (testTrackable.isVisible) {
-                            TrackingState.TRACKING
-                        } else {
-                            TrackingState.PAUSED
-                        }
-                }
-            }
-            is TestAugmentedObject -> {
-                if (!testTrackable.isConfigured()) {
-                    return
-                }
-                testTrackable.fakeRuntimeTrackable.apply {
-                    centerPose = testTrackable.centerPose
-                    extents = testTrackable.extents
-                    category = testTrackable.category
-                    trackingState =
-                        if (testTrackable.isVisible) {
-                            TrackingState.TRACKING
-                        } else {
-                            TrackingState.PAUSED
-                        }
-                }
-            }
-            is TestFace -> {
-                if (!testTrackable.isConfiguredForMeshing()) {
-                    return
-                }
-                testTrackable.fakeRuntimeTrackable.apply {
-                    centerPose = testTrackable.centerPose
-                    mesh = testTrackable.mesh
-                    noseTipPose = testTrackable.noseTipPose
-                    foreheadLeftPose = testTrackable.foreheadLeftPose
-                    foreheadRightPose = testTrackable.foreheadRightPose
-                    trackingState =
-                        if (testTrackable.isVisible) {
-                            TrackingState.TRACKING
-                        } else {
-                            TrackingState.PAUSED
-                        }
-                }
-            }
-            is TestAugmentedImage -> {
-                if (!testTrackable.isConfigured()) {
-                    return
-                }
-                testTrackable.fakeRuntimeTrackable.apply {
-                    centerPose = testTrackable.centerPose
-                    extents = testTrackable.extents
-                    index = testTrackable.index
-                    trackingState =
-                        if (testTrackable.isVisible) {
-                            TrackingState.TRACKING
-                        } else {
-                            TrackingState.PAUSED
-                        }
-                }
-            }
-        }
-    }
-
     internal fun registerWithRuntime(fakePerceptionRuntime: FakePerceptionRuntime) {
         runtime = fakePerceptionRuntime
+        runtime.addPendingTrackableProvider(this)
         for ((uuid, pose) in persistedAnchorPoses) {
             if (runtime.config.anchorPersistence == AnchorPersistenceMode.LOCAL) {
                 runtime.perceptionManager.persistedAnchorUUIDs[uuid] = pose
@@ -369,5 +291,19 @@ public class ArCoreTestRule : ExternalResource() {
         FakePerceptionRuntimeFactory.arCoreTestRule = null
         // TODO b/448689133: Remove this when no longer necessary
         androidx.xr.arcore.testing.FakePerceptionRuntimeFactory.createNewFakeRuntime = false
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    override fun getPendingTrackables(): Set<Trackable> {
+        val configuredPendingTrackables: MutableSet<Trackable> = mutableSetOf()
+        val pending = pendingTrackables.iterator()
+        while (pending.hasNext()) {
+            val testTrackable = pending.next()
+            if (testTrackable.isTrackableConfigured()) {
+                configuredPendingTrackables.add(testTrackable.fakeRuntimeTrackable)
+                pending.remove()
+            }
+        }
+        return configuredPendingTrackables
     }
 }

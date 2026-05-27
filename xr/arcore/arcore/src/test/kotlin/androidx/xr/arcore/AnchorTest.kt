@@ -73,7 +73,10 @@ class AnchorTest {
 
         activityController.create().start().resume()
 
-        session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
+        session =
+            (Session.create(context = activity, coroutineContext = testDispatcher)
+                    as SessionCreateSuccess)
+                .session
         session.configure(
             Config(
                 anchorPersistence = AnchorPersistenceMode.LOCAL,
@@ -89,7 +92,7 @@ class AnchorTest {
 
     @After
     fun cleanUp() {
-        arCoreTestRule.device.isCameraTracking = true
+        arCoreTestRule.deviceTester.isCameraTracking = true
     }
 
     @Test
@@ -104,7 +107,7 @@ class AnchorTest {
     @Test
     fun create_notTracking_returnsAnchorNotTracking() =
         runTest(testDispatcher) {
-            arCoreTestRule.device.isCameraTracking = false
+            arCoreTestRule.deviceTester.isCameraTracking = false
             advanceUntilIdle()
 
             assertThat(Anchor.create(session, Pose()))

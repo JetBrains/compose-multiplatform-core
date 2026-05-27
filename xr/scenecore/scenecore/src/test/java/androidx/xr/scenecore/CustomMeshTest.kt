@@ -50,20 +50,14 @@ class CustomMeshTest {
     @Before
     fun setUp() = runBlocking {
         val testDispatcher = StandardTestDispatcher()
-        val result = Session.create(activity, testDispatcher)
+        val result = Session.create(context = activity, coroutineContext = testDispatcher)
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
         session = (result as SessionCreateSuccess).session
 
         vertexLayout =
-            VertexLayout(
-                listOf(
-                    VertexAttributeDescriptor(
-                        VertexAttribute.POSITION,
-                        VertexAttributeType.FLOAT3,
-                        0,
-                    )
-                )
-            )
+            VertexLayout.Builder()
+                .addAttribute(VertexAttribute.POSITION, VertexAttributeType.FLOAT3)
+                .build()
 
         val vertexBuffer = ByteBuffer.allocateDirect(12).order(ByteOrder.nativeOrder())
         val indexBuffer = ByteBuffer.allocateDirect(12).order(ByteOrder.nativeOrder())

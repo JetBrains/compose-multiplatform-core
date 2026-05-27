@@ -30,6 +30,8 @@ import android.provider.Settings
 import android.view.View
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.LifecycleOwner
+import androidx.xr.arcore.Trackable
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.AnchorEntity
@@ -74,12 +76,14 @@ import androidx.xr.scenecore.runtime.SpatialVisibility
 import androidx.xr.scenecore.runtime.SubspaceNodeEntity
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.SurfaceFeature
+import androidx.xr.scenecore.runtime.TrackableComponent
 import androidx.xr.scenecore.runtime.TypeHolder
 import androidx.xr.scenecore.runtime.impl.OpenXrScenePose
 import androidx.xr.scenecore.runtime.impl.PerceptionSpaceScenePoseImpl
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertPerceivedResolution
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertSpatialCapabilities
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.convertSpatialVisibility
+import androidx.xr.scenecore.spatial.core.RuntimeUtils.getDefaultPixelsPerMeter
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getMatrix
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getPositionFromTransform
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getRotationFromTransform
@@ -119,12 +123,15 @@ private constructor(
     private val perceivedResolutionChangedListeners =
         ConcurrentHashMap<Consumer<PixelDimensions>, Executor>()
     private val boundaryConsentListeners = ConcurrentHashMap<Consumer<Boolean>, Executor>()
+
     // TODO b/373481538: remove lazy initialization once XR Extensions bug is fixed. This will allow
     // us to remove the lazySpatialStateProvider instance and pass the spatialState directly.
     private val spatialState = AtomicReference<SpatialState?>(null)
+
     // Returns the currently-known spatial state, or fetches it from the extensions if it has never
     // been set. The spatial state is kept updated in the SpatialStateCallback.
     private val lazySpatialStateProvider: Supplier<SpatialState>
+
     /** Returns the PerceptionSpaceScenePose for the Session. */
     private val perceptionSpaceScenePose: PerceptionSpaceScenePoseImpl
     private val isBoundaryConsentGrantedCache: AtomicBoolean
@@ -147,9 +154,11 @@ private constructor(
     @VisibleForTesting
     override val soundPoolExtensionsWrapper: SoundPoolExtensionsWrapper =
         SoundPoolExtensionsWrapperImpl(xrExtensions.xrSpatialAudioExtensions.soundPoolExtensions)
+
     @VisibleForTesting
     override val audioTrackExtensionsWrapper: AudioTrackExtensionsWrapper =
         AudioTrackExtensionsWrapperImpl(xrExtensions.xrSpatialAudioExtensions.audioTrackExtensions)
+
     @VisibleForTesting
     override val mediaPlayerExtensionsWrapper: MediaPlayerExtensionsWrapper =
         MediaPlayerExtensionsWrapperImpl(
@@ -700,6 +709,14 @@ private constructor(
         )
     }
 
+    override fun createTrackableComponent(
+        lifecycleOwner: LifecycleOwner,
+        trackable: Trackable<Trackable.State>,
+        poseExtractor: ((Any?) -> Pose?),
+    ): TrackableComponent {
+        return TrackableComponentImpl(activitySpace, lifecycleOwner, trackable, poseExtractor)
+    }
+
     override fun createResizableComponent(
         minimumSize: Dimensions,
         maximumSize: Dimensions,
@@ -871,6 +888,8 @@ private constructor(
         }
         return SoundEffectPoolComponentImpl(soundEffectPool)
     }
+
+    override val virtualPixelDensity: Float by lazy { getDefaultPixelsPerMeter(xrExtensions) }
 
     public companion object {
         private const val GUARDIAN_CONSENT_GRANTED = "guardian_consent_granted"

@@ -50,16 +50,6 @@ package androidx.compose.ui
  */
 @ExperimentalComposeUiApi
 object AndroidComposeUiFlags {
-    /**
-     * This flag enables support for walking up nested scrolling in response to
-     * android.R.id.accessibilityActionShowOnScreen from Accessibility.
-     *
-     * Enabled is correct nested scrolling behavior and it should be enabled in all apps.
-     */
-    // TODO: b/474650559
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isAccessibilityShowOnScreenNestedScrollingEnabled: Boolean = true
 
     /**
      * This flag enables using the View's handler for semantics processing instead of the Main
@@ -84,4 +74,13 @@ object AndroidComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     var isAlwaysScrollDuringScrollCaptureEnabled: Boolean = true
+
+    /**
+     * If enabled, interactions (like clicks) will automatically trigger interaction sound effects
+     * on Android.
+     */
+    // TODO: Remove this flag once it has soaked (b/495886959)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isInteractionSoundEffectsEnabled: Boolean = true
 }
